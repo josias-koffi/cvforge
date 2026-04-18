@@ -1,0 +1,13 @@
+{
+  "name": "@cvforge/config",
+  "private": true,
+  "scripts": {
+    "lint": "eslint . --ext .cjs --max-warnings=0",
+    "test": "vitest run --passWithNoTests",
+    "build": "node -e \"console.log('config package is configuration-only')\""
+  },
+  "exports": {
+    "./tsconfig/base": "./tsconfig/base.json",
+    "./eslint/base": "./eslint/base.cjs"
+  }
+}
