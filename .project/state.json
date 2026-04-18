@@ -13,7 +13,7 @@
   "specialized_workflows": [],
   "specialized_skills": [],
   "clarifications_pending": [],
-  "last_updated": "2026-04-18",
-  "last_workflow_run": null,
+  "last_updated": "2026-04-18T19:26:00+02:00",
+  "last_workflow_run": "run-agent developer",
   "last_task_completed": "US-004"
 }
