@@ -1,0 +1,15 @@
+services:
+  app:
+    restart: unless-stopped
+  landing:
+    restart: unless-stopped
+  api:
+    restart: unless-stopped
+  postgres:
+    restart: unless-stopped
+  minio:
+    restart: unless-stopped
+  puppeteer:
+    restart: unless-stopped
+  redis:
+    restart: unless-stopped

@@ -1,0 +1,77 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: docker/app.Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:3333
+    depends_on:
+      - api
+
+  landing:
+    build:
+      context: .
+      dockerfile: docker/landing.Dockerfile
+    ports:
+      - "3001:3001"
+
+  api:
+    build:
+      context: .
+      dockerfile: docker/api.Dockerfile
+    ports:
+      - "3333:3333"
+    environment:
+      DATABASE_URL: postgresql://cvforge:secret@postgres:5432/cvforge
+      REDIS_URL: redis://redis:6379
+      MINIO_ENDPOINT: http://minio:9000
+      PUPPETEER_URL: http://puppeteer:3002
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
+      MISTRAL_API_KEY: ${MISTRAL_API_KEY}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+    depends_on:
+      - postgres
+      - minio
+      - redis
+      - puppeteer
+
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: cvforge
+      POSTGRES_USER: cvforge
+      POSTGRES_PASSWORD: secret
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  minio:
+    image: minio/minio
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: cvforge
+      MINIO_ROOT_PASSWORD: secretminio
+    volumes:
+      - minio_data:/data
+
+  puppeteer:
+    build:
+      context: .
+      dockerfile: docker/puppeteer.Dockerfile
+    ports:
+      - "3002:3002"
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+volumes:
+  postgres_data:
+  minio_data:
