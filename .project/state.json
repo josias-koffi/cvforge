@@ -1,0 +1,19 @@
+{
+  "project_name": "cvforge",
+  "project_type": "greenfield",
+  "stack": "node",
+  "architecture_style": "monorepo (source: vision §2)",
+  "vision_source": ".project/vision.md",
+  "vision_mode": "verbatim",
+  "engineering_spec": "spec/engineering-standards.md",
+  "current_sprint": 1,
+  "completed_sprints": [],
+  "active_agents": [],
+  "specialized_agents": [],
+  "specialized_workflows": [],
+  "specialized_skills": [],
+  "clarifications_pending": [],
+  "last_updated": "2026-04-18",
+  "last_workflow_run": null,
+  "last_task_completed": "US-004"
+}
