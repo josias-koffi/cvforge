@@ -1,0 +1,17 @@
+{
+  "name": "@cvforge/landing",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --port 3001",
+    "build": "next build",
+    "lint": "eslint app --ext .ts,.tsx --max-warnings=0",
+    "test": "vitest run --coverage"
+  },
+  "dependencies": {
+    "@cvforge/types": "workspace:*",
+    "@cvforge/ui": "workspace:*",
+    "next": "^15.1.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  }
+}
