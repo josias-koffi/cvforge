@@ -1,0 +1,16 @@
+{
+  "name": "@cvforge/ui",
+  "private": true,
+  "dependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "scripts": {
+    "lint": "eslint src --ext .ts,.tsx --max-warnings=0",
+    "test": "vitest run --coverage",
+    "build": "tsc -p tsconfig.json --noEmit"
+  },
+  "exports": {
+    ".": "./src/index.tsx"
+  }
+}
