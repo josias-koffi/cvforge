@@ -10,4 +10,5 @@ export {
 } from "./card";
 export { Input, Label, Textarea } from "./field";
 export { AppShell } from "./shell";
+export type { ShellNavItem } from "./shell";
 export { PaperStyles, paperStylesCss } from "./styles";

@@ -12,25 +12,56 @@ import {
   Input,
   Label,
   PaperStyles,
+  type ShellNavItem,
   Textarea,
 } from "./index";
+
+const shellNavigation: ShellNavItem[] = [
+  {
+    href: "/dashboard",
+    label: "Dashboard",
+    description: "Vue d'ensemble",
+    shortLabel: "DB",
+    isActive: true,
+  },
+  {
+    href: "/templates",
+    label: "Templates",
+    description: "Bibliotheque",
+    shortLabel: "TP",
+  },
+  {
+    href: "/applications",
+    label: "Candidatures",
+    description: "Suivi",
+    shortLabel: "CD",
+  },
+];
 
 describe("AppShell", () => {
   it("should render the provided title and description", () => {
     const markup = renderToStaticMarkup(
       <>
         <PaperStyles />
-        <AppShell title="Paper Shell" description="Rendered for coverage." />
+        <AppShell
+          title="Paper Shell"
+          description="Rendered for coverage."
+          navigation={shellNavigation}
+        />
       </>,
     );
 
     expect(markup).toContain("Paper Shell");
     expect(markup).toContain("Rendered for coverage.");
     expect(markup).toContain("Papier &amp; Crayon");
+    expect(markup).toContain("Navigation principale");
+    expect(markup).toContain("Sections principales");
+    expect(markup).toContain("Dashboard");
     expect(markup).toContain("Composants de base disponibles");
     expect(markup).toContain("WCAG AA ready");
     expect(markup).toContain("--paper-canvas");
     expect(markup).toContain("@media (min-width: 768px)");
+    expect(markup).toContain("@media (min-width: 1024px)");
   });
 });
 

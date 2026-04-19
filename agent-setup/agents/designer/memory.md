@@ -26,3 +26,10 @@
 - **Why**: The component library needed a concrete visual and accessibility brief before implementation.
 - **Learned**: The token system is flexible enough to support shadcn-style primitives without introducing app-local visual drift.
 - **Open**: Navigation and dashboard stories should reuse the same card, button, and form primitives rather than inventing new patterns.
+
+## 2026-04-19 — US-008
+
+- **Did**: Specified a dual-mode navigation shell with a mobile bottom bar, a `lg` desktop sidebar, and semantic nav landmarks that preserve the existing "Papier & Crayon" feel.
+- **Why**: The sprint story required a responsive navigation system that works across the current Next apps without fragmenting the shared UI language.
+- **Learned**: The existing token system already provides enough structure for both compact mobile navigation and a richer desktop sidebar treatment.
+- **Open**: Future authenticated screens should inject task-specific content into this shell instead of forking the layout.

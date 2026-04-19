@@ -9,6 +9,7 @@ describe("HomePage", () => {
 
     expect(markup).toContain("CVforge App");
     expect(markup).toContain("PWA candidat initialis");
-    expect(markup).toContain("CVforge");
+    expect(markup).toContain("Tableau de bord");
+    expect(markup).toContain("Sections principales");
   });
 });

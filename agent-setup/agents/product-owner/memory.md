@@ -33,3 +33,10 @@
 - **Why**: The workflow needed a clear product boundary before introducing the shadcn-style component layer.
 - **Learned**: The existing vision and sprint criteria are precise enough to implement the first shared primitive set without inventing any new user flows.
 - **Open**: `US-008` should now consume these primitives instead of creating navigation-specific UI styles from scratch.
+
+## 2026-04-19 — US-008
+
+- **Did**: Confirmed that `US-008` is strictly a shared-shell navigation story and that its acceptance criteria can be evidenced through shared UI code, breakpoint rules, and rendered markup.
+- **Why**: The workflow needed a tight product boundary before turning the base shell into responsive app and landing navigation.
+- **Learned**: The vision already implies a reusable shell pattern, so no extra product scope was needed to support both marketing and authenticated surfaces.
+- **Open**: The next dashboard stories should populate this shell with real authenticated sections and data.

@@ -4,6 +4,10 @@ import { appContent } from "./content";
 
 export default function HomePage() {
   return (
-    <AppShell title={appContent.title} description={appContent.description} />
+    <AppShell
+      title={appContent.title}
+      description={appContent.description}
+      navigation={appContent.navigation}
+    />
   );
 }

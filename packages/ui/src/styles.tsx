@@ -8,6 +8,7 @@ export const paperStylesCss = `
   .cvforge-shell {
     min-height: 100vh;
     padding: var(--paper-space-xl);
+    padding-bottom: calc(6.5rem + env(safe-area-inset-bottom, 0px));
     background:
       radial-gradient(circle at top, rgba(200, 169, 110, 0.14), transparent 28rem),
       linear-gradient(180deg, var(--paper-canvas) 0%, #f6f3ed 100%);
@@ -20,6 +21,27 @@ export const paperStylesCss = `
     margin: 0 auto;
     display: grid;
     gap: var(--paper-space-xl);
+  }
+
+  .cvforge-shell__main {
+    display: grid;
+    gap: var(--paper-space-xl);
+    min-width: 0;
+  }
+
+  .cvforge-shell__sidebar {
+    display: none;
+  }
+
+  .cvforge-shell__sidebar-header {
+    display: grid;
+    gap: var(--paper-space-md);
+  }
+
+  .cvforge-shell__sidebar-copy {
+    margin: 0;
+    color: var(--paper-text-muted);
+    line-height: 1.65;
   }
 
   .cvforge-shell__hero {
@@ -67,6 +89,112 @@ export const paperStylesCss = `
     display: flex;
     flex-wrap: wrap;
     gap: var(--paper-space-md);
+  }
+
+  .cvforge-shell__sidebar-nav-list,
+  .cvforge-shell__mobile-nav-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .cvforge-shell__sidebar-nav-list {
+    display: grid;
+    gap: var(--paper-space-sm);
+  }
+
+  .cvforge-shell__nav-link {
+    display: grid;
+    gap: var(--paper-space-xs);
+    padding: var(--paper-space-md) var(--paper-space-lg);
+    border: 1px solid var(--paper-border);
+    border-radius: var(--paper-radius-lg);
+    background: color-mix(in srgb, var(--paper-surface) 92%, transparent);
+    color: inherit;
+    text-decoration: none;
+    transition:
+      background-color 150ms ease,
+      border-color 150ms ease,
+      transform 150ms ease;
+  }
+
+  .cvforge-shell__nav-link:hover {
+    transform: translateY(-1px);
+    background: var(--paper-surface);
+  }
+
+  .cvforge-shell__nav-link[aria-current="page"] {
+    border-color: color-mix(in srgb, var(--paper-accent-soft) 55%, var(--paper-border));
+    background: color-mix(in srgb, var(--paper-accent-soft) 14%, white);
+  }
+
+  .cvforge-shell__nav-label {
+    font-family: var(--paper-font-document);
+    font-size: 1.05rem;
+    color: var(--paper-text);
+  }
+
+  .cvforge-shell__nav-description {
+    color: var(--paper-text-muted);
+    font-size: 0.92rem;
+    line-height: 1.5;
+  }
+
+  .cvforge-shell__mobile-nav {
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
+    width: min(100%, 72rem);
+    margin: 0 auto;
+  }
+
+  .cvforge-shell__mobile-nav-list {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--paper-space-sm);
+    padding: var(--paper-space-sm);
+    border: 1px solid color-mix(in srgb, var(--paper-border) 82%, white);
+    border-radius: calc(var(--paper-radius-lg) + 0.25rem);
+    background: color-mix(in srgb, var(--paper-surface) 90%, rgba(255, 255, 255, 0.2));
+    box-shadow: var(--paper-shadow-paper);
+    backdrop-filter: blur(12px);
+  }
+
+  .cvforge-shell__mobile-nav-link {
+    display: grid;
+    justify-items: center;
+    gap: var(--paper-space-xs);
+    min-height: 4rem;
+    padding: var(--paper-space-sm);
+    border-radius: var(--paper-radius-md);
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .cvforge-shell__mobile-nav-link[aria-current="page"] {
+    background: color-mix(in srgb, var(--paper-accent-soft) 16%, white);
+  }
+
+  .cvforge-shell__mobile-nav-kicker {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2rem;
+    min-height: 2rem;
+    padding-inline: var(--paper-space-sm);
+    border: 1px solid var(--paper-border);
+    border-radius: var(--paper-radius-pill);
+    background: var(--paper-surface-muted);
+    font-family: var(--paper-font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .cvforge-shell__mobile-nav-label {
+    font-size: 0.82rem;
+    font-weight: 600;
+    text-align: center;
   }
 
   .cvforge-shell__grid {
@@ -301,6 +429,7 @@ export const paperStylesCss = `
   @media (min-width: 768px) {
     .cvforge-shell {
       padding: var(--paper-space-2xl);
+      padding-bottom: calc(7rem + env(safe-area-inset-bottom, 0px));
     }
 
     .cvforge-shell__grid {
@@ -309,6 +438,34 @@ export const paperStylesCss = `
 
     .cvforge-shell__grid > .cvforge-card:first-child {
       grid-column: span 2;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .cvforge-shell {
+      padding-bottom: var(--paper-space-2xl);
+    }
+
+    .cvforge-shell__frame {
+      width: min(100%, 80rem);
+      grid-template-columns: minmax(16rem, 18rem) minmax(0, 1fr);
+      align-items: start;
+    }
+
+    .cvforge-shell__sidebar {
+      position: sticky;
+      top: var(--paper-space-2xl);
+      display: grid;
+      gap: var(--paper-space-lg);
+      padding: var(--paper-space-xl);
+      border: 1px solid var(--paper-border);
+      border-radius: var(--paper-radius-lg);
+      background: color-mix(in srgb, var(--paper-surface) 92%, transparent);
+      box-shadow: var(--paper-shadow-paper);
+    }
+
+    .cvforge-shell__mobile-nav {
+      display: none;
     }
   }
 `;

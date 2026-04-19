@@ -7,6 +7,7 @@ export default function LandingPage() {
     <AppShell
       title={landingContent.title}
       description={landingContent.description}
+      navigation={landingContent.navigation}
     />
   );
 }

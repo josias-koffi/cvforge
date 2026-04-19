@@ -37,22 +37,22 @@ Fermer les fondations d'interface et de déploiement du MVP avec le design syste
     - [x] Les composants utilisent les tokens "Papier & Crayon"
     - [x] Les patterns restent conformes à l'accessibilité du spec
   - Source: vision `§2`, `§2.6`, `§16`
-- [ ] **[US-008]** Mettre en place la navigation mobile + sidebar desktop
+- [x] **[US-008]** Mettre en place la navigation mobile + sidebar desktop
   - Agent: `developer`
   - Workflow: `analyze-design-dev-review`
   - Acceptance criteria:
-    - [ ] Une bottom bar mobile existe pour les sections principales
-    - [ ] Une sidebar desktop existe à partir du breakpoint `lg`
-    - [ ] Le shell supporte `app`, `landing` et les futurs écrans authentifiés
+    - [x] Une bottom bar mobile existe pour les sections principales
+    - [x] Une sidebar desktop existe à partir du breakpoint `lg`
+    - [x] Le shell supporte `app`, `landing` et les futurs écrans authentifiés
   - Source: vision `§2.5`, `§16`
 
 ## 📊 Sprint DoD
 
-- [ ] All tasks ticked
-- [ ] All acceptance criteria verified
-- [ ] `run-tests` green
-- [ ] Coverage ≥ spec threshold
-- [ ] QA review ✅
+- [x] All tasks ticked
+- [x] All acceptance criteria verified
+- [x] `run-tests` green
+- [x] Coverage ≥ spec threshold
+- [x] QA review ✅
 
 ## 🚧 Risks
 

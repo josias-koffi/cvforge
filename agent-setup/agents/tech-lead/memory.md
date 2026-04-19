@@ -40,3 +40,10 @@
 - **Why**: The project needed an explicit architecture decision and a final release-style gate before marking the story complete.
 - **Learned**: The shared UI package can absorb additional component-library dependencies without breaking the monorepo quality gates.
 - **Open**: The next UI stories should keep the responsive shell on top of the shared component layer to avoid duplicate navigation implementations.
+
+## 2026-04-19 — US-008
+
+- **Did**: Closed the responsive-navigation workflow with a passing verdict after shared-shell reuse, breakpoint behavior, and quality-gate evidence were all confirmed.
+- **Why**: Sprint tracking and architecture governance require an explicit final decision before the story and sprint can be marked complete.
+- **Learned**: The shared UI package is now the stable place for cross-app layout primitives, not just tokens and atomic components.
+- **Open**: Upcoming authenticated dashboard work should extend this shell instead of introducing another layout abstraction.

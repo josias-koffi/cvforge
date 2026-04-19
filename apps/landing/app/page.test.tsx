@@ -9,6 +9,7 @@ describe("LandingPage", () => {
 
     expect(markup).toContain("CVforge Landing");
     expect(markup).toContain("Site vitrine initialis");
-    expect(markup).toContain("CVforge");
+    expect(markup).toContain("Templates");
+    expect(markup).toContain("Navigation principale");
   });
 });
