@@ -33,3 +33,10 @@
 - **Why**: The sprint story required a responsive navigation system that works across the current Next apps without fragmenting the shared UI language.
 - **Learned**: The existing token system already provides enough structure for both compact mobile navigation and a richer desktop sidebar treatment.
 - **Open**: Future authenticated screens should inject task-specific content into this shell instead of forking the layout.
+
+## 2026-04-19 — smtp backend setup
+
+- **Did**: Reviewed the SMTP setup task and explicitly marked the design stage as a non-UI skip while documenting the intended infrastructure shape.
+- **Why**: The workflow requires a design-stage artifact even when the requested work does not affect user-facing experience.
+- **Learned**: The current email setup request is purely backend infrastructure and does not create any new UX or accessibility surface yet.
+- **Open**: A later email-auth or notifications story may need actual user-facing copy and delivery-state UX.

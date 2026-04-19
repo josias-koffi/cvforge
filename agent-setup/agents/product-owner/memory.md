@@ -40,3 +40,10 @@
 - **Why**: The workflow needed a tight product boundary before turning the base shell into responsive app and landing navigation.
 - **Learned**: The vision already implies a reusable shell pattern, so no extra product scope was needed to support both marketing and authenticated surfaces.
 - **Open**: The next dashboard stories should populate this shell with real authenticated sections and data.
+
+## 2026-04-19 — smtp backend setup
+
+- **Did**: Framed the SMTP backend task as an ad hoc workflow item, defined testable acceptance criteria around env-driven configuration, and documented that the `US-003` reference does not match the current backlog.
+- **Why**: The workflow needed a precise product boundary before implementation so the work stayed limited to backend configuration rather than inventing a full email-delivery feature.
+- **Learned**: The requested outcome can be delivered as provider-neutral infrastructure with Resend only serving as the initial SMTP example.
+- **Open**: Future product work still needs explicit decisions for sender identity, magic-link delivery behavior, and notification use cases.

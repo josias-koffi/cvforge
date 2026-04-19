@@ -33,3 +33,10 @@
 - **Why**: The task could only be marked complete once the mobile and desktop navigation behavior had concrete implementation and validation evidence.
 - **Learned**: The shared shell remains above coverage thresholds while adding semantic nav regions and active-state affordances.
 - **Open**: Centralized automated accessibility checks remain a repo-level improvement outside this story.
+
+## 2026-04-19 — smtp backend setup
+
+- **Did**: Verified the SMTP configuration slice, env documentation, module wiring, and workspace quality-gate evidence, then recorded a passing review with no blocking findings.
+- **Why**: The task could only pass once the backend configuration requirements and engineering standards had concrete test and build evidence.
+- **Learned**: The API can add infrastructure-oriented setup work while staying above the project coverage thresholds and without introducing architecture drift.
+- **Open**: The future delivery service still needs its own review once real email sending is added.

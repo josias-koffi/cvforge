@@ -47,3 +47,10 @@
 - **Why**: The sprint story required one reusable shell that can serve `app`, `landing`, and later authenticated screens without duplicating layout code.
 - **Learned**: Typed navigation props plus an optional content slot are enough to keep the shell shared while allowing future authenticated pages to diverge in body content.
 - **Open**: The next authenticated dashboard stories should start consuming the shell with real routes and section content.
+
+## 2026-04-19 — smtp backend setup
+
+- **Did**: Added a provider-neutral SMTP config factory and Nest module in `apps/api`, documented the env variables in `.env.example`, added unit tests, fixed a TypeScript narrowing issue, and verified the workspace with `pnpm lint`, `pnpm test`, and `pnpm build`.
+- **Why**: The backend needed a simple SMTP setup that can point at Resend now while remaining swappable later through environment changes only.
+- **Learned**: A minimal DI-exposed config module is enough to prepare the API for future email delivery without adding extra libraries or provider lock-in.
+- **Open**: The next backend story should consume this config in a real mailer service and define sender metadata.

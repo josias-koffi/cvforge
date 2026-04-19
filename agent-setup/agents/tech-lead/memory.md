@@ -47,3 +47,10 @@
 - **Why**: Sprint tracking and architecture governance require an explicit final decision before the story and sprint can be marked complete.
 - **Learned**: The shared UI package is now the stable place for cross-app layout primitives, not just tokens and atomic components.
 - **Open**: Upcoming authenticated dashboard work should extend this shell instead of introducing another layout abstraction.
+
+## 2026-04-19 — smtp backend setup
+
+- **Did**: Closed the ad hoc SMTP backend workflow with a passing verdict after confirming the env-driven, provider-neutral configuration module and successful workspace validation.
+- **Why**: Architecture governance required an explicit final decision before the workflow state could be cleared and recorded.
+- **Learned**: The backend can prepare for future email delivery without an ADR when no new library or framework is introduced and the implementation remains inside the existing Nest structure.
+- **Open**: A future story should define the mailer service boundary and the auth/notification flows that will consume this config.
