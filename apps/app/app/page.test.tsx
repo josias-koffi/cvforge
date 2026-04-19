@@ -11,5 +11,6 @@ describe("HomePage", () => {
     expect(markup).toContain("PWA candidat initialis");
     expect(markup).toContain("Tableau de bord");
     expect(markup).toContain("Sections principales");
+    expect(markup).toContain("connexion passwordless");
   });
 });

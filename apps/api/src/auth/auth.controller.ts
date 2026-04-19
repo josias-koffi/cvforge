@@ -1,0 +1,108 @@
+import {
+  Body,
+  Controller,
+  Get,
+  Inject,
+  Post,
+  Query,
+  Req,
+  Res,
+  UnauthorizedException,
+} from "@nestjs/common";
+import { AuthMailerService } from "./auth-mailer.service";
+import { AuthService } from "./auth.service";
+
+type CookieResponse = {
+  cookie: (name: string, value: string, options: object) => void;
+  redirect: (statusCode: number, url: string) => unknown;
+};
+
+type RequestLike = {
+  headers: {
+    cookie?: string;
+  };
+};
+
+@Controller("auth")
+export class AuthController {
+  constructor(
+    @Inject(AuthService) private readonly authService: AuthService,
+    @Inject(AuthMailerService) private readonly authMailer: AuthMailerService,
+  ) {}
+
+  @Post("passwordless/request")
+  async requestMagicLink(@Body() body: { email?: string }) {
+    const result = this.authService.requestMagicLink(body.email ?? "");
+
+    await this.authMailer.sendMagicLinkEmail(result);
+
+    return {
+      email: result.email,
+      expiresAt: result.expiresAt,
+      sessionDurationDays: result.sessionDurationDays,
+    };
+  }
+
+  @Get("email/health")
+  getEmailHealth() {
+    return this.authMailer.getHealth();
+  }
+
+  @Get("passwordless/consume")
+  consumeMagicLink(
+    @Query("token") token: string,
+    @Query("redirectTo") redirectTo: string | undefined,
+    @Res() response: CookieResponse,
+  ) {
+    const result = this.authService.consumeMagicLink(token, redirectTo);
+
+    response.cookie(result.cookie.name, result.cookie.value, result.cookie.options);
+
+    return response.redirect(302, result.redirectUrl);
+  }
+
+  @Post("passwordless/consume")
+  consumeMagicLinkForApi(
+    @Body() body: { token?: string; redirectTo?: string },
+    @Res({ passthrough: true }) response: CookieResponse,
+  ) {
+    const result = this.authService.consumeMagicLink(
+      body.token ?? "",
+      body.redirectTo,
+    );
+
+    response.cookie(result.cookie.name, result.cookie.value, result.cookie.options);
+
+    return {
+      session: result.session,
+      redirectUrl: result.redirectUrl,
+    };
+  }
+
+  @Get("session")
+  readSession(@Req() request: RequestLike) {
+    const session = this.authService.readSessionFromCookieHeader(
+      request.headers.cookie,
+    );
+
+    if (!session) {
+      throw new UnauthorizedException("No valid session is present.");
+    }
+
+    return {
+      authenticated: true,
+      session,
+    };
+  }
+
+  @Post("logout")
+  logout(@Res({ passthrough: true }) response: CookieResponse) {
+    const cookie = this.authService.clearSessionCookie();
+
+    response.cookie(cookie.name, cookie.value, cookie.options);
+
+    return {
+      authenticated: false,
+    };
+  }
+}

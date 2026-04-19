@@ -47,3 +47,10 @@
 - **Why**: The workflow needed a precise product boundary before implementation so the work stayed limited to backend configuration rather than inventing a full email-delivery feature.
 - **Learned**: The requested outcome can be delivered as provider-neutral infrastructure with Resend only serving as the initial SMTP example.
 - **Open**: Future product work still needs explicit decisions for sender identity, magic-link delivery behavior, and notification use cases.
+
+## 2026-04-19 — US-009
+
+- **Did**: Confirmed that `US-009` is limited to the passwordless login contract itself, defined the acceptance boundary around a working magic-link flow plus secure sessions, and captured the still-open product decision on final session duration.
+- **Why**: The workflow needed a precise scope so implementation could deliver auth fundamentals without spilling into first-admin bootstrap or role-based authorization.
+- **Learned**: The vision allows the sprint to ship with a configurable recommended session duration while keeping the exact final value as a product follow-up.
+- **Open**: Real email delivery still needs to be connected to the existing SMTP setup in a future story.

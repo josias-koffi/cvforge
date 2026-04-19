@@ -40,3 +40,10 @@
 - **Why**: The workflow requires a design-stage artifact even when the requested work does not affect user-facing experience.
 - **Learned**: The current email setup request is purely backend infrastructure and does not create any new UX or accessibility surface yet.
 - **Open**: A later email-auth or notifications story may need actual user-facing copy and delivery-state UX.
+
+## 2026-04-19 — US-009
+
+- **Did**: Specified a minimal three-step passwordless flow covering login request, generated-link preview, and post-consumption session verification, while keeping the UI intentionally narrow.
+- **Why**: The sprint story needed enough UX to prove the auth flow end to end without inventing later dashboard, admin, or invitation surfaces.
+- **Learned**: A compact flow with explicit copy about the temporary link-preview behavior is enough to validate the auth contract and remain honest about current delivery capabilities.
+- **Open**: A future story should replace the preview step with real email delivery status once the SMTP-backed mailer exists.

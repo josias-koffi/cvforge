@@ -7,11 +7,15 @@
     "lint": "eslint src --ext .ts --max-warnings=0",
     "test": "vitest run --coverage"
   },
+  "devDependencies": {
+    "@types/nodemailer": "^7.0.1"
+  },
   "dependencies": {
     "@cvforge/types": "workspace:*",
     "@nestjs/common": "^11.0.0",
     "@nestjs/core": "^11.0.0",
     "@nestjs/platform-express": "^11.0.0",
+    "nodemailer": "^7.0.3",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1"
   }

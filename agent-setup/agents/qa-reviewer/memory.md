@@ -40,3 +40,10 @@
 - **Why**: The task could only pass once the backend configuration requirements and engineering standards had concrete test and build evidence.
 - **Learned**: The API can add infrastructure-oriented setup work while staying above the project coverage thresholds and without introducing architecture drift.
 - **Open**: The future delivery service still needs its own review once real email sending is added.
+
+## 2026-04-19 — US-009
+
+- **Did**: Reviewed the passwordless auth flow, verified each acceptance criterion against the new API and app code, and confirmed passing `pnpm lint`, `pnpm test`, and `pnpm build` plus coverage above the blocking thresholds for the touched packages.
+- **Why**: The story could only pass once the login flow, secure session behavior, and session-duration documentation each had direct code and validation evidence.
+- **Learned**: The generated-link preview is sufficient to validate the auth contract now without weakening the security or coverage gates for the story.
+- **Open**: A later review should confirm the real email-delivery path once SMTP-backed sending is wired in.

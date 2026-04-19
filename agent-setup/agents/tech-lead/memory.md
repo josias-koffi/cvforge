@@ -54,3 +54,10 @@
 - **Why**: Architecture governance required an explicit final decision before the workflow state could be cleared and recorded.
 - **Learned**: The backend can prepare for future email delivery without an ADR when no new library or framework is introduced and the implementation remains inside the existing Nest structure.
 - **Open**: A future story should define the mailer service boundary and the auth/notification flows that will consume this config.
+
+## 2026-04-19 — US-009
+
+- **Did**: Closed the `US-009` workflow with a passing verdict after confirming the passwordless auth slice, secure cookie-session approach, and successful repository validation and coverage evidence.
+- **Why**: Sprint bookkeeping and architecture governance require a clear final decision before the story can be marked complete.
+- **Learned**: The current codebase can land a secure passwordless foundation without adding a new auth framework, which keeps future admin/bootstrap stories simpler.
+- **Open**: The next auth-related story should integrate real email delivery on top of the existing SMTP and auth modules.

@@ -13,13 +13,13 @@ Sécuriser l'accès produit avec l'authentification passwordless, le bootstrappi
 
 ## ✅ Tasks (3–8 max)
 
-- [ ] **[US-009]** Implémenter l'auth passwordless et les sessions sécurisées
+- [x] **[US-009]** Implémenter l'auth passwordless et les sessions sécurisées
   - Agent: `developer`
   - Workflow: `analyze-design-dev-review`
   - Acceptance criteria:
-    - [ ] Le login passwordless fonctionne de bout en bout
-    - [ ] Les sessions sont persistées de manière sécurisée
-    - [ ] La durée de session est documentée, même si le réglage final reste à préciser
+    - [x] Le login passwordless fonctionne de bout en bout
+    - [x] Les sessions sont persistées de manière sécurisée
+    - [x] La durée de session est documentée, même si le réglage final reste à préciser
   - Source: vision `§3.1`, `§3.4`, `§16`
 - [ ] **[US-010]** Sécuriser le bootstrapping du premier admin
   - Agent: `tech-lead`
