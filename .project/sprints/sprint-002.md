@@ -21,13 +21,13 @@ Fermer les fondations d'interface et de déploiement du MVP avec le design syste
     - [x] Les services `app`, `landing` et `api` sont routables en production
     - [x] Les variables d'environnement prod sont documentées
   - Source: vision `§2.7`, `§16`
-- [ ] **[US-006]** Définir les tokens design system "Papier & Crayon"
+- [x] **[US-006]** Définir les tokens design system "Papier & Crayon"
   - Agent: `designer`
   - Workflow: `analyze-design-dev-review`
   - Acceptance criteria:
-    - [ ] Palette, typographies et tokens d'espacement sont codifiés
-    - [ ] Les styles respectent l'esthétique "papier ivoire / trait de crayon"
-    - [ ] Les composants de base respectent les contraintes mobile-first
+    - [x] Palette, typographies et tokens d'espacement sont codifiés
+    - [x] Les styles respectent l'esthétique "papier ivoire / trait de crayon"
+    - [x] Les composants de base respectent les contraintes mobile-first
   - Source: vision `§2.5`, `§2.6`, `§16`
 - [ ] **[US-007]** Installer `shadcn/ui` et personnaliser les composants de base
   - Agent: `developer`

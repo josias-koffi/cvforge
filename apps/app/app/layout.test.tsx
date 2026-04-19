@@ -12,7 +12,8 @@ describe("RootLayout", () => {
     );
 
     expect(markup).toContain('lang="fr"');
-    expect(markup).toContain("<body>");
+    expect(markup).toContain("<body");
+    expect(markup).toContain("background-color:#FAFAF7");
     expect(markup).toContain("child content");
   });
 });

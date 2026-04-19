@@ -11,7 +11,8 @@ describe("AppShell", () => {
 
     expect(markup).toContain("Paper Shell");
     expect(markup).toContain("Rendered for coverage.");
-    expect(markup).toContain("CVforge");
-    expect(markup).toContain("linear-gradient");
+    expect(markup).toContain("Papier &amp; Crayon");
+    expect(markup).toContain("--paper-canvas");
+    expect(markup).toContain("@media (min-width: 768px)");
   });
 });

@@ -11,6 +11,7 @@
     "build": "tsc -p tsconfig.json --noEmit"
   },
   "exports": {
-    ".": "./src/index.tsx"
+    ".": "./src/index.tsx",
+    "./design-system": "./src/design-system.ts"
   }
 }

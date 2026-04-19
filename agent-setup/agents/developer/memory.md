@@ -26,3 +26,10 @@
 - **Why**: Align the repository with the current orchestrated workflow model without overwriting user-owned project files outside the managed migration scope.
 - **Learned**: This repo was in a mixed state where root docs were generated but still referenced the older `agents/`, `spec/`, and root `workflows/`/`sprints/` layout; the live state file also lacked workflow orchestration keys.
 - **Open**: Validate the upgraded workflow commands against the intended sprint process and decide whether any project-local docs still reference the pre-upgrade paths.
+
+## 2026-04-19 — US-006
+
+- **Did**: Added a shared design-token module, refactored `AppShell` to consume it through CSS variables, themed both app layouts, and updated tests before running lint/test/build.
+- **Why**: The sprint story required codified "Papier & Crayon" tokens and a mobile-first base shell that later component work can inherit.
+- **Learned**: The existing workspace could absorb a tokenized design-system layer without any new dependency; package subpath exports were enough for cross-app reuse.
+- **Open**: `US-007` can now focus on component primitives instead of re-deciding the visual foundations.

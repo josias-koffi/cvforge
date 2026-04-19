@@ -26,3 +26,10 @@
 - **Why**: Sprint `US-005` required a production-ready Docker override that stays aligned with the local stack while adding SSL termination and explicit deployment inputs.
 - **Learned**: Compose needed `!override []` to fully clear inherited port mappings from the base file; otherwise services stayed directly published alongside Traefik.
 - **Open**: Production still needs real deployment secrets and DNS records matching `APP_DOMAIN`, `LANDING_DOMAIN`, `API_DOMAIN`, and the optional Traefik dashboard host.
+
+## 2026-04-19 — US-006
+
+- **Did**: Closed the orchestrated workflow with a passing verdict after design-token implementation, review, and validation succeeded.
+- **Why**: Sprint bookkeeping and architecture oversight require a clear final decision before the story can be considered complete.
+- **Learned**: The shared UI package is now the correct place for cross-app theme primitives, reducing the risk of token drift in the next UI stories.
+- **Open**: Future UI stories should keep reusing this token file instead of reintroducing app-local theme constants.
