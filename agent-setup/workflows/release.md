@@ -1,24 +1,64 @@
 <!-- generated-by: /init-project -->
-
 # Workflow: Release
 
-## Trigger
+## Mode
+orchestrated
 
-Sprint DoD fully met and release approved.
+## Stage 1 - Freeze
+Agent: tech-lead
+Inputs:
+- Sprint completion status
+- Release scope
+Outputs:
+- `.project/workflows/<run-id>/01-freeze.md`
+Pass:
+- Release scope is frozen
+- Blocking gaps are listed
+OnFailure:
+- Stop and return to sprint execution
 
-## Steps
+## Stage 2 - Regression
+Agent: qa-reviewer
+Inputs:
+- `.project/workflows/<run-id>/01-freeze.md`
+- Test plan and quality gates
+Outputs:
+- `.project/workflows/<run-id>/02-regression.md`
+Pass:
+- Full regression verdict is explicit
+OnFailure:
+- Stop and return the release candidate to engineering
 
-1. **Freeze** (`tech-lead`) — confirm sprint DoD ticks. Pass: all tasks ✅.
-2. **Regression** (`qa-reviewer`) — skill `run-tests` full suite. Pass: 100% green.
-3. **Dep audit** (`tech-lead`) — skill `dependency-audit`. Pass: 0 critical, 0 high, no licence violations.
-4. **Tag & changelog** (`developer`) — semver tag, generate changelog from conventional commits.
-5. **Deploy** (`developer`) — run deploy command from `.claude/CLAUDE.md`.
-6. **Release note** (`product-owner`) — write `.project/releases/vX.Y.Z.md` summarising delivered value per epic.
+## Stage 3 - Audit
+Agent: tech-lead
+Inputs:
+- `.project/workflows/<run-id>/02-regression.md`
+Outputs:
+- `.project/workflows/<run-id>/03-audit.md`
+Pass:
+- Dependency and operational risks are explicit
+OnFailure:
+- Stop and require remediation before deploy
 
-## Rollback
+## Stage 4 - Deploy
+Agent: developer
+Inputs:
+- `.project/workflows/<run-id>/03-audit.md`
+Outputs:
+- `.project/workflows/<run-id>/04-deploy.md`
+Pass:
+- Deployment result is explicit
+- Rollback status is explicit if deployment failed
+OnFailure:
+- Stop and record rollback actions
 
-Step 2 if regression fails post-deploy; revert tag.
-
-## State logs
-
-- `releases`: append `{version, date}`
+## Finalization
+Agent: product-owner
+Inputs:
+- `.project/workflows/<run-id>/04-deploy.md`
+Outputs:
+- `.project/workflows/<run-id>/final-summary.md`
+Pass:
+- Release note and user-facing outcome are explicit
+OnFailure:
+- Stop and request clarification from the user

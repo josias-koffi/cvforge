@@ -5,7 +5,7 @@
   "architecture_style": "monorepo (source: vision §2)",
   "vision_source": ".project/vision.md",
   "vision_mode": "verbatim",
-  "engineering_spec": "agent-setup/spec/engineering-standards.md",
+  "engineering_spec": "spec/engineering-standards.md",
   "current_sprint": 1,
   "completed_sprints": [],
   "active_agents": [],
@@ -13,11 +13,7 @@
   "specialized_workflows": [],
   "specialized_skills": [],
   "clarifications_pending": [],
-  "last_updated": "2026-04-19T03:51:34+02:00",
+  "last_updated": "2026-04-19T02:11:07+02:00",
   "last_workflow_run": "analyze-design-dev-review",
-  "last_workflow_stage": null,
-  "last_workflow_result": null,
-  "active_workflow_run": null,
-  "workflow_runs": [],
   "last_task_completed": "US-005"
 }

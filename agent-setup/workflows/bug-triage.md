@@ -1,22 +1,51 @@
 <!-- generated-by: /init-project -->
-
 # Workflow: Bug Triage
 
-## Trigger
+## Mode
+orchestrated
 
-Defect reported during sprint.
+## Stage 1 - Reproduce
+Agent: developer
+Inputs:
+- Bug report
+- Relevant runtime context
+Outputs:
+- `.project/workflows/<run-id>/01-reproduce.md`
+Pass:
+- Reproduction steps are stable or the inability to reproduce is explicit
+OnFailure:
+- Stop and ask for missing reproduction details
 
-## Steps
+## Stage 2 - Categorize
+Agent: tech-lead
+Inputs:
+- `.project/workflows/<run-id>/01-reproduce.md`
+Outputs:
+- `.project/workflows/<run-id>/02-categorize.md`
+Pass:
+- Severity and likely root-cause area are assigned
+OnFailure:
+- Stop and request a narrower technical scope
 
-1. **Reproduce** (`developer`) — document steps + expected/actual. Pass: consistently reproducible OR "cannot reproduce" marked.
-2. **Categorise** (`tech-lead`) — severity P0/P1/P2, root cause area. Pass: severity assigned.
-3. **Prioritise** (`product-owner`) — add to backlog with severity, decide sprint inclusion. Pass: backlog entry exists.
-4. **Assign** (`product-owner`) — if P0/P1 add to current sprint, acceptance criteria = "bug fixed + regression test added".
+## Stage 3 - Prioritize
+Agent: product-owner
+Inputs:
+- `.project/workflows/<run-id>/02-categorize.md`
+- Sprint or backlog context
+Outputs:
+- `.project/workflows/<run-id>/03-prioritize.md`
+Pass:
+- Backlog or sprint decision is explicit
+OnFailure:
+- Stop and flag the product prioritization gap
 
-## Rollback
-
-Step 1 if root cause changes after failed fix.
-
-## State logs
-
-- `bugs_triaged`: increment
+## Finalization
+Agent: product-owner
+Inputs:
+- `.project/workflows/<run-id>/03-prioritize.md`
+Outputs:
+- `.project/workflows/<run-id>/final-summary.md`
+Pass:
+- Ownership and next action are explicit
+OnFailure:
+- Stop and escalate to the user

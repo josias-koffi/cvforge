@@ -1,17 +1,53 @@
 <!-- generated-by: /init-project -->
-
 # Workflow: Spike Research
 
-## Trigger
+## Mode
+orchestrated
 
-A question cannot be answered with current knowledge and needs time-boxed investigation.
+## Stage 1 - Frame
+Agent: analyst
+Inputs:
+- Question or uncertainty to investigate
+- Vision constraints
+Outputs:
+- `.project/workflows/<run-id>/01-frame.md`
+Pass:
+- Research question is specific
+- Time box is explicit
+OnFailure:
+- Stop and ask for a narrower research scope
 
-## Steps
+## Stage 2 - Investigate
+Agent: analyst
+Inputs:
+- `.project/workflows/<run-id>/01-frame.md`
+Outputs:
+- `.project/workflows/<run-id>/02-investigate.md`
+Pass:
+- Findings are documented inside the time box
+- Unknowns and tradeoffs are explicit
+OnFailure:
+- Stop and report that the time box was insufficient
 
-1. **Frame** (`tech-lead` or `analyst`) — write question + time-box (max hours) in `.project/spikes/SPIKE-NNN.md`. Pass: question specific.
-2. **Investigate** (`developer` or `analyst`) — research inside time-box, document findings, no implementation. Pass: time-box respected, findings written.
-3. **Decide** (`tech-lead`) — proceed/reject/defer with rationale + ADR if architectural. Pass: decision unambiguous.
+## Stage 3 - Decide
+Agent: tech-lead
+Inputs:
+- `.project/workflows/<run-id>/02-investigate.md`
+Outputs:
+- `.project/workflows/<run-id>/03-decide.md`
+Pass:
+- Outcome is proceed, reject, or defer
+- Rationale is explicit
+OnFailure:
+- Stop and request a follow-up spike or clarification
 
-## Rollback
-
-None — spikes are exploratory; stop and report if time-box exceeded.
+## Finalization
+Agent: tech-lead
+Inputs:
+- `.project/workflows/<run-id>/03-decide.md`
+Outputs:
+- `.project/workflows/<run-id>/final-summary.md`
+Pass:
+- Decision and next action are unambiguous
+OnFailure:
+- Stop and escalate to the user
