@@ -13,13 +13,13 @@ Fermer les fondations d'interface et de déploiement du MVP avec le design syste
 
 ## ✅ Tasks (3–8 max)
 
-- [ ] **[US-005]** Finaliser `docker-compose.prod.yml` avec reverse proxy Traefik + SSL
+- [x] **[US-005]** Finaliser `docker-compose.prod.yml` avec reverse proxy Traefik + SSL
   - Agent: `tech-lead`
   - Workflow: `analyze-design-dev-review`
   - Acceptance criteria:
-    - [ ] `docker-compose.prod.yml` documente le reverse proxy et le chiffrement SSL
-    - [ ] Les services `app`, `landing` et `api` sont routables en production
-    - [ ] Les variables d'environnement prod sont documentées
+    - [x] `docker-compose.prod.yml` documente le reverse proxy et le chiffrement SSL
+    - [x] Les services `app`, `landing` et `api` sont routables en production
+    - [x] Les variables d'environnement prod sont documentées
   - Source: vision `§2.7`, `§16`
 - [ ] **[US-006]** Définir les tokens design system "Papier & Crayon"
   - Agent: `designer`
