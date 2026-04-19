@@ -29,13 +29,13 @@ Fermer les fondations d'interface et de déploiement du MVP avec le design syste
     - [x] Les styles respectent l'esthétique "papier ivoire / trait de crayon"
     - [x] Les composants de base respectent les contraintes mobile-first
   - Source: vision `§2.5`, `§2.6`, `§16`
-- [ ] **[US-007]** Installer `shadcn/ui` et personnaliser les composants de base
+- [x] **[US-007]** Installer `shadcn/ui` et personnaliser les composants de base
   - Agent: `developer`
   - Workflow: `analyze-design-dev-review`
   - Acceptance criteria:
-    - [ ] Les composants de base du design system sont disponibles dans `packages/ui`
-    - [ ] Les composants utilisent les tokens "Papier & Crayon"
-    - [ ] Les patterns restent conformes à l'accessibilité du spec
+    - [x] Les composants de base du design system sont disponibles dans `packages/ui`
+    - [x] Les composants utilisent les tokens "Papier & Crayon"
+    - [x] Les patterns restent conformes à l'accessibilité du spec
   - Source: vision `§2`, `§2.6`, `§16`
 - [ ] **[US-008]** Mettre en place la navigation mobile + sidebar desktop
   - Agent: `developer`

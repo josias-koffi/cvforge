@@ -19,3 +19,10 @@
 - **Why**: The task could only be marked complete once the design-system foundations and mobile-first behavior were evidenced in code and validation logs.
 - **Learned**: The new token layer is fully covered by tests in the touched packages and does not introduce a blocking standards issue.
 - **Open**: Accessibility automation is still a future repository-level gap, though this story does not fail on that basis.
+
+## 2026-04-19 — US-007
+
+- **Did**: Verified the new shared primitives, token usage, ADR coverage for the added libraries, and successful `pnpm lint`, `pnpm test`, and `pnpm build` runs against the sprint acceptance criteria.
+- **Why**: The story could only pass once each acceptance criterion and every blocking engineering rule had concrete evidence.
+- **Learned**: The new `@cvforge/ui` component layer stays above the coverage thresholds and preserves explicit accessibility affordances such as labels and visible focus styles.
+- **Open**: Repo-level automated accessibility checks are still a future improvement, but this story passes the current blocking gates.

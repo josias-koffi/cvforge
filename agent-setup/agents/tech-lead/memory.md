@@ -33,3 +33,10 @@
 - **Why**: Sprint bookkeeping and architecture oversight require a clear final decision before the story can be considered complete.
 - **Learned**: The shared UI package is now the correct place for cross-app theme primitives, reducing the risk of token drift in the next UI stories.
 - **Open**: Future UI stories should keep reusing this token file instead of reintroducing app-local theme constants.
+
+## 2026-04-19 — US-007
+
+- **Did**: Accepted the shadcn-style helper adoption via `ADR-001`, closed the workflow with a passing verdict, and directed the next story to build navigation on the new shared primitives.
+- **Why**: The project needed an explicit architecture decision and a final release-style gate before marking the story complete.
+- **Learned**: The shared UI package can absorb additional component-library dependencies without breaking the monorepo quality gates.
+- **Open**: The next UI stories should keep the responsive shell on top of the shared component layer to avoid duplicate navigation implementations.

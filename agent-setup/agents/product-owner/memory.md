@@ -26,3 +26,10 @@
 - **Why**: `US-006` needed a precise boundary so the design-system work stayed limited to tokens and base-shell foundations already present in the vision.
 - **Learned**: The vision is specific enough to define the first token set without adding new product requirements.
 - **Open**: `US-007` still needs to translate these tokens into reusable `shadcn/ui` primitives.
+
+## 2026-04-19 — US-007
+
+- **Did**: Confirmed that `US-007` stays limited to shared base components in `packages/ui` and that the acceptance criteria can be verified through exports, rendered markup, and quality-gate evidence.
+- **Why**: The workflow needed a clear product boundary before introducing the shadcn-style component layer.
+- **Learned**: The existing vision and sprint criteria are precise enough to implement the first shared primitive set without inventing any new user flows.
+- **Open**: `US-008` should now consume these primitives instead of creating navigation-specific UI styles from scratch.

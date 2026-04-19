@@ -33,3 +33,10 @@
 - **Why**: The sprint story required codified "Papier & Crayon" tokens and a mobile-first base shell that later component work can inherit.
 - **Learned**: The existing workspace could absorb a tokenized design-system layer without any new dependency; package subpath exports were enough for cross-app reuse.
 - **Open**: `US-007` can now focus on component primitives instead of re-deciding the visual foundations.
+
+## 2026-04-19 — US-007
+
+- **Did**: Added shadcn-style helper dependencies to `@cvforge/ui`, created reusable base primitives and shared styles, updated both app layouts to load them, added an ADR for the new libraries, and verified the workspace with lint/test/build.
+- **Why**: The sprint story required reusable base components in `packages/ui` that inherit the "Papier & Crayon" design tokens and remain accessible.
+- **Learned**: The monorepo can adopt shadcn component conventions incrementally inside the shared UI package without first migrating the whole stack to Tailwind.
+- **Open**: `US-008` should compose the new primitives into the responsive navigation shell instead of adding new page-local component patterns.
