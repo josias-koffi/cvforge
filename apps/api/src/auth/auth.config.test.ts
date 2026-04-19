@@ -11,6 +11,7 @@ describe("resolveAuthConfig", () => {
     expect(config.sessionTtlDays).toBe(7);
     expect(config.cookieName).toBe("cvforge_session");
     expect(config.secureCookies).toBe(false);
+    expect(config.stateFilePath).toContain(".data/auth-state.json");
   });
 
   it("should require an explicit session secret in production", () => {
@@ -19,5 +20,13 @@ describe("resolveAuthConfig", () => {
         NODE_ENV: "production",
       }),
     ).toThrow(/AUTH_SESSION_SECRET/);
+  });
+
+  it("should allow overriding the auth state file path", () => {
+    const config = resolveAuthConfig({
+      AUTH_STATE_FILE: "/tmp/cvforge-auth-state.json",
+    });
+
+    expect(config.stateFilePath).toBe("/tmp/cvforge-auth-state.json");
   });
 });

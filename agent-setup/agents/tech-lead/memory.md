@@ -61,3 +61,10 @@
 - **Why**: Sprint bookkeeping and architecture governance require a clear final decision before the story can be marked complete.
 - **Learned**: The current codebase can land a secure passwordless foundation without adding a new auth framework, which keeps future admin/bootstrap stories simpler.
 - **Open**: The next auth-related story should integrate real email delivery on top of the existing SMTP and auth modules.
+
+## 2026-04-19 — US-010
+
+- **Did**: Closed the first-admin bootstrap workflow with a passing verdict after confirming persistent one-time admin assignment, later-signup safeguards, and successful repository validation.
+- **Why**: Architecture governance and sprint bookkeeping require an explicit final decision before the story can be marked complete.
+- **Learned**: The existing auth slice can safely own early bootstrap rules without introducing a new framework or violating the current architecture constraints.
+- **Open**: The invitation and role-protection stories should now build on this persisted role authority instead of duplicating bootstrap logic.

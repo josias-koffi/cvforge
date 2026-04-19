@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 import { AuthMailerService } from "./auth-mailer.service";
+import type { AuthAccountStore, AuthConfig, AuthRole } from "./auth.types";
 import { AuthController } from "./auth.controller";
 import { AuthService } from "./auth.service";
-import type { AuthConfig } from "./auth.types";
 
 const config: AuthConfig = {
   apiUrl: "http://localhost:3333",
@@ -12,11 +12,37 @@ const config: AuthConfig = {
   cookieName: "cvforge_session",
   sessionSecret: "test-secret",
   secureCookies: false,
+  stateFilePath: "/tmp/cvforge-auth-state-controller-test.json",
 };
+
+function createInMemoryAccountStore(): AuthAccountStore {
+  const accounts = new Map<string, AuthRole>();
+  let bootstrapConsumed = false;
+
+  return {
+    resolveRole(email) {
+      const existingRole = accounts.get(email);
+
+      if (existingRole) {
+        return existingRole;
+      }
+
+      const role: AuthRole = bootstrapConsumed ? "user" : "admin";
+
+      accounts.set(email, role);
+
+      if (role === "admin") {
+        bootstrapConsumed = true;
+      }
+
+      return role;
+    },
+  };
+}
 
 describe("AuthController", () => {
   it("should issue an email-backed magic link, set a session cookie, and read the session", async () => {
-    const service = new AuthService(config);
+    const service = new AuthService(config, createInMemoryAccountStore());
     const mailer = {
       sendMagicLinkEmail: vi.fn().mockResolvedValue(undefined),
     } as unknown as AuthMailerService;
@@ -52,12 +78,13 @@ describe("AuthController", () => {
       authenticated: true,
       session: {
         email: "user@example.com",
+        role: "admin",
       },
     });
   });
 
   it("should expose auth email health", () => {
-    const service = new AuthService(config);
+    const service = new AuthService(config, createInMemoryAccountStore());
     const mailer = {
       getHealth: vi.fn().mockReturnValue({
         emailFromConfigured: true,

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AuthService } from "./auth.service";
-import type { AuthConfig } from "./auth.types";
+import type { AuthAccountStore, AuthConfig, AuthRole } from "./auth.types";
 
 const config: AuthConfig = {
   apiUrl: "http://localhost:3333",
@@ -10,7 +10,33 @@ const config: AuthConfig = {
   cookieName: "cvforge_session",
   sessionSecret: "test-secret",
   secureCookies: false,
+  stateFilePath: "/tmp/cvforge-auth-state-test.json",
 };
+
+function createInMemoryAccountStore(): AuthAccountStore {
+  const accounts = new Map<string, AuthRole>();
+  let bootstrapConsumed = false;
+
+  return {
+    resolveRole(email) {
+      const existingRole = accounts.get(email);
+
+      if (existingRole) {
+        return existingRole;
+      }
+
+      const role: AuthRole = bootstrapConsumed ? "user" : "admin";
+
+      accounts.set(email, role);
+
+      if (role === "admin") {
+        bootstrapConsumed = true;
+      }
+
+      return role;
+    },
+  };
+}
 
 describe("AuthService", () => {
   beforeEach(() => {
@@ -18,8 +44,8 @@ describe("AuthService", () => {
     vi.setSystemTime(new Date("2026-04-19T20:19:09.000Z"));
   });
 
-  it("should issue a magic link and create a signed session on consumption", () => {
-    const service = new AuthService(config);
+  it("should promote only the first completed account to admin", () => {
+    const service = new AuthService(config, createInMemoryAccountStore());
     const request = service.requestMagicLink(" User@Example.com ");
     const token = new URL(request.magicLink).searchParams.get("token");
 
@@ -34,19 +60,42 @@ describe("AuthService", () => {
     expect(consumed.redirectUrl).toBe("http://localhost:3000/login/success");
     expect(session).toMatchObject({
       email: "user@example.com",
-      role: "user",
+      role: "admin",
     });
     expect(session?.expiresAt).toBe("2026-04-26T20:19:09.000Z");
   });
 
+  it("should keep later public signups on the user role", () => {
+    const service = new AuthService(config, createInMemoryAccountStore());
+    const adminToken =
+      new URL(service.requestMagicLink("admin@example.com").magicLink).searchParams.get(
+        "token",
+      ) ?? "";
+    const userToken =
+      new URL(service.requestMagicLink("user@example.com").magicLink).searchParams.get(
+        "token",
+      ) ?? "";
+
+    service.consumeMagicLink(adminToken);
+    const consumedUser = service.consumeMagicLink(userToken);
+    const session = service.readSessionFromCookieHeader(
+      `${consumedUser.cookie.name}=${consumedUser.cookie.value}`,
+    );
+
+    expect(session).toMatchObject({
+      email: "user@example.com",
+      role: "user",
+    });
+  });
+
   it("should reject an invalid email address", () => {
-    const service = new AuthService(config);
+    const service = new AuthService(config, createInMemoryAccountStore());
 
     expect(() => service.requestMagicLink("not-an-email")).toThrow(/valid email/i);
   });
 
   it("should reject a reused or expired magic link", () => {
-    const service = new AuthService(config);
+    const service = new AuthService(config, createInMemoryAccountStore());
     const request = service.requestMagicLink("user@example.com");
     const token = new URL(request.magicLink).searchParams.get("token") ?? "";
 
@@ -66,7 +115,7 @@ describe("AuthService", () => {
   });
 
   it("should reject tampered or expired sessions", () => {
-    const service = new AuthService(config);
+    const service = new AuthService(config, createInMemoryAccountStore());
     const request = service.requestMagicLink("user@example.com");
     const token = new URL(request.magicLink).searchParams.get("token") ?? "";
     const consumed = service.consumeMagicLink(token);
@@ -87,7 +136,7 @@ describe("AuthService", () => {
   });
 
   it("should only allow redirects back to the configured app origin", () => {
-    const service = new AuthService(config);
+    const service = new AuthService(config, createInMemoryAccountStore());
     const request = service.requestMagicLink("user@example.com");
     const token = new URL(request.magicLink).searchParams.get("token") ?? "";
 

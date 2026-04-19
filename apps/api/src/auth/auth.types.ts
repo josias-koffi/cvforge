@@ -6,11 +6,14 @@ export type AuthConfig = {
   cookieName: string;
   sessionSecret: string;
   secureCookies: boolean;
+  stateFilePath: string;
 };
+
+export type AuthRole = "admin" | "user";
 
 export type AuthSession = {
   email: string;
-  role: "user";
+  role: AuthRole;
   issuedAt: string;
   expiresAt: string;
 };
@@ -20,4 +23,8 @@ export type MagicLinkResponse = {
   magicLink: string;
   expiresAt: string;
   sessionDurationDays: number;
+};
+
+export type AuthAccountStore = {
+  resolveRole: (email: string) => AuthRole;
 };

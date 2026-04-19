@@ -68,3 +68,10 @@
 - **Why**: The vision requires users to receive the magic link by email, and the previous preview-based flow was only a temporary technical placeholder.
 - **Learned**: The existing provider-neutral SMTP config was sufficient to support real auth email delivery once a dedicated mail transport and sender identity were added.
 - **Open**: Delivery success in real environments still depends on valid SMTP credentials plus a verified sender/domain on the chosen provider.
+
+## 2026-04-19 — US-010
+
+- **Did**: Added a file-backed auth account store, wired it into the Nest auth module, made session roles persistent and bootstrap-aware, added regression tests, and revalidated the repo with lint, test, and build.
+- **Why**: `US-010` required the first completed account to become `admin` exactly once while ensuring every later public signup stays `user`.
+- **Learned**: A small persisted role store is enough to secure the first-admin bootstrap now without introducing a database dependency ahead of the broader user model.
+- **Open**: Later auth stories should migrate this state into the real user persistence layer once that domain exists.

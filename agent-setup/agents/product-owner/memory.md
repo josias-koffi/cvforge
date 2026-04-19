@@ -54,3 +54,10 @@
 - **Why**: The workflow needed a precise scope so implementation could deliver auth fundamentals without spilling into first-admin bootstrap or role-based authorization.
 - **Learned**: The vision allows the sprint to ship with a configurable recommended session duration while keeping the exact final value as a product follow-up.
 - **Open**: Real email delivery still needs to be connected to the existing SMTP setup in a future story.
+
+## 2026-04-19 — US-010
+
+- **Did**: Confirmed that `US-010` is strictly the one-time first-admin bootstrap inside the existing passwordless flow and kept invitations and route protection out of scope.
+- **Why**: The workflow needed a product boundary that made each acceptance criterion directly testable without inventing extra admin features.
+- **Learned**: The vision requires persistent bootstrap state; otherwise the first-admin guarantee would not survive a restart.
+- **Open**: `US-011` still needs a separate invitation mechanism rather than extending public signup semantics.

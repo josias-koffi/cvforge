@@ -1,4 +1,4 @@
-import { getApiUrl } from "../../auth-config";
+import { getPublicApiUrl } from "../../auth-config";
 
 export type SessionPayload = {
   session: {
@@ -9,7 +9,7 @@ export type SessionPayload = {
 };
 
 export async function fetchSession(fetchImpl: typeof fetch = fetch) {
-  const response = await fetchImpl(`${getApiUrl()}/auth/session`, {
+  const response = await fetchImpl(`${getPublicApiUrl()}/auth/session`, {
     credentials: "include",
   });
 

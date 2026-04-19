@@ -4,7 +4,13 @@ import {
   UnauthorizedException,
 } from "@nestjs/common";
 import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
-import type { AuthConfig, AuthSession, MagicLinkResponse } from "./auth.types";
+import type {
+  AuthAccountStore,
+  AuthConfig,
+  AuthRole,
+  AuthSession,
+  MagicLinkResponse,
+} from "./auth.types";
 
 type MagicLinkRecord = {
   email: string;
@@ -20,7 +26,7 @@ type SerializedSessionCookie = {
 
 type SessionPayload = {
   email: string;
-  role: "user";
+  role: AuthRole;
   issuedAt: string;
   expiresAt: string;
 };
@@ -31,7 +37,10 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export class AuthService {
   private readonly magicLinks = new Map<string, MagicLinkRecord>();
 
-  constructor(private readonly config: AuthConfig) {}
+  constructor(
+    private readonly config: AuthConfig,
+    private readonly accountStore: AuthAccountStore,
+  ) {}
 
   requestMagicLink(rawEmail: string): MagicLinkResponse {
     this.pruneExpiredMagicLinks();
@@ -124,10 +133,11 @@ export class AuthService {
     const expiresAt = new Date(
       issuedAt.getTime() + this.config.sessionTtlDays * 24 * 60 * 60 * 1000,
     );
+    const role = this.accountStore.resolveRole(email);
 
     return {
       email,
-      role: "user",
+      role,
       issuedAt: issuedAt.toISOString(),
       expiresAt: expiresAt.toISOString(),
     };

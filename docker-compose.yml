@@ -6,9 +6,18 @@ services:
     ports:
       - "3000:3000"
     environment:
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
       NEXT_PUBLIC_API_URL: http://localhost:3333
+      API_INTERNAL_URL: http://api:3333
+      CHOKIDAR_USEPOLLING: "true"
+      WATCHPACK_POLLING: "true"
     depends_on:
       - api
+    volumes:
+      - ./apps/app:/workspace/apps/app
+      - ./packages/ui:/workspace/packages/ui
+      - ./packages/types:/workspace/packages/types
+      - ./packages/config:/workspace/packages/config
 
   landing:
     build:
@@ -16,6 +25,14 @@ services:
       dockerfile: docker/landing.Dockerfile
     ports:
       - "3001:3001"
+    environment:
+      CHOKIDAR_USEPOLLING: "true"
+      WATCHPACK_POLLING: "true"
+    volumes:
+      - ./apps/landing:/workspace/apps/landing
+      - ./packages/ui:/workspace/packages/ui
+      - ./packages/types:/workspace/packages/types
+      - ./packages/config:/workspace/packages/config
 
   api:
     build:
@@ -28,14 +45,32 @@ services:
       REDIS_URL: redis://redis:6379
       MINIO_ENDPOINT: http://minio:9000
       PUPPETEER_URL: http://puppeteer:3002
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+      NEXT_PUBLIC_API_URL: http://localhost:3333
+      SMTP_PROVIDER: ${SMTP_PROVIDER}
+      SMTP_SERVER: ${SMTP_SERVER}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASSWORD: ${SMTP_PASSWORD}
+      EMAIL_FROM: ${EMAIL_FROM}
+      AUTH_MAGIC_LINK_TTL_MINUTES: ${AUTH_MAGIC_LINK_TTL_MINUTES}
+      AUTH_SESSION_TTL_DAYS: ${AUTH_SESSION_TTL_DAYS}
+      AUTH_COOKIE_NAME: ${AUTH_COOKIE_NAME}
+      AUTH_SESSION_SECRET: ${AUTH_SESSION_SECRET}
+      AUTH_STATE_FILE: ${AUTH_STATE_FILE:-}
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
       MISTRAL_API_KEY: ${MISTRAL_API_KEY}
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+      CHOKIDAR_USEPOLLING: "true"
     depends_on:
       - postgres
       - minio
       - redis
       - puppeteer
+    volumes:
+      - ./apps/api:/workspace/apps/api
+      - ./packages/types:/workspace/packages/types
+      - ./packages/config:/workspace/packages/config
 
   postgres:
     image: postgres:16-alpine

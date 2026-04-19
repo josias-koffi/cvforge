@@ -1,3 +1,4 @@
+import { resolve } from "node:path";
 import type { AuthConfig } from "./auth.types";
 
 const DEFAULT_API_URL = "http://localhost:3333";
@@ -6,6 +7,7 @@ const DEFAULT_MAGIC_LINK_TTL_MINUTES = 15;
 const DEFAULT_SESSION_TTL_DAYS = 7;
 const DEFAULT_COOKIE_NAME = "cvforge_session";
 const DEFAULT_DEV_SECRET = "cvforge-dev-session-secret-change-me";
+const DEFAULT_STATE_FILE = resolve(process.cwd(), ".data", "auth-state.json");
 
 function parsePositiveInt(rawValue: string | undefined, fallback: number) {
   if (!rawValue) {
@@ -56,5 +58,6 @@ export function resolveAuthConfig(
     cookieName: env.AUTH_COOKIE_NAME?.trim() || DEFAULT_COOKIE_NAME,
     sessionSecret,
     secureCookies: appUrl.startsWith("https://"),
+    stateFilePath: env.AUTH_STATE_FILE?.trim() || DEFAULT_STATE_FILE,
   };
 }

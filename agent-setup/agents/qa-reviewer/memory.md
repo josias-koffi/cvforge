@@ -47,3 +47,10 @@
 - **Why**: The story could only pass once the login flow, secure session behavior, and session-duration documentation each had direct code and validation evidence.
 - **Learned**: The generated-link preview is sufficient to validate the auth contract now without weakening the security or coverage gates for the story.
 - **Open**: A later review should confirm the real email-delivery path once SMTP-backed sending is wired in.
+
+## 2026-04-19 — US-010
+
+- **Did**: Verified the one-time first-admin bootstrap behavior in code and tests, then confirmed passing `pnpm lint`, `pnpm test`, and `pnpm build` with API coverage above the blocking thresholds.
+- **Why**: The task could only pass once each role-assignment criterion and the permanent bootstrap lock had direct evidence.
+- **Learned**: The lightweight persisted store is sufficient for the current sprint so long as regression tests prove the bootstrap cannot be reused for later public signups.
+- **Open**: The future user domain should replace file-backed persistence before multi-instance deployment becomes a requirement.

@@ -21,13 +21,13 @@ Sécuriser l'accès produit avec l'authentification passwordless, le bootstrappi
     - [x] Les sessions sont persistées de manière sécurisée
     - [x] La durée de session est documentée, même si le réglage final reste à préciser
   - Source: vision `§3.1`, `§3.4`, `§16`
-- [ ] **[US-010]** Sécuriser le bootstrapping du premier admin
+- [x] **[US-010]** Sécuriser le bootstrapping du premier admin
   - Agent: `tech-lead`
   - Workflow: `analyze-design-dev-review`
   - Acceptance criteria:
-    - [ ] Le premier compte créé reçoit le rôle `admin`
-    - [ ] Le mécanisme est désactivé définitivement après création du premier admin
-    - [ ] Une inscription publique ultérieure ne peut jamais créer d'admin
+    - [x] Le premier compte créé reçoit le rôle `admin`
+    - [x] Le mécanisme est désactivé définitivement après création du premier admin
+    - [x] Une inscription publique ultérieure ne peut jamais créer d'admin
   - Source: vision `§3.2`, `§16`
 - [ ] **[US-011]** Ajouter les invitations admin/user à usage unique avec expiration 48h
   - Agent: `developer`

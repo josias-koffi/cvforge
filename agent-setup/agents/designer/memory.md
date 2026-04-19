@@ -47,3 +47,10 @@
 - **Why**: The sprint story needed enough UX to prove the auth flow end to end without inventing later dashboard, admin, or invitation surfaces.
 - **Learned**: A compact flow with explicit copy about the temporary link-preview behavior is enough to validate the auth contract and remain honest about current delivery capabilities.
 - **Open**: A future story should replace the preview step with real email delivery status once the SMTP-backed mailer exists.
+
+## 2026-04-19 — US-010
+
+- **Did**: Reviewed the first-admin bootstrap story and explicitly recorded the design stage as a non-UI skip with a backend-only technical shape.
+- **Why**: The workflow still requires a design artifact even when the requested change does not alter any user-facing surface.
+- **Learned**: The current passwordless flow can absorb one-time admin bootstrap rules without any new screen, copy, or accessibility work.
+- **Open**: Admin invitation and route-protection stories may create the first actual admin-facing UX surfaces.

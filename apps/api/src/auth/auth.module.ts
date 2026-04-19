@@ -1,6 +1,7 @@
 import { Module } from "@nestjs/common";
 import nodemailer from "nodemailer";
 import { SMTP_CONFIG, type SmtpConfig } from "../smtp/smtp.config";
+import { FileAuthAccountStore } from "./auth-account-store";
 import { SmtpModule } from "../smtp/smtp.module";
 import {
   AUTH_EMAIL_FROM,
@@ -23,7 +24,14 @@ function readEmailFrom(env: NodeJS.ProcessEnv) {
   providers: [
     {
       provide: AuthService,
-      useFactory: () => new AuthService(resolveAuthConfig(process.env)),
+      useFactory: () => {
+        const config = resolveAuthConfig(process.env);
+
+        return new AuthService(
+          config,
+          new FileAuthAccountStore(config.stateFilePath),
+        );
+      },
     },
     {
       provide: AUTH_EMAIL_FROM,

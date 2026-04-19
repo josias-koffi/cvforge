@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
-import { getApiUrl } from "../../auth-config";
+import { getAppUrl, getServerApiUrl } from "../../auth-config";
 
 export async function POST(request: Request) {
   const formData = await request.formData();
   const email = String(formData.get("email") ?? "").trim();
 
-  const response = await fetch(`${getApiUrl()}/auth/passwordless/request`, {
+  const response = await fetch(`${getServerApiUrl()}/auth/passwordless/request`, {
     body: JSON.stringify({ email }),
     headers: {
       "content-type": "application/json",
@@ -14,7 +14,7 @@ export async function POST(request: Request) {
   });
 
   if (!response.ok) {
-    return NextResponse.redirect(new URL("/login?error=request_failed", request.url));
+    return NextResponse.redirect(new URL("/login?error=request_failed", getAppUrl()));
   }
 
   const data = (await response.json()) as {
@@ -22,7 +22,7 @@ export async function POST(request: Request) {
     expiresAt: string;
     sessionDurationDays: number;
   };
-  const redirectUrl = new URL("/login/check-email", request.url);
+  const redirectUrl = new URL("/login/check-email", getAppUrl());
 
   redirectUrl.searchParams.set("email", data.email);
   redirectUrl.searchParams.set("expiresAt", data.expiresAt);
