@@ -1,7 +1,7 @@
 import {
   TEMPLATE_KIND_CV,
   TEMPLATE_KIND_LETTER,
-  type TemplateLayout,
+  type PuckData,
   type TemplateRecord,
 } from "@cvforge/types";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -12,14 +12,14 @@ type PersistedTemplatesState = {
   templates: Record<string, StoredTemplate>;
 };
 
-function createSeedLayout(kind: TemplateRecord["kind"]): TemplateLayout {
+function createSeedLayout(kind: TemplateRecord["kind"]): PuckData {
   if (kind === TEMPLATE_KIND_LETTER) {
     return {
-      blocks: [
+      content: [
         {
-          id: "letter-header",
-          name: "LMHeader",
+          type: "LMHeader",
           props: {
+            id: "letter-header",
             city: "Paris",
             companyCity: "Lyon",
             companyName: "Example Corp",
@@ -35,9 +35,9 @@ function createSeedLayout(kind: TemplateRecord["kind"]): TemplateLayout {
           },
         },
         {
-          id: "letter-body",
-          name: "LMBody",
+          type: "LMBody",
           props: {
+            id: "letter-body",
             paragraph1: "I am applying for your open role with strong enthusiasm.",
             paragraph2:
               "My product and frontend experience matches the scope described.",
@@ -46,23 +46,24 @@ function createSeedLayout(kind: TemplateRecord["kind"]): TemplateLayout {
           },
         },
         {
-          id: "letter-signature",
-          name: "LMSignature",
+          type: "LMSignature",
           props: {
+            id: "letter-signature",
             firstName: "Jane",
             lastName: "Doe",
           },
         },
       ],
+      root: { props: {} },
     };
   }
 
   return {
-    blocks: [
+    content: [
       {
-        id: "cv-header",
-        name: "CVHeader",
+        type: "CVHeader",
         props: {
+          id: "cv-header",
           city: "Paris",
           email: "jane@example.com",
           firstName: "Jane",
@@ -74,17 +75,17 @@ function createSeedLayout(kind: TemplateRecord["kind"]): TemplateLayout {
         },
       },
       {
-        id: "cv-summary",
-        name: "SummaryBlock",
+        type: "SummaryBlock",
         props: {
+          id: "cv-summary",
           summary:
             "Engineer focused on resilient product delivery and collaboration.",
         },
       },
       {
-        id: "cv-experience",
-        name: "ExperienceItem",
+        type: "ExperienceItem",
         props: {
+          id: "cv-experience",
           achievements: ["Reduced latency by 22% on a critical flow."],
           company: "CVforge",
           description: "Owned the document editor roadmap and delivery.",
@@ -94,17 +95,17 @@ function createSeedLayout(kind: TemplateRecord["kind"]): TemplateLayout {
         },
       },
       {
-        id: "cv-skills",
-        name: "SkillsList",
+        type: "SkillsList",
         props: {
+          id: "cv-skills",
           hardSkills: ["TypeScript", "React", "Node.js"],
           softSkills: ["Mentoring", "Facilitation"],
         },
       },
       {
-        id: "cv-education",
-        name: "EducationItem",
+        type: "EducationItem",
         props: {
+          id: "cv-education",
           degree: "Master Informatique",
           institution: "Universite de Lille",
           mention: "Bien",
@@ -112,6 +113,7 @@ function createSeedLayout(kind: TemplateRecord["kind"]): TemplateLayout {
         },
       },
     ],
+    root: { props: {} },
   };
 }
 
@@ -145,6 +147,20 @@ function createSeedState(): PersistedTemplatesState {
   };
 }
 
+function isPuckData(value: unknown): value is PuckData {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  const candidate = value as Record<string, unknown>;
+
+  return (
+    Array.isArray(candidate.content) &&
+    typeof candidate.root === "object" &&
+    candidate.root !== null
+  );
+}
+
 function normalizeTemplate(template: StoredTemplate): StoredTemplate {
   return {
     ...template,
@@ -157,33 +173,26 @@ function normalizeTemplate(template: StoredTemplate): StoredTemplate {
     isDefault: Boolean(template.isDefault),
     kind:
       template.kind === TEMPLATE_KIND_LETTER ? TEMPLATE_KIND_LETTER : TEMPLATE_KIND_CV,
-    layout:
-      template.layout && Array.isArray(template.layout.blocks)
-        ? {
-            blocks: template.layout.blocks
-              .filter(
-                (block): block is TemplateLayout["blocks"][number] => {
-                  if (!block || typeof block !== "object") {
-                    return false;
-                  }
+    layout: isPuckData(template.layout)
+      ? {
+          content: (template.layout as PuckData).content.filter(
+            (item): item is PuckData["content"][number] => {
+              if (!item || typeof item !== "object") {
+                return false;
+              }
 
-                  const candidate = block as unknown as Record<string, unknown>;
+              const candidate = item as unknown as Record<string, unknown>;
 
-                  return (
-                    typeof candidate.id === "string" &&
-                    typeof candidate.name === "string" &&
-                    typeof candidate.props === "object" &&
-                    candidate.props !== null
-                  );
-                },
-              )
-              .map((block) => ({
-                id: block.id,
-                name: block.name,
-                props: block.props as unknown as Record<string, unknown>,
-              })),
-          }
-        : createSeedLayout(template.kind),
+              return (
+                typeof candidate.type === "string" &&
+                typeof candidate.props === "object" &&
+                candidate.props !== null
+              );
+            },
+          ),
+          root: (template.layout as PuckData).root,
+        }
+      : createSeedLayout(template.kind),
     locale: template.locale === "en" ? "en" : "fr",
     name: String(template.name || "").trim() || "Template sans nom",
   };

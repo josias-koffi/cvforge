@@ -4,7 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import { TEMPLATE_KIND_CV, TEMPLATE_KIND_LETTER } from "@cvforge/types";
+import { TEMPLATE_KIND_CV, TEMPLATE_KIND_LETTER, type PuckData } from "@cvforge/types";
 import { randomUUID } from "node:crypto";
 import type { StoredTemplate, TemplatesStore, TemplateInput } from "./templates.types";
 
@@ -27,38 +27,39 @@ function normalizeCategories(value: unknown) {
     .slice(0, 10);
 }
 
-function normalizeLayout(value: unknown) {
+function normalizeLayout(value: unknown): PuckData {
   if (!value || typeof value !== "object") {
     throw new BadRequestException("Le template doit contenir un layout JSON.");
   }
 
-  const blocks = (value as { blocks?: unknown }).blocks;
+  const candidate = value as Record<string, unknown>;
+  const content = candidate.content;
 
-  if (!Array.isArray(blocks)) {
-    throw new BadRequestException("Le layout du template doit contenir des blocs.");
+  if (!Array.isArray(content)) {
+    throw new BadRequestException(
+      "Le layout du template doit contenir un tableau 'content' (format Puck Data).",
+    );
   }
 
-  return {
-    blocks: blocks
-      .map((block) => {
-        if (
-          !block ||
-          typeof block !== "object" ||
-          typeof (block as { id?: unknown }).id !== "string" ||
-          typeof (block as { name?: unknown }).name !== "string" ||
-          typeof (block as { props?: unknown }).props !== "object" ||
-          (block as { props?: unknown }).props === null
-        ) {
-          return null;
-        }
+  const root =
+    candidate.root && typeof candidate.root === "object"
+      ? (candidate.root as PuckData["root"])
+      : { props: {} };
 
-        return {
-          id: (block as { id: string }).id.trim(),
-          name: (block as { name: string }).name.trim(),
-          props: (block as { props: Record<string, unknown> }).props,
-        };
-      })
-      .filter((block): block is { id: string; name: string; props: Record<string, unknown> } => block !== null),
+  return {
+    content: content
+      .filter((item): item is Record<string, unknown> =>
+        !!item &&
+        typeof item === "object" &&
+        typeof (item as Record<string, unknown>).type === "string" &&
+        typeof (item as Record<string, unknown>).props === "object" &&
+        (item as Record<string, unknown>).props !== null,
+      )
+      .map((item) => ({
+        type: item.type as string,
+        props: item.props as Record<string, unknown>,
+      })),
+    root,
   };
 }
 

@@ -159,3 +159,10 @@
 - **Why**: The task could only pass once the LM flow had direct evidence for source reuse, default ATS template rendering, and RGPD consistency with the CV path.
 - **Learned**: The LM story is reviewable because the same service boundary now owns both documents; the only meaningful difference is the normalized output schema and user-facing editor surface.
 - **Open**: `@cvforge/app build` is still blocked by the pre-existing `.next` permission issue, and app-wide coverage remains below the repo target because of older uncovered surfaces outside this task.
+
+## 2026-04-20 — US-055 review
+
+- **Did**: Verified all 5 acceptance criteria for US-055, confirmed 289 monorepo tests pass, checked coverage (100% on `puck-config.ts`), and issued one advisory on ADR-003 package name.
+- **Why**: All acceptance criteria required evidence before the task could be ticked.
+- **Learned**: Package renames between ADR authoring and actual installation are a real risk. The advisory pattern (update ADR, don't block) is the right response for a name-only discrepancy with no API change.
+- **Open**: US-056 introduces `<Puck>` client component — the SSR guard (`next/dynamic` with `ssr: false`) must be verified during that review.

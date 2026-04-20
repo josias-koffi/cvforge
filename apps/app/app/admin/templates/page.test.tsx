@@ -32,11 +32,11 @@ describe("AdminTemplatesPage", () => {
       isDefault: true,
       kind: "cv",
       layout: {
-        blocks: [
+        content: [
           {
-            id: "cv-header",
-            name: "CVHeader",
+            type: "CVHeader",
             props: {
+              id: "cv-header",
               city: "Paris",
               email: "jane@example.com",
               firstName: "Jane",
@@ -48,6 +48,7 @@ describe("AdminTemplatesPage", () => {
             },
           },
         ],
+        root: { props: {} },
       },
       locale: "fr",
       name: "CV ATS par defaut",
@@ -60,7 +61,7 @@ describe("AdminTemplatesPage", () => {
       id: "template-cv-moderne",
       isDefault: false,
       kind: "cv",
-      layout: { blocks: [] },
+      layout: { content: [], root: { props: {} } },
       locale: "fr",
       name: "CV Moderne",
       updatedAt: "2026-04-20T00:00:00.000Z",
@@ -73,11 +74,12 @@ describe("AdminTemplatesPage", () => {
       isDefault: true,
       kind: "letter",
       layout: {
-        blocks: [
-          { id: "lm-header", name: "LMHeader", props: {} },
-          { id: "lm-body", name: "LMBody", props: {} },
-          { id: "lm-sig", name: "LMSignature", props: {} },
+        content: [
+          { type: "LMHeader", props: { id: "lm-header" } },
+          { type: "LMBody", props: { id: "lm-body" } },
+          { type: "LMSignature", props: { id: "lm-sig" } },
         ],
+        root: { props: {} },
       },
       locale: "fr",
       name: "LM ATS par defaut",

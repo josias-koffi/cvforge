@@ -231,16 +231,17 @@ describe("types package", () => {
       isDefault: true,
       kind: TEMPLATE_KIND_CV,
       layout: {
-        blocks: [
+        content: [
           {
-            id: "cv-header",
-            name: "CVHeader",
+            type: "CVHeader",
             props: {
+              id: "cv-header",
               firstName: "Jane",
               lastName: "Doe",
             },
           },
         ],
+        root: { props: {} },
       },
       locale: "fr",
       name: "CV ATS par defaut",
@@ -251,14 +252,15 @@ describe("types package", () => {
       isDefault: false,
       kind: TEMPLATE_KIND_LETTER,
       layout: {
-        blocks: [],
+        content: [],
+        root: { props: {} },
       },
       locale: "en",
       name: "LM moderne",
     };
 
     expect(template.kind).toBe("cv");
-    expect(template.layout.blocks[0]?.name).toBe("CVHeader");
+    expect(template.layout.content[0]?.type).toBe("CVHeader");
     expect(templateInput.kind).toBe("letter");
   });
 });

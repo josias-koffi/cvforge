@@ -31,8 +31,8 @@ describe("FileTemplatesStore", () => {
       TEMPLATE_KIND_LETTER,
     ]);
     expect(templates.filter((template) => template.isDefault)).toHaveLength(2);
-    expect(templates[0]?.layout.blocks).toHaveLength(5);
-    expect(templates[1]?.layout.blocks).toHaveLength(3);
+    expect(templates[0]?.layout.content).toHaveLength(5);
+    expect(templates[1]?.layout.content).toHaveLength(3);
   });
 
   it("removes a template from the persisted state", () => {
@@ -45,7 +45,7 @@ describe("FileTemplatesStore", () => {
       id: "template-to-remove",
       isDefault: false,
       kind: TEMPLATE_KIND_CV,
-      layout: { blocks: [] },
+      layout: { content: [], root: { props: {} } },
       locale: "fr",
       name: "To remove",
       updatedAt: "2026-04-20T12:00:00.000Z",
@@ -66,7 +66,7 @@ describe("FileTemplatesStore", () => {
       id: "template_custom",
       isDefault: false,
       kind: TEMPLATE_KIND_CV,
-      layout: { blocks: [] },
+      layout: { content: [], root: { props: {} } },
       locale: "fr",
       name: "Template custom",
       updatedAt: "2026-04-20T12:00:00.000Z",

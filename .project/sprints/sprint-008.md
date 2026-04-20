@@ -13,15 +13,15 @@ Intégrer Puck Editor à tous les endroits où il est attendu par la vision : in
 
 ## ✅ Tasks (3–8 max)
 
-- [ ] **[US-055]** Installer `@measured-co/puck`, créer l'adaptateur `toPuckConfig()` et migrer le JSON des templates existants
+- [x] **[US-055]** Installer `@measured-co/puck`, créer l'adaptateur `toPuckConfig()` et migrer le JSON des templates existants
   - Agent: `developer`
   - Workflow: `analyze-design-dev-review`
   - Acceptance criteria:
-    - [ ] `@measured-co/puck` est installé dans `packages/ui`
-    - [ ] `toPuckConfig(registry, kind)` produit un `Config` Puck valide filtré par `templateKind`
-    - [ ] Le type `TemplateRecord.layout` est mis à jour vers le type `Data` de Puck
-    - [ ] Un script de migration convertit les templates existants de `{ blocks: [] }` vers `{ content: [], root: { props: {} } }`
-    - [ ] Les tests existants liés au registre passent après migration
+    - [x] `@measured-co/puck` est installé dans `packages/ui` (`@puckeditor/core@0.21.2` — package renommé)
+    - [x] `toPuckConfig(registry, kind)` produit un `Config` Puck valide filtré par `templateKind`
+    - [x] Le type `TemplateRecord.layout` est mis à jour vers le type `Data` de Puck
+    - [x] Un script de migration convertit les templates existants de `{ blocks: [] }` vers `{ content: [], root: { props: {} } }`
+    - [x] Les tests existants liés au registre passent après migration
   - Source: ADR-003, vision `§6.1`, `§6.3`
 
 - [ ] **[US-056]** Intégrer Puck Editor en mode drag-and-drop dans l'interface admin de templates

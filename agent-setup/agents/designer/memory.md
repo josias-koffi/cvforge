@@ -159,3 +159,10 @@
 - **Why**: The workflow needed a concrete UX brief so the LM feature would stay visually aligned with the existing document flow and not invent a separate interface language.
 - **Learned**: The current "Papier & Crayon" document treatment works for letters with an even narrower structure than the CV, which keeps the MVP readable and print-safe.
 - **Open**: A future Puck migration should replace the structured LM editor with the same WYSIWYG environment promised by the vision.
+
+## 2026-04-20 — US-055 design
+
+- **Did**: Marked the design stage as a non-UI skip and produced the technical contract specification for `toPuckConfig()`, the `PuckData` type shape, `normalizeLayout()` update, and the migration script interface.
+- **Why**: US-055 is pure infrastructure; no user-facing surface is introduced.
+- **Learned**: Even for infrastructure stories, a design artifact that clarifies the API contract (types, function signatures, migration script behavior) prevents developer ambiguity and avoids re-work.
+- **Open**: US-056 will be the first story with an actual Puck UI surface — the `<PuckTemplateEditor>` Client Component.

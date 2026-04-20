@@ -215,3 +215,10 @@
 - **Why**: The LM feature could be generated and edited but not downloaded under the same metadata/privacy rules as the CV.
 - **Learned**: The right fix was to extend the shared exporter instead of duplicating PDF logic in the app, which preserves one privacy boundary for both document types.
 - **Open**: The full Next build is still affected by the pre-existing `.next` ownership issue; this fix was verified with targeted tests only.
+
+## 2026-04-20 — US-055 implement
+
+- **Did**: Installed `@puckeditor/core@0.21.2`, created `toPuckConfig()` adapter, migrated `TemplateRecord.layout` type to `PuckData`, updated all seed/normalize/validate code in templates store and service, wrote migration script, and updated all affected tests to pass.
+- **Why**: Sprint 008 foundational task — all subsequent Puck stories depend on this infrastructure.
+- **Learned**: `@measured-co/puck` was renamed to `@puckeditor/core`. Always verify package names from npm before installing. `PuckData` should be defined locally in `packages/types` rather than importing from the UI library, to avoid coupling a pure types package to a large dependency.
+- **Open**: The `<Puck>` component from `@puckeditor/core` still cannot run SSR — US-056 and US-057 must wrap it in `next/dynamic` with `ssr: false`.

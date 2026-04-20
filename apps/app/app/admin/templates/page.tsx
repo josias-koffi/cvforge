@@ -51,54 +51,60 @@ async function fetchTemplates() {
   return (await response.json()) as TemplatesResponse;
 }
 
+type BlockInstance = { id: string; name: string; props: Record<string, unknown> };
+type ContentItem = TemplateRecord["layout"]["content"][number];
+
 function resolveBlockInstances(
-  block: TemplateRecord["layout"]["blocks"][number],
+  item: ContentItem,
+  itemIndex: number,
   previewContent: CVDocumentContent | LetterDocumentContent,
-): Array<{ id: string; name: string; props: Record<string, unknown> }> {
+): BlockInstance[] {
+  const id = String(item.props.id ?? itemIndex);
+  const name = item.type;
   const cv = previewContent as CVDocumentContent;
   const letter = previewContent as LetterDocumentContent;
 
-  switch (block.name) {
+  switch (name) {
     case "CVHeader":
-      return [{ id: block.id, name: block.name, props: cv.candidate as unknown as Record<string, unknown> }];
+      return [{ id, name, props: cv.candidate as unknown as Record<string, unknown> }];
     case "SummaryBlock":
-      return [{ id: block.id, name: block.name, props: { summary: cv.candidate.summary } }];
+      return [{ id, name, props: { summary: cv.candidate.summary } }];
     case "ExperienceItem":
       return (cv.experiences ?? []).map((exp, i) => ({
-        id: `${block.id}-${i}`,
-        name: block.name,
+        id: `${id}-${i}`,
+        name,
         props: exp as unknown as Record<string, unknown>,
       }));
     case "EducationItem":
       return (cv.education ?? []).map((edu, i) => ({
-        id: `${block.id}-${i}`,
-        name: block.name,
+        id: `${id}-${i}`,
+        name,
         props: edu as unknown as Record<string, unknown>,
       }));
     case "SkillsList":
-      return [{ id: block.id, name: block.name, props: { hardSkills: cv.skills?.hard ?? [], softSkills: cv.skills?.soft ?? [] } }];
+      return [{ id, name, props: { hardSkills: cv.skills?.hard ?? [], softSkills: cv.skills?.soft ?? [] } }];
     case "CertificationItem":
       return (cv.certifications ?? []).map((cert, i) => ({
-        id: `${block.id}-${i}`,
-        name: block.name,
+        id: `${id}-${i}`,
+        name,
         props: cert as unknown as Record<string, unknown>,
       }));
     case "LanguageItem":
       return (cv.languages ?? []).map((lang, i) => ({
-        id: `${block.id}-${i}`,
-        name: block.name,
+        id: `${id}-${i}`,
+        name,
         props: lang as unknown as Record<string, unknown>,
       }));
     case "ProjectItem":
       return (cv.projects ?? []).map((proj, i) => ({
-        id: `${block.id}-${i}`,
-        name: block.name,
+        id: `${id}-${i}`,
+        name,
         props: proj as unknown as Record<string, unknown>,
       }));
     case "LMHeader":
       return [{
-        id: block.id,
-        name: block.name,
+        id,
+        name,
         props: {
           ...letter.candidate as unknown as Record<string, unknown>,
           companyCity: letter.company?.city ?? "",
@@ -108,11 +114,11 @@ function resolveBlockInstances(
         },
       }];
     case "LMBody":
-      return [{ id: block.id, name: block.name, props: letter.body as unknown as Record<string, unknown> }];
+      return [{ id, name, props: letter.body as unknown as Record<string, unknown> }];
     case "LMSignature":
-      return [{ id: block.id, name: block.name, props: letter.signature as unknown as Record<string, unknown> }];
+      return [{ id, name, props: letter.signature as unknown as Record<string, unknown> }];
     default:
-      return [{ id: block.id, name: block.name, props: block.props }];
+      return [{ id, name, props: { ...item.props } }];
   }
 }
 
@@ -123,8 +129,10 @@ function TemplatePreview({
   template: TemplateRecord;
   previewContent?: CVDocumentContent | LetterDocumentContent;
 }) {
-  const instances = template.layout.blocks.flatMap((block) =>
-    previewContent ? resolveBlockInstances(block, previewContent) : [{ id: block.id, name: block.name, props: { ...block.props } }],
+  const instances = template.layout.content.flatMap((item, i) =>
+    previewContent
+      ? resolveBlockInstances(item, i, previewContent)
+      : [{ id: String(item.props.id ?? i), name: item.type, props: { ...item.props } }],
   );
 
   return (

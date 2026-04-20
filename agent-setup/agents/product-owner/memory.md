@@ -180,3 +180,10 @@
 - **Why**: The workflow needed a precise product boundary so the LM story would extend the existing document pipeline instead of creating a second architecture.
 - **Learned**: Vision `§9` is specific enough to define the LM JSON structure, ATS default template order, and the attachment-to-candidature constraint without any extra product decisions.
 - **Open**: Sprint `007` can only be fully closed once the repo-wide app coverage/build environment is cleaned up.
+
+## 2026-04-20 — US-055 analyze
+
+- **Did**: Confirmed US-055 scope as the Puck infrastructure story: install `@puckeditor/core`, create `toPuckConfig()` adapter, migrate `TemplateRecord.layout` type, write migration script, and keep all existing registry tests green.
+- **Why**: The workflow needed a precise product boundary separating this foundational story from US-056 (admin drag-and-drop) and US-057 (user editor).
+- **Learned**: The npm package name changed from `@measured-co/puck` to `@puckeditor/core`. The sprint blocker note was prescient — always verify package names before declaring scope.
+- **Open**: US-056 and US-057 can now start. The migration script must be run against any live templates-state.json before deploying either story.

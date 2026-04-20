@@ -2,6 +2,7 @@
 
 Date: 2026-04-20
 Status: accepted
+Note: The package was renamed from `@measured-co/puck` to `@puckeditor/core`. The installed package is `@puckeditor/core@0.21.2`. All references in this ADR using `@measured-co/puck` should be read as `@puckeditor/core`.
 
 ## Context
 

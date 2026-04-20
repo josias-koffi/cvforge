@@ -201,3 +201,10 @@
 - **Why**: Architecture governance and sprint bookkeeping require an explicit final sign-off once implementation and QA show the documentary pipeline extension is complete.
 - **Learned**: Extending the existing document-generation module was the correct architectural move; it preserved one auditable pseudonymisation boundary and one application-backed document source of truth.
 - **Open**: Sprint `007` should stay open until the known `apps/app/.next` permission issue and repo-wide app coverage debt are resolved well enough to satisfy sprint DoD.
+
+## 2026-04-20 — US-055 finalization
+
+- **Did**: Finalized US-055 workflow run; all stages passed, sprint checkbox ticked, ADR-003 updated with package rename note, state.json updated.
+- **Why**: Sprint 008 foundational task complete — Puck infrastructure is in place for US-056 and US-057.
+- **Learned**: `@measured-co/puck` is now `@puckeditor/core`. The sprint note about verifying compatibility was valid and should be treated as a required pre-check in future stories involving new packages.
+- **Open**: US-056 (admin drag-and-drop) and US-057 (user CV editor) can start. Live migration script must run before either is deployed.

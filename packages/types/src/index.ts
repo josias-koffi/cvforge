@@ -257,14 +257,16 @@ export interface CvGenerationRequest {
 
 export type LetterGenerationRequest = CvGenerationRequest;
 
-export interface TemplateLayoutBlock {
-  id: string;
-  name: string;
-  props: Record<string, unknown>;
+export interface PuckDataItem {
+  type: string;
+  props: Record<string, unknown> & { id?: string };
+  readOnly?: Record<string, boolean>;
 }
 
-export interface TemplateLayout {
-  blocks: TemplateLayoutBlock[];
+export interface PuckData {
+  content: PuckDataItem[];
+  root: { props: Record<string, unknown>; readOnly?: Record<string, boolean> };
+  zones?: Record<string, PuckDataItem[]>;
 }
 
 export interface TemplateRecord {
@@ -274,7 +276,7 @@ export interface TemplateRecord {
   id: string;
   isDefault: boolean;
   kind: TemplateKind;
-  layout: TemplateLayout;
+  layout: PuckData;
   locale: Locale;
   name: string;
   updatedAt: string;
@@ -285,7 +287,7 @@ export type TemplateUpsertInput = {
   categories?: string[];
   isDefault?: boolean;
   kind?: TemplateKind;
-  layout?: TemplateLayout;
+  layout?: PuckData;
   locale?: Locale;
   name?: string;
 };

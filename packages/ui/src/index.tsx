@@ -33,4 +33,5 @@ export {
 export { CV_PREVIEW_FIXTURE, LETTER_PREVIEW_FIXTURE } from "./preview-fixtures";
 export { AppShell } from "./shell";
 export type { ShellNavItem } from "./shell";
+export { toPuckConfig } from "./puck-config";
 export { PaperStyles, paperStylesCss } from "./styles";

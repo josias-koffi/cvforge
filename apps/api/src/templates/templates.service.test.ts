@@ -35,7 +35,7 @@ function makeSeedTemplate(id: string, kind: StoredTemplate["kind"]): StoredTempl
     id,
     isDefault: true,
     kind,
-    layout: { blocks: [] },
+    layout: { content: [], root: { props: {} } },
     locale: "fr",
     name: `${kind.toUpperCase()} ATS`,
     updatedAt: "2026-04-20T12:00:00.000Z",
@@ -54,7 +54,7 @@ describe("TemplatesService", () => {
       categories: ["Moderne"],
       isDefault: true,
       kind: TEMPLATE_KIND_CV,
-      layout: { blocks: [] },
+      layout: { content: [], root: { props: {} } },
       locale: "en",
       name: "CV Moderne",
     });
