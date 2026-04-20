@@ -14,6 +14,7 @@ import {
   applicationStatuses,
   type CVDocumentContent,
   type CvContentUpdateRequest,
+  type LetterContentUpdateRequest,
   type ApplicationsKpiSummary,
   type DraftApplication,
   HEALTH_STATUS_OK,
@@ -50,6 +51,7 @@ describe("types package", () => {
       createdAt: "2026-04-20T12:00:00.000Z",
       cvGeneratedAt: null,
       id: "app_123",
+      letterGeneratedAt: null,
       offerUrl: "https://example.com/jobs/123",
       offerTextPreview: "Lead the platform team and improve reliability.",
       sourceLabel: "https://example.com/jobs/123",
@@ -212,8 +214,12 @@ describe("types package", () => {
     const updateRequest: CvContentUpdateRequest = {
       cvContent,
     };
+    const letterUpdateRequest: LetterContentUpdateRequest = {
+      letterContent,
+    };
 
     expect(updateRequest.cvContent.candidate.firstName).toBe("Jane");
+    expect(letterUpdateRequest.letterContent.signature.lastName).toBe("Doe");
   });
 
   it("should shape the admin template record contract", () => {

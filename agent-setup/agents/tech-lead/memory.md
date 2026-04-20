@@ -194,3 +194,10 @@
 - **Why**: The user hit the CV download route from a host-based `localhost:3000` session and received `Internal server error`; the failing network lookup needed to become resilient in both Docker and non-Docker setups.
 - **Learned**: The MinIO absence was not the immediate cause of the 500; the export path currently streams PDFs live and does not persist them yet.
 - **Open**: If persistence is required by product scope, the next step is to add a real MinIO-backed PDF storage layer and signed download URLs.
+
+## 2026-04-20 — US-028 finalization
+
+- **Did**: Closed US-028 with a passing verdict after confirming the letter-generation path now reuses the same application and profile inputs as the CV flow, persists normalized LM content, and exposes an authenticated LM ATS editing surface.
+- **Why**: Architecture governance and sprint bookkeeping require an explicit final sign-off once implementation and QA show the documentary pipeline extension is complete.
+- **Learned**: Extending the existing document-generation module was the correct architectural move; it preserved one auditable pseudonymisation boundary and one application-backed document source of truth.
+- **Open**: Sprint `007` should stay open until the known `apps/app/.next` permission issue and repo-wide app coverage debt are resolved well enough to satisfy sprint DoD.

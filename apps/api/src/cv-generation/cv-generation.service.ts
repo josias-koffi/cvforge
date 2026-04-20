@@ -8,6 +8,9 @@ import type {
   CVDocumentContent,
   CvContentUpdateRequest,
   CvGenerationRequest,
+  LetterContentUpdateRequest,
+  LetterDocumentContent,
+  LetterGenerationRequest,
   EducationItemProps,
   ExperienceItemProps,
   LanguageItemProps,
@@ -63,6 +66,47 @@ Retourne UNIQUEMENT un JSON valide avec cette structure exacte :
   "projects": [{ "title": "", "description": "", "url": "" }]
 }`;
 
+const LETTER_SYSTEM_PROMPT = `Tu es un Expert en Recrutement Senior et Spécialiste ATS.
+À partir du profil pseudonymisé du candidat et du texte de l'offre fournis, génère une lettre de motivation ATS, sobre et crédible.
+
+Règles impératives :
+1. Utilise exactement les mêmes sources métier que pour le CV : profil pseudonymisé + contexte d'offre.
+2. Détecte la langue de l'offre et rédige la lettre dans cette langue.
+3. Structure la lettre en 3 paragraphes : accroche, argumentaire, conclusion avec appel à l'action.
+4. Utilise "[CANDIDATE]" comme nom de famille si nécessaire — ne l'invente pas.
+5. Ne génère JAMAIS de numéro de téléphone ni d'adresse email.
+6. Laisse les champs phone et email vides ("").
+7. Utilise l'entreprise et le poste de l'offre pour l'objet et l'argumentaire.
+
+Retourne UNIQUEMENT un JSON valide avec cette structure exacte :
+{
+  "candidate": {
+    "firstName": "",
+    "lastName": "[CANDIDATE]",
+    "title": "",
+    "phone": "",
+    "email": "",
+    "city": "",
+    "linkedin": "",
+    "github": ""
+  },
+  "company": {
+    "name": "",
+    "city": ""
+  },
+  "date": "",
+  "object": "",
+  "body": {
+    "paragraph1": "",
+    "paragraph2": "",
+    "paragraph3": ""
+  },
+  "signature": {
+    "firstName": "",
+    "lastName": "[CANDIDATE]"
+  }
+}`;
+
 type RawCvJson = {
   candidate?: {
     firstName?: unknown;
@@ -81,6 +125,34 @@ type RawCvJson = {
   certifications?: unknown[];
   languages?: unknown[];
   projects?: unknown[];
+};
+
+type RawLetterJson = {
+  body?: {
+    paragraph1?: unknown;
+    paragraph2?: unknown;
+    paragraph3?: unknown;
+  };
+  candidate?: {
+    city?: unknown;
+    email?: unknown;
+    firstName?: unknown;
+    github?: unknown;
+    lastName?: unknown;
+    linkedin?: unknown;
+    phone?: unknown;
+    title?: unknown;
+  };
+  company?: {
+    city?: unknown;
+    name?: unknown;
+  };
+  date?: unknown;
+  object?: unknown;
+  signature?: {
+    firstName?: unknown;
+    lastName?: unknown;
+  };
 };
 
 function toStr(value: unknown, fallback = ""): string {
@@ -168,7 +240,7 @@ function normalizeProjects(raw: unknown[]): ProjectItemProps[] {
     .filter((p): p is ProjectItemProps => p !== null);
 }
 
-function extractJsonFromContent(raw: string): RawCvJson {
+function extractJsonFromContent<T>(raw: string): T {
   const fencedMatch = raw.match(/```json\s*([\s\S]*?)```/i);
   const candidate = fencedMatch?.[1] ?? raw;
   const start = candidate.indexOf("{");
@@ -181,7 +253,7 @@ function extractJsonFromContent(raw: string): RawCvJson {
   }
 
   try {
-    return JSON.parse(candidate.slice(start, end + 1)) as RawCvJson;
+    return JSON.parse(candidate.slice(start, end + 1)) as T;
   } catch {
     throw new UnprocessableEntityException(
       "La génération IA a retourné un JSON invalide.",
@@ -270,6 +342,87 @@ function normalizeUpdatedCvContent(
   };
 }
 
+function normalizeLetterJson(
+  raw: RawLetterJson,
+  localFields: LetterGenerationRequest["localFields"],
+  fallbackCompanyName: string | null,
+  fallbackCompanyCity: string | null,
+  fallbackObject: string,
+): LetterDocumentContent {
+  const candidate = raw.candidate ?? {};
+  const signature = raw.signature ?? {};
+
+  return {
+    body: {
+      paragraph1: toStr(raw.body?.paragraph1),
+      paragraph2: toStr(raw.body?.paragraph2),
+      paragraph3: toStr(raw.body?.paragraph3),
+    },
+    candidate: {
+      city: toStr(candidate.city),
+      email: localFields.email,
+      firstName: toStr(candidate.firstName),
+      github: toStr(candidate.github),
+      lastName: localFields.lastName,
+      linkedin: toStr(candidate.linkedin),
+      phone: localFields.phone,
+      title: toStr(candidate.title),
+    },
+    company: {
+      city: toStr(raw.company?.city, fallbackCompanyCity ?? ""),
+      name: toStr(raw.company?.name, fallbackCompanyName ?? ""),
+    },
+    date: toStr(raw.date, new Date().toISOString().slice(0, 10)),
+    object: toStr(raw.object, fallbackObject),
+    signature: {
+      firstName: toStr(signature.firstName, toStr(candidate.firstName)),
+      lastName: localFields.lastName,
+    },
+  };
+}
+
+function normalizeUpdatedLetterContent(
+  value: LetterContentUpdateRequest["letterContent"],
+): LetterDocumentContent {
+  return {
+    body: {
+      paragraph1: toStr(value.body.paragraph1),
+      paragraph2: toStr(value.body.paragraph2),
+      paragraph3: toStr(value.body.paragraph3),
+    },
+    candidate: {
+      city: toStr(value.candidate.city),
+      email: toStr(value.candidate.email),
+      firstName: toStr(value.candidate.firstName),
+      github: toStr(value.candidate.github),
+      lastName: toStr(value.candidate.lastName),
+      linkedin: toStr(value.candidate.linkedin),
+      phone: toStr(value.candidate.phone),
+      title: toStr(value.candidate.title),
+    },
+    company: {
+      city: toStr(value.company.city),
+      name: toStr(value.company.name),
+    },
+    date: toStr(value.date),
+    object: toStr(value.object),
+    signature: {
+      firstName: toStr(value.signature.firstName),
+      lastName: toStr(value.signature.lastName),
+    },
+  };
+}
+
+function assertLocalFieldsProvided(
+  localFields: CvGenerationRequest["localFields"],
+): void {
+  if (!localFields?.lastName && !localFields?.phone && !localFields?.email) {
+    throw new BadRequestException(
+      "Les champs locaux (lastName, phone, email) doivent être fournis.",
+    );
+  }
+}
+
 @Injectable()
 export class CvGenerationService {
   constructor(
@@ -282,34 +435,9 @@ export class CvGenerationService {
     applicationId: string,
     request: CvGenerationRequest,
   ): Promise<CVDocumentContent> {
-    if (
-      !request.localFields?.lastName &&
-      !request.localFields?.phone &&
-      !request.localFields?.email
-    ) {
-      throw new BadRequestException(
-        "Les champs locaux (lastName, phone, email) doivent être fournis.",
-      );
-    }
-
-    const application = this.store.findByIdForUserEmail(
-      userEmail,
-      applicationId,
-    );
-
-    if (!application) {
-      throw new NotFoundException("La candidature est introuvable.");
-    }
-
-    const offerContext = {
-      title: application.extracted.title,
-      companyName: application.extracted.companyName,
-      requirements: application.extracted.requirements,
-      responsibilities: application.extracted.responsibilities,
-      summary: application.extracted.summary,
-      language: application.extracted.language,
-      rawOfferText: application.rawOfferText.slice(0, 4000),
-    };
+    assertLocalFieldsProvided(request.localFields);
+    const application = this.getApplicationForUser(userEmail, applicationId);
+    const offerContext = this.buildOfferContext(application);
 
     const rawResponse = await this.openRouterService.chat(
       [
@@ -325,7 +453,7 @@ export class CvGenerationService {
       { temperature: 0.3 },
     );
 
-    const rawJson = extractJsonFromContent(rawResponse);
+    const rawJson = extractJsonFromContent<RawCvJson>(rawResponse);
     const cvContent = normalizeCvJson(rawJson, request.localFields);
 
     const timestamp = new Date().toISOString();
@@ -337,6 +465,49 @@ export class CvGenerationService {
     });
 
     return cvContent;
+  }
+
+  async generateLetter(
+    userEmail: string,
+    applicationId: string,
+    request: LetterGenerationRequest,
+  ): Promise<LetterDocumentContent> {
+    assertLocalFieldsProvided(request.localFields);
+    const application = this.getApplicationForUser(userEmail, applicationId);
+    const offerContext = this.buildOfferContext(application);
+
+    const rawResponse = await this.openRouterService.chat(
+      [
+        { role: "system", content: LETTER_SYSTEM_PROMPT },
+        {
+          role: "user",
+          content: JSON.stringify({
+            pseudonymisedProfile: request.promptProfile,
+            offerContext,
+          }),
+        },
+      ],
+      { temperature: 0.4 },
+    );
+
+    const rawJson = extractJsonFromContent<RawLetterJson>(rawResponse);
+    const letterContent = normalizeLetterJson(
+      rawJson,
+      request.localFields,
+      application.extracted.companyName,
+      application.extracted.location,
+      `Candidature au poste de ${application.extracted.title}`,
+    );
+
+    const timestamp = new Date().toISOString();
+    this.store.save({
+      ...application,
+      letterContent,
+      letterGeneratedAt: timestamp,
+      updatedAt: timestamp,
+    });
+
+    return letterContent;
   }
 
   updateCvContent(
@@ -370,15 +541,58 @@ export class CvGenerationService {
     userEmail: string,
     applicationId: string,
   ): CVDocumentContent | null {
-    const application = this.store.findByIdForUserEmail(
-      userEmail,
-      applicationId,
-    );
+    const application = this.getApplicationForUser(userEmail, applicationId);
+    return application.cvContent ?? null;
+  }
+
+  updateLetterContent(
+    userEmail: string,
+    applicationId: string,
+    request: LetterContentUpdateRequest,
+  ): LetterDocumentContent {
+    const application = this.getApplicationForUser(userEmail, applicationId);
+    const letterContent = normalizeUpdatedLetterContent(request.letterContent);
+    const timestamp = new Date().toISOString();
+
+    this.store.save({
+      ...application,
+      letterContent,
+      letterGeneratedAt: application.letterGeneratedAt ?? timestamp,
+      updatedAt: timestamp,
+    });
+
+    return letterContent;
+  }
+
+  getLetterContent(
+    userEmail: string,
+    applicationId: string,
+  ): LetterDocumentContent | null {
+    const application = this.getApplicationForUser(userEmail, applicationId);
+    return application.letterContent ?? null;
+  }
+
+  private getApplicationForUser(userEmail: string, applicationId: string) {
+    const application = this.store.findByIdForUserEmail(userEmail, applicationId);
 
     if (!application) {
       throw new NotFoundException("La candidature est introuvable.");
     }
 
-    return application.cvContent ?? null;
+    return application;
+  }
+
+  private buildOfferContext(
+    application: NonNullable<ReturnType<ApplicationsStore["findByIdForUserEmail"]>>,
+  ) {
+    return {
+      title: application.extracted.title,
+      companyName: application.extracted.companyName,
+      requirements: application.extracted.requirements,
+      responsibilities: application.extracted.responsibilities,
+      summary: application.extracted.summary,
+      language: application.extracted.language,
+      rawOfferText: application.rawOfferText.slice(0, 4000),
+    };
   }
 }

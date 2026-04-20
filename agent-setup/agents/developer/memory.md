@@ -201,3 +201,17 @@
 - **Why**: US-026 required editable CV content for the user without breaking the shared document schema or the later PDF export path.
 - **Learned**: Keeping the editor schema-driven around `CVDocumentContent` is enough to support a practical WYSIWYG-style workflow now while preserving PDF compatibility for US-027.
 - **Open**: US-027 can reuse the same `cvContent` contract for Puppeteer export without translating the edited data into a new format.
+
+## 2026-04-20 — US-028
+
+- **Did**: Extended the existing CV generation slice to support letters as a first-class document: added LM request/update contracts, persisted `letterContent` and `letterGeneratedAt`, implemented authenticated API generate/get/update endpoints, added candidature-side generation routing, and built a user-side LM editor/preview page.
+- **Why**: US-028 required the motivation letter to reuse the same documentary pipeline and pseudonymisation rules as the CV rather than introducing a parallel feature path.
+- **Learned**: The cleanest implementation was to keep the LM flow inside the existing document-generation module and reuse the same `promptProfile` + `offerContext` inputs, only swapping the normalization target and UI surface.
+- **Open**: The app package still has a pre-existing `.next` permission problem, and the repo-wide app coverage baseline remains below the project target outside this task's local scope.
+
+## 2026-04-20 — LM PDF export parity fix
+
+- **Did**: Added LM PDF export to the existing server-side document export service, exposed `GET /applications/:applicationId/letter/pdf`, created the Next route proxy at `app/letters/[applicationId]/pdf/route.ts`, and wired the LM editor with a download button matching the CV flow.
+- **Why**: The LM feature could be generated and edited but not downloaded under the same metadata/privacy rules as the CV.
+- **Learned**: The right fix was to extend the shared exporter instead of duplicating PDF logic in the app, which preserves one privacy boundary for both document types.
+- **Open**: The full Next build is still affected by the pre-existing `.next` ownership issue; this fix was verified with targeted tests only.

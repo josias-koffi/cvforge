@@ -27,6 +27,7 @@ import {
   getApplicationStatusTone,
 } from "./status-metadata";
 import { GenerateCvButton } from "./generate-cv-button";
+import { GenerateLetterButton } from "./generate-letter-button";
 
 type ApplicationsPageProps = {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
@@ -449,6 +450,43 @@ export default async function ApplicationsPage({
                           }}
                         >
                           Voir le CV généré
+                        </a>
+                      ) : null}
+                    </div>
+                  </div>
+                  <div
+                    style={{
+                      border: "1px solid #D9D4CA",
+                      borderRadius: "0.9rem",
+                      display: "grid",
+                      gap: "0.85rem",
+                      padding: "1rem",
+                    }}
+                  >
+                    <div style={{ display: "grid", gap: "0.35rem" }}>
+                      <strong style={{ color: "#1A1A18" }}>Génération de la LM</strong>
+                      <p style={{ color: "#6B6860", lineHeight: 1.6, margin: 0 }}>
+                        Génère la lettre de motivation à partir du même profil de base, du même contexte d&apos;offre et du même pipeline de pseudonymisation que le CV.
+                      </p>
+                    </div>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: "0.75rem" }}>
+                      <GenerateLetterButton applicationId={application.id} />
+                      {application.letterGeneratedAt ? (
+                        <a
+                          href={`/letters/${application.id}`}
+                          style={{
+                            alignItems: "center",
+                            border: "1px solid #C8A96E",
+                            borderRadius: "0.5rem",
+                            color: "#2C2C2A",
+                            display: "inline-flex",
+                            fontSize: "0.875rem",
+                            fontWeight: 500,
+                            padding: "0.45rem 0.9rem",
+                            textDecoration: "none",
+                          }}
+                        >
+                          Voir la LM générée
                         </a>
                       ) : null}
                     </div>

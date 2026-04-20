@@ -37,13 +37,13 @@ Rendre la génération documentaire du MVP réellement exploitable: CV généré
     - [x] Le rendu est fidèle au template Puck
     - [x] Les métadonnées identifiantes sont supprimées
   - Source: vision `§8`, `§15.4`, `§16`
-- [ ] **[US-028]** Générer la lettre de motivation avec le même pipeline documentaire
+- [x] **[US-028]** Générer la lettre de motivation avec le même pipeline documentaire
   - Agent: `developer`
   - Workflow: `analyze-design-dev-review`
   - Acceptance criteria:
-    - [ ] La LM est générée à partir des mêmes sources métier
-    - [ ] Le template LM ATS est utilisable par défaut
-    - [ ] Le pipeline de pseudonymisation reste cohérent avec celui du CV
+    - [x] La LM est générée à partir des mêmes sources métier
+    - [x] Le template LM ATS est utilisable par défaut
+    - [x] Le pipeline de pseudonymisation reste cohérent avec celui du CV
   - Source: vision `§9`, `§16`
 
 ## 📊 Sprint DoD

@@ -152,3 +152,10 @@
 - **Why**: The story needed minimal UI to trigger generation and display the result, without prematurely designing the WYSIWYG editor (US-026).
 - **Learned**: The "feuille de travail" aesthetic from the vision maps directly to the document page: white card on ivory, serif font, section dividers — no new design tokens needed.
 - **Open**: US-026 should overlay the Puck editor on top of this same render surface for the WYSIWYG editing flow.
+
+## 2026-04-20 — US-028 design
+
+- **Did**: Specified the mirrored LM surfaces: a candidature-card generation action and a `/letters/[applicationId]` ATS letter page built from `LMHeader`, `LMBody`, and `LMSignature`.
+- **Why**: The workflow needed a concrete UX brief so the LM feature would stay visually aligned with the existing document flow and not invent a separate interface language.
+- **Learned**: The current "Papier & Crayon" document treatment works for letters with an even narrower structure than the CV, which keeps the MVP readable and print-safe.
+- **Open**: A future Puck migration should replace the structured LM editor with the same WYSIWYG environment promised by the vision.

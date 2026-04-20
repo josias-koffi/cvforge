@@ -67,6 +67,8 @@ function normalizeStoredApplication(
     ...application,
     cvContent: application.cvContent ?? null,
     cvGeneratedAt: application.cvGeneratedAt ?? null,
+    letterContent: application.letterContent ?? null,
+    letterGeneratedAt: application.letterGeneratedAt ?? null,
     status,
     statusHistory: normalizeStatusHistory(
       application.statusHistory,

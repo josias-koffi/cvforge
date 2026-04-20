@@ -3,7 +3,11 @@ import {
   NotFoundException,
   UnprocessableEntityException,
 } from "@nestjs/common";
-import type { CVDocumentContent, CvGenerationRequest } from "@cvforge/types";
+import type {
+  CVDocumentContent,
+  CvGenerationRequest,
+  LetterDocumentContent,
+} from "@cvforge/types";
 import { CvGenerationService } from "./cv-generation.service";
 import type {
   ApplicationsStore,
@@ -18,6 +22,8 @@ function makeStoredApplication(
     cvContent: null,
     cvGeneratedAt: null,
     id: "app-001",
+    letterContent: null,
+    letterGeneratedAt: null,
     offerTextPreview: "A great job at Acme Corp.",
     offerUrl: "https://acme.example/jobs/1",
     rawOfferText:
@@ -122,6 +128,34 @@ const VALID_CV_JSON: CVDocumentContent = {
   languages: [],
   projects: [],
   skills: { hard: ["TypeScript", "Node.js"], soft: ["Communication"] },
+};
+
+const VALID_LETTER_JSON: LetterDocumentContent = {
+  body: {
+    paragraph1: "I am applying for your senior TypeScript role.",
+    paragraph2: "My backend and product experience align with your needs.",
+    paragraph3: "I would welcome the opportunity to discuss this role.",
+  },
+  candidate: {
+    city: "Paris",
+    email: "",
+    firstName: "Jean",
+    github: "",
+    lastName: "[CANDIDATE]",
+    linkedin: "",
+    phone: "",
+    title: "Senior TypeScript Developer",
+  },
+  company: {
+    city: "Paris",
+    name: "Acme Corp",
+  },
+  date: "2026-04-20",
+  object: "Application for Senior TypeScript Developer",
+  signature: {
+    firstName: "Jean",
+    lastName: "[CANDIDATE]",
+  },
 };
 
 describe("CvGenerationService", () => {
@@ -432,6 +466,92 @@ describe("CvGenerationService", () => {
     });
   });
 
+  describe("generateLetter", () => {
+    it("calls openRouter.chat with the same pseudonymised profile shape", async () => {
+      openRouter.chat.mockResolvedValue(JSON.stringify(VALID_LETTER_JSON));
+
+      await service.generateLetter("user@test.example", "app-001", makeRequest());
+
+      const [messages] = openRouter.chat.mock.calls[0] as [
+        Array<{ role: string; content: string }>,
+      ];
+      const userMessage = messages.find((m) => m.role === "user")!;
+      const payload = JSON.parse(userMessage.content) as {
+        offerContext: { title: string };
+        pseudonymisedProfile: { identity: Record<string, unknown> };
+      };
+
+      expect(payload.offerContext.title).toBe("Senior TypeScript Developer");
+      expect(payload.pseudonymisedProfile.identity).not.toHaveProperty("lastName");
+      expect(payload.pseudonymisedProfile.identity).not.toHaveProperty("phone");
+      expect(payload.pseudonymisedProfile.identity).not.toHaveProperty("email");
+    });
+
+    it("injects local fields into the returned letter content", async () => {
+      openRouter.chat.mockResolvedValue(JSON.stringify(VALID_LETTER_JSON));
+
+      const letterContent = await service.generateLetter(
+        "user@test.example",
+        "app-001",
+        makeRequest(),
+      );
+
+      expect(letterContent.candidate.lastName).toBe("Dupont");
+      expect(letterContent.candidate.phone).toBe("+33612345678");
+      expect(letterContent.candidate.email).toBe("user@test.example");
+      expect(letterContent.signature.lastName).toBe("Dupont");
+    });
+
+    it("persists letter content in the store", async () => {
+      openRouter.chat.mockResolvedValue(JSON.stringify(VALID_LETTER_JSON));
+
+      await service.generateLetter("user@test.example", "app-001", makeRequest());
+
+      const saved = (store.save as ReturnType<typeof vi.fn>).mock.calls[0][0] as StoredApplication;
+      expect(saved.letterContent?.company.name).toBe("Acme Corp");
+      expect(saved.letterGeneratedAt).toBeTruthy();
+    });
+  });
+
+  describe("updateLetterContent", () => {
+    it("persists sanitized letter updates", () => {
+      const updated = service.updateLetterContent("user@test.example", "app-001", {
+        letterContent: {
+          body: {
+            paragraph1: " Bonjour ",
+            paragraph2: " Experience solide ",
+            paragraph3: " A bientot ",
+          },
+          candidate: {
+            city: " Paris ",
+            email: " user@test.example ",
+            firstName: " Jean ",
+            github: " github.com/jean ",
+            lastName: " Dupont ",
+            linkedin: " linkedin.com/in/jean ",
+            phone: " +33612345678 ",
+            title: " Senior Developer ",
+          },
+          company: {
+            city: " Lyon ",
+            name: " Acme ",
+          },
+          date: " 2026-04-20 ",
+          object: " Candidature ",
+          signature: {
+            firstName: " Jean ",
+            lastName: " Dupont ",
+          },
+        },
+      });
+
+      expect(updated.body.paragraph1).toBe("Bonjour");
+      expect(updated.company.name).toBe("Acme");
+      const saved = (store.save as ReturnType<typeof vi.fn>).mock.calls[0][0] as StoredApplication;
+      expect(saved.letterGeneratedAt).toBeTruthy();
+    });
+  });
+
   describe("getCvContent", () => {
     it("returns null when no CV has been generated", () => {
       const result = service.getCvContent("user@test.example", "app-001");
@@ -459,6 +579,21 @@ describe("CvGenerationService", () => {
       expect(() =>
         service.getCvContent("user@test.example", "missing"),
       ).toThrow(NotFoundException);
+    });
+  });
+
+  describe("getLetterContent", () => {
+    it("returns the stored letterContent", () => {
+      const app = makeStoredApplication({
+        letterContent: VALID_LETTER_JSON,
+        letterGeneratedAt: "2026-04-20T12:00:00.000Z",
+      });
+      (store.findByIdForUserEmail as ReturnType<typeof vi.fn>).mockReturnValue(
+        app,
+      );
+
+      const result = service.getLetterContent("user@test.example", "app-001");
+      expect(result).toEqual(VALID_LETTER_JSON);
     });
   });
 });

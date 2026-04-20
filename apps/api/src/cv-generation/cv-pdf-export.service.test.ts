@@ -33,6 +33,34 @@ function makeStoredApplication(
     },
     cvGeneratedAt: "2026-01-02T00:00:00.000Z",
     id: "app-001",
+    letterContent: {
+      body: {
+        paragraph1: "Bonjour.",
+        paragraph2: "Mon experience correspond au poste.",
+        paragraph3: "Je serais ravi d'echanger avec vous.",
+      },
+      candidate: {
+        city: "Paris",
+        email: "user@test.example",
+        firstName: "Jean",
+        github: "github.com/jean",
+        lastName: "Dupont",
+        linkedin: "linkedin.com/in/jean",
+        phone: "+33612345678",
+        title: "Senior Developer",
+      },
+      company: {
+        city: "Paris",
+        name: "Acme Corp",
+      },
+      date: "2026-01-02",
+      object: "Candidature au poste de Senior Developer",
+      signature: {
+        firstName: "Jean",
+        lastName: "Dupont",
+      },
+    },
+    letterGeneratedAt: "2026-01-02T00:00:00.000Z",
     offerTextPreview: "A great job at Acme Corp.",
     offerUrl: "https://acme.example/jobs/1",
     rawOfferText: "Offer text",
@@ -258,6 +286,27 @@ describe("CvPdfExportService", () => {
     await expect(
       service.exportPdf("user@test.example", "app-001"),
     ).rejects.toBeInstanceOf(BadGatewayException);
+  });
+
+  it("exports a letter PDF with generic metadata and LM filename", async () => {
+    vi.mocked(fetch).mockResolvedValue(
+      new Response(new Uint8Array([37, 80, 68, 70]), {
+        headers: {
+          "content-type": "application/pdf",
+        },
+        status: 200,
+      }),
+    );
+
+    const result = await service.exportLetterPdf("user@test.example", "app-001");
+
+    expect(result.filename).toBe("DUPONT_Jean_CDI_Senior_Developer_LM.pdf");
+    const payload = JSON.parse(
+      (vi.mocked(fetch).mock.calls[0]?.[1] as RequestInit).body as string,
+    ) as { html: string };
+    expect(payload.html).toContain("<title>CVforge Letter export</title>");
+    expect(payload.html).toContain("Objet :</strong> Candidature au poste de Senior Developer");
+    expect(payload.html).not.toContain('meta name="author"');
   });
 
 });

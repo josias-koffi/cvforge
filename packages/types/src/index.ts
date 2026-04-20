@@ -167,6 +167,10 @@ export interface LetterDocumentContent {
   signature: LMSignatureProps;
 }
 
+export interface LetterContentUpdateRequest {
+  letterContent: LetterDocumentContent;
+}
+
 export interface ExtractedOfferFields {
   companyName: string | null;
   contractType: string | null;
@@ -195,6 +199,7 @@ export interface DraftApplication {
   createdAt: string;
   cvGeneratedAt: string | null;
   id: string;
+  letterGeneratedAt?: string | null;
   offerUrl: string | null;
   offerTextPreview: string;
   sourceLabel: string;
@@ -249,6 +254,8 @@ export interface CvGenerationRequest {
   localFields: CvLocalFields;
   promptProfile: PromptSafeProfile;
 }
+
+export type LetterGenerationRequest = CvGenerationRequest;
 
 export interface TemplateLayoutBlock {
   id: string;

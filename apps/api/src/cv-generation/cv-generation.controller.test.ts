@@ -4,7 +4,7 @@ import {
   UnauthorizedException,
 } from "@nestjs/common";
 import { describe, expect, it, vi } from "vitest";
-import type { CVDocumentContent } from "@cvforge/types";
+import type { CVDocumentContent, LetterDocumentContent } from "@cvforge/types";
 import { AuthService } from "../auth/auth.service";
 import { CvGenerationController } from "./cv-generation.controller";
 import { CvPdfExportService } from "./cv-pdf-export.service";
@@ -28,6 +28,34 @@ const MOCK_CV: CVDocumentContent = {
   languages: [],
   projects: [],
   skills: { hard: [], soft: [] },
+};
+
+const MOCK_LETTER: LetterDocumentContent = {
+  body: {
+    paragraph1: "Je candidate avec enthousiasme a votre poste.",
+    paragraph2: "Mon experience produit correspond a vos attentes.",
+    paragraph3: "Je serais ravi d'en discuter avec vous.",
+  },
+  candidate: {
+    city: "Paris",
+    email: "user@test.example",
+    firstName: "Jean",
+    github: "",
+    lastName: "Dupont",
+    linkedin: "",
+    phone: "+33612345678",
+    title: "Senior Developer",
+  },
+  company: {
+    city: "Paris",
+    name: "Acme",
+  },
+  date: "2026-04-20",
+  object: "Candidature au poste de Senior Developer",
+  signature: {
+    firstName: "Jean",
+    lastName: "Dupont",
+  },
 };
 
 const VALID_BODY = {
@@ -62,13 +90,20 @@ function makeController(
 ) {
   const cvService = {
     generateCv: vi.fn().mockResolvedValue(MOCK_CV),
+    generateLetter: vi.fn().mockResolvedValue(MOCK_LETTER),
     getCvContent: vi.fn().mockReturnValue(MOCK_CV),
+    getLetterContent: vi.fn().mockReturnValue(MOCK_LETTER),
+    updateLetterContent: vi.fn().mockReturnValue(MOCK_LETTER),
     updateCvContent: vi.fn().mockReturnValue(MOCK_CV),
     ...serviceOverrides,
   } as unknown as CvGenerationService;
 
   const pdfService = {
     exportPdf: vi.fn().mockResolvedValue({
+      filename: "DUPONT_Jean_CDI_Senior_Developer.pdf",
+      pdf: Buffer.from([37, 80, 68, 70]),
+    }),
+    exportLetterPdf: vi.fn().mockResolvedValue({
       filename: "DUPONT_Jean_CDI_Senior_Developer.pdf",
       pdf: Buffer.from([37, 80, 68, 70]),
     }),
@@ -131,6 +166,25 @@ describe("CvGenerationController", () => {
     });
   });
 
+  describe("POST :applicationId/generate-letter", () => {
+    it("returns letterContent for authenticated user", async () => {
+      const controller = makeController();
+      const result = await controller.generateLetter("app-001", VALID_BODY, {
+        headers: { cookie: "cvforge_session=abc" },
+      });
+
+      expect(result).toEqual({ letterContent: MOCK_LETTER });
+    });
+
+    it("throws UnauthorizedException when no session", async () => {
+      const controller = makeController(null);
+
+      await expect(
+        controller.generateLetter("app-001", VALID_BODY, { headers: {} }),
+      ).rejects.toBeInstanceOf(UnauthorizedException);
+    });
+  });
+
   describe("GET :applicationId/cv", () => {
     it("returns cvContent for authenticated user", () => {
       const controller = makeController();
@@ -158,6 +212,28 @@ describe("CvGenerationController", () => {
       expect(() => controller.getCvContent("app-001", { headers: {} })).toThrow(
         UnauthorizedException,
       );
+    });
+  });
+
+  describe("GET :applicationId/letter", () => {
+    it("returns letterContent for authenticated user", () => {
+      const controller = makeController();
+      const result = controller.getLetterContent("app-001", {
+        headers: { cookie: "cvforge_session=abc" },
+      });
+
+      expect(result).toEqual({ letterContent: MOCK_LETTER });
+    });
+
+    it("throws NotFoundException when no letter generated yet", () => {
+      const controller = makeController(
+        { email: "user@test.example", role: "user" },
+        { getLetterContent: vi.fn().mockReturnValue(null) },
+      );
+
+      expect(() =>
+        controller.getLetterContent("app-001", { headers: { cookie: "s=x" } }),
+      ).toThrow(NotFoundException);
     });
   });
 
@@ -219,6 +295,31 @@ describe("CvGenerationController", () => {
     });
   });
 
+  describe("PUT :applicationId/letter", () => {
+    it("returns letterContent for authenticated user", () => {
+      const controller = makeController();
+      const result = controller.updateLetterContent(
+        "app-001",
+        { letterContent: MOCK_LETTER },
+        { headers: { cookie: "cvforge_session=abc" } },
+      );
+
+      expect(result).toEqual({ letterContent: MOCK_LETTER });
+    });
+
+    it("throws UnauthorizedException when no session", () => {
+      const controller = makeController(null);
+
+      expect(() =>
+        controller.updateLetterContent(
+          "app-001",
+          { letterContent: MOCK_LETTER },
+          { headers: {} },
+        ),
+      ).toThrow(UnauthorizedException);
+    });
+  });
+
   describe("GET :applicationId/cv/pdf", () => {
     it("returns a streamed PDF file for authenticated user", async () => {
       const controller = makeController();
@@ -268,6 +369,55 @@ describe("CvGenerationController", () => {
       await controller.exportPdf("app-001", { headers: { cookie: "s=x" } });
 
       expect(pdfService.exportPdf).toHaveBeenCalledWith(
+        "user@test.example",
+        "app-001",
+      );
+    });
+  });
+
+  describe("GET :applicationId/letter/pdf", () => {
+    it("returns a streamed PDF file for authenticated user", async () => {
+      const controller = makeController();
+      const result = await controller.exportLetterPdf("app-001", {
+        headers: { cookie: "cvforge_session=abc" },
+      });
+
+      expect(result).toBeInstanceOf(StreamableFile);
+      expect(result.getHeaders()).toMatchObject({
+        disposition:
+          'attachment; filename="DUPONT_Jean_CDI_Senior_Developer.pdf"',
+        type: "application/pdf",
+      });
+    });
+
+    it("delegates to CvPdfExportService.exportLetterPdf with session email", async () => {
+      const cvService = {
+        generateCv: vi.fn(),
+        getCvContent: vi.fn(),
+        updateCvContent: vi.fn(),
+      } as unknown as CvGenerationService;
+      const pdfService = {
+        exportLetterPdf: vi.fn().mockResolvedValue({
+          filename: "DUPONT_Jean_CDI_Senior_Developer.pdf",
+          pdf: Buffer.from([37, 80, 68, 70]),
+        }),
+      } as unknown as CvPdfExportService;
+      const authService = {
+        readSessionFromCookieHeader: vi
+          .fn()
+          .mockReturnValue({ email: "user@test.example", role: "user" }),
+      } as unknown as AuthService;
+      const controller = new CvGenerationController(
+        cvService,
+        pdfService,
+        authService,
+      );
+
+      await controller.exportLetterPdf("app-001", {
+        headers: { cookie: "s=x" },
+      });
+
+      expect(pdfService.exportLetterPdf).toHaveBeenCalledWith(
         "user@test.example",
         "app-001",
       );

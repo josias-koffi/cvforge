@@ -272,6 +272,8 @@ export class ApplicationsService {
       cvContent: null,
       cvGeneratedAt: null,
       id: randomUUID(),
+      letterContent: null,
+      letterGeneratedAt: null,
       offerTextPreview: extraction.offerTextPreview,
       offerUrl: extraction.offerUrl,
       rawOfferText: extraction.offerText,
@@ -303,6 +305,8 @@ export class ApplicationsService {
       cvContent: null,
       cvGeneratedAt: null,
       id: randomUUID(),
+      letterContent: null,
+      letterGeneratedAt: null,
       offerTextPreview: extraction.offerTextPreview,
       offerUrl: extraction.offerUrl,
       rawOfferText: extraction.offerText,
@@ -455,7 +459,12 @@ export class ApplicationsService {
 }
 
 function stripRawOfferText(application: StoredApplication): DraftApplication {
-  const { rawOfferText: _rawOfferText, cvContent: _cvContent, ...draftApplication } = application;
+  const {
+    rawOfferText: _rawOfferText,
+    cvContent: _cvContent,
+    letterContent: _letterContent,
+    ...draftApplication
+  } = application;
 
   return draftApplication;
 }

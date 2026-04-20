@@ -4,6 +4,7 @@ import type {
   CVDocumentContent,
   DraftApplication,
   ExtractedOfferFields,
+  LetterDocumentContent,
 } from "@cvforge/types";
 
 export type ApplicationsConfig = {
@@ -12,6 +13,7 @@ export type ApplicationsConfig = {
 
 export type StoredApplication = DraftApplication & {
   cvContent: CVDocumentContent | null;
+  letterContent?: LetterDocumentContent | null;
   rawOfferText: string;
 };
 

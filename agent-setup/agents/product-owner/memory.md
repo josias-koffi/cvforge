@@ -173,3 +173,10 @@
 - **Why**: The workflow needed a precise boundary separating this story from US-026 (Puck editing), US-027 (PDF export), and US-028 (LM generation).
 - **Learned**: The profile lives in localStorage (app-side); the API must receive the pseudonymised payload and inject sensitive fields server-side — this is the correct RGPD-compliant architecture.
 - **Open**: US-026 should add WYSIWYG Puck editing on top of the generated CVDocumentContent that US-025 now stores per-application.
+
+## 2026-04-20 — US-028 analyze
+
+- **Did**: Confirmed that US-028 must mirror the CV documentary flow for a motivation letter attached to the same candidature, using the same prompt-safe profile input and the same application-derived offer context.
+- **Why**: The workflow needed a precise product boundary so the LM story would extend the existing document pipeline instead of creating a second architecture.
+- **Learned**: Vision `§9` is specific enough to define the LM JSON structure, ATS default template order, and the attachment-to-candidature constraint without any extra product decisions.
+- **Open**: Sprint `007` can only be fully closed once the repo-wide app coverage/build environment is cleaned up.

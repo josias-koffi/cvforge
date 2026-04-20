@@ -4,7 +4,7 @@ import {
   NotFoundException,
   ServiceUnavailableException,
 } from "@nestjs/common";
-import type { CVDocumentContent } from "@cvforge/types";
+import type { CVDocumentContent, LetterDocumentContent } from "@cvforge/types";
 import type {
   ApplicationsStore,
   StoredApplication,
@@ -76,6 +76,24 @@ function buildPdfFilename(application: StoredApplication) {
   );
 
   return `${lastName}_${firstName}_${contractType}_${position}.pdf`;
+}
+
+function buildLetterPdfFilename(application: StoredApplication) {
+  const candidate = application.letterContent?.candidate;
+  const lastName = sanitizeFilenameSegment(
+    candidate?.lastName?.trim() || "Candidat",
+  ).toUpperCase();
+  const firstName = sanitizeFilenameSegment(
+    candidate?.firstName?.trim() || "Candidat",
+  );
+  const contractType = sanitizeFilenameSegment(
+    application.extracted.contractType?.trim() || "Contrat",
+  );
+  const position = sanitizeFilenameSegment(
+    application.extracted.title?.trim() || candidate?.title?.trim() || "Poste",
+  );
+
+  return `${lastName}_${firstName}_${contractType}_${position}_LM.pdf`;
 }
 
 function resolvePdfExportConfig(
@@ -371,6 +389,119 @@ function renderCvPdfHtml(cvContent: CVDocumentContent) {
 </html>`;
 }
 
+function renderLetterPdfHtml(letterContent: LetterDocumentContent) {
+  const candidate = letterContent.candidate;
+
+  return `<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>CVforge Letter export</title>
+    <style>
+      @page {
+        size: A4;
+        margin: 12mm;
+      }
+
+      :root {
+        color-scheme: light;
+      }
+
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        background: #f6f3ed;
+        color: #1a1a18;
+        font-family: "EB Garamond", "Libre Baskerville", Georgia, serif;
+        font-size: 11.5pt;
+        line-height: 1.6;
+      }
+
+      body {
+        padding: 0;
+      }
+
+      main {
+        display: grid;
+      }
+
+      .sheet {
+        display: grid;
+        gap: 1rem;
+      }
+
+      .hero {
+        display: grid;
+        gap: 0.45rem;
+        padding-bottom: 0.65rem;
+        border-bottom: 1px solid #c8a96e;
+      }
+
+      .company {
+        color: #6b6860;
+      }
+
+      h1,
+      h2,
+      p {
+        margin: 0;
+      }
+
+      h1 {
+        font-size: 20pt;
+        line-height: 1.05;
+        letter-spacing: -0.03em;
+      }
+
+      h2 {
+        font-size: 11pt;
+      }
+
+      .contact {
+        color: #6b6860;
+      }
+
+      .body {
+        display: grid;
+        gap: 0.9rem;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section class="sheet">
+        <header class="hero">
+          <div>
+            <h1>${escapeHtml(`${candidate.firstName} ${candidate.lastName}`.trim())}</h1>
+            <p class="contact">${escapeHtml(candidate.title)}</p>
+            <p class="contact">
+              ${[candidate.phone, candidate.email, candidate.city, candidate.linkedin, candidate.github]
+                .filter((value) => value.length > 0)
+                .map((value) => escapeHtml(value))
+                .join(" · ")}
+            </p>
+          </div>
+          <div class="company">
+            <p>${escapeHtml(letterContent.company.name)}</p>
+            <p>${escapeHtml(letterContent.company.city)}</p>
+            <p>${escapeHtml(letterContent.date)}</p>
+          </div>
+          <p><strong>Objet :</strong> ${escapeHtml(letterContent.object)}</p>
+        </header>
+        <section class="body">
+          <p>${escapeHtml(letterContent.body.paragraph1)}</p>
+          <p>${escapeHtml(letterContent.body.paragraph2)}</p>
+          <p>${escapeHtml(letterContent.body.paragraph3)}</p>
+        </section>
+        <p>${escapeHtml(`${letterContent.signature.firstName} ${letterContent.signature.lastName}`.trim())}</p>
+      </section>
+    </main>
+  </body>
+</html>`;
+}
+
 async function postPdf(html: string, puppeteerUrl: string) {
   return fetch(`${puppeteerUrl}/pdf`, {
     body: JSON.stringify({
@@ -438,6 +569,48 @@ export class CvPdfExportService {
 
     return {
       filename: buildPdfFilename(application),
+      pdf: Buffer.from(await response.arrayBuffer()),
+    };
+  }
+
+  async exportLetterPdf(
+    userEmail: string,
+    applicationId: string,
+  ): Promise<PdfExportResult> {
+    const application = this.store.findByIdForUserEmail(userEmail, applicationId);
+
+    if (!application) {
+      throw new NotFoundException("La candidature est introuvable.");
+    }
+
+    if (!application.letterContent) {
+      throw new NotFoundException("Aucune lettre generee pour cette candidature.");
+    }
+
+    const { puppeteerUrl } = resolvePdfExportConfig();
+    const html = renderLetterPdfHtml(application.letterContent);
+    let response: Response;
+
+    try {
+      response = await postPdf(html, puppeteerUrl);
+    } catch (error) {
+      throw new ServiceUnavailableException(
+        "Le service Puppeteer est inaccessible.",
+        { cause: error as Error },
+      );
+    }
+
+    if (!response.ok) {
+      const fallback = await response.text().catch(() => "");
+      throw new BadGatewayException(
+        fallback
+          ? `L'export PDF a echoue: ${fallback.slice(0, 200)}`
+          : "L'export PDF a echoue.",
+      );
+    }
+
+    return {
+      filename: buildLetterPdfFilename(application),
       pdf: Buffer.from(await response.arrayBuffer()),
     };
   }

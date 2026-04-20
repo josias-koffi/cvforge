@@ -152,3 +152,10 @@
 - **Why**: The story could only pass once every acceptance criterion had direct automated test evidence covering the RGPD-critical path.
 - **Learned**: The pseudonymisation contract is reviewable when expressed as two distinct types (`PromptSafeProfile` vs `CvLocalFields`) — the type system prevents accidentally sending `localFields` to OpenRouter.
 - **Open**: US-026 should preserve the `cvContent` contract when adding Puck editing so that re-generation and editing can coexist without breaking the stored document structure.
+
+## 2026-04-20 — US-028 review
+
+- **Did**: Verified the mirrored LM pipeline against the sprint criteria, confirmed the same pseudonymised prompt shape and application-derived offer context, and rechecked `@cvforge/api` tests/lint/build plus `@cvforge/app` tests/lint.
+- **Why**: The task could only pass once the LM flow had direct evidence for source reuse, default ATS template rendering, and RGPD consistency with the CV path.
+- **Learned**: The LM story is reviewable because the same service boundary now owns both documents; the only meaningful difference is the normalized output schema and user-facing editor surface.
+- **Open**: `@cvforge/app build` is still blocked by the pre-existing `.next` permission issue, and app-wide coverage remains below the repo target because of older uncovered surfaces outside this task.

@@ -15,6 +15,8 @@ import {
 import type {
   CvContentUpdateRequest,
   CvGenerationRequest,
+  LetterContentUpdateRequest,
+  LetterGenerationRequest,
 } from "@cvforge/types";
 import { AuthService } from "../auth/auth.service";
 import { CvPdfExportService } from "./cv-pdf-export.service";
@@ -55,6 +57,29 @@ export class CvGenerationController {
     );
 
     return { cvContent };
+  }
+
+  @Post(":applicationId/generate-letter")
+  async generateLetter(
+    @Param("applicationId") applicationId: string,
+    @Body() body: LetterGenerationRequest,
+    @Req() request: RequestLike,
+  ) {
+    const session = this.authService.readSessionFromCookieHeader(
+      request.headers.cookie,
+    );
+
+    if (!session) {
+      throw new UnauthorizedException("A valid session is required.");
+    }
+
+    const letterContent = await this.cvGenerationService.generateLetter(
+      session.email,
+      applicationId,
+      body,
+    );
+
+    return { letterContent };
   }
 
   @Put(":applicationId/cv")
@@ -105,6 +130,54 @@ export class CvGenerationController {
     return { cvContent };
   }
 
+  @Put(":applicationId/letter")
+  updateLetterContent(
+    @Param("applicationId") applicationId: string,
+    @Body() body: LetterContentUpdateRequest,
+    @Req() request: RequestLike,
+  ) {
+    const session = this.authService.readSessionFromCookieHeader(
+      request.headers.cookie,
+    );
+
+    if (!session) {
+      throw new UnauthorizedException("A valid session is required.");
+    }
+
+    const letterContent = this.cvGenerationService.updateLetterContent(
+      session.email,
+      applicationId,
+      body,
+    );
+
+    return { letterContent };
+  }
+
+  @Get(":applicationId/letter")
+  getLetterContent(
+    @Param("applicationId") applicationId: string,
+    @Req() request: RequestLike,
+  ) {
+    const session = this.authService.readSessionFromCookieHeader(
+      request.headers.cookie,
+    );
+
+    if (!session) {
+      throw new UnauthorizedException("A valid session is required.");
+    }
+
+    const letterContent = this.cvGenerationService.getLetterContent(
+      session.email,
+      applicationId,
+    );
+
+    if (!letterContent) {
+      throw new NotFoundException("Aucune lettre générée pour cette candidature.");
+    }
+
+    return { letterContent };
+  }
+
   @Get(":applicationId/cv/pdf")
   @Header("Content-Type", "application/pdf")
   async exportPdf(
@@ -120,6 +193,31 @@ export class CvGenerationController {
     }
 
     const { filename, pdf } = await this.cvPdfExportService.exportPdf(
+      session.email,
+      applicationId,
+    );
+
+    return new StreamableFile(pdf, {
+      disposition: `attachment; filename="${filename}"`,
+      type: "application/pdf",
+    });
+  }
+
+  @Get(":applicationId/letter/pdf")
+  @Header("Content-Type", "application/pdf")
+  async exportLetterPdf(
+    @Param("applicationId") applicationId: string,
+    @Req() request: RequestLike,
+  ) {
+    const session = this.authService.readSessionFromCookieHeader(
+      request.headers.cookie,
+    );
+
+    if (!session) {
+      throw new UnauthorizedException("A valid session is required.");
+    }
+
+    const { filename, pdf } = await this.cvPdfExportService.exportLetterPdf(
       session.email,
       applicationId,
     );
