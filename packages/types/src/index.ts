@@ -202,3 +202,36 @@ export interface DraftApplication {
   userEmail: string;
   extracted: ExtractedOfferFields;
 }
+
+export interface TemplateLayoutBlock {
+  id: string;
+  name: string;
+  props: Record<string, unknown>;
+}
+
+export interface TemplateLayout {
+  blocks: TemplateLayoutBlock[];
+}
+
+export interface TemplateRecord {
+  active: boolean;
+  categories: string[];
+  createdAt: string;
+  id: string;
+  isDefault: boolean;
+  kind: TemplateKind;
+  layout: TemplateLayout;
+  locale: Locale;
+  name: string;
+  updatedAt: string;
+}
+
+export type TemplateUpsertInput = {
+  active?: boolean;
+  categories?: string[];
+  isDefault?: boolean;
+  kind?: TemplateKind;
+  layout?: TemplateLayout;
+  locale?: Locale;
+  name?: string;
+};

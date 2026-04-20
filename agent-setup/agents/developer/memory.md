@@ -159,3 +159,10 @@
 - **Why**: `US-021` required executable Puck-ready building blocks that both admin and user flows can consume later without duplicating schema or rendering logic.
 - **Learned**: The cleanest MVP shape is to deliver a shared block registry now and defer the actual editor integration to `US-022`, which keeps the current story dependency-free and strongly typed.
 - **Open**: The next template story should wire this registry into admin authoring and JSON persistence instead of re-declaring block metadata locally.
+
+## 2026-04-20 — US-022
+
+- **Did**: Added the API templates module and file-backed JSON persistence, seeded CV ATS and LM ATS templates, built the admin template studio with create/edit/duplicate flows, updated navigation, and verified the repo with lint, tests, and build.
+- **Why**: `US-022` needed a working admin management slice that matched the vision while staying within the current monorepo architecture.
+- **Learned**: The shared document block registry can power a practical Puck-compatible editor surface now, and the default-per-kind invariant should be enforced in the service layer.
+- **Open**: `US-023` can focus on activation, categorization, and default rules without reopening the editor/storage contract.

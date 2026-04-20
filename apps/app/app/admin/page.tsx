@@ -1,5 +1,5 @@
 import React from "react";
-import { AppShell } from "@cvforge/ui";
+import { AppShell, Button } from "@cvforge/ui";
 import { getAppNavigation } from "../content";
 import { requireAdminSession } from "../auth/session";
 
@@ -39,6 +39,11 @@ export default async function AdminPage() {
           <dt style={{ color: "#6B6860", fontWeight: 600 }}>Role</dt>
           <dd style={{ margin: 0 }}>{session.role}</dd>
         </dl>
+        <div>
+          <Button asChild>
+            <a href="/admin/templates">Ouvrir l&apos;éditeur de templates</a>
+          </Button>
+        </div>
       </div>
     </AppShell>
   );

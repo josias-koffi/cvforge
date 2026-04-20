@@ -7,7 +7,8 @@ type AppRoute =
   | "/cv"
   | "/candidatures"
   | "/interview"
-  | "/admin";
+  | "/admin"
+  | "/admin/templates";
 
 const baseNavigation: ShellNavItem[] = [
   {
@@ -45,6 +46,18 @@ const baseNavigation: ShellNavItem[] = [
     label: "Interview",
     description: "Preparation vocale",
     shortLabel: "IV",
+  },
+  {
+    href: "/admin",
+    label: "Admin",
+    description: "Espace reserve",
+    shortLabel: "AD",
+  },
+  {
+    href: "/admin/templates",
+    label: "Templates admin",
+    description: "Editor Puck",
+    shortLabel: "TP",
   },
 ];
 

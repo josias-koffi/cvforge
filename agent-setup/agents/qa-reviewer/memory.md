@@ -131,3 +131,10 @@
 - **Why**: The task could only pass once each acceptance criterion and the new-code coverage threshold had direct evidence in code and automated validation.
 - **Learned**: The registry-based approach makes reuse reviewable because the same metadata can be asserted for both an admin palette and a user-facing render path.
 - **Open**: `US-022` should preserve this single source of truth when the real Puck admin editor is introduced.
+
+## 2026-04-20 — US-022 review
+
+- **Did**: Reviewed the templates admin slice after implementation, confirmed the seeded CV/LM templates, the create/edit/duplicate editor surface, and the JSON persistence path.
+- **Why**: The sprint needed a final pass that checked the acceptance criteria against the shipped code and the executed gates.
+- **Learned**: The Puck-compatible editor keeps the shared block registry as the rendering source of truth while meeting the MVP goal.
+- **Open**: No blocking issues remained after lint, tests, and build.

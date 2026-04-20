@@ -145,3 +145,10 @@
 - **Why**: The workflow needed a strict product boundary so the current story could deliver reusable building blocks without prematurely opening admin CRUD or storage scope.
 - **Learned**: The vision cleanly separates custom document blocks from the later template-management story, which made the acceptance criteria directly testable.
 - **Open**: `US-022` now needs to attach these blocks to the admin template editor and persistence model.
+
+## 2026-04-20 — US-022 analyze
+
+- **Did**: Confirmed the admin template story needs seeded CV ATS and LM ATS templates, a create/edit admin editor, and JSON persistence in the API.
+- **Why**: The workflow needed a product-level scope check before implementation so the acceptance criteria stayed testable.
+- **Learned**: The sprint can land as a Puck-compatible admin studio on top of the shared document block registry without expanding the vision.
+- **Open**: `US-023` should handle default selection, duplication policy, and categorization as the next product slice.

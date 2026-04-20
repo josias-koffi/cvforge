@@ -131,3 +131,10 @@
 - **Why**: The workflow still required an explicit design decision even though this story delivers reusable blocks more than a new screen.
 - **Learned**: The "Papier & Crayon" direction is best preserved here with restrained document styling so later templates can still differentiate visually.
 - **Open**: `US-024` should decide how preview data and live rendering layer on top of this shared block registry.
+
+## 2026-04-20 — US-022 design
+
+- **Did**: Designed a two-pane admin templates studio with a library sidebar, create/edit forms, and a live preview rendered from the shared block registry.
+- **Why**: The sprint needed an admin UX that could create and modify templates without introducing a new editor framework.
+- **Learned**: A Puck-compatible JSON editor is sufficient for the MVP as long as the preview and storage contract stay explicit.
+- **Open**: Full drag-and-drop layout authoring can wait until the product commits to a dedicated Puck integration.

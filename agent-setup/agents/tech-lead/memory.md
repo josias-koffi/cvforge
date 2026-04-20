@@ -152,3 +152,10 @@
 - **Why**: Architecture governance and sprint bookkeeping require a final sign-off once the reusable editor foundation exists in code and every acceptance criterion is explicitly verified.
 - **Learned**: The right architecture is to keep block contracts in `packages/types` and block implementations plus registry metadata in `packages/ui`, which preserves a clean seam for future Puck integration.
 - **Open**: `US-022` should consume this registry directly rather than introducing a second block-definition layer in the admin editor.
+
+## 2026-04-20 — US-022 finalization
+
+- **Did**: Closed out the workflow after confirming the implementation passed lint, tests, and build, then recorded the sprint completion artifacts.
+- **Why**: The workflow needed a clear final verdict and next action for the sprint record.
+- **Learned**: The templates slice is ready for the next product step: defaulting, duplication policy, and categorization.
+- **Open**: None blocking for the current task.

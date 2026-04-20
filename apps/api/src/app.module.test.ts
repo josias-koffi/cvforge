@@ -6,9 +6,10 @@ import { AuthModule } from "./auth/auth.module";
 import { SmtpModule } from "./smtp/smtp.module";
 import { OpenRouterModule } from "./ai/openrouter.module";
 import { ApplicationsModule } from "./applications/applications.module";
+import { TemplatesModule } from "./templates/templates.module";
 
 describe("AppModule", () => {
-  it("should register AuthModule, SmtpModule, OpenRouterModule and ApplicationsModule", () => {
+  it("should register AuthModule, SmtpModule, OpenRouterModule, ApplicationsModule and TemplatesModule", () => {
     const imports = Reflect.getMetadata("imports", AppModule) as
       | unknown[]
       | undefined;
@@ -18,6 +19,7 @@ describe("AppModule", () => {
       SmtpModule,
       OpenRouterModule,
       ApplicationsModule,
+      TemplatesModule,
     ]);
   });
 

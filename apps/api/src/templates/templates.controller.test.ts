@@ -1,0 +1,54 @@
+import { ForbiddenException, UnauthorizedException } from "@nestjs/common";
+import { describe, expect, it, vi } from "vitest";
+import { TemplatesController } from "./templates.controller";
+
+describe("TemplatesController", () => {
+  it("lists templates for an authenticated admin", () => {
+    const templatesService = {
+      listTemplates: vi.fn().mockReturnValue([{ id: "template-cv" }]),
+    };
+    const authService = {
+      readSessionFromCookieHeader: vi.fn().mockReturnValue({
+        email: "admin@example.com",
+        role: "admin",
+      }),
+    };
+    const controller = new TemplatesController(
+      templatesService as never,
+      authService as never,
+    );
+
+    expect(controller.listTemplates({ headers: {} })).toEqual({
+      templates: [{ id: "template-cv" }],
+    });
+  });
+
+  it("rejects unauthenticated access", () => {
+    const controller = new TemplatesController(
+      { listTemplates: vi.fn() } as never,
+      {
+        readSessionFromCookieHeader: vi.fn().mockReturnValue(null),
+      } as never,
+    );
+
+    expect(() => controller.listTemplates({ headers: {} })).toThrow(
+      UnauthorizedException,
+    );
+  });
+
+  it("rejects non-admin sessions", () => {
+    const controller = new TemplatesController(
+      { listTemplates: vi.fn() } as never,
+      {
+        readSessionFromCookieHeader: vi.fn().mockReturnValue({
+          email: "user@example.com",
+          role: "user",
+        }),
+      } as never,
+    );
+
+    expect(() => controller.listTemplates({ headers: {} })).toThrow(
+      ForbiddenException,
+    );
+  });
+});

@@ -18,6 +18,8 @@ import {
   HEALTH_STATUS_OK,
   type LetterDocumentContent,
   type Locale,
+  type TemplateRecord,
+  type TemplateUpsertInput,
   type ServiceHealth,
   supportedLocales,
 } from "./index";
@@ -206,5 +208,45 @@ describe("types package", () => {
     expect(TEMPLATE_KIND_LETTER).toBe("letter");
     expect(DIVIDER_STYLE_SOLID).toBe("solid");
     expect(SECTION_TITLE_STYLE_ACCENT).toBe("accent");
+  });
+
+  it("should shape the admin template record contract", () => {
+    const template: TemplateRecord = {
+      active: true,
+      categories: ["ATS", "Minimaliste"],
+      createdAt: "2026-04-20T12:00:00.000Z",
+      id: "template_123",
+      isDefault: true,
+      kind: TEMPLATE_KIND_CV,
+      layout: {
+        blocks: [
+          {
+            id: "cv-header",
+            name: "CVHeader",
+            props: {
+              firstName: "Jane",
+              lastName: "Doe",
+            },
+          },
+        ],
+      },
+      locale: "fr",
+      name: "CV ATS par defaut",
+      updatedAt: "2026-04-20T12:00:00.000Z",
+    };
+    const templateInput: TemplateUpsertInput = {
+      categories: ["Moderne"],
+      isDefault: false,
+      kind: TEMPLATE_KIND_LETTER,
+      layout: {
+        blocks: [],
+      },
+      locale: "en",
+      name: "LM moderne",
+    };
+
+    expect(template.kind).toBe("cv");
+    expect(template.layout.blocks[0]?.name).toBe("CVHeader");
+    expect(templateInput.kind).toBe("letter");
   });
 });

@@ -21,13 +21,13 @@ Livrer la fondation documentaire du produit avec les blocs Puck et la gestion ad
     - [x] Les props attendues sont implémentées
     - [x] Les blocs sont réutilisables dans les templates admin et user
   - Source: vision `§6.1` à `§6.4`, `§16`
-- [ ] **[US-022]** Créer la gestion admin des templates CV ATS et LM ATS
+- [x] **[US-022]** Créer la gestion admin des templates CV ATS et LM ATS
   - Agent: `developer`
   - Workflow: `analyze-design-dev-review`
   - Acceptance criteria:
-    - [ ] Au moins un template CV ATS et un template LM ATS sont gérables
-    - [ ] L'admin peut créer et modifier un template dans Puck
-    - [ ] Les templates sont stockés selon l'architecture décrite
+    - [x] Au moins un template CV ATS et un template LM ATS sont gérables
+    - [x] L'admin peut créer et modifier un template dans Puck
+    - [x] Les templates sont stockés selon l'architecture décrite
   - Source: vision `§6.5` à `§6.7`, `§13.3`, `§16`
 - [ ] **[US-023]** Gérer activation, duplication, catégorisation et défaut des templates
   - Agent: `product-owner`
