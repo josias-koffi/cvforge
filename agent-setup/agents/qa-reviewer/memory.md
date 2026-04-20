@@ -124,3 +124,10 @@
 - **Why**: The story could only pass once each acceptance criterion was evidenced in code and tests, and once the remaining build failure was clearly separated as an environment issue rather than a feature defect.
 - **Learned**: The status model is reviewable when transitions are enforced centrally in the API and surfaced in the UI through allowed-next-action controls rather than free-form editing.
 - **Open**: The local `apps/app/.next` ownership problem still needs cleanup before app build can be restored as a reliable gate.
+
+## 2026-04-20 — US-021
+
+- **Did**: Verified the shared CV/LM block library, the normalized document-schema contract, the admin/user reuse evidence from the registry tests, and successful `pnpm lint`, `pnpm test`, and `pnpm build`.
+- **Why**: The task could only pass once each acceptance criterion and the new-code coverage threshold had direct evidence in code and automated validation.
+- **Learned**: The registry-based approach makes reuse reviewable because the same metadata can be asserted for both an admin palette and a user-facing render path.
+- **Open**: `US-022` should preserve this single source of truth when the real Puck admin editor is introduced.

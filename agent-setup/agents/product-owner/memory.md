@@ -138,3 +138,10 @@
 - **Why**: The task could only be implemented safely once the status model and acceptance evidence were constrained to the vision instead of growing into the full candidature sheet or dashboard roadmap.
 - **Learned**: The vision is precise enough to implement the MVP status lifecycle now without inventing backward transitions or extra states.
 - **Open**: A future dashboard story can extend visualizations and ATS metrics on top of the new status-summary contract rather than re-deciding the status model.
+
+## 2026-04-20 — US-021
+
+- **Did**: Confirmed that `US-021` is limited to the shared CV/LM block library and normalized content contract, while keeping full Puck editor integration in `US-022`.
+- **Why**: The workflow needed a strict product boundary so the current story could deliver reusable building blocks without prematurely opening admin CRUD or storage scope.
+- **Learned**: The vision cleanly separates custom document blocks from the later template-management story, which made the acceptance criteria directly testable.
+- **Open**: `US-022` now needs to attach these blocks to the admin template editor and persistence model.

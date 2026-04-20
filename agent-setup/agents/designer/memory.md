@@ -124,3 +124,10 @@
 - **Why**: The workflow needed a concrete interaction pattern that exposes the candidature pipeline clearly without pretending the full fiche candidature or chart suite already exists.
 - **Learned**: Rendering only the allowed next transitions keeps the MVP comprehensible and prevents the UI from drifting away from the enforced business rules.
 - **Open**: A later dashboard story can replace the simple KPI cards with richer charts without changing the underlying status contract.
+
+## 2026-04-20 — US-021
+
+- **Did**: Produced a component-level design brief for the new CV/LM document blocks, centered on print-safe semantic structure and a shared registry for future admin and user surfaces.
+- **Why**: The workflow still required an explicit design decision even though this story delivers reusable blocks more than a new screen.
+- **Learned**: The "Papier & Crayon" direction is best preserved here with restrained document styling so later templates can still differentiate visually.
+- **Open**: `US-024` should decide how preview data and live rendering layer on top of this shared block registry.

@@ -13,13 +13,13 @@ Livrer la fondation documentaire du produit avec les blocs Puck et la gestion ad
 
 ## ✅ Tasks (3–8 max)
 
-- [ ] **[US-021]** Développer les blocs Puck custom CV et LM
+- [x] **[US-021]** Développer les blocs Puck custom CV et LM
   - Agent: `developer`
   - Workflow: `analyze-design-dev-review`
   - Acceptance criteria:
-    - [ ] Les blocs CV et LM décrits par la vision existent
-    - [ ] Les props attendues sont implémentées
-    - [ ] Les blocs sont réutilisables dans les templates admin et user
+    - [x] Les blocs CV et LM décrits par la vision existent
+    - [x] Les props attendues sont implémentées
+    - [x] Les blocs sont réutilisables dans les templates admin et user
   - Source: vision `§6.1` à `§6.4`, `§16`
 - [ ] **[US-022]** Créer la gestion admin des templates CV ATS et LM ATS
   - Agent: `developer`

@@ -145,3 +145,10 @@
 - **Why**: Architecture governance and sprint bookkeeping require a final sign-off once the MVP candidature pipeline exists in executable code and every acceptance criterion is verified.
 - **Learned**: The correct architecture is to keep status semantics in the shared types package and treat the API as the only authority for transitions; the dashboard can then consume summary data without duplicating business rules.
 - **Open**: The pre-existing `apps/app/.next` permission issue still needs cleanup before local app build can return as a clean release gate.
+
+## 2026-04-20 — US-021 finalization
+
+- **Did**: Closed `US-021` with a passing verdict after confirming the shared document schema, the full CV/LM block set, the single reusable registry for future admin and user flows, and successful `pnpm lint`, `pnpm test`, and `pnpm build`.
+- **Why**: Architecture governance and sprint bookkeeping require a final sign-off once the reusable editor foundation exists in code and every acceptance criterion is explicitly verified.
+- **Learned**: The right architecture is to keep block contracts in `packages/types` and block implementations plus registry metadata in `packages/ui`, which preserves a clean seam for future Puck integration.
+- **Open**: `US-022` should consume this registry directly rather than introducing a second block-definition layer in the admin editor.

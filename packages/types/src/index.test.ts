@@ -6,11 +6,17 @@ import {
   APPLICATION_STATUS_REJECTED,
   APPLICATION_STATUS_SENT,
   APPLICATION_SOURCE_URL,
+  DIVIDER_STYLE_SOLID,
+  SECTION_TITLE_STYLE_ACCENT,
+  TEMPLATE_KIND_CV,
+  TEMPLATE_KIND_LETTER,
   applicationStatusTransitions,
   applicationStatuses,
+  type CVDocumentContent,
   type ApplicationsKpiSummary,
   type DraftApplication,
   HEALTH_STATUS_OK,
+  type LetterDocumentContent,
   type Locale,
   type ServiceHealth,
   supportedLocales,
@@ -107,5 +113,98 @@ describe("types package", () => {
 
     expect(summary.responseRate).toBe(67);
     expect(summary.statusCounts.sent).toBe(1);
+  });
+
+  it("should shape the normalized CV and letter template content contracts", () => {
+    const cvContent: CVDocumentContent = {
+      candidate: {
+        city: "Paris",
+        email: "jane@example.com",
+        firstName: "Jane",
+        github: "github.com/jane",
+        lastName: "Doe",
+        linkedin: "linkedin.com/in/jane",
+        phone: "+33 6 00 00 00 00",
+        summary: "Product engineer with eight years of SaaS experience.",
+        title: "Senior Product Engineer",
+      },
+      certifications: [
+        {
+          issuer: "AWS",
+          title: "Solutions Architect Associate",
+          year: "2025",
+        },
+      ],
+      education: [
+        {
+          degree: "Master Informatique",
+          institution: "Universite de Lille",
+          mention: "Bien",
+          year: "2018",
+        },
+      ],
+      experiences: [
+        {
+          achievements: ["Reduced page load by 28%"],
+          company: "CVforge",
+          description: "Led the candidate experience roadmap.",
+          endDate: "Present",
+          position: "Staff Engineer",
+          startDate: "2023",
+        },
+      ],
+      languages: [
+        {
+          language: "English",
+          level: "C1",
+        },
+      ],
+      projects: [
+        {
+          description: "Built a reusable document editor foundation.",
+          title: "Template Studio",
+          url: "https://example.com/template-studio",
+        },
+      ],
+      skills: {
+        hard: ["TypeScript", "React"],
+        soft: ["Facilitation", "Mentoring"],
+      },
+    };
+
+    const letterContent: LetterDocumentContent = {
+      body: {
+        paragraph1: "I am applying for your senior frontend role.",
+        paragraph2: "My experience aligns with the product challenges described.",
+        paragraph3: "I would welcome the opportunity to discuss this further.",
+      },
+      candidate: {
+        city: "Paris",
+        email: "jane@example.com",
+        firstName: "Jane",
+        github: "github.com/jane",
+        lastName: "Doe",
+        linkedin: "linkedin.com/in/jane",
+        phone: "+33 6 00 00 00 00",
+        title: "Senior Product Engineer",
+      },
+      company: {
+        city: "Lyon",
+        name: "Example Corp",
+      },
+      date: "2026-04-20",
+      object: "Candidature au poste de Senior Frontend Engineer",
+      signature: {
+        firstName: "Jane",
+        lastName: "Doe",
+      },
+    };
+
+    expect(cvContent.skills.hard).toContain("TypeScript");
+    expect(letterContent.company.name).toBe("Example Corp");
+    expect(TEMPLATE_KIND_CV).toBe("cv");
+    expect(TEMPLATE_KIND_LETTER).toBe("letter");
+    expect(DIVIDER_STYLE_SOLID).toBe("solid");
+    expect(SECTION_TITLE_STYLE_ACCENT).toBe("accent");
   });
 });

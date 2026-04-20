@@ -152,3 +152,10 @@
 - **Why**: `US-020` required an executable candidature pipeline that future dashboard work can trust, not a draft-only placeholder or documentation note.
 - **Learned**: Keeping the status model and transition map in `@cvforge/types` prevents the API and app from diverging as the candidature flow grows.
 - **Open**: `pnpm --filter @cvforge/app build` is still blocked by the pre-existing `.next` ownership issue and should be fixed before relying on local Next build as a hard gate again.
+
+## 2026-04-20 — US-021
+
+- **Did**: Added the normalized CV/LM content contract in `packages/types`, implemented the reusable document block library and shared registry in `packages/ui`, added regression tests, and verified the repository with `pnpm lint`, `pnpm test`, and `pnpm build`.
+- **Why**: `US-021` required executable Puck-ready building blocks that both admin and user flows can consume later without duplicating schema or rendering logic.
+- **Learned**: The cleanest MVP shape is to deliver a shared block registry now and defer the actual editor integration to `US-022`, which keeps the current story dependency-free and strongly typed.
+- **Open**: The next template story should wire this registry into admin authoring and JSON persistence instead of re-declaring block metadata locally.
