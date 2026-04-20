@@ -1,7 +1,8 @@
 import React from "react";
 import { cookies } from "next/headers";
-import { AppShell, Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, CV_PREVIEW_FIXTURE, Input, Label, LETTER_PREVIEW_FIXTURE, PaperStyles, Textarea, documentBlockRegistry } from "@cvforge/ui";
+import { AppShell, Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, CV_PREVIEW_FIXTURE, Input, Label, LETTER_PREVIEW_FIXTURE, PaperStyles, documentBlockRegistry } from "@cvforge/ui";
 import { TEMPLATE_KIND_CV, TEMPLATE_KIND_LETTER, type CVDocumentContent, type LetterDocumentContent, type TemplateRecord } from "@cvforge/types";
+import { PuckEditorLoader } from "./puck-editor-loader";
 import { DeleteForm } from "./delete-form";
 import { getAppNavigation } from "../../content";
 import { getServerApiUrl } from "../../auth-config";
@@ -643,15 +644,11 @@ export default async function AdminTemplatesPage({
                       Template par defaut
                     </label>
                   </div>
-                  <div style={{ display: "grid", gap: "0.35rem" }}>
-                    <Label htmlFor="create-layout">Layout JSON</Label>
-                    <Textarea
-                      id="create-layout"
-                      name="layout"
-                      defaultValue={JSON.stringify({ blocks: [] }, null, 2)}
-                      rows={8}
-                    />
-                  </div>
+                  <input
+                    name="layout"
+                    type="hidden"
+                    value={JSON.stringify({ content: [], root: { props: {} } })}
+                  />
                   <Button type="submit">Creer le template</Button>
                 </form>
               </CardContent>
@@ -789,20 +786,27 @@ export default async function AdminTemplatesPage({
                     </label>
                   </div>
 
-                  <div style={{ display: "grid", gap: "0.35rem" }}>
-                    <Label htmlFor="layout">Layout JSON</Label>
-                    <Textarea
-                      id="layout"
-                      name="layout"
-                      defaultValue={serializeLayout(selectedTemplate.layout)}
-                      rows={18}
-                    />
-                  </div>
+                  <input
+                    name="layout"
+                    type="hidden"
+                    value={serializeLayout(selectedTemplate.layout)}
+                  />
 
                   <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
-                    <Button type="submit">Enregistrer le template</Button>
+                    <Button type="submit">Enregistrer les métadonnées</Button>
                   </div>
                 </form>
+
+                <div style={{ marginTop: "1.5rem" }}>
+                  <p style={{ color: "#6B6860", fontSize: "0.875rem", margin: "0 0 0.75rem" }}>
+                    Assemblez les blocs ci-dessous puis cliquez sur &ldquo;Publier&rdquo; pour enregistrer le layout.
+                  </p>
+                  <PuckEditorLoader
+                    templateId={selectedTemplate.id}
+                    kind={selectedTemplate.kind}
+                    initialData={selectedTemplate.layout}
+                  />
+                </div>
               </CardContent>
             </Card>
 

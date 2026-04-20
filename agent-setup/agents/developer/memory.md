@@ -216,6 +216,13 @@
 - **Learned**: The right fix was to extend the shared exporter instead of duplicating PDF logic in the app, which preserves one privacy boundary for both document types.
 - **Open**: The full Next build is still affected by the pre-existing `.next` ownership issue; this fix was verified with targeted tests only.
 
+## 2026-04-20 — US-056
+
+- **Did**: Created `PuckTemplateEditor` client component (loaded via `next/dynamic` with `ssr: false`), created `/admin/templates/publish-layout` JSON route forwarding to `PUT /templates/:id`, replaced the layout JSON textarea with the live Puck drag-and-drop canvas in the admin templates page, fixed the create form's empty layout default to valid PuckData format, added `@puckeditor/core` as direct dependency of `apps/app`, added `transpilePackages` to `next.config.ts`.
+- **Why**: US-056 required replacing the manual JSON textarea with a real Puck canvas so admins can assemble, reorder, and delete blocks via drag-and-drop.
+- **Learned**: `@puckeditor/core` must be added as a direct dependency of the consuming app (not just the UI library) for module resolution in pnpm workspaces without hoisting. CSS from `@puckeditor/core` requires `transpilePackages` in `next.config.ts`. Splitting layout save from metadata save avoids synchronising Puck internal state with the surrounding HTML form — each concern has its own save path.
+- **Open**: US-057 should replace the user-side CV editor with the constrained Puck mode (`permissions: { delete: false, drag: false, duplicate: false, insert: false }`).
+
 ## 2026-04-20 — US-055 implement
 
 - **Did**: Installed `@puckeditor/core@0.21.2`, created `toPuckConfig()` adapter, migrated `TemplateRecord.layout` type to `PuckData`, updated all seed/normalize/validate code in templates store and service, wrote migration script, and updated all affected tests to pass.

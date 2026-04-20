@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import nextConfig from "../next.config";
 
 describe("app next config", () => {
-  it("should export an empty config object for the initial scaffold", () => {
-    expect(nextConfig).toEqual({});
+  it("includes @puckeditor/core in transpilePackages for SSR-safe Puck integration", () => {
+    expect(nextConfig).toMatchObject({
+      transpilePackages: expect.arrayContaining(["@puckeditor/core"]),
+    });
   });
 });

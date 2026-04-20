@@ -93,6 +93,9 @@ importers:
       '@cvforge/ui':
         specifier: workspace:*
         version: link:../../packages/ui
+      '@puckeditor/core':
+        specifier: ^0.21.2
+        version: 0.21.2(@floating-ui/dom@1.7.6)(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(use-sync-external-store@1.6.0(react@19.2.5))
       next:
         specifier: ^15.1.0
         version: 15.5.15(react-dom@19.2.5(react@19.2.5))(react@19.2.5)

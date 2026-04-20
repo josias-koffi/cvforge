@@ -24,15 +24,15 @@ Intégrer Puck Editor à tous les endroits où il est attendu par la vision : in
     - [x] Les tests existants liés au registre passent après migration
   - Source: ADR-003, vision `§6.1`, `§6.3`
 
-- [ ] **[US-056]** Intégrer Puck Editor en mode drag-and-drop dans l'interface admin de templates
+- [x] **[US-056]** Intégrer Puck Editor en mode drag-and-drop dans l'interface admin de templates
   - Agent: `developer`
   - Workflow: `analyze-design-dev-review`
   - Acceptance criteria:
-    - [ ] Le textarea JSON est remplacé par un vrai canvas Puck avec la palette de blocs filtrée par `kind`
-    - [ ] L'admin peut assembler, réordonner et supprimer des blocs par drag-and-drop
-    - [ ] `onPublish` appelle `PUT /templates/:id` et met à jour le layout en base
-    - [ ] Le composant `<PuckTemplateEditor>` est chargé via `next/dynamic` avec `ssr: false`
-    - [ ] La création d'un nouveau template ouvre un canvas vide dans Puck
+    - [x] Le textarea JSON est remplacé par un vrai canvas Puck avec la palette de blocs filtrée par `kind`
+    - [x] L'admin peut assembler, réordonner et supprimer des blocs par drag-and-drop
+    - [x] `onPublish` appelle `PUT /templates/:id` et met à jour le layout en base
+    - [x] Le composant `<PuckTemplateEditor>` est chargé via `next/dynamic` avec `ssr: false`
+    - [x] La création d'un nouveau template ouvre un canvas vide dans Puck
   - Source: ADR-003, vision `§6.1`, `§6.7`, `§13.3`
 
 - [ ] **[US-057]** Remplacer l'éditeur de CV utilisateur par Puck Editor en mode contenu uniquement
