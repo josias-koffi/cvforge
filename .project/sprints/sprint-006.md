@@ -37,22 +37,22 @@ Livrer la fondation documentaire du produit avec les blocs Puck et la gestion ad
     - [x] Les tags/catégories sont gérés
     - [x] Un template par défaut est définissable par type
   - Source: vision `§6.6`, `§13.3`, `§16`
-- [ ] **[US-024]** Prévisualiser les templates avec données fictives injectées
+- [x] **[US-024]** Prévisualiser les templates avec données fictives injectées
   - Agent: `designer`
   - Workflow: `analyze-design-dev-review`
   - Acceptance criteria:
-    - [ ] Une prévisualisation live existe
-    - [ ] Les données fictives couvrent les cas principaux
-    - [ ] Le rendu respecte le design "Papier & Crayon"
+    - [x] Une prévisualisation live existe
+    - [x] Les données fictives couvrent les cas principaux
+    - [x] Le rendu respecte le design "Papier & Crayon"
   - Source: vision `§13.3`, `§16`
 
 ## 📊 Sprint DoD
 
-- [ ] All tasks ticked
-- [ ] All acceptance criteria verified
-- [ ] `run-tests` green
-- [ ] Coverage ≥ spec threshold
-- [ ] QA review ✅
+- [x] All tasks ticked
+- [x] All acceptance criteria verified
+- [x] `run-tests` green
+- [x] Coverage ≥ spec threshold
+- [x] QA review ✅
 
 ## 🚧 Risks
 

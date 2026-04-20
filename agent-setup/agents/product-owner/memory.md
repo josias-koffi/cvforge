@@ -159,3 +159,10 @@
 - **Why**: The workflow needed a product-level scope check before implementation so the acceptance criteria stayed testable.
 - **Learned**: The sprint can land as a Puck-compatible admin studio on top of the shared document block registry without expanding the vision.
 - **Open**: `US-023` should handle default selection, duplication policy, and categorization as the next product slice.
+
+## 2026-04-20 — US-024 analyze
+
+- **Did**: Confirmed US-024 scope as a pure preview enhancement: fixture injection into the existing TemplatePreview, no real data or generation pipeline scope.
+- **Why**: The workflow needed a tight boundary so the story did not bleed into the AI generation or user-edit flows.
+- **Learned**: The vision explicitly separates admin preview (fictitious data) from user preview (real generated content), which made the acceptance criteria directly testable.
+- **Open**: Sprint 006 complete. Sprint 007 should tackle CV generation pipeline.
