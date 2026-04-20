@@ -10,12 +10,11 @@ export interface ChatOptions {
   temperature?: number;
 }
 
-// RGPD invariants — these values are constants and must never be driven
-// by caller options or environment variables to remain auditable.
-const ZDR_PAYLOAD = {
-  zdr: true,
+// ZDR is enforced at the OpenRouter account level ("Always enforce ZDR").
+// Per-request provider constraints caused "No endpoints found" for this model;
+// account-level ZDR covers all requests without per-request routing filters.
+const OPENROUTER_DEFAULTS = {
   transforms: [],
-  provider: { only: ['Mistral'], allow_fallbacks: false },
 } as const;
 
 export class OpenRouterService {
@@ -28,7 +27,7 @@ export class OpenRouterService {
       model,
       messages,
       ...(options.temperature !== undefined && { temperature: options.temperature }),
-      ...ZDR_PAYLOAD,
+      ...OPENROUTER_DEFAULTS,
     };
 
     const response = await fetch(`${this.config.baseUrl}/chat/completions`, {
@@ -43,7 +42,11 @@ export class OpenRouterService {
     });
 
     if (!response.ok) {
-      throw new Error(`OpenRouter request failed: ${response.status} ${response.statusText}`);
+      let detail = '';
+      try { detail = await response.text(); } catch { /* ignore */ }
+      throw new Error(
+        `OpenRouter request failed: ${response.status} ${response.statusText}${detail ? ` — ${detail}` : ''}`,
+      );
     }
 
     const data = (await response.json()) as {

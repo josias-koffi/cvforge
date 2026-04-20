@@ -33,32 +33,13 @@ describe('OpenRouterService', () => {
     vi.restoreAllMocks();
   });
 
-  it('sends zdr: true in every request body', async () => {
-    const svc = new OpenRouterService(BASE_CONFIG);
-    await svc.chat(MESSAGES);
-
-    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
-    const body = JSON.parse(init.body as string);
-    expect(body.zdr).toBe(true);
-  });
-
-  it('sends transforms: [] to disable prompt logging', async () => {
+  it('sends transforms: [] to disable prompt logging in every request', async () => {
     const svc = new OpenRouterService(BASE_CONFIG);
     await svc.chat(MESSAGES);
 
     const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
     const body = JSON.parse(init.body as string);
     expect(body.transforms).toEqual([]);
-  });
-
-  it('limits provider to Mistral only', async () => {
-    const svc = new OpenRouterService(BASE_CONFIG);
-    await svc.chat(MESSAGES);
-
-    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
-    const body = JSON.parse(init.body as string);
-    expect(body.provider.only).toEqual(['Mistral']);
-    expect(body.provider.allow_fallbacks).toBe(false);
   });
 
   it('uses the default model from config', async () => {
@@ -77,10 +58,7 @@ describe('OpenRouterService', () => {
     const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
     const body = JSON.parse(init.body as string);
     expect(body.model).toBe('mistralai/mistral-large');
-    // RGPD invariants must still be present even with a different model
-    expect(body.zdr).toBe(true);
     expect(body.transforms).toEqual([]);
-    expect(body.provider.only).toEqual(['Mistral']);
   });
 
   it('passes temperature when provided', async () => {
@@ -124,12 +102,12 @@ describe('OpenRouterService', () => {
     expect(result).toBe('Generated text');
   });
 
-  it('throws on non-OK HTTP response', async () => {
+  it('throws on non-OK HTTP response with body detail', async () => {
     fetchMock.mockImplementation(() =>
-      Promise.resolve(new Response('', { status: 429, statusText: 'Too Many Requests' })),
+      Promise.resolve(new Response('{"error":"model not found"}', { status: 404, statusText: 'Not Found' })),
     );
     const svc = new OpenRouterService(BASE_CONFIG);
-    await expect(svc.chat(MESSAGES)).rejects.toThrow('OpenRouter request failed: 429');
+    await expect(svc.chat(MESSAGES)).rejects.toThrow('OpenRouter request failed: 404');
   });
 
   it('throws when response has no choices content', async () => {

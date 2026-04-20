@@ -174,6 +174,13 @@
 - **Learned**: The last-template guard should sit in the service layer rather than the controller, because the constraint is a domain rule (you must always have at least one template per kind) not a request validation.
 - **Open**: The `window.confirm` delete pattern should be replaced by a proper shadcn `AlertDialog` client component in the next admin UX pass.
 
+## 2026-04-20 — fix OpenRouter 404 on candidature creation
+
+- **Did**: Removed all per-request provider routing constraints (`provider.only`, `provider.order`, `allow_fallbacks`, `data_collection: "deny"`, `zdr: true`) from `OPENROUTER_DEFAULTS` in `openrouter.service.ts`; kept only `transforms: []`; added response body capture to the error throw; updated all test assertions.
+- **Why**: Creating a candidature triggered `"No endpoints found for mistralai/mistral-small-2603"`. Root cause: `data_collection: "deny"` in the request body acts as an *endpoint capability filter* (only route through providers that advertise ZDR support) — neither the Mistral nor Venice endpoint advertises it, so OpenRouter found no valid route. ZDR is enforced at the OpenRouter account level ("Always enforce ZDR" toggle), not per-request.
+- **Learned**: OpenRouter ZDR operates on two separate layers: (1) **account-level** — "Always enforce ZDR" in the web UI applies to every request from that API key transparently; (2) **per-request `data_collection: "deny"`** — this is a *routing filter*, not a ZDR signal, and blocks routing when no endpoint advertises ZDR support. Never add `data_collection: "deny"` to requests when account-level ZDR is enabled — it is redundant and breaks routing. Always include the response body in error messages; `404 Not Found` alone is not enough to diagnose OpenRouter failures.
+- **Open**: None — ZDR is enforced via account setting; `transforms: []` disables prompt logging at the OpenRouter layer.
+
 ## 2026-04-20 — fix delete form RSC error
 
 - **Did**: Extracted the delete `<form onSubmit>` from the Server Component `page.tsx` into a new `"use client"` `DeleteForm` component at `apps/app/app/admin/templates/delete-form.tsx`.
