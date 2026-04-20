@@ -124,3 +124,10 @@
 - **Why**: The workflow needed a tight MVP boundary that satisfies vision `§7.3` without prematurely opening manual fallback, PDF import, ATS generation, or status-pipeline scope.
 - **Learned**: The wording "creer une candidature" needs a persisted draft record rather than a transient preview to remain product-coherent.
 - **Open**: `US-019` should add the manual text fallback and decide whether PDF fallback is worth the MVP cost.
+
+## 2026-04-20 — US-019
+
+- **Did**: Confirmed that `US-019` adds the manual text fallback on the existing candidature flow and formally deferred PDF fallback for MVP with documented rationale.
+- **Why**: The workflow needed a product decision that preserved the vision path without forcing a risky file-ingestion scope into the sprint.
+- **Learned**: Vision `§16` makes URL plus text fallback sufficient for MVP candidature creation, while PDF import remains a later enhancement.
+- **Open**: `US-020` should now focus only on the status pipeline, not on ingestion completeness.

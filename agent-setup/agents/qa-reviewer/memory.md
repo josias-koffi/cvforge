@@ -110,3 +110,10 @@
 - **Why**: The story could only pass once every acceptance criterion and the blocking new-code coverage rule had direct evidence.
 - **Learned**: The candidature-ingestion slice clears the coverage gate once the supporting config/store/module paths are tested, not just the main service path.
 - **Open**: `pnpm --filter @cvforge/app build` is still blocked by the pre-existing `.next` ownership problem and remains an environment advisory.
+
+## 2026-04-20 — US-019
+
+- **Did**: Verified the new pasted-text fallback path, confirmed the explicit PDF MVP defer decision, and rechecked lint, repo tests, API build, plus touched-slice coverage evidence.
+- **Why**: The task could only pass once both the executable fallback and the PDF scope decision had concrete evidence instead of remaining as a sprint note.
+- **Learned**: The fallback decision is reviewable when the UI, API, and workflow summary all express the same product stance rather than splitting it between code and docs.
+- **Open**: `pnpm --filter @cvforge/app build` remains blocked by the pre-existing `.next` ownership issue and should not be misread as a regression from this story.

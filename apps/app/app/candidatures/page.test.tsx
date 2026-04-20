@@ -39,6 +39,8 @@ describe("ApplicationsPage", () => {
             id: "app_123",
             offerTextPreview: "Lead the backend platform.",
             offerUrl: "https://example.com/jobs/123",
+            sourceLabel: "https://example.com/jobs/123",
+            sourceType: "url",
             status: "draft",
             updatedAt: "2026-04-20T12:00:00.000Z",
             userEmail: "user@example.com",
@@ -66,6 +68,8 @@ describe("ApplicationsPage", () => {
 
     expect(markup).toContain("Candidatures");
     expect(markup).toContain("Importer une offre");
+    expect(markup).toContain("Fallback texte");
+    expect(markup).toContain("Import PDF MVP");
     expect(markup).toContain("Backend Engineer");
     expect(markup).toContain("app_123");
   });
@@ -88,5 +92,24 @@ describe("ApplicationsPage", () => {
 
     expect(markup).toContain("L&#x27;URL fournie est invalide");
     expect(markup).toContain("bad-url");
+  });
+
+  it("renders the pasted-text validation error state", async () => {
+    requireSessionMock.mockResolvedValue({
+      email: "user@example.com",
+      expiresAt: "2026-04-27T07:45:24.000Z",
+      role: "user",
+    });
+    fetchMock.mockResolvedValue({
+      json: async () => ({ applications: [] }),
+      ok: true,
+    });
+
+    const Page = await ApplicationsPage({
+      searchParams: { error: "invalid_text" },
+    });
+    const markup = renderToStaticMarkup(Page);
+
+    expect(markup).toContain("Collez le texte integral de l&#x27;offre");
   });
 });

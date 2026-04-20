@@ -10,6 +10,7 @@ import {
   CardTitle,
   Input,
   Label,
+  Textarea,
 } from "@cvforge/ui";
 import type { DraftApplication } from "@cvforge/types";
 import { getServerApiUrl } from "../auth-config";
@@ -50,10 +51,12 @@ function resolveMessage(errorCode: string | null) {
   switch (errorCode) {
     case "invalid_url":
       return "L'URL fournie est invalide. Collez une URL http ou https complete.";
+    case "invalid_text":
+      return "Collez le texte integral de l'offre pour activer le fallback manuel.";
     case "unreachable":
       return "Le site de l'offre n'a pas pu etre recupere depuis le serveur.";
     case "unprocessable":
-      return "Le scraping a reussi, mais le contenu recupere est insuffisant pour creer une candidature.";
+      return "Le contenu fourni est insuffisant pour creer une candidature. Essayez avec une URL plus complete ou collez davantage de texte.";
     case "request_failed":
       return "L'import de l'offre a echoue. Reessayez dans un instant.";
     default:
@@ -117,6 +120,7 @@ export default async function ApplicationsPage({
               method="POST"
               style={{ display: "grid", gap: "0.875rem" }}
             >
+              <input name="sourceType" type="hidden" value="url" />
               <div style={{ display: "grid", gap: "0.4rem" }}>
                 <Label htmlFor="offerUrl">URL de l&apos;offre</Label>
                 <Input
@@ -130,6 +134,48 @@ export default async function ApplicationsPage({
               </div>
               <Button type="submit">Creer un brouillon</Button>
             </form>
+            <div
+              style={{
+                borderTop: "1px solid #D8D2C8",
+                display: "grid",
+                gap: "0.75rem",
+                paddingTop: "1rem",
+              }}
+            >
+              <div style={{ display: "grid", gap: "0.35rem" }}>
+                <strong style={{ color: "#1A1A18" }}>Fallback texte</strong>
+                <p style={{ color: "#6B6860", lineHeight: 1.6, margin: 0 }}>
+                  Si le site bloque le scraping ou si vous n&apos;avez qu&apos;un copier-coller
+                  de l&apos;offre, collez son texte complet ici pour creer le meme
+                  brouillon de candidature.
+                </p>
+              </div>
+              <form
+                action="/candidatures/import"
+                method="POST"
+                style={{ display: "grid", gap: "0.875rem" }}
+              >
+                <input name="sourceType" type="hidden" value="text" />
+                <div style={{ display: "grid", gap: "0.4rem" }}>
+                  <Label htmlFor="offerText">Texte de l&apos;offre</Label>
+                  <Textarea
+                    id="offerText"
+                    name="offerText"
+                    placeholder="Collez ici le texte integral de l'offre..."
+                    required
+                    rows={8}
+                  />
+                </div>
+                <Button type="submit" variant="secondary">
+                  Creer depuis le texte
+                </Button>
+              </form>
+              <p style={{ color: "#6B6860", lineHeight: 1.6, margin: 0 }}>
+                Import PDF MVP: reporte pour le moment. Le produit reste utilisable
+                avec l&apos;URL et le fallback texte pendant que l&apos;ingestion PDF est
+                cadree dans un futur lot.
+              </p>
+            </div>
             {message ? (
               <p
                 style={{
@@ -197,7 +243,7 @@ export default async function ApplicationsPage({
                   >
                     <div>
                       <dt style={{ color: "#6B6860", fontWeight: 600 }}>Source</dt>
-                      <dd style={{ margin: 0 }}>{application.offerUrl}</dd>
+                      <dd style={{ margin: 0 }}>{application.sourceLabel}</dd>
                     </div>
                     <div>
                       <dt style={{ color: "#6B6860", fontWeight: 600 }}>Contrat</dt>

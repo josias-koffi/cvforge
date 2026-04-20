@@ -131,3 +131,10 @@
 - **Why**: Architecture governance and sprint bookkeeping require a final sign-off once implementation and QA evidence show that the feature is complete within the sprint scope.
 - **Learned**: The current architecture can support early candidature creation by layering a thin file-backed draft store behind the API, which buys product momentum without committing the long-term persistence design prematurely.
 - **Open**: `US-019` should add the text fallback on top of this same API boundary and avoid spreading extraction logic into the Next app.
+
+## 2026-04-20 — US-019 finalization
+
+- **Did**: Closed `US-019` with a passing verdict after confirming the shared URL-plus-text ingestion flow, successful lint/test/API-build evidence, and the explicit MVP deferral of PDF import.
+- **Why**: Architecture governance and sprint bookkeeping require a final decision once the fallback path and the PDF scope stance are both evidenced in code and review artifacts.
+- **Learned**: Deferring PDF import is the correct architectural call for MVP because the current candidature boundary has no safe file-ingestion path yet, while the text fallback already preserves product continuity.
+- **Open**: `US-020` can now build the candidature status pipeline on a stable ingestion contract; `.next` ownership cleanup is still needed before app builds become a reliable local gate.

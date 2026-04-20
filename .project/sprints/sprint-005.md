@@ -29,13 +29,13 @@ Ouvrir le pipeline métier principal du MVP: création de candidature, statuts e
     - [x] Les champs utiles à la candidature sont extraits
     - [x] Les erreurs d'extraction sont gérées proprement
   - Source: vision `§7`, `§16`
-- [ ] **[US-019]** Ajouter le fallback texte et le fallback PDF si faisable dans le MVP
+- [x] **[US-019]** Ajouter le fallback texte et le fallback PDF si faisable dans le MVP
   - Agent: `developer`
   - Workflow: `analyze-design-dev-review`
   - Acceptance criteria:
-    - [ ] Le fallback texte est disponible
-    - [ ] La faisabilité du fallback PDF MVP est statuée
-    - [ ] Si le fallback PDF est trop coûteux, le report est documenté sans casser le MVP
+    - [x] Le fallback texte est disponible
+    - [x] La faisabilité du fallback PDF MVP est statuée
+    - [x] Si le fallback PDF est trop coûteux, le report est documenté sans casser le MVP
   - Source: vision `§7`, `§16`
 - [ ] **[US-020]** Mettre en place le pipeline de statuts candidature
   - Agent: `product-owner`
@@ -61,4 +61,4 @@ Ouvrir le pipeline métier principal du MVP: création de candidature, statuts e
 
 ## ⚠️ To Clarify (sprint blockers)
 
-- Décision explicite à prendre pendant le sprint sur le fallback PDF MVP.
+- Aucun blocage ouvert pour `US-019`; la décision MVP sur le fallback PDF est prise et documentée.

@@ -59,4 +59,25 @@ export class ApplicationsController {
       ),
     };
   }
+
+  @Post("import-from-text")
+  async importFromText(
+    @Body() body: { offerText?: string },
+    @Req() request: RequestLike,
+  ) {
+    const session = this.authService.readSessionFromCookieHeader(
+      request.headers.cookie,
+    );
+
+    if (!session) {
+      throw new UnauthorizedException("A valid session is required.");
+    }
+
+    return {
+      application: await this.applicationsService.importFromText(
+        session.email,
+        body.offerText ?? "",
+      ),
+    };
+  }
 }

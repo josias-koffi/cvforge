@@ -110,3 +110,10 @@
 - **Why**: The story needed a concrete UX shape that supports offer ingestion now without inventing the later full pipeline table, filters, or editor workflow.
 - **Learned**: A server-rendered submit/redirect pattern is enough for this MVP slice and avoids unnecessary client-state complexity while preserving accessibility.
 - **Open**: The later candidature pipeline story should decide when this page evolves from draft-creation flow into the full list/table management screen from the vision.
+
+## 2026-04-20 — US-019
+
+- **Did**: Extended the `/candidatures` UX with a labeled pasted-text fallback beneath the URL import and documented the PDF MVP deferral as static explanatory copy.
+- **Why**: The workflow needed a usable fallback without hiding options behind tabs or inventing a misleading PDF-upload surface.
+- **Learned**: The current card layout can support two ingestion modes clearly as long as they are framed as alternatives to the same draft-creation action.
+- **Open**: The future PDF story should decide whether the UX starts from upload-first, drag-and-drop, or a more guided import step.

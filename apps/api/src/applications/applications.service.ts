@@ -5,6 +5,8 @@ import {
   UnprocessableEntityException,
 } from "@nestjs/common";
 import {
+  APPLICATION_SOURCE_TEXT,
+  APPLICATION_SOURCE_URL,
   APPLICATION_STATUS_DRAFT,
   type DraftApplication,
   type ExtractedOfferFields,
@@ -28,6 +30,7 @@ type ExtractedOfferPayload = Omit<ExtractedOfferFields, "language"> & {
 };
 
 const MIN_OFFER_TEXT_LENGTH = 160;
+const MANUAL_TEXT_SOURCE_LABEL = "Texte colle manuellement";
 
 function normalizeOfferUrl(rawUrl: string) {
   const value = rawUrl.trim();
@@ -49,6 +52,22 @@ function normalizeOfferUrl(rawUrl: string) {
   }
 
   return url.toString();
+}
+
+function normalizeOfferText(rawText: string) {
+  const value = rawText.trim();
+
+  if (!value) {
+    throw new BadRequestException("Le texte de l'offre est requis.");
+  }
+
+  if (value.length < MIN_OFFER_TEXT_LENGTH) {
+    throw new UnprocessableEntityException(
+      "Le texte fourni est insuffisant pour creer une candidature.",
+    );
+  }
+
+  return value;
 }
 
 function extractFirstJsonObject(rawContent: string) {
@@ -153,6 +172,31 @@ export class ApplicationsService {
       offerTextPreview: extraction.offerTextPreview,
       offerUrl: extraction.offerUrl,
       rawOfferText: extraction.offerText,
+      sourceLabel: extraction.sourceLabel,
+      sourceType: extraction.sourceType,
+      status: APPLICATION_STATUS_DRAFT,
+      updatedAt: timestamp,
+      userEmail,
+      extracted: extraction.extracted,
+    };
+
+    return stripRawOfferText(this.store.createDraft(storedApplication));
+  }
+
+  async importFromText(
+    userEmail: string,
+    rawOfferText: string,
+  ): Promise<DraftApplication> {
+    const extraction = await this.extractOfferFromText(rawOfferText);
+    const timestamp = new Date().toISOString();
+    const storedApplication: StoredApplication = {
+      createdAt: timestamp,
+      id: randomUUID(),
+      offerTextPreview: extraction.offerTextPreview,
+      offerUrl: extraction.offerUrl,
+      rawOfferText: extraction.offerText,
+      sourceLabel: extraction.sourceLabel,
+      sourceType: extraction.sourceType,
       status: APPLICATION_STATUS_DRAFT,
       updatedAt: timestamp,
       userEmail,
@@ -174,13 +218,45 @@ export class ApplicationsService {
     }
 
     const metadata = extractOfferMetadata(html);
-    const extracted = await this.extractStructuredFields(offerUrl, offerText, metadata);
+    const extracted = await this.extractStructuredFields(
+      offerText,
+      metadata,
+      offerUrl,
+      APPLICATION_SOURCE_URL,
+    );
 
     return {
       extracted,
       offerText,
       offerTextPreview: buildOfferPreview(offerText),
       offerUrl,
+      sourceLabel: offerUrl,
+      sourceType: APPLICATION_SOURCE_URL,
+    };
+  }
+
+  private async extractOfferFromText(
+    rawOfferText: string,
+  ): Promise<OfferExtractionResult> {
+    const offerText = normalizeOfferText(rawOfferText);
+    const extracted = await this.extractStructuredFields(
+      offerText,
+      {
+        description: buildOfferPreview(offerText, 320),
+        siteName: null,
+        title: null,
+      },
+      null,
+      APPLICATION_SOURCE_TEXT,
+    );
+
+    return {
+      extracted,
+      offerText,
+      offerTextPreview: buildOfferPreview(offerText),
+      offerUrl: null,
+      sourceLabel: MANUAL_TEXT_SOURCE_LABEL,
+      sourceType: APPLICATION_SOURCE_TEXT,
     };
   }
 
@@ -219,13 +295,14 @@ export class ApplicationsService {
   }
 
   private async extractStructuredFields(
-    offerUrl: string,
     offerText: string,
     metadata: {
       description: string | null;
       siteName: string | null;
       title: string | null;
     },
+    offerUrl: string | null,
+    sourceType: DraftApplication["sourceType"],
   ) {
     const response = await this.openRouterService.chat(
       [
@@ -240,6 +317,7 @@ export class ApplicationsService {
             description: metadata.description,
             offerText,
             offerUrl,
+            sourceType,
             siteName: metadata.siteName,
             titleHint: metadata.title,
           }),

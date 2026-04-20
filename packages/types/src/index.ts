@@ -3,6 +3,8 @@ export type Locale = "fr" | "en";
 
 export const HEALTH_STATUS_OK = "ok" as const;
 export const APPLICATION_STATUS_DRAFT = "draft" as const;
+export const APPLICATION_SOURCE_URL = "url" as const;
+export const APPLICATION_SOURCE_TEXT = "text" as const;
 
 export interface ServiceHealth {
   status: "ok";
@@ -24,8 +26,12 @@ export interface ExtractedOfferFields {
 export interface DraftApplication {
   createdAt: string;
   id: string;
-  offerUrl: string;
+  offerUrl: string | null;
   offerTextPreview: string;
+  sourceLabel: string;
+  sourceType:
+    | typeof APPLICATION_SOURCE_URL
+    | typeof APPLICATION_SOURCE_TEXT;
   status: typeof APPLICATION_STATUS_DRAFT;
   updatedAt: string;
   userEmail: string;

@@ -17,5 +17,7 @@ export type OfferExtractionResult = {
   extracted: ExtractedOfferFields;
   offerText: string;
   offerTextPreview: string;
-  offerUrl: string;
+  offerUrl: string | null;
+  sourceLabel: string;
+  sourceType: DraftApplication["sourceType"];
 };

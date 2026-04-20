@@ -82,12 +82,50 @@ describe("ApplicationsService", () => {
 
     expect(application.userEmail).toBe("user@example.com");
     expect(application.status).toBe("draft");
+    expect(application.sourceType).toBe("url");
     expect(application.extracted).toMatchObject({
       companyName: "Example Corp",
       contractType: "CDI",
       location: "Remote",
       title: "Senior Platform Engineer",
     });
+    expect(openRouterService.chat).toHaveBeenCalledTimes(1);
+  });
+
+  it("imports a draft application from pasted offer text", async () => {
+    openRouterService.chat.mockResolvedValue(
+      JSON.stringify({
+        companyName: "Example Corp",
+        contractType: "CDI",
+        language: "fr",
+        location: "Paris",
+        requirements: ["Node.js", "NestJS"],
+        responsibilities: ["Concevoir des APIs", "Ameliorer la fiabilite"],
+        salaryRange: null,
+        summary: "Role backend senior axe plateforme.",
+        title: "Senior Backend Engineer",
+      }),
+    );
+    const service = new ApplicationsService(
+      createStore(),
+      openRouterService as never,
+    );
+
+    const application = await service.importFromText(
+      "user@example.com",
+      `
+        Senior Backend Engineer
+        Nous recherchons une personne capable de concevoir des APIs, d'ameliorer
+        la fiabilite de la plateforme, de collaborer avec l'equipe produit et
+        d'accompagner les developpeurs sur NestJS, TypeScript et PostgreSQL dans
+        un contexte de croissance.
+      `,
+    );
+
+    expect(application.offerUrl).toBeNull();
+    expect(application.sourceType).toBe("text");
+    expect(application.sourceLabel).toBe("Texte colle manuellement");
+    expect(application.extracted.title).toBe("Senior Backend Engineer");
     expect(openRouterService.chat).toHaveBeenCalledTimes(1);
   });
 
@@ -154,5 +192,16 @@ describe("ApplicationsService", () => {
     await expect(
       service.importFromUrl("user@example.com", "https://example.com/jobs/123"),
     ).rejects.toBeInstanceOf(UnprocessableEntityException);
+  });
+
+  it("rejects pasted offer text that is empty", async () => {
+    const service = new ApplicationsService(
+      createStore(),
+      openRouterService as never,
+    );
+
+    await expect(
+      service.importFromText("user@example.com", "   "),
+    ).rejects.toBeInstanceOf(BadRequestException);
   });
 });
