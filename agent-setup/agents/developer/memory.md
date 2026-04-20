@@ -229,3 +229,10 @@
 - **Why**: Sprint 008 foundational task — all subsequent Puck stories depend on this infrastructure.
 - **Learned**: `@measured-co/puck` was renamed to `@puckeditor/core`. Always verify package names from npm before installing. `PuckData` should be defined locally in `packages/types` rather than importing from the UI library, to avoid coupling a pure types package to a large dependency.
 - **Open**: The `<Puck>` component from `@puckeditor/core` still cannot run SSR — US-056 and US-057 must wrap it in `next/dynamic` with `ssr: false`.
+
+## 2026-04-20 — US-057
+
+- **Did**: Replaced the `CvEditor` shadcn/ui form with Puck content-only mode: added `cvContentToPuckData()` and `puckDataToCvContent()` converters, created `PuckCvEditor` with `permissions={{ delete: false, drag: false, duplicate: false, insert: false }}`, used `<Render>` from Puck (no dynamic) for mobile, and `next/dynamic` with `ssr: false` for the desktop editor.
+- **Why**: US-057 required the user CV editor to shift from a custom form to Puck's own field-editing UI while keeping the existing save and PDF export paths.
+- **Learned**: The `<Render>` component from `@puckeditor/core` is genuinely SSR-safe and works with `renderToStaticMarkup` in a vitest node environment when mocked. The SkillsList block uses `hardSkills`/`softSkills` field names while `CVDocumentContent.skills` uses `hard`/`soft` — both converters must handle this mapping explicitly. The `str()` coercion helper should use `String()` for non-null values rather than `typeof === "string"` to handle numeric props gracefully.
+- **Open**: Sprint 008 is now fully complete (US-055 + US-056 + US-057). Sprint DoD pending final QA and test coverage sign-off.

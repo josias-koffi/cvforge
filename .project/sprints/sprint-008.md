@@ -35,15 +35,15 @@ Intégrer Puck Editor à tous les endroits où il est attendu par la vision : in
     - [x] La création d'un nouveau template ouvre un canvas vide dans Puck
   - Source: ADR-003, vision `§6.1`, `§6.7`, `§13.3`
 
-- [ ] **[US-057]** Remplacer l'éditeur de CV utilisateur par Puck Editor en mode contenu uniquement
+- [x] **[US-057]** Remplacer l'éditeur de CV utilisateur par Puck Editor en mode contenu uniquement
   - Agent: `developer`
   - Workflow: `analyze-design-dev-review`
   - Acceptance criteria:
-    - [ ] Le formulaire shadcn/ui est remplacé par `<Puck>` avec `permissions: { delete: false, drag: false, duplicate: false, insert: false }`
-    - [ ] Le contenu généré par l'IA est chargé dans Puck comme `Data` initial
-    - [ ] Les modifications sont sauvegardées via `PUT /applications/:id/cv`
-    - [ ] La lecture mobile utilise `<Render>` de Puck (SSR-safe, pas d'import dynamique nécessaire)
-    - [ ] L'export PDF via Puppeteer reste compatible avec le rendu `<Render>`
+    - [x] Le formulaire shadcn/ui est remplacé par `<Puck>` avec `permissions: { delete: false, drag: false, duplicate: false, insert: false }`
+    - [x] Le contenu généré par l'IA est chargé dans Puck comme `Data` initial
+    - [x] Les modifications sont sauvegardées via `PUT /applications/:id/cv`
+    - [x] La lecture mobile utilise `<Render>` de Puck (SSR-safe, pas d'import dynamique nécessaire)
+    - [x] L'export PDF via Puppeteer reste compatible avec le rendu `<Render>`
   - Source: ADR-003, vision `§6`, `§8`, `§16`
 
 ## 📊 Sprint DoD
