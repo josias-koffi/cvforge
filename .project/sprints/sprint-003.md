@@ -29,13 +29,13 @@ Sécuriser l'accès produit avec l'authentification passwordless, le bootstrappi
     - [x] Le mécanisme est désactivé définitivement après création du premier admin
     - [x] Une inscription publique ultérieure ne peut jamais créer d'admin
   - Source: vision `§3.2`, `§16`
-- [ ] **[US-011]** Ajouter les invitations admin/user à usage unique avec expiration 48h
+- [x] **[US-011]** Ajouter les invitations admin/user à usage unique avec expiration 48h
   - Agent: `developer`
   - Workflow: `analyze-design-dev-review`
   - Acceptance criteria:
-    - [ ] Un admin peut générer un lien d'invitation nominatif
-    - [ ] Le lien n'est consommable qu'une seule fois
-    - [ ] Le lien expire après 48h
+    - [x] Un admin peut générer un lien d'invitation nominatif
+    - [x] Le lien n'est consommable qu'une seule fois
+    - [x] Le lien expire après 48h
   - Source: vision `§3.2`, `§13.2`, `§16`
 - [ ] **[US-012]** Protéger les routes par rôles, dont `/admin`
   - Agent: `qa-reviewer`

@@ -1,16 +1,18 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
-import type { AuthAccountStore, AuthRole } from "./auth.types";
+import type { AuthAccountStore, AuthInvitation, AuthRole } from "./auth.types";
 
 type PersistedAuthState = {
   accounts: Record<string, { role: AuthRole }>;
   bootstrapConsumed: boolean;
+  invitations: Record<string, AuthInvitation>;
 };
 
 function createEmptyState(): PersistedAuthState {
   return {
     accounts: {},
     bootstrapConsumed: false,
+    invitations: {},
   };
 }
 
@@ -38,6 +40,62 @@ export class FileAuthAccountStore implements AuthAccountStore {
     return role;
   }
 
+  assignInvitedRole(email: string, role: AuthRole): AuthRole {
+    const state = this.readState();
+    const existingRole = state.accounts[email]?.role;
+    const resolvedRole =
+      existingRole === "admin" || role === "admin" ? "admin" : "user";
+
+    state.accounts[email] = { role: resolvedRole };
+
+    if (resolvedRole === "admin") {
+      state.bootstrapConsumed = true;
+    }
+
+    this.writeState(state);
+
+    return resolvedRole;
+  }
+
+  readInvitation(tokenHash: string): AuthInvitation | null {
+    const state = this.readState();
+
+    return state.invitations[tokenHash] ?? null;
+  }
+
+  saveInvitation(tokenHash: string, invitation: AuthInvitation) {
+    const state = this.readState();
+
+    state.invitations[tokenHash] = invitation;
+
+    this.writeState(state);
+  }
+
+  consumeInvitation(tokenHash: string, consumedAt: string, now: number) {
+    const state = this.readState();
+    const invitation = state.invitations[tokenHash];
+
+    if (!invitation) {
+      return null;
+    }
+
+    if (
+      invitation.consumedAt !== null ||
+      new Date(invitation.expiresAt).getTime() <= now
+    ) {
+      return null;
+    }
+
+    state.invitations[tokenHash] = {
+      ...invitation,
+      consumedAt,
+    };
+
+    this.writeState(state);
+
+    return state.invitations[tokenHash];
+  }
+
   private readState(): PersistedAuthState {
     if (!existsSync(this.stateFilePath)) {
       return createEmptyState();
@@ -51,6 +109,7 @@ export class FileAuthAccountStore implements AuthAccountStore {
       return {
         accounts: parsed.accounts ?? {},
         bootstrapConsumed: parsed.bootstrapConsumed ?? false,
+        invitations: parsed.invitations ?? {},
       };
     } catch {
       return createEmptyState();

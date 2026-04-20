@@ -54,3 +54,10 @@
 - **Why**: The workflow still requires a design artifact even when the requested change does not alter any user-facing surface.
 - **Learned**: The current passwordless flow can absorb one-time admin bootstrap rules without any new screen, copy, or accessibility work.
 - **Open**: Admin invitation and route-protection stories may create the first actual admin-facing UX surfaces.
+
+## 2026-04-20 — US-011
+
+- **Did**: Specified a dedicated invitation acceptance page that exposes the invited email, role, expiry, and a single acceptance action while explicitly skipping the not-yet-built admin panel UI.
+- **Why**: The story needed one consumable user-facing surface so the invitation link could work end to end without inventing future admin screens.
+- **Learned**: A minimal invitation page is enough to satisfy the vision's "special registration page" requirement while staying aligned with the existing passwordless session flow.
+- **Open**: The later admin-panel story should provide a proper invitation generation UI on top of this API contract.

@@ -68,3 +68,10 @@
 - **Why**: Architecture governance and sprint bookkeeping require an explicit final decision before the story can be marked complete.
 - **Learned**: The existing auth slice can safely own early bootstrap rules without introducing a new framework or violating the current architecture constraints.
 - **Open**: The invitation and role-protection stories should now build on this persisted role authority instead of duplicating bootstrap logic.
+
+## 2026-04-20 — US-011
+
+- **Did**: Closed the invitation workflow with a passing verdict after confirming the persisted invitation model, end-to-end invitation acceptance flow, and successful lint/test validation.
+- **Why**: Architecture governance and sprint bookkeeping require an explicit final decision before the story can be marked complete.
+- **Learned**: The existing auth boundary is sufficient for invitation issuance and role assignment without any new framework or ADR; the next architecture step is centralized route authorization.
+- **Open**: Repository-wide build stability still depends on cleaning stale `.next` artifacts that are currently owned by `nobody`.

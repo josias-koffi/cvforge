@@ -1,6 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AuthService } from "./auth.service";
-import type { AuthAccountStore, AuthConfig, AuthRole } from "./auth.types";
+import type {
+  AuthAccountStore,
+  AuthConfig,
+  AuthInvitation,
+  AuthRole,
+} from "./auth.types";
 
 const config: AuthConfig = {
   apiUrl: "http://localhost:3333",
@@ -15,6 +20,7 @@ const config: AuthConfig = {
 
 function createInMemoryAccountStore(): AuthAccountStore {
   const accounts = new Map<string, AuthRole>();
+  const invitations = new Map<string, AuthInvitation>();
   let bootstrapConsumed = false;
 
   return {
@@ -34,6 +40,48 @@ function createInMemoryAccountStore(): AuthAccountStore {
       }
 
       return role;
+    },
+    assignInvitedRole(email, role) {
+      const existingRole = accounts.get(email);
+      const resolvedRole =
+        existingRole === "admin" || role === "admin" ? "admin" : "user";
+
+      accounts.set(email, resolvedRole);
+
+      if (resolvedRole === "admin") {
+        bootstrapConsumed = true;
+      }
+
+      return resolvedRole;
+    },
+    readInvitation(tokenHash) {
+      return invitations.get(tokenHash) ?? null;
+    },
+    saveInvitation(tokenHash, invitation) {
+      invitations.set(tokenHash, invitation);
+    },
+    consumeInvitation(tokenHash, consumedAt, now) {
+      const invitation = invitations.get(tokenHash);
+
+      if (!invitation) {
+        return null;
+      }
+
+      if (
+        invitation.consumedAt !== null ||
+        new Date(invitation.expiresAt).getTime() <= now
+      ) {
+        return null;
+      }
+
+      const updatedInvitation = {
+        ...invitation,
+        consumedAt,
+      };
+
+      invitations.set(tokenHash, updatedInvitation);
+
+      return updatedInvitation;
     },
   };
 }
@@ -143,5 +191,97 @@ describe("AuthService", () => {
     const external = service.consumeMagicLink(token, "https://evil.example/path");
 
     expect(external.redirectUrl).toBe("http://localhost:3000/login");
+  });
+
+  it("should allow an admin to create a single-use invitation that expires after 48 hours", () => {
+    const service = new AuthService(config, createInMemoryAccountStore());
+    const adminToken =
+      new URL(service.requestMagicLink("admin@example.com").magicLink).searchParams.get(
+        "token",
+      ) ?? "";
+    const adminSession = service.consumeMagicLink(adminToken);
+    const invitation = service.createInvitation(
+      `${adminSession.cookie.name}=${adminSession.cookie.value}`,
+      "new-admin@example.com",
+      "admin",
+    );
+    const invitationToken =
+      new URL(invitation.invitationUrl).searchParams.get("token") ?? "";
+
+    expect(invitation).toMatchObject({
+      email: "new-admin@example.com",
+      role: "admin",
+      expiresAt: "2026-04-21T20:19:09.000Z",
+    });
+    expect(service.previewInvitation(invitationToken)).toMatchObject({
+      email: "new-admin@example.com",
+      role: "admin",
+    });
+
+    const consumed = service.consumeInvitation(invitationToken);
+    const invitedSession = service.readSessionFromCookieHeader(
+      `${consumed.cookie.name}=${consumed.cookie.value}`,
+    );
+
+    expect(invitedSession).toMatchObject({
+      email: "new-admin@example.com",
+      role: "admin",
+    });
+    expect(() => service.consumeInvitation(invitationToken)).toThrow(
+      /invalid or expired/i,
+    );
+  });
+
+  it("should reject invitation creation without an admin session", () => {
+    const service = new AuthService(config, createInMemoryAccountStore());
+    const adminToken =
+      new URL(service.requestMagicLink("admin@example.com").magicLink).searchParams.get(
+        "token",
+      ) ?? "";
+
+    service.consumeMagicLink(adminToken);
+
+    expect(() =>
+      service.createInvitation(undefined, "user@example.com", "user"),
+    ).toThrow(/valid session/i);
+
+    const userToken =
+      new URL(service.requestMagicLink("user@example.com").magicLink).searchParams.get(
+        "token",
+      ) ?? "";
+    const userSession = service.consumeMagicLink(userToken);
+
+    expect(() =>
+      service.createInvitation(
+        `${userSession.cookie.name}=${userSession.cookie.value}`,
+        "other@example.com",
+        "user",
+      ),
+    ).toThrow(/only admins/i);
+  });
+
+  it("should reject expired invitations", () => {
+    const service = new AuthService(config, createInMemoryAccountStore());
+    const adminToken =
+      new URL(service.requestMagicLink("admin@example.com").magicLink).searchParams.get(
+        "token",
+      ) ?? "";
+    const adminSession = service.consumeMagicLink(adminToken);
+    const invitation = service.createInvitation(
+      `${adminSession.cookie.name}=${adminSession.cookie.value}`,
+      "invitee@example.com",
+      "user",
+    );
+    const invitationToken =
+      new URL(invitation.invitationUrl).searchParams.get("token") ?? "";
+
+    vi.advanceTimersByTime(48 * 60 * 60 * 1000 + 1);
+
+    expect(() => service.previewInvitation(invitationToken)).toThrow(
+      /invalid or expired/i,
+    );
+    expect(() => service.consumeInvitation(invitationToken)).toThrow(
+      /invalid or expired/i,
+    );
   });
 });

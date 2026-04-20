@@ -54,3 +54,10 @@
 - **Why**: The task could only pass once each role-assignment criterion and the permanent bootstrap lock had direct evidence.
 - **Learned**: The lightweight persisted store is sufficient for the current sprint so long as regression tests prove the bootstrap cannot be reused for later public signups.
 - **Open**: The future user domain should replace file-backed persistence before multi-instance deployment becomes a requirement.
+
+## 2026-04-20 — US-011
+
+- **Did**: Verified admin-only invitation creation, one-time consumption, and 48-hour expiry in code and automated tests, then confirmed passing lint, package tests, and root `pnpm test`.
+- **Why**: The task could only pass once each invitation acceptance criterion had direct evidence in the API and app flow.
+- **Learned**: The invitation slice satisfies the current blocking standards, but the repository-wide `pnpm build` command is still exposed to stale `.next` artifacts owned by another user.
+- **Open**: `US-012` should reuse the persisted role checks now present in the auth slice to protect `/admin` and other privileged routes.

@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   UnauthorizedException,
 } from "@nestjs/common";
@@ -7,8 +8,10 @@ import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypt
 import type {
   AuthAccountStore,
   AuthConfig,
+  AuthInvitation,
   AuthRole,
   AuthSession,
+  InvitationResponse,
   MagicLinkResponse,
 } from "./auth.types";
 
@@ -32,6 +35,7 @@ type SessionPayload = {
 };
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const INVITATION_TTL_MS = 48 * 60 * 60 * 1000;
 
 @Injectable()
 export class AuthService {
@@ -68,6 +72,84 @@ export class AuthService {
     };
   }
 
+  createInvitation(
+    cookieHeader: string | undefined,
+    rawEmail: string,
+    rawRole: string | undefined,
+  ): InvitationResponse {
+    const session = this.readSessionFromCookieHeader(cookieHeader);
+
+    if (!session) {
+      throw new UnauthorizedException("A valid session is required.");
+    }
+
+    if (session.role !== "admin") {
+      throw new ForbiddenException("Only admins can create invitations.");
+    }
+
+    const email = this.normalizeEmail(rawEmail);
+    const role = this.normalizeRole(rawRole);
+    const createdAt = new Date();
+    const expiresAt = new Date(createdAt.getTime() + INVITATION_TTL_MS).toISOString();
+    const token = randomBytes(24).toString("base64url");
+
+    this.accountStore.saveInvitation(this.hashToken(token), {
+      consumedAt: null,
+      createdAt: createdAt.toISOString(),
+      createdBy: session.email,
+      email,
+      expiresAt,
+      role,
+    });
+
+    return {
+      email,
+      role,
+      invitationUrl: this.buildInvitationUrl(token),
+      expiresAt,
+    };
+  }
+
+  previewInvitation(rawToken: string) {
+    const invitation = this.requireInvitation(rawToken);
+
+    return {
+      email: invitation.email,
+      expiresAt: invitation.expiresAt,
+      role: invitation.role,
+    };
+  }
+
+  consumeInvitation(rawToken: string) {
+    const token = rawToken.trim();
+
+    if (!token) {
+      throw new BadRequestException("An invitation token is required.");
+    }
+
+    const consumedAt = new Date().toISOString();
+    const invitation = this.accountStore.consumeInvitation(
+      this.hashToken(token),
+      consumedAt,
+      Date.now(),
+    );
+
+    if (!invitation) {
+      throw new UnauthorizedException("This invitation is invalid or expired.");
+    }
+
+    const role = this.accountStore.assignInvitedRole(
+      invitation.email,
+      invitation.role,
+    );
+    const session = this.createSession(invitation.email, role);
+
+    return {
+      session,
+      cookie: this.serializeSessionCookie(session),
+    };
+  }
+
   consumeMagicLink(rawToken: string, redirectTo?: string) {
     this.pruneExpiredMagicLinks();
 
@@ -85,7 +167,7 @@ export class AuthService {
 
     record.consumedAt = Date.now();
 
-    const session = this.createSession(record.email);
+    const session = this.createSession(record.email, this.accountStore.resolveRole(record.email));
 
     return {
       redirectUrl: this.normalizeRedirectTarget(redirectTo),
@@ -128,12 +210,19 @@ export class AuthService {
     return consumeUrl.toString();
   }
 
-  private createSession(email: string): AuthSession {
+  private buildInvitationUrl(token: string) {
+    const invitationUrl = new URL("/register/invitation", this.config.appUrl);
+
+    invitationUrl.searchParams.set("token", token);
+
+    return invitationUrl.toString();
+  }
+
+  private createSession(email: string, role: AuthRole): AuthSession {
     const issuedAt = new Date();
     const expiresAt = new Date(
       issuedAt.getTime() + this.config.sessionTtlDays * 24 * 60 * 60 * 1000,
     );
-    const role = this.accountStore.resolveRole(email);
 
     return {
       email,
@@ -226,6 +315,44 @@ export class AuthService {
 
   private hashToken(token: string) {
     return createHash("sha256").update(token).digest("hex");
+  }
+
+  private normalizeEmail(rawEmail: string) {
+    const email = rawEmail.trim().toLowerCase();
+
+    if (!EMAIL_PATTERN.test(email)) {
+      throw new BadRequestException("A valid email address is required.");
+    }
+
+    return email;
+  }
+
+  private normalizeRole(rawRole: string | undefined): AuthRole {
+    if (rawRole === "admin" || rawRole === "user") {
+      return rawRole;
+    }
+
+    throw new BadRequestException("Invitation role must be admin or user.");
+  }
+
+  private requireInvitation(rawToken: string): AuthInvitation {
+    const token = rawToken.trim();
+
+    if (!token) {
+      throw new BadRequestException("An invitation token is required.");
+    }
+
+    const invitation = this.accountStore.readInvitation(this.hashToken(token));
+
+    if (
+      !invitation ||
+      invitation.consumedAt !== null ||
+      new Date(invitation.expiresAt).getTime() <= Date.now()
+    ) {
+      throw new UnauthorizedException("This invitation is invalid or expired.");
+    }
+
+    return invitation;
   }
 
   private sign(payload: string) {

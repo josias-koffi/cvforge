@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  ForbiddenException,
   Get,
   Inject,
   Post,
@@ -48,6 +49,37 @@ export class AuthController {
     return this.authMailer.getHealth();
   }
 
+  @Post("invitations")
+  createInvitation(
+    @Body() body: { email?: string; role?: string },
+    @Req() request: RequestLike,
+  ) {
+    return this.authService.createInvitation(
+      request.headers.cookie,
+      body.email ?? "",
+      body.role,
+    );
+  }
+
+  @Get("invitations/preview")
+  previewInvitation(@Query("token") token: string) {
+    return this.authService.previewInvitation(token);
+  }
+
+  @Post("invitations/consume")
+  consumeInvitation(
+    @Body() body: { token?: string },
+    @Res({ passthrough: true }) response: CookieResponse,
+  ) {
+    const result = this.authService.consumeInvitation(body.token ?? "");
+
+    response.cookie(result.cookie.name, result.cookie.value, result.cookie.options);
+
+    return {
+      session: result.session,
+    };
+  }
+
   @Get("passwordless/consume")
   consumeMagicLink(
     @Query("token") token: string,
@@ -87,6 +119,26 @@ export class AuthController {
 
     if (!session) {
       throw new UnauthorizedException("No valid session is present.");
+    }
+
+    return {
+      authenticated: true,
+      session,
+    };
+  }
+
+  @Get("session/admin")
+  readAdminSession(@Req() request: RequestLike) {
+    const session = this.authService.readSessionFromCookieHeader(
+      request.headers.cookie,
+    );
+
+    if (!session) {
+      throw new UnauthorizedException("No valid session is present.");
+    }
+
+    if (session.role !== "admin") {
+      throw new ForbiddenException("Admin access is required.");
     }
 
     return {

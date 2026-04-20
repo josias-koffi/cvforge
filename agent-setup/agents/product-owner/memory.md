@@ -61,3 +61,10 @@
 - **Why**: The workflow needed a product boundary that made each acceptance criterion directly testable without inventing extra admin features.
 - **Learned**: The vision requires persistent bootstrap state; otherwise the first-admin guarantee would not survive a restart.
 - **Open**: `US-011` still needs a separate invitation mechanism rather than extending public signup semantics.
+
+## 2026-04-20 — US-011
+
+- **Did**: Confirmed that `US-011` stays limited to admin-generated nominative invitations with 48-hour expiry and a consumable invitation-specific registration path.
+- **Why**: The workflow needed a strict boundary so the story would deliver invitation mechanics without prematurely building the full admin panel or broader user-management flows.
+- **Learned**: The vision is precise enough to ship the invitation contract now while keeping `/admin` protection and admin UI for the next story.
+- **Open**: `US-012` still needs to protect the future admin surface and centralize authorization checks.
