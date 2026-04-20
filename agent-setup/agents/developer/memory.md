@@ -110,3 +110,17 @@
 - **Why**: `US-014` required a usable editable base profile for MVP without adding a backend user persistence layer or opening multi-profile scope.
 - **Learned**: The current app can support a dense candidate profile editor by keeping state logic in tested helpers and treating the UI layer as static presentational markup.
 - **Open**: Repository build verification is still blocked by stale `.next` artifacts owned by another user in both `apps/app` and `apps/landing`.
+
+## 2026-04-20 — US-015
+
+- **Did**: Added a new `ai-prompt-profile` helper in `apps/app` to generate a prompt-safe candidate payload, listed forbidden and reinjected fields explicitly, added regression tests, and revalidated with app lint/tests, repo lint/tests, and an app build.
+- **Why**: `US-015` required the pseudonymisation rules from vision `§15.3` to exist as executable code before any OpenRouter integration is introduced.
+- **Learned**: The current local profile and onboarding models are already sufficient to encode the RGPD prompt contract without adding an API client, new dependency, or ADR.
+- **Open**: The future AI integration should consume this helper centrally so prompt construction does not fork across CV, LM, and interview features.
+
+## 2026-04-20 — US-016
+
+- **Did**: Added signup consent enforcement on the public and invitation flows, persisted consent metadata in the auth store, introduced shared input guards for critical onboarding/profile fields, extended regression tests, and documented the remaining RGPD launch gaps in sprint `009`.
+- **Why**: `US-016` required executable MVP guardrails for consent and critical data handling, not just a documentation placeholder.
+- **Learned**: The existing auth slice can persist consent without a new dependency, and the local onboarding/profile stores are a good choke point for defensive normalization.
+- **Open**: The app build gate is still blocked by foreign-owned files in `apps/app/.next`, so environment cleanup is needed before local Next builds become reliable again.

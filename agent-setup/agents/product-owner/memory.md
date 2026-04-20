@@ -96,3 +96,17 @@
 - **Why**: The workflow needed a strict product boundary so the story delivers a usable profile source without prematurely opening the multi-profile roadmap.
 - **Learned**: The current onboarding output is sufficient to seed a first base-profile experience without inventing backend persistence that belongs to later user-domain work.
 - **Open**: `US-015` now needs to define exactly which profile fields are withheld or transformed before AI prompt construction.
+
+## 2026-04-20 — US-015
+
+- **Did**: Confirmed that `US-015` is limited to a reusable pseudonymisation contract for future AI prompts, mapped the forbidden fields from vision `§15.3`, and kept real OpenRouter integration out of scope.
+- **Why**: The workflow needed a precise product boundary so the story could be completed now without inventing the later CV/LM/interview delivery pipelines.
+- **Learned**: The vision is explicit enough to define a testable prompt-safe payload plus a local reinjection plan before any remote AI call exists in the codebase.
+- **Open**: The future generation stories should decide whether public profile links need their own documented transmission policy.
+
+## 2026-04-20 — US-016
+
+- **Did**: Reframed `US-016` under the implementation workflow, limited the scope to signup consent, critical input guardrails, and sprint `009` RGPD carry-over, then confirmed the open legal/operational items stay out of sprint `004`.
+- **Why**: The declared `bug-triage` workflow could not satisfy the story acceptance criteria; the rerun needed a product boundary that remained faithful to vision `§15.1` and `§15.5`.
+- **Learned**: The current MVP can ship meaningful RGPD guardrails now without pretending that the legal texts and DSAR operations are already delivered.
+- **Open**: Sprint `009` still needs to close the documented RGPD launch blockers before commercialization.

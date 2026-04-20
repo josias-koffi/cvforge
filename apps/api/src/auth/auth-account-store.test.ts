@@ -31,8 +31,8 @@ describe("FileAuthAccountStore", () => {
 
     expect(JSON.parse(readFileSync(stateFilePath, "utf8"))).toEqual({
       accounts: {
-        "admin@example.com": { role: "admin" },
-        "user@example.com": { role: "user" },
+        "admin@example.com": { consent: null, role: "admin" },
+        "user@example.com": { consent: null, role: "user" },
       },
       bootstrapConsumed: true,
       invitations: {},
@@ -64,10 +64,23 @@ describe("FileAuthAccountStore", () => {
     expect(
       store.consumeInvitation("token-hash", "2026-04-20T07:01:00.000Z", Date.UTC(2026, 3, 20, 7, 1)),
     ).toBeNull();
-    expect(store.assignInvitedRole("invitee@example.com", "admin")).toBe("admin");
+    expect(
+      store.assignInvitedRole("invitee@example.com", "admin", {
+        acceptedAt: "2026-04-20T07:00:00.000Z",
+        source: "invitation",
+        version: "2026-04-mvp",
+      }),
+    ).toBe("admin");
     expect(JSON.parse(readFileSync(stateFilePath, "utf8"))).toEqual({
       accounts: {
-        "invitee@example.com": { role: "admin" },
+        "invitee@example.com": {
+          consent: {
+            acceptedAt: "2026-04-20T07:00:00.000Z",
+            source: "invitation",
+            version: "2026-04-mvp",
+          },
+          role: "admin",
+        },
       },
       bootstrapConsumed: true,
       invitations: {

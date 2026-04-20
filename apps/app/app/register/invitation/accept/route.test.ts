@@ -20,6 +20,7 @@ describe("POST /register/invitation/accept", () => {
     const formData = new FormData();
 
     formData.set("token", "token-123");
+    formData.set("consentAccepted", "true");
 
     const response = await POST(
       new Request("http://localhost:3000/register/invitation/accept", {
@@ -45,6 +46,7 @@ describe("POST /register/invitation/accept", () => {
     const formData = new FormData();
 
     formData.set("token", "expired-token");
+    formData.set("consentAccepted", "true");
 
     const response = await POST(
       new Request("http://localhost:3000/register/invitation/accept", {
@@ -55,6 +57,27 @@ describe("POST /register/invitation/accept", () => {
 
     expect(response.headers.get("location")).toBe(
       "http://localhost:3000/register/invitation?token=expired-token&error=consume_failed",
+    );
+  });
+
+  it("should reject invitation acceptance without consent before calling the API", async () => {
+    const fetchMock = vi.fn();
+
+    vi.stubGlobal("fetch", fetchMock);
+
+    const formData = new FormData();
+    formData.set("token", "token-123");
+
+    const response = await POST(
+      new Request("http://localhost:3000/register/invitation/accept", {
+        body: formData,
+        method: "POST",
+      }),
+    );
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(response.headers.get("location")).toBe(
+      "http://localhost:3000/register/invitation?token=token-123&error=consent_required",
     );
   });
 });

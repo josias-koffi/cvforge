@@ -82,3 +82,17 @@
 - **Why**: The task could only pass once each profile acceptance criterion and the new-code coverage bar had direct evidence.
 - **Learned**: The touched profile slice can exceed the blocking coverage threshold even with a static client editor so long as the stateful helpers are isolated and tested thoroughly.
 - **Open**: Build verification still depends on cleaning `.next` directories owned by another user before Next can regenerate artifacts.
+
+## 2026-04-20 — US-015
+
+- **Did**: Verified the new prompt pseudonymisation helper, confirmed explicit omission and reinjection evidence in tests, and rechecked `pnpm lint`, `pnpm test`, plus `pnpm --filter @cvforge/app build`.
+- **Why**: The story could only pass once each RGPD acceptance criterion had direct code and validation evidence rather than a documentation-only promise.
+- **Learned**: The pseudonymisation policy is easiest to review when it is expressed as a pure function with a stable result contract and a focused regression suite.
+- **Open**: Any future decision to transmit public profile links to AI should be documented and reviewed explicitly instead of being added implicitly to prompt builders.
+
+## 2026-04-20 — US-016
+
+- **Did**: Verified consent collection on both signup surfaces, confirmed the new input-guard normalization path and sprint `009` RGPD carry-over, and rechecked `pnpm lint`, `pnpm test`, plus `pnpm --filter @cvforge/api build`.
+- **Why**: The story could only pass once each acceptance criterion and the standards coverage gate had direct evidence in code, tests, and sprint documentation.
+- **Learned**: Consent is easiest to audit when it is enforced twice: first in the Next routes for UX clarity, then again in the Nest auth service for integrity.
+- **Open**: `pnpm --filter @cvforge/app build` is still blocked by the pre-existing `.next` ownership issue and remains an environment advisory rather than a product defect.

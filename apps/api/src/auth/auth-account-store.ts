@@ -1,9 +1,15 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
-import type { AuthAccountStore, AuthInvitation, AuthRole } from "./auth.types";
+import type {
+  AuthAccount,
+  AuthAccountStore,
+  AuthConsentRecord,
+  AuthInvitation,
+  AuthRole,
+} from "./auth.types";
 
 type PersistedAuthState = {
-  accounts: Record<string, { role: AuthRole }>;
+  accounts: Record<string, AuthAccount>;
   bootstrapConsumed: boolean;
   invitations: Record<string, AuthInvitation>;
 };
@@ -19,7 +25,13 @@ function createEmptyState(): PersistedAuthState {
 export class FileAuthAccountStore implements AuthAccountStore {
   constructor(private readonly stateFilePath: string) {}
 
-  resolveRole(email: string): AuthRole {
+  readAccount(email: string) {
+    const state = this.readState();
+
+    return state.accounts[email] ?? null;
+  }
+
+  resolveRole(email: string, consent?: AuthConsentRecord | null): AuthRole {
     const state = this.readState();
     const account = state.accounts[email];
 
@@ -29,7 +41,10 @@ export class FileAuthAccountStore implements AuthAccountStore {
 
     const role: AuthRole = state.bootstrapConsumed ? "user" : "admin";
 
-    state.accounts[email] = { role };
+    state.accounts[email] = {
+      consent: consent ?? null,
+      role,
+    };
 
     if (role === "admin") {
       state.bootstrapConsumed = true;
@@ -40,13 +55,16 @@ export class FileAuthAccountStore implements AuthAccountStore {
     return role;
   }
 
-  assignInvitedRole(email: string, role: AuthRole): AuthRole {
+  assignInvitedRole(email: string, role: AuthRole, consent: AuthConsentRecord): AuthRole {
     const state = this.readState();
     const existingRole = state.accounts[email]?.role;
     const resolvedRole =
       existingRole === "admin" || role === "admin" ? "admin" : "user";
 
-    state.accounts[email] = { role: resolvedRole };
+    state.accounts[email] = {
+      consent,
+      role: resolvedRole,
+    };
 
     if (resolvedRole === "admin") {
       state.bootstrapConsumed = true;

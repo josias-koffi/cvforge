@@ -30,6 +30,7 @@ describe("InvitationPage", () => {
     expect(markup).toContain("Invitation admin");
     expect(markup).toContain("invitee@example.com");
     expect(markup).toContain('action="/register/invitation/accept"');
+    expect(markup).toContain('name="consentAccepted"');
     expect(markup).toContain("usage unique");
   });
 
@@ -49,5 +50,29 @@ describe("InvitationPage", () => {
     const markup = renderToStaticMarkup(Page);
 
     expect(markup).toContain("Invitation invalide");
+  });
+
+  it("should render the consent error message when requested", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        json: async () => ({
+          email: "invitee@example.com",
+          expiresAt: "2026-04-22T06:55:06.000Z",
+          role: "admin",
+        }),
+        ok: true,
+      }),
+    );
+
+    const Page = await InvitationPage({
+      searchParams: Promise.resolve({
+        error: "consent_required",
+        token: "token-123",
+      }),
+    });
+    const markup = renderToStaticMarkup(Page);
+
+    expect(markup).toContain("Le consentement RGPD est requis");
   });
 });

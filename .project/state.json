@@ -12,7 +12,7 @@
   "specialized_workflows": [],
   "specialized_skills": [],
   "clarifications_pending": [],
-  "last_updated": "2026-04-20T10:16:17+02:00",
+  "last_updated": "2026-04-20T10:56:47+02:00",
   "last_workflow_run": "analyze-design-dev-review",
   "last_workflow_stage": "Finalization",
   "last_workflow_result": "passed",
@@ -93,11 +93,26 @@
       "task": "US-014",
       "workflow": "analyze-design-dev-review",
       "result": "passed"
+    },
+    {
+      "run_id": "20260420-103754-us-015",
+      "sprint": "004",
+      "task": "US-015",
+      "workflow": "analyze-design-dev-review",
+      "result": "passed"
+    },
+    {
+      "run_id": "20260420-105647-us-016",
+      "sprint": "004",
+      "task": "US-016",
+      "workflow": "analyze-design-dev-review",
+      "result": "passed"
     }
   ],
-  "last_task_completed": "US-014",
+  "last_task_completed": "US-016",
   "completed_sprints": [
     2,
-    3
+    3,
+    4
   ]
 }

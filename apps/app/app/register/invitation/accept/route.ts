@@ -4,8 +4,21 @@ import { getAppUrl, getServerApiUrl } from "../../../auth-config";
 export async function POST(request: Request) {
   const formData = await request.formData();
   const token = String(formData.get("token") ?? "").trim();
+  const consentAccepted = formData.get("consentAccepted") === "true";
+  const errorRedirectUrl = new URL("/register/invitation", getAppUrl());
+
+  if (token) {
+    errorRedirectUrl.searchParams.set("token", token);
+  }
+
+  if (!consentAccepted) {
+    errorRedirectUrl.searchParams.set("error", "consent_required");
+
+    return NextResponse.redirect(errorRedirectUrl);
+  }
+
   const response = await fetch(`${getServerApiUrl()}/auth/invitations/consume`, {
-    body: JSON.stringify({ token }),
+    body: JSON.stringify({ consentAccepted, token }),
     headers: {
       "content-type": "application/json",
     },
@@ -13,15 +26,9 @@ export async function POST(request: Request) {
   });
 
   if (!response.ok) {
-    const redirectUrl = new URL("/register/invitation", getAppUrl());
+    errorRedirectUrl.searchParams.set("error", "consume_failed");
 
-    if (token) {
-      redirectUrl.searchParams.set("token", token);
-    }
-
-    redirectUrl.searchParams.set("error", "consume_failed");
-
-    return NextResponse.redirect(redirectUrl);
+    return NextResponse.redirect(errorRedirectUrl);
   }
 
   const redirectUrl = new URL("/login/success", getAppUrl());

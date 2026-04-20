@@ -32,8 +32,13 @@ export class AuthController {
   ) {}
 
   @Post("passwordless/request")
-  async requestMagicLink(@Body() body: { email?: string }) {
-    const result = this.authService.requestMagicLink(body.email ?? "");
+  async requestMagicLink(
+    @Body() body: { consentAccepted?: boolean; email?: string },
+  ) {
+    const result = this.authService.requestMagicLink(
+      body.email ?? "",
+      body.consentAccepted === true,
+    );
 
     await this.authMailer.sendMagicLinkEmail(result);
 
@@ -68,10 +73,13 @@ export class AuthController {
 
   @Post("invitations/consume")
   consumeInvitation(
-    @Body() body: { token?: string },
+    @Body() body: { consentAccepted?: boolean; token?: string },
     @Res({ passthrough: true }) response: CookieResponse,
   ) {
-    const result = this.authService.consumeInvitation(body.token ?? "");
+    const result = this.authService.consumeInvitation(
+      body.token ?? "",
+      body.consentAccepted === true,
+    );
 
     response.cookie(result.cookie.name, result.cookie.value, result.cookie.options);
 

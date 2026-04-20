@@ -6,6 +6,7 @@ import {
 } from "@nestjs/common";
 import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import type {
+  AuthConsentRecord,
   AuthAccountStore,
   AuthConfig,
   AuthInvitation,
@@ -16,6 +17,7 @@ import type {
 } from "./auth.types";
 
 type MagicLinkRecord = {
+  consent: AuthConsentRecord | null;
   email: string;
   expiresAt: number;
   consumedAt: number | null;
@@ -36,6 +38,7 @@ type SessionPayload = {
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const INVITATION_TTL_MS = 48 * 60 * 60 * 1000;
+const CONSENT_VERSION = "2026-04-mvp";
 
 @Injectable()
 export class AuthService {
@@ -46,19 +49,25 @@ export class AuthService {
     private readonly accountStore: AuthAccountStore,
   ) {}
 
-  requestMagicLink(rawEmail: string): MagicLinkResponse {
+  requestMagicLink(rawEmail: string, consentAccepted = false): MagicLinkResponse {
     this.pruneExpiredMagicLinks();
 
     const email = rawEmail.trim().toLowerCase();
+    const existingAccount = this.accountStore.readAccount(email);
 
     if (!EMAIL_PATTERN.test(email)) {
       throw new BadRequestException("A valid email address is required.");
+    }
+
+    if (!existingAccount && !consentAccepted) {
+      throw new BadRequestException("Consent is required before creating an account.");
     }
 
     const token = randomBytes(24).toString("base64url");
     const expiresAt = Date.now() + this.config.magicLinkTtlMinutes * 60_000;
 
     this.magicLinks.set(this.hashToken(token), {
+      consent: existingAccount?.consent ?? this.createConsentRecord("passwordless"),
       email,
       expiresAt,
       consumedAt: null,
@@ -120,11 +129,15 @@ export class AuthService {
     };
   }
 
-  consumeInvitation(rawToken: string) {
+  consumeInvitation(rawToken: string, consentAccepted = false) {
     const token = rawToken.trim();
 
     if (!token) {
       throw new BadRequestException("An invitation token is required.");
+    }
+
+    if (!consentAccepted) {
+      throw new BadRequestException("Consent is required before accepting an invitation.");
     }
 
     const consumedAt = new Date().toISOString();
@@ -141,6 +154,7 @@ export class AuthService {
     const role = this.accountStore.assignInvitedRole(
       invitation.email,
       invitation.role,
+      this.createConsentRecord("invitation"),
     );
     const session = this.createSession(invitation.email, role);
 
@@ -167,7 +181,10 @@ export class AuthService {
 
     record.consumedAt = Date.now();
 
-    const session = this.createSession(record.email, this.accountStore.resolveRole(record.email));
+    const session = this.createSession(
+      record.email,
+      this.accountStore.resolveRole(record.email, record.consent),
+    );
 
     return {
       redirectUrl: this.normalizeRedirectTarget(redirectTo),
@@ -216,6 +233,14 @@ export class AuthService {
     invitationUrl.searchParams.set("token", token);
 
     return invitationUrl.toString();
+  }
+
+  private createConsentRecord(source: AuthConsentRecord["source"]): AuthConsentRecord {
+    return {
+      acceptedAt: new Date().toISOString(),
+      source,
+      version: CONSENT_VERSION,
+    };
   }
 
   private createSession(email: string, role: AuthRole): AuthSession {

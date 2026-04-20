@@ -12,6 +12,8 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   const errorMessage =
     resolvedSearchParams?.error === "request_failed"
       ? "Impossible de generer le magic link pour le moment."
+      : resolvedSearchParams?.error === "consent_required"
+        ? "Le consentement RGPD est requis pour creer un compte."
       : null;
 
   return (
@@ -98,6 +100,28 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             padding: "0.875rem 1rem",
           }}
         />
+        <label
+          htmlFor="consent-accepted"
+          style={{
+            alignItems: "flex-start",
+            display: "flex",
+            gap: "0.75rem",
+            lineHeight: 1.6,
+          }}
+        >
+          <input
+            id="consent-accepted"
+            name="consentAccepted"
+            required
+            type="checkbox"
+            value="true"
+          />
+          <span>
+            Je consens a la creation de mon compte et j&apos;accepte les futures CGU et
+            la politique de confidentialite du MVP, y compris l&apos;usage encadre
+            d&apos;OpenRouter/Mistral.
+          </span>
+        </label>
         <button
           type="submit"
           style={{

@@ -4,9 +4,14 @@ import { getAppUrl, getServerApiUrl } from "../../auth-config";
 export async function POST(request: Request) {
   const formData = await request.formData();
   const email = String(formData.get("email") ?? "").trim();
+  const consentAccepted = formData.get("consentAccepted") === "true";
+
+  if (!consentAccepted) {
+    return NextResponse.redirect(new URL("/login?error=consent_required", getAppUrl()));
+  }
 
   const response = await fetch(`${getServerApiUrl()}/auth/passwordless/request`, {
-    body: JSON.stringify({ email }),
+    body: JSON.stringify({ consentAccepted, email }),
     headers: {
       "content-type": "application/json",
     },

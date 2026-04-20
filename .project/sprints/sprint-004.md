@@ -29,30 +29,30 @@ Rendre l'onboarding et le profil candidat exploitables pour alimenter ensuite le
     - [x] Les actions de consultation et édition sont disponibles
     - [x] La règle "1 profil de base en MVP" est respectée
   - Source: vision `§5`, `§16`
-- [ ] **[US-015]** Appliquer les règles de pseudonymisation pour les prompts IA
+- [x] **[US-015]** Appliquer les règles de pseudonymisation pour les prompts IA
   - Agent: `tech-lead`
   - Workflow: `analyze-design-dev-review`
   - Acceptance criteria:
-    - [ ] Les données interdites ne sont pas transmises à l'IA
-    - [ ] Les champs à réinjecter localement sont identifiés
-    - [ ] Le comportement est couvert par des tests
+    - [x] Les données interdites ne sont pas transmises à l'IA
+    - [x] Les champs à réinjecter localement sont identifiés
+    - [x] Le comportement est couvert par des tests
   - Source: vision `§15.3`, `§16`
-- [ ] **[US-016]** Ajouter consentement et garde-fous de données nécessaires au MVP
+- [x] **[US-016]** Ajouter consentement et garde-fous de données nécessaires au MVP
   - Agent: `qa-reviewer`
   - Workflow: `bug-triage`
   - Acceptance criteria:
-    - [ ] Le consentement utilisateur est collecté à l'inscription
-    - [ ] Les validations d'entrées critiques sont en place
-    - [ ] Les écarts RGPD ouverts sont documentés pour le sprint 009
+    - [x] Le consentement utilisateur est collecté à l'inscription
+    - [x] Les validations d'entrées critiques sont en place
+    - [x] Les écarts RGPD ouverts sont documentés pour le sprint 009
   - Source: vision `§15.1`, `§15.5`
 
 ## 📊 Sprint DoD
 
-- [ ] All tasks ticked
-- [ ] All acceptance criteria verified
-- [ ] `run-tests` green
-- [ ] Coverage ≥ spec threshold
-- [ ] QA review ✅
+- [x] All tasks ticked
+- [x] All acceptance criteria verified
+- [x] `run-tests` green
+- [x] Coverage ≥ spec threshold
+- [x] QA review ✅
 
 ## 🚧 Risks
 

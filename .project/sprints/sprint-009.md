@@ -44,6 +44,10 @@ Clôturer le MVP avec les opérations admin, les notifications de base et les ex
     - [ ] Les exports d'accès/portabilité sont cadrés
     - [ ] La suppression RGPD est implémentée ou bloquée explicitement au lancement
     - [ ] Les durées de conservation critiques sont documentées
+  - Open gaps carried from `US-016`:
+    - Rédiger les CGU et la politique de confidentialité avec la mention OpenRouter/Mistral.
+    - Désigner le responsable de traitement, finaliser le registre des traitements, et outiller la procédure DSAR.
+    - Auditer les durées de conservation, la purge audio, Stripe SCCs, et l'éventuel besoin DPO / OpenRouter enterprise.
   - Source: vision `§15.1`, `§15.5`, `§16`
 
 ## 📊 Sprint DoD

@@ -2,6 +2,7 @@ import { ForbiddenException, UnauthorizedException } from "@nestjs/common";
 import { describe, expect, it, vi } from "vitest";
 import { AuthMailerService } from "./auth-mailer.service";
 import type {
+  AuthAccount,
   AuthAccountStore,
   AuthConfig,
   AuthInvitation,
@@ -22,13 +23,16 @@ const config: AuthConfig = {
 };
 
 function createInMemoryAccountStore(): AuthAccountStore {
-  const accounts = new Map<string, AuthRole>();
+  const accounts = new Map<string, AuthAccount>();
   const invitations = new Map<string, AuthInvitation>();
   let bootstrapConsumed = false;
 
   return {
-    resolveRole(email) {
-      const existingRole = accounts.get(email);
+    readAccount(email) {
+      return accounts.get(email) ?? null;
+    },
+    resolveRole(email, consent) {
+      const existingRole = accounts.get(email)?.role;
 
       if (existingRole) {
         return existingRole;
@@ -36,7 +40,7 @@ function createInMemoryAccountStore(): AuthAccountStore {
 
       const role: AuthRole = bootstrapConsumed ? "user" : "admin";
 
-      accounts.set(email, role);
+      accounts.set(email, { consent: consent ?? null, role });
 
       if (role === "admin") {
         bootstrapConsumed = true;
@@ -44,12 +48,12 @@ function createInMemoryAccountStore(): AuthAccountStore {
 
       return role;
     },
-    assignInvitedRole(email, role) {
-      const existingRole = accounts.get(email);
+    assignInvitedRole(email, role, consent) {
+      const existingRole = accounts.get(email)?.role;
       const resolvedRole =
         existingRole === "admin" || role === "admin" ? "admin" : "user";
 
-      accounts.set(email, resolvedRole);
+      accounts.set(email, { consent, role: resolvedRole });
 
       if (resolvedRole === "admin") {
         bootstrapConsumed = true;
@@ -96,7 +100,10 @@ describe("AuthController", () => {
       sendMagicLinkEmail: vi.fn().mockResolvedValue(undefined),
     } as unknown as AuthMailerService;
     const controller = new AuthController(service, mailer);
-    const request = await controller.requestMagicLink({ email: "user@example.com" });
+    const request = await controller.requestMagicLink({
+      consentAccepted: true,
+      email: "user@example.com",
+    });
     const sendCall = vi.mocked(mailer.sendMagicLinkEmail).mock.calls[0]?.[0];
     const token = sendCall ? new URL(sendCall.magicLink).searchParams.get("token") ?? "" : "";
     const cookie = vi.fn();
@@ -158,7 +165,10 @@ describe("AuthController", () => {
       getHealth: vi.fn(),
     } as unknown as AuthMailerService;
     const controller = new AuthController(service, mailer);
-    const request = await controller.requestMagicLink({ email: "admin@example.com" });
+    const request = await controller.requestMagicLink({
+      consentAccepted: true,
+      email: "admin@example.com",
+    });
     const sendCall = vi.mocked(mailer.sendMagicLinkEmail).mock.calls[0]?.[0];
     const adminToken =
       sendCall ? new URL(sendCall.magicLink).searchParams.get("token") ?? "" : "";
@@ -206,7 +216,7 @@ describe("AuthController", () => {
     });
 
     const consumed = controller.consumeInvitation(
-      { token: invitationToken },
+      { consentAccepted: true, token: invitationToken },
       {
         cookie: consumeCookie,
       } as never,
@@ -220,6 +230,65 @@ describe("AuthController", () => {
       email: "invitee@example.com",
       role: "admin",
     });
+  });
+
+  it("should reject new public signup requests without consent", async () => {
+    const service = new AuthService(config, createInMemoryAccountStore());
+    const mailer = {
+      sendMagicLinkEmail: vi.fn().mockResolvedValue(undefined),
+      getHealth: vi.fn(),
+    } as unknown as AuthMailerService;
+    const controller = new AuthController(service, mailer);
+
+    await expect(
+      controller.requestMagicLink({ consentAccepted: false, email: "user@example.com" }),
+    ).rejects.toThrow(/consent/i);
+  });
+
+  it("should reject invitation consumption without consent", async () => {
+    const service = new AuthService(config, createInMemoryAccountStore());
+    const mailer = {
+      sendMagicLinkEmail: vi.fn().mockResolvedValue(undefined),
+      getHealth: vi.fn(),
+    } as unknown as AuthMailerService;
+    const controller = new AuthController(service, mailer);
+    const request = await controller.requestMagicLink({
+      consentAccepted: true,
+      email: "admin@example.com",
+    });
+    const sendCall = vi.mocked(mailer.sendMagicLinkEmail).mock.calls[0]?.[0];
+    const adminToken =
+      sendCall ? new URL(sendCall.magicLink).searchParams.get("token") ?? "" : "";
+    const loginCookie = vi.fn();
+    const loginRedirect = vi.fn();
+
+    controller.consumeMagicLink(adminToken, undefined, {
+      cookie: loginCookie,
+      redirect: loginRedirect,
+    } as never);
+
+    const [cookieName, cookieValue] = loginCookie.mock.calls[0] as [string, string];
+    const invitation = controller.createInvitation(
+      {
+        email: "invitee@example.com",
+        role: "admin",
+      },
+      {
+        headers: {
+          cookie: `${cookieName}=${cookieValue}`,
+        },
+      } as never,
+    );
+    const invitationToken =
+      new URL(invitation.invitationUrl).searchParams.get("token") ?? "";
+
+    expect(request.email).toBe("admin@example.com");
+    expect(() =>
+      controller.consumeInvitation(
+        { consentAccepted: false, token: invitationToken },
+        { cookie: vi.fn() } as never,
+      ),
+    ).toThrow(/consent/i);
   });
 
   it("should reject missing or non-admin sessions from the admin session probe", async () => {
@@ -236,7 +305,10 @@ describe("AuthController", () => {
       } as never),
     ).toThrow(UnauthorizedException);
 
-    const adminRequest = await controller.requestMagicLink({ email: "admin@example.com" });
+    const adminRequest = await controller.requestMagicLink({
+      consentAccepted: true,
+      email: "admin@example.com",
+    });
     const adminSendCall = vi.mocked(mailer.sendMagicLinkEmail).mock.calls[0]?.[0];
     const adminToken =
       adminSendCall
@@ -252,7 +324,10 @@ describe("AuthController", () => {
 
     expect(adminRequest.email).toBe("admin@example.com");
 
-    const userRequest = await controller.requestMagicLink({ email: "user@example.com" });
+    const userRequest = await controller.requestMagicLink({
+      consentAccepted: true,
+      email: "user@example.com",
+    });
     const userSendCall = vi.mocked(mailer.sendMagicLinkEmail).mock.calls[1]?.[0];
     const userToken =
       userSendCall ? new URL(userSendCall.magicLink).searchParams.get("token") ?? "" : "";

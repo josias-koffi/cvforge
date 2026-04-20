@@ -10,6 +10,7 @@ describe("LoginPage", () => {
     expect(markup).toContain("Connexion passwordless");
     expect(markup).toContain('action="/login/request"');
     expect(markup).toContain('type="email"');
+    expect(markup).toContain('name="consentAccepted"');
     expect(markup).toContain("Recevoir mon magic link");
   });
 
@@ -22,5 +23,16 @@ describe("LoginPage", () => {
     const markup = renderToStaticMarkup(Page);
 
     expect(markup).toContain("Impossible de generer le magic link");
+  });
+
+  it("should render the consent error message when requested", async () => {
+    const Page = await LoginPage({
+      searchParams: Promise.resolve({
+        error: "consent_required",
+      }),
+    });
+    const markup = renderToStaticMarkup(Page);
+
+    expect(markup).toContain("Le consentement RGPD est requis");
   });
 });

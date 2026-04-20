@@ -1,3 +1,13 @@
+import {
+  normalizeEmail,
+  normalizeFutureDateInput,
+  normalizeLongText,
+  normalizePastDateInput,
+  normalizePhone,
+  normalizeShortText,
+  normalizeUrlField,
+} from "../input-guards";
+
 export const ONBOARDING_DRAFT_STORAGE_KEY = "cvforge-onboarding-draft";
 
 export type OnboardingDraft = {
@@ -76,10 +86,6 @@ export function createEmptyDraft(sessionEmail: string): OnboardingDraft {
   };
 }
 
-function asString(value: unknown) {
-  return typeof value === "string" ? value : "";
-}
-
 function asBoolean(value: unknown) {
   return value === true;
 }
@@ -102,31 +108,34 @@ export function sanitizeDraft(
 
   return {
     additional: {
-      availabilityDate: asString(candidate.additional?.availabilityDate),
+      availabilityDate:
+        candidate.additional?.availabilityMode === "date"
+          ? normalizeFutureDateInput(candidate.additional?.availabilityDate)
+          : "",
       availabilityMode:
         candidate.additional?.availabilityMode === "immediate" ||
         candidate.additional?.availabilityMode === "date"
           ? candidate.additional.availabilityMode
           : "",
-      birthDate: asString(candidate.additional?.birthDate),
-      contractTypes: asString(candidate.additional?.contractTypes),
-      educationLevel: asString(candidate.additional?.educationLevel),
+      birthDate: normalizePastDateInput(candidate.additional?.birthDate),
+      contractTypes: normalizeLongText(candidate.additional?.contractTypes, 300),
+      educationLevel: normalizeShortText(candidate.additional?.educationLevel, 120),
       hasDrivingLicense: asBoolean(candidate.additional?.hasDrivingLicense),
-      languages: asString(candidate.additional?.languages),
-      nationality: asString(candidate.additional?.nationality),
-      salaryRange: asString(candidate.additional?.salaryRange),
-      targetSectors: asString(candidate.additional?.targetSectors),
+      languages: normalizeLongText(candidate.additional?.languages, 300),
+      nationality: normalizeShortText(candidate.additional?.nationality, 80),
+      salaryRange: normalizeShortText(candidate.additional?.salaryRange, 80),
+      targetSectors: normalizeLongText(candidate.additional?.targetSectors, 300),
     },
     importCv: {
-      fileName: asString(candidate.importCv?.fileName),
-      notes: asString(candidate.importCv?.notes),
+      fileName: normalizeShortText(candidate.importCv?.fileName, 160),
+      notes: normalizeLongText(candidate.importCv?.notes),
       skipped: asBoolean(candidate.importCv?.skipped),
     },
     links: {
-      github: asString(candidate.links?.github),
-      linkedIn: asString(candidate.links?.linkedIn),
-      other: asString(candidate.links?.other),
-      portfolio: asString(candidate.links?.portfolio),
+      github: normalizeUrlField(candidate.links?.github),
+      linkedIn: normalizeUrlField(candidate.links?.linkedIn),
+      other: normalizeUrlField(candidate.links?.other),
+      portfolio: normalizeUrlField(candidate.links?.portfolio),
     },
     meta: {
       currentStep: asStep(candidate.meta?.currentStep),
@@ -136,12 +145,12 @@ export function sanitizeDraft(
           : null,
     },
     personal: {
-      city: asString(candidate.personal?.city),
-      firstName: asString(candidate.personal?.firstName),
-      lastName: asString(candidate.personal?.lastName),
-      phone: asString(candidate.personal?.phone),
+      city: normalizeShortText(candidate.personal?.city, 120),
+      firstName: normalizeShortText(candidate.personal?.firstName, 80),
+      lastName: normalizeShortText(candidate.personal?.lastName, 80),
+      phone: normalizePhone(candidate.personal?.phone),
       professionalEmail:
-        asString(candidate.personal?.professionalEmail) || sessionEmail,
+        normalizeEmail(candidate.personal?.professionalEmail, sessionEmail) || sessionEmail,
     },
   };
 }

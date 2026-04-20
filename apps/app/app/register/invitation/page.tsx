@@ -37,6 +37,8 @@ export default async function InvitationPage({
   const errorMessage =
     resolvedSearchParams?.error === "consume_failed"
       ? "Impossible de consommer cette invitation."
+      : resolvedSearchParams?.error === "consent_required"
+        ? "Le consentement RGPD est requis avant d'accepter l'invitation."
       : null;
 
   if (!token || !invitation) {
@@ -136,6 +138,29 @@ export default async function InvitationPage({
 
       <form action="/register/invitation/accept" method="post">
         <input name="token" type="hidden" value={token} />
+        <label
+          htmlFor="invitation-consent-accepted"
+          style={{
+            alignItems: "flex-start",
+            display: "flex",
+            gap: "0.75rem",
+            lineHeight: 1.6,
+            marginBottom: "1rem",
+          }}
+        >
+          <input
+            id="invitation-consent-accepted"
+            name="consentAccepted"
+            required
+            type="checkbox"
+            value="true"
+          />
+          <span>
+            J&apos;accepte la creation de mon compte invite et le traitement des
+            donnees necessaires au MVP selon les futures CGU et la politique de
+            confidentialite.
+          </span>
+        </label>
         <button
           type="submit"
           style={{

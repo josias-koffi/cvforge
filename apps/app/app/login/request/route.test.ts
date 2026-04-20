@@ -21,6 +21,7 @@ describe("POST /login/request", () => {
 
     const formData = new FormData();
     formData.set("email", "user@example.com");
+    formData.set("consentAccepted", "true");
 
     const response = await POST(
       new Request("http://localhost:3000/login/request", {
@@ -44,6 +45,7 @@ describe("POST /login/request", () => {
 
     const formData = new FormData();
     formData.set("email", "user@example.com");
+    formData.set("consentAccepted", "true");
 
     const response = await POST(
       new Request("http://localhost:3000/login/request", {
@@ -54,6 +56,27 @@ describe("POST /login/request", () => {
 
     expect(response.headers.get("location")).toBe(
       "http://localhost:3000/login?error=request_failed",
+    );
+  });
+
+  it("should reject a missing consent checkbox before calling the API", async () => {
+    const fetchMock = vi.fn();
+
+    vi.stubGlobal("fetch", fetchMock);
+
+    const formData = new FormData();
+    formData.set("email", "user@example.com");
+
+    const response = await POST(
+      new Request("http://localhost:3000/login/request", {
+        body: formData,
+        method: "POST",
+      }),
+    );
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(response.headers.get("location")).toBe(
+      "http://localhost:3000/login?error=consent_required",
     );
   });
 });

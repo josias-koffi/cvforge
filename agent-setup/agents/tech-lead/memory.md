@@ -103,3 +103,17 @@
 - **Why**: Architecture governance and sprint bookkeeping require an explicit final decision before the story can be marked complete.
 - **Learned**: The existing app boundary can carry the first base-profile domain locally without a new framework or ADR, which keeps the next pseudonymisation work focused on data handling rather than persistence redesign.
 - **Open**: The repository still needs ownership cleanup on generated `.next` directories before build can be a reliable gate again.
+
+## 2026-04-20 — US-015 finalization
+
+- **Did**: Closed `US-015` with a passing verdict after confirming the prompt-safe contract, explicit local reinjection metadata, and successful lint/test/build evidence for the affected app slice.
+- **Why**: Architecture governance and sprint bookkeeping require a final sign-off once the policy is enforced in code and each acceptance criterion is verified.
+- **Learned**: The existing app-layer profile boundary is a sufficient place to centralize pseudonymisation rules now, which reduces the risk of future OpenRouter integrations leaking forbidden fields through duplicated prompt builders.
+- **Open**: The future AI service boundary should import this contract from one place instead of redefining prompt sanitization per feature.
+
+## 2026-04-20 — US-016 finalization
+
+- **Did**: Closed `US-016` with a passing verdict after confirming persisted consent metadata, shared critical-input guardrails, sprint `009` RGPD carry-over, and successful repo lint/test plus API build evidence.
+- **Why**: Architecture governance and sprint bookkeeping require a final sign-off once the implementation and QA stages show that the MVP guardrails are real and reviewable.
+- **Learned**: The current auth and local-profile boundaries are sufficient to enforce meaningful RGPD preparation work now without an ADR or a wider persistence redesign.
+- **Open**: The remaining launch-critical RGPD items are now explicitly queued in sprint `009`; the local app build still depends on fixing `.next` ownership outside the code change itself.

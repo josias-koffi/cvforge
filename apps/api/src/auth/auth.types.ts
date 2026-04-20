@@ -1,3 +1,14 @@
+export type AuthConsentRecord = {
+  acceptedAt: string;
+  source: "invitation" | "passwordless";
+  version: string;
+};
+
+export type AuthAccount = {
+  consent: AuthConsentRecord | null;
+  role: AuthRole;
+};
+
 export type AuthConfig = {
   apiUrl: string;
   appUrl: string;
@@ -42,8 +53,13 @@ export type InvitationResponse = {
 };
 
 export type AuthAccountStore = {
-  resolveRole: (email: string) => AuthRole;
-  assignInvitedRole: (email: string, role: AuthRole) => AuthRole;
+  readAccount: (email: string) => AuthAccount | null;
+  resolveRole: (email: string, consent?: AuthConsentRecord | null) => AuthRole;
+  assignInvitedRole: (
+    email: string,
+    role: AuthRole,
+    consent: AuthConsentRecord,
+  ) => AuthRole;
   readInvitation: (tokenHash: string) => AuthInvitation | null;
   saveInvitation: (tokenHash: string, invitation: AuthInvitation) => void;
   consumeInvitation: (

@@ -82,3 +82,17 @@
 - **Why**: The story needed a focused UX that satisfies the vision sections while preserving the sprint rule of a single profile in MVP.
 - **Learned**: The existing shell and card system can support a fairly dense profile editor as long as the page stays vertically structured and clearly segmented.
 - **Open**: Later CV-generation work should decide how this profile transitions from structured form data into the editor/template pipeline.
+
+## 2026-04-20 — US-015
+
+- **Did**: Marked the design stage as a non-UI data-contract task and specified a prompt-safe profile shape with explicit omission and reinjection metadata.
+- **Why**: The workflow still required a design decision even though the story changes backend-facing data semantics rather than a user-facing screen.
+- **Learned**: A pure helper contract is the least risky way to encode RGPD prompt rules now because it can be reused by future CV, letter, and interview flows without UI duplication.
+- **Open**: Later AI surfaces should expose only explanatory copy if users need visibility into what data is withheld from prompts.
+
+## 2026-04-20 — US-016
+
+- **Did**: Specified mandatory consent checkboxes and inline error feedback on both signup surfaces, plus invisible data guardrails for URLs, phone numbers, dates, and bounded text inputs.
+- **Why**: The story needed a minimal UX that makes consent explicit without adding new screens, while keeping the data-entry experience safe for the current MVP.
+- **Learned**: The existing auth pages can absorb RGPD consent and validation affordances with small copy and form changes instead of a new registration flow.
+- **Open**: The future legal copy should replace the placeholder wording once the real CGU and privacy policy are written in sprint `009`.

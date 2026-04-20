@@ -1,4 +1,12 @@
 import { loadDraftFromStorage } from "../onboarding/draft";
+import {
+  normalizeEmail,
+  normalizeLongText,
+  normalizePhone,
+  normalizeShortText,
+  normalizeStringList,
+  normalizeUrlField,
+} from "../input-guards";
 
 export const BASE_PROFILE_STORAGE_KEY = "cvforge-base-profile";
 
@@ -124,28 +132,16 @@ export function createEmptyBaseProfile(sessionEmail: string): BaseProfile {
   };
 }
 
-function asString(value: unknown) {
-  return typeof value === "string" ? value : "";
-}
-
-function asStringList(value: unknown) {
-  if (!Array.isArray(value)) {
-    return [];
-  }
-
-  return value.filter((item): item is string => typeof item === "string");
-}
-
 function asExperienceList(value: unknown) {
   if (!Array.isArray(value)) {
     return [];
   }
 
   return value.map((item) => ({
-    company: asString((item as ExperienceEntry | undefined)?.company),
-    period: asString((item as ExperienceEntry | undefined)?.period),
-    results: asString((item as ExperienceEntry | undefined)?.results),
-    role: asString((item as ExperienceEntry | undefined)?.role),
+    company: normalizeShortText((item as ExperienceEntry | undefined)?.company, 120),
+    period: normalizeShortText((item as ExperienceEntry | undefined)?.period, 80),
+    results: normalizeLongText((item as ExperienceEntry | undefined)?.results, 600),
+    role: normalizeShortText((item as ExperienceEntry | undefined)?.role, 120),
   }));
 }
 
@@ -155,10 +151,10 @@ function asEducationList(value: unknown) {
   }
 
   return value.map((item) => ({
-    degree: asString((item as EducationEntry | undefined)?.degree),
-    honors: asString((item as EducationEntry | undefined)?.honors),
-    institution: asString((item as EducationEntry | undefined)?.institution),
-    year: asString((item as EducationEntry | undefined)?.year),
+    degree: normalizeShortText((item as EducationEntry | undefined)?.degree, 120),
+    honors: normalizeShortText((item as EducationEntry | undefined)?.honors, 120),
+    institution: normalizeShortText((item as EducationEntry | undefined)?.institution, 120),
+    year: normalizeShortText((item as EducationEntry | undefined)?.year, 16),
   }));
 }
 
@@ -168,9 +164,9 @@ function asCertificationList(value: unknown) {
   }
 
   return value.map((item) => ({
-    issuer: asString((item as CertificationEntry | undefined)?.issuer),
-    title: asString((item as CertificationEntry | undefined)?.title),
-    year: asString((item as CertificationEntry | undefined)?.year),
+    issuer: normalizeShortText((item as CertificationEntry | undefined)?.issuer, 120),
+    title: normalizeShortText((item as CertificationEntry | undefined)?.title, 120),
+    year: normalizeShortText((item as CertificationEntry | undefined)?.year, 16),
   }));
 }
 
@@ -180,9 +176,9 @@ function asProjectList(value: unknown) {
   }
 
   return value.map((item) => ({
-    description: asString((item as ProjectEntry | undefined)?.description),
-    link: asString((item as ProjectEntry | undefined)?.link),
-    title: asString((item as ProjectEntry | undefined)?.title),
+    description: normalizeLongText((item as ProjectEntry | undefined)?.description, 600),
+    link: normalizeUrlField((item as ProjectEntry | undefined)?.link),
+    title: normalizeShortText((item as ProjectEntry | undefined)?.title, 120),
   }));
 }
 
@@ -236,17 +232,17 @@ export function sanitizeBaseProfile(
   const candidate = value as Partial<BaseProfile>;
 
   return {
-    headline: asString(candidate.headline),
+    headline: normalizeShortText(candidate.headline, 120),
     identity: {
-      city: asString(candidate.identity?.city),
-      email: asString(candidate.identity?.email) || sessionEmail,
-      firstName: asString(candidate.identity?.firstName),
-      github: asString(candidate.identity?.github),
-      lastName: asString(candidate.identity?.lastName),
-      linkedIn: asString(candidate.identity?.linkedIn),
-      otherLink: asString(candidate.identity?.otherLink),
-      phone: asString(candidate.identity?.phone),
-      portfolio: asString(candidate.identity?.portfolio),
+      city: normalizeShortText(candidate.identity?.city, 120),
+      email: normalizeEmail(candidate.identity?.email, sessionEmail) || sessionEmail,
+      firstName: normalizeShortText(candidate.identity?.firstName, 80),
+      github: normalizeUrlField(candidate.identity?.github),
+      lastName: normalizeShortText(candidate.identity?.lastName, 80),
+      linkedIn: normalizeUrlField(candidate.identity?.linkedIn),
+      otherLink: normalizeUrlField(candidate.identity?.otherLink),
+      phone: normalizePhone(candidate.identity?.phone),
+      portfolio: normalizeUrlField(candidate.identity?.portfolio),
     },
     meta: {
       lastSavedAt:
@@ -263,11 +259,11 @@ export function sanitizeBaseProfile(
       certifications: asCertificationList(candidate.sections?.certifications),
       education: asEducationList(candidate.sections?.education),
       experiences: asExperienceList(candidate.sections?.experiences),
-      interests: asString(candidate.sections?.interests),
+      interests: normalizeLongText(candidate.sections?.interests, 400),
       personalProjects: asProjectList(candidate.sections?.personalProjects),
-      softSkills: asStringList(candidate.sections?.softSkills),
-      summary: asString(candidate.sections?.summary),
-      technicalSkills: asStringList(candidate.sections?.technicalSkills),
+      softSkills: normalizeStringList(candidate.sections?.softSkills),
+      summary: normalizeLongText(candidate.sections?.summary),
+      technicalSkills: normalizeStringList(candidate.sections?.technicalSkills),
     },
   };
 }
