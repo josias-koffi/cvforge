@@ -89,7 +89,7 @@ describe("ApplicationsPage", () => {
       });
 
     const Page = await ApplicationsPage({
-      searchParams: { created: "app_123" },
+      searchParams: Promise.resolve({ created: "app_123" }),
     });
     const markup = renderToStaticMarkup(Page);
 
@@ -134,7 +134,7 @@ describe("ApplicationsPage", () => {
       });
 
     const Page = await ApplicationsPage({
-      searchParams: { error: "invalid_url", url: "bad-url" },
+      searchParams: Promise.resolve({ error: "invalid_url", url: "bad-url" }),
     });
     const markup = renderToStaticMarkup(Page);
 
@@ -172,7 +172,7 @@ describe("ApplicationsPage", () => {
       });
 
     const Page = await ApplicationsPage({
-      searchParams: { error: "invalid_text" },
+      searchParams: Promise.resolve({ error: "invalid_text" }),
     });
     const markup = renderToStaticMarkup(Page);
 
@@ -209,7 +209,7 @@ describe("ApplicationsPage", () => {
       });
 
     const Page = await ApplicationsPage({
-      searchParams: { statusUpdated: "app_123" },
+      searchParams: Promise.resolve({ statusUpdated: "app_123" }),
     });
     const markup = renderToStaticMarkup(Page);
 

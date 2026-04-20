@@ -1,8 +1,6 @@
 import React from "react";
 import { cookies } from "next/headers";
 import {
-  type ApplicationsKpiSummary,
-  type ApplicationStatus,
   AppShell,
   Button,
   Card,
@@ -14,7 +12,11 @@ import {
   Label,
   Textarea,
 } from "@cvforge/ui";
-import type { DraftApplication } from "@cvforge/types";
+import type {
+  ApplicationsKpiSummary,
+  ApplicationStatus,
+  DraftApplication,
+} from "@cvforge/types";
 import { getServerApiUrl } from "../auth-config";
 import { requireSession } from "../auth/session";
 import { getAppNavigation } from "../content";
@@ -26,9 +28,7 @@ import {
 } from "./status-metadata";
 
 type ApplicationsPageProps = {
-  searchParams?:
-    | Promise<Record<string, string | string[] | undefined>>
-    | Record<string, string | string[] | undefined>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
 
 function getCookieHeader(cookieStore: Awaited<ReturnType<typeof cookies>>) {
@@ -104,7 +104,7 @@ async function resolveSearchParams(
     return {};
   }
 
-  return searchParams instanceof Promise ? await searchParams : searchParams;
+  return await searchParams;
 }
 
 function renderArray(values: string[]) {
@@ -134,7 +134,7 @@ function renderStatusCount(summary: ApplicationsKpiSummary, status: ApplicationS
 
 export default async function ApplicationsPage({
   searchParams,
-}: ApplicationsPageProps = {}) {
+}: ApplicationsPageProps) {
   const session = await requireSession();
   const [applications, summary] = await Promise.all([
     fetchApplications(),
