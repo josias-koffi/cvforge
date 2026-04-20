@@ -189,6 +189,7 @@ export interface ApplicationsKpiSummary {
 
 export interface DraftApplication {
   createdAt: string;
+  cvGeneratedAt: string | null;
   id: string;
   offerUrl: string | null;
   offerTextPreview: string;
@@ -201,6 +202,40 @@ export interface DraftApplication {
   updatedAt: string;
   userEmail: string;
   extracted: ExtractedOfferFields;
+}
+
+export interface CvLocalFields {
+  email: string;
+  lastName: string;
+  phone: string;
+}
+
+export interface PromptSafeIdentity {
+  candidateToken: string;
+  city: string;
+  firstName: string;
+}
+
+export interface PromptSafeProfileSections {
+  certifications: Array<{ issuer: string; title: string; year: string }>;
+  education: Array<{ degree: string; honors: string; institution: string; year: string }>;
+  experiences: Array<{ company: string; period: string; results: string; role: string }>;
+  interests: string;
+  personalProjects: Array<{ description: string; link: string; title: string }>;
+  softSkills: string[];
+  summary: string;
+  technicalSkills: string[];
+}
+
+export interface PromptSafeProfile {
+  headline: string;
+  identity: PromptSafeIdentity;
+  profileSections: PromptSafeProfileSections;
+}
+
+export interface CvGenerationRequest {
+  localFields: CvLocalFields;
+  promptProfile: PromptSafeProfile;
 }
 
 export interface TemplateLayoutBlock {

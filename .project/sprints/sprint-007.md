@@ -13,13 +13,13 @@ Rendre la génération documentaire du MVP réellement exploitable: CV généré
 
 ## ✅ Tasks (3–8 max)
 
-- [ ] **[US-025]** Générer un CV via pipeline OpenRouter vers JSON pseudonymisé puis injection locale
+- [x] **[US-025]** Générer un CV via pipeline OpenRouter vers JSON pseudonymisé puis injection locale
   - Agent: `developer`
   - Workflow: `analyze-design-dev-review`
   - Acceptance criteria:
-    - [ ] Le prompt n'expose pas les données interdites
-    - [ ] Le JSON généré est compatible avec le template actif
-    - [ ] Les champs réinjectés localement apparaissent au rendu final
+    - [x] Le prompt n'expose pas les données interdites
+    - [x] Le JSON généré est compatible avec le template actif
+    - [x] Les champs réinjectés localement apparaissent au rendu final
   - Source: vision `§6.2`, `§8`, `§15.3`, `§16`
 - [ ] **[US-026]** Permettre l'édition WYSIWYG Puck côté user + lecture mobile
   - Agent: `developer`

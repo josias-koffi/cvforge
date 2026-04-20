@@ -187,3 +187,10 @@
 - **Why**: Next.js RSC serialization rejects event handler props (`onSubmit`) passed across the server/client boundary. The `window.confirm` guard requires client-side JS and therefore must live in a Client Component.
 - **Learned**: Any `<form onSubmit>` or interactive handler inside a Server Component will throw "Event handlers cannot be passed to Client Component props" at runtime. The fix is always to extract to a minimal `"use client"` wrapper rather than moving the whole page.
 - **Open**: Consider replacing `window.confirm` with a proper `AlertDialog` from shadcn in a future UX pass for a better modal experience.
+
+## 2026-04-20 — US-025
+
+- **Did**: Implemented the full CV generation pipeline — new `cv-generation` NestJS module (`CvGenerationService`, `CvGenerationController`), added `cvContent`/`cvGeneratedAt` to `StoredApplication` and `DraftApplication`, `GenerateCvButton` client component, `/candidatures/generate-cv` route handler, and `/cv/[applicationId]` render page.
+- **Why**: US-025 required the first end-to-end generation path: pseudonymised OpenRouter call → normalised CVDocumentContent → local field re-injection → render via document block components.
+- **Learned**: The profile is app-side (localStorage); the RGPD-correct pattern is to build `PromptSafeProfile` on the client and re-inject `localFields` server-side after the AI response — this keeps PII out of OpenRouter without moving profile storage to the API. The `cv-generation` module shares the same `FileApplicationsStore` instance as `ApplicationsModule`, which works in the current file-backed setup but will need coordination when migrating to a real DB.
+- **Open**: US-026 should wire the stored `cvContent` into the Puck editor for WYSIWYG editing. US-027 adds PDF export from the same content.

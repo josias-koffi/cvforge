@@ -145,3 +145,10 @@
 - **Why**: The sprint needed an admin UX that could create and modify templates without introducing a new editor framework.
 - **Learned**: A Puck-compatible JSON editor is sufficient for the MVP as long as the preview and storage contract stay explicit.
 - **Open**: Full drag-and-drop layout authoring can wait until the product commits to a dedicated Puck integration.
+
+## 2026-04-20 — US-025 design
+
+- **Did**: Specified two surfaces: a "Générer le CV" client button on candidature cards and a `/cv/[applicationId]` render page with A4-style centered layout using EB Garamond typography and the existing document block components.
+- **Why**: The story needed minimal UI to trigger generation and display the result, without prematurely designing the WYSIWYG editor (US-026).
+- **Learned**: The "feuille de travail" aesthetic from the vision maps directly to the document page: white card on ivory, serif font, section dividers — no new design tokens needed.
+- **Open**: US-026 should overlay the Puck editor on top of this same render surface for the WYSIWYG editing flow.

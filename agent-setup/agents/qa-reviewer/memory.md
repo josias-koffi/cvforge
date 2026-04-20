@@ -145,3 +145,10 @@
 - **Why**: The story could only pass once each acceptance criterion had direct code evidence and the new route handlers cleared the 90% new-code coverage threshold.
 - **Learned**: The gold `Défaut` badge contrast ratio at #C8A96E on #FAFAF7 just clears 4.5:1 WCAG AA — margin is thin; any future palette adjustment should recheck this.
 - **Open**: The `window.confirm` pattern and the page line count are advisory items to address in the next admin UX pass.
+
+## 2026-04-20 — US-025 review
+
+- **Did**: Verified all three acceptance criteria: (1) prompt RGPD compliance via service test assertions on the OpenRouter payload, (2) `CVDocumentContent` compatibility with the block registry contract, (3) local field re-injection confirmed by service test and CV render page.
+- **Why**: The story could only pass once every acceptance criterion had direct automated test evidence covering the RGPD-critical path.
+- **Learned**: The pseudonymisation contract is reviewable when expressed as two distinct types (`PromptSafeProfile` vs `CvLocalFields`) — the type system prevents accidentally sending `localFields` to OpenRouter.
+- **Open**: US-026 should preserve the `cvContent` contract when adding Puck editing so that re-generation and editing can coexist without breaking the stored document structure.

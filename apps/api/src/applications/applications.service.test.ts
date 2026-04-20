@@ -21,6 +21,9 @@ function createStore(): ApplicationsStore {
       applications.set(application.id, application);
       return application;
     },
+    findById(applicationId) {
+      return applications.get(applicationId) ?? null;
+    },
     findByIdForUserEmail(userEmail, applicationId) {
       const application = applications.get(applicationId);
 

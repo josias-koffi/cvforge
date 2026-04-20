@@ -1,6 +1,7 @@
 import type {
   ApplicationStatus,
   ApplicationsKpiSummary,
+  CVDocumentContent,
   DraftApplication,
   ExtractedOfferFields,
 } from "@cvforge/types";
@@ -10,6 +11,7 @@ export type ApplicationsConfig = {
 };
 
 export type StoredApplication = DraftApplication & {
+  cvContent: CVDocumentContent | null;
   rawOfferText: string;
 };
 
@@ -21,6 +23,7 @@ export type ApplicationsStore = {
   ) => StoredApplication | null;
   listByUserEmail: (userEmail: string) => StoredApplication[];
   save: (application: StoredApplication) => StoredApplication;
+  findById: (applicationId: string) => StoredApplication | null;
 };
 
 export type OfferExtractionResult = {

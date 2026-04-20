@@ -25,6 +25,8 @@ describe("FileApplicationsStore", () => {
 
     store.createDraft({
       createdAt: "2026-04-20T12:00:00.000Z",
+      cvContent: null,
+      cvGeneratedAt: null,
       id: "app_old",
       offerTextPreview: "Old preview",
       offerUrl: "https://example.com/jobs/old",
@@ -54,6 +56,8 @@ describe("FileApplicationsStore", () => {
     });
     store.createDraft({
       createdAt: "2026-04-20T13:00:00.000Z",
+      cvContent: null,
+      cvGeneratedAt: null,
       id: "app_new",
       offerTextPreview: "New preview",
       offerUrl: "https://example.com/jobs/new",
@@ -103,6 +107,8 @@ describe("FileApplicationsStore", () => {
 
     store.save({
       createdAt: "2026-04-20T12:00:00.000Z",
+      cvContent: null,
+      cvGeneratedAt: null,
       id: "legacy_app",
       offerTextPreview: "Legacy preview",
       offerUrl: "https://example.com/jobs/legacy",

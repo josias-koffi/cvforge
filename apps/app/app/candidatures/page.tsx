@@ -26,6 +26,7 @@ import {
   getApplicationStatusLabel,
   getApplicationStatusTone,
 } from "./status-metadata";
+import { GenerateCvButton } from "./generate-cv-button";
 
 type ApplicationsPageProps = {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
@@ -413,6 +414,44 @@ export default async function ApplicationsPage({
                         )}
                       </div>
                     )}
+                  </div>
+                  <div
+                    style={{
+                      border: "1px solid #D9D4CA",
+                      borderRadius: "0.9rem",
+                      display: "grid",
+                      gap: "0.85rem",
+                      padding: "1rem",
+                    }}
+                  >
+                    <div style={{ display: "grid", gap: "0.35rem" }}>
+                      <strong style={{ color: "#1A1A18" }}>Génération du CV</strong>
+                      <p style={{ color: "#6B6860", lineHeight: 1.6, margin: 0 }}>
+                        Génère un CV ATS optimisé à partir de votre profil de base et du texte de l&apos;offre.
+                        Les données sensibles (nom, téléphone, email) sont injectées localement après la génération IA.
+                      </p>
+                    </div>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: "0.75rem" }}>
+                      <GenerateCvButton applicationId={application.id} />
+                      {application.cvGeneratedAt ? (
+                        <a
+                          href={`/cv/${application.id}`}
+                          style={{
+                            alignItems: "center",
+                            border: "1px solid #C8A96E",
+                            borderRadius: "0.5rem",
+                            color: "#2C2C2A",
+                            display: "inline-flex",
+                            fontSize: "0.875rem",
+                            fontWeight: 500,
+                            padding: "0.45rem 0.9rem",
+                            textDecoration: "none",
+                          }}
+                        >
+                          Voir le CV généré
+                        </a>
+                      ) : null}
+                    </div>
                   </div>
                   <dl
                     style={{

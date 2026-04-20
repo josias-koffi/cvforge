@@ -166,3 +166,10 @@
 - **Why**: The workflow needed a tight boundary so the story did not bleed into the AI generation or user-edit flows.
 - **Learned**: The vision explicitly separates admin preview (fictitious data) from user preview (real generated content), which made the acceptance criteria directly testable.
 - **Open**: Sprint 006 complete. Sprint 007 should tackle CV generation pipeline.
+
+## 2026-04-20 — US-025 analyze
+
+- **Did**: Confirmed US-025 scope as the core CV generation pipeline: pseudonymised prompt → OpenRouter → JSON → local re-injection → stored CVDocumentContent, with frontend trigger and render page.
+- **Why**: The workflow needed a precise boundary separating this story from US-026 (Puck editing), US-027 (PDF export), and US-028 (LM generation).
+- **Learned**: The profile lives in localStorage (app-side); the API must receive the pseudonymised payload and inject sensitive fields server-side — this is the correct RGPD-compliant architecture.
+- **Open**: US-026 should add WYSIWYG Puck editing on top of the generated CVDocumentContent that US-025 now stores per-application.

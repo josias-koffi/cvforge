@@ -65,6 +65,8 @@ function normalizeStoredApplication(
 
   return {
     ...application,
+    cvContent: application.cvContent ?? null,
+    cvGeneratedAt: application.cvGeneratedAt ?? null,
     status,
     statusHistory: normalizeStatusHistory(
       application.statusHistory,
@@ -84,6 +86,11 @@ export class FileApplicationsStore implements ApplicationsStore {
     this.writeState(state);
 
     return application;
+  }
+
+  findById(applicationId: string) {
+    const state = this.readState();
+    return state.applications[applicationId] ?? null;
   }
 
   findByIdForUserEmail(userEmail: string, applicationId: string) {

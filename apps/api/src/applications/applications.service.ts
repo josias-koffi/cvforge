@@ -269,6 +269,8 @@ export class ApplicationsService {
     const timestamp = new Date().toISOString();
     const storedApplication: StoredApplication = {
       createdAt: timestamp,
+      cvContent: null,
+      cvGeneratedAt: null,
       id: randomUUID(),
       offerTextPreview: extraction.offerTextPreview,
       offerUrl: extraction.offerUrl,
@@ -298,6 +300,8 @@ export class ApplicationsService {
     const timestamp = new Date().toISOString();
     const storedApplication: StoredApplication = {
       createdAt: timestamp,
+      cvContent: null,
+      cvGeneratedAt: null,
       id: randomUUID(),
       offerTextPreview: extraction.offerTextPreview,
       offerUrl: extraction.offerUrl,
@@ -451,7 +455,7 @@ export class ApplicationsService {
 }
 
 function stripRawOfferText(application: StoredApplication): DraftApplication {
-  const { rawOfferText: _rawOfferText, ...draftApplication } = application;
+  const { rawOfferText: _rawOfferText, cvContent: _cvContent, ...draftApplication } = application;
 
   return draftApplication;
 }
