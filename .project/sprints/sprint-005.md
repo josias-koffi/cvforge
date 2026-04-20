@@ -13,13 +13,13 @@ Ouvrir le pipeline métier principal du MVP: création de candidature, statuts e
 
 ## ✅ Tasks (3–8 max)
 
-- [ ] **[US-017]** Intégrer OpenRouter avec `zdr: true` et fournisseur Mistral
+- [x] **[US-017]** Intégrer OpenRouter avec `zdr: true` et fournisseur Mistral
   - Agent: `tech-lead`
   - Workflow: `analyze-design-dev-review`
   - Acceptance criteria:
-    - [ ] Tous les appels OpenRouter forcent `zdr: true`
-    - [ ] Le prompt logging reste désactivé
-    - [ ] Le provider est limité à Mistral quand applicable
+    - [x] Tous les appels OpenRouter forcent `zdr: true`
+    - [x] Le prompt logging reste désactivé
+    - [x] Le provider est limité à Mistral quand applicable
   - Source: vision `§2`, `§15.2`, `§16`
 - [ ] **[US-018]** Créer une candidature à partir d'une offre via scraping
   - Agent: `developer`

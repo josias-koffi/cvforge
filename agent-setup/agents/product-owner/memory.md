@@ -110,3 +110,10 @@
 - **Why**: The declared `bug-triage` workflow could not satisfy the story acceptance criteria; the rerun needed a product boundary that remained faithful to vision `§15.1` and `§15.5`.
 - **Learned**: The current MVP can ship meaningful RGPD guardrails now without pretending that the legal texts and DSAR operations are already delivered.
 - **Open**: Sprint `009` still needs to close the documented RGPD launch blockers before commercialization.
+
+## 2026-04-20 — US-017
+
+- **Did**: Confirmed that `US-017` is limited to a NestJS `OpenRouterModule` with three hard-coded RGPD invariants (`zdr: true`, `transforms: []`, `provider: Mistral only`), with no UI or prompt-building scope.
+- **Why**: The workflow needed a precise scope so the story could be completed without prematurely designing the full AI generation pipeline.
+- **Learned**: The three acceptance criteria map directly to auditable constants in the service code, which makes future compliance reviews straightforward.
+- **Open**: Future AI generation stories (US-018, US-019) should import `OPENROUTER_SERVICE` instead of constructing direct HTTP clients.

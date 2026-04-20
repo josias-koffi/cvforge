@@ -96,3 +96,10 @@
 - **Why**: The story needed a minimal UX that makes consent explicit without adding new screens, while keeping the data-entry experience safe for the current MVP.
 - **Learned**: The existing auth pages can absorb RGPD consent and validation affordances with small copy and form changes instead of a new registration flow.
 - **Open**: The future legal copy should replace the placeholder wording once the real CGU and privacy policy are written in sprint `009`.
+
+## 2026-04-20 — US-017
+
+- **Did**: Marked the design stage as a non-UI skip; provided architecture notes for the developer on module layout and the RGPD invariant payload shape.
+- **Why**: The story is pure backend infrastructure with no user-facing surface.
+- **Learned**: Infrastructure stories still benefit from a design artifact that clarifies the API contract for the developer handoff, even when no screen or interaction is involved.
+- **Open**: Future AI features that build on `OpenRouterService` may need UX for loading states, error feedback, and credit consumption affordances.

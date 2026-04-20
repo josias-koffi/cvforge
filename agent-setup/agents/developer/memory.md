@@ -124,3 +124,10 @@
 - **Why**: `US-016` required executable MVP guardrails for consent and critical data handling, not just a documentation placeholder.
 - **Learned**: The existing auth slice can persist consent without a new dependency, and the local onboarding/profile stores are a good choke point for defensive normalization.
 - **Open**: The app build gate is still blocked by foreign-owned files in `apps/app/.next`, so environment cleanup is needed before local Next builds become reliable again.
+
+## 2026-04-20 — US-017
+
+- **Did**: Created `apps/api/src/ai/` with `openrouter.config.ts`, `openrouter.service.ts`, `openrouter.module.ts`, and two test files (18 tests total); registered `OpenRouterModule` in `AppModule`; used native `fetch` (Node 20) to avoid a new dependency.
+- **Why**: `US-017` required an auditable RGPD-compliant OpenRouter client that future generation stories can consume via the `OPENROUTER_SERVICE` injection token.
+- **Learned**: Extracting the three RGPD invariants (`zdr`, `transforms`, `provider`) as a `const` spread — not configurable — makes the compliance story auditable in a single file.
+- **Open**: The `OPENROUTER_BASE_URL` env override is useful for testing; a future hardening story should document or restrict it.

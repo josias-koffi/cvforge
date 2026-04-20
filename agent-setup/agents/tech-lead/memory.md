@@ -117,3 +117,10 @@
 - **Why**: Architecture governance and sprint bookkeeping require a final sign-off once the implementation and QA stages show that the MVP guardrails are real and reviewable.
 - **Learned**: The current auth and local-profile boundaries are sufficient to enforce meaningful RGPD preparation work now without an ADR or a wider persistence redesign.
 - **Open**: The remaining launch-critical RGPD items are now explicitly queued in sprint `009`; the local app build still depends on fixing `.next` ownership outside the code change itself.
+
+## 2026-04-20 — US-017 finalization
+
+- **Did**: Closed `US-017` with a passing verdict after confirming the RGPD-safe OpenRouter module, 100% `src/ai` coverage, and all three acceptance criteria verified by dedicated unit tests.
+- **Why**: Architecture governance and sprint bookkeeping require a final sign-off before the story can be marked complete.
+- **Learned**: Encoding RGPD invariants as `const` spread values in the service (not runtime config) is the correct audit-friendly pattern for OpenRouter compliance; future AI services should follow this approach.
+- **Open**: `OPENROUTER_BASE_URL` env override is acceptable for testing but warrants a future hardening note; US-018/US-019 should consume `OPENROUTER_SERVICE` token rather than constructing a parallel HTTP client.

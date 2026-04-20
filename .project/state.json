@@ -6,13 +6,13 @@
   "vision_source": ".project/vision.md",
   "vision_mode": "verbatim",
   "engineering_spec": "agent-setup/spec/engineering-standards.md",
-  "current_sprint": 4,
+  "current_sprint": 5,
   "active_agents": [],
   "specialized_agents": [],
   "specialized_workflows": [],
   "specialized_skills": [],
   "clarifications_pending": [],
-  "last_updated": "2026-04-20T10:56:47+02:00",
+  "last_updated": "2026-04-20T11:14:00+02:00",
   "last_workflow_run": "analyze-design-dev-review",
   "last_workflow_stage": "Finalization",
   "last_workflow_result": "passed",
@@ -107,9 +107,16 @@
       "task": "US-016",
       "workflow": "analyze-design-dev-review",
       "result": "passed"
+    },
+    {
+      "run_id": "20260420-110000-us-017",
+      "sprint": "005",
+      "task": "US-017",
+      "workflow": "analyze-design-dev-review",
+      "result": "passed"
     }
   ],
-  "last_task_completed": "US-016",
+  "last_task_completed": "US-017",
   "completed_sprints": [
     2,
     3,

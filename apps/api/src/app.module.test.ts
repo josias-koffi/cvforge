@@ -4,14 +4,15 @@ import { AppController } from "./app.controller";
 import { AppModule } from "./app.module";
 import { AuthModule } from "./auth/auth.module";
 import { SmtpModule } from "./smtp/smtp.module";
+import { OpenRouterModule } from "./ai/openrouter.module";
 
 describe("AppModule", () => {
-  it("should register AuthModule and SmtpModule", () => {
+  it("should register AuthModule, SmtpModule and OpenRouterModule", () => {
     const imports = Reflect.getMetadata("imports", AppModule) as
       | unknown[]
       | undefined;
 
-    expect(imports).toEqual([AuthModule, SmtpModule]);
+    expect(imports).toEqual([AuthModule, SmtpModule, OpenRouterModule]);
   });
 
   it("should register AppController", () => {

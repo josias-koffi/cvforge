@@ -96,3 +96,10 @@
 - **Why**: The story could only pass once each acceptance criterion and the standards coverage gate had direct evidence in code, tests, and sprint documentation.
 - **Learned**: Consent is easiest to audit when it is enforced twice: first in the Next routes for UX clarity, then again in the Nest auth service for integrity.
 - **Open**: `pnpm --filter @cvforge/app build` is still blocked by the pre-existing `.next` ownership issue and remains an environment advisory rather than a product defect.
+
+## 2026-04-20 — US-017
+
+- **Did**: Verified all three acceptance criteria against test evidence (12 service tests + 6 config tests), confirmed `pnpm --filter api lint` and `pnpm --filter api test` pass with 100% `src/ai` line/branch coverage and 89.88% overall statements.
+- **Why**: The story could only pass once each ZDR, prompt-logging, and provider invariant had direct test-level proof rather than a code inspection alone.
+- **Learned**: RGPD invariants are easiest to audit when they are `const` spread values rather than conditional defaults, because each test can assert the exact body shape without mocking config.
+- **Open**: The `useFactory` in `openrouter.module.ts` is not covered by a module-integration test (same gap as `SmtpModule`); advisory only.
