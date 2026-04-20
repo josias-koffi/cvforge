@@ -29,13 +29,13 @@ Rendre la génération documentaire du MVP réellement exploitable: CV généré
     - [x] Un mode lecture seule mobile existe
     - [x] Les modifications restent compatibles avec l'export PDF
   - Source: vision `§6`, `§8`, `§16`
-- [ ] **[US-027]** Exporter le CV en PDF via Puppeteer sans métadonnées identifiantes
+- [x] **[US-027]** Exporter le CV en PDF via Puppeteer sans métadonnées identifiantes
   - Agent: `tech-lead`
   - Workflow: `analyze-design-dev-review`
   - Acceptance criteria:
-    - [ ] L'export PDF est généré par le service dédié
-    - [ ] Le rendu est fidèle au template Puck
-    - [ ] Les métadonnées identifiantes sont supprimées
+    - [x] L'export PDF est généré par le service dédié
+    - [x] Le rendu est fidèle au template Puck
+    - [x] Les métadonnées identifiantes sont supprimées
   - Source: vision `§8`, `§15.4`, `§16`
 - [ ] **[US-028]** Générer la lettre de motivation avec le même pipeline documentaire
   - Agent: `developer`

@@ -1,12 +1,14 @@
 import {
   Body,
   Controller,
+  Header,
   Get,
   Inject,
   NotFoundException,
   Param,
   Put,
   Post,
+  StreamableFile,
   UnauthorizedException,
   Req,
 } from "@nestjs/common";
@@ -15,6 +17,7 @@ import type {
   CvGenerationRequest,
 } from "@cvforge/types";
 import { AuthService } from "../auth/auth.service";
+import { CvPdfExportService } from "./cv-pdf-export.service";
 import { CvGenerationService } from "./cv-generation.service";
 
 type RequestLike = {
@@ -26,6 +29,8 @@ export class CvGenerationController {
   constructor(
     @Inject(CvGenerationService)
     private readonly cvGenerationService: CvGenerationService,
+    @Inject(CvPdfExportService)
+    private readonly cvPdfExportService: CvPdfExportService,
     @Inject(AuthService) private readonly authService: AuthService,
   ) {}
 
@@ -98,5 +103,30 @@ export class CvGenerationController {
     }
 
     return { cvContent };
+  }
+
+  @Get(":applicationId/cv/pdf")
+  @Header("Content-Type", "application/pdf")
+  async exportPdf(
+    @Param("applicationId") applicationId: string,
+    @Req() request: RequestLike,
+  ) {
+    const session = this.authService.readSessionFromCookieHeader(
+      request.headers.cookie,
+    );
+
+    if (!session) {
+      throw new UnauthorizedException("A valid session is required.");
+    }
+
+    const { filename, pdf } = await this.cvPdfExportService.exportPdf(
+      session.email,
+      applicationId,
+    );
+
+    return new StreamableFile(pdf, {
+      disposition: `attachment; filename="${filename}"`,
+      type: "application/pdf",
+    });
   }
 }

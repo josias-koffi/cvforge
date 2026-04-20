@@ -75,6 +75,7 @@ describe("CvPage", () => {
     expect(markup).toContain("Edition WYSIWYG du CV");
     expect(markup).toContain("Lecture seule sur mobile");
     expect(markup).toContain("Aperçu live");
+    expect(markup).toContain("Telecharger le PDF");
     expect(markup).toContain("Jean");
     expect(markup).toContain("TypeScript");
   });

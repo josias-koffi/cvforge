@@ -1,8 +1,13 @@
-import { NotFoundException, UnauthorizedException } from "@nestjs/common";
+import {
+  NotFoundException,
+  StreamableFile,
+  UnauthorizedException,
+} from "@nestjs/common";
 import { describe, expect, it, vi } from "vitest";
 import type { CVDocumentContent } from "@cvforge/types";
 import { AuthService } from "../auth/auth.service";
 import { CvGenerationController } from "./cv-generation.controller";
+import { CvPdfExportService } from "./cv-pdf-export.service";
 import { CvGenerationService } from "./cv-generation.service";
 
 const MOCK_CV: CVDocumentContent = {
@@ -62,11 +67,18 @@ function makeController(
     ...serviceOverrides,
   } as unknown as CvGenerationService;
 
+  const pdfService = {
+    exportPdf: vi.fn().mockResolvedValue({
+      filename: "DUPONT_Jean_CDI_Senior_Developer.pdf",
+      pdf: Buffer.from([37, 80, 68, 70]),
+    }),
+  } as unknown as CvPdfExportService;
+
   const authService = {
     readSessionFromCookieHeader: vi.fn().mockReturnValue(sessionOverride),
   } as unknown as AuthService;
 
-  return new CvGenerationController(cvService, authService);
+  return new CvGenerationController(cvService, pdfService, authService);
 }
 
 describe("CvGenerationController", () => {
@@ -93,12 +105,19 @@ describe("CvGenerationController", () => {
         generateCv: vi.fn().mockResolvedValue(MOCK_CV),
         getCvContent: vi.fn(),
       } as unknown as CvGenerationService;
+      const pdfService = {
+        exportPdf: vi.fn(),
+      } as unknown as CvPdfExportService;
       const authService = {
         readSessionFromCookieHeader: vi
           .fn()
           .mockReturnValue({ email: "user@test.example", role: "user" }),
       } as unknown as AuthService;
-      const controller = new CvGenerationController(cvService, authService);
+      const controller = new CvGenerationController(
+        cvService,
+        pdfService,
+        authService,
+      );
 
       await controller.generateCv("app-001", VALID_BODY, {
         headers: { cookie: "s=x" },
@@ -172,12 +191,19 @@ describe("CvGenerationController", () => {
         getCvContent: vi.fn(),
         updateCvContent: vi.fn().mockReturnValue(MOCK_CV),
       } as unknown as CvGenerationService;
+      const pdfService = {
+        exportPdf: vi.fn(),
+      } as unknown as CvPdfExportService;
       const authService = {
         readSessionFromCookieHeader: vi
           .fn()
           .mockReturnValue({ email: "user@test.example", role: "user" }),
       } as unknown as AuthService;
-      const controller = new CvGenerationController(cvService, authService);
+      const controller = new CvGenerationController(
+        cvService,
+        pdfService,
+        authService,
+      );
 
       controller.updateCvContent(
         "app-001",
@@ -189,6 +215,61 @@ describe("CvGenerationController", () => {
         "user@test.example",
         "app-001",
         { cvContent: MOCK_CV },
+      );
+    });
+  });
+
+  describe("GET :applicationId/cv/pdf", () => {
+    it("returns a streamed PDF file for authenticated user", async () => {
+      const controller = makeController();
+      const result = await controller.exportPdf("app-001", {
+        headers: { cookie: "cvforge_session=abc" },
+      });
+
+      expect(result).toBeInstanceOf(StreamableFile);
+      expect(result.getHeaders()).toMatchObject({
+        disposition:
+          'attachment; filename="DUPONT_Jean_CDI_Senior_Developer.pdf"',
+        type: "application/pdf",
+      });
+    });
+
+    it("throws UnauthorizedException when no session", async () => {
+      const controller = makeController(null);
+
+      await expect(
+        controller.exportPdf("app-001", { headers: {} }),
+      ).rejects.toBeInstanceOf(UnauthorizedException);
+    });
+
+    it("delegates to CvPdfExportService.exportPdf with session email", async () => {
+      const cvService = {
+        generateCv: vi.fn(),
+        getCvContent: vi.fn(),
+        updateCvContent: vi.fn(),
+      } as unknown as CvGenerationService;
+      const pdfService = {
+        exportPdf: vi.fn().mockResolvedValue({
+          filename: "DUPONT_Jean_CDI_Senior_Developer.pdf",
+          pdf: Buffer.from([37, 80, 68, 70]),
+        }),
+      } as unknown as CvPdfExportService;
+      const authService = {
+        readSessionFromCookieHeader: vi
+          .fn()
+          .mockReturnValue({ email: "user@test.example", role: "user" }),
+      } as unknown as AuthService;
+      const controller = new CvGenerationController(
+        cvService,
+        pdfService,
+        authService,
+      );
+
+      await controller.exportPdf("app-001", { headers: { cookie: "s=x" } });
+
+      expect(pdfService.exportPdf).toHaveBeenCalledWith(
+        "user@test.example",
+        "app-001",
       );
     });
   });

@@ -93,6 +93,31 @@ function joinBulletList(values: string[]) {
   return values.join("\n");
 }
 
+function resolveDownloadFilename(
+  contentDisposition: string | null,
+  applicationId: string,
+) {
+  if (!contentDisposition) {
+    return `cv-${applicationId}.pdf`;
+  }
+
+  const utf8Match = contentDisposition.match(/filename\*=UTF-8''([^;]+)/i);
+  if (utf8Match?.[1]) {
+    try {
+      return decodeURIComponent(utf8Match[1]);
+    } catch {
+      return utf8Match[1];
+    }
+  }
+
+  const filenameMatch = contentDisposition.match(/filename="([^"]+)"/i);
+  if (filenameMatch?.[1]) {
+    return filenameMatch[1];
+  }
+
+  return `cv-${applicationId}.pdf`;
+}
+
 function SectionCard({
   children,
   description,
@@ -135,7 +160,7 @@ function Field({
 export function CvEditor({ applicationId, cvContent }: CvEditorProps) {
   const [draft, setDraft] = React.useState<CVDocumentContent>(cvContent);
   const [status, setStatus] = React.useState<
-    "idle" | "saving" | "saved" | "error"
+    "idle" | "saving" | "saved" | "downloading" | "error"
   >("idle");
   const [message, setMessage] = React.useState<string | null>(null);
 
@@ -272,6 +297,49 @@ export function CvEditor({ applicationId, cvContent }: CvEditorProps) {
     }
   }
 
+  async function downloadPdf() {
+    setStatus("downloading");
+    setMessage(null);
+
+    try {
+      const response = await fetch(`/cv/${applicationId}/pdf`);
+
+      if (!response.ok) {
+        const payload = (await response.json().catch(() => ({}))) as {
+          message?: string;
+        };
+        throw new Error(payload.message ?? "L'export PDF a echoue.");
+      }
+
+      const contentType = response.headers.get("content-type") ?? "";
+
+      if (!contentType.includes("application/pdf")) {
+        throw new Error("Le service a retourne un contenu non PDF.");
+      }
+
+      const pdf = await response.blob();
+      const objectUrl = window.URL.createObjectURL(pdf);
+      const link = document.createElement("a");
+      link.href = objectUrl;
+      link.download = resolveDownloadFilename(
+        response.headers.get("content-disposition"),
+        applicationId,
+      );
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(objectUrl);
+
+      setStatus("saved");
+      setMessage("Le PDF a ete telecharge.");
+    } catch (error) {
+      setStatus("error");
+      setMessage(
+        error instanceof Error ? error.message : "L'export PDF a echoue.",
+      );
+    }
+  }
+
   return (
     <section
       aria-label="Editeur du CV"
@@ -307,7 +375,7 @@ export function CvEditor({ applicationId, cvContent }: CvEditorProps) {
           </p>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "0.75rem" }}>
             <Button
-              disabled={status === "saving"}
+              disabled={status === "saving" || status === "downloading"}
               onClick={() => void saveCvContent()}
               type="button"
             >
@@ -316,11 +384,22 @@ export function CvEditor({ applicationId, cvContent }: CvEditorProps) {
                 : "Enregistrer les modifications"}
             </Button>
             <Button
+              disabled={status === "downloading"}
               onClick={() => setDraft(cvContent)}
               type="button"
               variant="secondary"
             >
               Revenir au CV genere
+            </Button>
+            <Button
+              disabled={status === "saving" || status === "downloading"}
+              onClick={() => void downloadPdf()}
+              type="button"
+              variant="secondary"
+            >
+              {status === "downloading"
+                ? "Preparation du PDF…"
+                : "Telecharger le PDF"}
             </Button>
           </div>
           {message ? (

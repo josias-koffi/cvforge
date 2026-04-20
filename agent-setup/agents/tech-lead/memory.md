@@ -180,3 +180,17 @@
 - **Why**: Both surfaces were built without `@measured-co/puck` during sprints 006–007. The admin has a raw JSON textarea in place of drag-and-drop; the user has a form-based editor. Both are critical product gaps that must be closed before the MVP ships.
 - **Learned**: The existing `documentBlockRegistry` in `packages/ui` is already Puck-ready — a thin `toPuckConfig()` adapter is all that separates the current registry from a live Puck config. The main migration work is converting existing template JSON from `{ blocks: [] }` to Puck's native `{ content: [], root: {} }` format.
 - **Open**: Two implementation stories are needed — one for admin drag-and-drop (replaces the textarea) and one for user Puck CV editor (replaces the form editor). Both require the `TemplateRecord.layout` type to be updated to Puck's `Data` type and the seed templates to be migrated before merging.
+
+## 2026-04-20 — US-027 finalization
+
+- **Did**: Closed `US-027` with a passing verdict after confirming the dedicated PDF export service, the app-side download route, the generic metadata title in the export HTML, and the targeted lint/test evidence for both app and API slices.
+- **Why**: Sprint bookkeeping and release gating require an explicit tech-lead decision once the implementation and QA evidence are complete.
+- **Learned**: Browserless `/pdf` with inline HTML is sufficient for the MVP export path as long as the service owns the template markup and the metadata stays generic.
+- **Open**: `US-028` should reuse the same PDF export boundary for the letter of motivation rather than inventing a second export pipeline.
+
+## 2026-04-20 — PDF export fallback fix
+
+- **Did**: Added a local-host fallback for the Browserless PDF call and explicit service-unavailable handling so host-based dev no longer collapses into a generic 500 when `PUPPETEER_URL=http://puppeteer:3002` is unreachable outside Docker.
+- **Why**: The user hit the CV download route from a host-based `localhost:3000` session and received `Internal server error`; the failing network lookup needed to become resilient in both Docker and non-Docker setups.
+- **Learned**: The MinIO absence was not the immediate cause of the 500; the export path currently streams PDFs live and does not persist them yet.
+- **Open**: If persistence is required by product scope, the next step is to add a real MinIO-backed PDF storage layer and signed download URLs.

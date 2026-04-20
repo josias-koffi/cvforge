@@ -5,6 +5,7 @@ import { resolveApplicationsConfig } from "../applications/applications.config";
 import { FileApplicationsStore } from "../applications/applications.store";
 import { CvGenerationController } from "./cv-generation.controller";
 import { CvGenerationService } from "./cv-generation.service";
+import { CvPdfExportService } from "./cv-pdf-export.service";
 
 @Module({
   imports: [AuthModule, OpenRouterModule],
@@ -21,6 +22,15 @@ import { CvGenerationService } from "./cv-generation.service";
             resolveApplicationsConfig(process.env).stateFilePath,
           ),
           openRouterService,
+        ),
+    },
+    {
+      provide: CvPdfExportService,
+      useFactory: () =>
+        new CvPdfExportService(
+          new FileApplicationsStore(
+            resolveApplicationsConfig(process.env).stateFilePath,
+          ),
         ),
     },
   ],
