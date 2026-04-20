@@ -2,6 +2,7 @@ import React from "react";
 import { cookies } from "next/headers";
 import { AppShell, Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, CV_PREVIEW_FIXTURE, Input, Label, LETTER_PREVIEW_FIXTURE, PaperStyles, Textarea, documentBlockRegistry } from "@cvforge/ui";
 import { TEMPLATE_KIND_CV, TEMPLATE_KIND_LETTER, type CVDocumentContent, type LetterDocumentContent, type TemplateRecord } from "@cvforge/types";
+import { DeleteForm } from "./delete-form";
 import { getAppNavigation } from "../../content";
 import { getServerApiUrl } from "../../auth-config";
 import { requireAdminSession } from "../../auth/session";
@@ -291,21 +292,7 @@ function TemplateCard({
           </form>
         ) : null}
 
-        <form action="/admin/templates/delete" method="post" onSubmit={(e) => {
-          if (!window.confirm(`Supprimer « ${template.name} » ? Cette action est irréversible.`)) {
-            e.preventDefault();
-          }
-        }}>
-          <input name="templateId" type="hidden" value={template.id} />
-          <Button
-            type="submit"
-            variant="ghost"
-            style={{ color: "#C0392B", fontSize: "0.8125rem", padding: "0.25rem 0.625rem" }}
-            aria-label={`Supprimer ${template.name}`}
-          >
-            Supprimer
-          </Button>
-        </form>
+        <DeleteForm templateId={template.id} templateName={template.name} />
       </div>
     </div>
   );
