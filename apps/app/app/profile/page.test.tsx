@@ -9,26 +9,25 @@ vi.mock("../auth/session", () => ({
   requireSession: requireSessionMock,
 }));
 
-import DashboardPage from "./page";
+import ProfilePage from "./page";
 
-describe("DashboardPage", () => {
+describe("ProfilePage", () => {
   beforeEach(() => {
     requireSessionMock.mockReset();
   });
 
-  it("renders the protected post-onboarding dashboard", async () => {
+  it("renders the protected unique base profile screen", async () => {
     requireSessionMock.mockResolvedValue({
       email: "user@example.com",
       expiresAt: "2026-04-27T07:45:24.000Z",
       role: "user",
     });
 
-    const Page = await DashboardPage();
+    const Page = await ProfilePage();
     const markup = renderToStaticMarkup(Page);
 
-    expect(markup).toContain("Tableau de bord candidat");
+    expect(markup).toContain("Profil de base");
+    expect(markup).toContain("Profil de base unique");
     expect(markup).toContain("user@example.com");
-    expect(markup).toContain("Ouvrir le profil de base");
-    expect(markup).toContain("Reprendre l&#x27;onboarding");
   });
 });

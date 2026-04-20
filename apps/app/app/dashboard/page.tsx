@@ -10,15 +10,15 @@ export default async function DashboardPage() {
   return (
     <AppShell
       title="Tableau de bord candidat"
-      description="Point d'entree du parcours apres validation de l'onboarding."
+      description="Point d'entree du parcours apres validation de l'onboarding et edition du profil."
       navigation={getAppNavigation("/dashboard")}
     >
       <Card>
         <CardHeader>
-          <CardTitle>Profil pret a etre enrichi</CardTitle>
+          <CardTitle>Profil de base pret a etre enrichi</CardTitle>
           <p style={{ color: "#6B6860", lineHeight: 1.6, margin: 0 }}>
-            L&apos;onboarding a collecte les informations candidates qui alimenteront
-            ensuite le profil de base du MVP.
+            L&apos;onboarding alimente maintenant un profil de base unique que le candidat
+            peut consulter et editer avant les futures generations IA.
           </p>
         </CardHeader>
         <CardContent style={{ display: "grid", gap: "1rem" }}>
@@ -39,9 +39,12 @@ export default async function DashboardPage() {
             <dd style={{ margin: 0 }}>{session.role}</dd>
           </dl>
           <p style={{ color: "#6B6860", lineHeight: 1.6, margin: 0 }}>
-            Le prochain sprint pourra transformer ces donnees en profil de base
-            editable et en source pour les generations IA.
+            Le MVP conserve un seul profil de base par compte pour rester aligne
+            avec la contrainte sprint avant l'ouverture du multi-profils.
           </p>
+          <Link href="/profile" style={{ color: "#2C2C2A", fontWeight: 600 }}>
+            Ouvrir le profil de base
+          </Link>
           <Link href="/" style={{ color: "#2C2C2A", fontWeight: 600 }}>
             Reprendre l&apos;onboarding
           </Link>

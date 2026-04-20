@@ -75,3 +75,10 @@
 - **Why**: The task could only pass once each onboarding criterion and the project coverage gate had direct evidence.
 - **Learned**: Separating wizard-state logic from static rendering keeps the client-heavy onboarding flow reviewable and testable without adding new tooling.
 - **Open**: `pnpm build` remains subject to the pre-existing permission problem in `apps/landing/.next/trace`.
+
+## 2026-04-20 — US-014
+
+- **Did**: Verified the unique base-profile route, helper model, navigation updates, and coverage evidence; confirmed passing app and repo lint/tests; recorded the lingering build-permission issue as an environment advisory.
+- **Why**: The task could only pass once each profile acceptance criterion and the new-code coverage bar had direct evidence.
+- **Learned**: The touched profile slice can exceed the blocking coverage threshold even with a static client editor so long as the stateful helpers are isolated and tested thoroughly.
+- **Open**: Build verification still depends on cleaning `.next` directories owned by another user before Next can regenerate artifacts.

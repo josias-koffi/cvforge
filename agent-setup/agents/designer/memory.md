@@ -75,3 +75,10 @@
 - **Why**: The story required a concrete UX pattern that matches the vision while fitting inside the existing authenticated shell and shared design primitives.
 - **Learned**: The current `AppShell` and card primitives are sufficient for a usable wizard without inventing a second layout system.
 - **Open**: `US-014` should decide how the onboarding completion state transitions into the editable base-profile screen.
+
+## 2026-04-20 — US-014
+
+- **Did**: Specified a protected `/profile` screen with a consultation summary, stacked editing sections, onboarding-seeded defaults, and no multi-profile controls.
+- **Why**: The story needed a focused UX that satisfies the vision sections while preserving the sprint rule of a single profile in MVP.
+- **Learned**: The existing shell and card system can support a fairly dense profile editor as long as the page stays vertically structured and clearly segmented.
+- **Open**: Later CV-generation work should decide how this profile transitions from structured form data into the editor/template pipeline.

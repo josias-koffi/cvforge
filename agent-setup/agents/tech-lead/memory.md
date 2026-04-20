@@ -96,3 +96,10 @@
 - **Why**: Architecture governance and sprint bookkeeping require a final sign-off once the implementation and QA evidence are complete.
 - **Learned**: The existing authenticated shell can absorb a substantial mobile-first wizard without adding a new routing framework or state library.
 - **Open**: `US-014` should formalize how onboarding output maps into the single editable base-profile model for MVP.
+
+## 2026-04-20 — US-014 finalization
+
+- **Did**: Closed `US-014` with a passing verdict after confirming the protected profile route, the single-profile storage rule, the coverage-complete profile slice, and successful lint/test gates.
+- **Why**: Architecture governance and sprint bookkeeping require an explicit final decision before the story can be marked complete.
+- **Learned**: The existing app boundary can carry the first base-profile domain locally without a new framework or ADR, which keeps the next pseudonymisation work focused on data handling rather than persistence redesign.
+- **Open**: The repository still needs ownership cleanup on generated `.next` directories before build can be a reliable gate again.

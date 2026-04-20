@@ -2,6 +2,7 @@
 
 import React from "react";
 import { Button, Card, CardContent, CardHeader, CardTitle, Input, Label, Textarea } from "@cvforge/ui";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   createEmptyDraft,
@@ -104,7 +105,7 @@ export function OnboardingWizard({ sessionEmail }: { sessionEmail: string }) {
   const handleCompleteProfile = React.useCallback(() => {
     const finalizedDraft = updateDraftMeta(draft, onboardingSteps.length - 1);
     saveDraftToStorage(finalizedDraft, getStorage());
-    router.push("/dashboard");
+    router.push("/profile");
   }, [draft, router]);
 
   return (
@@ -659,6 +660,9 @@ export function OnboardingWizard({ sessionEmail }: { sessionEmail: string }) {
             Completer mon profil
           </Button>
         )}
+        <Link href="/profile" style={{ color: "#2C2C2A", fontWeight: 600, padding: "0.75rem 0" }}>
+          Consulter le profil de base
+        </Link>
       </div>
     </section>
   );

@@ -21,13 +21,13 @@ Rendre l'onboarding et le profil candidat exploitables pour alimenter ensuite le
     - [x] Le récapitulatif final permet validation et reprise
     - [x] Le flux est utilisable en mobile-first
   - Source: vision `§4`, `§16`
-- [ ] **[US-014]** Modéliser et éditer le profil de base unique
+- [x] **[US-014]** Modéliser et éditer le profil de base unique
   - Agent: `developer`
   - Workflow: `analyze-design-dev-review`
   - Acceptance criteria:
-    - [ ] Le profil de base contient les sections décrites par la vision
-    - [ ] Les actions de consultation et édition sont disponibles
-    - [ ] La règle "1 profil de base en MVP" est respectée
+    - [x] Le profil de base contient les sections décrites par la vision
+    - [x] Les actions de consultation et édition sont disponibles
+    - [x] La règle "1 profil de base en MVP" est respectée
   - Source: vision `§5`, `§16`
 - [ ] **[US-015]** Appliquer les règles de pseudonymisation pour les prompts IA
   - Agent: `tech-lead`

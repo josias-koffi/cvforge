@@ -3,6 +3,7 @@ import type { ShellNavItem } from "@cvforge/ui";
 type AppRoute =
   | "/"
   | "/dashboard"
+  | "/profile"
   | "/cv"
   | "/candidatures"
   | "/interview"
@@ -20,6 +21,12 @@ const baseNavigation: ShellNavItem[] = [
     label: "Tableau de bord",
     description: "Suivi du profil",
     shortLabel: "TD",
+  },
+  {
+    href: "/profile",
+    label: "Profil de base",
+    description: "Edition du profil unique",
+    shortLabel: "PB",
   },
   {
     href: "/cv",

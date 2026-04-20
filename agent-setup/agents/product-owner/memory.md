@@ -89,3 +89,10 @@
 - **Why**: The workflow needed a strict product boundary before implementation so the story would deliver onboarding value without inventing the full profile domain too early.
 - **Learned**: The vision is explicit enough to ship the wizard now while deferring full AI-backed profile enrichment and editing flows to the next sprint tasks.
 - **Open**: `US-014` should define how these onboarding fields seed the single editable base profile in MVP.
+
+## 2026-04-20 — US-014
+
+- **Did**: Confirmed that `US-014` is limited to one editable base profile in MVP, mapped the nine vision sections to concrete acceptance evidence, and kept duplication, deletion, and favorite actions out of scope.
+- **Why**: The workflow needed a strict product boundary so the story delivers a usable profile source without prematurely opening the multi-profile roadmap.
+- **Learned**: The current onboarding output is sufficient to seed a first base-profile experience without inventing backend persistence that belongs to later user-domain work.
+- **Open**: `US-015` now needs to define exactly which profile fields are withheld or transformed before AI prompt construction.
