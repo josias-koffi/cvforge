@@ -82,3 +82,10 @@
 - **Why**: The rerun needed a scope definition that stayed inside the vision while turning the previously triaged gap into implementable work.
 - **Learned**: The story can be completed without inventing the full admin panel by shipping a minimal `/admin` surface plus route guards.
 - **Open**: The future admin-panel story can now build on the guarded route instead of starting from a public surface.
+
+## 2026-04-20 — US-013
+
+- **Did**: Confirmed that `US-013` stays limited to the first-login onboarding wizard, mapped the five vision steps to testable acceptance criteria, and kept the editable base-profile scope for `US-014`.
+- **Why**: The workflow needed a strict product boundary before implementation so the story would deliver onboarding value without inventing the full profile domain too early.
+- **Learned**: The vision is explicit enough to ship the wizard now while deferring full AI-backed profile enrichment and editing flows to the next sprint tasks.
+- **Open**: `US-014` should define how these onboarding fields seed the single editable base profile in MVP.

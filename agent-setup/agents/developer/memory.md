@@ -96,3 +96,10 @@
 - **Why**: `US-012` required real role-based route protection and direct test evidence on top of the existing passwordless/session work.
 - **Learned**: The current auth slice is sufficient for app-side route protection without adding middleware or a new auth library; forwarding the cookie jar to the Nest auth endpoints keeps the authority centralized.
 - **Open**: Local Next builds still depend on cleaning stale `.next` artifacts owned by another user.
+
+## 2026-04-20 — US-013
+
+- **Did**: Replaced the placeholder protected home page with a five-step onboarding wizard, added local draft persistence plus tested wizard-state helpers, introduced a protected `/dashboard` exit route, and updated the app navigation and page tests.
+- **Why**: `US-013` required a real first-login candidate flow that can be resumed later and remains within the existing shared UI system.
+- **Learned**: The current app package can meet the new-code coverage bar by separating wizard state logic from static UI markup while reusing the shared shell and form primitives.
+- **Open**: Root `pnpm build` is still blocked by the pre-existing permission issue on `apps/landing/.next/trace`.

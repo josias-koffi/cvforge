@@ -89,3 +89,10 @@
 - **Why**: Sprint bookkeeping and architecture governance require an explicit final decision once the implementation and QA evidence are complete.
 - **Learned**: The centralized signed-session contract is now strong enough to gate both candidate and admin routes without introducing a new framework or ADR.
 - **Open**: The next admin-panel work can build directly on the guarded `/admin` route once the local `.next` ownership problem is cleaned up.
+
+## 2026-04-20 — US-013 finalization
+
+- **Did**: Closed `US-013` with a passing verdict after confirming the onboarding wizard implementation, tested draft-state slice, and successful lint/test gates, while preserving the known `landing` build-permission issue as an environment advisory.
+- **Why**: Architecture governance and sprint bookkeeping require a final sign-off once the implementation and QA evidence are complete.
+- **Learned**: The existing authenticated shell can absorb a substantial mobile-first wizard without adding a new routing framework or state library.
+- **Open**: `US-014` should formalize how onboarding output maps into the single editable base-profile model for MVP.

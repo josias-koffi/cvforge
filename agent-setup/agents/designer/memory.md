@@ -68,3 +68,10 @@
 - **Why**: The rerun needed a concrete route-level interaction design without prematurely designing the full admin panel.
 - **Learned**: A small denial page plus server-side redirects are enough to satisfy the current authorization story while keeping the "Papier & Crayon" tone consistent.
 - **Open**: The future admin panel should reuse the same denial pattern for any deeper privileged subroutes.
+
+## 2026-04-20 — US-013
+
+- **Did**: Specified a mobile-first five-step onboarding flow with visible progress, local resume affordance, and a final recap step that allows section-by-section correction before validation.
+- **Why**: The story required a concrete UX pattern that matches the vision while fitting inside the existing authenticated shell and shared design primitives.
+- **Learned**: The current `AppShell` and card primitives are sufficient for a usable wizard without inventing a second layout system.
+- **Open**: `US-014` should decide how the onboarding completion state transitions into the editable base-profile screen.

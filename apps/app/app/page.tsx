@@ -1,50 +1,19 @@
 import React from "react";
 import { AppShell } from "@cvforge/ui";
-import { appContent } from "./content";
-import Link from "next/link";
+import { getAppNavigation } from "./content";
 import { requireSession } from "./auth/session";
+import { OnboardingWizard } from "./onboarding/wizard";
 
 export default async function HomePage() {
   const session = await requireSession();
 
   return (
     <AppShell
-      title={appContent.title}
-      description={appContent.description}
-      navigation={appContent.navigation}
+      title="Onboarding candidat"
+      description="Premier parcours mobile-first pour collecter les informations du profil candidat."
+      navigation={getAppNavigation("/")}
     >
-      <div
-        style={{
-          display: "grid",
-          gap: "1rem",
-          maxWidth: "26rem",
-        }}
-      >
-        <p style={{ color: "#6B6860", lineHeight: 1.6, margin: 0 }}>
-          Votre session passwordless est active. Les routes protegees du sprint
-          003 exigent maintenant une session valide avant d&apos;afficher le tableau
-          de bord candidat.
-        </p>
-        <dl
-          style={{
-            backgroundColor: "#FFFFFF",
-            border: "1px solid #D9D4CA",
-            borderRadius: "1rem",
-            display: "grid",
-            gap: "0.5rem",
-            margin: 0,
-            padding: "1.25rem",
-          }}
-        >
-          <dt style={{ color: "#6B6860", fontWeight: 600 }}>Session</dt>
-          <dd style={{ margin: 0 }}>{session.email}</dd>
-          <dt style={{ color: "#6B6860", fontWeight: 600 }}>Role</dt>
-          <dd style={{ margin: 0 }}>{session.role}</dd>
-        </dl>
-        <Link href="/admin" style={{ color: "#2C2C2A", fontWeight: 600 }}>
-          Ouvrir la zone admin protegee
-        </Link>
-      </div>
+      <OnboardingWizard sessionEmail={session.email} />
     </AppShell>
   );
 }

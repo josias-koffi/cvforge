@@ -13,13 +13,13 @@ Rendre l'onboarding et le profil candidat exploitables pour alimenter ensuite le
 
 ## ✅ Tasks (3–8 max)
 
-- [ ] **[US-013]** Construire le wizard d'onboarding en 5 étapes
+- [x] **[US-013]** Construire le wizard d'onboarding en 5 étapes
   - Agent: `developer`
   - Workflow: `analyze-design-dev-review`
   - Acceptance criteria:
-    - [ ] Les 5 étapes décrites par la vision sont présentes
-    - [ ] Le récapitulatif final permet validation et reprise
-    - [ ] Le flux est utilisable en mobile-first
+    - [x] Les 5 étapes décrites par la vision sont présentes
+    - [x] Le récapitulatif final permet validation et reprise
+    - [x] Le flux est utilisable en mobile-first
   - Source: vision `§4`, `§16`
 - [ ] **[US-014]** Modéliser et éditer le profil de base unique
   - Agent: `developer`

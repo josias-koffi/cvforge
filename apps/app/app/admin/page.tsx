@@ -1,6 +1,6 @@
 import React from "react";
 import { AppShell } from "@cvforge/ui";
-import { appContent } from "../content";
+import { getAppNavigation } from "../content";
 import { requireAdminSession } from "../auth/session";
 
 export default async function AdminPage() {
@@ -10,7 +10,7 @@ export default async function AdminPage() {
     <AppShell
       title="Espace admin"
       description="Zone reservee aux comptes administrateurs."
-      navigation={appContent.navigation}
+      navigation={getAppNavigation("/admin")}
     >
       <div
         style={{

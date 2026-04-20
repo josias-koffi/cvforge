@@ -68,3 +68,10 @@
 - **Why**: The story could only pass once each route-protection acceptance criterion had direct implementation and test evidence.
 - **Learned**: The current auth slice now covers route-level authorization adequately for the sprint, even though local Next build stability is still affected by stale generated artifacts.
 - **Open**: The stale `apps/app/.next` ownership should be cleaned under the correct user before relying on local app builds again.
+
+## 2026-04-20 — US-013
+
+- **Did**: Verified the onboarding wizard against the sprint criteria, confirmed passing `pnpm lint` and `pnpm test`, and recorded `@cvforge/app` coverage at `90.21%` lines with the onboarding slice at `92.03%`.
+- **Why**: The task could only pass once each onboarding criterion and the project coverage gate had direct evidence.
+- **Learned**: Separating wizard-state logic from static rendering keeps the client-heavy onboarding flow reviewable and testable without adding new tooling.
+- **Open**: `pnpm build` remains subject to the pre-existing permission problem in `apps/landing/.next/trace`.
