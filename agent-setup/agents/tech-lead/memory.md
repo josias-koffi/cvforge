@@ -166,3 +166,17 @@
 - **Why**: Architecture governance and sprint bookkeeping require a final sign-off once implementation and QA stages show the template management surface is complete.
 - **Learned**: The delete-with-constraint pattern (last-template guard + default-transfer) is now established in the templates service and should be reused for any future entity with a one-default-per-group business rule.
 - **Open**: US-024 should build the fictitious-data preview on top of the existing block registry without reopening the template storage or management contract.
+
+## 2026-04-20 — Puck Editor integration audit
+
+- **Did**: Verified whether Puck Editor (`@measured-co/puck`) is installed in the monorepo by scanning all `package.json` files and all source files for any reference to the package.
+- **Why**: User asked the tech-lead to confirm or deny that Puck Editor is absent from the project.
+- **Learned**: Puck Editor is **not installed anywhere** in the monorepo. The vision (§2 stack, §6, §7) mandates it as the single WYSIWYG editing layer for both admin template creation and user CV/LM editing, but zero dependency entries or imports exist today. The current block components in `packages/ui` were built as a foundation for future Puck integration (per US-021 memory note) but are not wired into Puck yet.
+- **Open**: An ADR should be created before Puck integration begins, covering the chosen version, how Puck JSON is stored in PostgreSQL, and how the custom block registry is registered with `@measured-co/puck`. This is a hard prerequisite for the CV editing flow (US-025+).
+
+## 2026-04-20 — ADR-003 Puck Editor integration
+
+- **Did**: Authored and accepted ADR-003 covering Puck Editor integration across both the admin template creation surface and the user CV editing surface.
+- **Why**: Both surfaces were built without `@measured-co/puck` during sprints 006–007. The admin has a raw JSON textarea in place of drag-and-drop; the user has a form-based editor. Both are critical product gaps that must be closed before the MVP ships.
+- **Learned**: The existing `documentBlockRegistry` in `packages/ui` is already Puck-ready — a thin `toPuckConfig()` adapter is all that separates the current registry from a live Puck config. The main migration work is converting existing template JSON from `{ blocks: [] }` to Puck's native `{ content: [], root: {} }` format.
+- **Open**: Two implementation stories are needed — one for admin drag-and-drop (replaces the textarea) and one for user Puck CV editor (replaces the form editor). Both require the `TemplateRecord.layout` type to be updated to Puck's `Data` type and the seed templates to be migrated before merging.

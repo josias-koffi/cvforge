@@ -4,7 +4,7 @@
 
 ## 🎯 Sprint Goal
 
-Clôturer le MVP avec les opérations admin, les notifications de base et les exigences RGPD critiques avant lancement commercial (source: vision `§13`, `§14`, `§15`, `§16`).
+Fermer la boucle de monétisation et d'engagement du MVP avec crédits, Stripe et premier dashboard utilisateur (source: vision `§11`, `§12`, `§16`).
 
 ## 📅 Period
 
@@ -13,42 +13,38 @@ Clôturer le MVP avec les opérations admin, les notifications de base et les ex
 
 ## ✅ Tasks (3–8 max)
 
-- [ ] **[US-033]** Développer le panel admin utilisateurs et crédits
-  - Agent: `developer`
-  - Workflow: `analyze-design-dev-review`
-  - Acceptance criteria:
-    - [ ] La liste et la fiche utilisateur sont disponibles
-    - [ ] L'admin peut attribuer des crédits avec note
-    - [ ] L'admin peut désactiver ou supprimer un compte
-  - Source: vision `§13.2`, `§16`
-- [ ] **[US-034]** Finaliser les opérations avancées de gestion des templates admin
-  - Agent: `developer`
-  - Workflow: `analyze-design-dev-review`
-  - Acceptance criteria:
-    - [ ] Activation/désactivation et suppression sont gérées
-    - [ ] Une vérification empêche la suppression dangereuse
-    - [ ] La vue admin couvre les besoins du MVP
-  - Source: vision `§13.3`, `§16`
-- [ ] **[US-035]** Mettre en place le centre de notifications et les rappels de base
-  - Agent: `product-owner`
-  - Workflow: `none`
-  - Acceptance criteria:
-    - [ ] Les notifications in-app critiques existent
-    - [ ] Les rappels de relance et entretien sont prévus dans le centre
-    - [ ] Les préférences utilisateur sont cadrées pour `V1.1`
-  - Source: vision `§12.4`, `§14`, `§16`
-- [ ] **[US-036]** Traiter les exigences RGPD critiques avant lancement commercial
+- [ ] **[US-029]** Mettre en place le ledger de crédits et les règles de consommation IA
   - Agent: `tech-lead`
   - Workflow: `analyze-design-dev-review`
   - Acceptance criteria:
-    - [ ] Les exports d'accès/portabilité sont cadrés
-    - [ ] La suppression RGPD est implémentée ou bloquée explicitement au lancement
-    - [ ] Les durées de conservation critiques sont documentées
-  - Open gaps carried from `US-016`:
-    - Rédiger les CGU et la politique de confidentialité avec la mention OpenRouter/Mistral.
-    - Désigner le responsable de traitement, finaliser le registre des traitements, et outiller la procédure DSAR.
-    - Auditer les durées de conservation, la purge audio, Stripe SCCs, et l'éventuel besoin DPO / OpenRouter enterprise.
-  - Source: vision `§15.1`, `§15.5`, `§16`
+    - [ ] Le solde de crédits est traçable
+    - [ ] Chaque action IA consomme les crédits attendus
+    - [ ] L'historique est exploitable pour l'utilisateur et l'admin
+  - Source: vision `§11`, `§16`
+- [ ] **[US-030]** Intégrer Stripe pour les packs `Starter` et `Pro`
+  - Agent: `developer`
+  - Workflow: `analyze-design-dev-review`
+  - Acceptance criteria:
+    - [ ] Les deux packs sont achetables
+    - [ ] Le webhook met à jour le solde
+    - [ ] Les cas d'erreur de paiement sont gérés
+  - Source: vision `§11`, `§16`
+- [ ] **[US-031]** Créer la page "Mes crédits" avec historique et alerte solde bas
+  - Agent: `designer`
+  - Workflow: `analyze-design-dev-review`
+  - Acceptance criteria:
+    - [ ] Le solde courant est visible
+    - [ ] L'historique des achats/consommations est lisible
+    - [ ] Une alerte apparaît quand le solde est bas
+  - Source: vision `§11`, `§14.1`, `§16`
+- [ ] **[US-032]** Exposer le dashboard utilisateur avec KPI de base et accès rapides
+  - Agent: `analyst`
+  - Workflow: `release`
+  - Acceptance criteria:
+    - [ ] Les 7 KPI de base sont visibles
+    - [ ] Les accès rapides et les dernières candidatures sont affichés
+    - [ ] Les KPI sont alimentés par les données réelles du produit
+  - Source: vision `§12.1` à `§12.4`, `§16`
 
 ## 📊 Sprint DoD
 
@@ -60,9 +56,9 @@ Clôturer le MVP avec les opérations admin, les notifications de base et les ex
 
 ## 🚧 Risks
 
-- Toute dette RGPD non résolue bloque la commercialisation du MVP.
-- Les opérations destructives admin exigent une validation d'autorisation stricte.
+- Les règles de débit de crédits doivent rester cohérentes avec les coûts IA réels.
+- Stripe et le ledger doivent partager un modèle d'événements fiable.
 
 ## ⚠️ To Clarify (sprint blockers)
 
-- Désigner un responsable de traitement et statuer sur le besoin d'un DPO avant mise en vente (source: vision `§15.5`).
+- Aucun bloqueur explicite si les packs restent limités à `Starter` et `Pro`.

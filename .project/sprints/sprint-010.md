@@ -4,7 +4,7 @@
 
 ## 🎯 Sprint Goal
 
-Ouvrir `V1.1` avec les fonctions de productivité candidat: profils multiples, import CV, export DOCX, historique et recherche de recruteur (source: vision `§4`, `§5`, `§6.6`, `§16`).
+Finaliser le MVP en livrant le panel admin complet, les opérations avancées de templates, le centre de notifications et les exigences RGPD critiques avant lancement commercial (source: vision `§12.2`, `§13`, `§15.1`, `§15.5`, `§16`).
 
 ## 📅 Period
 
@@ -13,38 +13,38 @@ Ouvrir `V1.1` avec les fonctions de productivité candidat: profils multiples, i
 
 ## ✅ Tasks (3–8 max)
 
-- [ ] **[US-037]** Ajouter les profils de base multiples
+- [ ] **[US-033]** Développer le panel admin utilisateurs et crédits
   - Agent: `developer`
   - Workflow: `analyze-design-dev-review`
   - Acceptance criteria:
-    - [ ] Un utilisateur peut gérer plusieurs profils de base
-    - [ ] Le profil actif peut être sélectionné par candidature
-    - [ ] La compatibilité avec CV/LM existants est maintenue
-  - Source: vision `§5.1`, `§16`
-- [ ] **[US-038]** Importer un CV existant avec extraction IA pseudonymisée
+    - [ ] La liste des utilisateurs est paginée et filtrable
+    - [ ] Les crédits peuvent être attribués manuellement avec note obligatoire
+    - [ ] Chaque attribution manuelle est loggée
+  - Source: vision `§13.2`, `§16`
+- [ ] **[US-034]** Finaliser les opérations avancées de gestion des templates admin
+  - Agent: `developer`
+  - Workflow: `analyze-design-dev-review`
+  - Acceptance criteria:
+    - [ ] Les analytics de templates (top templates, volume) sont visibles
+    - [ ] L'export CSV des données admin est disponible
+    - [ ] Les opérations restantes du panel admin sont complètes
+  - Source: vision `§13.3`, `§16`
+- [ ] **[US-035]** Mettre en place le centre de notifications et les rappels de base
+  - Agent: `designer`
+  - Workflow: `analyze-design-dev-review`
+  - Acceptance criteria:
+    - [ ] La cloche avec badge est présente dans le header
+    - [ ] Les notifications in-app sont listées avec statut lu/non lu
+    - [ ] Les rappels de candidature (J+7) sont déclenchés
+  - Source: vision `§12.4`, `§14`, `§16`
+- [ ] **[US-036]** Traiter les exigences RGPD critiques avant lancement commercial
   - Agent: `tech-lead`
   - Workflow: `analyze-design-dev-review`
   - Acceptance criteria:
-    - [ ] L'import de CV est disponible
-    - [ ] Le pipeline d'extraction respecte la pseudonymisation
-    - [ ] Les limites de qualité sont documentées
-  - Source: vision `§4`, `§15.3`, `§16`
-- [ ] **[US-039]** Ajouter l'export DOCX et l'historique des versions CV/LM
-  - Agent: `developer`
-  - Workflow: `analyze-design-dev-review`
-  - Acceptance criteria:
-    - [ ] Un export DOCX existe
-    - [ ] Les versions successives des CV/LM sont historisées
-    - [ ] Le choix de la librairie DOCX est documenté par ADR si nécessaire
-  - Source: vision `§6.6`, `§16`
-- [ ] **[US-040]** Ajouter la recherche de recruteur
-  - Agent: `analyst`
-  - Workflow: `spike-research`
-  - Acceptance criteria:
-    - [ ] Le cas d'usage est implémenté ou cadré précisément
-    - [ ] Les sources et limitations des données sont documentées
-    - [ ] Le flux s'intègre au parcours candidature
-  - Source: vision `§16`
+    - [ ] Export des données personnelles disponible
+    - [ ] Suppression compte + données associées opérationnelle
+    - [ ] Durées de conservation documentées et purge automatique audio prévue
+  - Source: vision `§15.1`, `§15.5`, `§16`
 
 ## 📊 Sprint DoD
 
@@ -56,9 +56,9 @@ Ouvrir `V1.1` avec les fonctions de productivité candidat: profils multiples, i
 
 ## 🚧 Risks
 
-- L'import CV peut être bruité et coûteux.
-- Le choix de la librairie DOCX peut déclencher une ADR.
+- La suppression RGPD doit être irréversible — prévoir une confirmation forte côté admin.
+- Les durées de conservation audio doivent être définies avant d'implémenter la purge.
 
 ## ⚠️ To Clarify (sprint blockers)
 
-- Confirmer la librairie DOCX retenue pendant le sprint.
+- Confirmer les durées de conservation des données avant d'implémenter la purge automatique.

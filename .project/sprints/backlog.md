@@ -15,13 +15,14 @@
 | E5 | MVP | Ingestion des offres et pipeline candidature | Une candidature peut être créée via scraping ou fallback texte, avec pipeline de statuts opérationnel | 005 | vision `§7`, `§16` |
 | E6 | MVP | Pipeline IA texte et templates | Tous les appels OpenRouter envoient `zdr: true`; au moins 1 template CV ATS et 1 template LM ATS sont gérés côté admin via Puck | 005-006 | vision `§2`, `§6`, `§15.2`, `§16` |
 | E7 | MVP | Génération CV, édition et export PDF | Un CV est généré via pipeline pseudonymisé, éditable dans Puck, consultable en lecture mobile, puis exportable en PDF sans métadonnées identifiantes | 007 | vision `§6`, `§8`, `§15.3`, `§15.4`, `§16` |
-| E8 | MVP | Lettre de motivation, crédits et paiement | La LM utilise le même pipeline que le CV; les packs `Starter 9,99 EUR` et `Pro 19,99 EUR` sont achetables et le solde de crédits est visible | 008 | vision `§9`, `§11`, `§16` |
-| E9 | MVP | Dashboard, panel admin et préparation au lancement | Le dashboard expose les 7 KPI de base; le panel admin couvre users + templates; les exigences RGPD critiques avant lancement sont traitées | 009 | vision `§12.2`, `§13`, `§15.1`, `§15.5`, `§16` |
-| E10 | V1.1 | Productivité candidat avancée | Les profils multiples, l'import CV, l'export DOCX, l'historique de versions et la recherche de recruteur sont disponibles | 010 | vision `§4`, `§5`, `§6.6`, `§16` |
-| E11 | V1.1 | Rappels, analytics avancés et partage | Les rappels email/in-app, les graphiques avancés et la carte partageable LinkedIn sont actifs | 011 | vision `§12.3` à `§12.5`, `§14`, `§16` |
-| E12 | V1.2 | Plateforme interview temps réel | Le streaming STT/TTS/LLM, le VAD et le feedback visuel tiennent l'objectif perçu `< 1,2 s` pour la boucle interview | 012 | vision `§10`, `§16` |
-| E13 | V1.2 | Produit interview complet et conformité audio | Le mode interview vocal, les profils d'interview, le rapport noté, la réécoute/transcription, le mode libre et la purge audio RGPD sont disponibles | 013 | vision `§10`, `§15.5`, `§16` |
-| E14 | V2.0 | Offre recruteur et extension entreprise | Les rôles recruteur, organisations, import PDF d'offre, extension browser, analytics admin avancés et étude enterprise OpenRouter sont cadrés et livrés | 014 | vision `§13.4`, `§16` |
+| E7-Puck | MVP | Intégration Puck Editor (admin + user) | `@measured-co/puck` est installé, le drag-and-drop admin remplace le textarea JSON, l'éditeur CV utilisateur utilise Puck en mode contenu uniquement — conformément à ADR-003 | 008 | ADR-003, vision `§6.1`, `§6.7`, `§8`, `§13.3`, `§16` |
+| E8 | MVP | Lettre de motivation, crédits et paiement | La LM utilise le même pipeline que le CV; les packs `Starter 9,99 EUR` et `Pro 19,99 EUR` sont achetables et le solde de crédits est visible | 009 | vision `§9`, `§11`, `§16` |
+| E9 | MVP | Dashboard, panel admin et préparation au lancement | Le dashboard expose les 7 KPI de base; le panel admin couvre users + templates; les exigences RGPD critiques avant lancement sont traitées | 010 | vision `§12.2`, `§13`, `§15.1`, `§15.5`, `§16` |
+| E10 | V1.1 | Productivité candidat avancée | Les profils multiples, l'import CV, l'export DOCX, l'historique de versions et la recherche de recruteur sont disponibles | 011 | vision `§4`, `§5`, `§6.6`, `§16` |
+| E11 | V1.1 | Rappels, analytics avancés et partage | Les rappels email/in-app, les graphiques avancés et la carte partageable LinkedIn sont actifs | 012 | vision `§12.3` à `§12.5`, `§14`, `§16` |
+| E12 | V1.2 | Plateforme interview temps réel | Le streaming STT/TTS/LLM, le VAD et le feedback visuel tiennent l'objectif perçu `< 1,2 s` pour la boucle interview | 013 | vision `§10`, `§16` |
+| E13 | V1.2 | Produit interview complet et conformité audio | Le mode interview vocal, les profils d'interview, le rapport noté, la réécoute/transcription, le mode libre et la purge audio RGPD sont disponibles | 014 | vision `§10`, `§15.5`, `§16` |
+| E14 | V2.0 | Offre recruteur et extension entreprise | Les rôles recruteur, organisations, import PDF d'offre, extension browser, analytics admin avancés et étude enterprise OpenRouter sont cadrés et livrés | 015 | vision `§13.4`, `§16` |
 
 ## Estimate Scale
 
@@ -65,32 +66,35 @@ Référence de gate: le spec impose des branches courtes et des PRs <= 400 ligne
 | US-026 | Permettre l'édition WYSIWYG Puck côté user + lecture mobile | E7 | L | P0 | 007 | vision `§6`, `§8`, `§16` |
 | US-027 | Exporter le CV en PDF via Puppeteer sans métadonnées identifiantes | E7 | M | P0 | 007 | vision `§8`, `§15.4`, `§16` |
 | US-028 | Générer la lettre de motivation avec le même pipeline documentaire | E8 | M | P0 | 007 | vision `§9`, `§16` |
-| US-029 | Mettre en place le ledger de crédits et les règles de consommation IA | E8 | M | P0 | 008 | vision `§11`, `§16` |
-| US-030 | Intégrer Stripe pour les packs `Starter` et `Pro` | E8 | M | P0 | 008 | vision `§11`, `§16` |
-| US-031 | Créer la page "Mes crédits" avec historique et alerte solde bas | E8 | M | P0 | 008 | vision `§11`, `§14.1`, `§16` |
-| US-032 | Exposer le dashboard utilisateur avec KPI de base et accès rapides | E9 | M | P0 | 008 | vision `§12.1` à `§12.4`, `§16` |
-| US-033 | Développer le panel admin utilisateurs et crédits | E9 | L | P0 | 009 | vision `§13.2`, `§16` |
-| US-034 | Finaliser les opérations avancées de gestion des templates admin | E9 | M | P0 | 009 | vision `§13.3`, `§16` |
-| US-035 | Mettre en place le centre de notifications et les rappels de base | E9 | M | P1 | 009 | vision `§12.4`, `§14`, `§16` |
-| US-036 | Traiter les exigences RGPD critiques avant lancement commercial | E9 | L | P0 | 009 | vision `§15.1`, `§15.5`, `§16` |
-| US-037 | Ajouter les profils de base multiples | E10 | M | P1 | 010 | vision `§5.1`, `§16` |
-| US-038 | Importer un CV existant avec extraction IA pseudonymisée | E10 | L | P1 | 010 | vision `§4`, `§15.3`, `§16` |
-| US-039 | Ajouter l'export DOCX et l'historique des versions CV/LM | E10 | M | P1 | 010 | vision `§6.6`, `§16` |
-| US-040 | Ajouter la recherche de recruteur | E10 | M | P2 | 010 | vision `§16` |
-| US-041 | Envoyer les rappels et notifications email avec préférences utilisateur | E11 | M | P1 | 011 | vision `§14`, `§16` |
-| US-042 | Exposer les graphiques avancés du dashboard | E11 | M | P1 | 011 | vision `§12.3`, `§16` |
-| US-043 | Générer la carte partageable LinkedIn et le partage natif | E11 | M | P2 | 011 | vision `§12.5`, `§16` |
-| US-044 | Intégrer Voxtral Small pour le STT streaming progressif | E12 | L | P0 | 012 | vision `§10`, `§16` |
-| US-045 | Intégrer Voxtral TTS et le pipeline streaming LLM -> TTS | E12 | L | P0 | 012 | vision `§10`, `§16` |
-| US-046 | Ajouter VAD navigateur et feedback visuel temps réel | E12 | M | P0 | 012 | vision `§10`, `§16` |
-| US-047 | Tenir la latence perçue cible `< 1,2 s` sur la boucle interview | E12 | L | P0 | 012 | vision `§10`, `§16` |
-| US-048 | Livrer le mode interview vocal complet avec profils recruteur | E13 | L | P0 | 013 | vision `§10`, `§16` |
-| US-049 | Générer le rapport post-interview avec métriques et notes | E13 | M | P0 | 013 | vision `§10`, `§16` |
-| US-050 | Ajouter réécoute audio, transcription, mode pratique libre, purge RGPD et pré-génération | E13 | L | P1 | 013 | vision `§10`, `§15.5`, `§16` |
-| US-051 | Ajouter le rôle recruteur et les organisations / comptes entreprise | E14 | L | P1 | 014 | vision `§16` |
-| US-052 | Ajouter l'import PDF d'offre et la connexion sociale à évaluer | E14 | M | P2 | 014 | vision `§3.1`, `§16` |
-| US-053 | Ajouter l'extension browser pour le scraping d'offres | E14 | M | P2 | 014 | vision `§16` |
-| US-054 | Ajouter analytics admin avancés, export CSV et évaluer OpenRouter enterprise | E14 | M | P2 | 014 | vision `§13.4`, `§15.5`, `§16` |
+| US-055 | Installer `@measured-co/puck`, créer l'adaptateur `toPuckConfig()` et migrer le JSON des templates existants | E7-Puck | S | P0 | 008 | ADR-003, vision `§6.1`, `§6.3` |
+| US-056 | Intégrer Puck Editor en mode drag-and-drop dans l'interface admin de templates | E7-Puck | L | P0 | 008 | ADR-003, vision `§6.1`, `§6.7`, `§13.3` |
+| US-057 | Remplacer l'éditeur de CV utilisateur par Puck Editor avec permissions de contenu uniquement | E7-Puck | M | P0 | 008 | ADR-003, vision `§6`, `§8`, `§16` |
+| US-029 | Mettre en place le ledger de crédits et les règles de consommation IA | E8 | M | P0 | 009 | vision `§11`, `§16` |
+| US-030 | Intégrer Stripe pour les packs `Starter` et `Pro` | E8 | M | P0 | 009 | vision `§11`, `§16` |
+| US-031 | Créer la page "Mes crédits" avec historique et alerte solde bas | E8 | M | P0 | 009 | vision `§11`, `§14.1`, `§16` |
+| US-032 | Exposer le dashboard utilisateur avec KPI de base et accès rapides | E9 | M | P0 | 009 | vision `§12.1` à `§12.4`, `§16` |
+| US-033 | Développer le panel admin utilisateurs et crédits | E9 | L | P0 | 010 | vision `§13.2`, `§16` |
+| US-034 | Finaliser les opérations avancées de gestion des templates admin | E9 | M | P0 | 010 | vision `§13.3`, `§16` |
+| US-035 | Mettre en place le centre de notifications et les rappels de base | E9 | M | P1 | 010 | vision `§12.4`, `§14`, `§16` |
+| US-036 | Traiter les exigences RGPD critiques avant lancement commercial | E9 | L | P0 | 010 | vision `§15.1`, `§15.5`, `§16` |
+| US-037 | Ajouter les profils de base multiples | E10 | M | P1 | 011 | vision `§5.1`, `§16` |
+| US-038 | Importer un CV existant avec extraction IA pseudonymisée | E10 | L | P1 | 011 | vision `§4`, `§15.3`, `§16` |
+| US-039 | Ajouter l'export DOCX et l'historique des versions CV/LM | E10 | M | P1 | 011 | vision `§6.6`, `§16` |
+| US-040 | Ajouter la recherche de recruteur | E10 | M | P2 | 011 | vision `§16` |
+| US-041 | Envoyer les rappels et notifications email avec préférences utilisateur | E11 | M | P1 | 012 | vision `§14`, `§16` |
+| US-042 | Exposer les graphiques avancés du dashboard | E11 | M | P1 | 012 | vision `§12.3`, `§16` |
+| US-043 | Générer la carte partageable LinkedIn et le partage natif | E11 | M | P2 | 012 | vision `§12.5`, `§16` |
+| US-044 | Intégrer Voxtral Small pour le STT streaming progressif | E12 | L | P0 | 013 | vision `§10`, `§16` |
+| US-045 | Intégrer Voxtral TTS et le pipeline streaming LLM -> TTS | E12 | L | P0 | 013 | vision `§10`, `§16` |
+| US-046 | Ajouter VAD navigateur et feedback visuel temps réel | E12 | M | P0 | 013 | vision `§10`, `§16` |
+| US-047 | Tenir la latence perçue cible `< 1,2 s` sur la boucle interview | E12 | L | P0 | 013 | vision `§10`, `§16` |
+| US-048 | Livrer le mode interview vocal complet avec profils recruteur | E13 | L | P0 | 014 | vision `§10`, `§16` |
+| US-049 | Générer le rapport post-interview avec métriques et notes | E13 | M | P0 | 014 | vision `§10`, `§16` |
+| US-050 | Ajouter réécoute audio, transcription, mode pratique libre, purge RGPD et pré-génération | E13 | L | P1 | 014 | vision `§10`, `§15.5`, `§16` |
+| US-051 | Ajouter le rôle recruteur et les organisations / comptes entreprise | E14 | L | P1 | 015 | vision `§16` |
+| US-052 | Ajouter l'import PDF d'offre et la connexion sociale à évaluer | E14 | M | P2 | 015 | vision `§3.1`, `§16` |
+| US-053 | Ajouter l'extension browser pour le scraping d'offres | E14 | M | P2 | 015 | vision `§16` |
+| US-054 | Ajouter analytics admin avancés, export CSV et évaluer OpenRouter enterprise | E14 | M | P2 | 015 | vision `§13.4`, `§15.5`, `§16` |
 
 ## Clarifications Pendantes
 
@@ -132,13 +136,15 @@ Référence de gate: le spec impose des branches courtes et des PRs <= 400 ligne
 | `003` | Valider sécurité auth, sessions et autorisations | `tech-lead` + `qa-reviewer` |
 | `005` | Valider `zdr: true`, prompt logging off, pseudonymisation | `tech-lead` |
 | `007` | Valider export PDF sans fuite de données identifiantes | `tech-lead` + `qa-reviewer` |
-| `008` | Valider ledger crédits et webhooks Stripe | `tech-lead` |
-| `009` | Gate RGPD de lancement MVP | `tech-lead` + `product-owner` |
-| `012` | Gate observabilité et latence interview | `tech-lead` + `analyst` |
-| `013` | Gate purge audio et conservation RGPD | `tech-lead` |
+| `008` | Valider intégration Puck Editor — migration JSON, SSR constraint, permissions user | `tech-lead` |
+| `009` | Valider ledger crédits et webhooks Stripe | `tech-lead` |
+| `010` | Gate RGPD de lancement MVP | `tech-lead` + `product-owner` |
+| `013` | Gate observabilité et latence interview | `tech-lead` + `analyst` |
+| `014` | Gate purge audio et conservation RGPD | `tech-lead` |
 
 ## ADR Watchlist
 
+- ~~Puck Editor comme couche WYSIWYG~~ → **ADR-003 acceptée** (2026-04-20)
 - Provider email pour magic links / notifications
 - Librairie DOCX pour `V1.1`
 - Extension browser si une stack dédiée est introduite

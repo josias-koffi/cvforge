@@ -4,7 +4,7 @@
 
 ## 🎯 Sprint Goal
 
-Transformer la base technique interview en expérience produit complète, scorée et conforme RGPD (source: vision `§10`, `§15.5`, `§16`).
+Poser la base temps réel de `V1.2` pour l'interview vocal avec STT, TTS, streaming et latence perçue maîtrisée (source: vision `§10`, `§16`).
 
 ## 📅 Period
 
@@ -13,31 +13,38 @@ Transformer la base technique interview en expérience produit complète, scoré
 
 ## ✅ Tasks (3–8 max)
 
-- [ ] **[US-048]** Livrer le mode interview vocal complet avec profils recruteur
+- [ ] **[US-044]** Intégrer Voxtral Small pour le STT streaming progressif
   - Agent: `developer`
   - Workflow: `analyze-design-dev-review`
   - Acceptance criteria:
-    - [ ] Le mode interview vocal fonctionne de bout en bout
-    - [ ] Les profils `Standard`, `Agressif`, `Passif`, `Technique`, `Comportemental` existent
-    - [ ] L'utilisateur peut lancer et terminer proprement une session
+    - [ ] Le STT fonctionne par chunks progressifs
+    - [ ] Les flux audio sont ingérés côté navigateur et backend
+    - [ ] Les cas de reprise/erreur sont gérés
   - Source: vision `§10`, `§16`
-- [ ] **[US-049]** Générer le rapport post-interview avec métriques et notes
-  - Agent: `analyst`
-  - Workflow: `release`
-  - Acceptance criteria:
-    - [ ] Un rapport structuré est généré en fin de session
-    - [ ] Les notes et métriques sont persistées
-    - [ ] Le dashboard peut consommer ces scores
-  - Source: vision `§10`, `§12.3`, `§16`
-- [ ] **[US-050]** Ajouter réécoute audio, transcription, mode pratique libre, purge RGPD et pré-génération
-  - Agent: `tech-lead`
+- [ ] **[US-045]** Intégrer Voxtral TTS et le pipeline streaming LLM -> TTS
+  - Agent: `developer`
   - Workflow: `analyze-design-dev-review`
   - Acceptance criteria:
-    - [ ] La réécoute audio et la transcription sont disponibles
-    - [ ] Le mode pratique libre fonctionne
-    - [ ] La purge automatique audio respecte la politique RGPD
-    - [ ] La pré-génération de la question suivante est intégrée si la latence le permet
-  - Source: vision `§10`, `§15.5`, `§16`
+    - [ ] La voix IA est générée via Voxtral TTS
+    - [ ] Le premier chunk audio arrive avant la fin de génération complète
+    - [ ] Le pipeline complet est observable
+  - Source: vision `§10`, `§16`
+- [ ] **[US-046]** Ajouter VAD navigateur et feedback visuel temps réel
+  - Agent: `designer`
+  - Workflow: `analyze-design-dev-review`
+  - Acceptance criteria:
+    - [ ] Le VAD navigateur détecte les prises de parole
+    - [ ] Le micro et l'état "thinking" sont visibles
+    - [ ] Le flux reste exploitable sur une interface minimaliste
+  - Source: vision `§10`, `§16`
+- [ ] **[US-047]** Tenir la latence perçue cible `< 1,2 s` sur la boucle interview
+  - Agent: `analyst`
+  - Workflow: `spike-research`
+  - Acceptance criteria:
+    - [ ] La mesure de latence perçue est instrumentée
+    - [ ] Les optimisations critiques sont identifiées et exécutées
+    - [ ] La cible `< 1,2 s` est démontrée ou l'écart est documenté
+  - Source: vision `§10`, `§16`
 
 ## 📊 Sprint DoD
 
@@ -49,9 +56,9 @@ Transformer la base technique interview en expérience produit complète, scoré
 
 ## 🚧 Risks
 
-- La gestion des fichiers audio peut créer de la dette d'infrastructure et de conformité.
-- Le mode pratique libre peut nécessiter un cadrage UX plus fin.
+- La complexité temps réel peut déborder fortement par rapport aux sprints précédents.
+- La latence dépend autant du frontend que du routage IA.
 
 ## ⚠️ To Clarify (sprint blockers)
 
-- Fixer la durée de rétention audio et son automatisation avant clôture du sprint.
+- Aucun bloqueur de vision, mais la cible de latence devient un critère de go/no-go.
