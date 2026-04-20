@@ -21,13 +21,13 @@ Ouvrir le pipeline métier principal du MVP: création de candidature, statuts e
     - [x] Le prompt logging reste désactivé
     - [x] Le provider est limité à Mistral quand applicable
   - Source: vision `§2`, `§15.2`, `§16`
-- [ ] **[US-018]** Créer une candidature à partir d'une offre via scraping
+- [x] **[US-018]** Créer une candidature à partir d'une offre via scraping
   - Agent: `developer`
   - Workflow: `analyze-design-dev-review`
   - Acceptance criteria:
-    - [ ] Une offre peut être ingérée depuis une URL
-    - [ ] Les champs utiles à la candidature sont extraits
-    - [ ] Les erreurs d'extraction sont gérées proprement
+    - [x] Une offre peut être ingérée depuis une URL
+    - [x] Les champs utiles à la candidature sont extraits
+    - [x] Les erreurs d'extraction sont gérées proprement
   - Source: vision `§7`, `§16`
 - [ ] **[US-019]** Ajouter le fallback texte et le fallback PDF si faisable dans le MVP
   - Agent: `developer`

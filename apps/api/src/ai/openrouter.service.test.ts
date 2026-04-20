@@ -20,15 +20,16 @@ function makeResponse(content: string, status = 200) {
 }
 
 describe('OpenRouterService', () => {
-  let fetchSpy: ReturnType<typeof vi.spyOn>;
+  const fetchMock = vi.fn();
 
   beforeEach(() => {
-    fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(() =>
-      makeResponse('ok'),
-    );
+    fetchMock.mockReset();
+    fetchMock.mockImplementation(() => makeResponse('ok'));
+    vi.stubGlobal('fetch', fetchMock);
   });
 
   afterEach(() => {
+    vi.unstubAllGlobals();
     vi.restoreAllMocks();
   });
 
@@ -36,7 +37,7 @@ describe('OpenRouterService', () => {
     const svc = new OpenRouterService(BASE_CONFIG);
     await svc.chat(MESSAGES);
 
-    const [, init] = fetchSpy.mock.calls[0] as [string, RequestInit];
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
     const body = JSON.parse(init.body as string);
     expect(body.zdr).toBe(true);
   });
@@ -45,7 +46,7 @@ describe('OpenRouterService', () => {
     const svc = new OpenRouterService(BASE_CONFIG);
     await svc.chat(MESSAGES);
 
-    const [, init] = fetchSpy.mock.calls[0] as [string, RequestInit];
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
     const body = JSON.parse(init.body as string);
     expect(body.transforms).toEqual([]);
   });
@@ -54,7 +55,7 @@ describe('OpenRouterService', () => {
     const svc = new OpenRouterService(BASE_CONFIG);
     await svc.chat(MESSAGES);
 
-    const [, init] = fetchSpy.mock.calls[0] as [string, RequestInit];
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
     const body = JSON.parse(init.body as string);
     expect(body.provider.only).toEqual(['Mistral']);
     expect(body.provider.allow_fallbacks).toBe(false);
@@ -64,7 +65,7 @@ describe('OpenRouterService', () => {
     const svc = new OpenRouterService(BASE_CONFIG);
     await svc.chat(MESSAGES);
 
-    const [, init] = fetchSpy.mock.calls[0] as [string, RequestInit];
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
     const body = JSON.parse(init.body as string);
     expect(body.model).toBe('mistralai/mistral-small-2603');
   });
@@ -73,7 +74,7 @@ describe('OpenRouterService', () => {
     const svc = new OpenRouterService(BASE_CONFIG);
     await svc.chat(MESSAGES, { model: 'mistralai/mistral-large' });
 
-    const [, init] = fetchSpy.mock.calls[0] as [string, RequestInit];
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
     const body = JSON.parse(init.body as string);
     expect(body.model).toBe('mistralai/mistral-large');
     // RGPD invariants must still be present even with a different model
@@ -86,7 +87,7 @@ describe('OpenRouterService', () => {
     const svc = new OpenRouterService(BASE_CONFIG);
     await svc.chat(MESSAGES, { temperature: 0.7 });
 
-    const [, init] = fetchSpy.mock.calls[0] as [string, RequestInit];
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
     const body = JSON.parse(init.body as string);
     expect(body.temperature).toBe(0.7);
   });
@@ -95,7 +96,7 @@ describe('OpenRouterService', () => {
     const svc = new OpenRouterService(BASE_CONFIG);
     await svc.chat(MESSAGES);
 
-    const [, init] = fetchSpy.mock.calls[0] as [string, RequestInit];
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
     const body = JSON.parse(init.body as string);
     expect(body.temperature).toBeUndefined();
   });
@@ -104,7 +105,7 @@ describe('OpenRouterService', () => {
     const svc = new OpenRouterService(BASE_CONFIG);
     await svc.chat(MESSAGES);
 
-    const [url] = fetchSpy.mock.calls[0] as [string, RequestInit];
+    const [url] = fetchMock.mock.calls[0] as [string, RequestInit];
     expect(url).toBe('https://openrouter.ai/api/v1/chat/completions');
   });
 
@@ -112,19 +113,19 @@ describe('OpenRouterService', () => {
     const svc = new OpenRouterService(BASE_CONFIG);
     await svc.chat(MESSAGES);
 
-    const [, init] = fetchSpy.mock.calls[0] as [string, RequestInit];
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
     expect((init.headers as Record<string, string>)['Authorization']).toBe('Bearer test-key');
   });
 
   it('returns the text content from the response', async () => {
-    fetchSpy.mockImplementation(() => makeResponse('Generated text'));
+    fetchMock.mockImplementation(() => makeResponse('Generated text'));
     const svc = new OpenRouterService(BASE_CONFIG);
     const result = await svc.chat(MESSAGES);
     expect(result).toBe('Generated text');
   });
 
   it('throws on non-OK HTTP response', async () => {
-    fetchSpy.mockImplementation(() =>
+    fetchMock.mockImplementation(() =>
       Promise.resolve(new Response('', { status: 429, statusText: 'Too Many Requests' })),
     );
     const svc = new OpenRouterService(BASE_CONFIG);
@@ -132,7 +133,7 @@ describe('OpenRouterService', () => {
   });
 
   it('throws when response has no choices content', async () => {
-    fetchSpy.mockImplementation(() =>
+    fetchMock.mockImplementation(() =>
       Promise.resolve(
         new Response(JSON.stringify({ choices: [] }), {
           status: 200,

@@ -103,3 +103,10 @@
 - **Why**: The story is pure backend infrastructure with no user-facing surface.
 - **Learned**: Infrastructure stories still benefit from a design artifact that clarifies the API contract for the developer handoff, even when no screen or interaction is involved.
 - **Open**: Future AI features that build on `OpenRouterService` may need UX for loading states, error feedback, and credit consumption affordances.
+
+## 2026-04-20 — US-018
+
+- **Did**: Specified a protected `/candidatures` import screen with a single URL field, deterministic success and error states, and vertically structured draft cards for the extracted offer data.
+- **Why**: The story needed a concrete UX shape that supports offer ingestion now without inventing the later full pipeline table, filters, or editor workflow.
+- **Learned**: A server-rendered submit/redirect pattern is enough for this MVP slice and avoids unnecessary client-state complexity while preserving accessibility.
+- **Open**: The later candidature pipeline story should decide when this page evolves from draft-creation flow into the full list/table management screen from the vision.

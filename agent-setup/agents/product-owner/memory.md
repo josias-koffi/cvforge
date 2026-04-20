@@ -117,3 +117,10 @@
 - **Why**: The workflow needed a precise scope so the story could be completed without prematurely designing the full AI generation pipeline.
 - **Learned**: The three acceptance criteria map directly to auditable constants in the service code, which makes future compliance reviews straightforward.
 - **Open**: Future AI generation stories (US-018, US-019) should import `OPENROUTER_SERVICE` instead of constructing direct HTTP clients.
+
+## 2026-04-20 — US-018
+
+- **Did**: Scoped `US-018` to an authenticated URL-ingestion flow with server-side scraping, structured extraction into a persisted draft candidature, and explicit error states for invalid, unreachable, or unusable offers.
+- **Why**: The workflow needed a tight MVP boundary that satisfies vision `§7.3` without prematurely opening manual fallback, PDF import, ATS generation, or status-pipeline scope.
+- **Learned**: The wording "creer une candidature" needs a persisted draft record rather than a transient preview to remain product-coherent.
+- **Open**: `US-019` should add the manual text fallback and decide whether PDF fallback is worth the MVP cost.

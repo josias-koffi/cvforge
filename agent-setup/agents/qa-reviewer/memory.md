@@ -103,3 +103,10 @@
 - **Why**: The story could only pass once each ZDR, prompt-logging, and provider invariant had direct test-level proof rather than a code inspection alone.
 - **Learned**: RGPD invariants are easiest to audit when they are `const` spread values rather than conditional defaults, because each test can assert the exact body shape without mocking config.
 - **Open**: The `useFactory` in `openrouter.module.ts` is not covered by a module-integration test (same gap as `SmtpModule`); advisory only.
+
+## 2026-04-20 — US-018
+
+- **Did**: Verified the authenticated offer-import flow, structured extraction payload, and explicit failure handling in code and automated tests; rechecked `pnpm lint`, `pnpm test`, `pnpm --filter @cvforge/api build`, and the new-slice coverage thresholds.
+- **Why**: The story could only pass once every acceptance criterion and the blocking new-code coverage rule had direct evidence.
+- **Learned**: The candidature-ingestion slice clears the coverage gate once the supporting config/store/module paths are tested, not just the main service path.
+- **Open**: `pnpm --filter @cvforge/app build` is still blocked by the pre-existing `.next` ownership problem and remains an environment advisory.

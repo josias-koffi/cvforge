@@ -124,3 +124,10 @@
 - **Why**: Architecture governance and sprint bookkeeping require a final sign-off before the story can be marked complete.
 - **Learned**: Encoding RGPD invariants as `const` spread values in the service (not runtime config) is the correct audit-friendly pattern for OpenRouter compliance; future AI services should follow this approach.
 - **Open**: `OPENROUTER_BASE_URL` env override is acceptable for testing but warrants a future hardening note; US-018/US-019 should consume `OPENROUTER_SERVICE` token rather than constructing a parallel HTTP client.
+
+## 2026-04-20 — US-018 finalization
+
+- **Did**: Closed `US-018` with a passing verdict after confirming the new candidature-ingestion module, the protected `/candidatures` flow, repo-wide lint/test success, API build success, and explicit handling of the known app-build environment issue.
+- **Why**: Architecture governance and sprint bookkeeping require a final sign-off once implementation and QA evidence show that the feature is complete within the sprint scope.
+- **Learned**: The current architecture can support early candidature creation by layering a thin file-backed draft store behind the API, which buys product momentum without committing the long-term persistence design prematurely.
+- **Open**: `US-019` should add the text fallback on top of this same API boundary and avoid spreading extraction logic into the Next app.

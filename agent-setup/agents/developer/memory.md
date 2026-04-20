@@ -131,3 +131,10 @@
 - **Why**: `US-017` required an auditable RGPD-compliant OpenRouter client that future generation stories can consume via the `OPENROUTER_SERVICE` injection token.
 - **Learned**: Extracting the three RGPD invariants (`zdr`, `transforms`, `provider`) as a `const` spread — not configurable — makes the compliance story auditable in a single file.
 - **Open**: The `OPENROUTER_BASE_URL` env override is useful for testing; a future hardening story should document or restrict it.
+
+## 2026-04-20 — US-018
+
+- **Did**: Added a new `apps/api/src/applications/` slice for authenticated offer scraping, OpenRouter-backed field extraction, and file-backed draft candidature persistence; added the protected `/candidatures` page plus import route in `apps/app`; expanded shared types and tests across API, app, and types.
+- **Why**: `US-018` required a real end-to-end candidature creation path from an offer URL, not just a parser utility or placeholder UI.
+- **Learned**: The existing auth session and `OPENROUTER_SERVICE` boundaries were enough to ship a coherent ingestion vertical slice without a new dependency or ADR.
+- **Open**: `@cvforge/app build` is still blocked by the pre-existing `.next` ownership issue, so local Next build remains an environment concern rather than a feature regression.
