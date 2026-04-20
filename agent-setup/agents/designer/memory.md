@@ -61,3 +61,10 @@
 - **Why**: The story needed one consumable user-facing surface so the invitation link could work end to end without inventing future admin screens.
 - **Learned**: A minimal invitation page is enough to satisfy the vision's "special registration page" requirement while staying aligned with the existing passwordless session flow.
 - **Open**: The later admin-panel story should provide a proper invitation generation UI on top of this API contract.
+
+## 2026-04-20 — US-012
+
+- **Did**: Specified a minimal protected-route UX with the authenticated dashboard on `/`, an admin-only `/admin` surface, and a public `/forbidden` fallback for non-admin users.
+- **Why**: The rerun needed a concrete route-level interaction design without prematurely designing the full admin panel.
+- **Learned**: A small denial page plus server-side redirects are enough to satisfy the current authorization story while keeping the "Papier & Crayon" tone consistent.
+- **Open**: The future admin panel should reuse the same denial pattern for any deeper privileged subroutes.

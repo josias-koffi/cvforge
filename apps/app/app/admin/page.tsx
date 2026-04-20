@@ -1,29 +1,27 @@
 import React from "react";
 import { AppShell } from "@cvforge/ui";
-import { appContent } from "./content";
-import Link from "next/link";
-import { requireSession } from "./auth/session";
+import { appContent } from "../content";
+import { requireAdminSession } from "../auth/session";
 
-export default async function HomePage() {
-  const session = await requireSession();
+export default async function AdminPage() {
+  const session = await requireAdminSession();
 
   return (
     <AppShell
-      title={appContent.title}
-      description={appContent.description}
+      title="Espace admin"
+      description="Zone reservee aux comptes administrateurs."
       navigation={appContent.navigation}
     >
       <div
         style={{
           display: "grid",
           gap: "1rem",
-          maxWidth: "26rem",
+          maxWidth: "32rem",
         }}
       >
         <p style={{ color: "#6B6860", lineHeight: 1.6, margin: 0 }}>
-          Votre session passwordless est active. Les routes protegees du sprint
-          003 exigent maintenant une session valide avant d&apos;afficher le tableau
-          de bord candidat.
+          Les controles d&apos;acces de sprint 003 confirment que cette route reste
+          reservee au role admin.
         </p>
         <dl
           style={{
@@ -36,14 +34,11 @@ export default async function HomePage() {
             padding: "1.25rem",
           }}
         >
-          <dt style={{ color: "#6B6860", fontWeight: 600 }}>Session</dt>
+          <dt style={{ color: "#6B6860", fontWeight: 600 }}>Session admin</dt>
           <dd style={{ margin: 0 }}>{session.email}</dd>
           <dt style={{ color: "#6B6860", fontWeight: 600 }}>Role</dt>
           <dd style={{ margin: 0 }}>{session.role}</dd>
         </dl>
-        <Link href="/admin" style={{ color: "#2C2C2A", fontWeight: 600 }}>
-          Ouvrir la zone admin protegee
-        </Link>
       </div>
     </AppShell>
   );

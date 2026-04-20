@@ -1,3 +1,4 @@
+import { ForbiddenException, UnauthorizedException } from "@nestjs/common";
 import { describe, expect, it, vi } from "vitest";
 import { AuthMailerService } from "./auth-mailer.service";
 import type {
@@ -219,5 +220,59 @@ describe("AuthController", () => {
       email: "invitee@example.com",
       role: "admin",
     });
+  });
+
+  it("should reject missing or non-admin sessions from the admin session probe", async () => {
+    const service = new AuthService(config, createInMemoryAccountStore());
+    const mailer = {
+      sendMagicLinkEmail: vi.fn().mockResolvedValue(undefined),
+      getHealth: vi.fn(),
+    } as unknown as AuthMailerService;
+    const controller = new AuthController(service, mailer);
+
+    expect(() =>
+      controller.readAdminSession({
+        headers: {},
+      } as never),
+    ).toThrow(UnauthorizedException);
+
+    const adminRequest = await controller.requestMagicLink({ email: "admin@example.com" });
+    const adminSendCall = vi.mocked(mailer.sendMagicLinkEmail).mock.calls[0]?.[0];
+    const adminToken =
+      adminSendCall
+        ? new URL(adminSendCall.magicLink).searchParams.get("token") ?? ""
+        : "";
+    const adminCookie = vi.fn();
+    const adminRedirect = vi.fn();
+
+    controller.consumeMagicLink(adminToken, undefined, {
+      cookie: adminCookie,
+      redirect: adminRedirect,
+    } as never);
+
+    expect(adminRequest.email).toBe("admin@example.com");
+
+    const userRequest = await controller.requestMagicLink({ email: "user@example.com" });
+    const userSendCall = vi.mocked(mailer.sendMagicLinkEmail).mock.calls[1]?.[0];
+    const userToken =
+      userSendCall ? new URL(userSendCall.magicLink).searchParams.get("token") ?? "" : "";
+    const userCookie = vi.fn();
+    const userRedirect = vi.fn();
+
+    controller.consumeMagicLink(userToken, undefined, {
+      cookie: userCookie,
+      redirect: userRedirect,
+    } as never);
+
+    const [cookieName, cookieValue] = userCookie.mock.calls[0] as [string, string];
+
+    expect(userRequest.email).toBe("user@example.com");
+    expect(() =>
+      controller.readAdminSession({
+        headers: {
+          cookie: `${cookieName}=${cookieValue}`,
+        },
+      } as never),
+    ).toThrow(ForbiddenException);
   });
 });

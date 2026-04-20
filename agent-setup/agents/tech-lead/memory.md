@@ -75,3 +75,17 @@
 - **Why**: Architecture governance and sprint bookkeeping require an explicit final decision before the story can be marked complete.
 - **Learned**: The existing auth boundary is sufficient for invitation issuance and role assignment without any new framework or ADR; the next architecture step is centralized route authorization.
 - **Open**: Repository-wide build stability still depends on cleaning stale `.next` artifacts that are currently owned by `nobody`.
+
+## 2026-04-20 — US-012
+
+- **Did**: Categorized `US-012` as a high-severity authorization gap in the app routing layer and documented that the sprint task currently points at a triage-only workflow.
+- **Why**: The tech-lead stage needed to assign severity and root-cause area while checking whether the expected fix fits the current architecture.
+- **Learned**: No ADR is needed for this work; the correct next step is to add route authorization on top of the existing signed-session contract.
+- **Open**: The sprint metadata should be corrected to an implementation-capable workflow before engineering resumes.
+
+## 2026-04-20 — US-012 finalization
+
+- **Did**: Closed `US-012` with a passing verdict after confirming the route-protection implementation, regression coverage, and sprint completion, while recording the pre-existing app-build ownership issue as an environment advisory.
+- **Why**: Sprint bookkeeping and architecture governance require an explicit final decision once the implementation and QA evidence are complete.
+- **Learned**: The centralized signed-session contract is now strong enough to gate both candidate and admin routes without introducing a new framework or ADR.
+- **Open**: The next admin-panel work can build directly on the guarded `/admin` route once the local `.next` ownership problem is cleaned up.

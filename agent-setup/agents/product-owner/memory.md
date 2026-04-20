@@ -68,3 +68,17 @@
 - **Why**: The workflow needed a strict boundary so the story would deliver invitation mechanics without prematurely building the full admin panel or broader user-management flows.
 - **Learned**: The vision is precise enough to ship the invitation contract now while keeping `/admin` protection and admin UI for the next story.
 - **Open**: `US-012` still needs to protect the future admin surface and centralize authorization checks.
+
+## 2026-04-20 — US-012
+
+- **Did**: Prioritized the confirmed authorization gap to remain in sprint `003` and documented that the task cannot be completed through the currently assigned `bug-triage` workflow.
+- **Why**: The product-owner stage needed an explicit sprint decision and a clear next action once triage confirmed the gap.
+- **Learned**: The story scope still matches the vision, but the workflow metadata does not match the delivery work required.
+- **Open**: Reassign `US-012` to an implementation workflow, then rerun it.
+
+## 2026-04-20 — US-012 implementation
+
+- **Did**: Reframed `US-012` under the implementation workflow with explicit acceptance mapping for a protected dashboard route, an admin-only route, and tested authorization behavior.
+- **Why**: The rerun needed a scope definition that stayed inside the vision while turning the previously triaged gap into implementable work.
+- **Learned**: The story can be completed without inventing the full admin panel by shipping a minimal `/admin` surface plus route guards.
+- **Open**: The future admin-panel story can now build on the guarded route instead of starting from a public surface.

@@ -37,22 +37,22 @@ Sécuriser l'accès produit avec l'authentification passwordless, le bootstrappi
     - [x] Le lien n'est consommable qu'une seule fois
     - [x] Le lien expire après 48h
   - Source: vision `§3.2`, `§13.2`, `§16`
-- [ ] **[US-012]** Protéger les routes par rôles, dont `/admin`
+- [x] **[US-012]** Protéger les routes par rôles, dont `/admin`
   - Agent: `qa-reviewer`
   - Workflow: `bug-triage`
   - Acceptance criteria:
-    - [ ] Les routes admin sont inaccessibles aux `user`
-    - [ ] Les routes protégées exigent une session valide
-    - [ ] Les contrôles d'autorisation sont testés
+    - [x] Les routes admin sont inaccessibles aux `user`
+    - [x] Les routes protégées exigent une session valide
+    - [x] Les contrôles d'autorisation sont testés
   - Source: vision `§3.3`, `§13.1`, `§16`
 
 ## 📊 Sprint DoD
 
-- [ ] All tasks ticked
-- [ ] All acceptance criteria verified
-- [ ] `run-tests` green
-- [ ] Coverage ≥ spec threshold
-- [ ] QA review ✅
+- [x] All tasks ticked
+- [x] All acceptance criteria verified
+- [x] `run-tests` green
+- [x] Coverage ≥ spec threshold
+- [x] QA review ✅
 
 ## 🚧 Risks
 
@@ -61,4 +61,4 @@ Sécuriser l'accès produit avec l'authentification passwordless, le bootstrappi
 
 ## ⚠️ To Clarify (sprint blockers)
 
-- Durée de session finale à arrêter pendant l'implémentation (source: vision `§3.4`).
+- None.

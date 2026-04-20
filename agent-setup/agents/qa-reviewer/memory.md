@@ -61,3 +61,10 @@
 - **Why**: The task could only pass once each invitation acceptance criterion had direct evidence in the API and app flow.
 - **Learned**: The invitation slice satisfies the current blocking standards, but the repository-wide `pnpm build` command is still exposed to stale `.next` artifacts owned by another user.
 - **Open**: `US-012` should reuse the persisted role checks now present in the auth slice to protect `/admin` and other privileged routes.
+
+## 2026-04-20 — US-012
+
+- **Did**: Verified the new protected dashboard route, admin-only route, authorization redirect tests, workspace lint, root tests, and API build evidence, then recorded the remaining app-build ownership issue as a non-blocking environment advisory.
+- **Why**: The story could only pass once each route-protection acceptance criterion had direct implementation and test evidence.
+- **Learned**: The current auth slice now covers route-level authorization adequately for the sprint, even though local Next build stability is still affected by stale generated artifacts.
+- **Open**: The stale `apps/app/.next` ownership should be cleaned under the correct user before relying on local app builds again.
