@@ -145,3 +145,10 @@
 - **Why**: `US-019` required a real manual fallback path while keeping the PDF scope honest and non-blocking for MVP delivery.
 - **Learned**: Reusing the existing `applications` boundary keeps the extraction logic source-agnostic and avoids duplicating candidature creation between URL and text imports.
 - **Open**: The app build is still blocked by foreign-owned files in `apps/app/.next`, and a future PDF story will need a proper upload/storage/parsing design instead of incremental patching.
+
+## 2026-04-20 — US-020
+
+- **Did**: Added a shared application-status domain contract, implemented persisted status history plus guarded transitions in the API, exposed `/applications/summary` and `/:id/status`, updated `/candidatures` with manual transition controls and history, and replaced the placeholder dashboard with KPI cards backed by the new summary endpoint.
+- **Why**: `US-020` required an executable candidature pipeline that future dashboard work can trust, not a draft-only placeholder or documentation note.
+- **Learned**: Keeping the status model and transition map in `@cvforge/types` prevents the API and app from diverging as the candidature flow grows.
+- **Open**: `pnpm --filter @cvforge/app build` is still blocked by the pre-existing `.next` ownership issue and should be fixed before relying on local Next build as a hard gate again.

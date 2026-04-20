@@ -1,6 +1,8 @@
 import {
   BadGatewayException,
   BadRequestException,
+  ConflictException,
+  NotFoundException,
   UnprocessableEntityException,
 } from "@nestjs/common";
 import type { DraftApplication } from "@cvforge/types";
@@ -19,10 +21,23 @@ function createStore(): ApplicationsStore {
       applications.set(application.id, application);
       return application;
     },
+    findByIdForUserEmail(userEmail, applicationId) {
+      const application = applications.get(applicationId);
+
+      if (!application || application.userEmail !== userEmail) {
+        return null;
+      }
+
+      return application;
+    },
     listByUserEmail(userEmail) {
       return [...applications.values()].filter(
         (application) => application.userEmail === userEmail,
       );
+    },
+    save(application) {
+      applications.set(application.id, application);
+      return application;
     },
   };
 }
@@ -82,6 +97,7 @@ describe("ApplicationsService", () => {
 
     expect(application.userEmail).toBe("user@example.com");
     expect(application.status).toBe("draft");
+    expect(application.statusHistory).toHaveLength(1);
     expect(application.sourceType).toBe("url");
     expect(application.extracted).toMatchObject({
       companyName: "Example Corp",
@@ -126,6 +142,12 @@ describe("ApplicationsService", () => {
     expect(application.sourceType).toBe("text");
     expect(application.sourceLabel).toBe("Texte colle manuellement");
     expect(application.extracted.title).toBe("Senior Backend Engineer");
+    expect(application.statusHistory).toEqual([
+      {
+        changedAt: application.createdAt,
+        status: "draft",
+      },
+    ]);
     expect(openRouterService.chat).toHaveBeenCalledTimes(1);
   });
 
@@ -203,5 +225,135 @@ describe("ApplicationsService", () => {
     await expect(
       service.importFromText("user@example.com", "   "),
     ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it("updates a draft application to sent when the transition is allowed", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(
+        "<html><head><title>Backend Engineer</title></head><body><p>Responsibilities and requirements with enough text to pass the threshold. Responsibilities and requirements with enough text to pass the threshold.</p></body></html>",
+        { status: 200 },
+      ),
+    );
+    openRouterService.chat.mockResolvedValue(
+      JSON.stringify({
+        language: "en",
+        summary: "Backend role.",
+        title: "Backend Engineer",
+      }),
+    );
+    const service = new ApplicationsService(
+      createStore(),
+      openRouterService as never,
+    );
+
+    const application = await service.importFromUrl(
+      "user@example.com",
+      "https://example.com/jobs/123",
+    );
+    const updatedApplication = service.updateStatus(
+      "user@example.com",
+      application.id,
+      "sent",
+    );
+
+    expect(updatedApplication.status).toBe("sent");
+    expect(updatedApplication.statusHistory).toHaveLength(2);
+    expect(updatedApplication.statusHistory[1]?.status).toBe("sent");
+  });
+
+  it("rejects forbidden backward transitions", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(
+        "<html><head><title>Backend Engineer</title></head><body><p>Responsibilities and requirements with enough text to pass the threshold. Responsibilities and requirements with enough text to pass the threshold.</p></body></html>",
+        { status: 200 },
+      ),
+    );
+    openRouterService.chat.mockResolvedValue(
+      JSON.stringify({
+        language: "en",
+        summary: "Backend role.",
+        title: "Backend Engineer",
+      }),
+    );
+    const service = new ApplicationsService(
+      createStore(),
+      openRouterService as never,
+    );
+
+    const application = await service.importFromUrl(
+      "user@example.com",
+      "https://example.com/jobs/123",
+    );
+
+    await expect(() =>
+      service.updateStatus("user@example.com", application.id, "offer_received"),
+    ).toThrow(ConflictException);
+  });
+
+  it("rejects unknown applications during a status change", () => {
+    const service = new ApplicationsService(
+      createStore(),
+      openRouterService as never,
+    );
+
+    expect(() =>
+      service.updateStatus("user@example.com", "missing", "sent"),
+    ).toThrow(NotFoundException);
+  });
+
+  it("builds a KPI summary from application statuses", async () => {
+    vi.spyOn(globalThis, "fetch").mockImplementation(() =>
+      Promise.resolve(
+        new Response(
+          "<html><head><title>Backend Engineer</title></head><body><p>Responsibilities and requirements with enough text to pass the threshold. Responsibilities and requirements with enough text to pass the threshold.</p></body></html>",
+          { status: 200 },
+        ),
+      ),
+    );
+    openRouterService.chat.mockResolvedValue(
+      JSON.stringify({
+        language: "en",
+        summary: "Backend role.",
+        title: "Backend Engineer",
+      }),
+    );
+    const service = new ApplicationsService(
+      createStore(),
+      openRouterService as never,
+    );
+
+    const first = await service.importFromUrl(
+      "user@example.com",
+      "https://example.com/jobs/1",
+    );
+    const second = await service.importFromUrl(
+      "user@example.com",
+      "https://example.com/jobs/2",
+    );
+    const third = await service.importFromUrl(
+      "user@example.com",
+      "https://example.com/jobs/3",
+    );
+
+    service.updateStatus("user@example.com", first.id, "sent");
+    service.updateStatus("user@example.com", first.id, "interview_scheduled");
+    service.updateStatus("user@example.com", second.id, "sent");
+    service.updateStatus("user@example.com", second.id, "rejected");
+
+    const summary = service.listApplicationSummary("user@example.com");
+
+    expect(summary).toEqual({
+      respondedCount: 2,
+      responseRate: 100,
+      statusCounts: {
+        draft: 1,
+        interview_scheduled: 1,
+        offer_received: 0,
+        rejected: 1,
+        sent: 0,
+      },
+      totalCount: 3,
+    });
+    expect(third.status).toBe("draft");
   });
 });

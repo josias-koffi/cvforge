@@ -1,3 +1,9 @@
+import {
+  APPLICATION_STATUS_DRAFT,
+  applicationStatuses,
+  type ApplicationStatus,
+  type ApplicationStatusHistoryEntry,
+} from "@cvforge/types";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 import type {
@@ -15,14 +21,78 @@ function createEmptyState(): PersistedApplicationsState {
   };
 }
 
+function normalizeStatus(status: unknown): ApplicationStatus {
+  return applicationStatuses.includes(status as ApplicationStatus)
+    ? (status as ApplicationStatus)
+    : APPLICATION_STATUS_DRAFT;
+}
+
+function normalizeStatusHistory(
+  value: unknown,
+  fallbackStatus: ApplicationStatus,
+  fallbackChangedAt: string,
+): ApplicationStatusHistoryEntry[] {
+  if (Array.isArray(value)) {
+    const normalized = value
+      .map((entry) => {
+        if (!entry || typeof entry !== "object") {
+          return null;
+        }
+
+        const changedAt =
+          typeof (entry as { changedAt?: unknown }).changedAt === "string"
+            ? (entry as { changedAt: string }).changedAt
+            : fallbackChangedAt;
+        const status = normalizeStatus((entry as { status?: unknown }).status);
+
+        return { changedAt, status };
+      })
+      .filter((entry): entry is ApplicationStatusHistoryEntry => entry !== null);
+
+    if (normalized.length > 0) {
+      return normalized;
+    }
+  }
+
+  return [{ changedAt: fallbackChangedAt, status: fallbackStatus }];
+}
+
+function normalizeStoredApplication(
+  application: StoredApplication,
+): StoredApplication {
+  const status = normalizeStatus(application.status);
+  const fallbackChangedAt = application.updatedAt || application.createdAt;
+
+  return {
+    ...application,
+    status,
+    statusHistory: normalizeStatusHistory(
+      application.statusHistory,
+      status,
+      fallbackChangedAt,
+    ),
+  };
+}
+
 export class FileApplicationsStore implements ApplicationsStore {
   constructor(private readonly stateFilePath: string) {}
 
   createDraft(application: StoredApplication) {
     const state = this.readState();
 
-    state.applications[application.id] = application;
+    state.applications[application.id] = normalizeStoredApplication(application);
     this.writeState(state);
+
+    return application;
+  }
+
+  findByIdForUserEmail(userEmail: string, applicationId: string) {
+    const state = this.readState();
+    const application = state.applications[applicationId];
+
+    if (!application || application.userEmail !== userEmail) {
+      return null;
+    }
 
     return application;
   }
@@ -33,6 +103,15 @@ export class FileApplicationsStore implements ApplicationsStore {
     return Object.values(state.applications)
       .filter((application) => application.userEmail === userEmail)
       .sort((left, right) => right.createdAt.localeCompare(left.createdAt));
+  }
+
+  save(application: StoredApplication) {
+    const state = this.readState();
+
+    state.applications[application.id] = normalizeStoredApplication(application);
+    this.writeState(state);
+
+    return application;
   }
 
   private readState(): PersistedApplicationsState {
@@ -46,7 +125,12 @@ export class FileApplicationsStore implements ApplicationsStore {
       ) as Partial<PersistedApplicationsState>;
 
       return {
-        applications: parsed.applications ?? {},
+        applications: Object.fromEntries(
+          Object.entries(parsed.applications ?? {}).map(([id, application]) => [
+            id,
+            normalizeStoredApplication(application as StoredApplication),
+          ]),
+        ),
       };
     } catch {
       return createEmptyState();

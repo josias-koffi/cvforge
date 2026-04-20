@@ -32,6 +32,12 @@ describe("FileApplicationsStore", () => {
       sourceLabel: "https://example.com/jobs/old",
       sourceType: "url",
       status: "draft",
+      statusHistory: [
+        {
+          changedAt: "2026-04-20T12:00:00.000Z",
+          status: "draft",
+        },
+      ],
       updatedAt: "2026-04-20T12:00:00.000Z",
       userEmail: "user@example.com",
       extracted: {
@@ -55,6 +61,12 @@ describe("FileApplicationsStore", () => {
       sourceLabel: "https://example.com/jobs/new",
       sourceType: "url",
       status: "draft",
+      statusHistory: [
+        {
+          changedAt: "2026-04-20T13:00:00.000Z",
+          status: "draft",
+        },
+      ],
       updatedAt: "2026-04-20T13:00:00.000Z",
       userEmail: "user@example.com",
       extracted: {
@@ -83,5 +95,44 @@ describe("FileApplicationsStore", () => {
     const store = new FileApplicationsStore(path);
 
     expect(store.listByUserEmail("user@example.com")).toEqual([]);
+  });
+
+  it("hydrates legacy stored drafts without an explicit status history", () => {
+    const path = makeStorePath();
+    const store = new FileApplicationsStore(path);
+
+    store.save({
+      createdAt: "2026-04-20T12:00:00.000Z",
+      id: "legacy_app",
+      offerTextPreview: "Legacy preview",
+      offerUrl: "https://example.com/jobs/legacy",
+      rawOfferText: "Legacy raw text",
+      sourceLabel: "https://example.com/jobs/legacy",
+      sourceType: "url",
+      status: "draft",
+      statusHistory: [] as never[],
+      updatedAt: "2026-04-20T12:00:00.000Z",
+      userEmail: "user@example.com",
+      extracted: {
+        companyName: "Example",
+        contractType: null,
+        language: "fr",
+        location: null,
+        requirements: [],
+        responsibilities: [],
+        salaryRange: null,
+        summary: "Legacy summary",
+        title: "Legacy title",
+      },
+    });
+
+    const [application] = store.listByUserEmail("user@example.com");
+
+    expect(application?.statusHistory).toEqual([
+      {
+        changedAt: "2026-04-20T12:00:00.000Z",
+        status: "draft",
+      },
+    ]);
   });
 });

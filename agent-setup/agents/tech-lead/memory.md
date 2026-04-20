@@ -138,3 +138,10 @@
 - **Why**: Architecture governance and sprint bookkeeping require a final decision once the fallback path and the PDF scope stance are both evidenced in code and review artifacts.
 - **Learned**: Deferring PDF import is the correct architectural call for MVP because the current candidature boundary has no safe file-ingestion path yet, while the text fallback already preserves product continuity.
 - **Open**: `US-020` can now build the candidature status pipeline on a stable ingestion contract; `.next` ownership cleanup is still needed before app builds become a reliable local gate.
+
+## 2026-04-20 — US-020 finalization
+
+- **Did**: Closed `US-020` with a passing verdict after confirming the shared status contract, centralized API transition rules, persisted history, KPI summary endpoint, dashboard consumption, and passing lint/tests/API build.
+- **Why**: Architecture governance and sprint bookkeeping require a final sign-off once the MVP candidature pipeline exists in executable code and every acceptance criterion is verified.
+- **Learned**: The correct architecture is to keep status semantics in the shared types package and treat the API as the only authority for transitions; the dashboard can then consume summary data without duplicating business rules.
+- **Open**: The pre-existing `apps/app/.next` permission issue still needs cleanup before local app build can return as a clean release gate.

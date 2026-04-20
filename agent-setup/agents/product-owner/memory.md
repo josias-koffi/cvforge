@@ -131,3 +131,10 @@
 - **Why**: The workflow needed a product decision that preserved the vision path without forcing a risky file-ingestion scope into the sprint.
 - **Learned**: Vision `§16` makes URL plus text fallback sufficient for MVP candidature creation, while PDF import remains a later enhancement.
 - **Open**: `US-020` should now focus only on the status pipeline, not on ingestion completeness.
+
+## 2026-04-20 — US-020
+
+- **Did**: Reframed `US-020` under the implementation workflow override, locked the candidature pipeline to the five vision statuses, and defined KPI-ready scope around total applications, counts by status, and response rate.
+- **Why**: The task could only be implemented safely once the status model and acceptance evidence were constrained to the vision instead of growing into the full candidature sheet or dashboard roadmap.
+- **Learned**: The vision is precise enough to implement the MVP status lifecycle now without inventing backward transitions or extra states.
+- **Open**: A future dashboard story can extend visualizations and ATS metrics on top of the new status-summary contract rather than re-deciding the status model.

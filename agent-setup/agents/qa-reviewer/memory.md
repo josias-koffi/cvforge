@@ -117,3 +117,10 @@
 - **Why**: The task could only pass once both the executable fallback and the PDF scope decision had concrete evidence instead of remaining as a sprint note.
 - **Learned**: The fallback decision is reviewable when the UI, API, and workflow summary all express the same product stance rather than splitting it between code and docs.
 - **Open**: `pnpm --filter @cvforge/app build` remains blocked by the pre-existing `.next` ownership issue and should not be misread as a regression from this story.
+
+## 2026-04-20 — US-020
+
+- **Did**: Verified the five-status candidature pipeline, server-side transition enforcement, timestamped history, dashboard summary endpoint, passing lint, passing focused tests with coverage above spec, and passing API build; recorded the known app-build permission issue as an advisory only.
+- **Why**: The story could only pass once each acceptance criterion was evidenced in code and tests, and once the remaining build failure was clearly separated as an environment issue rather than a feature defect.
+- **Learned**: The status model is reviewable when transitions are enforced centrally in the API and surfaced in the UI through allowed-next-action controls rather than free-form editing.
+- **Open**: The local `apps/app/.next` ownership problem still needs cleanup before app build can be restored as a reliable gate.

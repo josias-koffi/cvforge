@@ -32,34 +32,61 @@ describe("ApplicationsPage", () => {
       role: "user",
     });
     fetchMock.mockResolvedValue({
-      json: async () => ({
-        applications: [
-          {
-            createdAt: "2026-04-20T12:00:00.000Z",
-            id: "app_123",
-            offerTextPreview: "Lead the backend platform.",
-            offerUrl: "https://example.com/jobs/123",
-            sourceLabel: "https://example.com/jobs/123",
-            sourceType: "url",
-            status: "draft",
-            updatedAt: "2026-04-20T12:00:00.000Z",
-            userEmail: "user@example.com",
-            extracted: {
-              companyName: "Example Corp",
-              contractType: "CDI",
-              language: "fr",
-              location: "Paris",
-              requirements: ["Node.js"],
-              responsibilities: ["Build APIs"],
-              salaryRange: null,
-              summary: "Platform role.",
-              title: "Backend Engineer",
-            },
-          },
-        ],
-      }),
       ok: true,
     });
+    fetchMock
+      .mockResolvedValueOnce({
+        json: async () => ({
+          applications: [
+            {
+              createdAt: "2026-04-20T12:00:00.000Z",
+              id: "app_123",
+              offerTextPreview: "Lead the backend platform.",
+              offerUrl: "https://example.com/jobs/123",
+              sourceLabel: "https://example.com/jobs/123",
+              sourceType: "url",
+              status: "draft",
+              statusHistory: [
+                {
+                  changedAt: "2026-04-20T12:00:00.000Z",
+                  status: "draft",
+                },
+              ],
+              updatedAt: "2026-04-20T12:00:00.000Z",
+              userEmail: "user@example.com",
+              extracted: {
+                companyName: "Example Corp",
+                contractType: "CDI",
+                language: "fr",
+                location: "Paris",
+                requirements: ["Node.js"],
+                responsibilities: ["Build APIs"],
+                salaryRange: null,
+                summary: "Platform role.",
+                title: "Backend Engineer",
+              },
+            },
+          ],
+        }),
+        ok: true,
+      })
+      .mockResolvedValueOnce({
+        json: async () => ({
+          summary: {
+            respondedCount: 0,
+            responseRate: 0,
+            statusCounts: {
+              draft: 1,
+              interview_scheduled: 0,
+              offer_received: 0,
+              rejected: 0,
+              sent: 0,
+            },
+            totalCount: 1,
+          },
+        }),
+        ok: true,
+      });
 
     const Page = await ApplicationsPage({
       searchParams: { created: "app_123" },
@@ -72,6 +99,9 @@ describe("ApplicationsPage", () => {
     expect(markup).toContain("Import PDF MVP");
     expect(markup).toContain("Backend Engineer");
     expect(markup).toContain("app_123");
+    expect(markup).toContain("Brouillon");
+    expect(markup).toContain("Marquer comme envoyee");
+    expect(markup).toContain("Historique des statuts");
   });
 
   it("renders the extraction error state", async () => {
@@ -80,10 +110,28 @@ describe("ApplicationsPage", () => {
       expiresAt: "2026-04-27T07:45:24.000Z",
       role: "user",
     });
-    fetchMock.mockResolvedValue({
-      json: async () => ({ applications: [] }),
-      ok: true,
-    });
+    fetchMock
+      .mockResolvedValueOnce({
+        json: async () => ({ applications: [] }),
+        ok: true,
+      })
+      .mockResolvedValueOnce({
+        json: async () => ({
+          summary: {
+            respondedCount: 0,
+            responseRate: 0,
+            statusCounts: {
+              draft: 0,
+              interview_scheduled: 0,
+              offer_received: 0,
+              rejected: 0,
+              sent: 0,
+            },
+            totalCount: 0,
+          },
+        }),
+        ok: true,
+      });
 
     const Page = await ApplicationsPage({
       searchParams: { error: "invalid_url", url: "bad-url" },
@@ -100,10 +148,28 @@ describe("ApplicationsPage", () => {
       expiresAt: "2026-04-27T07:45:24.000Z",
       role: "user",
     });
-    fetchMock.mockResolvedValue({
-      json: async () => ({ applications: [] }),
-      ok: true,
-    });
+    fetchMock
+      .mockResolvedValueOnce({
+        json: async () => ({ applications: [] }),
+        ok: true,
+      })
+      .mockResolvedValueOnce({
+        json: async () => ({
+          summary: {
+            respondedCount: 0,
+            responseRate: 0,
+            statusCounts: {
+              draft: 0,
+              interview_scheduled: 0,
+              offer_received: 0,
+              rejected: 0,
+              sent: 0,
+            },
+            totalCount: 0,
+          },
+        }),
+        ok: true,
+      });
 
     const Page = await ApplicationsPage({
       searchParams: { error: "invalid_text" },
@@ -111,5 +177,42 @@ describe("ApplicationsPage", () => {
     const markup = renderToStaticMarkup(Page);
 
     expect(markup).toContain("Collez le texte integral de l&#x27;offre");
+  });
+
+  it("renders the status update success state", async () => {
+    requireSessionMock.mockResolvedValue({
+      email: "user@example.com",
+      expiresAt: "2026-04-27T07:45:24.000Z",
+      role: "user",
+    });
+    fetchMock
+      .mockResolvedValueOnce({
+        json: async () => ({ applications: [] }),
+        ok: true,
+      })
+      .mockResolvedValueOnce({
+        json: async () => ({
+          summary: {
+            respondedCount: 1,
+            responseRate: 100,
+            statusCounts: {
+              draft: 0,
+              interview_scheduled: 1,
+              offer_received: 0,
+              rejected: 0,
+              sent: 0,
+            },
+            totalCount: 1,
+          },
+        }),
+        ok: true,
+      });
+
+    const Page = await ApplicationsPage({
+      searchParams: { statusUpdated: "app_123" },
+    });
+    const markup = renderToStaticMarkup(Page);
+
+    expect(markup).toContain("Statut mis a jour pour la candidature app_123");
   });
 });

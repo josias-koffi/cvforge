@@ -117,3 +117,10 @@
 - **Why**: The workflow needed a usable fallback without hiding options behind tabs or inventing a misleading PDF-upload surface.
 - **Learned**: The current card layout can support two ingestion modes clearly as long as they are framed as alternatives to the same draft-creation action.
 - **Open**: The future PDF story should decide whether the UX starts from upload-first, drag-and-drop, or a more guided import step.
+
+## 2026-04-20 — US-020
+
+- **Did**: Defined a status-management UX on `/candidatures` with badge-like current-state display, only-valid next-transition buttons, visible timestamped history, and KPI cards reused by `/dashboard`.
+- **Why**: The workflow needed a concrete interaction pattern that exposes the candidature pipeline clearly without pretending the full fiche candidature or chart suite already exists.
+- **Learned**: Rendering only the allowed next transitions keeps the MVP comprehensible and prevents the UI from drifting away from the enforced business rules.
+- **Open**: A later dashboard story can replace the simple KPI cards with richer charts without changing the underlying status contract.

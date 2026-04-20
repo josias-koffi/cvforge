@@ -37,22 +37,22 @@ Ouvrir le pipeline métier principal du MVP: création de candidature, statuts e
     - [x] La faisabilité du fallback PDF MVP est statuée
     - [x] Si le fallback PDF est trop coûteux, le report est documenté sans casser le MVP
   - Source: vision `§7`, `§16`
-- [ ] **[US-020]** Mettre en place le pipeline de statuts candidature
+- [x] **[US-020]** Mettre en place le pipeline de statuts candidature
   - Agent: `product-owner`
   - Workflow: `none`
   - Acceptance criteria:
-    - [ ] Les statuts du pipeline sont implémentés
-    - [ ] Les transitions métier sont définies
-    - [ ] Le statut alimente les futurs KPI dashboard
+    - [x] Les statuts du pipeline sont implémentés
+    - [x] Les transitions métier sont définies
+    - [x] Le statut alimente les futurs KPI dashboard
   - Source: vision `§7`, `§12.2`, `§16`
 
 ## 📊 Sprint DoD
 
-- [ ] All tasks ticked
-- [ ] All acceptance criteria verified
-- [ ] `run-tests` green
-- [ ] Coverage ≥ spec threshold
-- [ ] QA review ✅
+- [x] All tasks ticked
+- [x] All acceptance criteria verified
+- [x] `run-tests` green
+- [x] Coverage ≥ spec threshold
+- [x] QA review ✅
 
 ## 🚧 Risks
 

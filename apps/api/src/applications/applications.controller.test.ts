@@ -16,6 +16,12 @@ describe("ApplicationsController", () => {
         sourceLabel: "https://example.com/jobs/123",
         sourceType: "url",
         status: "draft",
+        statusHistory: [
+          {
+            changedAt: "2026-04-20T12:00:00.000Z",
+            status: "draft",
+          },
+        ],
         updatedAt: "2026-04-20T12:00:00.000Z",
         userEmail: "user@example.com",
         extracted: {
@@ -30,7 +36,9 @@ describe("ApplicationsController", () => {
           title: "Backend Engineer",
         },
       }),
+      listApplicationSummary: vi.fn(),
       listApplications: vi.fn(),
+      updateStatus: vi.fn(),
     } as unknown as ApplicationsService;
     const authService = {
       readSessionFromCookieHeader: vi.fn().mockReturnValue({
@@ -58,7 +66,9 @@ describe("ApplicationsController", () => {
     const applicationsService = {
       importFromText: vi.fn(),
       importFromUrl: vi.fn(),
+      listApplicationSummary: vi.fn(),
       listApplications: vi.fn().mockReturnValue([{ id: "app_123" }]),
+      updateStatus: vi.fn(),
     } as unknown as ApplicationsService;
     const authService = {
       readSessionFromCookieHeader: vi.fn().mockReturnValue({
@@ -82,7 +92,9 @@ describe("ApplicationsController", () => {
     const applicationsService = {
       importFromText: vi.fn(),
       importFromUrl: vi.fn(),
+      listApplicationSummary: vi.fn(),
       listApplications: vi.fn(),
+      updateStatus: vi.fn(),
     } as unknown as ApplicationsService;
     const authService = {
       readSessionFromCookieHeader: vi.fn().mockReturnValue(null),
@@ -110,6 +122,12 @@ describe("ApplicationsController", () => {
         sourceLabel: "Texte colle manuellement",
         sourceType: "text",
         status: "draft",
+        statusHistory: [
+          {
+            changedAt: "2026-04-20T12:00:00.000Z",
+            status: "draft",
+          },
+        ],
         updatedAt: "2026-04-20T12:00:00.000Z",
         userEmail: "user@example.com",
         extracted: {
@@ -125,7 +143,9 @@ describe("ApplicationsController", () => {
         },
       }),
       importFromUrl: vi.fn(),
+      listApplicationSummary: vi.fn(),
       listApplications: vi.fn(),
+      updateStatus: vi.fn(),
     } as unknown as ApplicationsService;
     const authService = {
       readSessionFromCookieHeader: vi.fn().mockReturnValue({
@@ -150,6 +170,90 @@ describe("ApplicationsController", () => {
       offerUrl: null,
       sourceType: "text",
       userEmail: "user@example.com",
+    });
+  });
+
+  it("lists KPI summary data for the authenticated user", () => {
+    const applicationsService = {
+      importFromText: vi.fn(),
+      importFromUrl: vi.fn(),
+      listApplicationSummary: vi.fn().mockReturnValue({
+        respondedCount: 1,
+        responseRate: 50,
+        statusCounts: {
+          draft: 1,
+          interview_scheduled: 1,
+          offer_received: 0,
+          rejected: 0,
+          sent: 0,
+        },
+        totalCount: 2,
+      }),
+      listApplications: vi.fn(),
+      updateStatus: vi.fn(),
+    } as unknown as ApplicationsService;
+    const authService = {
+      readSessionFromCookieHeader: vi.fn().mockReturnValue({
+        email: "user@example.com",
+        role: "user",
+      }),
+    } as unknown as AuthService;
+    const controller = new ApplicationsController(
+      applicationsService,
+      authService,
+    );
+
+    expect(
+      controller.listSummary({ headers: { cookie: "cvforge_session=abc" } }),
+    ).toEqual({
+      summary: {
+        respondedCount: 1,
+        responseRate: 50,
+        statusCounts: {
+          draft: 1,
+          interview_scheduled: 1,
+          offer_received: 0,
+          rejected: 0,
+          sent: 0,
+        },
+        totalCount: 2,
+      },
+    });
+  });
+
+  it("updates an application status for the authenticated user", () => {
+    const applicationsService = {
+      importFromText: vi.fn(),
+      importFromUrl: vi.fn(),
+      listApplicationSummary: vi.fn(),
+      listApplications: vi.fn(),
+      updateStatus: vi.fn().mockReturnValue({
+        id: "app_123",
+        status: "sent",
+      }),
+    } as unknown as ApplicationsService;
+    const authService = {
+      readSessionFromCookieHeader: vi.fn().mockReturnValue({
+        email: "user@example.com",
+        role: "user",
+      }),
+    } as unknown as AuthService;
+    const controller = new ApplicationsController(
+      applicationsService,
+      authService,
+    );
+
+    expect(
+      controller.updateStatus(
+        "app_123",
+        { status: "sent" },
+        { headers: { cookie: "cvforge_session=abc" } },
+      ),
+    ).toEqual({
+      application: {
+        id: "app_123",
+        status: "sent",
+      },
     });
   });
 });

@@ -1,4 +1,9 @@
-import type { DraftApplication, ExtractedOfferFields } from "@cvforge/types";
+import type {
+  ApplicationStatus,
+  ApplicationsKpiSummary,
+  DraftApplication,
+  ExtractedOfferFields,
+} from "@cvforge/types";
 
 export type ApplicationsConfig = {
   stateFilePath: string;
@@ -10,7 +15,12 @@ export type StoredApplication = DraftApplication & {
 
 export type ApplicationsStore = {
   createDraft: (application: StoredApplication) => StoredApplication;
+  findByIdForUserEmail: (
+    userEmail: string,
+    applicationId: string,
+  ) => StoredApplication | null;
   listByUserEmail: (userEmail: string) => StoredApplication[];
+  save: (application: StoredApplication) => StoredApplication;
 };
 
 export type OfferExtractionResult = {
@@ -21,3 +31,10 @@ export type OfferExtractionResult = {
   sourceLabel: string;
   sourceType: DraftApplication["sourceType"];
 };
+
+export type ApplicationStatusUpdate = {
+  applicationId: string;
+  nextStatus: ApplicationStatus;
+};
+
+export type ApplicationSummary = ApplicationsKpiSummary;

@@ -1,13 +1,22 @@
 import {
   BadGatewayException,
   BadRequestException,
+  ConflictException,
   Injectable,
+  NotFoundException,
   UnprocessableEntityException,
 } from "@nestjs/common";
 import {
+  APPLICATION_STATUS_INTERVIEW_SCHEDULED,
   APPLICATION_SOURCE_TEXT,
   APPLICATION_SOURCE_URL,
   APPLICATION_STATUS_DRAFT,
+  APPLICATION_STATUS_OFFER_RECEIVED,
+  APPLICATION_STATUS_REJECTED,
+  applicationStatuses,
+  applicationStatusTransitions,
+  type ApplicationStatus,
+  type ApplicationsKpiSummary,
   type DraftApplication,
   type ExtractedOfferFields,
 } from "@cvforge/types";
@@ -31,6 +40,11 @@ type ExtractedOfferPayload = Omit<ExtractedOfferFields, "language"> & {
 
 const MIN_OFFER_TEXT_LENGTH = 160;
 const MANUAL_TEXT_SOURCE_LABEL = "Texte colle manuellement";
+const RESPONSE_STATUSES = new Set<ApplicationStatus>([
+  APPLICATION_STATUS_INTERVIEW_SCHEDULED,
+  APPLICATION_STATUS_REJECTED,
+  APPLICATION_STATUS_OFFER_RECEIVED,
+]);
 
 function normalizeOfferUrl(rawUrl: string) {
   const value = rawUrl.trim();
@@ -68,6 +82,20 @@ function normalizeOfferText(rawText: string) {
   }
 
   return value;
+}
+
+function isApplicationStatus(value: string): value is ApplicationStatus {
+  return applicationStatuses.includes(value as ApplicationStatus);
+}
+
+function createEmptyStatusCounts(): ApplicationsKpiSummary["statusCounts"] {
+  return {
+    draft: 0,
+    interview_scheduled: 0,
+    offer_received: 0,
+    rejected: 0,
+    sent: 0,
+  };
 }
 
 function extractFirstJsonObject(rawContent: string) {
@@ -160,6 +188,79 @@ export class ApplicationsService {
     return this.store.listByUserEmail(userEmail).map(stripRawOfferText);
   }
 
+  listApplicationSummary(userEmail: string): ApplicationsKpiSummary {
+    const applications = this.store.listByUserEmail(userEmail);
+    const statusCounts = createEmptyStatusCounts();
+
+    applications.forEach((application) => {
+      statusCounts[application.status] += 1;
+    });
+
+    const totalCount = applications.length;
+    const actionableCount = applications.filter(
+      (application) => application.status !== APPLICATION_STATUS_DRAFT,
+    ).length;
+    const respondedCount = applications.filter((application) =>
+      RESPONSE_STATUSES.has(application.status),
+    ).length;
+
+    return {
+      respondedCount,
+      responseRate:
+        actionableCount === 0
+          ? 0
+          : Math.round((respondedCount / actionableCount) * 100),
+      statusCounts,
+      totalCount,
+    };
+  }
+
+  updateStatus(
+    userEmail: string,
+    applicationId: string,
+    nextStatusValue: string,
+  ): DraftApplication {
+    if (!isApplicationStatus(nextStatusValue)) {
+      throw new BadRequestException("Le statut cible est invalide.");
+    }
+
+    const application = this.store.findByIdForUserEmail(userEmail, applicationId);
+
+    if (!application) {
+      throw new NotFoundException("La candidature est introuvable.");
+    }
+
+    if (application.status === nextStatusValue) {
+      throw new BadRequestException("La candidature possede deja ce statut.");
+    }
+
+    const allowedNextStatuses = applicationStatusTransitions[
+      application.status
+    ] as readonly ApplicationStatus[];
+
+    if (!allowedNextStatuses.includes(nextStatusValue)) {
+      throw new ConflictException(
+        "Cette transition de statut n'est pas autorisee.",
+      );
+    }
+
+    const timestamp = new Date().toISOString();
+    const updatedApplication: StoredApplication = {
+      ...application,
+      status: nextStatusValue,
+      statusHistory: [
+        ...application.statusHistory,
+        {
+          changedAt: timestamp,
+          status: nextStatusValue,
+        },
+      ],
+      updatedAt: timestamp,
+    };
+
+    return stripRawOfferText(this.store.save(updatedApplication));
+  }
+
   async importFromUrl(
     userEmail: string,
     rawUrl: string,
@@ -175,6 +276,12 @@ export class ApplicationsService {
       sourceLabel: extraction.sourceLabel,
       sourceType: extraction.sourceType,
       status: APPLICATION_STATUS_DRAFT,
+      statusHistory: [
+        {
+          changedAt: timestamp,
+          status: APPLICATION_STATUS_DRAFT,
+        },
+      ],
       updatedAt: timestamp,
       userEmail,
       extracted: extraction.extracted,
@@ -198,6 +305,12 @@ export class ApplicationsService {
       sourceLabel: extraction.sourceLabel,
       sourceType: extraction.sourceType,
       status: APPLICATION_STATUS_DRAFT,
+      statusHistory: [
+        {
+          changedAt: timestamp,
+          status: APPLICATION_STATUS_DRAFT,
+        },
+      ],
       updatedAt: timestamp,
       userEmail,
       extracted: extraction.extracted,
