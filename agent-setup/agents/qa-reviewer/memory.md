@@ -138,3 +138,10 @@
 - **Why**: The sprint needed a final pass that checked the acceptance criteria against the shipped code and the executed gates.
 - **Learned**: The Puck-compatible editor keeps the shared block registry as the rendering source of truth while meeting the MVP goal.
 - **Open**: No blocking issues remained after lint, tests, and build.
+
+## 2026-04-20 — US-023 review
+
+- **Did**: Verified all three acceptance criteria (duplication UX, category management, default designation per type), confirmed all blocking engineering standards pass, and identified three non-blocking advisory items.
+- **Why**: The story could only pass once each acceptance criterion had direct code evidence and the new route handlers cleared the 90% new-code coverage threshold.
+- **Learned**: The gold `Défaut` badge contrast ratio at #C8A96E on #FAFAF7 just clears 4.5:1 WCAG AA — margin is thin; any future palette adjustment should recheck this.
+- **Open**: The `window.confirm` pattern and the page line count are advisory items to address in the next admin UX pass.

@@ -166,3 +166,10 @@
 - **Why**: `US-022` needed a working admin management slice that matched the vision while staying within the current monorepo architecture.
 - **Learned**: The shared document block registry can power a practical Puck-compatible editor surface now, and the default-per-kind invariant should be enforced in the service layer.
 - **Open**: `US-023` can focus on activation, categorization, and default rules without reopening the editor/storage contract.
+
+## 2026-04-20 — US-023
+
+- **Did**: Added `deleteTemplate` to API service with last-template guard and default-transfer logic; added `TemplatesStore.remove()` with file persistence; added `DELETE /templates/:id` endpoint; added three new Next.js route handlers (delete, toggle-active, set-default); rewrote the admin templates page with inline action cards, filter bar, predefined category suggestions, and gold default badge; added 18 new tests across all touched files.
+- **Why**: `US-023` required management actions surfaced directly on template cards without forcing the admin to open the edit form.
+- **Learned**: The last-template guard should sit in the service layer rather than the controller, because the constraint is a domain rule (you must always have at least one template per kind) not a request validation.
+- **Open**: The `window.confirm` delete pattern should be replaced by a proper shadcn `AlertDialog` client component in the next admin UX pass.

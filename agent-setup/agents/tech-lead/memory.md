@@ -159,3 +159,10 @@
 - **Why**: The workflow needed a clear final verdict and next action for the sprint record.
 - **Learned**: The templates slice is ready for the next product step: defaulting, duplication policy, and categorization.
 - **Open**: None blocking for the current task.
+
+## 2026-04-20 — US-023 finalization
+
+- **Did**: Closed US-023 with a passing verdict after confirming all three acceptance criteria, the delete-with-constraint pattern in the service layer, the filter bar and inline action surface, and successful lint/test gates.
+- **Why**: Architecture governance and sprint bookkeeping require a final sign-off once implementation and QA stages show the template management surface is complete.
+- **Learned**: The delete-with-constraint pattern (last-template guard + default-transfer) is now established in the templates service and should be reused for any future entity with a one-default-per-group business rule.
+- **Open**: US-024 should build the fictitious-data preview on top of the existing block registry without reopening the template storage or management contract.

@@ -132,6 +132,13 @@
 - **Learned**: The "Papier & Crayon" direction is best preserved here with restrained document styling so later templates can still differentiate visually.
 - **Open**: `US-024` should decide how preview data and live rendering layer on top of this shared block registry.
 
+## 2026-04-20 — US-023 design
+
+- **Did**: Designed the inline action surface on template cards (toggle, default badge, category pills, delete with confirm), the predefined category suggestion system, and a pill-style filter bar — all staying in the "Registre comptable" admin aesthetic from the vision.
+- **Why**: The workflow required a concrete UX specification before implementation so the developer had explicit interaction targets.
+- **Learned**: The existing card primitives are sufficient for dense admin actions when action buttons are small (0.8rem, ghost variant) and grouped below the card metadata.
+- **Open**: The `window.confirm` delete pattern should be replaced by a proper `AlertDialog` client component when more interactive patterns are introduced in US-024 or later.
+
 ## 2026-04-20 — US-022 design
 
 - **Did**: Designed a two-pane admin templates studio with a library sidebar, create/edit forms, and a live preview rendered from the shared block registry.

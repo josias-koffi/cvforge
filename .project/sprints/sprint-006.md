@@ -29,13 +29,13 @@ Livrer la fondation documentaire du produit avec les blocs Puck et la gestion ad
     - [x] L'admin peut créer et modifier un template dans Puck
     - [x] Les templates sont stockés selon l'architecture décrite
   - Source: vision `§6.5` à `§6.7`, `§13.3`, `§16`
-- [ ] **[US-023]** Gérer activation, duplication, catégorisation et défaut des templates
+- [x] **[US-023]** Gérer activation, duplication, catégorisation et défaut des templates
   - Agent: `product-owner`
-  - Workflow: `none`
+  - Workflow: `analyze-design-dev-review` (override)
   - Acceptance criteria:
-    - [ ] Un template peut être dupliqué
-    - [ ] Les tags/catégories sont gérés
-    - [ ] Un template par défaut est définissable par type
+    - [x] Un template peut être dupliqué
+    - [x] Les tags/catégories sont gérés
+    - [x] Un template par défaut est définissable par type
   - Source: vision `§6.6`, `§13.3`, `§16`
 - [ ] **[US-024]** Prévisualiser les templates avec données fictives injectées
   - Agent: `designer`

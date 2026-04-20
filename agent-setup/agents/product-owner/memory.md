@@ -146,6 +146,13 @@
 - **Learned**: The vision cleanly separates custom document blocks from the later template-management story, which made the acceptance criteria directly testable.
 - **Open**: `US-022` now needs to attach these blocks to the admin template editor and persistence model.
 
+## 2026-04-20 — US-023 analyze
+
+- **Did**: Confirmed US-023 scope: activation toggle, category management UX, default badge, delete-with-constraint, and filter bar. Duplication backend was already complete from US-022; the story focused on surface and UX gaps.
+- **Why**: The workflow needed a precise product boundary so no scope from US-024 (preview with fictitious data) was pulled in.
+- **Learned**: The vision §6.7 and §13.3 are complete enough to derive all six management actions without inventing new requirements.
+- **Open**: US-024 should define how fictitious data is injected into the live preview.
+
 ## 2026-04-20 — US-022 analyze
 
 - **Did**: Confirmed the admin template story needs seeded CV ATS and LM ATS templates, a create/edit admin editor, and JSON persistence in the API.
