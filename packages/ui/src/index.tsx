@@ -30,6 +30,7 @@ export {
   SkillsList,
   SummaryBlock,
 } from "./document-blocks";
+export { CV_PREVIEW_FIXTURE, LETTER_PREVIEW_FIXTURE } from "./preview-fixtures";
 export { AppShell } from "./shell";
 export type { ShellNavItem } from "./shell";
 export { PaperStyles, paperStylesCss } from "./styles";

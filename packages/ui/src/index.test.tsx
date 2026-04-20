@@ -9,10 +9,12 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CV_PREVIEW_FIXTURE,
   documentBlockRegistry,
   getBlocksForTemplateKind,
   Input,
   Label,
+  LETTER_PREVIEW_FIXTURE,
   PaperStyles,
   type ShellNavItem,
   Textarea,
@@ -186,6 +188,55 @@ describe("document blocks", () => {
     expect(markup).toContain("Template Studio");
     expect(markup).toContain("Application for Senior Frontend Engineer");
     expect(markup).toContain("I would welcome the opportunity to discuss this role further.");
+  });
+
+  it("renders CV_PREVIEW_FIXTURE with all main sections covered", () => {
+    expect(CV_PREVIEW_FIXTURE.candidate.firstName).toBe("Jean");
+    expect(CV_PREVIEW_FIXTURE.candidate.lastName).toBe("Dupont");
+    expect(CV_PREVIEW_FIXTURE.experiences.length).toBeGreaterThanOrEqual(2);
+    expect(CV_PREVIEW_FIXTURE.education.length).toBeGreaterThanOrEqual(1);
+    expect(CV_PREVIEW_FIXTURE.certifications.length).toBeGreaterThanOrEqual(1);
+    expect(CV_PREVIEW_FIXTURE.languages.length).toBeGreaterThanOrEqual(1);
+    expect(CV_PREVIEW_FIXTURE.projects.length).toBeGreaterThanOrEqual(1);
+    expect(CV_PREVIEW_FIXTURE.skills.hard.length).toBeGreaterThan(0);
+    expect(CV_PREVIEW_FIXTURE.skills.soft.length).toBeGreaterThan(0);
+    expect(CV_PREVIEW_FIXTURE.candidate.summary).toBeTruthy();
+  });
+
+  it("renders LETTER_PREVIEW_FIXTURE with all main sections covered", () => {
+    expect(LETTER_PREVIEW_FIXTURE.candidate.firstName).toBe("Jean");
+    expect(LETTER_PREVIEW_FIXTURE.company.name).toBeTruthy();
+    expect(LETTER_PREVIEW_FIXTURE.body.paragraph1).toBeTruthy();
+    expect(LETTER_PREVIEW_FIXTURE.body.paragraph2).toBeTruthy();
+    expect(LETTER_PREVIEW_FIXTURE.body.paragraph3).toBeTruthy();
+    expect(LETTER_PREVIEW_FIXTURE.signature.lastName).toBe("Dupont");
+    expect(LETTER_PREVIEW_FIXTURE.object).toBeTruthy();
+    expect(LETTER_PREVIEW_FIXTURE.date).toBeTruthy();
+  });
+
+  it("renders CV fixture data through block components", () => {
+    const { candidate, experiences, education, skills } = CV_PREVIEW_FIXTURE;
+    const markupHeader = renderToStaticMarkup(
+      <documentBlockRegistry.CVHeader.component {...candidate} />,
+    );
+    const markupExp = renderToStaticMarkup(
+      <documentBlockRegistry.ExperienceItem.component {...experiences[0]!} />,
+    );
+    const markupSkills = renderToStaticMarkup(
+      <documentBlockRegistry.SkillsList.component
+        hardSkills={skills.hard}
+        softSkills={skills.soft}
+      />,
+    );
+    const markupEdu = renderToStaticMarkup(
+      <documentBlockRegistry.EducationItem.component {...education[0]!} />,
+    );
+
+    expect(markupHeader).toContain("Jean Dupont");
+    expect(markupHeader).toContain("Chef de projet IT");
+    expect(markupExp).toContain("Banque Crédit Sud");
+    expect(markupSkills).toContain("Gestion de projet");
+    expect(markupEdu).toContain("Paris-Dauphine");
   });
 
   it("should handle the optional document block branches", () => {

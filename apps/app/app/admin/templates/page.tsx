@@ -1,7 +1,7 @@
 import React from "react";
 import { cookies } from "next/headers";
-import { AppShell, Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Input, Label, PaperStyles, Textarea, documentBlockRegistry } from "@cvforge/ui";
-import { TEMPLATE_KIND_CV, TEMPLATE_KIND_LETTER, type TemplateRecord } from "@cvforge/types";
+import { AppShell, Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, CV_PREVIEW_FIXTURE, Input, Label, LETTER_PREVIEW_FIXTURE, PaperStyles, Textarea, documentBlockRegistry } from "@cvforge/ui";
+import { TEMPLATE_KIND_CV, TEMPLATE_KIND_LETTER, type CVDocumentContent, type LetterDocumentContent, type TemplateRecord } from "@cvforge/types";
 import { getAppNavigation } from "../../content";
 import { getServerApiUrl } from "../../auth-config";
 import { requireAdminSession } from "../../auth/session";
@@ -50,61 +50,155 @@ async function fetchTemplates() {
   return (await response.json()) as TemplatesResponse;
 }
 
-function TemplatePreview({ template }: { template: TemplateRecord }) {
+function resolveBlockInstances(
+  block: TemplateRecord["layout"]["blocks"][number],
+  previewContent: CVDocumentContent | LetterDocumentContent,
+): Array<{ id: string; name: string; props: Record<string, unknown> }> {
+  const cv = previewContent as CVDocumentContent;
+  const letter = previewContent as LetterDocumentContent;
+
+  switch (block.name) {
+    case "CVHeader":
+      return [{ id: block.id, name: block.name, props: cv.candidate as unknown as Record<string, unknown> }];
+    case "SummaryBlock":
+      return [{ id: block.id, name: block.name, props: { summary: cv.candidate.summary } }];
+    case "ExperienceItem":
+      return (cv.experiences ?? []).map((exp, i) => ({
+        id: `${block.id}-${i}`,
+        name: block.name,
+        props: exp as unknown as Record<string, unknown>,
+      }));
+    case "EducationItem":
+      return (cv.education ?? []).map((edu, i) => ({
+        id: `${block.id}-${i}`,
+        name: block.name,
+        props: edu as unknown as Record<string, unknown>,
+      }));
+    case "SkillsList":
+      return [{ id: block.id, name: block.name, props: { hardSkills: cv.skills?.hard ?? [], softSkills: cv.skills?.soft ?? [] } }];
+    case "CertificationItem":
+      return (cv.certifications ?? []).map((cert, i) => ({
+        id: `${block.id}-${i}`,
+        name: block.name,
+        props: cert as unknown as Record<string, unknown>,
+      }));
+    case "LanguageItem":
+      return (cv.languages ?? []).map((lang, i) => ({
+        id: `${block.id}-${i}`,
+        name: block.name,
+        props: lang as unknown as Record<string, unknown>,
+      }));
+    case "ProjectItem":
+      return (cv.projects ?? []).map((proj, i) => ({
+        id: `${block.id}-${i}`,
+        name: block.name,
+        props: proj as unknown as Record<string, unknown>,
+      }));
+    case "LMHeader":
+      return [{
+        id: block.id,
+        name: block.name,
+        props: {
+          ...letter.candidate as unknown as Record<string, unknown>,
+          companyCity: letter.company?.city ?? "",
+          companyName: letter.company?.name ?? "",
+          date: letter.date ?? "",
+          object: letter.object ?? "",
+        },
+      }];
+    case "LMBody":
+      return [{ id: block.id, name: block.name, props: letter.body as unknown as Record<string, unknown> }];
+    case "LMSignature":
+      return [{ id: block.id, name: block.name, props: letter.signature as unknown as Record<string, unknown> }];
+    default:
+      return [{ id: block.id, name: block.name, props: block.props }];
+  }
+}
+
+function TemplatePreview({
+  template,
+  previewContent,
+}: {
+  template: TemplateRecord;
+  previewContent?: CVDocumentContent | LetterDocumentContent;
+}) {
+  const instances = template.layout.blocks.flatMap((block) =>
+    previewContent ? resolveBlockInstances(block, previewContent) : [{ id: block.id, name: block.name, props: { ...block.props } }],
+  );
+
   return (
-    <div
-      style={{
-        backgroundColor: "#FBF8F2",
-        border: "1px solid #D9D4CA",
-        borderRadius: "1rem",
-        display: "grid",
-        gap: "1rem",
-        padding: "1rem",
-      }}
-    >
-      {template.layout.blocks.map((block) => {
-        const definition =
-          documentBlockRegistry[
-            block.name as keyof typeof documentBlockRegistry
-          ];
+    <div>
+      {previewContent ? (
+        <p
+          style={{
+            color: "#6B6860",
+            fontStyle: "italic",
+            fontSize: "0.8125rem",
+            margin: "0 0 0.75rem",
+          }}
+        >
+          Données fictives injectées — aperçu du rendu visuel uniquement
+        </p>
+      ) : null}
+      <div
+        style={{
+          backgroundColor: "#FAFAF7",
+          border: "1px solid #D9D4CA",
+          borderRadius: "1rem",
+          display: "grid",
+          fontFamily: '"EB Garamond", "Libre Baskerville", serif',
+          gap: "1rem",
+          maxWidth: "65ch",
+          padding: "1.5rem",
+        }}
+      >
+        {instances.map((instance) => {
+          const definition =
+            documentBlockRegistry[
+              instance.name as keyof typeof documentBlockRegistry
+            ];
 
-        if (!definition) {
+          if (!definition) {
+            return (
+              <div key={instance.id} style={{ color: "#8A7F71" }}>
+                {instance.name} introuvable dans le registre partage.
+              </div>
+            );
+          }
+
+          const Component = definition.component as React.ElementType;
+          const mergedProps = previewContent
+            ? instance.props
+            : { ...definition.defaultProps, ...instance.props };
+
           return (
-            <div key={block.id} style={{ color: "#8A7F71" }}>
-              {block.name} introuvable dans le registre partage.
-            </div>
-          );
-        }
-
-        const Component = definition.component as React.ElementType;
-
-        return (
-          <section
-            key={block.id}
-            style={{
-              backgroundColor: "#FFFFFF",
-              border: "1px solid #EEE7DC",
-              borderRadius: "0.75rem",
-              padding: "0.875rem",
-            }}
-          >
-            <div
+            <section
+              key={instance.id}
               style={{
-                alignItems: "center",
-                display: "flex",
-                justifyContent: "space-between",
-                marginBottom: "0.5rem",
+                backgroundColor: "#FFFFFF",
+                border: "1px solid #EEE7DC",
+                borderRadius: "0.75rem",
+                padding: "0.875rem",
               }}
             >
-              <strong>{definition.label}</strong>
-              <span style={{ color: "#8A7F71", fontSize: "0.875rem" }}>
-                {block.name}
-              </span>
-            </div>
-            <Component {...definition.defaultProps} {...block.props} />
-          </section>
-        );
-      })}
+              <div
+                style={{
+                  alignItems: "center",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginBottom: "0.5rem",
+                }}
+              >
+                <strong style={{ fontFamily: "Inter, sans-serif", fontSize: "0.875rem" }}>{definition.label}</strong>
+                <span style={{ color: "#8A7F71", fontFamily: "Inter, sans-serif", fontSize: "0.8125rem" }}>
+                  {instance.name}
+                </span>
+              </div>
+              <Component {...mergedProps} />
+            </section>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -719,13 +813,20 @@ export default async function AdminTemplatesPage({
 
             <Card>
               <CardHeader>
-                <CardTitle>Apercu live</CardTitle>
+                <CardTitle>Aperçu live</CardTitle>
                 <CardDescription>
-                  Rendu des blocs partagés avec le registre CV/LM.
+                  Rendu avec données fictives injectées — tous les blocs du template sont peuplés.
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <TemplatePreview template={selectedTemplate} />
+                <TemplatePreview
+                  template={selectedTemplate}
+                  previewContent={
+                    selectedTemplate.kind === TEMPLATE_KIND_LETTER
+                      ? LETTER_PREVIEW_FIXTURE
+                      : CV_PREVIEW_FIXTURE
+                  }
+                />
               </CardContent>
             </Card>
           </div>

@@ -72,7 +72,13 @@ describe("AdminTemplatesPage", () => {
       id: "template-letter-ats",
       isDefault: true,
       kind: "letter",
-      layout: { blocks: [] },
+      layout: {
+        blocks: [
+          { id: "lm-header", name: "LMHeader", props: {} },
+          { id: "lm-body", name: "LMBody", props: {} },
+          { id: "lm-sig", name: "LMSignature", props: {} },
+        ],
+      },
       locale: "fr",
       name: "LM ATS par defaut",
       updatedAt: "2026-04-20T00:00:00.000Z",
@@ -106,7 +112,7 @@ describe("AdminTemplatesPage", () => {
     expect(markup).toContain("CV ATS par defaut");
     expect(markup).toContain("LM ATS par defaut");
     expect(markup).toContain("Editeur Puck");
-    expect(markup).toContain("Apercu live");
+    expect(markup).toContain("Aperçu live");
     expect(markup).toContain("CVHeader");
   });
 
@@ -165,5 +171,31 @@ describe("AdminTemplatesPage", () => {
     expect(markup).toContain("Moderne");
     expect(markup).toContain("Minimaliste");
     expect(markup).toContain("Créatif");
+  });
+
+  it("injects CV fixture data into the live preview for a CV template", async () => {
+    setupMocks();
+
+    const Page = await AdminTemplatesPage({
+      searchParams: Promise.resolve({ templateId: "template-cv-ats" }),
+    });
+    const markup = renderToStaticMarkup(Page);
+
+    expect(markup).toContain("Jean Dupont");
+    expect(markup).toContain("Chef de projet IT");
+    expect(markup).toContain("Données fictives injectées");
+    expect(markup).toContain("EB Garamond");
+  });
+
+  it("injects letter fixture data into the live preview for a letter template", async () => {
+    setupMocks();
+
+    const Page = await AdminTemplatesPage({
+      searchParams: Promise.resolve({ templateId: "template-letter-ats" }),
+    });
+    const markup = renderToStaticMarkup(Page);
+
+    expect(markup).toContain("InnoTech Solutions");
+    expect(markup).toContain("Données fictives injectées");
   });
 });
