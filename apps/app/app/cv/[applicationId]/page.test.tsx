@@ -1,3 +1,4 @@
+import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -16,6 +17,29 @@ vi.mock("../../auth/session", () => ({
 
 vi.mock("../../auth-config", () => ({
   getServerApiUrl: () => "http://api.test",
+}));
+
+vi.mock("@puckeditor/core", () => ({
+  Render: ({
+    data,
+  }: {
+    data: {
+      content: Array<{ type: string; props: Record<string, unknown> }>;
+    };
+  }) =>
+    React.createElement(
+      "div",
+      { "data-testid": "puck-render" },
+      data.content
+        .filter((item) => item.type === "CVHeader" || item.type === "SkillsList")
+        .map((item, i) =>
+          React.createElement(
+            "span",
+            { key: i },
+            Object.values(item.props).join(" "),
+          ),
+        ),
+    ),
 }));
 
 import CvPage from "./page";
@@ -63,7 +87,7 @@ describe("CvPage", () => {
     } as Response);
   }
 
-  it("renders the CV editor and read-only mobile fallback", async () => {
+  it("renders the CV editor page with correct title and Puck editor", async () => {
     setupMocks();
 
     const Page = await CvPage({
@@ -72,10 +96,19 @@ describe("CvPage", () => {
     const markup = renderToStaticMarkup(Page);
 
     expect(markup).toContain("Edition du CV");
-    expect(markup).toContain("Edition WYSIWYG du CV");
+    expect(markup).toContain("Edition du CV par contenu");
     expect(markup).toContain("Lecture seule sur mobile");
-    expect(markup).toContain("Aperçu live");
-    expect(markup).toContain("Telecharger le PDF");
+    expect(markup).toContain("Télécharger le PDF");
+  });
+
+  it("renders the mobile read-only view with candidate data via Puck Render", async () => {
+    setupMocks();
+
+    const Page = await CvPage({
+      params: Promise.resolve({ applicationId: "app-001" }),
+    });
+    const markup = renderToStaticMarkup(Page);
+
     expect(markup).toContain("Jean");
     expect(markup).toContain("TypeScript");
   });
@@ -89,6 +122,6 @@ describe("CvPage", () => {
     const markup = renderToStaticMarkup(Page);
 
     expect(markup).toContain("lecture seule");
-    expect(markup).toContain("export PDF");
+    expect(markup).toContain("Publier");
   });
 });
