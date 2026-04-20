@@ -13,6 +13,7 @@ import {
   applicationStatusTransitions,
   applicationStatuses,
   type CVDocumentContent,
+  type CvContentUpdateRequest,
   type ApplicationsKpiSummary,
   type DraftApplication,
   HEALTH_STATUS_OK,
@@ -47,6 +48,7 @@ describe("types package", () => {
   it("should shape a draft application contract", () => {
     const application: DraftApplication = {
       createdAt: "2026-04-20T12:00:00.000Z",
+      cvGeneratedAt: null,
       id: "app_123",
       offerUrl: "https://example.com/jobs/123",
       offerTextPreview: "Lead the platform team and improve reliability.",
@@ -93,10 +95,7 @@ describe("types package", () => {
     ]);
     expect(
       applicationStatusTransitions[APPLICATION_STATUS_INTERVIEW_SCHEDULED],
-    ).toEqual([
-      APPLICATION_STATUS_REJECTED,
-      APPLICATION_STATUS_OFFER_RECEIVED,
-    ]);
+    ).toEqual([APPLICATION_STATUS_REJECTED, APPLICATION_STATUS_OFFER_RECEIVED]);
   });
 
   it("should shape the dashboard KPI summary contract", () => {
@@ -177,7 +176,8 @@ describe("types package", () => {
     const letterContent: LetterDocumentContent = {
       body: {
         paragraph1: "I am applying for your senior frontend role.",
-        paragraph2: "My experience aligns with the product challenges described.",
+        paragraph2:
+          "My experience aligns with the product challenges described.",
         paragraph3: "I would welcome the opportunity to discuss this further.",
       },
       candidate: {
@@ -208,6 +208,12 @@ describe("types package", () => {
     expect(TEMPLATE_KIND_LETTER).toBe("letter");
     expect(DIVIDER_STYLE_SOLID).toBe("solid");
     expect(SECTION_TITLE_STYLE_ACCENT).toBe("accent");
+
+    const updateRequest: CvContentUpdateRequest = {
+      cvContent,
+    };
+
+    expect(updateRequest.cvContent.candidate.firstName).toBe("Jane");
   });
 
   it("should shape the admin template record contract", () => {

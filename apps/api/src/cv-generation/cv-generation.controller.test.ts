@@ -26,10 +26,18 @@ const MOCK_CV: CVDocumentContent = {
 };
 
 const VALID_BODY = {
-  localFields: { email: "user@test.example", lastName: "Dupont", phone: "+33612345678" },
+  localFields: {
+    email: "user@test.example",
+    lastName: "Dupont",
+    phone: "+33612345678",
+  },
   promptProfile: {
     headline: "Senior Developer",
-    identity: { candidateToken: "[CANDIDATE]", city: "Paris", firstName: "Jean" },
+    identity: {
+      candidateToken: "[CANDIDATE]",
+      city: "Paris",
+      firstName: "Jean",
+    },
     profileSections: {
       certifications: [],
       education: [],
@@ -50,6 +58,7 @@ function makeController(
   const cvService = {
     generateCv: vi.fn().mockResolvedValue(MOCK_CV),
     getCvContent: vi.fn().mockReturnValue(MOCK_CV),
+    updateCvContent: vi.fn().mockReturnValue(MOCK_CV),
     ...serviceOverrides,
   } as unknown as CvGenerationService;
 
@@ -64,11 +73,9 @@ describe("CvGenerationController", () => {
   describe("POST :applicationId/generate-cv", () => {
     it("returns cvContent for authenticated user", async () => {
       const controller = makeController();
-      const result = await controller.generateCv(
-        "app-001",
-        VALID_BODY,
-        { headers: { cookie: "cvforge_session=abc" } },
-      );
+      const result = await controller.generateCv("app-001", VALID_BODY, {
+        headers: { cookie: "cvforge_session=abc" },
+      });
 
       expect(result).toEqual({ cvContent: MOCK_CV });
     });
@@ -87,11 +94,15 @@ describe("CvGenerationController", () => {
         getCvContent: vi.fn(),
       } as unknown as CvGenerationService;
       const authService = {
-        readSessionFromCookieHeader: vi.fn().mockReturnValue({ email: "user@test.example", role: "user" }),
+        readSessionFromCookieHeader: vi
+          .fn()
+          .mockReturnValue({ email: "user@test.example", role: "user" }),
       } as unknown as AuthService;
       const controller = new CvGenerationController(cvService, authService);
 
-      await controller.generateCv("app-001", VALID_BODY, { headers: { cookie: "s=x" } });
+      await controller.generateCv("app-001", VALID_BODY, {
+        headers: { cookie: "s=x" },
+      });
 
       expect(cvService.generateCv).toHaveBeenCalledWith(
         "user@test.example",
@@ -104,7 +115,9 @@ describe("CvGenerationController", () => {
   describe("GET :applicationId/cv", () => {
     it("returns cvContent for authenticated user", () => {
       const controller = makeController();
-      const result = controller.getCvContent("app-001", { headers: { cookie: "cvforge_session=abc" } });
+      const result = controller.getCvContent("app-001", {
+        headers: { cookie: "cvforge_session=abc" },
+      });
 
       expect(result).toEqual({ cvContent: MOCK_CV });
     });
@@ -123,9 +136,60 @@ describe("CvGenerationController", () => {
     it("throws UnauthorizedException when no session", () => {
       const controller = makeController(null);
 
+      expect(() => controller.getCvContent("app-001", { headers: {} })).toThrow(
+        UnauthorizedException,
+      );
+    });
+  });
+
+  describe("PUT :applicationId/cv", () => {
+    it("returns cvContent for authenticated user", () => {
+      const controller = makeController();
+      const result = controller.updateCvContent(
+        "app-001",
+        { cvContent: MOCK_CV },
+        { headers: { cookie: "cvforge_session=abc" } },
+      );
+
+      expect(result).toEqual({ cvContent: MOCK_CV });
+    });
+
+    it("throws UnauthorizedException when no session", () => {
+      const controller = makeController(null);
+
       expect(() =>
-        controller.getCvContent("app-001", { headers: {} }),
+        controller.updateCvContent(
+          "app-001",
+          { cvContent: MOCK_CV },
+          { headers: {} },
+        ),
       ).toThrow(UnauthorizedException);
+    });
+
+    it("delegates to CvGenerationService.updateCvContent with session email", () => {
+      const cvService = {
+        generateCv: vi.fn(),
+        getCvContent: vi.fn(),
+        updateCvContent: vi.fn().mockReturnValue(MOCK_CV),
+      } as unknown as CvGenerationService;
+      const authService = {
+        readSessionFromCookieHeader: vi
+          .fn()
+          .mockReturnValue({ email: "user@test.example", role: "user" }),
+      } as unknown as AuthService;
+      const controller = new CvGenerationController(cvService, authService);
+
+      controller.updateCvContent(
+        "app-001",
+        { cvContent: MOCK_CV },
+        { headers: { cookie: "s=x" } },
+      );
+
+      expect(cvService.updateCvContent).toHaveBeenCalledWith(
+        "user@test.example",
+        "app-001",
+        { cvContent: MOCK_CV },
+      );
     });
   });
 });

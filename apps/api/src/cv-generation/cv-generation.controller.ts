@@ -5,11 +5,15 @@ import {
   Inject,
   NotFoundException,
   Param,
+  Put,
   Post,
   UnauthorizedException,
   Req,
 } from "@nestjs/common";
-import type { CvGenerationRequest } from "@cvforge/types";
+import type {
+  CvContentUpdateRequest,
+  CvGenerationRequest,
+} from "@cvforge/types";
 import { AuthService } from "../auth/auth.service";
 import { CvGenerationService } from "./cv-generation.service";
 
@@ -40,6 +44,29 @@ export class CvGenerationController {
     }
 
     const cvContent = await this.cvGenerationService.generateCv(
+      session.email,
+      applicationId,
+      body,
+    );
+
+    return { cvContent };
+  }
+
+  @Put(":applicationId/cv")
+  updateCvContent(
+    @Param("applicationId") applicationId: string,
+    @Body() body: CvContentUpdateRequest,
+    @Req() request: RequestLike,
+  ) {
+    const session = this.authService.readSessionFromCookieHeader(
+      request.headers.cookie,
+    );
+
+    if (!session) {
+      throw new UnauthorizedException("A valid session is required.");
+    }
+
+    const cvContent = this.cvGenerationService.updateCvContent(
       session.email,
       applicationId,
       body,

@@ -6,6 +6,7 @@ import {
 } from "@nestjs/common";
 import type {
   CVDocumentContent,
+  CvContentUpdateRequest,
   CvGenerationRequest,
   EducationItemProps,
   ExperienceItemProps,
@@ -228,6 +229,47 @@ function normalizeCvJson(
   };
 }
 
+function normalizeUpdatedCvContent(
+  value: CvContentUpdateRequest["cvContent"],
+): CVDocumentContent {
+  return {
+    candidate: {
+      city: toStr(value.candidate.city),
+      email: toStr(value.candidate.email),
+      firstName: toStr(value.candidate.firstName),
+      github: toStr(value.candidate.github),
+      lastName: toStr(value.candidate.lastName),
+      linkedin: toStr(value.candidate.linkedin),
+      phone: toStr(value.candidate.phone),
+      summary: toStr(value.candidate.summary),
+      title: toStr(value.candidate.title),
+    },
+    certifications: normalizeCertifications(
+      Array.isArray(value.certifications) ? value.certifications : [],
+    ),
+    education: normalizeEducation(
+      Array.isArray(value.education) ? value.education : [],
+    ),
+    experiences: normalizeExperiences(
+      Array.isArray(value.experiences) ? value.experiences : [],
+    ),
+    languages: normalizeLanguages(
+      Array.isArray(value.languages) ? value.languages : [],
+    ),
+    projects: normalizeProjects(
+      Array.isArray(value.projects) ? value.projects : [],
+    ),
+    skills: {
+      hard: Array.isArray(value.skills?.hard)
+        ? toStrArray(value.skills.hard)
+        : [],
+      soft: Array.isArray(value.skills?.soft)
+        ? toStrArray(value.skills.soft)
+        : [],
+    },
+  };
+}
+
 @Injectable()
 export class CvGenerationService {
   constructor(
@@ -240,13 +282,20 @@ export class CvGenerationService {
     applicationId: string,
     request: CvGenerationRequest,
   ): Promise<CVDocumentContent> {
-    if (!request.localFields?.lastName && !request.localFields?.phone && !request.localFields?.email) {
+    if (
+      !request.localFields?.lastName &&
+      !request.localFields?.phone &&
+      !request.localFields?.email
+    ) {
       throw new BadRequestException(
         "Les champs locaux (lastName, phone, email) doivent être fournis.",
       );
     }
 
-    const application = this.store.findByIdForUserEmail(userEmail, applicationId);
+    const application = this.store.findByIdForUserEmail(
+      userEmail,
+      applicationId,
+    );
 
     if (!application) {
       throw new NotFoundException("La candidature est introuvable.");
@@ -290,11 +339,41 @@ export class CvGenerationService {
     return cvContent;
   }
 
+  updateCvContent(
+    userEmail: string,
+    applicationId: string,
+    request: CvContentUpdateRequest,
+  ): CVDocumentContent {
+    const application = this.store.findByIdForUserEmail(
+      userEmail,
+      applicationId,
+    );
+
+    if (!application) {
+      throw new NotFoundException("La candidature est introuvable.");
+    }
+
+    const cvContent = normalizeUpdatedCvContent(request.cvContent);
+    const timestamp = new Date().toISOString();
+
+    this.store.save({
+      ...application,
+      cvContent,
+      cvGeneratedAt: application.cvGeneratedAt ?? timestamp,
+      updatedAt: timestamp,
+    });
+
+    return cvContent;
+  }
+
   getCvContent(
     userEmail: string,
     applicationId: string,
   ): CVDocumentContent | null {
-    const application = this.store.findByIdForUserEmail(userEmail, applicationId);
+    const application = this.store.findByIdForUserEmail(
+      userEmail,
+      applicationId,
+    );
 
     if (!application) {
       throw new NotFoundException("La candidature est introuvable.");

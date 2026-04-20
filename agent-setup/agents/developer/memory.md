@@ -194,3 +194,10 @@
 - **Why**: US-025 required the first end-to-end generation path: pseudonymised OpenRouter call → normalised CVDocumentContent → local field re-injection → render via document block components.
 - **Learned**: The profile is app-side (localStorage); the RGPD-correct pattern is to build `PromptSafeProfile` on the client and re-inject `localFields` server-side after the AI response — this keeps PII out of OpenRouter without moving profile storage to the API. The `cv-generation` module shares the same `FileApplicationsStore` instance as `ApplicationsModule`, which works in the current file-backed setup but will need coordination when migrating to a real DB.
 - **Open**: US-026 should wire the stored `cvContent` into the Puck editor for WYSIWYG editing. US-027 adds PDF export from the same content.
+
+## 2026-04-20 — US-026
+
+- **Did**: Added a user-side CV editor surface that loads stored `cvContent`, exposes a desktop structured editing form with live preview, hides the editor on mobile in favor of read-only preview, and persists updates through a new authenticated `PUT /applications/:applicationId/cv` API path plus a Next route bridge.
+- **Why**: US-026 required editable CV content for the user without breaking the shared document schema or the later PDF export path.
+- **Learned**: Keeping the editor schema-driven around `CVDocumentContent` is enough to support a practical WYSIWYG-style workflow now while preserving PDF compatibility for US-027.
+- **Open**: US-027 can reuse the same `cvContent` contract for Puppeteer export without translating the edited data into a new format.

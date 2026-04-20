@@ -151,6 +151,10 @@ export interface CVDocumentContent {
   };
 }
 
+export interface CvContentUpdateRequest {
+  cvContent: CVDocumentContent;
+}
+
 export interface LetterDocumentContent {
   body: LMBodyProps;
   candidate: CandidateIdentity;
@@ -194,9 +198,7 @@ export interface DraftApplication {
   offerUrl: string | null;
   offerTextPreview: string;
   sourceLabel: string;
-  sourceType:
-    | typeof APPLICATION_SOURCE_URL
-    | typeof APPLICATION_SOURCE_TEXT;
+  sourceType: typeof APPLICATION_SOURCE_URL | typeof APPLICATION_SOURCE_TEXT;
   status: ApplicationStatus;
   statusHistory: ApplicationStatusHistoryEntry[];
   updatedAt: string;
@@ -218,8 +220,18 @@ export interface PromptSafeIdentity {
 
 export interface PromptSafeProfileSections {
   certifications: Array<{ issuer: string; title: string; year: string }>;
-  education: Array<{ degree: string; honors: string; institution: string; year: string }>;
-  experiences: Array<{ company: string; period: string; results: string; role: string }>;
+  education: Array<{
+    degree: string;
+    honors: string;
+    institution: string;
+    year: string;
+  }>;
+  experiences: Array<{
+    company: string;
+    period: string;
+    results: string;
+    role: string;
+  }>;
   interests: string;
   personalProjects: Array<{ description: string; link: string; title: string }>;
   softSkills: string[];

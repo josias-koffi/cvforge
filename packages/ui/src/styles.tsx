@@ -426,6 +426,20 @@ export const paperStylesCss = `
     color: color-mix(in srgb, var(--paper-text-muted) 82%, white);
   }
 
+  .cvforge-cv-editor__desktop-only {
+    display: none;
+  }
+
+  .cvforge-cv-editor__mobile-only {
+    display: grid;
+    gap: var(--paper-space-lg);
+  }
+
+  .cvforge-cv-editor__split {
+    display: grid;
+    gap: var(--paper-space-lg);
+  }
+
   @media (min-width: 768px) {
     .cvforge-shell {
       padding: var(--paper-space-2xl);
@@ -444,6 +458,19 @@ export const paperStylesCss = `
   @media (min-width: 1024px) {
     .cvforge-shell {
       padding-bottom: var(--paper-space-2xl);
+    }
+
+    .cvforge-cv-editor__desktop-only {
+      display: grid;
+    }
+
+    .cvforge-cv-editor__mobile-only {
+      display: none;
+    }
+
+    .cvforge-cv-editor__split {
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+      align-items: start;
     }
 
     .cvforge-shell__frame {

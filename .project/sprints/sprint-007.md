@@ -21,13 +21,13 @@ Rendre la génération documentaire du MVP réellement exploitable: CV généré
     - [x] Le JSON généré est compatible avec le template actif
     - [x] Les champs réinjectés localement apparaissent au rendu final
   - Source: vision `§6.2`, `§8`, `§15.3`, `§16`
-- [ ] **[US-026]** Permettre l'édition WYSIWYG Puck côté user + lecture mobile
+- [x] **[US-026]** Permettre l'édition WYSIWYG Puck côté user + lecture mobile
   - Agent: `developer`
   - Workflow: `analyze-design-dev-review`
   - Acceptance criteria:
-    - [ ] L'utilisateur peut éditer son CV dans Puck
-    - [ ] Un mode lecture seule mobile existe
-    - [ ] Les modifications restent compatibles avec l'export PDF
+    - [x] L'utilisateur peut éditer son CV dans Puck
+    - [x] Un mode lecture seule mobile existe
+    - [x] Les modifications restent compatibles avec l'export PDF
   - Source: vision `§6`, `§8`, `§16`
 - [ ] **[US-027]** Exporter le CV en PDF via Puppeteer sans métadonnées identifiantes
   - Agent: `tech-lead`
