@@ -23,70 +23,79 @@ describe("AdminTemplatesPage", () => {
     globalThis.fetch = vi.fn();
   });
 
-  it("renders the ATS templates editor for an admin", async () => {
+  const mockTemplates = [
+    {
+      active: true,
+      categories: ["ATS"],
+      createdAt: "2026-04-20T00:00:00.000Z",
+      id: "template-cv-ats",
+      isDefault: true,
+      kind: "cv",
+      layout: {
+        blocks: [
+          {
+            id: "cv-header",
+            name: "CVHeader",
+            props: {
+              city: "Paris",
+              email: "jane@example.com",
+              firstName: "Jane",
+              github: "github.com/janedoe",
+              lastName: "Doe",
+              linkedin: "linkedin.com/in/janedoe",
+              phone: "+33 6 00 00 00 00",
+              title: "Senior Product Engineer",
+            },
+          },
+        ],
+      },
+      locale: "fr",
+      name: "CV ATS par defaut",
+      updatedAt: "2026-04-20T00:00:00.000Z",
+    },
+    {
+      active: false,
+      categories: ["Moderne"],
+      createdAt: "2026-04-20T00:00:00.000Z",
+      id: "template-cv-moderne",
+      isDefault: false,
+      kind: "cv",
+      layout: { blocks: [] },
+      locale: "fr",
+      name: "CV Moderne",
+      updatedAt: "2026-04-20T00:00:00.000Z",
+    },
+    {
+      active: true,
+      categories: ["ATS"],
+      createdAt: "2026-04-20T00:00:00.000Z",
+      id: "template-letter-ats",
+      isDefault: true,
+      kind: "letter",
+      layout: { blocks: [] },
+      locale: "fr",
+      name: "LM ATS par defaut",
+      updatedAt: "2026-04-20T00:00:00.000Z",
+    },
+  ];
+
+  function setupMocks() {
     requireAdminSessionMock.mockResolvedValue({
       email: "admin@example.com",
       expiresAt: "2026-04-27T07:45:24.000Z",
       role: "admin",
     });
     cookiesMock.mockResolvedValue({
-      getAll: () => [
-        {
-          name: "cvforge_session",
-          value: "session-token",
-        },
-      ],
+      getAll: () => [{ name: "cvforge_session", value: "session-token" }],
     });
     vi.mocked(fetch).mockResolvedValue({
-      json: async () => ({
-        templates: [
-          {
-            active: true,
-            categories: ["ATS"],
-            createdAt: "2026-04-20T00:00:00.000Z",
-            id: "template-cv-ats",
-            isDefault: true,
-            kind: "cv",
-            layout: {
-              blocks: [
-                {
-                  id: "cv-header",
-                  name: "CVHeader",
-                  props: {
-                    city: "Paris",
-                    email: "jane@example.com",
-                    firstName: "Jane",
-                    github: "github.com/janedoe",
-                    lastName: "Doe",
-                    linkedin: "linkedin.com/in/janedoe",
-                    phone: "+33 6 00 00 00 00",
-                    title: "Senior Product Engineer",
-                  },
-                },
-              ],
-            },
-            locale: "fr",
-            name: "CV ATS par defaut",
-            updatedAt: "2026-04-20T00:00:00.000Z",
-          },
-          {
-            active: true,
-            categories: ["ATS"],
-            createdAt: "2026-04-20T00:00:00.000Z",
-            id: "template-letter-ats",
-            isDefault: true,
-            kind: "letter",
-            layout: {
-              blocks: [],
-            },
-            locale: "fr",
-            name: "LM ATS par defaut",
-            updatedAt: "2026-04-20T00:00:00.000Z",
-          },
-        ],
-      }),
+      json: async () => ({ templates: mockTemplates }),
       ok: true,
     } as Response);
+  }
+
+  it("renders the ATS templates editor for an admin", async () => {
+    setupMocks();
 
     const Page = await AdminTemplatesPage({
       searchParams: Promise.resolve({ templateId: "template-cv-ats" }),
@@ -99,5 +108,62 @@ describe("AdminTemplatesPage", () => {
     expect(markup).toContain("Editeur Puck");
     expect(markup).toContain("Apercu live");
     expect(markup).toContain("CVHeader");
+  });
+
+  it("shows filter chips and inline action buttons on template cards", async () => {
+    setupMocks();
+
+    const Page = await AdminTemplatesPage({
+      searchParams: Promise.resolve({ templateId: "template-cv-ats" }),
+    });
+    const markup = renderToStaticMarkup(Page);
+
+    expect(markup).toContain("Dupliquer");
+    expect(markup).toContain("Désactiver");
+    expect(markup).toContain("Activer");
+    expect(markup).toContain("Supprimer");
+    expect(markup).toContain("Définir par défaut");
+    expect(markup).toContain("filterKind=cv");
+    expect(markup).toContain("filterKind=letter");
+    expect(markup).toContain("filterActive=active");
+    expect(markup).toContain("filterActive=inactive");
+  });
+
+  it("marks the default template with the gold badge", async () => {
+    setupMocks();
+
+    const Page = await AdminTemplatesPage({
+      searchParams: Promise.resolve({ templateId: "template-cv-ats" }),
+    });
+    const markup = renderToStaticMarkup(Page);
+
+    expect(markup).toContain("Défaut");
+    expect(markup).toContain("#C8A96E");
+  });
+
+  it("filters templates by kind when filterKind is set", async () => {
+    setupMocks();
+
+    const Page = await AdminTemplatesPage({
+      searchParams: Promise.resolve({ filterKind: "cv", templateId: "template-cv-ats" }),
+    });
+    const markup = renderToStaticMarkup(Page);
+
+    expect(markup).toContain("CV ATS par defaut");
+    expect(markup).toContain("CV Moderne");
+    expect(markup).not.toContain("LM ATS par defaut");
+  });
+
+  it("shows predefined category suggestions in the editor form", async () => {
+    setupMocks();
+
+    const Page = await AdminTemplatesPage({
+      searchParams: Promise.resolve({ templateId: "template-cv-ats" }),
+    });
+    const markup = renderToStaticMarkup(Page);
+
+    expect(markup).toContain("Moderne");
+    expect(markup).toContain("Minimaliste");
+    expect(markup).toContain("Créatif");
   });
 });

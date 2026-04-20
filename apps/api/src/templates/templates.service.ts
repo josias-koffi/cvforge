@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
@@ -121,6 +122,34 @@ export class TemplatesService {
     });
 
     return this.persistWithDefaultConstraints(candidate, existing.id);
+  }
+
+  deleteTemplate(templateId: string) {
+    const existing = this.store.findById(templateId);
+
+    if (!existing) {
+      throw new NotFoundException("Le template est introuvable.");
+    }
+
+    const sameKindTemplates = this.store
+      .list()
+      .filter((candidate) => candidate.kind === existing.kind && candidate.id !== templateId);
+
+    if (existing.isDefault && sameKindTemplates.length > 0) {
+      const next = sameKindTemplates[0];
+
+      this.store.save({
+        ...next,
+        isDefault: true,
+        updatedAt: new Date().toISOString(),
+      });
+    } else if (existing.isDefault && sameKindTemplates.length === 0) {
+      throw new ConflictException(
+        "Impossible de supprimer le seul template de ce type.",
+      );
+    }
+
+    this.store.remove(templateId);
   }
 
   duplicateTemplate(templateId: string) {

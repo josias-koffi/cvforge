@@ -17,6 +17,9 @@ function makeStore(seedTemplates: StoredTemplate[] = []): TemplatesStore {
     list() {
       return [...templates.values()];
     },
+    remove(templateId) {
+      templates.delete(templateId);
+    },
     save(template) {
       templates.set(template.id, template);
       return template;
@@ -88,5 +91,44 @@ describe("TemplatesService", () => {
         name: "Missing",
       }),
     ).toThrow(/introuvable/);
+  });
+
+  it("deletes a non-default template and leaves the default intact", () => {
+    const store = makeStore([
+      makeSeedTemplate("cv-default", TEMPLATE_KIND_CV),
+      { ...makeSeedTemplate("cv-other", TEMPLATE_KIND_CV), isDefault: false },
+    ]);
+    const service = new TemplatesService(store);
+
+    service.deleteTemplate("cv-other");
+
+    expect(store.findById("cv-other")).toBeNull();
+    expect(store.findById("cv-default")?.isDefault).toBe(true);
+  });
+
+  it("transfers the default flag when deleting the current default", () => {
+    const store = makeStore([
+      makeSeedTemplate("cv-default", TEMPLATE_KIND_CV),
+      { ...makeSeedTemplate("cv-other", TEMPLATE_KIND_CV), isDefault: false },
+    ]);
+    const service = new TemplatesService(store);
+
+    service.deleteTemplate("cv-default");
+
+    expect(store.findById("cv-default")).toBeNull();
+    expect(store.findById("cv-other")?.isDefault).toBe(true);
+  });
+
+  it("refuses to delete the last template of a kind", () => {
+    const store = makeStore([makeSeedTemplate("cv-only", TEMPLATE_KIND_CV)]);
+    const service = new TemplatesService(store);
+
+    expect(() => service.deleteTemplate("cv-only")).toThrow(/seul template/);
+  });
+
+  it("rejects deletion of unknown templates", () => {
+    const service = new TemplatesService(makeStore());
+
+    expect(() => service.deleteTemplate("missing")).toThrow(/introuvable/);
   });
 });

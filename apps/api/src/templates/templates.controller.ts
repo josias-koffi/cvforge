@@ -1,8 +1,10 @@
 import {
   Body,
   Controller,
+  Delete,
   ForbiddenException,
   Get,
+  HttpCode,
   Inject,
   Param,
   Post,
@@ -72,6 +74,16 @@ export class TemplatesController {
     return {
       template: this.templatesService.duplicateTemplate(templateId),
     };
+  }
+
+  @Delete(":templateId")
+  @HttpCode(204)
+  deleteTemplate(
+    @Param("templateId") templateId: string,
+    @Req() request: RequestLike,
+  ) {
+    this.requireAdminSession(request.headers.cookie);
+    this.templatesService.deleteTemplate(templateId);
   }
 
   private requireAdminSession(cookieHeader?: string) {

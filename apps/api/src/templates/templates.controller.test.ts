@@ -51,4 +51,21 @@ describe("TemplatesController", () => {
       ForbiddenException,
     );
   });
+
+  it("deletes a template for an authenticated admin", () => {
+    const deleteTemplate = vi.fn();
+    const controller = new TemplatesController(
+      { deleteTemplate } as never,
+      {
+        readSessionFromCookieHeader: vi.fn().mockReturnValue({
+          email: "admin@example.com",
+          role: "admin",
+        }),
+      } as never,
+    );
+
+    controller.deleteTemplate("template-cv-ats", { headers: {} });
+
+    expect(deleteTemplate).toHaveBeenCalledWith("template-cv-ats");
+  });
 });

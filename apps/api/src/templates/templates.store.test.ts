@@ -35,6 +35,27 @@ describe("FileTemplatesStore", () => {
     expect(templates[1]?.layout.blocks).toHaveLength(3);
   });
 
+  it("removes a template from the persisted state", () => {
+    const path = makeStorePath();
+    const store = new FileTemplatesStore(path);
+    const created = store.create({
+      active: false,
+      categories: [],
+      createdAt: "2026-04-20T12:00:00.000Z",
+      id: "template-to-remove",
+      isDefault: false,
+      kind: TEMPLATE_KIND_CV,
+      layout: { blocks: [] },
+      locale: "fr",
+      name: "To remove",
+      updatedAt: "2026-04-20T12:00:00.000Z",
+    });
+
+    store.remove(created.id);
+
+    expect(new FileTemplatesStore(path).findById(created.id)).toBeNull();
+  });
+
   it("persists new templates and hydrates them back from disk", () => {
     const path = makeStorePath();
     const store = new FileTemplatesStore(path);

@@ -226,6 +226,13 @@ export class FileTemplatesStore implements TemplatesStore {
       });
   }
 
+  remove(templateId: string) {
+    const state = this.readState();
+
+    delete state.templates[templateId];
+    this.writeState(state);
+  }
+
   save(template: StoredTemplate) {
     const state = this.readState();
 

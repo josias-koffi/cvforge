@@ -6,9 +6,14 @@ import { getAppNavigation } from "../../content";
 import { getServerApiUrl } from "../../auth-config";
 import { requireAdminSession } from "../../auth/session";
 
+const PREDEFINED_CATEGORIES = ["ATS", "Moderne", "Minimaliste", "Créatif"] as const;
+
 type TemplatePageProps = {
   searchParams?: Promise<{
     error?: string;
+    filterActive?: string;
+    filterCategory?: string;
+    filterKind?: string;
     saved?: string;
     templateId?: string;
   }>;
@@ -104,18 +109,167 @@ function TemplatePreview({ template }: { template: TemplateRecord }) {
   );
 }
 
+function TemplateCard({
+  template,
+  isSelected,
+}: {
+  template: TemplateRecord;
+  isSelected: boolean;
+}) {
+  return (
+    <div
+      style={{
+        backgroundColor: isSelected ? "#F6EFE4" : "#FFFFFF",
+        border: "1px solid #D9D4CA",
+        borderRadius: "0.875rem",
+        display: "grid",
+        gap: "0.5rem",
+        opacity: template.active ? 1 : 0.65,
+        padding: "0.875rem",
+      }}
+    >
+      <a
+        href={`/admin/templates?templateId=${encodeURIComponent(template.id)}`}
+        style={{ color: "#1A1A18", textDecoration: "none" }}
+      >
+        <div
+          style={{
+            alignItems: "center",
+            display: "flex",
+            gap: "0.5rem",
+            justifyContent: "space-between",
+          }}
+        >
+          <strong style={{ lineHeight: 1.3 }}>{template.name}</strong>
+          {template.isDefault ? (
+            <Badge style={{ backgroundColor: "#C8A96E", color: "#1A1A18", flexShrink: 0 }}>
+              Défaut
+            </Badge>
+          ) : null}
+        </div>
+        <div style={{ color: "#6B6860", fontSize: "0.875rem", marginTop: "0.15rem" }}>
+          {kindLabel(template.kind)} · {template.active ? "Actif" : "Inactif"}
+        </div>
+      </a>
+
+      {template.categories.length > 0 ? (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.25rem" }}>
+          {template.categories.map((cat) => (
+            <Badge key={cat} variant="outline" style={{ fontSize: "0.75rem" }}>
+              {cat}
+            </Badge>
+          ))}
+        </div>
+      ) : null}
+
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.375rem", marginTop: "0.25rem" }}>
+        <form action="/admin/templates/duplicate" method="post">
+          <input name="templateId" type="hidden" value={template.id} />
+          <Button type="submit" variant="ghost" style={{ fontSize: "0.8125rem", padding: "0.25rem 0.625rem" }}>
+            Dupliquer
+          </Button>
+        </form>
+
+        <form action="/admin/templates/toggle-active" method="post">
+          <input name="templateId" type="hidden" value={template.id} />
+          <input name="active" type="hidden" value={String(!template.active)} />
+          <Button
+            type="submit"
+            variant="ghost"
+            style={{ fontSize: "0.8125rem", padding: "0.25rem 0.625rem" }}
+            aria-label={template.active ? `Désactiver ${template.name}` : `Activer ${template.name}`}
+          >
+            {template.active ? "Désactiver" : "Activer"}
+          </Button>
+        </form>
+
+        {!template.isDefault ? (
+          <form action="/admin/templates/set-default" method="post">
+            <input name="templateId" type="hidden" value={template.id} />
+            <Button
+              type="submit"
+              variant="ghost"
+              style={{ fontSize: "0.8125rem", padding: "0.25rem 0.625rem" }}
+              aria-label={`Définir ${template.name} comme template par défaut`}
+            >
+              Définir par défaut
+            </Button>
+          </form>
+        ) : null}
+
+        <form action="/admin/templates/delete" method="post" onSubmit={(e) => {
+          if (!window.confirm(`Supprimer « ${template.name} » ? Cette action est irréversible.`)) {
+            e.preventDefault();
+          }
+        }}>
+          <input name="templateId" type="hidden" value={template.id} />
+          <Button
+            type="submit"
+            variant="ghost"
+            style={{ color: "#C0392B", fontSize: "0.8125rem", padding: "0.25rem 0.625rem" }}
+            aria-label={`Supprimer ${template.name}`}
+          >
+            Supprimer
+          </Button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function errorMessage(code: string) {
+  switch (code) {
+    case "template_last_default":
+      return "Impossible de supprimer le seul template de ce type.";
+    case "template_delete_failed":
+      return "Une erreur est survenue lors de la suppression.";
+    case "template_missing":
+      return "Template introuvable.";
+    case "template_invalid_layout":
+      return "Le layout JSON est invalide.";
+    default:
+      return "Une erreur est survenue lors de l'enregistrement.";
+  }
+}
+
 export default async function AdminTemplatesPage({
   searchParams,
 }: TemplatePageProps) {
   const session = await requireAdminSession();
   const resolvedSearchParams = await searchParams;
   const { templates } = await fetchTemplates();
+
+  const filterKind = resolvedSearchParams?.filterKind ?? "";
+  const filterActive = resolvedSearchParams?.filterActive ?? "";
+  const filterCategory = resolvedSearchParams?.filterCategory ?? "";
+
+  const filteredTemplates = templates.filter((template) => {
+    if (filterKind && template.kind !== filterKind) return false;
+    if (filterActive === "active" && !template.active) return false;
+    if (filterActive === "inactive" && template.active) return false;
+    if (filterCategory && !template.categories.includes(filterCategory)) return false;
+
+    return true;
+  });
+
   const selectedTemplate =
+    filteredTemplates.find((template) => template.id === resolvedSearchParams?.templateId) ??
     templates.find((template) => template.id === resolvedSearchParams?.templateId) ??
+    filteredTemplates[0] ??
     templates[0];
 
   if (!selectedTemplate) {
     throw new Error("Aucun template ATS seed n'est disponible.");
+  }
+
+  const allCategories = Array.from(
+    new Set(templates.flatMap((template) => template.categories)),
+  ).sort();
+
+  const filterBase = new URL(`/admin/templates`, "http://localhost");
+
+  if (resolvedSearchParams?.templateId) {
+    filterBase.searchParams.set("templateId", resolvedSearchParams.templateId);
   }
 
   return (
@@ -130,60 +284,122 @@ export default async function AdminTemplatesPage({
           style={{
             display: "grid",
             gap: "1.5rem",
-            gridTemplateColumns: "minmax(0, 18rem) minmax(0, 1fr)",
+            gridTemplateColumns: "minmax(0, 20rem) minmax(0, 1fr)",
           }}
         >
           <aside style={{ display: "grid", gap: "1rem" }}>
             <Card>
               <CardHeader>
-                <CardTitle>Bibliotheque</CardTitle>
+                <CardTitle>Bibliothèque</CardTitle>
                 <CardDescription>
-                  {templates.filter((template) => template.kind === TEMPLATE_KIND_CV).length} CV ATS et{" "}
-                  {templates.filter((template) => template.kind === TEMPLATE_KIND_LETTER).length} LM ATS
+                  {templates.filter((t) => t.kind === TEMPLATE_KIND_CV).length} CV ·{" "}
+                  {templates.filter((t) => t.kind === TEMPLATE_KIND_LETTER).length} LM
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <div style={{ display: "grid", gap: "0.75rem" }}>
-                  {templates.map((template) => (
-                    <React.Fragment key={template.id}>
-                      <a
-                        href={`/admin/templates?templateId=${encodeURIComponent(template.id)}`}
-                        style={{
-                          backgroundColor:
-                            template.id === selectedTemplate.id ? "#F6EFE4" : "#FFFFFF",
-                          border: "1px solid #D9D4CA",
-                          borderRadius: "0.875rem",
-                          color: "#1A1A18",
-                          display: "grid",
-                          gap: "0.35rem",
-                          padding: "0.875rem",
-                          textDecoration: "none",
-                        }}
-                      >
-                        <div
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "0.375rem" }}>
+                    <a
+                      href={`/admin/templates${resolvedSearchParams?.templateId ? `?templateId=${encodeURIComponent(resolvedSearchParams.templateId)}` : ""}`}
+                      style={{
+                        border: "1px solid",
+                        borderColor: !filterKind && !filterActive && !filterCategory ? "#2C2C2A" : "#D9D4CA",
+                        borderRadius: "999px",
+                        color: !filterKind && !filterActive && !filterCategory ? "#2C2C2A" : "#6B6860",
+                        fontSize: "0.8125rem",
+                        padding: "0.2rem 0.65rem",
+                        textDecoration: "none",
+                      }}
+                    >
+                      Tous
+                    </a>
+                    {[TEMPLATE_KIND_CV, TEMPLATE_KIND_LETTER].map((kind) => {
+                      const params = new URL(filterBase.toString());
+
+                      params.searchParams.set("filterKind", kind);
+
+                      return (
+                        <a
+                          key={kind}
+                          href={params.pathname + params.search}
                           style={{
-                            alignItems: "center",
-                            display: "flex",
-                            gap: "0.5rem",
-                            justifyContent: "space-between",
+                            border: "1px solid",
+                            borderColor: filterKind === kind ? "#2C2C2A" : "#D9D4CA",
+                            borderRadius: "999px",
+                            color: filterKind === kind ? "#2C2C2A" : "#6B6860",
+                            fontSize: "0.8125rem",
+                            padding: "0.2rem 0.65rem",
+                            textDecoration: "none",
                           }}
                         >
-                          <strong>{template.name}</strong>
-                          {template.isDefault ? <Badge>Defaut</Badge> : null}
-                        </div>
-                        <span style={{ color: "#6B6860" }}>{kindLabel(template.kind)}</span>
-                        <span style={{ color: "#8A7F71", fontSize: "0.875rem" }}>
-                          {template.active ? "Visible aux utilisateurs" : "Masque aux utilisateurs"}
-                        </span>
-                      </a>
-                      <form action="/admin/templates/duplicate" method="post">
-                        <input name="templateId" type="hidden" value={template.id} />
-                        <Button type="submit" variant="ghost">
-                          Dupliquer
-                        </Button>
-                      </form>
-                    </React.Fragment>
-                  ))}
+                          {kindLabel(kind)}
+                        </a>
+                      );
+                    })}
+                    {[
+                      { label: "Actifs", value: "active" },
+                      { label: "Inactifs", value: "inactive" },
+                    ].map(({ label, value }) => {
+                      const params = new URL(filterBase.toString());
+
+                      params.searchParams.set("filterActive", value);
+
+                      return (
+                        <a
+                          key={value}
+                          href={params.pathname + params.search}
+                          style={{
+                            border: "1px solid",
+                            borderColor: filterActive === value ? "#2C2C2A" : "#D9D4CA",
+                            borderRadius: "999px",
+                            color: filterActive === value ? "#2C2C2A" : "#6B6860",
+                            fontSize: "0.8125rem",
+                            padding: "0.2rem 0.65rem",
+                            textDecoration: "none",
+                          }}
+                        >
+                          {label}
+                        </a>
+                      );
+                    })}
+                    {allCategories.map((cat) => {
+                      const params = new URL(filterBase.toString());
+
+                      params.searchParams.set("filterCategory", cat);
+
+                      return (
+                        <a
+                          key={cat}
+                          href={params.pathname + params.search}
+                          style={{
+                            border: "1px solid",
+                            borderColor: filterCategory === cat ? "#2C2C2A" : "#D9D4CA",
+                            borderRadius: "999px",
+                            color: filterCategory === cat ? "#2C2C2A" : "#6B6860",
+                            fontSize: "0.8125rem",
+                            padding: "0.2rem 0.65rem",
+                            textDecoration: "none",
+                          }}
+                        >
+                          {cat}
+                        </a>
+                      );
+                    })}
+                  </div>
+
+                  {filteredTemplates.length === 0 ? (
+                    <p style={{ color: "#8A7F71", fontSize: "0.875rem", margin: 0 }}>
+                      Aucun template ne correspond aux filtres.
+                    </p>
+                  ) : (
+                    filteredTemplates.map((template) => (
+                      <TemplateCard
+                        key={template.id}
+                        template={template}
+                        isSelected={template.id === selectedTemplate.id}
+                      />
+                    ))
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -205,6 +421,17 @@ export default async function AdminTemplatesPage({
           </aside>
 
           <div style={{ display: "grid", gap: "1rem" }}>
+            {resolvedSearchParams?.saved ? (
+              <p style={{ color: "#4A7C59", margin: 0 }}>
+                Template enregistré avec succès.
+              </p>
+            ) : null}
+            {resolvedSearchParams?.error ? (
+              <p style={{ color: "#C0392B", margin: 0 }}>
+                {errorMessage(resolvedSearchParams.error)}
+              </p>
+            ) : null}
+
             <Card>
               <CardHeader>
                 <CardTitle>Creer un template</CardTitle>
@@ -268,12 +495,35 @@ export default async function AdminTemplatesPage({
                       </select>
                     </div>
                     <div style={{ display: "grid", gap: "0.35rem" }}>
-                      <Label htmlFor="create-categories">Categories</Label>
+                      <Label htmlFor="create-categories">
+                        Catégories
+                        <span style={{ color: "#8A7F71", fontWeight: 400, marginLeft: "0.4rem" }}>
+                          (séparées par virgule)
+                        </span>
+                      </Label>
                       <Input
                         id="create-categories"
                         name="categories"
                         defaultValue="ATS"
+                        placeholder={PREDEFINED_CATEGORIES.join(", ")}
                       />
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.25rem", marginTop: "0.2rem" }}>
+                        {PREDEFINED_CATEGORIES.map((cat) => (
+                          <span
+                            key={cat}
+                            style={{
+                              border: "1px solid #D9D4CA",
+                              borderRadius: "999px",
+                              color: "#6B6860",
+                              cursor: "default",
+                              fontSize: "0.75rem",
+                              padding: "0.1rem 0.5rem",
+                            }}
+                          >
+                            {cat}
+                          </span>
+                        ))}
+                      </div>
                     </div>
                   </div>
                   <div
@@ -326,17 +576,6 @@ export default async function AdminTemplatesPage({
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {resolvedSearchParams?.saved ? (
-                  <p style={{ color: "#2F6B3A", marginTop: 0 }}>
-                    Template enregistre avec succes.
-                  </p>
-                ) : null}
-                {resolvedSearchParams?.error ? (
-                  <p style={{ color: "#A13D2D", marginTop: 0 }}>
-                    Une erreur est survenue pendant la sauvegarde.
-                  </p>
-                ) : null}
-
                 <form
                   action="/admin/templates/save"
                   method="post"
@@ -390,12 +629,37 @@ export default async function AdminTemplatesPage({
                       </select>
                     </div>
                     <div style={{ display: "grid", gap: "0.35rem" }}>
-                      <Label htmlFor="categories">Categories</Label>
+                      <Label htmlFor="categories">
+                        Catégories
+                        <span style={{ color: "#8A7F71", fontWeight: 400, marginLeft: "0.4rem" }}>
+                          (séparées par virgule)
+                        </span>
+                      </Label>
                       <Input
                         id="categories"
                         name="categories"
                         defaultValue={selectedTemplate.categories.join(", ")}
+                        placeholder={PREDEFINED_CATEGORIES.join(", ")}
                       />
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.25rem", marginTop: "0.2rem" }}>
+                        {PREDEFINED_CATEGORIES.map((cat) => (
+                          <span
+                            key={cat}
+                            style={{
+                              border: "1px solid",
+                              borderColor: selectedTemplate.categories.includes(cat) ? "#2C2C2A" : "#D9D4CA",
+                              borderRadius: "999px",
+                              color: selectedTemplate.categories.includes(cat) ? "#2C2C2A" : "#8A7F71",
+                              cursor: "default",
+                              fontSize: "0.75rem",
+                              fontWeight: selectedTemplate.categories.includes(cat) ? 600 : 400,
+                              padding: "0.1rem 0.5rem",
+                            }}
+                          >
+                            {cat}
+                          </span>
+                        ))}
+                      </div>
                     </div>
                   </div>
 
@@ -457,7 +721,7 @@ export default async function AdminTemplatesPage({
               <CardHeader>
                 <CardTitle>Apercu live</CardTitle>
                 <CardDescription>
-                  Rendu des blocs partagés avec le registre CV/LM.
+                  Rendu des blocs partagés avec le registre CV/LM.
                 </CardDescription>
               </CardHeader>
               <CardContent>

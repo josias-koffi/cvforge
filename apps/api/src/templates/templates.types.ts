@@ -10,6 +10,7 @@ export type TemplatesStore = {
   create: (template: StoredTemplate) => StoredTemplate;
   findById: (templateId: string) => StoredTemplate | null;
   list: () => StoredTemplate[];
+  remove: (templateId: string) => void;
   save: (template: StoredTemplate) => StoredTemplate;
 };
 
