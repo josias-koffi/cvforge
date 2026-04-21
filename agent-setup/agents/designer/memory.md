@@ -166,3 +166,17 @@
 - **Why**: US-055 is pure infrastructure; no user-facing surface is introduced.
 - **Learned**: Even for infrastructure stories, a design artifact that clarifies the API contract (types, function signatures, migration script behavior) prevents developer ambiguity and avoids re-work.
 - **Open**: US-056 will be the first story with an actual Puck UI surface — the `<PuckTemplateEditor>` Client Component.
+
+## 2026-04-21 — Sprint 008 DoD
+
+- **Did**: Reviewed the sprint-close request and explicitly kept the design stage as a non-UI skip because the work was limited to verification and bookkeeping.
+- **Why**: The workflow still needs a design-stage decision even when no new interface or interaction is being introduced.
+- **Learned**: Sprint closure reviews should not silently imply design approval beyond what the underlying task reviews already covered.
+- **Open**: None for design; the remaining blockers are engineering gates.
+
+## 2026-04-21 — Sprint 008 DoD retry
+
+- **Did**: Reconfirmed the non-UI skip for the successful sprint-close rerun after the coverage fixes landed.
+- **Why**: The retry still required an explicit design-stage decision even though the work remained purely verification-focused.
+- **Learned**: Quality-gate recovery work can close a sprint without reopening any product or UX scope.
+- **Open**: None.

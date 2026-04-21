@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { Puck } from "@puckeditor/core";
 import "@puckeditor/core/puck.css";
 import type { Data } from "@puckeditor/core";

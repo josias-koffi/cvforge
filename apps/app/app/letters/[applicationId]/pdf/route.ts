@@ -13,9 +13,9 @@ export async function GET(
   _request: Request,
   {
     params,
-  }: { params: { applicationId: string } | Promise<{ applicationId: string }> },
+  }: { params: Promise<{ applicationId: string }> },
 ) {
-  const { applicationId } = await Promise.resolve(params);
+  const { applicationId } = await params;
   const cookieStore = await cookies();
   const cookieHeader = getCookieHeader(cookieStore);
 

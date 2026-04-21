@@ -208,3 +208,17 @@
 - **Why**: Sprint 008 foundational task complete — Puck infrastructure is in place for US-056 and US-057.
 - **Learned**: `@measured-co/puck` is now `@puckeditor/core`. The sprint note about verifying compatibility was valid and should be treated as a required pre-check in future stories involving new packages.
 - **Open**: US-056 (admin drag-and-drop) and US-057 (user CV editor) can start. Live migration script must run before either is deployed.
+
+## 2026-04-21 — Sprint 008 DoD finalization
+
+- **Did**: Closed the sprint-level validation workflow with a failing verdict, updated the sprint DoD checkboxes to reflect only the verified items, and recorded the failed result in project state.
+- **Why**: Architecture and release governance require the sprint record to match the actual engineering gates, not the intended outcome.
+- **Learned**: Sprint 008 feature scope is complete, but formal closure is still blocked by repo-level coverage debt and a broken root coverage invocation.
+- **Open**: Sprint 008 should remain out of `completed_sprints` until the coverage gate is fixed and QA can issue a passing sprint-close review.
+
+## 2026-04-21 — Sprint 008 DoD retry finalization
+
+- **Did**: Closed the sprint-level retry workflow with a passing verdict, marked the remaining DoD checkboxes complete, and added Sprint 008 to `completed_sprints`.
+- **Why**: Governance required one final explicit sign-off once the engineering blockers were actually fixed.
+- **Learned**: The sprint-close path is now robust again because the root coverage command and the package-level tests agree on how coverage should be invoked.
+- **Open**: None for Sprint 008.

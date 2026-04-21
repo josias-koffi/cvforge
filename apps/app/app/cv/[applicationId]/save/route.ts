@@ -14,7 +14,7 @@ export async function PUT(
   request: Request,
   {
     params,
-  }: { params: { applicationId: string } | Promise<{ applicationId: string }> },
+  }: { params: Promise<{ applicationId: string }> },
 ) {
   let body: Partial<CvContentUpdateRequest>;
 
@@ -28,7 +28,7 @@ export async function PUT(
   }
 
   const cvContent = body.cvContent ?? null;
-  const { applicationId } = await Promise.resolve(params);
+  const { applicationId } = await params;
 
   if (!cvContent) {
     return NextResponse.json(

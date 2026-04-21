@@ -187,3 +187,17 @@
 - **Why**: The workflow needed a precise product boundary separating this foundational story from US-056 (admin drag-and-drop) and US-057 (user editor).
 - **Learned**: The npm package name changed from `@measured-co/puck` to `@puckeditor/core`. The sprint blocker note was prescient — always verify package names before declaring scope.
 - **Open**: US-056 and US-057 can now start. The migration script must be run against any live templates-state.json before deploying either story.
+
+## 2026-04-21 — Sprint 008 DoD
+
+- **Did**: Validated the Sprint 008 closure scope against the completed US-055/056/057 artifacts and confirmed which DoD items are objectively evidenced.
+- **Why**: Sprint closure required a product-level decision based on explicit verification rather than assuming the sprint was complete once the task boxes were checked.
+- **Learned**: The sprint value is delivered, but the repo-wide coverage gate still blocks formal sprint completion.
+- **Open**: Sprint 008 should be revalidated once the app coverage floor and root coverage command are fixed.
+
+## 2026-04-21 — Sprint 008 DoD retry
+
+- **Did**: Revalidated Sprint 008 after the test and coverage fixes and confirmed that every DoD item now has explicit passing evidence.
+- **Why**: The sprint could only be closed once the previously failing engineering gates were rechecked, not assumed.
+- **Learned**: The sprint scope was already complete; the closure delay came entirely from repo-level quality gate drift.
+- **Open**: None for Sprint 008.

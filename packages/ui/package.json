@@ -13,7 +13,7 @@
   },
   "scripts": {
     "lint": "eslint src --ext .ts,.tsx --max-warnings=0",
-    "test": "vitest run --coverage",
+    "test": "vitest run",
     "build": "tsc -p tsconfig.json --noEmit"
   },
   "exports": {

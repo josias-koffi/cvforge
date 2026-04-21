@@ -166,3 +166,17 @@
 - **Why**: All acceptance criteria required evidence before the task could be ticked.
 - **Learned**: Package renames between ADR authoring and actual installation are a real risk. The advisory pattern (update ADR, don't block) is the right response for a name-only discrepancy with no API change.
 - **Open**: US-056 introduces `<Puck>` client component — the SSR guard (`next/dynamic` with `ssr: false`) must be verified during that review.
+
+## 2026-04-21 — Sprint 008 DoD review
+
+- **Did**: Reviewed Sprint 008 closure evidence, confirmed the three task-level reviews still stand, reran `pnpm test`, and issued a failing sprint-level QA verdict because the app package remains below the blocking coverage line threshold.
+- **Why**: A sprint-close approval cannot ignore the engineering-spec coverage gate even when every task acceptance criterion has already passed.
+- **Learned**: Repo-level sprint closure can fail even when all underlying stories pass individually, because the DoD introduces aggregate gates that must be checked again at the sprint boundary.
+- **Open**: Re-run the review after the root coverage command is fixed and `@cvforge/app` reaches at least 80% line coverage.
+
+## 2026-04-21 — Sprint 008 DoD retry review
+
+- **Did**: Re-ran the sprint-close QA review after the coverage fixes, confirmed the root coverage command succeeds, and issued a passing verdict with all five DoD items verified.
+- **Why**: The sprint needed a final QA decision based on current evidence, not on the earlier failed review.
+- **Learned**: The repaired coverage workflow and the new focused tests were enough to move the sprint from blocked to complete without reopening any acceptance criteria.
+- **Open**: None for Sprint 008.

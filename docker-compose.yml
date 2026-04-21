@@ -3,6 +3,7 @@ services:
     build:
       context: .
       dockerfile: docker/app.Dockerfile
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
     ports:
       - "3000:3000"
     environment:
@@ -18,11 +19,13 @@ services:
       - ./packages/ui:/workspace/packages/ui
       - ./packages/types:/workspace/packages/types
       - ./packages/config:/workspace/packages/config
+      - app_next:/workspace/apps/app/.next
 
   landing:
     build:
       context: .
       dockerfile: docker/landing.Dockerfile
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
     ports:
       - "3001:3001"
     environment:
@@ -33,11 +36,13 @@ services:
       - ./packages/ui:/workspace/packages/ui
       - ./packages/types:/workspace/packages/types
       - ./packages/config:/workspace/packages/config
+      - landing_next:/workspace/apps/landing/.next
 
   api:
     build:
       context: .
       dockerfile: docker/api.Dockerfile
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
     ports:
       - "3333:3333"
     environment:
@@ -108,5 +113,7 @@ services:
       - "6379:6379"
 
 volumes:
+  app_next:
+  landing_next:
   postgres_data:
   minio_data:

@@ -14,7 +14,7 @@ export async function PUT(
   request: Request,
   {
     params,
-  }: { params: { applicationId: string } | Promise<{ applicationId: string }> },
+  }: { params: Promise<{ applicationId: string }> },
 ) {
   let body: Partial<LetterContentUpdateRequest>;
 
@@ -28,7 +28,7 @@ export async function PUT(
   }
 
   const letterContent = body.letterContent ?? null;
-  const { applicationId } = await Promise.resolve(params);
+  const { applicationId } = await params;
 
   if (!letterContent) {
     return NextResponse.json(

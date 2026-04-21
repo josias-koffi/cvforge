@@ -236,3 +236,17 @@
 - **Why**: US-057 required the user CV editor to shift from a custom form to Puck's own field-editing UI while keeping the existing save and PDF export paths.
 - **Learned**: The `<Render>` component from `@puckeditor/core` is genuinely SSR-safe and works with `renderToStaticMarkup` in a vitest node environment when mocked. The SkillsList block uses `hardSkills`/`softSkills` field names while `CVDocumentContent.skills` uses `hard`/`soft` — both converters must handle this mapping explicitly. The `str()` coercion helper should use `String()` for non-null values rather than `typeof === "string"` to handle numeric props gracefully.
 - **Open**: Sprint 008 is now fully complete (US-055 + US-056 + US-057). Sprint DoD pending final QA and test coverage sign-off.
+
+## 2026-04-21 — Sprint 008 DoD
+
+- **Did**: Re-ran the repo test gate, checked the current coverage output, and recorded a sprint-close workflow showing that only the first three DoD items can be marked.
+- **Why**: The sprint could not be closed safely without current evidence for both the test and coverage gates.
+- **Learned**: `pnpm test` is green, but the workspace still has a coverage configuration problem: `pnpm test -- --coverage` duplicates the flag and the app package remains under the 80% line threshold.
+- **Open**: Fix the root coverage invocation and raise `@cvforge/app` line coverage before retrying Sprint 008 closure.
+
+## 2026-04-21 — Sprint 008 DoD retry
+
+- **Did**: Fixed the duplicated coverage-flag issue by normalizing workspace test scripts, added targeted coverage tests in `apps/app` and `packages/config`, and verified both `pnpm test` and `pnpm test -- --coverage` pass.
+- **Why**: Sprint 008 could not be closed until the root coverage command ran cleanly and the app package cleared the blocking line threshold.
+- **Learned**: The most efficient coverage recovery was to test the unexercised UI wrappers and error boundaries directly instead of broadening feature behavior.
+- **Open**: None for Sprint 008; remaining coverage debt is outside the sprint-close threshold.
