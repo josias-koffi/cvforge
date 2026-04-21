@@ -250,3 +250,10 @@
 - **Why**: Sprint 008 could not be closed until the root coverage command ran cleanly and the app package cleared the blocking line threshold.
 - **Learned**: The most efficient coverage recovery was to test the unexercised UI wrappers and error boundaries directly instead of broadening feature behavior.
 - **Open**: None for Sprint 008; remaining coverage debt is outside the sprint-close threshold.
+
+## 2026-04-21 — US-029
+
+- **Did**: Added a dedicated API credits module with file-backed ledger persistence, shared credit-action types, user/admin ledger endpoints, admin manual grants, and debit hooks in the existing offer-import and document-generation services; then verified the API package with targeted tests, lint, and build.
+- **Why**: US-029 required a traceable balance model and enforced AI consumption rules before Stripe and the credits dashboard can be built safely.
+- **Learned**: A dedicated ledger service is cleaner than burying credit state inside auth or applications persistence, and it gives US-030 a single purchase-ingestion seam via `recordStripePurchase()`.
+- **Open**: Root workspace verification was not rerun because this story is backend-only; the known app-side build issues remain outside this task.

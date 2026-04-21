@@ -16,6 +16,12 @@ export const APPLICATION_STATUS_REJECTED = "rejected" as const;
 export const APPLICATION_STATUS_OFFER_RECEIVED = "offer_received" as const;
 export const APPLICATION_SOURCE_URL = "url" as const;
 export const APPLICATION_SOURCE_TEXT = "text" as const;
+export const AI_CREDIT_ACTION_OFFER_ENRICHMENT = "offer_enrichment" as const;
+export const AI_CREDIT_ACTION_CV_GENERATION = "cv_generation" as const;
+export const AI_CREDIT_ACTION_LETTER_GENERATION = "letter_generation" as const;
+export const CREDIT_EVENT_AI_USAGE = "ai_usage" as const;
+export const CREDIT_EVENT_ADMIN_GRANT = "admin_grant" as const;
+export const CREDIT_EVENT_STRIPE_PURCHASE = "stripe_purchase" as const;
 
 export const applicationStatuses = [
   APPLICATION_STATUS_DRAFT,
@@ -26,6 +32,18 @@ export const applicationStatuses = [
 ] as const;
 
 export type ApplicationStatus = (typeof applicationStatuses)[number];
+export const aiCreditActions = [
+  AI_CREDIT_ACTION_OFFER_ENRICHMENT,
+  AI_CREDIT_ACTION_CV_GENERATION,
+  AI_CREDIT_ACTION_LETTER_GENERATION,
+] as const;
+export type AiCreditAction = (typeof aiCreditActions)[number];
+export const creditEventTypes = [
+  CREDIT_EVENT_AI_USAGE,
+  CREDIT_EVENT_ADMIN_GRANT,
+  CREDIT_EVENT_STRIPE_PURCHASE,
+] as const;
+export type CreditEventType = (typeof creditEventTypes)[number];
 export type TemplateKind =
   | typeof TEMPLATE_KIND_CV
   | typeof TEMPLATE_KIND_LETTER;
@@ -193,6 +211,37 @@ export interface ApplicationsKpiSummary {
   responseRate: number;
   statusCounts: Record<ApplicationStatus, number>;
   totalCount: number;
+}
+
+export const AI_CREDIT_COSTS: Record<AiCreditAction, number> = {
+  [AI_CREDIT_ACTION_OFFER_ENRICHMENT]: 1,
+  [AI_CREDIT_ACTION_CV_GENERATION]: 3,
+  [AI_CREDIT_ACTION_LETTER_GENERATION]: 3,
+};
+
+export interface CreditLedgerEntry {
+  id: string;
+  userEmail: string;
+  type: CreditEventType;
+  action: AiCreditAction | "admin_grant" | "stripe_purchase";
+  amount: number;
+  balanceAfter: number;
+  createdAt: string;
+  note: string | null;
+  metadata: {
+    adminEmail?: string;
+    applicationId?: string;
+    packId?: string;
+    stripePaymentIntentId?: string;
+  };
+}
+
+export interface CreditLedgerSummary {
+  userEmail: string;
+  balance: number;
+  lowBalanceThreshold: number;
+  isLowBalance: boolean;
+  history: CreditLedgerEntry[];
 }
 
 export interface DraftApplication {

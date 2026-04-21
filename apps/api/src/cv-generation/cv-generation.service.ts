@@ -1,24 +1,27 @@
 import {
+  type CVDocumentContent,
+  type CvContentUpdateRequest,
+  type CvGenerationRequest,
+  type LetterContentUpdateRequest,
+  type LetterDocumentContent,
+  type LetterGenerationRequest,
+  type EducationItemProps,
+  type ExperienceItemProps,
+  type LanguageItemProps,
+  type CertificationItemProps,
+  type ProjectItemProps,
+  AI_CREDIT_ACTION_CV_GENERATION,
+  AI_CREDIT_ACTION_LETTER_GENERATION,
+} from "@cvforge/types";
+import {
   BadRequestException,
   Injectable,
   NotFoundException,
   UnprocessableEntityException,
 } from "@nestjs/common";
-import type {
-  CVDocumentContent,
-  CvContentUpdateRequest,
-  CvGenerationRequest,
-  LetterContentUpdateRequest,
-  LetterDocumentContent,
-  LetterGenerationRequest,
-  EducationItemProps,
-  ExperienceItemProps,
-  LanguageItemProps,
-  CertificationItemProps,
-  ProjectItemProps,
-} from "@cvforge/types";
 import type { OpenRouterService } from "../ai/openrouter.service";
 import type { ApplicationsStore } from "../applications/applications.types";
+import type { CreditsService } from "../credits/credits.service";
 
 // CV generation prompt based on vision §8.1
 const CV_SYSTEM_PROMPT = `Tu es un Expert en Recrutement Senior et Spécialiste ATS.
@@ -428,6 +431,7 @@ export class CvGenerationService {
   constructor(
     private readonly store: ApplicationsStore,
     private readonly openRouterService: OpenRouterService,
+    private readonly creditsService: CreditsService,
   ) {}
 
   async generateCv(
@@ -438,6 +442,11 @@ export class CvGenerationService {
     assertLocalFieldsProvided(request.localFields);
     const application = this.getApplicationForUser(userEmail, applicationId);
     const offerContext = this.buildOfferContext(application);
+    this.creditsService.consumeCredits({
+      action: AI_CREDIT_ACTION_CV_GENERATION,
+      applicationId,
+      userEmail,
+    });
 
     const rawResponse = await this.openRouterService.chat(
       [
@@ -475,6 +484,11 @@ export class CvGenerationService {
     assertLocalFieldsProvided(request.localFields);
     const application = this.getApplicationForUser(userEmail, applicationId);
     const offerContext = this.buildOfferContext(application);
+    this.creditsService.consumeCredits({
+      action: AI_CREDIT_ACTION_LETTER_GENERATION,
+      applicationId,
+      userEmail,
+    });
 
     const rawResponse = await this.openRouterService.chat(
       [

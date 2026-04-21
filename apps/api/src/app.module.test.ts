@@ -7,6 +7,7 @@ import { SmtpModule } from "./smtp/smtp.module";
 import { OpenRouterModule } from "./ai/openrouter.module";
 import { ApplicationsModule } from "./applications/applications.module";
 import { CvGenerationModule } from "./cv-generation/cv-generation.module";
+import { CreditsModule } from "./credits/credits.module";
 import { TemplatesModule } from "./templates/templates.module";
 
 describe("AppModule", () => {
@@ -21,6 +22,7 @@ describe("AppModule", () => {
       OpenRouterModule,
       ApplicationsModule,
       CvGenerationModule,
+      CreditsModule,
       TemplatesModule,
     ]);
   });

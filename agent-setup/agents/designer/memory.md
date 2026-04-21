@@ -180,3 +180,10 @@
 - **Why**: The retry still required an explicit design-stage decision even though the work remained purely verification-focused.
 - **Learned**: Quality-gate recovery work can close a sprint without reopening any product or UX scope.
 - **Open**: None.
+
+## 2026-04-21 — US-029 design
+
+- **Did**: Marked the design stage as a non-UI skip and documented the API-first credit-ledger contract for future user/admin surfaces.
+- **Why**: US-029 introduces backend ledger behavior and read/write endpoints, but the first actual credits page is explicitly deferred to US-031.
+- **Learned**: Defining user and admin credit endpoints now reduces UX ambiguity later because the upcoming "Mes credits" page and admin user sheet can both consume the same summary shape.
+- **Open**: US-031 should decide the exact low-balance alert presentation on top of the new `lowBalanceThreshold` and `isLowBalance` fields.

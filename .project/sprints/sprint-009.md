@@ -13,13 +13,13 @@ Fermer la boucle de monétisation et d'engagement du MVP avec crédits, Stripe e
 
 ## ✅ Tasks (3–8 max)
 
-- [ ] **[US-029]** Mettre en place le ledger de crédits et les règles de consommation IA
+- [x] **[US-029]** Mettre en place le ledger de crédits et les règles de consommation IA
   - Agent: `tech-lead`
   - Workflow: `analyze-design-dev-review`
   - Acceptance criteria:
-    - [ ] Le solde de crédits est traçable
-    - [ ] Chaque action IA consomme les crédits attendus
-    - [ ] L'historique est exploitable pour l'utilisateur et l'admin
+    - [x] Le solde de crédits est traçable
+    - [x] Chaque action IA consomme les crédits attendus
+    - [x] L'historique est exploitable pour l'utilisateur et l'admin
   - Source: vision `§11`, `§16`
 - [ ] **[US-030]** Intégrer Stripe pour les packs `Starter` et `Pro`
   - Agent: `developer`

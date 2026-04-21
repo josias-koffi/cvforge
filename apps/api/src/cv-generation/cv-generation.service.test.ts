@@ -13,6 +13,7 @@ import type {
   ApplicationsStore,
   StoredApplication,
 } from "../applications/applications.types";
+import type { CreditsService } from "../credits/credits.service";
 
 function makeStoredApplication(
   overrides: Partial<StoredApplication> = {},
@@ -161,6 +162,7 @@ const VALID_LETTER_JSON: LetterDocumentContent = {
 describe("CvGenerationService", () => {
   let store: ApplicationsStore;
   let openRouter: { chat: ReturnType<typeof vi.fn> };
+  let creditsService: CreditsService;
   let service: CvGenerationService;
 
   beforeEach(() => {
@@ -177,7 +179,10 @@ describe("CvGenerationService", () => {
     openRouter = {
       chat: vi.fn().mockResolvedValue(JSON.stringify(VALID_CV_JSON)),
     };
-    service = new CvGenerationService(store, openRouter as never);
+    creditsService = {
+      consumeCredits: vi.fn(),
+    } as unknown as CreditsService;
+    service = new CvGenerationService(store, openRouter as never, creditsService);
   });
 
   describe("generateCv", () => {
@@ -201,6 +206,11 @@ describe("CvGenerationService", () => {
         "candidateToken",
         "[CANDIDATE]",
       );
+      expect(creditsService.consumeCredits).toHaveBeenCalledWith({
+        action: "cv_generation",
+        applicationId: "app-001",
+        userEmail: "user@test.example",
+      });
     });
 
     it("injects localFields into the returned cvContent", async () => {
@@ -250,6 +260,18 @@ describe("CvGenerationService", () => {
       await expect(
         service.generateCv("user@test.example", "app-001", makeRequest()),
       ).rejects.toThrow(UnprocessableEntityException);
+    });
+
+    it("consumes credits before generating a letter", async () => {
+      openRouter.chat.mockResolvedValue(JSON.stringify(VALID_LETTER_JSON));
+
+      await service.generateLetter("user@test.example", "app-001", makeRequest());
+
+      expect(creditsService.consumeCredits).toHaveBeenCalledWith({
+        action: "letter_generation",
+        applicationId: "app-001",
+        userEmail: "user@test.example",
+      });
     });
 
     it("parses fenced json block from AI response", async () => {

@@ -222,3 +222,10 @@
 - **Why**: Governance required one final explicit sign-off once the engineering blockers were actually fixed.
 - **Learned**: The sprint-close path is now robust again because the root coverage command and the package-level tests agree on how coverage should be invoked.
 - **Open**: None for Sprint 008.
+
+## 2026-04-21 — US-029 finalization
+
+- **Did**: Closed US-029 with a passing verdict after confirming the dedicated credit ledger, shared debit constants, AI-hook integration, and admin/user history endpoints, then updated sprint and workflow bookkeeping.
+- **Why**: Architecture governance needed an explicit sign-off before Stripe and dashboard work reuse this ledger as the single balance source.
+- **Learned**: The right architecture is an append-only credits module shared by the existing AI services, not duplicate balance fields across auth, applications, and payments.
+- **Open**: US-030 should reuse `recordStripePurchase()` and avoid any second purchase-history persistence path.

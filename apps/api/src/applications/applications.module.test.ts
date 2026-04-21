@@ -2,6 +2,7 @@ import "reflect-metadata";
 import { describe, expect, it } from "vitest";
 import { OpenRouterModule } from "../ai/openrouter.module";
 import { AuthModule } from "../auth/auth.module";
+import { CreditsModule } from "../credits/credits.module";
 import { ApplicationsController } from "./applications.controller";
 import { ApplicationsModule } from "./applications.module";
 import { ApplicationsService } from "./applications.service";
@@ -12,7 +13,7 @@ describe("ApplicationsModule", () => {
       | unknown[]
       | undefined;
 
-    expect(imports).toEqual([AuthModule, OpenRouterModule]);
+    expect(imports).toEqual([AuthModule, CreditsModule, OpenRouterModule]);
   });
 
   it("registers the applications controller and service provider", () => {

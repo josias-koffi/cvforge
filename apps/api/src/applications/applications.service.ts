@@ -7,6 +7,7 @@ import {
   UnprocessableEntityException,
 } from "@nestjs/common";
 import {
+  AI_CREDIT_ACTION_OFFER_ENRICHMENT,
   APPLICATION_STATUS_INTERVIEW_SCHEDULED,
   APPLICATION_SOURCE_TEXT,
   APPLICATION_SOURCE_URL,
@@ -22,6 +23,7 @@ import {
 } from "@cvforge/types";
 import { randomUUID } from "node:crypto";
 import type { OpenRouterService } from "../ai/openrouter.service";
+import type { CreditsService } from "../credits/credits.service";
 import type {
   ApplicationsStore,
   OfferExtractionResult,
@@ -182,6 +184,7 @@ export class ApplicationsService {
   constructor(
     private readonly store: ApplicationsStore,
     private readonly openRouterService: OpenRouterService,
+    private readonly creditsService: CreditsService,
   ) {}
 
   listApplications(userEmail: string): DraftApplication[] {
@@ -265,7 +268,7 @@ export class ApplicationsService {
     userEmail: string,
     rawUrl: string,
   ): Promise<DraftApplication> {
-    const extraction = await this.extractOffer(rawUrl);
+    const extraction = await this.extractOffer(userEmail, rawUrl);
     const timestamp = new Date().toISOString();
     const storedApplication: StoredApplication = {
       createdAt: timestamp,
@@ -298,7 +301,7 @@ export class ApplicationsService {
     userEmail: string,
     rawOfferText: string,
   ): Promise<DraftApplication> {
-    const extraction = await this.extractOfferFromText(rawOfferText);
+    const extraction = await this.extractOfferFromText(userEmail, rawOfferText);
     const timestamp = new Date().toISOString();
     const storedApplication: StoredApplication = {
       createdAt: timestamp,
@@ -327,7 +330,10 @@ export class ApplicationsService {
     return stripRawOfferText(this.store.createDraft(storedApplication));
   }
 
-  private async extractOffer(rawUrl: string): Promise<OfferExtractionResult> {
+  private async extractOffer(
+    userEmail: string,
+    rawUrl: string,
+  ): Promise<OfferExtractionResult> {
     const offerUrl = normalizeOfferUrl(rawUrl);
     const html = await this.fetchOfferHtml(offerUrl);
     const offerText = extractVisibleTextFromHtml(html);
@@ -339,6 +345,10 @@ export class ApplicationsService {
     }
 
     const metadata = extractOfferMetadata(html);
+    this.creditsService.consumeCredits({
+      action: AI_CREDIT_ACTION_OFFER_ENRICHMENT,
+      userEmail,
+    });
     const extracted = await this.extractStructuredFields(
       offerText,
       metadata,
@@ -357,9 +367,14 @@ export class ApplicationsService {
   }
 
   private async extractOfferFromText(
+    userEmail: string,
     rawOfferText: string,
   ): Promise<OfferExtractionResult> {
     const offerText = normalizeOfferText(rawOfferText);
+    this.creditsService.consumeCredits({
+      action: AI_CREDIT_ACTION_OFFER_ENRICHMENT,
+      userEmail,
+    });
     const extracted = await this.extractStructuredFields(
       offerText,
       {

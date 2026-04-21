@@ -201,3 +201,10 @@
 - **Why**: The sprint could only be closed once the previously failing engineering gates were rechecked, not assumed.
 - **Learned**: The sprint scope was already complete; the closure delay came entirely from repo-level quality gate drift.
 - **Open**: None for Sprint 008.
+
+## 2026-04-21 — US-029 analyze
+
+- **Did**: Confirmed that US-029 is limited to the backend credit ledger, AI debit rules for existing OpenRouter-backed actions, and history/read APIs needed by the upcoming Stripe and credits-page stories.
+- **Why**: The workflow needed a precise product boundary so the story would not spill into Stripe checkout or the "Mes credits" UI planned in US-030 and US-031.
+- **Learned**: Vision `§11.4` and `§11.6` are specific enough to derive the MVP debit rules now: offer enrichment `1`, CV generation `3`, and letter generation `3`.
+- **Open**: US-030 should connect confirmed Stripe purchases to the same ledger instead of creating a second balance source.

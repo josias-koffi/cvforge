@@ -180,3 +180,10 @@
 - **Why**: The sprint needed a final QA decision based on current evidence, not on the earlier failed review.
 - **Learned**: The repaired coverage workflow and the new focused tests were enough to move the sprint from blocked to complete without reopening any acceptance criteria.
 - **Open**: None for Sprint 008.
+
+## 2026-04-21 — US-029 review
+
+- **Did**: Verified the new credit ledger, debit rules, and user/admin history endpoints against the sprint criteria, then confirmed `@cvforge/api` targeted tests, lint, and build all pass.
+- **Why**: The story could only pass once each acceptance criterion had explicit code and validation evidence, especially around the debit amounts and the traceability fields.
+- **Learned**: The ledger is reviewable because every balance change records both the delta and the resulting `balanceAfter`, which makes later user/admin history screens straightforward to audit.
+- **Open**: US-030 still needs webhook-level review once Stripe purchase events start writing into the ledger.

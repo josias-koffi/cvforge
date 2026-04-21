@@ -12,6 +12,7 @@ import type {
   ApplicationsStore,
   StoredApplication,
 } from "./applications.types";
+import type { CreditsService } from "../credits/credits.service";
 
 function createStore(): ApplicationsStore {
   const applications = new Map<string, StoredApplication>();
@@ -49,10 +50,14 @@ describe("ApplicationsService", () => {
   const openRouterService = {
     chat: vi.fn(),
   };
+  const creditsService = {
+    consumeCredits: vi.fn(),
+  } as unknown as CreditsService;
 
   beforeEach(() => {
     vi.restoreAllMocks();
     openRouterService.chat.mockReset();
+    vi.mocked(creditsService.consumeCredits).mockReset();
   });
 
   it("imports a draft application from an offer url", async () => {
@@ -91,6 +96,7 @@ describe("ApplicationsService", () => {
     const service = new ApplicationsService(
       createStore(),
       openRouterService as never,
+      creditsService,
     );
 
     const application = await service.importFromUrl(
@@ -109,6 +115,10 @@ describe("ApplicationsService", () => {
       title: "Senior Platform Engineer",
     });
     expect(openRouterService.chat).toHaveBeenCalledTimes(1);
+    expect(creditsService.consumeCredits).toHaveBeenCalledWith({
+      action: "offer_enrichment",
+      userEmail: "user@example.com",
+    });
   });
 
   it("imports a draft application from pasted offer text", async () => {
@@ -128,6 +138,7 @@ describe("ApplicationsService", () => {
     const service = new ApplicationsService(
       createStore(),
       openRouterService as never,
+      creditsService,
     );
 
     const application = await service.importFromText(
@@ -152,6 +163,10 @@ describe("ApplicationsService", () => {
       },
     ]);
     expect(openRouterService.chat).toHaveBeenCalledTimes(1);
+    expect(creditsService.consumeCredits).toHaveBeenCalledWith({
+      action: "offer_enrichment",
+      userEmail: "user@example.com",
+    });
   });
 
   it("lists applications without exposing raw offer text", async () => {
@@ -171,6 +186,7 @@ describe("ApplicationsService", () => {
     const service = new ApplicationsService(
       createStore(),
       openRouterService as never,
+      creditsService,
     );
 
     await service.importFromUrl("user@example.com", "https://example.com/jobs/123");
@@ -186,6 +202,7 @@ describe("ApplicationsService", () => {
     const service = new ApplicationsService(
       createStore(),
       openRouterService as never,
+      creditsService,
     );
 
     await expect(
@@ -198,6 +215,7 @@ describe("ApplicationsService", () => {
     const service = new ApplicationsService(
       createStore(),
       openRouterService as never,
+      creditsService,
     );
 
     await expect(
@@ -212,6 +230,7 @@ describe("ApplicationsService", () => {
     const service = new ApplicationsService(
       createStore(),
       openRouterService as never,
+      creditsService,
     );
 
     await expect(
@@ -223,6 +242,7 @@ describe("ApplicationsService", () => {
     const service = new ApplicationsService(
       createStore(),
       openRouterService as never,
+      creditsService,
     );
 
     await expect(
@@ -247,6 +267,7 @@ describe("ApplicationsService", () => {
     const service = new ApplicationsService(
       createStore(),
       openRouterService as never,
+      creditsService,
     );
 
     const application = await service.importFromUrl(
@@ -281,6 +302,7 @@ describe("ApplicationsService", () => {
     const service = new ApplicationsService(
       createStore(),
       openRouterService as never,
+      creditsService,
     );
 
     const application = await service.importFromUrl(
@@ -297,6 +319,7 @@ describe("ApplicationsService", () => {
     const service = new ApplicationsService(
       createStore(),
       openRouterService as never,
+      creditsService,
     );
 
     expect(() =>
@@ -323,6 +346,7 @@ describe("ApplicationsService", () => {
     const service = new ApplicationsService(
       createStore(),
       openRouterService as never,
+      creditsService,
     );
 
     const first = await service.importFromUrl(
