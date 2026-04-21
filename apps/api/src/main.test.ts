@@ -33,7 +33,9 @@ describe("bootstrap", () => {
 
     const result = await bootstrap();
 
-    expect(createMock).toHaveBeenCalledTimes(1);
+    expect(createMock).toHaveBeenCalledWith(expect.anything(), {
+      rawBody: true,
+    });
     expect(enableCors).toHaveBeenCalledWith({
       credentials: true,
       origin: "http://localhost:3000",
@@ -58,6 +60,9 @@ describe("bootstrap", () => {
 
     await bootstrap();
 
+    expect(createMock).toHaveBeenCalledWith(expect.anything(), {
+      rawBody: true,
+    });
     expect(enableCors).toHaveBeenCalledWith({
       credentials: true,
       origin: "https://app.example.test",
@@ -77,7 +82,9 @@ describe("bootstrap", () => {
 
     await import("./main");
 
-    expect(createMock).toHaveBeenCalledTimes(1);
+    expect(createMock).toHaveBeenCalledWith(expect.anything(), {
+      rawBody: true,
+    });
     expect(enableCors).toHaveBeenCalledWith({
       credentials: true,
       origin: "http://localhost:3000",

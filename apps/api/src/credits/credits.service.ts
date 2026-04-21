@@ -126,6 +126,18 @@ export class CreditsService {
       );
     }
 
+    const existingEntry = this.getSummaryForUser(input.userEmail).history.find(
+      (entry) =>
+        entry.type === CREDIT_EVENT_STRIPE_PURCHASE &&
+        (entry.metadata.stripeCheckoutSessionId === input.stripeCheckoutSessionId ||
+          (input.stripePaymentIntentId != null &&
+            entry.metadata.stripePaymentIntentId === input.stripePaymentIntentId)),
+    );
+
+    if (existingEntry) {
+      return existingEntry;
+    }
+
     const current = this.getSummaryForUser(input.userEmail);
 
     return this.store.addEntry({
@@ -136,7 +148,8 @@ export class CreditsService {
       id: randomUUID(),
       metadata: {
         packId: input.packId,
-        stripePaymentIntentId: input.stripePaymentIntentId,
+        stripeCheckoutSessionId: input.stripeCheckoutSessionId,
+        stripePaymentIntentId: input.stripePaymentIntentId ?? undefined,
       },
       note: `Achat Stripe ${input.packId} (${input.amountCents} cents)`,
       type: CREDIT_EVENT_STRIPE_PURCHASE,

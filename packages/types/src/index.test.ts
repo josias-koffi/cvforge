@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   APPLICATION_STATUS_INTERVIEW_SCHEDULED,
+  CREDIT_PACK_PRO,
+  CREDIT_PACK_STARTER,
   APPLICATION_STATUS_DRAFT,
   APPLICATION_STATUS_OFFER_RECEIVED,
   APPLICATION_STATUS_REJECTED,
@@ -16,6 +18,10 @@ import {
   type CvContentUpdateRequest,
   type LetterContentUpdateRequest,
   type ApplicationsKpiSummary,
+  creditPackIds,
+  creditPacks,
+  type CreateCheckoutSessionRequest,
+  type CreateCheckoutSessionResponse,
   type DraftApplication,
   HEALTH_STATUS_OK,
   type LetterDocumentContent,
@@ -116,6 +122,22 @@ describe("types package", () => {
 
     expect(summary.responseRate).toBe(67);
     expect(summary.statusCounts.sent).toBe(1);
+  });
+
+  it("should expose the supported credit packs", () => {
+    const request: CreateCheckoutSessionRequest = {
+      packId: CREDIT_PACK_STARTER,
+    };
+    const response: CreateCheckoutSessionResponse = {
+      checkoutUrl: "https://checkout.stripe.com/c/session_123",
+      sessionId: "cs_test_123",
+    };
+
+    expect(creditPackIds).toEqual([CREDIT_PACK_STARTER, CREDIT_PACK_PRO]);
+    expect(creditPacks.starter.priceCents).toBe(999);
+    expect(creditPacks.pro.credits).toBe(1400);
+    expect(request.packId).toBe("starter");
+    expect(response.sessionId).toContain("cs_test_");
   });
 
   it("should shape the normalized CV and letter template content contracts", () => {

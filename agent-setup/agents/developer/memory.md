@@ -257,3 +257,10 @@
 - **Why**: US-029 required a traceable balance model and enforced AI consumption rules before Stripe and the credits dashboard can be built safely.
 - **Learned**: A dedicated ledger service is cleaner than burying credit state inside auth or applications persistence, and it gives US-030 a single purchase-ingestion seam via `recordStripePurchase()`.
 - **Open**: Root workspace verification was not rerun because this story is backend-only; the known app-side build issues remain outside this task.
+
+## 2026-04-21 — US-030
+
+- **Did**: Added a new API billing slice for Stripe Checkout session creation and webhook verification, made Stripe purchase recording idempotent in the credits ledger, added shared pack contracts, added a Next checkout proxy route, and exposed the two pack purchase actions from the dashboard; then verified lint, targeted tests, package builds, and the root coverage command.
+- **Why**: US-030 required an end-to-end payment path that credits the existing ledger only after Stripe-confirmed payment without introducing a second balance source.
+- **Learned**: The cleanest implementation in this workspace was to use Stripe's documented REST API directly and verify webhook signatures manually against the raw body, which avoided adding a new runtime dependency while keeping the integration auditable.
+- **Open**: US-031 should surface the new purchase metadata and current balance on the dedicated credits page instead of re-deriving package details locally.

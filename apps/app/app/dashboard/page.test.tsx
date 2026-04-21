@@ -57,8 +57,45 @@ describe("DashboardPage", () => {
     expect(markup).toContain("Total candidatures");
     expect(markup).toContain("Taux de reponse");
     expect(markup).toContain("Pipeline candidature");
+    expect(markup).toContain("Acheter des credits");
+    expect(markup).toContain("Pack Starter");
+    expect(markup).toContain("Pack Pro");
     expect(markup).toContain("Ouvrir le pipeline de candidatures");
     expect(markup).toContain("Ouvrir le profil de base");
     expect(markup).toContain("Reprendre l&#x27;onboarding");
+  });
+
+  it("renders a billing status banner when checkout returns to the dashboard", async () => {
+    requireSessionMock.mockResolvedValue({
+      email: "user@example.com",
+      expiresAt: "2026-04-27T07:45:24.000Z",
+      role: "user",
+    });
+    fetchMock.mockResolvedValue({
+      json: async () => ({
+        summary: {
+          respondedCount: 0,
+          responseRate: 0,
+          statusCounts: {
+            draft: 0,
+            interview_scheduled: 0,
+            offer_received: 0,
+            rejected: 0,
+            sent: 0,
+          },
+          totalCount: 0,
+        },
+      }),
+      ok: true,
+    });
+
+    const Page = await DashboardPage({
+      searchParams: Promise.resolve({
+        billing: "cancelled",
+      }),
+    });
+    const markup = renderToStaticMarkup(Page);
+
+    expect(markup).toContain("Le paiement a ete annule avant confirmation Stripe.");
   });
 });

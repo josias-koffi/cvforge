@@ -187,3 +187,10 @@
 - **Why**: The story could only pass once each acceptance criterion had explicit code and validation evidence, especially around the debit amounts and the traceability fields.
 - **Learned**: The ledger is reviewable because every balance change records both the delta and the resulting `balanceAfter`, which makes later user/admin history screens straightforward to audit.
 - **Open**: US-030 still needs webhook-level review once Stripe purchase events start writing into the ledger.
+
+## 2026-04-21 — US-030 review
+
+- **Did**: Verified checkout creation for both packs, webhook-based ledger crediting, duplicate-delivery protection, dashboard purchase entry, and payment-error handling; then rechecked API/app lint, API/app builds, and the root coverage run.
+- **Why**: The story could only pass once the payment path had direct evidence for successful purchase flow, safe webhook ingestion, and non-crediting failure paths.
+- **Learned**: The billing slice is reviewable because it keeps a single source of truth for balance changes and makes webhook retries harmless through checkout-session/payment-intent deduplication.
+- **Open**: Purchase-confirmation email remains a future story; the current task stops correctly at checkout + ledger integration.

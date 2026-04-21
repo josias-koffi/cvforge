@@ -6,6 +6,7 @@ import { AuthModule } from "./auth/auth.module";
 import { SmtpModule } from "./smtp/smtp.module";
 import { OpenRouterModule } from "./ai/openrouter.module";
 import { ApplicationsModule } from "./applications/applications.module";
+import { BillingModule } from "./billing/billing.module";
 import { CvGenerationModule } from "./cv-generation/cv-generation.module";
 import { CreditsModule } from "./credits/credits.module";
 import { TemplatesModule } from "./templates/templates.module";
@@ -21,6 +22,7 @@ describe("AppModule", () => {
       SmtpModule,
       OpenRouterModule,
       ApplicationsModule,
+      BillingModule,
       CvGenerationModule,
       CreditsModule,
       TemplatesModule,

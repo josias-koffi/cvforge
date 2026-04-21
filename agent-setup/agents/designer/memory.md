@@ -187,3 +187,10 @@
 - **Why**: US-029 introduces backend ledger behavior and read/write endpoints, but the first actual credits page is explicitly deferred to US-031.
 - **Learned**: Defining user and admin credit endpoints now reduces UX ambiguity later because the upcoming "Mes credits" page and admin user sheet can both consume the same summary shape.
 - **Open**: US-031 should decide the exact low-balance alert presentation on top of the new `lowBalanceThreshold` and `isLowBalance` fields.
+
+## 2026-04-21 — US-030 design
+
+- **Did**: Specified a minimal dashboard purchase section plus a thin Next checkout route, while keeping the billing logic API-first and the future full credits page out of scope.
+- **Why**: The story needed one usable purchase entry point now without pre-empting the broader "Mes credits" UI planned in US-031.
+- **Learned**: Native POST forms are enough for this payment entry point because Stripe-hosted checkout already owns the complex payment interaction; the product only needs clear pre-checkout package choice and post-return status messaging.
+- **Open**: US-031 should decide where the persistent "Acheter des credits" CTA lives once the credits page itself exists.

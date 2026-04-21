@@ -208,3 +208,10 @@
 - **Why**: The workflow needed a precise product boundary so the story would not spill into Stripe checkout or the "Mes credits" UI planned in US-030 and US-031.
 - **Learned**: Vision `§11.4` and `§11.6` are specific enough to derive the MVP debit rules now: offer enrichment `1`, CV generation `3`, and letter generation `3`.
 - **Open**: US-030 should connect confirmed Stripe purchases to the same ledger instead of creating a second balance source.
+
+## 2026-04-21 — US-030 analyze
+
+- **Did**: Confirmed that US-030 is limited to Stripe-hosted checkout for the two fixed packs, webhook-based crediting into the existing ledger, and basic purchase entry/error handling from the authenticated app surface.
+- **Why**: The workflow needed a precise product boundary so the story would not spill into the full credits-history page deferred to US-031.
+- **Learned**: Vision `§11.5` and `§11.6` are specific enough to derive the exact MVP SKU set now: `Starter` (`€9.99`, `550` credits) and `Pro` (`€19.99`, `1400` credits).
+- **Open**: US-031 should reuse the same pack definitions and ledger purchase metadata for the user-facing credits history.

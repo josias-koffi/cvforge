@@ -19,7 +19,9 @@ function loadEnvironmentFiles() {
 }
 
 export async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    rawBody: true,
+  });
   app.enableCors({
     credentials: true,
     origin: process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",

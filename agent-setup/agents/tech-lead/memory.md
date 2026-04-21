@@ -229,3 +229,10 @@
 - **Why**: Architecture governance needed an explicit sign-off before Stripe and dashboard work reuse this ledger as the single balance source.
 - **Learned**: The right architecture is an append-only credits module shared by the existing AI services, not duplicate balance fields across auth, applications, and payments.
 - **Open**: US-030 should reuse `recordStripePurchase()` and avoid any second purchase-history persistence path.
+
+## 2026-04-21 — US-030 finalization
+
+- **Did**: Closed US-030 with a passing verdict after confirming Stripe-hosted checkout for both packs, verified webhook crediting into the shared ledger, and a working dashboard purchase entry point with explicit return states; then updated sprint and workflow bookkeeping.
+- **Why**: Architecture governance required an explicit sign-off that Stripe payments extend the existing ledger safely instead of introducing a second credit source or a non-idempotent webhook path.
+- **Learned**: The correct billing architecture for this MVP is still ledger-first: Stripe owns payment confirmation, but the local credits module owns the auditable balance and duplicate protection.
+- **Open**: US-031 should build the user-visible credits history on top of the ledger purchase entries created here, not on a separate payments store.

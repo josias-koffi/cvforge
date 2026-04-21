@@ -1,7 +1,14 @@
 import React from "react";
-import { AppShell, Card, CardContent, CardHeader, CardTitle } from "@cvforge/ui";
+import {
+  AppShell,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@cvforge/ui";
 import { cookies } from "next/headers";
-import type { ApplicationsKpiSummary } from "@cvforge/types";
+import { creditPackIds, creditPacks, type ApplicationsKpiSummary } from "@cvforge/types";
 import Link from "next/link";
 import { getServerApiUrl } from "../auth-config";
 import { requireSession } from "../auth/session";
@@ -35,9 +42,64 @@ async function fetchApplicationsSummary() {
   return payload.summary;
 }
 
-export default async function DashboardPage() {
+function resolveBillingMessage(
+  billingState: string,
+  reason: string,
+  packId: string,
+) {
+  if (billingState === "success") {
+    const pack = creditPacks[packId as keyof typeof creditPacks];
+    const packLabel = pack?.label ?? "selection";
+
+    return `Paiement ${packLabel} termine. Le solde sera synchronise des confirmation Stripe.`;
+  }
+
+  if (billingState === "cancelled") {
+    return "Le paiement a ete annule avant confirmation Stripe.";
+  }
+
+  if (billingState === "error") {
+    if (reason === "invalid_pack") {
+      return "Le pack selectionne est invalide.";
+    }
+
+    if (reason === "request_failed") {
+      return "La creation du checkout Stripe a echoue. Reessayez dans un instant.";
+    }
+
+    return reason;
+  }
+
+  return null;
+}
+
+type DashboardPageProps = {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+};
+
+async function resolveSearchParams(
+  searchParams: DashboardPageProps["searchParams"],
+) {
+  if (!searchParams) {
+    return {};
+  }
+
+  return await searchParams;
+}
+
+export default async function DashboardPage(props: DashboardPageProps) {
+  const { searchParams } = props ?? {};
   const session = await requireSession();
   const summary = await fetchApplicationsSummary();
+  const resolvedSearchParams = await resolveSearchParams(searchParams);
+  const billingState = String(resolvedSearchParams.billing ?? "");
+  const billingReason = String(resolvedSearchParams.reason ?? "");
+  const billingPackId = String(resolvedSearchParams.pack ?? "");
+  const billingMessage = resolveBillingMessage(
+    billingState,
+    billingReason,
+    billingPackId,
+  );
 
   return (
     <AppShell
@@ -46,6 +108,16 @@ export default async function DashboardPage() {
       navigation={getAppNavigation("/dashboard")}
     >
       <div style={{ display: "grid", gap: "1.5rem" }}>
+        {billingMessage ? (
+          <Card>
+            <CardContent style={{ padding: "1rem 1.25rem" }}>
+              <p style={{ color: "#2C2C2A", lineHeight: 1.6, margin: 0 }}>
+                {billingMessage}
+              </p>
+            </CardContent>
+          </Card>
+        ) : null}
+
         <div
           style={{
             display: "grid",
@@ -123,6 +195,58 @@ export default async function DashboardPage() {
                 </span>
               </div>
             ))}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Acheter des credits</CardTitle>
+            <p style={{ color: "#6B6860", lineHeight: 1.6, margin: 0 }}>
+              Checkout Stripe heberge pour les packs one-shot du MVP.
+            </p>
+          </CardHeader>
+          <CardContent
+            style={{
+              display: "grid",
+              gap: "1rem",
+              gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+            }}
+          >
+            {creditPackIds.map((packId) => {
+              const pack = creditPacks[packId];
+
+              return (
+                <form
+                  key={pack.id}
+                  action="/credits/checkout"
+                  method="POST"
+                  style={{
+                    backgroundColor: "#FFFFFF",
+                    border: "1px solid #D9D4CA",
+                    borderRadius: "1rem",
+                    display: "grid",
+                    gap: "0.75rem",
+                    padding: "1rem",
+                  }}
+                >
+                  <input name="packId" type="hidden" value={pack.id} />
+                  <div style={{ display: "grid", gap: "0.35rem" }}>
+                    <strong style={{ color: "#1A1A18", fontSize: "1.05rem" }}>
+                      Pack {pack.label}
+                    </strong>
+                    <span style={{ color: "#6B6860" }}>
+                      {(pack.priceCents / 100).toLocaleString("fr-FR", {
+                        currency: "EUR",
+                        style: "currency",
+                      })}{" "}
+                      TTC
+                    </span>
+                    <span style={{ color: "#6B6860" }}>{pack.credits} credits</span>
+                  </div>
+                  <Button type="submit">Acheter le pack {pack.label}</Button>
+                </form>
+              );
+            })}
           </CardContent>
         </Card>
 

@@ -99,4 +99,33 @@ describe("CreditsService", () => {
       }),
     ).toThrow(UnprocessableEntityException);
   });
+
+  it("deduplicates repeated Stripe purchase events", () => {
+    const service = new CreditsService(createStore(), {
+      lowBalanceThreshold: 20,
+      stateFilePath: "/tmp/unused.json",
+    });
+
+    const first = service.recordStripePurchase({
+      amountCents: 999,
+      credits: 550,
+      packId: "starter",
+      stripeCheckoutSessionId: "cs_test_123",
+      stripePaymentIntentId: "pi_123",
+      userEmail: "user@example.com",
+    });
+
+    const second = service.recordStripePurchase({
+      amountCents: 999,
+      credits: 550,
+      packId: "starter",
+      stripeCheckoutSessionId: "cs_test_123",
+      stripePaymentIntentId: "pi_123",
+      userEmail: "user@example.com",
+    });
+
+    expect(second.id).toBe(first.id);
+    expect(service.getSummaryForUser("user@example.com").history).toHaveLength(1);
+    expect(service.getSummaryForUser("user@example.com").balance).toBe(550);
+  });
 });

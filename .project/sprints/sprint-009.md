@@ -21,13 +21,13 @@ Fermer la boucle de monétisation et d'engagement du MVP avec crédits, Stripe e
     - [x] Chaque action IA consomme les crédits attendus
     - [x] L'historique est exploitable pour l'utilisateur et l'admin
   - Source: vision `§11`, `§16`
-- [ ] **[US-030]** Intégrer Stripe pour les packs `Starter` et `Pro`
+- [x] **[US-030]** Intégrer Stripe pour les packs `Starter` et `Pro`
   - Agent: `developer`
   - Workflow: `analyze-design-dev-review`
   - Acceptance criteria:
-    - [ ] Les deux packs sont achetables
-    - [ ] Le webhook met à jour le solde
-    - [ ] Les cas d'erreur de paiement sont gérés
+    - [x] Les deux packs sont achetables
+    - [x] Le webhook met à jour le solde
+    - [x] Les cas d'erreur de paiement sont gérés
   - Source: vision `§11`, `§16`
 - [ ] **[US-031]** Créer la page "Mes crédits" avec historique et alerte solde bas
   - Agent: `designer`
