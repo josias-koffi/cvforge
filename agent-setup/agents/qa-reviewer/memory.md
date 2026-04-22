@@ -229,3 +229,10 @@
 - **Why**: The task could only pass once each acceptance criterion had direct UI or route evidence and the new admin contract compiled cleanly.
 - **Learned**: The story is reviewable because analytics are grounded in persisted document-generation data rather than page-local placeholders.
 - **Open**: Historic pre-tracking records remain outside current usage counts; advisory only.
+
+## 2026-04-22 — US-035 review
+
+- **Did**: Verified the notification bell, notification-center feed, read/unread state, and J+7 reminder generation; re-ran API/app tests, API/app lint/build, and the root coverage command.
+- **Why**: The task could only pass once all three acceptance criteria had direct implementation evidence and the touched packages cleared the blocking gates.
+- **Learned**: The feature is reviewable because the reminder rule is derived from persisted candidature history, which makes the trigger deterministic and easy to regression-test.
+- **Open**: Email-channel notification coverage remains outside this story.

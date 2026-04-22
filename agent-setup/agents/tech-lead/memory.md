@@ -271,3 +271,10 @@
 - **Why**: Architecture governance required an explicit sign-off that admin reporting extends the current templates and applications boundaries without introducing a new reporting subsystem.
 - **Learned**: The right architecture is to derive admin template analytics from persisted application/template usage metadata at the module edge, not from a separate analytics store.
 - **Open**: A future migration may backfill usage counts for documents generated before `cvTemplateId` / `letterTemplateId` tracking existed.
+
+## 2026-04-22 — US-035 finalization
+
+- **Did**: Closed US-035 with a passing verdict after confirming the shared-shell bell entry point, the in-app notification center, deterministic J+7 reminder generation, and successful API/app tests, lint, builds, plus root coverage.
+- **Why**: Architecture governance required an explicit sign-off that notifications extend the existing candidature history and shell patterns without adding premature queue infrastructure or a second UI shell.
+- **Learned**: The correct MVP architecture is persistence-first and derived: notification reminders can be generated idempotently from application history now, and BullMQ/email can be added later on top of the same notification contract.
+- **Open**: US-036 remains the last Sprint 010 launch blocker.

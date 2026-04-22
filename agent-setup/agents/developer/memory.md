@@ -218,6 +218,13 @@
 
 ## 2026-04-20 — US-056
 
+## 2026-04-22 — publish notifications sprint work
+
+- **Did**: Verified the notifications center branch state, ran `pre-commit run --all-files`, `pnpm lint`, `pnpm test`, and `pnpm build`, then grouped the pending changes for publish on `develop`.
+- **Why**: The current sprint work combined the in-app notifications feature with its workflow/state artifacts and needed a clean, reviewable push sequence.
+- **Learned**: The repo now builds cleanly end to end, including the Next app package that had previously been blocked by `.next` ownership issues in older entries.
+- **Open**: Keep future sprint workflow artifacts in their own small commit so the product change remains easier to review.
+
 ## 2026-04-22 — publish US-032 release
 
 - **Did**: Validated the pending US-032 dashboard and sprint-release changes with `pre-commit run --all-files`, `pnpm lint`, `pnpm test`, `pnpm build`, and `pnpm audit --audit-level=high`, then split the work into feature and project-governance commits for push on `develop`.
@@ -313,3 +320,10 @@
 - **Why**: US-034 required real admin visibility into template usage plus exportability, not just the existing CRUD editor.
 - **Learned**: The smallest robust solution was to track template usage at document-generation time and aggregate it in the templates module, which avoided inventing a second analytics store.
 - **Open**: Historic documents created before this tracking exists will not automatically backfill usage counts.
+
+## 2026-04-22 — US-035
+
+- **Did**: Added a typed notifications slice across `types`, `api`, and `app`, implemented persisted J+7 follow-up reminders from candidature status history, added the notification center routes/page, extended the shared shell with a header accessory slot, and wired the bell across authenticated pages.
+- **Why**: US-035 required a real in-app notification flow and reminder trigger, not a dashboard-only placeholder.
+- **Learned**: The least risky implementation was to derive reminders lazily and idempotently from the existing application history instead of introducing background workers before the rest of the repo uses them.
+- **Open**: Email delivery and the other notification types from vision `§14.1` remain future work.

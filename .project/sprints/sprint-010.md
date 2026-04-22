@@ -29,13 +29,13 @@ Finaliser le MVP en livrant le panel admin complet, les opérations avancées de
     - [x] L'export CSV des données admin est disponible
     - [x] Les opérations restantes du panel admin sont complètes
   - Source: vision `§13.3`, `§16`
-- [ ] **[US-035]** Mettre en place le centre de notifications et les rappels de base
+- [x] **[US-035]** Mettre en place le centre de notifications et les rappels de base
   - Agent: `designer`
   - Workflow: `analyze-design-dev-review`
   - Acceptance criteria:
-    - [ ] La cloche avec badge est présente dans le header
-    - [ ] Les notifications in-app sont listées avec statut lu/non lu
-    - [ ] Les rappels de candidature (J+7) sont déclenchés
+    - [x] La cloche avec badge est présente dans le header
+    - [x] Les notifications in-app sont listées avec statut lu/non lu
+    - [x] Les rappels de candidature (J+7) sont déclenchés
   - Source: vision `§12.4`, `§14`, `§16`
 - [ ] **[US-036]** Traiter les exigences RGPD critiques avant lancement commercial
   - Agent: `tech-lead`

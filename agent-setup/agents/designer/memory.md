@@ -215,3 +215,10 @@
 - **Why**: The story needed observable admin value without introducing a second template dashboard or disrupting the working editor flow.
 - **Learned**: This admin surface remains clearer when analytics stay text-first and card-based, rather than adding charts or a separate reporting page.
 - **Open**: A later analytics story could add richer historical breakdowns if product scope calls for them.
+
+## 2026-04-22 — US-035 design
+
+- **Did**: Designed the notification entry as a bell pill in the shared shell header and specified `/notifications` as an unread-first feed with explicit read/unread badges and direct candidature links.
+- **Why**: The story needed a visible, reusable notification pattern that works across authenticated pages without inventing a second shell or modal system.
+- **Learned**: The current shell can absorb notification affordances cleanly when the bell lives in the hero topline and the center stays card-based and text-first.
+- **Open**: Later notification stories can add interview or low-credit items on top of the same feed without changing this entry pattern.

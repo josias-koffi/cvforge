@@ -250,3 +250,10 @@
 - **Why**: The workflow needed a precise product boundary so the story would not drift into future user-side template selection or broader admin dashboard work.
 - **Learned**: Vision `§13.3` is specific enough to require real usage analytics, not static placeholders, so the implementation should persist minimal template-usage metadata from document generation.
 - **Open**: US-035 can proceed independently once the admin templates analytics/export slice is closed.
+
+## 2026-04-22 — US-035 analyze
+
+- **Did**: Confirmed that US-035 is limited to one in-app notification center plus the MVP J+7 follow-up reminder for candidatures still marked as sent without response.
+- **Why**: The workflow needed a precise product boundary so the story would not spill into email preferences, interview reminders, or later notification types.
+- **Learned**: Vision `§12.4` and `§14` are specific enough to derive a testable reminder rule and a concrete notification-center entry point without inventing extra product scope.
+- **Open**: US-036 can proceed independently once this in-app notification slice is closed.
