@@ -243,3 +243,17 @@
 - **Why**: Architecture governance required an explicit final sign-off before the story could be marked complete in sprint `009`.
 - **Learned**: The ledger-first architecture scales cleanly into the UI layer: one API summary now supports dashboard entry, recharge actions, and transparent user history without adding a second billing read model.
 - **Open**: US-032 should reuse this credits surface as a linked dashboard destination rather than rebuilding the same billing context inside the dashboard cards.
+
+## 2026-04-22 — US-032 release freeze and audit
+
+- **Did**: Froze US-032 scope to the dashboard page, approved the remediation for 7 live KPI cards plus quick-access and recent-application sections, then audited the release candidate after test/lint/build verification.
+- **Why**: The task carried the `release` workflow, so architecture sign-off needed explicit scope control and an operational-risk statement before the story could be closed.
+- **Learned**: The cleanest dashboard completion reused the existing applications and credits contracts instead of creating a separate dashboard read model or adding new dependencies.
+- **Open**: Production release governance still needs a vulnerability audit from a registry that implements the npm audit endpoint.
+
+## 2026-04-22 — Sprint 009 release finalization
+
+- **Did**: Re-ran the dependency audit after the registry constraint was removed, confirmed only low/moderate advisories, re-ran workspace coverage, and cleared the remaining sprint governance gate.
+- **Why**: Sprint 009 could not be formally closed while the audit was unverified and the coverage checkbox remained open.
+- **Learned**: The repo now satisfies the blocking governance thresholds for this sprint: tests green, coverage above floor, and no high/critical audit findings.
+- **Open**: Low/moderate advisories can be handled as follow-up maintenance outside the sprint-close path.

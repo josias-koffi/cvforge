@@ -222,3 +222,17 @@
 - **Why**: The workflow needed a precise scope so the story stayed inside vision `§11.7` and `§14.1` without drifting into the later notification-center or expanded dashboard work.
 - **Learned**: The existing backend contract from US-029 and US-030 is already sufficient for this page; the remaining gap was discoverability and presentation in the app.
 - **Open**: US-032 should complete the dashboard-access pattern around this new credits surface.
+
+## 2026-04-22 — US-032 finalization
+
+- **Did**: Closed US-032 after verifying 7 visible base KPIs, quick-access entry points, and the recent-applications list on the authenticated dashboard; then updated sprint and workflow records.
+- **Why**: Sprint scope required the first usable dashboard entry point promised in vision `§12.1` to `§12.4` and roadmap `§16`.
+- **Learned**: The MVP dashboard scope is strongest when it stays anchored to current product data already present in applications and credits, instead of waiting for later ATS and interview analytics stories.
+- **Open**: Future dashboard iterations can add ATS averages and interview-score trends once those metrics exist as first-class product data.
+
+## 2026-04-22 — Sprint 009 closure
+
+- **Did**: Finalized Sprint 009 after the audit and coverage gates were evidenced, and marked the sprint complete in project state.
+- **Why**: Product governance requires the sprint record to reflect actual validated completion, not just feature implementation.
+- **Learned**: The sprint now closes cleanly because the dashboard story completed the engagement loop and the quality gates are explicitly satisfied.
+- **Open**: Future roadmap work can extend the dashboard with richer analytics once those datasets exist.

@@ -218,6 +218,13 @@
 
 ## 2026-04-20 — US-056
 
+## 2026-04-22 — publish US-032 release
+
+- **Did**: Validated the pending US-032 dashboard and sprint-release changes with `pre-commit run --all-files`, `pnpm lint`, `pnpm test`, `pnpm build`, and `pnpm audit --audit-level=high`, then split the work into feature and project-governance commits for push on `develop`.
+- **Why**: The branch had a completed dashboard feature plus release paperwork that needed a clean, reviewable publish sequence.
+- **Learned**: The current workspace gates pass cleanly and the dependency audit is no longer blocked by the registry path; only `1 low` and `1 moderate` advisory remain.
+- **Open**: None for the publish step itself.
+
 - **Did**: Created `PuckTemplateEditor` client component (loaded via `next/dynamic` with `ssr: false`), created `/admin/templates/publish-layout` JSON route forwarding to `PUT /templates/:id`, replaced the layout JSON textarea with the live Puck drag-and-drop canvas in the admin templates page, fixed the create form's empty layout default to valid PuckData format, added `@puckeditor/core` as direct dependency of `apps/app`, added `transpilePackages` to `next.config.ts`.
 - **Why**: US-056 required replacing the manual JSON textarea with a real Puck canvas so admins can assemble, reorder, and delete blocks via drag-and-drop.
 - **Learned**: `@puckeditor/core` must be added as a direct dependency of the consuming app (not just the UI library) for module resolution in pnpm workspaces without hoisting. CSS from `@puckeditor/core` requires `transpilePackages` in `next.config.ts`. Splitting layout save from metadata save avoids synchronising Puck internal state with the surrounding HTML form — each concern has its own save path.
@@ -278,3 +285,17 @@
 - **Why**: Keep the repo aligned with the current framework-managed project format without resetting live workflow history or touching user-owned files outside the migration scope.
 - **Learned**: The repository was already on the current managed docs and workflow format; the only drift was a missing `repos` key in state plus a trivial README block formatting mismatch.
 - **Open**: Review whether the project-specific `git-push-safe` skill should replace or coexist with the framework's `push-to-github` skill naming; `.codex` is mounted read-only as a file in this environment, so project-local Codex skill sync remains blocked until that mount behavior changes.
+
+## 2026-04-22 — US-032
+
+- **Did**: Expanded the authenticated dashboard to fetch live applications and credits, added 7 base KPI cards, quick-access cards, and a recent-applications block, then updated the dashboard test coverage and verified the repo with `pnpm test`, `pnpm lint`, and `pnpm build`.
+- **Why**: US-032 required the dashboard MVP to expose real product activity rather than partial placeholder metrics.
+- **Learned**: The existing `/applications`, `/applications/summary`, and `/credits/me` endpoints were already sufficient to complete the dashboard without backend changes.
+- **Open**: A full dependency audit still needs an audit-capable registry because the configured private registry does not expose the npm audit endpoint.
+
+## 2026-04-22 — Sprint 009 final gates
+
+- **Did**: Re-ran workspace coverage and dependency audit after the registry change, confirmed the coverage floor is met, and closed the remaining sprint release paperwork.
+- **Why**: The code was already done, but the sprint could not be finalized until the last governance checks were evidenced.
+- **Learned**: The workspace now closes cleanly with the dashboard changes included; no extra code changes were needed once the audit path was available.
+- **Open**: Non-blocking low/moderate advisories remain available for later dependency hygiene work.

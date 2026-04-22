@@ -201,3 +201,17 @@
 - **Why**: The task could only pass once the balance visibility, readable mixed history, and low-balance warning each had direct implementation and validation evidence.
 - **Learned**: The credits story is reviewable because it reuses one ledger summary contract for both state and history, which keeps the UI honest and easy to test.
 - **Open**: None for this story; the next sprint item is the broader dashboard completion in US-032.
+
+## 2026-04-22 — US-032 regression review
+
+- **Did**: Verified the dashboard against the three sprint criteria, expanded the render tests for the new KPI and recent-application sections, and re-ran `pnpm test`, `pnpm lint`, and `pnpm build` successfully.
+- **Why**: The release workflow required an explicit regression verdict before the task could be marked complete.
+- **Learned**: The story is easy to validate because all new dashboard signals are pulled from existing authenticated endpoints rather than hidden client-only state.
+- **Open**: Coverage was not re-checked in this story workflow, so Sprint 009 DoD should keep its coverage item open until explicitly measured.
+
+## 2026-04-22 — Sprint 009 close review
+
+- **Did**: Re-ran workspace coverage and dependency audit, confirmed `@cvforge/app` line coverage at `84.13%` and branch coverage at `74.93%`, and observed only `1 low` plus `1 moderate` audit finding.
+- **Why**: Formal sprint closure required the remaining blocking DoD items to be evidenced directly.
+- **Learned**: The current repo state is sufficient for closure because the blocking thresholds are line `>= 80%`, branch `>= 70%`, and no high/critical vulnerability.
+- **Open**: Follow-up maintenance can target the non-blocking advisory vulnerabilities separately.

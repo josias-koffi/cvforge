@@ -37,22 +37,22 @@ Fermer la boucle de monétisation et d'engagement du MVP avec crédits, Stripe e
     - [x] L'historique des achats/consommations est lisible
     - [x] Une alerte apparaît quand le solde est bas
   - Source: vision `§11`, `§14.1`, `§16`
-- [ ] **[US-032]** Exposer le dashboard utilisateur avec KPI de base et accès rapides
+- [x] **[US-032]** Exposer le dashboard utilisateur avec KPI de base et accès rapides
   - Agent: `analyst`
   - Workflow: `release`
   - Acceptance criteria:
-    - [ ] Les 7 KPI de base sont visibles
-    - [ ] Les accès rapides et les dernières candidatures sont affichés
-    - [ ] Les KPI sont alimentés par les données réelles du produit
+    - [x] Les 7 KPI de base sont visibles
+    - [x] Les accès rapides et les dernières candidatures sont affichés
+    - [x] Les KPI sont alimentés par les données réelles du produit
   - Source: vision `§12.1` à `§12.4`, `§16`
 
 ## 📊 Sprint DoD
 
-- [ ] All tasks ticked
-- [ ] All acceptance criteria verified
-- [ ] `run-tests` green
-- [ ] Coverage ≥ spec threshold
-- [ ] QA review ✅
+- [x] All tasks ticked
+- [x] All acceptance criteria verified
+- [x] `run-tests` green
+- [x] Coverage ≥ spec threshold
+- [x] QA review ✅
 
 ## 🚧 Risks
 
