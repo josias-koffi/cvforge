@@ -105,6 +105,7 @@ describe("AppShell", () => {
         <AppShell
           title="Paper Shell"
           description="Rendered for coverage."
+          headerAccessory={<span>Notifications</span>}
           navigation={shellNavigation}
         />
       </>,
@@ -116,6 +117,7 @@ describe("AppShell", () => {
     expect(markup).toContain("Navigation principale");
     expect(markup).toContain("Sections principales");
     expect(markup).toContain("Dashboard");
+    expect(markup).toContain("Notifications");
     expect(markup).toContain("Composants de base disponibles");
     expect(markup).toContain("WCAG AA ready");
     expect(markup).toContain("--paper-canvas");

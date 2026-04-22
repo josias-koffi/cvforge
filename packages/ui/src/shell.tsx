@@ -24,6 +24,7 @@ type AppShellProps = {
   title: string;
   description: string;
   eyebrow?: string;
+  headerAccessory?: React.ReactNode;
   navigation: ShellNavItem[];
   children?: React.ReactNode;
 };
@@ -160,6 +161,7 @@ export function AppShell({
   title,
   description,
   eyebrow = "CVforge · Papier & Crayon",
+  headerAccessory,
   navigation,
   children,
 }: AppShellProps) {
@@ -185,9 +187,16 @@ export function AppShell({
 
         <section className="cvforge-shell__main">
           <Card className="cvforge-shell__hero">
-            <Badge className="cvforge-shell__eyebrow" variant="outline">
-              {eyebrow}
-            </Badge>
+            <div className="cvforge-shell__hero-topline">
+              <Badge className="cvforge-shell__eyebrow" variant="outline">
+                {eyebrow}
+              </Badge>
+              {headerAccessory ? (
+                <div className="cvforge-shell__hero-accessory">
+                  {headerAccessory}
+                </div>
+              ) : null}
+            </div>
             <div className="cvforge-shell__hero-copy">
               <h1 className="cvforge-shell__title">{title}</h1>
               <p className="cvforge-shell__description">{description}</p>

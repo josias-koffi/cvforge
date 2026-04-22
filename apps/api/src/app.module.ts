@@ -7,6 +7,7 @@ import { ApplicationsModule } from "./applications/applications.module";
 import { BillingModule } from "./billing/billing.module";
 import { CvGenerationModule } from "./cv-generation/cv-generation.module";
 import { CreditsModule } from "./credits/credits.module";
+import { NotificationsModule } from "./notifications/notifications.module";
 import { TemplatesModule } from "./templates/templates.module";
 
 @Module({
@@ -18,6 +19,7 @@ import { TemplatesModule } from "./templates/templates.module";
     BillingModule,
     CvGenerationModule,
     CreditsModule,
+    NotificationsModule,
     TemplatesModule,
   ],
   controllers: [AppController],

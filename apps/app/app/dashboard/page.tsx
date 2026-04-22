@@ -24,6 +24,7 @@ import {
   applicationStatusOrder,
   getApplicationStatusLabel,
 } from "../candidatures/status-metadata";
+import { NotificationBell } from "../notifications/notification-bell";
 
 function getCookieHeader(cookieStore: Awaited<ReturnType<typeof cookies>>) {
   return cookieStore
@@ -181,6 +182,7 @@ export default async function DashboardPage(props: DashboardPageProps) {
     <AppShell
       title="Tableau de bord candidat"
       description="Point d'entree du parcours apres validation de l'onboarding et edition du profil."
+      headerAccessory={<NotificationBell />}
       navigation={getAppNavigation("/dashboard")}
     >
       <div style={{ display: "grid", gap: "1.5rem" }}>

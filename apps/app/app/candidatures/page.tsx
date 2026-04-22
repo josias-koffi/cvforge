@@ -20,6 +20,7 @@ import type {
 import { getServerApiUrl } from "../auth-config";
 import { requireSession } from "../auth/session";
 import { getAppNavigation } from "../content";
+import { NotificationBell } from "../notifications/notification-bell";
 import {
   applicationStatusActionLabels,
   applicationStatusTransitions,
@@ -153,6 +154,7 @@ export default async function ApplicationsPage({
     <AppShell
       title="Candidatures"
       description="Importez une offre depuis son URL pour creer un brouillon de candidature avec les champs essentiels deja extraits."
+      headerAccessory={<NotificationBell />}
       navigation={getAppNavigation("/candidatures")}
     >
       <div style={{ display: "grid", gap: "1.5rem" }}>

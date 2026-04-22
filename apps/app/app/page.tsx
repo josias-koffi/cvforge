@@ -2,6 +2,7 @@ import React from "react";
 import { AppShell } from "@cvforge/ui";
 import { getAppNavigation } from "./content";
 import { requireSession } from "./auth/session";
+import { NotificationBell } from "./notifications/notification-bell";
 import { OnboardingWizard } from "./onboarding/wizard";
 
 export default async function HomePage() {
@@ -11,6 +12,7 @@ export default async function HomePage() {
     <AppShell
       title="Onboarding candidat"
       description="Premier parcours mobile-first pour collecter les informations du profil candidat."
+      headerAccessory={<NotificationBell />}
       navigation={getAppNavigation("/")}
     >
       <OnboardingWizard sessionEmail={session.email} />

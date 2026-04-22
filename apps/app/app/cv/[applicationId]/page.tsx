@@ -6,6 +6,7 @@ import type { CVDocumentContent } from "@cvforge/types";
 import { getServerApiUrl } from "../../auth-config";
 import { requireSession } from "../../auth/session";
 import { getAppNavigation } from "../../content";
+import { NotificationBell } from "../../notifications/notification-bell";
 import { cvContentToPuckData } from "./cv-content-to-puck";
 import { CvEditor } from "./cv-editor";
 
@@ -55,6 +56,7 @@ export default async function CvPage({ params }: CvPageProps) {
   return (
     <AppShell
       description="Editez le CV généré dans une structure WYSIWYG compatible avec l'export PDF."
+      headerAccessory={<NotificationBell />}
       navigation={getAppNavigation("/candidatures")}
       title="Edition du CV"
     >

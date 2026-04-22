@@ -4,6 +4,7 @@ type AppRoute =
   | "/"
   | "/dashboard"
   | "/credits"
+  | "/notifications"
   | "/profile"
   | "/cv"
   | "/candidatures"

@@ -6,6 +6,7 @@ import type { LetterDocumentContent } from "@cvforge/types";
 import { getServerApiUrl } from "../../auth-config";
 import { requireSession } from "../../auth/session";
 import { getAppNavigation } from "../../content";
+import { NotificationBell } from "../../notifications/notification-bell";
 import { LetterEditor } from "./letter-editor";
 
 type LetterPageProps = {
@@ -54,6 +55,7 @@ export default async function LetterPage({ params }: LetterPageProps) {
   return (
     <AppShell
       description="Editez la lettre de motivation générée dans le template LM ATS par défaut."
+      headerAccessory={<NotificationBell />}
       navigation={getAppNavigation("/candidatures")}
       title="Edition de la LM"
     >

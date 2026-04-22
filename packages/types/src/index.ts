@@ -24,6 +24,8 @@ export const CREDIT_EVENT_ADMIN_GRANT = "admin_grant" as const;
 export const CREDIT_EVENT_STRIPE_PURCHASE = "stripe_purchase" as const;
 export const CREDIT_PACK_STARTER = "starter" as const;
 export const CREDIT_PACK_PRO = "pro" as const;
+export const NOTIFICATION_TYPE_APPLICATION_FOLLOW_UP =
+  "application_follow_up" as const;
 
 export const applicationStatuses = [
   APPLICATION_STATUS_DRAFT,
@@ -48,6 +50,10 @@ export const creditEventTypes = [
 export type CreditEventType = (typeof creditEventTypes)[number];
 export const creditPackIds = [CREDIT_PACK_STARTER, CREDIT_PACK_PRO] as const;
 export type CreditPackId = (typeof creditPackIds)[number];
+export const notificationTypes = [
+  NOTIFICATION_TYPE_APPLICATION_FOLLOW_UP,
+] as const;
+export type NotificationType = (typeof notificationTypes)[number];
 export type TemplateKind =
   | typeof TEMPLATE_KIND_CV
   | typeof TEMPLATE_KIND_LETTER;
@@ -281,6 +287,24 @@ export interface CreditLedgerSummary {
   lowBalanceThreshold: number;
   isLowBalance: boolean;
   history: CreditLedgerEntry[];
+}
+
+export interface InAppNotification {
+  id: string;
+  userEmail: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+  linkHref: string;
+  createdAt: string;
+  readAt: string | null;
+  metadata: {
+    applicationId?: string;
+  };
+}
+
+export interface NotificationSummary {
+  unreadCount: number;
 }
 
 export interface DraftApplication {

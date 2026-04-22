@@ -7,6 +7,7 @@ import { DeleteForm } from "./delete-form";
 import { getAppNavigation } from "../../content";
 import { getServerApiUrl } from "../../auth-config";
 import { requireAdminSession } from "../../auth/session";
+import { NotificationBell } from "../../notifications/notification-bell";
 
 const PREDEFINED_CATEGORIES = ["ATS", "Moderne", "Minimaliste", "Créatif"] as const;
 
@@ -395,6 +396,7 @@ export default async function AdminTemplatesPage({
       <AppShell
         title="Templates admin"
         description="Creation, edition et aperçu des templates CV ATS et LM ATS."
+        headerAccessory={<NotificationBell />}
         navigation={getAppNavigation("/admin/templates")}
       >
         <div

@@ -50,6 +50,20 @@ export const paperStylesCss = `
     padding: var(--paper-space-2xl);
   }
 
+  .cvforge-shell__hero-topline {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--paper-space-md);
+    flex-wrap: wrap;
+  }
+
+  .cvforge-shell__hero-accessory {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+  }
+
   .cvforge-shell__eyebrow {
     width: fit-content;
     padding: var(--paper-space-sm) var(--paper-space-lg);

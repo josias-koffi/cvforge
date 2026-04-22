@@ -17,6 +17,7 @@ import {
 } from "@cvforge/ui";
 import { getServerApiUrl } from "../auth-config";
 import { getAppNavigation } from "../content";
+import { NotificationBell } from "../notifications/notification-bell";
 import { requireSession } from "../auth/session";
 
 const FULL_APPLICATION_CREDIT_COST = 17;
@@ -102,6 +103,7 @@ export default async function CreditsPage() {
     <AppShell
       title="Mes credits"
       description="Solde disponible, transparence du ledger et acces direct au rechargement Stripe."
+      headerAccessory={<NotificationBell />}
       navigation={getAppNavigation("/credits")}
     >
       <div style={{ display: "grid", gap: "1.5rem" }}>

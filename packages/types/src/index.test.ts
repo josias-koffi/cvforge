@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   APPLICATION_STATUS_INTERVIEW_SCHEDULED,
+  NOTIFICATION_TYPE_APPLICATION_FOLLOW_UP,
   CREDIT_PACK_PRO,
   CREDIT_PACK_STARTER,
   APPLICATION_STATUS_DRAFT,
@@ -24,8 +25,10 @@ import {
   type CreateCheckoutSessionResponse,
   type DraftApplication,
   HEALTH_STATUS_OK,
+  type InAppNotification,
   type LetterDocumentContent,
   type Locale,
+  type NotificationSummary,
   type TemplateRecord,
   type TemplateUpsertInput,
   type ServiceHealth,
@@ -138,6 +141,29 @@ describe("types package", () => {
     expect(creditPacks.pro.credits).toBe(1400);
     expect(request.packId).toBe("starter");
     expect(response.sessionId).toContain("cs_test_");
+  });
+
+  it("should shape the in-app notification contracts", () => {
+    const notification: InAppNotification = {
+      createdAt: "2026-04-22T08:00:00.000Z",
+      id: "notif_123",
+      linkHref: "/candidatures?applicationId=app_123",
+      message: "Relancez cette candidature apres 7 jours sans reponse.",
+      metadata: {
+        applicationId: "app_123",
+      },
+      readAt: null,
+      title: "Relancer Acme",
+      type: NOTIFICATION_TYPE_APPLICATION_FOLLOW_UP,
+      userEmail: "user@example.com",
+    };
+    const summary: NotificationSummary = {
+      unreadCount: 1,
+    };
+
+    expect(notification.type).toBe("application_follow_up");
+    expect(notification.metadata.applicationId).toBe("app_123");
+    expect(summary.unreadCount).toBe(1);
   });
 
   it("should shape the normalized CV and letter template content contracts", () => {

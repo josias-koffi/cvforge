@@ -9,6 +9,7 @@ import { ApplicationsModule } from "./applications/applications.module";
 import { BillingModule } from "./billing/billing.module";
 import { CvGenerationModule } from "./cv-generation/cv-generation.module";
 import { CreditsModule } from "./credits/credits.module";
+import { NotificationsModule } from "./notifications/notifications.module";
 import { TemplatesModule } from "./templates/templates.module";
 
 describe("AppModule", () => {
@@ -25,6 +26,7 @@ describe("AppModule", () => {
       BillingModule,
       CvGenerationModule,
       CreditsModule,
+      NotificationsModule,
       TemplatesModule,
     ]);
   });

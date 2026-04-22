@@ -5,6 +5,7 @@ import { AppShell, Button, Card, CardContent, CardHeader, CardTitle, Input, Labe
 import { getAppNavigation } from "../content";
 import { getServerApiUrl } from "../auth-config";
 import { requireAdminSession } from "../auth/session";
+import { NotificationBell } from "../notifications/notification-bell";
 
 type AdminPageProps = {
   searchParams?: Promise<{
@@ -168,6 +169,7 @@ export default async function AdminPage(props: AdminPageProps) {
     <AppShell
       title="Espace admin"
       description="Pilotage des utilisateurs, credits et acces admin depuis un registre unique."
+      headerAccessory={<NotificationBell />}
       navigation={getAppNavigation("/admin")}
     >
       <div style={{ display: "grid", gap: "1.5rem" }}>
