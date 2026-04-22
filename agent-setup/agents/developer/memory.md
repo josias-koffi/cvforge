@@ -327,3 +327,10 @@
 - **Why**: US-035 required a real in-app notification flow and reminder trigger, not a dashboard-only placeholder.
 - **Learned**: The least risky implementation was to derive reminders lazily and idempotently from the existing application history instead of introducing background workers before the rest of the repo uses them.
 - **Open**: Email delivery and the other notification types from vision `§14.1` remain future work.
+
+## 2026-04-22 — fix Docker Next.js dist permissions
+
+- **Did**: Parameterized `distDir` in both Next apps, moved the Docker dev services to `/tmp`-backed Next output directories through `NEXT_DIST_DIR`, removed the Compose `.next` volume mounts, and verified the change with `pnpm --filter @cvforge/app build` plus `pnpm --filter @cvforge/landing build`.
+- **Why**: The `app` and `landing` containers were failing on April 22, 2026 with `EACCES` errors against `/workspace/apps/*/.next/*` because stale generated artifacts were not writable under the runtime UID/GID.
+- **Learned**: Keeping hot-reload source mounts while moving Next build output outside the bind-mounted workspace is the simplest stable fix; it avoids ownership drift without weakening the host-UID container model.
+- **Open**: The running Compose stack must be recreated so the services stop using the old `app_next` and `landing_next` volumes.
