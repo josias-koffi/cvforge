@@ -264,3 +264,10 @@
 - **Why**: US-030 required an end-to-end payment path that credits the existing ledger only after Stripe-confirmed payment without introducing a second balance source.
 - **Learned**: The cleanest implementation in this workspace was to use Stripe's documented REST API directly and verify webhook signatures manually against the raw body, which avoided adding a new runtime dependency while keeping the integration auditable.
 - **Open**: US-031 should surface the new purchase metadata and current balance on the dedicated credits page instead of re-deriving package details locally.
+
+## 2026-04-22 — upgrade project scaffolding
+
+- **Did**: Ran the preview-first `upgrade-project` migration, backed up the overwritten managed files under `.project/upgrades/20260422-075329/`, refreshed the generated README block formatting, added the missing `repos` orchestration key to `.project/state.json`, and synced project-local skills into `.claude/skills/` and `.codex/skills/`.
+- **Why**: Keep the repo aligned with the current framework-managed project format without resetting live workflow history or touching user-owned files outside the migration scope.
+- **Learned**: The repository was already on the current managed docs and workflow format; the only drift was a missing `repos` key in state plus a trivial README block formatting mismatch.
+- **Open**: Review whether the project-specific `git-push-safe` skill should replace or coexist with the framework's `push-to-github` skill naming; `.codex` is mounted read-only as a file in this environment, so project-local Codex skill sync remains blocked until that mount behavior changes.
