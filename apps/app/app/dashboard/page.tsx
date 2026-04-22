@@ -4,11 +4,18 @@ import {
   Button,
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
 } from "@cvforge/ui";
 import { cookies } from "next/headers";
-import { creditPackIds, creditPacks, type ApplicationsKpiSummary } from "@cvforge/types";
+import {
+  creditPackIds,
+  creditPacks,
+  type ApplicationsKpiSummary,
+  type CreditLedgerSummary,
+  type DraftApplication,
+} from "@cvforge/types";
 import Link from "next/link";
 import { getServerApiUrl } from "../auth-config";
 import { requireSession } from "../auth/session";
@@ -40,6 +47,69 @@ async function fetchApplicationsSummary() {
   const payload = (await response.json()) as { summary: ApplicationsKpiSummary };
 
   return payload.summary;
+}
+
+async function fetchApplications() {
+  const cookieStore = await cookies();
+  const cookieHeader = getCookieHeader(cookieStore);
+  const response = await fetch(`${getServerApiUrl()}/applications`, {
+    cache: "no-store",
+    headers: cookieHeader ? { cookie: cookieHeader } : undefined,
+  });
+
+  if (!response.ok) {
+    throw new Error("Impossible de recuperer les candidatures.");
+  }
+
+  const payload = (await response.json()) as { applications: DraftApplication[] };
+
+  return payload.applications;
+}
+
+async function fetchCreditsSummary() {
+  const cookieStore = await cookies();
+  const cookieHeader = getCookieHeader(cookieStore);
+  const response = await fetch(`${getServerApiUrl()}/credits/me`, {
+    cache: "no-store",
+    headers: cookieHeader ? { cookie: cookieHeader } : undefined,
+  });
+
+  if (!response.ok) {
+    throw new Error("Impossible de recuperer le solde de credits.");
+  }
+
+  const payload = (await response.json()) as { credits: CreditLedgerSummary };
+
+  return payload.credits;
+}
+
+function formatDate(value: string) {
+  return new Intl.DateTimeFormat("fr-FR", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(new Date(value));
+}
+
+function countApplicationsThisMonth(applications: DraftApplication[]) {
+  const now = new Date();
+
+  return applications.filter((application) => {
+    const createdAt = new Date(application.createdAt);
+
+    return (
+      createdAt.getFullYear() === now.getFullYear() &&
+      createdAt.getMonth() === now.getMonth()
+    );
+  }).length;
+}
+
+function getRecentApplications(applications: DraftApplication[]) {
+  return [...applications]
+    .sort(
+      (left, right) =>
+        new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime(),
+    )
+    .slice(0, 4);
 }
 
 function resolveBillingMessage(
@@ -90,7 +160,13 @@ async function resolveSearchParams(
 export default async function DashboardPage(props: DashboardPageProps) {
   const { searchParams } = props ?? {};
   const session = await requireSession();
-  const summary = await fetchApplicationsSummary();
+  const [summary, applications, credits] = await Promise.all([
+    fetchApplicationsSummary(),
+    fetchApplications(),
+    fetchCreditsSummary(),
+  ]);
+  const applicationsThisMonth = countApplicationsThisMonth(applications);
+  const recentApplications = getRecentApplications(applications);
   const resolvedSearchParams = await resolveSearchParams(searchParams);
   const billingState = String(resolvedSearchParams.billing ?? "");
   const billingReason = String(resolvedSearchParams.reason ?? "");
@@ -127,34 +203,44 @@ export default async function DashboardPage(props: DashboardPageProps) {
         >
           <Card>
             <CardHeader>
+              <CardDescription>Total candidatures</CardDescription>
               <CardTitle>{summary.totalCount}</CardTitle>
-              <p style={{ color: "#6B6860", lineHeight: 1.6, margin: 0 }}>
-                Total candidatures
-              </p>
             </CardHeader>
           </Card>
           <Card>
             <CardHeader>
+              <CardDescription>Candidatures ce mois</CardDescription>
+              <CardTitle>{applicationsThisMonth}</CardTitle>
+            </CardHeader>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardDescription>Taux de reponse</CardDescription>
               <CardTitle>{summary.responseRate}%</CardTitle>
-              <p style={{ color: "#6B6860", lineHeight: 1.6, margin: 0 }}>
-                Taux de reponse
-              </p>
             </CardHeader>
           </Card>
           <Card>
             <CardHeader>
+              <CardDescription>Reponses obtenues</CardDescription>
               <CardTitle>{summary.respondedCount}</CardTitle>
-              <p style={{ color: "#6B6860", lineHeight: 1.6, margin: 0 }}>
-                Reponses obtenues
-              </p>
             </CardHeader>
           </Card>
           <Card>
             <CardHeader>
+              <CardDescription>Entretiens planifies</CardDescription>
+              <CardTitle>{summary.statusCounts.interview_scheduled}</CardTitle>
+            </CardHeader>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardDescription>Offres recues</CardDescription>
               <CardTitle>{summary.statusCounts.offer_received}</CardTitle>
-              <p style={{ color: "#6B6860", lineHeight: 1.6, margin: 0 }}>
-                Offres recues
-              </p>
+            </CardHeader>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardDescription>Credits restants</CardDescription>
+              <CardTitle>{credits.balance}</CardTitle>
             </CardHeader>
           </Card>
         </div>
@@ -195,6 +281,151 @@ export default async function DashboardPage(props: DashboardPageProps) {
                 </span>
               </div>
             ))}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Acces rapides</CardTitle>
+            <p style={{ color: "#6B6860", lineHeight: 1.6, margin: 0 }}>
+              Raccourcis vers les actions les plus frequentes du candidat.
+            </p>
+          </CardHeader>
+          <CardContent
+            style={{
+              display: "grid",
+              gap: "1rem",
+              gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+            }}
+          >
+            <Link
+              href="/candidatures"
+              style={{
+                backgroundColor: "#FFFFFF",
+                border: "1px solid #D9D4CA",
+                borderRadius: "1rem",
+                color: "#2C2C2A",
+                display: "grid",
+                gap: "0.5rem",
+                padding: "1rem",
+                textDecoration: "none",
+              }}
+            >
+              <strong>Nouvelle candidature</strong>
+              <span style={{ color: "#6B6860" }}>
+                Importer une offre puis lancer le pipeline CVforge.
+              </span>
+            </Link>
+            <Link
+              href="/credits"
+              style={{
+                backgroundColor: "#FFFFFF",
+                border: "1px solid #D9D4CA",
+                borderRadius: "1rem",
+                color: "#2C2C2A",
+                display: "grid",
+                gap: "0.5rem",
+                padding: "1rem",
+                textDecoration: "none",
+              }}
+            >
+              <strong>Acheter des credits</strong>
+              <span style={{ color: "#6B6860" }}>
+                Recharger le solde ou consulter le ledger complet.
+              </span>
+            </Link>
+            <Link
+              href="/profile"
+              style={{
+                backgroundColor: "#FFFFFF",
+                border: "1px solid #D9D4CA",
+                borderRadius: "1rem",
+                color: "#2C2C2A",
+                display: "grid",
+                gap: "0.5rem",
+                padding: "1rem",
+                textDecoration: "none",
+              }}
+            >
+              <strong>Mettre a jour mon profil</strong>
+              <span style={{ color: "#6B6860" }}>
+                Garder le profil de base pret pour les prochaines generations.
+              </span>
+            </Link>
+            <Link
+              href="/interview"
+              style={{
+                backgroundColor: "#FFFFFF",
+                border: "1px solid #D9D4CA",
+                borderRadius: "1rem",
+                color: "#2C2C2A",
+                display: "grid",
+                gap: "0.5rem",
+                padding: "1rem",
+                textDecoration: "none",
+              }}
+            >
+              <strong>Mode interview</strong>
+              <span style={{ color: "#6B6860" }}>
+                Reprendre les entretiens planifies et l'entrainement vocal.
+              </span>
+            </Link>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Dernieres candidatures</CardTitle>
+            <p style={{ color: "#6B6860", lineHeight: 1.6, margin: 0 }}>
+              Liste courte des candidatures les plus recentes pour reprendre vite.
+            </p>
+          </CardHeader>
+          <CardContent style={{ display: "grid", gap: "1rem" }}>
+            {recentApplications.length === 0 ? (
+              <p style={{ color: "#6B6860", lineHeight: 1.6, margin: 0 }}>
+                Aucune candidature enregistree pour le moment.
+              </p>
+            ) : (
+              recentApplications.map((application) => (
+                <div
+                  key={application.id}
+                  style={{
+                    backgroundColor: "#FFFFFF",
+                    border: "1px solid #D9D4CA",
+                    borderRadius: "1rem",
+                    display: "grid",
+                    gap: "0.5rem",
+                    padding: "1rem",
+                  }}
+                >
+                  <div
+                    style={{
+                      alignItems: "center",
+                      display: "flex",
+                      flexWrap: "wrap",
+                      gap: "0.75rem",
+                      justifyContent: "space-between",
+                    }}
+                  >
+                    <strong style={{ color: "#1A1A18" }}>
+                      {application.extracted.title}
+                    </strong>
+                    <span style={{ color: "#6B6860" }}>
+                      {getApplicationStatusLabel(application.status)}
+                    </span>
+                  </div>
+                  <span style={{ color: "#6B6860" }}>
+                    {application.extracted.companyName ?? application.sourceLabel}
+                  </span>
+                  <span style={{ color: "#6B6860" }}>
+                    Mise a jour: {formatDate(application.updatedAt)}
+                  </span>
+                </div>
+              ))
+            )}
+            <Link href="/candidatures" style={{ color: "#2C2C2A", fontWeight: 600 }}>
+              Ouvrir le pipeline de candidatures
+            </Link>
           </CardContent>
         </Card>
 
