@@ -306,3 +306,10 @@
 - **Why**: US-033 required an operational admin panel for user lookup and manual credit support without introducing a new persistence model or admin framework.
 - **Learned**: The cleanest implementation was to join the existing file-backed auth store and shared credits ledger in one admin query, which kept logging and balance state auditable from a single source of truth.
 - **Open**: A later admin detail story can expose full user fiches and candidature history on top of the same joined contract.
+
+## 2026-04-22 — US-034
+
+- **Did**: Added backend template analytics and CSV export, persisted `cvTemplateId`/`letterTemplateId` in generated-document flows, added the app-side export proxy, extended `/admin/templates` with analytics/top-template UI, and verified the touched API/app paths with tests, lint, and builds.
+- **Why**: US-034 required real admin visibility into template usage plus exportability, not just the existing CRUD editor.
+- **Learned**: The smallest robust solution was to track template usage at document-generation time and aggregate it in the templates module, which avoided inventing a second analytics store.
+- **Open**: Historic documents created before this tracking exists will not automatically backfill usage counts.

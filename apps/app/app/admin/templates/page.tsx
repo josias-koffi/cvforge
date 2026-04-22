@@ -1,7 +1,7 @@
 import React from "react";
 import { cookies } from "next/headers";
 import { AppShell, Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, CV_PREVIEW_FIXTURE, Input, Label, LETTER_PREVIEW_FIXTURE, PaperStyles, documentBlockRegistry } from "@cvforge/ui";
-import { TEMPLATE_KIND_CV, TEMPLATE_KIND_LETTER, type CVDocumentContent, type LetterDocumentContent, type TemplateRecord } from "@cvforge/types";
+import { TEMPLATE_KIND_CV, TEMPLATE_KIND_LETTER, type CVDocumentContent, type LetterDocumentContent, type TemplateAnalyticsSummary, type TemplateRecord } from "@cvforge/types";
 import { PuckEditorLoader } from "./puck-editor-loader";
 import { DeleteForm } from "./delete-form";
 import { getAppNavigation } from "../../content";
@@ -23,6 +23,11 @@ type TemplatePageProps = {
 
 type TemplatesResponse = {
   templates: TemplateRecord[];
+};
+
+type TemplateAnalyticsResponse = {
+  csv: string;
+  summary: TemplateAnalyticsSummary;
 };
 
 function kindLabel(kind: TemplateRecord["kind"]) {
@@ -50,6 +55,25 @@ async function fetchTemplates() {
   }
 
   return (await response.json()) as TemplatesResponse;
+}
+
+async function fetchTemplateAnalytics() {
+  const cookieStore = await cookies();
+  const cookieHeader = cookieStore
+    .getAll()
+    .map(({ name, value }) => `${name}=${value}`)
+    .join("; ");
+
+  const response = await fetch(`${getServerApiUrl()}/templates/analytics`, {
+    cache: "no-store",
+    headers: cookieHeader ? { cookie: cookieHeader } : undefined,
+  });
+
+  if (!response.ok) {
+    throw new Error("Impossible de charger les analytics templates.");
+  }
+
+  return (await response.json()) as TemplateAnalyticsResponse;
 }
 
 type BlockInstance = { id: string; name: string; props: Record<string, unknown> };
@@ -327,7 +351,10 @@ export default async function AdminTemplatesPage({
 }: TemplatePageProps) {
   const session = await requireAdminSession();
   const resolvedSearchParams = await searchParams;
-  const { templates } = await fetchTemplates();
+  const [{ templates }, analytics] = await Promise.all([
+    fetchTemplates(),
+    fetchTemplateAnalytics(),
+  ]);
 
   const filterKind = resolvedSearchParams?.filterKind ?? "";
   const filterActive = resolvedSearchParams?.filterActive ?? "";
@@ -490,6 +517,80 @@ export default async function AdminTemplatesPage({
                       />
                     ))
                   )}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Analytics</CardTitle>
+                <CardDescription>
+                  Volume réel des documents générés et templates les plus utilisés.
+                </CardDescription>
+              </CardHeader>
+              <CardContent style={{ display: "grid", gap: "0.875rem" }}>
+                <div
+                  style={{
+                    display: "grid",
+                    gap: "0.75rem",
+                    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+                  }}
+                >
+                  {[
+                    { label: "Templates", value: analytics.summary.totalTemplates },
+                    { label: "Actifs", value: analytics.summary.activeTemplates },
+                    { label: "CV générés", value: analytics.summary.generatedCvCount },
+                    { label: "LM générées", value: analytics.summary.generatedLetterCount },
+                  ].map((item) => (
+                    <div
+                      key={item.label}
+                      style={{
+                        backgroundColor: "#FAFAF7",
+                        border: "1px solid #E7E0D3",
+                        borderRadius: "0.875rem",
+                        padding: "0.75rem",
+                      }}
+                    >
+                      <div style={{ color: "#6B6860", fontSize: "0.8125rem" }}>{item.label}</div>
+                      <strong style={{ fontSize: "1.125rem" }}>{item.value}</strong>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ display: "grid", gap: "0.5rem" }}>
+                  <div
+                    style={{
+                      alignItems: "center",
+                      display: "flex",
+                      justifyContent: "space-between",
+                    }}
+                  >
+                    <strong>Top templates</strong>
+                    <a
+                      href="/admin/templates/export"
+                      style={{ color: "#2C2C2A", fontSize: "0.875rem" }}
+                    >
+                      Export CSV
+                    </a>
+                  </div>
+                  {analytics.summary.topTemplates.map((template) => (
+                    <div
+                      key={template.id}
+                      style={{
+                        alignItems: "center",
+                        display: "flex",
+                        gap: "0.75rem",
+                        justifyContent: "space-between",
+                      }}
+                    >
+                      <div style={{ display: "grid", gap: "0.1rem" }}>
+                        <span>{template.name}</span>
+                        <span style={{ color: "#6B6860", fontSize: "0.8125rem" }}>
+                          {kindLabel(template.kind)} · {template.locale.toUpperCase()}
+                        </span>
+                      </div>
+                      <strong>{template.usageCount}</strong>
+                    </div>
+                  ))}
                 </div>
               </CardContent>
             </Card>

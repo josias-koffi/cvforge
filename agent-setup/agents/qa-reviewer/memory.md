@@ -222,3 +222,10 @@
 - **Why**: The task could only pass once each admin criterion had direct implementation evidence and the touched packages cleared the blocking engineering gates.
 - **Learned**: The story is reviewable because the admin UI does not invent its own logging model; it surfaces the same append-only ledger already used for user balances and Stripe purchases.
 - **Open**: None for this task; the next admin sprint item is analytics/export scope in US-034.
+
+## 2026-04-22 — US-034 review
+
+- **Did**: Verified visible template analytics, CSV export availability, and regression coverage for the existing admin template operations; rechecked targeted API/app tests plus touched-package lint/build gates.
+- **Why**: The task could only pass once each acceptance criterion had direct UI or route evidence and the new admin contract compiled cleanly.
+- **Learned**: The story is reviewable because analytics are grounded in persisted document-generation data rather than page-local placeholders.
+- **Open**: Historic pre-tracking records remain outside current usage counts; advisory only.

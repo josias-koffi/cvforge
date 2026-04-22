@@ -23,6 +23,7 @@ export type ApplicationsStore = {
     userEmail: string,
     applicationId: string,
   ) => StoredApplication | null;
+  listAll: () => StoredApplication[];
   listByUserEmail: (userEmail: string) => StoredApplication[];
   save: (application: StoredApplication) => StoredApplication;
   findById: (applicationId: string) => StoredApplication | null;

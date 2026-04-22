@@ -1,5 +1,7 @@
 import { Module } from "@nestjs/common";
 import { AuthModule } from "../auth/auth.module";
+import { resolveApplicationsConfig } from "../applications/applications.config";
+import { FileApplicationsStore } from "../applications/applications.store";
 import { TemplatesController } from "./templates.controller";
 import { resolveTemplatesConfig } from "./templates.config";
 import { FileTemplatesStore } from "./templates.store";
@@ -15,6 +17,9 @@ import { TemplatesService } from "./templates.service";
         new TemplatesService(
           new FileTemplatesStore(
             resolveTemplatesConfig(process.env).stateFilePath,
+          ),
+          new FileApplicationsStore(
+            resolveApplicationsConfig(process.env).stateFilePath,
           ),
         ),
     },

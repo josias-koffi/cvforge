@@ -103,6 +103,7 @@ describe("FileApplicationsStore", () => {
     const store = new FileApplicationsStore(path);
 
     expect(store.listByUserEmail("user@example.com")).toEqual([]);
+    expect(store.listAll()).toEqual([]);
   });
 
   it("hydrates legacy stored drafts without an explicit status history", () => {
@@ -146,5 +147,45 @@ describe("FileApplicationsStore", () => {
         status: "draft",
       },
     ]);
+  });
+
+  it("lists all applications across users for admin analytics", () => {
+    const store = new FileApplicationsStore(makeStorePath());
+
+    store.createDraft({
+      createdAt: "2026-04-20T12:00:00.000Z",
+      cvContent: null,
+      cvGeneratedAt: "2026-04-20T12:30:00.000Z",
+      cvTemplateId: "template-cv-ats",
+      id: "app-001",
+      letterContent: null,
+      letterGeneratedAt: null,
+      letterTemplateId: null,
+      offerTextPreview: "Preview",
+      offerUrl: null,
+      rawOfferText: "Raw",
+      sourceLabel: "Manual",
+      sourceType: "text",
+      status: "draft",
+      statusHistory: [
+        { changedAt: "2026-04-20T12:00:00.000Z", status: "draft" },
+      ],
+      updatedAt: "2026-04-20T12:30:00.000Z",
+      userEmail: "admin@example.com",
+      extracted: {
+        companyName: null,
+        contractType: null,
+        language: "fr",
+        location: null,
+        requirements: [],
+        responsibilities: [],
+        salaryRange: null,
+        summary: "Summary",
+        title: "Role",
+      },
+    });
+
+    expect(store.listAll()).toHaveLength(1);
+    expect(store.listAll()[0]?.cvTemplateId).toBe("template-cv-ats");
   });
 });

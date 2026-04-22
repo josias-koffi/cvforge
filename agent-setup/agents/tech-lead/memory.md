@@ -264,3 +264,10 @@
 - **Why**: Architecture governance required an explicit sign-off that admin user management extends the existing auth and credits boundaries instead of introducing a parallel admin data model.
 - **Learned**: The correct architecture is to keep auth as the user registry and the credits module as the audit trail, then compose them in one admin read model only at the controller/UI edge.
 - **Open**: US-034 should build analytics/export features on top of this same admin route rather than forking a second admin dashboard.
+
+## 2026-04-22 — US-034 finalization
+
+- **Did**: Closed US-034 with a passing verdict after confirming template analytics, CSV export, persisted usage tracking from document generation, and successful API/app tests plus touched-package lint/build gates; then updated sprint and workflow bookkeeping.
+- **Why**: Architecture governance required an explicit sign-off that admin reporting extends the current templates and applications boundaries without introducing a new reporting subsystem.
+- **Learned**: The right architecture is to derive admin template analytics from persisted application/template usage metadata at the module edge, not from a separate analytics store.
+- **Open**: A future migration may backfill usage counts for documents generated before `cvTemplateId` / `letterTemplateId` tracking existed.

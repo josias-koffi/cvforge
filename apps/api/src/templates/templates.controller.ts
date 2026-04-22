@@ -10,6 +10,7 @@ import {
   Post,
   Put,
   Req,
+  StreamableFile,
   UnauthorizedException,
 } from "@nestjs/common";
 import { AuthService } from "../auth/auth.service";
@@ -37,6 +38,25 @@ export class TemplatesController {
     return {
       templates: this.templatesService.listTemplates(),
     };
+  }
+
+  @Get("analytics")
+  getAnalytics(@Req() request: RequestLike) {
+    this.requireAdminSession(request.headers.cookie);
+
+    return this.templatesService.getAnalytics();
+  }
+
+  @Get("export.csv")
+  exportCsv(@Req() request: RequestLike) {
+    this.requireAdminSession(request.headers.cookie);
+
+    const analytics = this.templatesService.getAnalytics();
+
+    return new StreamableFile(Buffer.from(analytics.csv, "utf8"), {
+      disposition: 'attachment; filename="admin-templates-export.csv"',
+      type: "text/csv; charset=utf-8",
+    });
   }
 
   @Post()

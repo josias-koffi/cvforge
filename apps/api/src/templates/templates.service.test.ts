@@ -1,7 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { TEMPLATE_KIND_CV, TEMPLATE_KIND_LETTER } from "@cvforge/types";
+import {
+  TEMPLATE_KIND_CV,
+  TEMPLATE_KIND_LETTER,
+  type DraftApplication,
+} from "@cvforge/types";
 import { TemplatesService } from "./templates.service";
-import type { StoredTemplate, TemplatesStore } from "./templates.types";
+import type {
+  StoredTemplate,
+  TemplatesAnalyticsStore,
+  TemplatesStore,
+} from "./templates.types";
 
 function makeStore(seedTemplates: StoredTemplate[] = []): TemplatesStore {
   const templates = new Map(seedTemplates.map((template) => [template.id, template]));
@@ -39,6 +47,39 @@ function makeSeedTemplate(id: string, kind: StoredTemplate["kind"]): StoredTempl
     locale: "fr",
     name: `${kind.toUpperCase()} ATS`,
     updatedAt: "2026-04-20T12:00:00.000Z",
+  };
+}
+
+function makeApplication(
+  overrides: Partial<DraftApplication> = {},
+): DraftApplication {
+  return {
+    createdAt: "2026-04-20T12:00:00.000Z",
+    cvGeneratedAt: null,
+    cvTemplateId: null,
+    id: "app-001",
+    letterGeneratedAt: null,
+    letterTemplateId: null,
+    offerTextPreview: "Preview",
+    offerUrl: null,
+    sourceLabel: "Manual",
+    sourceType: "text",
+    status: "draft",
+    statusHistory: [{ changedAt: "2026-04-20T12:00:00.000Z", status: "draft" }],
+    updatedAt: "2026-04-20T12:00:00.000Z",
+    userEmail: "user@example.com",
+    extracted: {
+      companyName: "Acme",
+      contractType: null,
+      language: "fr",
+      location: null,
+      requirements: [],
+      responsibilities: [],
+      salaryRange: null,
+      summary: "Summary",
+      title: "Role",
+    },
+    ...overrides,
   };
 }
 
@@ -130,5 +171,51 @@ describe("TemplatesService", () => {
     const service = new TemplatesService(makeStore());
 
     expect(() => service.deleteTemplate("missing")).toThrow(/introuvable/);
+  });
+
+  it("builds analytics and CSV export from template usage", () => {
+    const templatesStore = makeStore([
+      makeSeedTemplate("cv-default", TEMPLATE_KIND_CV),
+      makeSeedTemplate("letter-default", TEMPLATE_KIND_LETTER),
+      {
+        ...makeSeedTemplate("cv-secondary", TEMPLATE_KIND_CV),
+        isDefault: false,
+        name: "CV Moderne",
+      },
+    ]);
+    const applicationsStore: TemplatesAnalyticsStore = {
+      listAll: () =>
+        [
+          makeApplication({
+            cvGeneratedAt: "2026-04-21T10:00:00.000Z",
+            cvTemplateId: "cv-default",
+            id: "app-cv-1",
+          }),
+          makeApplication({
+            cvGeneratedAt: "2026-04-22T10:00:00.000Z",
+            cvTemplateId: "cv-default",
+            id: "app-cv-2",
+          }),
+          makeApplication({
+            id: "app-letter-1",
+            letterGeneratedAt: "2026-04-22T11:00:00.000Z",
+            letterTemplateId: "letter-default",
+          }),
+        ] as never[],
+    };
+    const service = new TemplatesService(templatesStore, applicationsStore);
+
+    const analytics = service.getAnalytics();
+
+    expect(analytics.summary.totalTemplates).toBe(3);
+    expect(analytics.summary.generatedCvCount).toBe(2);
+    expect(analytics.summary.generatedLetterCount).toBe(1);
+    expect(analytics.summary.topTemplates[0]).toMatchObject({
+      id: "cv-default",
+      usageCount: 2,
+    });
+    expect(analytics.csv).toContain("templateId,name,kind");
+    expect(analytics.csv).toContain("cv-default");
+    expect(analytics.csv).toContain("letter-default");
   });
 });

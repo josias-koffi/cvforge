@@ -21,13 +21,13 @@ Finaliser le MVP en livrant le panel admin complet, les opérations avancées de
     - [x] Les crédits peuvent être attribués manuellement avec note obligatoire
     - [x] Chaque attribution manuelle est loggée
   - Source: vision `§13.2`, `§16`
-- [ ] **[US-034]** Finaliser les opérations avancées de gestion des templates admin
+- [x] **[US-034]** Finaliser les opérations avancées de gestion des templates admin
   - Agent: `developer`
   - Workflow: `analyze-design-dev-review`
   - Acceptance criteria:
-    - [ ] Les analytics de templates (top templates, volume) sont visibles
-    - [ ] L'export CSV des données admin est disponible
-    - [ ] Les opérations restantes du panel admin sont complètes
+    - [x] Les analytics de templates (top templates, volume) sont visibles
+    - [x] L'export CSV des données admin est disponible
+    - [x] Les opérations restantes du panel admin sont complètes
   - Source: vision `§13.3`, `§16`
 - [ ] **[US-035]** Mettre en place le centre de notifications et les rappels de base
   - Agent: `designer`

@@ -14,6 +14,7 @@ import type {
   StoredApplication,
 } from "../applications/applications.types";
 import type { CreditsService } from "../credits/credits.service";
+import type { TemplatesStore } from "../templates/templates.types";
 
 function makeStoredApplication(
   overrides: Partial<StoredApplication> = {},
@@ -163,6 +164,7 @@ describe("CvGenerationService", () => {
   let store: ApplicationsStore;
   let openRouter: { chat: ReturnType<typeof vi.fn> };
   let creditsService: CreditsService;
+  let templatesStore: Pick<TemplatesStore, "list">;
   let service: CvGenerationService;
 
   beforeEach(() => {
@@ -172,6 +174,7 @@ describe("CvGenerationService", () => {
       createDraft: vi.fn(),
       findById: vi.fn().mockReturnValue(app),
       findByIdForUserEmail: vi.fn().mockReturnValue(app),
+      listAll: vi.fn().mockReturnValue([app]),
       listByUserEmail: vi.fn().mockReturnValue([app]),
       save: vi.fn().mockImplementation((a: StoredApplication) => a),
     };
@@ -182,7 +185,40 @@ describe("CvGenerationService", () => {
     creditsService = {
       consumeCredits: vi.fn(),
     } as unknown as CreditsService;
-    service = new CvGenerationService(store, openRouter as never, creditsService);
+    templatesStore = {
+      list: vi.fn().mockReturnValue([
+        {
+          active: true,
+          categories: ["ATS"],
+          createdAt: "2026-04-20T00:00:00.000Z",
+          id: "template-cv-ats",
+          isDefault: true,
+          kind: "cv",
+          layout: { content: [], root: { props: {} } },
+          locale: "fr",
+          name: "CV ATS",
+          updatedAt: "2026-04-20T00:00:00.000Z",
+        },
+        {
+          active: true,
+          categories: ["ATS"],
+          createdAt: "2026-04-20T00:00:00.000Z",
+          id: "template-letter-ats",
+          isDefault: true,
+          kind: "letter",
+          layout: { content: [], root: { props: {} } },
+          locale: "fr",
+          name: "LM ATS",
+          updatedAt: "2026-04-20T00:00:00.000Z",
+        },
+      ]),
+    };
+    service = new CvGenerationService(
+      store,
+      openRouter as never,
+      creditsService,
+      templatesStore,
+    );
   });
 
   describe("generateCv", () => {
@@ -234,6 +270,7 @@ describe("CvGenerationService", () => {
 
       expect(saved.cvContent).toBeDefined();
       expect(saved.cvGeneratedAt).toBeTruthy();
+      expect(saved.cvTemplateId).toBe("template-cv-ats");
     });
 
     it("throws NotFoundException when application not found", async () => {
@@ -272,6 +309,17 @@ describe("CvGenerationService", () => {
         applicationId: "app-001",
         userEmail: "user@test.example",
       });
+    });
+
+    it("persists the default letter template usage", async () => {
+      openRouter.chat.mockResolvedValue(JSON.stringify(VALID_LETTER_JSON));
+
+      await service.generateLetter("user@test.example", "app-001", makeRequest());
+
+      const saved = (store.save as ReturnType<typeof vi.fn>).mock
+        .calls.at(-1)?.[0] as StoredApplication;
+
+      expect(saved.letterTemplateId).toBe("template-letter-ats");
     });
 
     it("parses fenced json block from AI response", async () => {

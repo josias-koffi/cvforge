@@ -96,8 +96,34 @@ describe("AdminTemplatesPage", () => {
     cookiesMock.mockResolvedValue({
       getAll: () => [{ name: "cvforge_session", value: "session-token" }],
     });
-    vi.mocked(fetch).mockResolvedValue({
+    vi.mocked(fetch).mockResolvedValueOnce({
       json: async () => ({ templates: mockTemplates }),
+      ok: true,
+    } as Response);
+    vi.mocked(fetch).mockResolvedValueOnce({
+      json: async () => ({
+        csv: "templateId,name\n",
+        summary: {
+          activeTemplates: 2,
+          defaultTemplates: 2,
+          generatedCvCount: 3,
+          generatedLetterCount: 1,
+          templatesByKind: { cv: 2, letter: 1 },
+          topTemplates: [
+            {
+              active: true,
+              id: "template-cv-ats",
+              isDefault: true,
+              kind: "cv",
+              lastUsedAt: "2026-04-20T00:00:00.000Z",
+              locale: "fr",
+              name: "CV ATS par defaut",
+              usageCount: 3,
+            },
+          ],
+          totalTemplates: 3,
+        },
+      }),
       ok: true,
     } as Response);
   }
@@ -116,6 +142,7 @@ describe("AdminTemplatesPage", () => {
     expect(markup).toContain("Editeur Puck");
     expect(markup).toContain("Aperçu live");
     expect(markup).toContain("CVHeader");
+    expect(markup).toContain("Analytics");
   });
 
   it("shows filter chips and inline action buttons on template cards", async () => {
@@ -135,6 +162,20 @@ describe("AdminTemplatesPage", () => {
     expect(markup).toContain("filterKind=letter");
     expect(markup).toContain("filterActive=active");
     expect(markup).toContain("filterActive=inactive");
+  });
+
+  it("shows template analytics and the CSV export link", async () => {
+    setupMocks();
+
+    const Page = await AdminTemplatesPage({
+      searchParams: Promise.resolve({ templateId: "template-cv-ats" }),
+    });
+    const markup = renderToStaticMarkup(Page);
+
+    expect(markup).toContain("CV générés");
+    expect(markup).toContain("LM générées");
+    expect(markup).toContain("Top templates");
+    expect(markup).toContain("/admin/templates/export");
   });
 
   it("marks the default template with the gold badge", async () => {

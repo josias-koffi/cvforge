@@ -12,6 +12,8 @@ import {
   type ProjectItemProps,
   AI_CREDIT_ACTION_CV_GENERATION,
   AI_CREDIT_ACTION_LETTER_GENERATION,
+  TEMPLATE_KIND_CV,
+  TEMPLATE_KIND_LETTER,
 } from "@cvforge/types";
 import {
   BadRequestException,
@@ -22,6 +24,7 @@ import {
 import type { OpenRouterService } from "../ai/openrouter.service";
 import type { ApplicationsStore } from "../applications/applications.types";
 import type { CreditsService } from "../credits/credits.service";
+import type { TemplatesStore } from "../templates/templates.types";
 
 // CV generation prompt based on vision §8.1
 const CV_SYSTEM_PROMPT = `Tu es un Expert en Recrutement Senior et Spécialiste ATS.
@@ -432,6 +435,7 @@ export class CvGenerationService {
     private readonly store: ApplicationsStore,
     private readonly openRouterService: OpenRouterService,
     private readonly creditsService: CreditsService,
+    private readonly templatesStore?: Pick<TemplatesStore, "list">,
   ) {}
 
   async generateCv(
@@ -464,12 +468,14 @@ export class CvGenerationService {
 
     const rawJson = extractJsonFromContent<RawCvJson>(rawResponse);
     const cvContent = normalizeCvJson(rawJson, request.localFields);
+    const cvTemplateId = this.resolveDefaultTemplateId(TEMPLATE_KIND_CV);
 
     const timestamp = new Date().toISOString();
     this.store.save({
       ...application,
       cvContent,
       cvGeneratedAt: timestamp,
+      cvTemplateId: cvTemplateId ?? application.cvTemplateId ?? null,
       updatedAt: timestamp,
     });
 
@@ -512,12 +518,14 @@ export class CvGenerationService {
       application.extracted.location,
       `Candidature au poste de ${application.extracted.title}`,
     );
+    const letterTemplateId = this.resolveDefaultTemplateId(TEMPLATE_KIND_LETTER);
 
     const timestamp = new Date().toISOString();
     this.store.save({
       ...application,
       letterContent,
       letterGeneratedAt: timestamp,
+      letterTemplateId: letterTemplateId ?? application.letterTemplateId ?? null,
       updatedAt: timestamp,
     });
 
@@ -545,6 +553,8 @@ export class CvGenerationService {
       ...application,
       cvContent,
       cvGeneratedAt: application.cvGeneratedAt ?? timestamp,
+      cvTemplateId:
+        application.cvTemplateId ?? this.resolveDefaultTemplateId(TEMPLATE_KIND_CV),
       updatedAt: timestamp,
     });
 
@@ -572,6 +582,9 @@ export class CvGenerationService {
       ...application,
       letterContent,
       letterGeneratedAt: application.letterGeneratedAt ?? timestamp,
+      letterTemplateId:
+        application.letterTemplateId ??
+        this.resolveDefaultTemplateId(TEMPLATE_KIND_LETTER),
       updatedAt: timestamp,
     });
 
@@ -608,5 +621,16 @@ export class CvGenerationService {
       language: application.extracted.language,
       rawOfferText: application.rawOfferText.slice(0, 4000),
     };
+  }
+
+  private resolveDefaultTemplateId(
+    kind: typeof TEMPLATE_KIND_CV | typeof TEMPLATE_KIND_LETTER,
+  ) {
+    const templates = this.templatesStore?.list() ?? [];
+    const defaultTemplate =
+      templates.find((template) => template.kind === kind && template.isDefault) ??
+      templates.find((template) => template.kind === kind);
+
+    return defaultTemplate?.id ?? null;
   }
 }

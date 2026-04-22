@@ -5,6 +5,8 @@ import { resolveApplicationsConfig } from "../applications/applications.config";
 import { FileApplicationsStore } from "../applications/applications.store";
 import { CreditsModule } from "../credits/credits.module";
 import { CreditsService } from "../credits/credits.service";
+import { resolveTemplatesConfig } from "../templates/templates.config";
+import { FileTemplatesStore } from "../templates/templates.store";
 import { CvGenerationController } from "./cv-generation.controller";
 import { CvGenerationService } from "./cv-generation.service";
 import { CvPdfExportService } from "./cv-pdf-export.service";
@@ -26,6 +28,7 @@ import { CvPdfExportService } from "./cv-pdf-export.service";
           ),
           openRouterService,
           creditsService,
+          new FileTemplatesStore(resolveTemplatesConfig(process.env).stateFilePath),
         ),
     },
     {

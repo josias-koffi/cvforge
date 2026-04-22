@@ -286,8 +286,10 @@ export interface CreditLedgerSummary {
 export interface DraftApplication {
   createdAt: string;
   cvGeneratedAt: string | null;
+  cvTemplateId?: string | null;
   id: string;
   letterGeneratedAt?: string | null;
+  letterTemplateId?: string | null;
   offerUrl: string | null;
   offerTextPreview: string;
   sourceLabel: string;
@@ -368,6 +370,27 @@ export interface TemplateRecord {
   locale: Locale;
   name: string;
   updatedAt: string;
+}
+
+export interface TemplateUsageMetric {
+  active: boolean;
+  id: string;
+  isDefault: boolean;
+  kind: TemplateKind;
+  lastUsedAt: string | null;
+  locale: Locale;
+  name: string;
+  usageCount: number;
+}
+
+export interface TemplateAnalyticsSummary {
+  activeTemplates: number;
+  defaultTemplates: number;
+  generatedCvCount: number;
+  generatedLetterCount: number;
+  templatesByKind: Record<TemplateKind, number>;
+  topTemplates: TemplateUsageMetric[];
+  totalTemplates: number;
 }
 
 export type TemplateUpsertInput = {

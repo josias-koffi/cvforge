@@ -208,3 +208,10 @@
 - **Why**: The admin route already existed, but the story needed a concrete UX that made user filtering and manual credit logging visible without inventing a second admin shell.
 - **Learned**: The existing shell and card primitives are sufficient for a "registre comptable" admin surface as long as dense data is split into small factual cards instead of a desktop-only table.
 - **Open**: A later user-detail story can expand each card into a full fiche utilisateur with candidatures and deeper activity history.
+
+## 2026-04-22 — US-034 design
+
+- **Did**: Extended the existing `/admin/templates` layout with a compact analytics card, KPI tiles, a top-templates list, and a visible CSV export action while preserving the current library/editor split.
+- **Why**: The story needed observable admin value without introducing a second template dashboard or disrupting the working editor flow.
+- **Learned**: This admin surface remains clearer when analytics stay text-first and card-based, rather than adding charts or a separate reporting page.
+- **Open**: A later analytics story could add richer historical breakdowns if product scope calls for them.

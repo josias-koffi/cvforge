@@ -67,8 +67,10 @@ function normalizeStoredApplication(
     ...application,
     cvContent: application.cvContent ?? null,
     cvGeneratedAt: application.cvGeneratedAt ?? null,
+    cvTemplateId: application.cvTemplateId ?? null,
     letterContent: application.letterContent ?? null,
     letterGeneratedAt: application.letterGeneratedAt ?? null,
+    letterTemplateId: application.letterTemplateId ?? null,
     status,
     statusHistory: normalizeStatusHistory(
       application.statusHistory,
@@ -104,6 +106,14 @@ export class FileApplicationsStore implements ApplicationsStore {
     }
 
     return application;
+  }
+
+  listAll() {
+    const state = this.readState();
+
+    return Object.values(state.applications)
+      .map(normalizeStoredApplication)
+      .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt));
   }
 
   listByUserEmail(userEmail: string) {

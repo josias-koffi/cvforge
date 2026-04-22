@@ -39,6 +39,9 @@ function createStore(): ApplicationsStore {
         (application) => application.userEmail === userEmail,
       );
     },
+    listAll() {
+      return [...applications.values()];
+    },
     save(application) {
       applications.set(application.id, application);
       return application;

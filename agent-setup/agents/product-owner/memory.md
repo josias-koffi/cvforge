@@ -243,3 +243,10 @@
 - **Why**: The workflow needed a tight product boundary so the story would not spill into later admin actions such as suspension, deletion, analytics, or invitation management.
 - **Learned**: Vision `§13.2` is precise enough to ship the MVP admin register now by reusing the auth account store and credit ledger already in place.
 - **Open**: US-034 should extend the admin area with template analytics and exports without reopening the user-management contract.
+
+## 2026-04-22 — US-034 analyze
+
+- **Did**: Confirmed that US-034 is limited to completing the admin templates panel with visible analytics, CSV export, and fully operational template-management actions around the existing editor flow.
+- **Why**: The workflow needed a precise product boundary so the story would not drift into future user-side template selection or broader admin dashboard work.
+- **Learned**: Vision `§13.3` is specific enough to require real usage analytics, not static placeholders, so the implementation should persist minimal template-usage metadata from document generation.
+- **Open**: US-035 can proceed independently once the admin templates analytics/export slice is closed.
