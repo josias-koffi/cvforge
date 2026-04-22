@@ -2,6 +2,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 import type {
   AuthAccount,
+  AuthAccountRecord,
   AuthAccountStore,
   AuthConsentRecord,
   AuthInvitation,
@@ -24,6 +25,17 @@ function createEmptyState(): PersistedAuthState {
 
 export class FileAuthAccountStore implements AuthAccountStore {
   constructor(private readonly stateFilePath: string) {}
+
+  listAccounts(): AuthAccountRecord[] {
+    const state = this.readState();
+
+    return Object.entries(state.accounts)
+      .map(([email, account]) => ({
+        email,
+        ...account,
+      }))
+      .sort((left, right) => left.email.localeCompare(right.email));
+  }
 
   readAccount(email: string) {
     const state = this.readState();

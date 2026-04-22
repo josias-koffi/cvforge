@@ -215,3 +215,10 @@
 - **Why**: Formal sprint closure required the remaining blocking DoD items to be evidenced directly.
 - **Learned**: The current repo state is sufficient for closure because the blocking thresholds are line `>= 80%`, branch `>= 70%`, and no high/critical vulnerability.
 - **Open**: Follow-up maintenance can target the non-blocking advisory vulnerabilities separately.
+
+## 2026-04-22 — US-033 review
+
+- **Did**: Verified the admin users panel against the sprint criteria, confirmed server-side filtering/pagination, mandatory-note credit grants, visible latest manual-grant logging, and rechecked API/app test, lint, and build evidence.
+- **Why**: The task could only pass once each admin criterion had direct implementation evidence and the touched packages cleared the blocking engineering gates.
+- **Learned**: The story is reviewable because the admin UI does not invent its own logging model; it surfaces the same append-only ledger already used for user balances and Stripe purchases.
+- **Open**: None for this task; the next admin sprint item is analytics/export scope in US-034.

@@ -105,4 +105,25 @@ describe("FileAuthAccountStore", () => {
 
     expect(store.resolveRole("first@example.com")).toBe("admin");
   });
+
+  it("lists persisted accounts with their emails", () => {
+    const stateFilePath = createStateFilePath();
+    const store = new FileAuthAccountStore(stateFilePath);
+
+    store.resolveRole("zoe@example.com");
+    store.resolveRole("alice@example.com");
+
+    expect(store.listAccounts()).toEqual([
+      {
+        consent: null,
+        email: "alice@example.com",
+        role: "user",
+      },
+      {
+        consent: null,
+        email: "zoe@example.com",
+        role: "admin",
+      },
+    ]);
+  });
 });

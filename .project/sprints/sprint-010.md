@@ -13,13 +13,13 @@ Finaliser le MVP en livrant le panel admin complet, les opérations avancées de
 
 ## ✅ Tasks (3–8 max)
 
-- [ ] **[US-033]** Développer le panel admin utilisateurs et crédits
+- [x] **[US-033]** Développer le panel admin utilisateurs et crédits
   - Agent: `developer`
   - Workflow: `analyze-design-dev-review`
   - Acceptance criteria:
-    - [ ] La liste des utilisateurs est paginée et filtrable
-    - [ ] Les crédits peuvent être attribués manuellement avec note obligatoire
-    - [ ] Chaque attribution manuelle est loggée
+    - [x] La liste des utilisateurs est paginée et filtrable
+    - [x] Les crédits peuvent être attribués manuellement avec note obligatoire
+    - [x] Chaque attribution manuelle est loggée
   - Source: vision `§13.2`, `§16`
 - [ ] **[US-034]** Finaliser les opérations avancées de gestion des templates admin
   - Agent: `developer`

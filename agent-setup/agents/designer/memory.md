@@ -201,3 +201,10 @@
 - **Why**: The story needed a concrete page-level UX so the credits ledger became understandable to end users instead of remaining an API and dashboard checkout primitive only.
 - **Learned**: The current shell and card primitives are enough to deliver the credits experience cleanly without adding a separate billing layout or charting dependency.
 - **Open**: US-032 should decide whether the dashboard itself should surface the current balance as a KPI tile now that the dedicated page exists.
+
+## 2026-04-22 — US-033 design
+
+- **Did**: Designed `/admin` as a mobile-tolerant users register with summary cards, a labeled filter bar, user cards exposing activity and latest manual grant details, and an inline mandatory-note credit form.
+- **Why**: The admin route already existed, but the story needed a concrete UX that made user filtering and manual credit logging visible without inventing a second admin shell.
+- **Learned**: The existing shell and card primitives are sufficient for a "registre comptable" admin surface as long as dense data is split into small factual cards instead of a desktop-only table.
+- **Open**: A later user-detail story can expand each card into a full fiche utilisateur with candidatures and deeper activity history.

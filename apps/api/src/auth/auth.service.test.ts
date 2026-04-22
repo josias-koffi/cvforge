@@ -25,6 +25,14 @@ function createInMemoryAccountStore(): AuthAccountStore {
   let bootstrapConsumed = false;
 
   return {
+    listAccounts() {
+      return [...accounts.entries()]
+        .map(([email, account]) => ({
+          email,
+          ...account,
+        }))
+        .sort((left, right) => left.email.localeCompare(right.email));
+    },
     readAccount(email) {
       return accounts.get(email) ?? null;
     },

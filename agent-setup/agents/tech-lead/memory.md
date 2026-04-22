@@ -257,3 +257,10 @@
 - **Why**: Sprint 009 could not be formally closed while the audit was unverified and the coverage checkbox remained open.
 - **Learned**: The repo now satisfies the blocking governance thresholds for this sprint: tests green, coverage above floor, and no high/critical audit findings.
 - **Open**: Low/moderate advisories can be handled as follow-up maintenance outside the sprint-close path.
+
+## 2026-04-22 — US-033 finalization
+
+- **Did**: Closed US-033 with a passing verdict after confirming the new admin users query, the `/admin` users-and-credits panel, mandatory-note grant flow, and successful API/app test, lint, and build gates; then updated sprint and workflow bookkeeping.
+- **Why**: Architecture governance required an explicit sign-off that admin user management extends the existing auth and credits boundaries instead of introducing a parallel admin data model.
+- **Learned**: The correct architecture is to keep auth as the user registry and the credits module as the audit trail, then compose them in one admin read model only at the controller/UI edge.
+- **Open**: US-034 should build analytics/export features on top of this same admin route rather than forking a second admin dashboard.

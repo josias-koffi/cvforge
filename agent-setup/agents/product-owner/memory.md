@@ -236,3 +236,10 @@
 - **Why**: Product governance requires the sprint record to reflect actual validated completion, not just feature implementation.
 - **Learned**: The sprint now closes cleanly because the dashboard story completed the engagement loop and the quality gates are explicitly satisfied.
 - **Open**: Future roadmap work can extend the dashboard with richer analytics once those datasets exist.
+
+## 2026-04-22 — US-033 analyze
+
+- **Did**: Confirmed that US-033 is limited to the first usable admin users-and-credits panel on `/admin`, with server-side filtering/pagination and manual credit attribution anchored to the existing ledger.
+- **Why**: The workflow needed a tight product boundary so the story would not spill into later admin actions such as suspension, deletion, analytics, or invitation management.
+- **Learned**: Vision `§13.2` is precise enough to ship the MVP admin register now by reusing the auth account store and credit ledger already in place.
+- **Open**: US-034 should extend the admin area with template analytics and exports without reopening the user-management contract.

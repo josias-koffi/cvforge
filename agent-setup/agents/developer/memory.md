@@ -299,3 +299,10 @@
 - **Why**: The code was already done, but the sprint could not be finalized until the last governance checks were evidenced.
 - **Learned**: The workspace now closes cleanly with the dashboard changes included; no extra code changes were needed once the audit path was available.
 - **Open**: Non-blocking low/moderate advisories remain available for later dependency hygiene work.
+
+## 2026-04-22 — US-033
+
+- **Did**: Added auth account enumeration, implemented `GET /credits/admin/users` with filtering/pagination plus latest manual-grant metadata, replaced the placeholder `/admin` page with a real users-and-credits panel, added the `/admin/grant-credits` proxy route, and covered the new paths with API/app tests.
+- **Why**: US-033 required an operational admin panel for user lookup and manual credit support without introducing a new persistence model or admin framework.
+- **Learned**: The cleanest implementation was to join the existing file-backed auth store and shared credits ledger in one admin query, which kept logging and balance state auditable from a single source of truth.
+- **Open**: A later admin detail story can expose full user fiches and candidature history on top of the same joined contract.

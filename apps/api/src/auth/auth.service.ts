@@ -7,6 +7,7 @@ import {
 import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import type {
   AuthConsentRecord,
+  AuthAccountRecord,
   AuthAccountStore,
   AuthConfig,
   AuthInvitation,
@@ -215,6 +216,10 @@ export class AuthService {
         secure: this.config.secureCookies,
       },
     };
+  }
+
+  listAccounts(): AuthAccountRecord[] {
+    return this.accountStore.listAccounts();
   }
 
   private buildMagicLink(token: string) {

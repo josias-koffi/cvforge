@@ -9,6 +9,10 @@ export type AuthAccount = {
   role: AuthRole;
 };
 
+export type AuthAccountRecord = AuthAccount & {
+  email: string;
+};
+
 export type AuthConfig = {
   apiUrl: string;
   appUrl: string;
@@ -53,6 +57,7 @@ export type InvitationResponse = {
 };
 
 export type AuthAccountStore = {
+  listAccounts: () => AuthAccountRecord[];
   readAccount: (email: string) => AuthAccount | null;
   resolveRole: (email: string, consent?: AuthConsentRecord | null) => AuthRole;
   assignInvitedRole: (
