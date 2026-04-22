@@ -236,3 +236,10 @@
 - **Why**: Architecture governance required an explicit sign-off that Stripe payments extend the existing ledger safely instead of introducing a second credit source or a non-idempotent webhook path.
 - **Learned**: The correct billing architecture for this MVP is still ledger-first: Stripe owns payment confirmation, but the local credits module owns the auditable balance and duplicate protection.
 - **Open**: US-031 should build the user-visible credits history on top of the ledger purchase entries created here, not on a separate payments store.
+
+## 2026-04-22 — US-031 finalization
+
+- **Did**: Closed US-031 with a passing verdict after confirming the new `/credits` route, ledger-backed balance and history rendering, low-balance warning behavior, and successful app test/lint/build gates; then updated sprint and workflow bookkeeping.
+- **Why**: Architecture governance required an explicit final sign-off before the story could be marked complete in sprint `009`.
+- **Learned**: The ledger-first architecture scales cleanly into the UI layer: one API summary now supports dashboard entry, recharge actions, and transparent user history without adding a second billing read model.
+- **Open**: US-032 should reuse this credits surface as a linked dashboard destination rather than rebuilding the same billing context inside the dashboard cards.

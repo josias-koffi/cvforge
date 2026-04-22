@@ -194,3 +194,10 @@
 - **Why**: The story could only pass once the payment path had direct evidence for successful purchase flow, safe webhook ingestion, and non-crediting failure paths.
 - **Learned**: The billing slice is reviewable because it keeps a single source of truth for balance changes and makes webhook retries harmless through checkout-session/payment-intent deduplication.
 - **Open**: Purchase-confirmation email remains a future story; the current task stops correctly at checkout + ledger integration.
+
+## 2026-04-22 — US-031 review
+
+- **Did**: Verified the `/credits` page against the sprint criteria, confirmed dedicated render-test coverage for normal and low-balance states, and rechecked app lint plus production build.
+- **Why**: The task could only pass once the balance visibility, readable mixed history, and low-balance warning each had direct implementation and validation evidence.
+- **Learned**: The credits story is reviewable because it reuses one ledger summary contract for both state and history, which keeps the UI honest and easy to test.
+- **Open**: None for this story; the next sprint item is the broader dashboard completion in US-032.

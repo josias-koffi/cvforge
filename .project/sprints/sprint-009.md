@@ -29,13 +29,13 @@ Fermer la boucle de monétisation et d'engagement du MVP avec crédits, Stripe e
     - [x] Le webhook met à jour le solde
     - [x] Les cas d'erreur de paiement sont gérés
   - Source: vision `§11`, `§16`
-- [ ] **[US-031]** Créer la page "Mes crédits" avec historique et alerte solde bas
+- [x] **[US-031]** Créer la page "Mes crédits" avec historique et alerte solde bas
   - Agent: `designer`
   - Workflow: `analyze-design-dev-review`
   - Acceptance criteria:
-    - [ ] Le solde courant est visible
-    - [ ] L'historique des achats/consommations est lisible
-    - [ ] Une alerte apparaît quand le solde est bas
+    - [x] Le solde courant est visible
+    - [x] L'historique des achats/consommations est lisible
+    - [x] Une alerte apparaît quand le solde est bas
   - Source: vision `§11`, `§14.1`, `§16`
 - [ ] **[US-032]** Exposer le dashboard utilisateur avec KPI de base et accès rapides
   - Agent: `analyst`

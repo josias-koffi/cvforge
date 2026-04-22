@@ -194,3 +194,10 @@
 - **Why**: The story needed one usable purchase entry point now without pre-empting the broader "Mes credits" UI planned in US-031.
 - **Learned**: Native POST forms are enough for this payment entry point because Stripe-hosted checkout already owns the complex payment interaction; the product only needs clear pre-checkout package choice and post-return status messaging.
 - **Open**: US-031 should decide where the persistent "Acheter des credits" CTA lives once the credits page itself exists.
+
+## 2026-04-22 — US-031 design
+
+- **Did**: Designed `/credits` as a first-class authenticated page with a low-balance alert, summary cards, a visual gauge, Stripe recharge cards, and a readable ledger timeline, plus a dashboard link to reach it directly.
+- **Why**: The story needed a concrete page-level UX so the credits ledger became understandable to end users instead of remaining an API and dashboard checkout primitive only.
+- **Learned**: The current shell and card primitives are enough to deliver the credits experience cleanly without adding a separate billing layout or charting dependency.
+- **Open**: US-032 should decide whether the dashboard itself should surface the current balance as a KPI tile now that the dedicated page exists.

@@ -212,6 +212,12 @@ export default async function DashboardPage(props: DashboardPageProps) {
               gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
             }}
           >
+            <Link
+              href="/credits"
+              style={{ color: "#2C2C2A", fontWeight: 600, gridColumn: "1 / -1" }}
+            >
+              Ouvrir la page Mes credits
+            </Link>
             {creditPackIds.map((packId) => {
               const pack = creditPacks[packId];
 

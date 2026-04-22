@@ -258,6 +258,13 @@
 - **Learned**: A dedicated ledger service is cleaner than burying credit state inside auth or applications persistence, and it gives US-030 a single purchase-ingestion seam via `recordStripePurchase()`.
 - **Open**: Root workspace verification was not rerun because this story is backend-only; the known app-side build issues remain outside this task.
 
+## 2026-04-22 — US-031
+
+- **Did**: Implemented the authenticated `/credits` page, added app-shell navigation and dashboard discoverability, rendered ledger-backed history plus low-balance warning, and validated the app with targeted tests, lint, and build.
+- **Why**: US-031 required the user-facing credits experience on top of the ledger and Stripe work already delivered in US-029 and US-030.
+- **Learned**: The existing `/credits/me` response is rich enough to power the whole page directly; no app-side billing state or extra API endpoint was needed.
+- **Open**: US-032 can now treat credits as a linked dashboard surface instead of trying to carry both summary and history inside the dashboard itself.
+
 ## 2026-04-21 — US-030
 
 - **Did**: Added a new API billing slice for Stripe Checkout session creation and webhook verification, made Stripe purchase recording idempotent in the credits ledger, added shared pack contracts, added a Next checkout proxy route, and exposed the two pack purchase actions from the dashboard; then verified lint, targeted tests, package builds, and the root coverage command.

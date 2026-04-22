@@ -215,3 +215,10 @@
 - **Why**: The workflow needed a precise product boundary so the story would not spill into the full credits-history page deferred to US-031.
 - **Learned**: Vision `§11.5` and `§11.6` are specific enough to derive the exact MVP SKU set now: `Starter` (`€9.99`, `550` credits) and `Pro` (`€19.99`, `1400` credits).
 - **Open**: US-031 should reuse the same pack definitions and ledger purchase metadata for the user-facing credits history.
+
+## 2026-04-22 — US-031 analyze
+
+- **Did**: Confirmed that US-031 is limited to the authenticated "Mes crédits" page, reusing the existing ledger summary for balance, history, and low-balance warning rather than adding a new billing model.
+- **Why**: The workflow needed a precise scope so the story stayed inside vision `§11.7` and `§14.1` without drifting into the later notification-center or expanded dashboard work.
+- **Learned**: The existing backend contract from US-029 and US-030 is already sufficient for this page; the remaining gap was discoverability and presentation in the app.
+- **Open**: US-032 should complete the dashboard-access pattern around this new credits surface.

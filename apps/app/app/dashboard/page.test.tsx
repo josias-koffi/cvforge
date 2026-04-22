@@ -58,6 +58,7 @@ describe("DashboardPage", () => {
     expect(markup).toContain("Taux de reponse");
     expect(markup).toContain("Pipeline candidature");
     expect(markup).toContain("Acheter des credits");
+    expect(markup).toContain("Ouvrir la page Mes credits");
     expect(markup).toContain("Pack Starter");
     expect(markup).toContain("Pack Pro");
     expect(markup).toContain("Ouvrir le pipeline de candidatures");
