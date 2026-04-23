@@ -322,6 +322,16 @@ export function saveBaseProfileToStorage(
   storage.setItem(BASE_PROFILE_STORAGE_KEY, JSON.stringify(profile));
 }
 
+export function clearBaseProfileFromStorage(
+  storage: Pick<Storage, "removeItem"> | undefined,
+) {
+  if (!storage) {
+    return;
+  }
+
+  storage.removeItem(BASE_PROFILE_STORAGE_KEY);
+}
+
 export function touchBaseProfile(profile: BaseProfile): BaseProfile {
   return {
     ...profile,

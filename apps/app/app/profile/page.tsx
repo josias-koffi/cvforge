@@ -1,5 +1,6 @@
 import React from "react";
-import { AppShell } from "@cvforge/ui";
+import { AppShell, Button } from "@cvforge/ui";
+import Link from "next/link";
 import { requireSession } from "../auth/session";
 import { getAppNavigation } from "../content";
 import { NotificationBell } from "../notifications/notification-bell";
@@ -15,6 +16,11 @@ export default async function ProfilePage() {
       headerAccessory={<NotificationBell />}
       navigation={getAppNavigation("/profile")}
     >
+      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "1rem" }}>
+        <Button asChild variant="secondary">
+          <Link href="/profile/privacy">Export RGPD et suppression</Link>
+        </Button>
+      </div>
       <ProfileEditor sessionEmail={session.email} />
     </AppShell>
   );

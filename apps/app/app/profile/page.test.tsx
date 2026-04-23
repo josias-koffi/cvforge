@@ -29,5 +29,6 @@ describe("ProfilePage", () => {
     expect(markup).toContain("Profil de base");
     expect(markup).toContain("Profil de base unique");
     expect(markup).toContain("user@example.com");
+    expect(markup).toContain("/profile/privacy");
   });
 });

@@ -334,3 +334,10 @@
 - **Why**: The `app` and `landing` containers were failing on April 22, 2026 with `EACCES` errors against `/workspace/apps/*/.next/*` because stale generated artifacts were not writable under the runtime UID/GID.
 - **Learned**: Keeping hot-reload source mounts while moving Next build output outside the bind-mounted workspace is the simplest stable fix; it avoids ownership drift without weakening the host-UID container model.
 - **Open**: The running Compose stack must be recreated so the services stop using the old `app_next` and `landing_next` volumes.
+
+## 2026-04-23 — US-036
+
+- **Did**: Added a new API privacy slice for export/deletion/retention-policy reads, extended the file-backed stores for owned-data deletion and third-party reference anonymisation, built `/profile/privacy` plus app proxy routes, cleared local browser profile data on deletion, documented retention rules, and verified the repo with lint/test/build/coverage.
+- **Why**: `US-036` required executable GDPR launch mechanics, not a documentation-only placeholder.
+- **Learned**: The browser-local base profile is the critical wrinkle in this codebase; the correct implementation is API-owned export/deletion plus app-side augmentation and local cleanup.
+- **Open**: The planned 30-day audio purge still needs a real scheduled implementation once interview audio persistence exists.

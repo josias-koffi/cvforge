@@ -218,6 +218,13 @@
 
 ## 2026-04-22 — US-035 design
 
+## 2026-04-23 — US-036
+
+- **Did**: Designed a profile-adjacent privacy screen with a download-first GDPR export action, exact-email confirmation for irreversible deletion, and plain-language retention cards plus an audio-purge plan block.
+- **Why**: The sprint needed a usable privacy surface without inventing a separate settings shell or weakening the destructive-action safeguards.
+- **Learned**: The existing shell and card primitives are sufficient for sensitive privacy flows when the language stays factual and the confirmation step is explicit.
+- **Open**: If a broader account-settings area appears later, this privacy screen can become one section within it without redesigning the underlying interaction model.
+
 - **Did**: Designed the notification entry as a bell pill in the shared shell header and specified `/notifications` as an unread-first feed with explicit read/unread badges and direct candidature links.
 - **Why**: The story needed a visible, reusable notification pattern that works across authenticated pages without inventing a second shell or modal system.
 - **Learned**: The current shell can absorb notification affordances cleanly when the bell lives in the hero topline and the center stays card-based and text-first.

@@ -236,3 +236,10 @@
 - **Why**: The task could only pass once all three acceptance criteria had direct implementation evidence and the touched packages cleared the blocking gates.
 - **Learned**: The feature is reviewable because the reminder rule is derived from persisted candidature history, which makes the trigger deterministic and easy to regression-test.
 - **Open**: Email-channel notification coverage remains outside this story.
+
+## 2026-04-23 — US-036 review
+
+- **Did**: Verified the authenticated export flow, the irreversible delete flow with server-side cleanup plus browser-local cleanup, the documented retention policy, and passing repo-level lint/test/build/coverage evidence.
+- **Why**: The story could only pass once each GDPR acceptance criterion had direct executable evidence instead of remaining an operational note.
+- **Learned**: The feature is reviewable because the privacy slice centralizes server-held personal data while the app explicitly augments that export with the browser-local base profile.
+- **Open**: The audio purge is correctly documented as planned work until the interview-audio persistence layer exists.

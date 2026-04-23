@@ -72,6 +72,19 @@ export class FileNotificationsStore implements NotificationsStore {
     return normalized;
   }
 
+  deleteByUserEmail(userEmail: string) {
+    const state = this.readState();
+    const keptNotifications = state.notifications.filter(
+      (notification) => notification.userEmail !== userEmail,
+    );
+    const removedCount = state.notifications.length - keptNotifications.length;
+
+    state.notifications = keptNotifications;
+    this.writeState(state);
+
+    return removedCount;
+  }
+
   private readState(): PersistedNotificationsState {
     if (!existsSync(this.stateFilePath)) {
       return createEmptyState();

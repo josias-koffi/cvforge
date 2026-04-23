@@ -40,6 +40,50 @@ export class FileCreditLedgerStore implements CreditLedgerStore {
       .sort((left, right) => right.createdAt.localeCompare(left.createdAt));
   }
 
+  listEntriesByAdminEmail(adminEmail: string) {
+    const state = this.readState();
+
+    return state.entries
+      .filter((entry) => entry.metadata.adminEmail === adminEmail)
+      .sort((left, right) => right.createdAt.localeCompare(left.createdAt));
+  }
+
+  deleteByUserEmail(userEmail: string) {
+    const state = this.readState();
+    const keptEntries = state.entries.filter((entry) => entry.userEmail !== userEmail);
+    const removedCount = state.entries.length - keptEntries.length;
+
+    state.entries = keptEntries;
+    this.writeState(state);
+
+    return removedCount;
+  }
+
+  anonymizeAdminReferences(adminEmail: string) {
+    const state = this.readState();
+    let scrubbedCount = 0;
+
+    state.entries = state.entries.map((entry) => {
+      if (entry.metadata.adminEmail !== adminEmail || entry.userEmail === adminEmail) {
+        return entry;
+      }
+
+      scrubbedCount += 1;
+
+      return normalizeEntry({
+        ...entry,
+        metadata: {
+          ...entry.metadata,
+          adminEmail: "[deleted-account]",
+        },
+      });
+    });
+
+    this.writeState(state);
+
+    return scrubbedCount;
+  }
+
   private readState(): PersistedCreditsState {
     if (!existsSync(this.stateFilePath)) {
       return createEmptyState();

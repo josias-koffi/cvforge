@@ -9,6 +9,10 @@ export function getAppUrl() {
   return normalizeUrl(process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000");
 }
 
+export function getAuthCookieName() {
+  return process.env.AUTH_COOKIE_NAME?.trim() || "cvforge_session";
+}
+
 export function getPublicApiUrl() {
   return normalizeUrl(process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3333");
 }

@@ -15,6 +15,18 @@ type PersistedAuthState = {
   invitations: Record<string, AuthInvitation>;
 };
 
+export type AuthExportSnapshot = {
+  account: AuthAccountRecord | null;
+  issuedInvitations: Array<AuthInvitation & { tokenHash: string }>;
+  receivedInvitations: Array<AuthInvitation & { tokenHash: string }>;
+};
+
+export type PurgedAuthAccountSummary = {
+  accountDeleted: boolean;
+  invitationsRemoved: number;
+  invitationsScrubbed: number;
+};
+
 function createEmptyState(): PersistedAuthState {
   return {
     accounts: {},
@@ -124,6 +136,74 @@ export class FileAuthAccountStore implements AuthAccountStore {
     this.writeState(state);
 
     return state.invitations[tokenHash];
+  }
+
+  exportUserData(email: string): AuthExportSnapshot {
+    const state = this.readState();
+    const account = state.accounts[email]
+      ? {
+          email,
+          ...state.accounts[email],
+        }
+      : null;
+    const invitations = Object.entries(state.invitations).map(
+      ([tokenHash, invitation]) => ({
+        tokenHash,
+        ...invitation,
+      }),
+    );
+
+    return {
+      account,
+      issuedInvitations: invitations.filter(
+        (invitation) => invitation.createdBy === email,
+      ),
+      receivedInvitations: invitations.filter(
+        (invitation) => invitation.email === email,
+      ),
+    };
+  }
+
+  purgeUserData(email: string): PurgedAuthAccountSummary {
+    const state = this.readState();
+    const accountDeleted = Boolean(state.accounts[email]);
+    const deletedRole = state.accounts[email]?.role ?? null;
+    let invitationsRemoved = 0;
+    let invitationsScrubbed = 0;
+
+    delete state.accounts[email];
+
+    for (const [tokenHash, invitation] of Object.entries(state.invitations)) {
+      if (invitation.email === email) {
+        delete state.invitations[tokenHash];
+        invitationsRemoved += 1;
+        continue;
+      }
+
+      if (invitation.createdBy === email) {
+        state.invitations[tokenHash] = {
+          ...invitation,
+          createdBy: "[deleted-account]",
+        };
+        invitationsScrubbed += 1;
+      }
+    }
+
+    const hasRemainingAdmin = Object.values(state.accounts).some(
+      (account) => account.role === "admin",
+    );
+
+    if (deletedRole === "admin" && !hasRemainingAdmin) {
+      state.bootstrapConsumed = false;
+    }
+
+    this.writeState(state);
+
+    return {
+      accountDeleted,
+      invitationsRemoved,
+      invitationsScrubbed,
+    };
   }
 
   private readState(): PersistedAuthState {

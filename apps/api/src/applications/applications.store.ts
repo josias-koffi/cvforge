@@ -133,6 +133,24 @@ export class FileApplicationsStore implements ApplicationsStore {
     return application;
   }
 
+  deleteByUserEmail(userEmail: string) {
+    const state = this.readState();
+    let removedCount = 0;
+
+    for (const [applicationId, application] of Object.entries(state.applications)) {
+      if (application.userEmail !== userEmail) {
+        continue;
+      }
+
+      delete state.applications[applicationId];
+      removedCount += 1;
+    }
+
+    this.writeState(state);
+
+    return removedCount;
+  }
+
   private readState(): PersistedApplicationsState {
     if (!existsSync(this.stateFilePath)) {
       return createEmptyState();

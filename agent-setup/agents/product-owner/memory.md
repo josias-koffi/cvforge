@@ -218,6 +218,13 @@
 
 ## 2026-04-22 — US-031 analyze
 
+## 2026-04-23 — US-036
+
+- **Did**: Framed `US-036` around a self-service export/delete flow, confirmed the browser-local profile had to be merged into the export, and closed the open retention blocker with an explicit MVP policy plus a planned 30-day audio purge.
+- **Why**: Sprint `010` could not close until the launch-critical GDPR criteria from vision `§15.1` and `§15.5` were turned into verifiable product behavior.
+- **Learned**: The clean MVP boundary is "privacy operations for the authenticated user now, legal/contractual follow-ups later" rather than trying to complete every RGPD workstream in one story.
+- **Open**: The audio purge remains a planned implementation until interview audio persistence ships.
+
 - **Did**: Confirmed that US-031 is limited to the authenticated "Mes crédits" page, reusing the existing ledger summary for balance, history, and low-balance warning rather than adding a new billing model.
 - **Why**: The workflow needed a precise scope so the story stayed inside vision `§11.7` and `§14.1` without drifting into the later notification-center or expanded dashboard work.
 - **Learned**: The existing backend contract from US-029 and US-030 is already sufficient for this page; the remaining gap was discoverability and presentation in the app.

@@ -187,3 +187,13 @@ export function saveDraftToStorage(
 
   storage.setItem(ONBOARDING_DRAFT_STORAGE_KEY, JSON.stringify(draft));
 }
+
+export function clearDraftFromStorage(
+  storage: Pick<Storage, "removeItem"> | undefined,
+) {
+  if (!storage) {
+    return;
+  }
+
+  storage.removeItem(ONBOARDING_DRAFT_STORAGE_KEY);
+}

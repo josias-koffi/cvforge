@@ -37,22 +37,22 @@ Finaliser le MVP en livrant le panel admin complet, les opérations avancées de
     - [x] Les notifications in-app sont listées avec statut lu/non lu
     - [x] Les rappels de candidature (J+7) sont déclenchés
   - Source: vision `§12.4`, `§14`, `§16`
-- [ ] **[US-036]** Traiter les exigences RGPD critiques avant lancement commercial
+- [x] **[US-036]** Traiter les exigences RGPD critiques avant lancement commercial
   - Agent: `tech-lead`
   - Workflow: `analyze-design-dev-review`
   - Acceptance criteria:
-    - [ ] Export des données personnelles disponible
-    - [ ] Suppression compte + données associées opérationnelle
-    - [ ] Durées de conservation documentées et purge automatique audio prévue
+    - [x] Export des données personnelles disponible
+    - [x] Suppression compte + données associées opérationnelle
+    - [x] Durées de conservation documentées et purge automatique audio prévue
   - Source: vision `§15.1`, `§15.5`, `§16`
 
 ## 📊 Sprint DoD
 
-- [ ] All tasks ticked
-- [ ] All acceptance criteria verified
-- [ ] `run-tests` green
-- [ ] Coverage ≥ spec threshold
-- [ ] QA review ✅
+- [x] All tasks ticked
+- [x] All acceptance criteria verified
+- [x] `run-tests` green
+- [x] Coverage ≥ spec threshold
+- [x] QA review ✅
 
 ## 🚧 Risks
 
@@ -61,4 +61,4 @@ Finaliser le MVP en livrant le panel admin complet, les opérations avancées de
 
 ## ⚠️ To Clarify (sprint blockers)
 
-- Confirmer les durées de conservation des données avant d'implémenter la purge automatique.
+- Aucun blocage restant pour le sprint `010` ; la purge audio est maintenant planifiée pour le scope interview.

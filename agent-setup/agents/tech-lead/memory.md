@@ -278,3 +278,10 @@
 - **Why**: Architecture governance required an explicit sign-off that notifications extend the existing candidature history and shell patterns without adding premature queue infrastructure or a second UI shell.
 - **Learned**: The correct MVP architecture is persistence-first and derived: notification reminders can be generated idempotently from application history now, and BullMQ/email can be added later on top of the same notification contract.
 - **Open**: US-036 remains the last Sprint 010 launch blocker.
+
+## 2026-04-23 — US-036 finalization
+
+- **Did**: Closed US-036 with a passing verdict after confirming the new privacy module, authenticated export/delete routes, deletion-safe anonymisation of third-party admin references, the documented retention policy, and passing repo lint/test/build/coverage gates; then updated sprint/workflow bookkeeping.
+- **Why**: Sprint 010 required an explicit architecture sign-off that the GDPR launch slice is operational and fits the current monorepo boundaries without inventing a new framework or persistence model.
+- **Learned**: The right architecture is a dedicated privacy boundary that composes the existing auth/applications/credits/notifications stores, while letting the app augment the export with browser-local profile data.
+- **Open**: The documented 30-day audio purge must become a real scheduled job when interview audio persistence is implemented.
