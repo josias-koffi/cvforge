@@ -258,6 +258,13 @@
 - **Learned**: The repo now satisfies the blocking governance thresholds for this sprint: tests green, coverage above floor, and no high/critical audit findings.
 - **Open**: Low/moderate advisories can be handled as follow-up maintenance outside the sprint-close path.
 
+## 2026-04-23 — US-039 finalization
+
+- **Did**: Accepted ADR-005 for `docx`, closed the DOCX export/version-history workflow with a passing verdict, and updated sprint/state records.
+- **Why**: Architecture governance required an explicit dependency decision and final sign-off before marking `US-039` complete.
+- **Learned**: Keeping DOCX generation in the API preserves the same authorization and structured-content boundary used by PDF export.
+- **Open**: Sprint 011 remains open until `US-040` and sprint DoD are completed.
+
 ## 2026-04-22 — US-033 finalization
 
 - **Did**: Closed US-033 with a passing verdict after confirming the new admin users query, the `/admin` users-and-credits panel, mandatory-note grant flow, and successful API/app test, lint, and build gates; then updated sprint and workflow bookkeeping.

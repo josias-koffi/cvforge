@@ -243,3 +243,10 @@
 - **Why**: Imported CV data must remain reviewable before it changes the active base profile.
 - **Learned**: The existing profile page can host the import flow without adding a new route-level IA workspace.
 - **Open**: A future OCR-quality improvement may need a richer preview/diff UI.
+
+## 2026-04-23 — US-039 design
+
+- **Did**: Added DOCX as a sibling download action on CV/LM editor pages and specified compact version-history cards.
+- **Why**: The export and history controls belong where users already edit and review documents.
+- **Learned**: An ordered history list is enough for auditability now without designing compare or restore flows outside the story scope.
+- **Open**: Template-specific DOCX styling can be refined later if visual fidelity becomes a product requirement.

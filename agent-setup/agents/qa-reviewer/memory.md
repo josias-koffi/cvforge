@@ -257,3 +257,10 @@
 - **Why**: The task could only pass once all acceptance criteria and blocking engineering standards had direct evidence.
 - **Learned**: The repo-level coverage run exposed a landing branch gap, which was closed with a focused config test before approval.
 - **Open**: No blocking issues remain for US-038; PDF quality remains an advisory limitation by design.
+
+## 2026-04-23 — US-039 review
+
+- **Did**: Verified DOCX export, CV/LM version history, ADR-005, and passing lint/test/build/coverage gates.
+- **Why**: The story could only pass once each acceptance criterion had direct route, service, UI, and test evidence.
+- **Learned**: The first coverage attempt hit a transient API bootstrap timeout, but the rerun passed with API `86.54%` lines / `74.29%` branches and app `82.72%` lines / `70.01%` branches.
+- **Open**: DOCX styling remains intentionally ATS-focused rather than template-faithful.

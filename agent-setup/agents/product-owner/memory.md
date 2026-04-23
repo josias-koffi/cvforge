@@ -258,6 +258,13 @@
 - **Learned**: Vision `§13.3` is specific enough to require real usage analytics, not static placeholders, so the implementation should persist minimal template-usage metadata from document generation.
 - **Open**: US-035 can proceed independently once the admin templates analytics/export slice is closed.
 
+## 2026-04-23 — US-039
+
+- **Did**: Scoped `US-039` to DOCX export for existing CV/LM documents plus visible version history for generation and manual saves.
+- **Why**: Sprint 011 required the V1.1 document productivity slice without reopening template authoring or adding restore/compare workflows.
+- **Learned**: The clean MVP boundary is an ATS-readable DOCX generated from structured document content, not visual parity with PDF.
+- **Open**: Future document work can add template-faithful DOCX styling and version restore if product scope requires it.
+
 ## 2026-04-22 — US-035 analyze
 
 - **Did**: Confirmed that US-035 is limited to one in-app notification center plus the MVP J+7 follow-up reminder for candidatures still marked as sent without response.

@@ -29,13 +29,13 @@ Ouvrir `V1.1` avec les fonctions de productivité candidat: profils multiples, i
     - [x] Le pipeline d'extraction respecte la pseudonymisation
     - [x] Les limites de qualité sont documentées
   - Source: vision `§4`, `§15.3`, `§16`
-- [ ] **[US-039]** Ajouter l'export DOCX et l'historique des versions CV/LM
+- [x] **[US-039]** Ajouter l'export DOCX et l'historique des versions CV/LM
   - Agent: `developer`
   - Workflow: `analyze-design-dev-review`
   - Acceptance criteria:
-    - [ ] Un export DOCX existe
-    - [ ] Les versions successives des CV/LM sont historisées
-    - [ ] Le choix de la librairie DOCX est documenté par ADR si nécessaire
+    - [x] Un export DOCX existe
+    - [x] Les versions successives des CV/LM sont historisées
+    - [x] Le choix de la librairie DOCX est documenté par ADR si nécessaire
   - Source: vision `§6.6`, `§16`
 - [ ] **[US-040]** Ajouter la recherche de recruteur
   - Agent: `analyst`

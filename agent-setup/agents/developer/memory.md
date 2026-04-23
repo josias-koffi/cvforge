@@ -298,6 +298,13 @@
 - **Did**: Expanded the authenticated dashboard to fetch live applications and credits, added 7 base KPI cards, quick-access cards, and a recent-applications block, then updated the dashboard test coverage and verified the repo with `pnpm test`, `pnpm lint`, and `pnpm build`.
 - **Why**: US-032 required the dashboard MVP to expose real product activity rather than partial placeholder metrics.
 - **Learned**: The existing `/applications`, `/applications/summary`, and `/credits/me` endpoints were already sufficient to complete the dashboard without backend changes.
+
+## 2026-04-23 — US-039
+
+- **Did**: Added server-side DOCX export with `docx`, authenticated app proxy routes, CV/LM version snapshots on generation/save, visible editor histories, and ADR-005.
+- **Why**: Sprint 011 required DOCX output and successive CV/LM version history on top of the existing document pipeline.
+- **Learned**: The structured `CVDocumentContent` and `LetterDocumentContent` contracts are sufficient to generate ATS-readable DOCX without rendering HTML first.
+- **Open**: The DOCX layout is conservative; future work can map template styling into DOCX if needed.
 - **Open**: A full dependency audit still needs an audit-capable registry because the configured private registry does not expose the npm audit endpoint.
 
 ## 2026-04-22 — Sprint 009 final gates
