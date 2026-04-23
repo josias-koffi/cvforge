@@ -108,6 +108,14 @@ function makeController(
       filename: "DUPONT_Jean_CDI_Senior_Developer.pdf",
       pdf: Buffer.from([37, 80, 68, 70]),
     }),
+    exportDocx: vi.fn().mockResolvedValue({
+      docx: Buffer.from([80, 75, 3, 4]),
+      filename: "DUPONT_Jean_CDI_Senior_Developer.docx",
+    }),
+    exportLetterDocx: vi.fn().mockResolvedValue({
+      docx: Buffer.from([80, 75, 3, 4]),
+      filename: "DUPONT_Jean_CDI_Senior_Developer_LM.docx",
+    }),
   } as unknown as CvPdfExportService;
   const cvImportService = {
     extractProfileFromCv: vi.fn().mockResolvedValue({
@@ -444,6 +452,22 @@ describe("CvGenerationController", () => {
     });
   });
 
+  describe("GET :applicationId/cv/docx", () => {
+    it("returns a streamed DOCX file for authenticated user", async () => {
+      const controller = makeController();
+      const result = await controller.exportDocx("app-001", {
+        headers: { cookie: "cvforge_session=abc" },
+      });
+
+      expect(result).toBeInstanceOf(StreamableFile);
+      expect(result.getHeaders()).toMatchObject({
+        disposition:
+          'attachment; filename="DUPONT_Jean_CDI_Senior_Developer.docx"',
+        type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      });
+    });
+  });
+
   describe("GET :applicationId/letter/pdf", () => {
     it("returns a streamed PDF file for authenticated user", async () => {
       const controller = makeController();
@@ -491,6 +515,22 @@ describe("CvGenerationController", () => {
         "user@test.example",
         "app-001",
       );
+    });
+  });
+
+  describe("GET :applicationId/letter/docx", () => {
+    it("returns a streamed DOCX file for authenticated user", async () => {
+      const controller = makeController();
+      const result = await controller.exportLetterDocx("app-001", {
+        headers: { cookie: "cvforge_session=abc" },
+      });
+
+      expect(result).toBeInstanceOf(StreamableFile);
+      expect(result.getHeaders()).toMatchObject({
+        disposition:
+          'attachment; filename="DUPONT_Jean_CDI_Senior_Developer_LM.docx"',
+        type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      });
     });
   });
 });

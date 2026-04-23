@@ -258,6 +258,27 @@ describe("CvPdfExportService", () => {
     ).rejects.toBeInstanceOf(NotFoundException);
   });
 
+  it("exports CV DOCX from the stored document content", async () => {
+    const result = await service.exportDocx("user@test.example", "app-001");
+
+    expect(result.filename).toBe("DUPONT_Jean_CDI_Senior_Developer.docx");
+    expect(result.docx).toBeInstanceOf(Buffer);
+    expect(result.docx.subarray(0, 2).toString()).toBe("PK");
+  });
+
+  it("exports letter DOCX from the stored letter content", async () => {
+    const result = await service.exportLetterDocx(
+      "user@test.example",
+      "app-001",
+    );
+
+    expect(result.filename).toBe(
+      "DUPONT_Jean_CDI_Senior_Developer_LM.docx",
+    );
+    expect(result.docx).toBeInstanceOf(Buffer);
+    expect(result.docx.subarray(0, 2).toString()).toBe("PK");
+  });
+
   it("throws when no CV has been generated yet", async () => {
     store.findByIdForUserEmail.mockReturnValue(
       makeStoredApplication({ cvContent: null }),

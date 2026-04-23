@@ -64,11 +64,28 @@ describe("LetterPage", () => {
     cookiesMock.mockResolvedValue({
       getAll: () => [{ name: "cvforge_session", value: "session-token" }],
     });
-    vi.mocked(fetch).mockResolvedValue({
-      json: async () => ({ letterContent }),
-      ok: true,
-      status: 200,
-    } as Response);
+    vi.mocked(fetch)
+      .mockResolvedValueOnce({
+        json: async () => ({ letterContent }),
+        ok: true,
+        status: 200,
+      } as Response)
+      .mockResolvedValueOnce({
+        json: async () => ({
+          versions: [
+            {
+              content: letterContent,
+              createdAt: "2026-04-23T10:00:00.000Z",
+              id: "app-001-letter-v1",
+              source: "generation",
+              templateId: "template-letter-ats",
+              versionNumber: 1,
+            },
+          ],
+        }),
+        ok: true,
+        status: 200,
+      } as Response);
   }
 
   it("renders the default LM ATS editor and preview", async () => {
@@ -84,5 +101,7 @@ describe("LetterPage", () => {
     expect(markup).toContain("Template LM ATS par défaut");
     expect(markup).toContain("Aperçu live");
     expect(markup).toContain("Example Corp");
+    expect(markup).toContain("Telecharger le DOCX");
+    expect(markup).toContain("Historique des versions LM");
   });
 });

@@ -2,7 +2,10 @@ import React from "react";
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import { AppShell } from "@cvforge/ui";
-import type { LetterDocumentContent } from "@cvforge/types";
+import type {
+  LetterDocumentContent,
+  LetterDocumentVersionEntry,
+} from "@cvforge/types";
 import { getServerApiUrl } from "../../auth-config";
 import { requireSession } from "../../auth/session";
 import { getAppNavigation } from "../../content";
@@ -43,10 +46,35 @@ async function fetchLetterContent(
   return payload.letterContent;
 }
 
+async function fetchLetterVersions(
+  applicationId: string,
+): Promise<LetterDocumentVersionEntry[]> {
+  const cookieStore = await cookies();
+  const cookieHeader = getCookieHeader(cookieStore);
+
+  const response = await fetch(
+    `${getServerApiUrl()}/applications/${applicationId}/letter/versions`,
+    {
+      cache: "no-store",
+      headers: cookieHeader ? { cookie: cookieHeader } : undefined,
+    },
+  );
+
+  if (!response.ok) return [];
+
+  const payload = (await response.json()) as {
+    versions: LetterDocumentVersionEntry[];
+  };
+  return Array.isArray(payload.versions) ? payload.versions : [];
+}
+
 export default async function LetterPage({ params }: LetterPageProps) {
   await requireSession();
   const { applicationId } = await params;
-  const letterContent = await fetchLetterContent(applicationId);
+  const [letterContent, versions] = await Promise.all([
+    fetchLetterContent(applicationId),
+    fetchLetterVersions(applicationId),
+  ]);
 
   if (!letterContent) {
     notFound();
@@ -59,7 +87,11 @@ export default async function LetterPage({ params }: LetterPageProps) {
       navigation={getAppNavigation("/candidatures")}
       title="Edition de la LM"
     >
-      <LetterEditor applicationId={applicationId} letterContent={letterContent} />
+      <LetterEditor
+        applicationId={applicationId}
+        letterContent={letterContent}
+        versions={versions}
+      />
     </AppShell>
   );
 }

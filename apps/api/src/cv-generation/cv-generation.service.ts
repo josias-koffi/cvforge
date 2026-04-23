@@ -1,9 +1,11 @@
 import {
   type CVDocumentContent,
+  type CVDocumentVersionEntry,
   type CvContentUpdateRequest,
   type CvGenerationRequest,
   type LetterContentUpdateRequest,
   type LetterDocumentContent,
+  type LetterDocumentVersionEntry,
   type LetterGenerationRequest,
   type EducationItemProps,
   type ExperienceItemProps,
@@ -23,6 +25,7 @@ import {
 } from "@nestjs/common";
 import type { OpenRouterService } from "../ai/openrouter.service";
 import type { ApplicationsStore } from "../applications/applications.types";
+import type { StoredApplication } from "../applications/applications.types";
 import type { CreditsService } from "../credits/credits.service";
 import type { TemplatesStore } from "../templates/templates.types";
 
@@ -429,6 +432,61 @@ function assertLocalFieldsProvided(
   }
 }
 
+function nextVersionNumber(
+  versions: Array<{ versionNumber: number }> | undefined,
+) {
+  return (versions?.reduce(
+    (highest, version) => Math.max(highest, version.versionNumber),
+    0,
+  ) ?? 0) + 1;
+}
+
+function appendCvVersion(
+  application: StoredApplication,
+  content: CVDocumentContent,
+  timestamp: string,
+  source: CVDocumentVersionEntry["source"],
+  templateId: string | null,
+) {
+  const versions = application.cvVersions ?? [];
+  const versionNumber = nextVersionNumber(versions);
+
+  return [
+    ...versions,
+    {
+      content,
+      createdAt: timestamp,
+      id: `${application.id}-cv-v${versionNumber}`,
+      source,
+      templateId,
+      versionNumber,
+    },
+  ];
+}
+
+function appendLetterVersion(
+  application: StoredApplication,
+  content: LetterDocumentContent,
+  timestamp: string,
+  source: LetterDocumentVersionEntry["source"],
+  templateId: string | null,
+) {
+  const versions = application.letterVersions ?? [];
+  const versionNumber = nextVersionNumber(versions);
+
+  return [
+    ...versions,
+    {
+      content,
+      createdAt: timestamp,
+      id: `${application.id}-letter-v${versionNumber}`,
+      source,
+      templateId,
+      versionNumber,
+    },
+  ];
+}
+
 @Injectable()
 export class CvGenerationService {
   constructor(
@@ -471,11 +529,19 @@ export class CvGenerationService {
     const cvTemplateId = this.resolveDefaultTemplateId(TEMPLATE_KIND_CV);
 
     const timestamp = new Date().toISOString();
+    const resolvedTemplateId = cvTemplateId ?? application.cvTemplateId ?? null;
     this.store.save({
       ...application,
       cvContent,
       cvGeneratedAt: timestamp,
-      cvTemplateId: cvTemplateId ?? application.cvTemplateId ?? null,
+      cvTemplateId: resolvedTemplateId,
+      cvVersions: appendCvVersion(
+        application,
+        cvContent,
+        timestamp,
+        "generation",
+        resolvedTemplateId,
+      ),
       updatedAt: timestamp,
     });
 
@@ -521,11 +587,20 @@ export class CvGenerationService {
     const letterTemplateId = this.resolveDefaultTemplateId(TEMPLATE_KIND_LETTER);
 
     const timestamp = new Date().toISOString();
+    const resolvedTemplateId =
+      letterTemplateId ?? application.letterTemplateId ?? null;
     this.store.save({
       ...application,
       letterContent,
       letterGeneratedAt: timestamp,
-      letterTemplateId: letterTemplateId ?? application.letterTemplateId ?? null,
+      letterTemplateId: resolvedTemplateId,
+      letterVersions: appendLetterVersion(
+        application,
+        letterContent,
+        timestamp,
+        "generation",
+        resolvedTemplateId,
+      ),
       updatedAt: timestamp,
     });
 
@@ -548,13 +623,21 @@ export class CvGenerationService {
 
     const cvContent = normalizeUpdatedCvContent(request.cvContent);
     const timestamp = new Date().toISOString();
+    const cvTemplateId =
+      application.cvTemplateId ?? this.resolveDefaultTemplateId(TEMPLATE_KIND_CV);
 
     this.store.save({
       ...application,
       cvContent,
       cvGeneratedAt: application.cvGeneratedAt ?? timestamp,
-      cvTemplateId:
-        application.cvTemplateId ?? this.resolveDefaultTemplateId(TEMPLATE_KIND_CV),
+      cvTemplateId,
+      cvVersions: appendCvVersion(
+        application,
+        cvContent,
+        timestamp,
+        "manual_save",
+        cvTemplateId ?? null,
+      ),
       updatedAt: timestamp,
     });
 
@@ -569,6 +652,16 @@ export class CvGenerationService {
     return application.cvContent ?? null;
   }
 
+  listCvVersions(
+    userEmail: string,
+    applicationId: string,
+  ): CVDocumentVersionEntry[] {
+    const application = this.getApplicationForUser(userEmail, applicationId);
+    return [...(application.cvVersions ?? [])].sort(
+      (left, right) => right.versionNumber - left.versionNumber,
+    );
+  }
+
   updateLetterContent(
     userEmail: string,
     applicationId: string,
@@ -577,14 +670,22 @@ export class CvGenerationService {
     const application = this.getApplicationForUser(userEmail, applicationId);
     const letterContent = normalizeUpdatedLetterContent(request.letterContent);
     const timestamp = new Date().toISOString();
+    const letterTemplateId =
+      application.letterTemplateId ??
+      this.resolveDefaultTemplateId(TEMPLATE_KIND_LETTER);
 
     this.store.save({
       ...application,
       letterContent,
       letterGeneratedAt: application.letterGeneratedAt ?? timestamp,
-      letterTemplateId:
-        application.letterTemplateId ??
-        this.resolveDefaultTemplateId(TEMPLATE_KIND_LETTER),
+      letterTemplateId,
+      letterVersions: appendLetterVersion(
+        application,
+        letterContent,
+        timestamp,
+        "manual_save",
+        letterTemplateId ?? null,
+      ),
       updatedAt: timestamp,
     });
 
@@ -597,6 +698,16 @@ export class CvGenerationService {
   ): LetterDocumentContent | null {
     const application = this.getApplicationForUser(userEmail, applicationId);
     return application.letterContent ?? null;
+  }
+
+  listLetterVersions(
+    userEmail: string,
+    applicationId: string,
+  ): LetterDocumentVersionEntry[] {
+    const application = this.getApplicationForUser(userEmail, applicationId);
+    return [...(application.letterVersions ?? [])].sort(
+      (left, right) => right.versionNumber - left.versionNumber,
+    );
   }
 
   private getApplicationForUser(userEmail: string, applicationId: string) {

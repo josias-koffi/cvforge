@@ -2,9 +2,11 @@ import type {
   ApplicationStatus,
   ApplicationsKpiSummary,
   CVDocumentContent,
+  CVDocumentVersionEntry,
   DraftApplication,
   ExtractedOfferFields,
   LetterDocumentContent,
+  LetterDocumentVersionEntry,
 } from "@cvforge/types";
 
 export type ApplicationsConfig = {
@@ -13,7 +15,9 @@ export type ApplicationsConfig = {
 
 export type StoredApplication = DraftApplication & {
   cvContent: CVDocumentContent | null;
+  cvVersions?: CVDocumentVersionEntry[];
   letterContent?: LetterDocumentContent | null;
+  letterVersions?: LetterDocumentVersionEntry[];
   rawOfferText: string;
 };
 

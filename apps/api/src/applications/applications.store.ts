@@ -3,6 +3,8 @@ import {
   applicationStatuses,
   type ApplicationStatus,
   type ApplicationStatusHistoryEntry,
+  type CVDocumentVersionEntry,
+  type LetterDocumentVersionEntry,
 } from "@cvforge/types";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
@@ -62,6 +64,8 @@ function normalizeStoredApplication(
 ): StoredApplication {
   const status = normalizeStatus(application.status);
   const fallbackChangedAt = application.updatedAt || application.createdAt;
+  const cvVersions = normalizeCvVersions(application);
+  const letterVersions = normalizeLetterVersions(application);
 
   return {
     ...application,
@@ -71,6 +75,8 @@ function normalizeStoredApplication(
     letterContent: application.letterContent ?? null,
     letterGeneratedAt: application.letterGeneratedAt ?? null,
     letterTemplateId: application.letterTemplateId ?? null,
+    cvVersions,
+    letterVersions,
     status,
     statusHistory: normalizeStatusHistory(
       application.statusHistory,
@@ -78,6 +84,61 @@ function normalizeStoredApplication(
       fallbackChangedAt,
     ),
   };
+}
+
+function normalizeCvVersions(
+  application: StoredApplication,
+): CVDocumentVersionEntry[] {
+  if (Array.isArray(application.cvVersions) && application.cvVersions.length > 0) {
+    return application.cvVersions;
+  }
+
+  if (!application.cvContent) {
+    return [];
+  }
+
+  const createdAt =
+    application.cvGeneratedAt ?? application.updatedAt ?? application.createdAt;
+
+  return [
+    {
+      content: application.cvContent,
+      createdAt,
+      id: `${application.id}-cv-v1`,
+      source: "generation",
+      templateId: application.cvTemplateId ?? null,
+      versionNumber: 1,
+    },
+  ];
+}
+
+function normalizeLetterVersions(
+  application: StoredApplication,
+): LetterDocumentVersionEntry[] {
+  if (
+    Array.isArray(application.letterVersions) &&
+    application.letterVersions.length > 0
+  ) {
+    return application.letterVersions;
+  }
+
+  if (!application.letterContent) {
+    return [];
+  }
+
+  const createdAt =
+    application.letterGeneratedAt ?? application.updatedAt ?? application.createdAt;
+
+  return [
+    {
+      content: application.letterContent,
+      createdAt,
+      id: `${application.id}-letter-v1`,
+      source: "generation",
+      templateId: application.letterTemplateId ?? null,
+      versionNumber: 1,
+    },
+  ];
 }
 
 export class FileApplicationsStore implements ApplicationsStore {

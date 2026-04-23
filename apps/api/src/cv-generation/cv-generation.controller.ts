@@ -157,6 +157,27 @@ export class CvGenerationController {
     return { cvContent };
   }
 
+  @Get(":applicationId/cv/versions")
+  listCvVersions(
+    @Param("applicationId") applicationId: string,
+    @Req() request: RequestLike,
+  ) {
+    const session = this.authService.readSessionFromCookieHeader(
+      request.headers.cookie,
+    );
+
+    if (!session) {
+      throw new UnauthorizedException("A valid session is required.");
+    }
+
+    return {
+      versions: this.cvGenerationService.listCvVersions(
+        session.email,
+        applicationId,
+      ),
+    };
+  }
+
   @Put(":applicationId/letter")
   updateLetterContent(
     @Param("applicationId") applicationId: string,
@@ -178,6 +199,27 @@ export class CvGenerationController {
     );
 
     return { letterContent };
+  }
+
+  @Get(":applicationId/letter/versions")
+  listLetterVersions(
+    @Param("applicationId") applicationId: string,
+    @Req() request: RequestLike,
+  ) {
+    const session = this.authService.readSessionFromCookieHeader(
+      request.headers.cookie,
+    );
+
+    if (!session) {
+      throw new UnauthorizedException("A valid session is required.");
+    }
+
+    return {
+      versions: this.cvGenerationService.listLetterVersions(
+        session.email,
+        applicationId,
+      ),
+    };
   }
 
   @Get(":applicationId/letter")
@@ -230,6 +272,34 @@ export class CvGenerationController {
     });
   }
 
+  @Get(":applicationId/cv/docx")
+  @Header(
+    "Content-Type",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  )
+  async exportDocx(
+    @Param("applicationId") applicationId: string,
+    @Req() request: RequestLike,
+  ) {
+    const session = this.authService.readSessionFromCookieHeader(
+      request.headers.cookie,
+    );
+
+    if (!session) {
+      throw new UnauthorizedException("A valid session is required.");
+    }
+
+    const { docx, filename } = await this.cvPdfExportService.exportDocx(
+      session.email,
+      applicationId,
+    );
+
+    return new StreamableFile(docx, {
+      disposition: `attachment; filename="${filename}"`,
+      type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    });
+  }
+
   @Get(":applicationId/letter/pdf")
   @Header("Content-Type", "application/pdf")
   async exportLetterPdf(
@@ -252,6 +322,34 @@ export class CvGenerationController {
     return new StreamableFile(pdf, {
       disposition: `attachment; filename="${filename}"`,
       type: "application/pdf",
+    });
+  }
+
+  @Get(":applicationId/letter/docx")
+  @Header(
+    "Content-Type",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  )
+  async exportLetterDocx(
+    @Param("applicationId") applicationId: string,
+    @Req() request: RequestLike,
+  ) {
+    const session = this.authService.readSessionFromCookieHeader(
+      request.headers.cookie,
+    );
+
+    if (!session) {
+      throw new UnauthorizedException("A valid session is required.");
+    }
+
+    const { docx, filename } = await this.cvPdfExportService.exportLetterDocx(
+      session.email,
+      applicationId,
+    );
+
+    return new StreamableFile(docx, {
+      disposition: `attachment; filename="${filename}"`,
+      type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     });
   }
 }

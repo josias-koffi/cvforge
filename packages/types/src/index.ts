@@ -181,6 +181,17 @@ export interface CVDocumentContent {
   };
 }
 
+export type DocumentVersionSource = "generation" | "manual_save";
+
+export interface CVDocumentVersionEntry {
+  content: CVDocumentContent;
+  createdAt: string;
+  id: string;
+  source: DocumentVersionSource;
+  templateId: string | null;
+  versionNumber: number;
+}
+
 export interface CvContentUpdateRequest {
   cvContent: CVDocumentContent;
 }
@@ -195,6 +206,15 @@ export interface LetterDocumentContent {
   date: string;
   object: string;
   signature: LMSignatureProps;
+}
+
+export interface LetterDocumentVersionEntry {
+  content: LetterDocumentContent;
+  createdAt: string;
+  id: string;
+  source: DocumentVersionSource;
+  templateId: string | null;
+  versionNumber: number;
 }
 
 export interface LetterContentUpdateRequest {

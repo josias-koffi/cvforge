@@ -61,6 +61,30 @@ describe("CvEditor", () => {
     expect(markup).toContain("Edition du CV par contenu");
     expect(markup).toContain("Lecture seule sur mobile");
     expect(markup).toContain("Télécharger le PDF");
+    expect(markup).toContain("Télécharger le DOCX");
+  });
+
+  it("renders CV version history when versions are provided", () => {
+    const markup = renderToStaticMarkup(
+      React.createElement(CvEditor, {
+        applicationId: "app-001",
+        puckData: samplePuckData,
+        versions: [
+          {
+            content: {} as never,
+            createdAt: "2026-04-23T10:00:00.000Z",
+            id: "app-001-cv-v1",
+            source: "generation",
+            templateId: "template-cv-ats",
+            versionNumber: 1,
+          },
+        ],
+      }),
+    );
+
+    expect(markup).toContain("Historique des versions CV");
+    expect(markup).toContain("Version 1");
+    expect(markup).toContain("génération");
   });
 
   it("renders the mobile Puck Render component with candidate data", () => {

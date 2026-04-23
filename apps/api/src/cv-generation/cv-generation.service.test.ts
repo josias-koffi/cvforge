@@ -271,6 +271,46 @@ describe("CvGenerationService", () => {
       expect(saved.cvContent).toBeDefined();
       expect(saved.cvGeneratedAt).toBeTruthy();
       expect(saved.cvTemplateId).toBe("template-cv-ats");
+      expect(saved.cvVersions).toHaveLength(1);
+      expect(saved.cvVersions?.[0]).toMatchObject({
+        source: "generation",
+        templateId: "template-cv-ats",
+        versionNumber: 1,
+      });
+    });
+
+    it("appends a manual CV version when content is saved", () => {
+      (store.findByIdForUserEmail as ReturnType<typeof vi.fn>).mockReturnValue(
+        makeStoredApplication({
+          cvContent: VALID_CV_JSON,
+          cvGeneratedAt: "2026-01-02T00:00:00.000Z",
+          cvTemplateId: "template-cv-ats",
+          cvVersions: [
+            {
+              content: VALID_CV_JSON,
+              createdAt: "2026-01-02T00:00:00.000Z",
+              id: "app-001-cv-v1",
+              source: "generation",
+              templateId: "template-cv-ats",
+              versionNumber: 1,
+            },
+          ],
+        }),
+      );
+
+      service.updateCvContent("user@test.example", "app-001", {
+        cvContent: VALID_CV_JSON,
+      });
+
+      const saved = (store.save as ReturnType<typeof vi.fn>).mock
+        .calls.at(-1)?.[0] as StoredApplication;
+
+      expect(saved.cvVersions).toHaveLength(2);
+      expect(saved.cvVersions?.[1]).toMatchObject({
+        source: "manual_save",
+        templateId: "template-cv-ats",
+        versionNumber: 2,
+      });
     });
 
     it("throws NotFoundException when application not found", async () => {
@@ -320,6 +360,11 @@ describe("CvGenerationService", () => {
         .calls.at(-1)?.[0] as StoredApplication;
 
       expect(saved.letterTemplateId).toBe("template-letter-ats");
+      expect(saved.letterVersions?.[0]).toMatchObject({
+        source: "generation",
+        templateId: "template-letter-ats",
+        versionNumber: 1,
+      });
     });
 
     it("parses fenced json block from AI response", async () => {

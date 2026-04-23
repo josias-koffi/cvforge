@@ -14,12 +14,13 @@ import {
   toPuckConfig,
   documentBlockRegistry,
 } from "@cvforge/ui";
-import type { PuckData } from "@cvforge/types";
+import type { CVDocumentVersionEntry, PuckData } from "@cvforge/types";
 import { PuckCvEditorLoader } from "./puck-cv-editor-loader";
 
 type CvEditorProps = {
   applicationId: string;
   puckData: PuckData;
+  versions: CVDocumentVersionEntry[];
 };
 
 function resolveDownloadFilename(
@@ -41,51 +42,69 @@ function resolveDownloadFilename(
   return filenameMatch?.[1] ?? `cv-${applicationId}.pdf`;
 }
 
-export function CvEditor({ applicationId, puckData }: CvEditorProps) {
+function fallbackFilename(applicationId: string, format: "docx" | "pdf") {
+  return `cv-${applicationId}.${format}`;
+}
+
+export function CvEditor({ applicationId, puckData, versions }: CvEditorProps) {
+  const documentVersions = versions ?? [];
   const [dlStatus, setDlStatus] = useState<"idle" | "downloading" | "error">(
     "idle",
   );
   const [dlMessage, setDlMessage] = useState<string | null>(null);
   const config = toPuckConfig(documentBlockRegistry, "cv");
 
-  async function downloadPdf() {
+  async function downloadDocument(format: "docx" | "pdf") {
     setDlStatus("downloading");
     setDlMessage(null);
 
     try {
-      const response = await fetch(`/cv/${applicationId}/pdf`);
+      const response = await fetch(`/cv/${applicationId}/${format}`);
 
       if (!response.ok) {
         const payload = (await response.json().catch(() => ({}))) as {
           message?: string;
         };
-        throw new Error(payload.message ?? "L'export PDF a échoué.");
+        throw new Error(payload.message ?? `L'export ${format.toUpperCase()} a échoué.`);
       }
 
       const contentType = response.headers.get("content-type") ?? "";
-      if (!contentType.includes("application/pdf")) {
+      if (format === "pdf" && !contentType.includes("application/pdf")) {
         throw new Error("Le service a retourné un contenu non PDF.");
       }
+      if (
+        format === "docx" &&
+        !contentType.includes(
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        )
+      ) {
+        throw new Error("Le service a retourné un contenu non DOCX.");
+      }
 
-      const pdf = await response.blob();
-      const objectUrl = window.URL.createObjectURL(pdf);
+      const blob = await response.blob();
+      const objectUrl = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = objectUrl;
       link.download = resolveDownloadFilename(
         response.headers.get("content-disposition"),
         applicationId,
-      );
+      ).replace(/\.pdf$/i, `.${format}`);
+      if (!response.headers.get("content-disposition")) {
+        link.download = fallbackFilename(applicationId, format);
+      }
       document.body.appendChild(link);
       link.click();
       link.remove();
       window.URL.revokeObjectURL(objectUrl);
 
       setDlStatus("idle");
-      setDlMessage("Le PDF a été téléchargé.");
+      setDlMessage(`Le ${format.toUpperCase()} a été téléchargé.`);
     } catch (error) {
       setDlStatus("error");
       setDlMessage(
-        error instanceof Error ? error.message : "L'export PDF a échoué.",
+        error instanceof Error
+          ? error.message
+          : `L'export ${format.toUpperCase()} a échoué.`,
       );
     }
   }
@@ -127,13 +146,22 @@ export function CvEditor({ applicationId, puckData }: CvEditorProps) {
           <div>
             <Button
               disabled={dlStatus === "downloading"}
-              onClick={() => void downloadPdf()}
+              onClick={() => void downloadDocument("pdf")}
               type="button"
               variant="secondary"
             >
               {dlStatus === "downloading"
                 ? "Préparation du PDF…"
                 : "Télécharger le PDF"}
+            </Button>
+            <Button
+              disabled={dlStatus === "downloading"}
+              onClick={() => void downloadDocument("docx")}
+              type="button"
+            >
+              {dlStatus === "downloading"
+                ? "Préparation du DOCX…"
+                : "Télécharger le DOCX"}
             </Button>
           </div>
           {dlMessage ? (
@@ -152,6 +180,33 @@ export function CvEditor({ applicationId, puckData }: CvEditorProps) {
               {dlMessage}
             </p>
           ) : null}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Historique des versions CV</CardTitle>
+          <CardDescription>
+            Chaque génération et chaque publication enregistrée crée une version
+            horodatée.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {documentVersions.length === 0 ? (
+            <p style={{ color: "#6B6860", margin: 0 }}>
+              Aucune version historisée.
+            </p>
+          ) : (
+            <ol style={{ display: "grid", gap: "0.5rem", margin: 0 }}>
+              {documentVersions.map((version) => (
+                <li key={version.id}>
+                  Version {version.versionNumber} -{" "}
+                  {version.source === "generation" ? "génération" : "sauvegarde"}{" "}
+                  - {new Date(version.createdAt).toLocaleString("fr-FR")}
+                </li>
+              ))}
+            </ol>
+          )}
         </CardContent>
       </Card>
 

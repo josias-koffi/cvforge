@@ -2,7 +2,7 @@ import React from "react";
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import { AppShell } from "@cvforge/ui";
-import type { CVDocumentContent } from "@cvforge/types";
+import type { CVDocumentContent, CVDocumentVersionEntry } from "@cvforge/types";
 import { getServerApiUrl } from "../../auth-config";
 import { requireSession } from "../../auth/session";
 import { getAppNavigation } from "../../content";
@@ -42,10 +42,35 @@ async function fetchCvContent(
   return payload.cvContent;
 }
 
+async function fetchCvVersions(
+  applicationId: string,
+): Promise<CVDocumentVersionEntry[]> {
+  const cookieStore = await cookies();
+  const cookieHeader = getCookieHeader(cookieStore);
+
+  const response = await fetch(
+    `${getServerApiUrl()}/applications/${applicationId}/cv/versions`,
+    {
+      cache: "no-store",
+      headers: cookieHeader ? { cookie: cookieHeader } : undefined,
+    },
+  );
+
+  if (!response.ok) return [];
+
+  const payload = (await response.json()) as {
+    versions: CVDocumentVersionEntry[];
+  };
+  return Array.isArray(payload.versions) ? payload.versions : [];
+}
+
 export default async function CvPage({ params }: CvPageProps) {
   await requireSession();
   const { applicationId } = await params;
-  const cvContent = await fetchCvContent(applicationId);
+  const [cvContent, versions] = await Promise.all([
+    fetchCvContent(applicationId),
+    fetchCvVersions(applicationId),
+  ]);
 
   if (!cvContent) {
     notFound();
@@ -60,7 +85,11 @@ export default async function CvPage({ params }: CvPageProps) {
       navigation={getAppNavigation("/candidatures")}
       title="Edition du CV"
     >
-      <CvEditor applicationId={applicationId} puckData={puckData} />
+      <CvEditor
+        applicationId={applicationId}
+        puckData={puckData}
+        versions={versions}
+      />
     </AppShell>
   );
 }

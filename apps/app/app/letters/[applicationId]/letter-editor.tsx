@@ -14,6 +14,7 @@ import {
   Textarea,
 } from "@cvforge/ui";
 import type { LetterDocumentContent } from "@cvforge/types";
+import type { LetterDocumentVersionEntry } from "@cvforge/types";
 import { LetterDocumentPreview } from "./letter-document-preview";
 
 function resolveDownloadFilename(
@@ -83,10 +84,13 @@ function Field({
 export function LetterEditor({
   applicationId,
   letterContent,
+  versions,
 }: {
   applicationId: string;
   letterContent: LetterDocumentContent;
+  versions: LetterDocumentVersionEntry[];
 }) {
+  const documentVersions = versions ?? [];
   const [draft, setDraft] = React.useState(letterContent);
   const [status, setStatus] = React.useState<
     "idle" | "saving" | "saved" | "downloading" | "error"
@@ -149,45 +153,58 @@ export function LetterEditor({
     }
   }
 
-  async function downloadPdf() {
+  async function downloadDocument(format: "docx" | "pdf") {
     setStatus("downloading");
     setMessage(null);
 
     try {
-      const response = await fetch(`/letters/${applicationId}/pdf`);
+      const response = await fetch(`/letters/${applicationId}/${format}`);
 
       if (!response.ok) {
         const payload = (await response.json().catch(() => ({}))) as {
           message?: string;
         };
-        throw new Error(payload.message ?? "L'export PDF a echoue.");
+        throw new Error(payload.message ?? `L'export ${format.toUpperCase()} a echoue.`);
       }
 
       const contentType = response.headers.get("content-type") ?? "";
 
-      if (!contentType.includes("application/pdf")) {
+      if (format === "pdf" && !contentType.includes("application/pdf")) {
         throw new Error("Le service a retourne un contenu non PDF.");
       }
+      if (
+        format === "docx" &&
+        !contentType.includes(
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        )
+      ) {
+        throw new Error("Le service a retourne un contenu non DOCX.");
+      }
 
-      const pdf = await response.blob();
-      const objectUrl = window.URL.createObjectURL(pdf);
+      const blob = await response.blob();
+      const objectUrl = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = objectUrl;
       link.download = resolveDownloadFilename(
         response.headers.get("content-disposition"),
         applicationId,
-      );
+      ).replace(/\.pdf$/i, `.${format}`);
+      if (!response.headers.get("content-disposition")) {
+        link.download = `letter-${applicationId}.${format}`;
+      }
       document.body.appendChild(link);
       link.click();
       link.remove();
       window.URL.revokeObjectURL(objectUrl);
 
       setStatus("saved");
-      setMessage("Le PDF a ete telecharge.");
+      setMessage(`Le ${format.toUpperCase()} a ete telecharge.`);
     } catch (error) {
       setStatus("error");
       setMessage(
-        error instanceof Error ? error.message : "L'export PDF a echoue.",
+        error instanceof Error
+          ? error.message
+          : `L'export ${format.toUpperCase()} a echoue.`,
       );
     }
   }
@@ -229,10 +246,18 @@ export function LetterEditor({
           </Button>
           <Button
             disabled={status === "saving" || status === "downloading"}
-            onClick={() => void downloadPdf()}
+            onClick={() => void downloadDocument("pdf")}
             type="button"
           >
             {status === "downloading" ? "Téléchargement…" : "Telecharger le PDF"}
+          </Button>
+          <Button
+            disabled={status === "saving" || status === "downloading"}
+            onClick={() => void downloadDocument("docx")}
+            type="button"
+            variant="secondary"
+          >
+            {status === "downloading" ? "Téléchargement…" : "Telecharger le DOCX"}
           </Button>
         </div>
       </div>
@@ -252,6 +277,32 @@ export function LetterEditor({
           {message}
         </p>
       ) : null}
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Historique des versions LM</CardTitle>
+          <CardDescription>
+            Chaque génération et chaque sauvegarde créent une version horodatée.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {documentVersions.length === 0 ? (
+            <p style={{ color: "#6B6860", margin: 0 }}>
+              Aucune version historisée.
+            </p>
+          ) : (
+            <ol style={{ display: "grid", gap: "0.5rem", margin: 0 }}>
+              {documentVersions.map((version) => (
+                <li key={version.id}>
+                  Version {version.versionNumber} -{" "}
+                  {version.source === "generation" ? "génération" : "sauvegarde"}{" "}
+                  - {new Date(version.createdAt).toLocaleString("fr-FR")}
+                </li>
+              ))}
+            </ol>
+          )}
+        </CardContent>
+      </Card>
 
       <div style={{ display: "grid", gap: "1.5rem", gridTemplateColumns: "minmax(0, 1fr)" }}>
         <div
