@@ -16,7 +16,7 @@ describe("ProfilePage", () => {
     requireSessionMock.mockReset();
   });
 
-  it("renders the protected unique base profile screen", async () => {
+  it("renders the protected multi-profile screen", async () => {
     requireSessionMock.mockResolvedValue({
       email: "user@example.com",
       expiresAt: "2026-04-27T07:45:24.000Z",
@@ -27,7 +27,7 @@ describe("ProfilePage", () => {
     const markup = renderToStaticMarkup(Page);
 
     expect(markup).toContain("Profil de base");
-    expect(markup).toContain("Profil de base unique");
+    expect(markup).toContain("Profils de base multiples");
     expect(markup).toContain("user@example.com");
     expect(markup).toContain("/profile/privacy");
   });

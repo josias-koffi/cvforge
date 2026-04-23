@@ -4,11 +4,13 @@ import {
   normalizeLongText,
   normalizePhone,
   normalizeShortText,
-  normalizeStringList,
   normalizeUrlField,
 } from "../input-guards";
 
 export const BASE_PROFILE_STORAGE_KEY = "cvforge-base-profile";
+export const BASE_PROFILE_REGISTRY_STORAGE_KEY = "cvforge-base-profiles";
+export const APPLICATION_PROFILE_SELECTION_STORAGE_KEY =
+  "cvforge-application-profile-selection";
 
 export type ExperienceEntry = {
   company: string;
@@ -38,6 +40,7 @@ export type ProjectEntry = {
 
 export type BaseProfile = {
   headline: string;
+  id: string;
   identity: {
     city: string;
     email: string;
@@ -49,9 +52,10 @@ export type BaseProfile = {
     phone: string;
     portfolio: string;
   };
+  label: string;
   meta: {
     lastSavedAt: string | null;
-    maxProfiles: 1;
+    maxProfiles: number | null;
     source: "empty" | "onboarding" | "storage";
   };
   sections: {
@@ -65,6 +69,26 @@ export type BaseProfile = {
     technicalSkills: string[];
   };
 };
+
+export type BaseProfileRegistry = {
+  activeProfileId: string;
+  profiles: BaseProfile[];
+  version: 2;
+};
+
+export type ApplicationProfileSelection = Record<string, string>;
+
+function createProfileId() {
+  if (typeof globalThis.crypto?.randomUUID === "function") {
+    return globalThis.crypto.randomUUID();
+  }
+
+  return `profile_${Date.now().toString(36)}`;
+}
+
+function createProfileLabel(index: number) {
+  return index === 1 ? "Profil principal" : `Profil ${index}`;
+}
 
 export function createEmptyExperience(): ExperienceEntry {
   return {
@@ -100,9 +124,13 @@ export function createEmptyProject(): ProjectEntry {
   };
 }
 
-export function createEmptyBaseProfile(sessionEmail: string): BaseProfile {
+export function createEmptyBaseProfile(
+  sessionEmail: string,
+  options?: { id?: string; label?: string },
+): BaseProfile {
   return {
     headline: "",
+    id: normalizeShortText(options?.id, 80) || createProfileId(),
     identity: {
       city: "",
       email: sessionEmail,
@@ -114,9 +142,10 @@ export function createEmptyBaseProfile(sessionEmail: string): BaseProfile {
       phone: "",
       portfolio: "",
     },
+    label: normalizeShortText(options?.label, 80) || createProfileLabel(1),
     meta: {
       lastSavedAt: null,
-      maxProfiles: 1,
+      maxProfiles: null,
       source: "empty",
     },
     sections: {
@@ -130,6 +159,25 @@ export function createEmptyBaseProfile(sessionEmail: string): BaseProfile {
       technicalSkills: [],
     },
   };
+}
+
+export function createEmptyProfileRegistry(sessionEmail: string): BaseProfileRegistry {
+  const profile = createEmptyBaseProfile(sessionEmail);
+
+  return {
+    activeProfileId: profile.id,
+    profiles: [profile],
+    version: 2,
+  };
+}
+
+export function createAdditionalBaseProfile(
+  sessionEmail: string,
+  profileCount: number,
+): BaseProfile {
+  return createEmptyBaseProfile(sessionEmail, {
+    label: createProfileLabel(profileCount + 1),
+  });
 }
 
 function asExperienceList(value: unknown) {
@@ -185,11 +233,13 @@ function asProjectList(value: unknown) {
 export function createProfileFromOnboarding(
   sessionEmail: string,
   storage: Pick<Storage, "getItem">,
+  options?: { id?: string; label?: string },
 ): BaseProfile {
   const draft = loadDraftFromStorage(sessionEmail, storage);
 
   return {
     headline: "",
+    id: normalizeShortText(options?.id, 80) || createProfileId(),
     identity: {
       city: draft.personal.city,
       email: draft.personal.professionalEmail || sessionEmail,
@@ -201,9 +251,10 @@ export function createProfileFromOnboarding(
       phone: draft.personal.phone,
       portfolio: draft.links.portfolio,
     },
+    label: normalizeShortText(options?.label, 80) || createProfileLabel(1),
     meta: {
       lastSavedAt: null,
-      maxProfiles: 1,
+      maxProfiles: null,
       source: "onboarding",
     },
     sections: {
@@ -222,17 +273,19 @@ export function createProfileFromOnboarding(
 export function sanitizeBaseProfile(
   value: unknown,
   sessionEmail: string,
+  fallback?: BaseProfile,
 ): BaseProfile {
-  const fallback = createEmptyBaseProfile(sessionEmail);
+  const emptyProfile = fallback ?? createEmptyBaseProfile(sessionEmail);
 
   if (!value || typeof value !== "object") {
-    return fallback;
+    return emptyProfile;
   }
 
   const candidate = value as Partial<BaseProfile>;
 
   return {
     headline: normalizeShortText(candidate.headline, 120),
+    id: normalizeShortText(candidate.id, 80) || emptyProfile.id,
     identity: {
       city: normalizeShortText(candidate.identity?.city, 120),
       email: normalizeEmail(candidate.identity?.email, sessionEmail) || sessionEmail,
@@ -244,12 +297,14 @@ export function sanitizeBaseProfile(
       phone: normalizePhone(candidate.identity?.phone),
       portfolio: normalizeUrlField(candidate.identity?.portfolio),
     },
+    label:
+      normalizeShortText(candidate.label, 80) || emptyProfile.label || createProfileLabel(1),
     meta: {
       lastSavedAt:
         typeof candidate.meta?.lastSavedAt === "string"
           ? candidate.meta.lastSavedAt
           : null,
-      maxProfiles: 1,
+      maxProfiles: null,
       source:
         candidate.meta?.source === "onboarding" || candidate.meta?.source === "storage"
           ? candidate.meta.source
@@ -268,57 +323,188 @@ export function sanitizeBaseProfile(
   };
 }
 
-export function loadBaseProfileFromStorage(
-  sessionEmail: string,
-  storage: Pick<Storage, "getItem"> | undefined,
-): BaseProfile {
-  if (!storage) {
-    return createEmptyBaseProfile(sessionEmail);
+function normalizeStringList(value: unknown) {
+  if (!Array.isArray(value)) {
+    return [];
   }
 
-  const rawProfile = storage.getItem(BASE_PROFILE_STORAGE_KEY);
+  return value
+    .map((item) => normalizeShortText(item, 80))
+    .filter(Boolean);
+}
 
-  if (rawProfile) {
-    try {
-      const parsed = JSON.parse(rawProfile) as unknown;
-      const sanitized = sanitizeBaseProfile(parsed, sessionEmail);
+function hasMeaningfulProfileContent(profile: BaseProfile) {
+  return Boolean(
+    profile.identity.firstName.trim() ||
+      profile.identity.lastName.trim() ||
+      profile.identity.city.trim() ||
+      profile.identity.phone.trim() ||
+      profile.identity.linkedIn.trim() ||
+      profile.identity.github.trim() ||
+      profile.identity.portfolio.trim() ||
+      profile.identity.otherLink.trim() ||
+      profile.headline.trim() ||
+      profile.sections.summary.trim(),
+  );
+}
 
-      return {
-        ...sanitized,
+function migrateLegacyProfile(
+  sessionEmail: string,
+  legacyValue: unknown,
+): BaseProfileRegistry | null {
+  if (!legacyValue || typeof legacyValue !== "object") {
+    return null;
+  }
+
+  const migratedProfile = sanitizeBaseProfile(legacyValue, sessionEmail, createEmptyBaseProfile(sessionEmail));
+
+  return {
+    activeProfileId: migratedProfile.id,
+    profiles: [
+      {
+        ...migratedProfile,
         meta: {
-          ...sanitized.meta,
+          ...migratedProfile.meta,
           source: "storage",
         },
-      };
+      },
+    ],
+    version: 2,
+  };
+}
+
+export function sanitizeBaseProfileRegistry(
+  value: unknown,
+  sessionEmail: string,
+): BaseProfileRegistry {
+  const fallback = createEmptyProfileRegistry(sessionEmail);
+
+  if (!value || typeof value !== "object") {
+    return fallback;
+  }
+
+  const candidate = value as Partial<BaseProfileRegistry>;
+  const rawProfiles = Array.isArray(candidate.profiles) ? candidate.profiles : [];
+  const profiles = rawProfiles
+    .map((profile, index) =>
+      sanitizeBaseProfile(profile, sessionEmail, createEmptyBaseProfile(sessionEmail, {
+        label: createProfileLabel(index + 1),
+      })),
+    )
+    .filter((profile, index, collection) =>
+      collection.findIndex((item) => item.id === profile.id) === index,
+    );
+
+  if (profiles.length === 0) {
+    return fallback;
+  }
+
+  const activeProfileId = profiles.some((profile) => profile.id === candidate.activeProfileId)
+    ? (candidate.activeProfileId as string)
+    : profiles[0].id;
+
+  return {
+    activeProfileId,
+    profiles,
+    version: 2,
+  };
+}
+
+export function getActiveProfile(registry: BaseProfileRegistry) {
+  return (
+    registry.profiles.find((profile) => profile.id === registry.activeProfileId) ??
+    registry.profiles[0]
+  );
+}
+
+export function loadProfileRegistryFromStorage(
+  sessionEmail: string,
+  storage: Pick<Storage, "getItem" | "setItem"> | undefined,
+): BaseProfileRegistry {
+  if (!storage) {
+    return createEmptyProfileRegistry(sessionEmail);
+  }
+
+  const rawRegistry = storage.getItem(BASE_PROFILE_REGISTRY_STORAGE_KEY);
+
+  if (rawRegistry) {
+    try {
+      return sanitizeBaseProfileRegistry(JSON.parse(rawRegistry) as unknown, sessionEmail);
     } catch {
-      return createEmptyBaseProfile(sessionEmail);
+      return createEmptyProfileRegistry(sessionEmail);
+    }
+  }
+
+  const rawLegacyProfile = storage.getItem(BASE_PROFILE_STORAGE_KEY);
+
+  if (rawLegacyProfile) {
+    try {
+      const migratedRegistry = migrateLegacyProfile(
+        sessionEmail,
+        JSON.parse(rawLegacyProfile) as unknown,
+      );
+
+      if (migratedRegistry) {
+        storage.setItem(
+          BASE_PROFILE_REGISTRY_STORAGE_KEY,
+          JSON.stringify(migratedRegistry),
+        );
+        return migratedRegistry;
+      }
+    } catch {
+      return createEmptyProfileRegistry(sessionEmail);
     }
   }
 
   const seededProfile = createProfileFromOnboarding(sessionEmail, storage);
-  const hasOnboardingData = Boolean(
-    seededProfile.identity.firstName.trim() ||
-      seededProfile.identity.lastName.trim() ||
-      seededProfile.identity.city.trim() ||
-      seededProfile.identity.phone.trim() ||
-      seededProfile.identity.linkedIn.trim() ||
-      seededProfile.identity.github.trim() ||
-      seededProfile.identity.portfolio.trim() ||
-      seededProfile.identity.otherLink.trim() ||
-      seededProfile.sections.summary.trim(),
-  );
 
-  return hasOnboardingData ? seededProfile : createEmptyBaseProfile(sessionEmail);
+  if (hasMeaningfulProfileContent(seededProfile)) {
+    return {
+      activeProfileId: seededProfile.id,
+      profiles: [seededProfile],
+      version: 2,
+    };
+  }
+
+  return createEmptyProfileRegistry(sessionEmail);
 }
 
-export function saveBaseProfileToStorage(
-  profile: BaseProfile,
+export function saveProfileRegistryToStorage(
+  registry: BaseProfileRegistry,
   storage: Pick<Storage, "setItem"> | undefined,
 ) {
   if (!storage) {
     return;
   }
 
+  storage.setItem(BASE_PROFILE_REGISTRY_STORAGE_KEY, JSON.stringify(registry));
+}
+
+export function loadBaseProfileFromStorage(
+  sessionEmail: string,
+  storage: Pick<Storage, "getItem" | "setItem"> | undefined,
+): BaseProfile {
+  return getActiveProfile(loadProfileRegistryFromStorage(sessionEmail, storage));
+}
+
+export function saveBaseProfileToStorage(
+  profile: BaseProfile,
+  storage: Pick<Storage, "getItem" | "setItem"> | undefined,
+) {
+  if (!storage) {
+    return;
+  }
+
+  const registry = loadProfileRegistryFromStorage(profile.identity.email, storage);
+  const nextRegistry = {
+    ...registry,
+    activeProfileId: profile.id,
+    profiles: registry.profiles.some((entry) => entry.id === profile.id)
+      ? registry.profiles.map((entry) => (entry.id === profile.id ? profile : entry))
+      : [...registry.profiles, profile],
+  };
+
+  saveProfileRegistryToStorage(nextRegistry, storage);
   storage.setItem(BASE_PROFILE_STORAGE_KEY, JSON.stringify(profile));
 }
 
@@ -330,6 +516,8 @@ export function clearBaseProfileFromStorage(
   }
 
   storage.removeItem(BASE_PROFILE_STORAGE_KEY);
+  storage.removeItem(BASE_PROFILE_REGISTRY_STORAGE_KEY);
+  storage.removeItem(APPLICATION_PROFILE_SELECTION_STORAGE_KEY);
 }
 
 export function touchBaseProfile(profile: BaseProfile): BaseProfile {
@@ -381,4 +569,80 @@ export function countCompletedProfileSections(profile: BaseProfile) {
   ];
 
   return sections.filter(Boolean).length;
+}
+
+export function loadApplicationProfileSelection(
+  storage: Pick<Storage, "getItem"> | undefined,
+): ApplicationProfileSelection {
+  if (!storage) {
+    return {};
+  }
+
+  const raw = storage.getItem(APPLICATION_PROFILE_SELECTION_STORAGE_KEY);
+
+  if (!raw) {
+    return {};
+  }
+
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+
+    if (!parsed || typeof parsed !== "object") {
+      return {};
+    }
+
+    return Object.fromEntries(
+      Object.entries(parsed).filter(
+        ([applicationId, profileId]) =>
+          typeof applicationId === "string" && typeof profileId === "string" && profileId.trim(),
+      ),
+    );
+  } catch {
+    return {};
+  }
+}
+
+export function saveApplicationProfileSelection(
+  selection: ApplicationProfileSelection,
+  storage: Pick<Storage, "setItem"> | undefined,
+) {
+  if (!storage) {
+    return;
+  }
+
+  storage.setItem(
+    APPLICATION_PROFILE_SELECTION_STORAGE_KEY,
+    JSON.stringify(selection),
+  );
+}
+
+export function getSelectedProfileIdForApplication(
+  applicationId: string,
+  registry: BaseProfileRegistry,
+  selection: ApplicationProfileSelection,
+) {
+  const selectedProfileId = selection[applicationId];
+
+  if (selectedProfileId && registry.profiles.some((profile) => profile.id === selectedProfileId)) {
+    return selectedProfileId;
+  }
+
+  return registry.activeProfileId;
+}
+
+export function getProfileForApplication(
+  applicationId: string,
+  registry: BaseProfileRegistry,
+  selection: ApplicationProfileSelection,
+) {
+  const selectedProfileId = getSelectedProfileIdForApplication(
+    applicationId,
+    registry,
+    selection,
+  );
+
+  return (
+    registry.profiles.find((profile) => profile.id === selectedProfileId) ??
+    getActiveProfile(registry)
+  );
 }

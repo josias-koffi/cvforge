@@ -229,3 +229,10 @@
 - **Why**: The story needed a visible, reusable notification pattern that works across authenticated pages without inventing a second shell or modal system.
 - **Learned**: The current shell can absorb notification affordances cleanly when the bell lives in the hero topline and the center stays card-based and text-first.
 - **Open**: Later notification stories can add interview or low-credit items on top of the same feed without changing this entry pattern.
+
+## 2026-04-23 — US-037 design
+
+- **Did**: Designed `/profile` as a multi-profile workspace with switchable profile cards and kept `/candidatures` on a lightweight per-application selector instead of introducing a new settings surface.
+- **Why**: The story needed explicit interaction rules for switching socles without destabilizing the existing long-form profile editor.
+- **Learned**: The current card and form primitives are sufficient for multi-profile management when the active profile remains the only editable pane.
+- **Open**: A future refinement could add duplication or archiving patterns if users accumulate many profiles.

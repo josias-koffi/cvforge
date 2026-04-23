@@ -27,6 +27,7 @@ import {
   getApplicationStatusLabel,
   getApplicationStatusTone,
 } from "./status-metadata";
+import { ApplicationProfileSelector } from "./application-profile-selector";
 import { GenerateCvButton } from "./generate-cv-button";
 import { GenerateLetterButton } from "./generate-letter-button";
 
@@ -430,12 +431,19 @@ export default async function ApplicationsPage({
                     <div style={{ display: "grid", gap: "0.35rem" }}>
                       <strong style={{ color: "#1A1A18" }}>Génération du CV</strong>
                       <p style={{ color: "#6B6860", lineHeight: 1.6, margin: 0 }}>
-                        Génère un CV ATS optimisé à partir de votre profil de base et du texte de l&apos;offre.
-                        Les données sensibles (nom, téléphone, email) sont injectées localement après la génération IA.
+                        Genere un CV ATS optimise a partir du profil selectionne pour cette candidature et du texte de l&apos;offre.
+                        Les donnees sensibles (nom, telephone, email) sont injectees localement apres la generation IA.
                       </p>
                     </div>
+                    <ApplicationProfileSelector
+                      applicationId={application.id}
+                      sessionEmail={session.email}
+                    />
                     <div style={{ display: "flex", flexWrap: "wrap", gap: "0.75rem" }}>
-                      <GenerateCvButton applicationId={application.id} />
+                      <GenerateCvButton
+                        applicationId={application.id}
+                        sessionEmail={session.email}
+                      />
                       {application.cvGeneratedAt ? (
                         <a
                           href={`/cv/${application.id}`}
@@ -468,11 +476,14 @@ export default async function ApplicationsPage({
                     <div style={{ display: "grid", gap: "0.35rem" }}>
                       <strong style={{ color: "#1A1A18" }}>Génération de la LM</strong>
                       <p style={{ color: "#6B6860", lineHeight: 1.6, margin: 0 }}>
-                        Génère la lettre de motivation à partir du même profil de base, du même contexte d&apos;offre et du même pipeline de pseudonymisation que le CV.
+                        Genere la lettre de motivation a partir du meme profil selectionne, du meme contexte d&apos;offre et du meme pipeline de pseudonymisation que le CV.
                       </p>
                     </div>
                     <div style={{ display: "flex", flexWrap: "wrap", gap: "0.75rem" }}>
-                      <GenerateLetterButton applicationId={application.id} />
+                      <GenerateLetterButton
+                        applicationId={application.id}
+                        sessionEmail={session.email}
+                      />
                       {application.letterGeneratedAt ? (
                         <a
                           href={`/letters/${application.id}`}

@@ -3,9 +3,10 @@
 import React from "react";
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Input, Label } from "@cvforge/ui";
 import {
+  BASE_PROFILE_REGISTRY_STORAGE_KEY,
   BASE_PROFILE_STORAGE_KEY,
   clearBaseProfileFromStorage,
-  loadBaseProfileFromStorage,
+  loadProfileRegistryFromStorage,
 } from "../base-profile";
 import {
   ONBOARDING_DRAFT_STORAGE_KEY,
@@ -68,14 +69,15 @@ export function PrivacyManager({
       }
 
       const payload = (await response.json()) as PrivacyApiExportPayload;
-      const localProfile = loadBaseProfileFromStorage(sessionEmail, getStorage());
+      const localProfiles = loadProfileRegistryFromStorage(sessionEmail, getStorage());
 
       downloadJsonFile(
         `cvforge-privacy-export-${sessionEmail.replace(/[^a-z0-9]+/gi, "-")}.json`,
         {
           ...payload.exportData,
-          localProfile,
+          localProfiles,
           localStorageKeys: {
+            baseProfileRegistry: BASE_PROFILE_REGISTRY_STORAGE_KEY,
             baseProfile: BASE_PROFILE_STORAGE_KEY,
             onboardingDraft: ONBOARDING_DRAFT_STORAGE_KEY,
           },
@@ -134,7 +136,7 @@ export function PrivacyManager({
           <p style={{ color: "#6B6860", lineHeight: 1.6, margin: 0 }}>
             L&apos;export JSON regroupe le compte, les candidatures, le ledger de
             credits, les notifications, les invitations connues par l&apos;API et le
-            profil de base conserve dans le navigateur.
+            registre local des profils de base conserve dans le navigateur.
           </p>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "0.75rem" }}>
             <Button onClick={handleExport} type="button">

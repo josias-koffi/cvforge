@@ -285,3 +285,10 @@
 - **Why**: Sprint 010 required an explicit architecture sign-off that the GDPR launch slice is operational and fits the current monorepo boundaries without inventing a new framework or persistence model.
 - **Learned**: The right architecture is a dedicated privacy boundary that composes the existing auth/applications/credits/notifications stores, while letting the app augment the export with browser-local profile data.
 - **Open**: The documented 30-day audio purge must become a real scheduled job when interview audio persistence is implemented.
+
+## 2026-04-23 — US-037 finalization
+
+- **Did**: Closed US-037 with a passing verdict after confirming the local multi-profile registry, candidature-level profile selection, automatic legacy-profile migration, and passing `@cvforge/app` test/build/lint gates; then updated sprint and workflow bookkeeping.
+- **Why**: Architecture governance required an explicit sign-off that the story extends the existing browser-local profile boundary coherently without inventing premature backend persistence.
+- **Learned**: The correct MVP architecture is a migration-safe client registry plus per-candidature preference mapping, because document generation was already driven from browser-local profile state.
+- **Open**: If profiles need to roam across devices later, that should become a separate backend-backed story rather than an incidental extension of this one.

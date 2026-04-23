@@ -101,6 +101,7 @@ describe("ApplicationsPage", () => {
     expect(markup).toContain("app_123");
     expect(markup).toContain("Brouillon");
     expect(markup).toContain("Marquer comme envoyee");
+    expect(markup).toContain("Profil actif pour cette candidature");
     expect(markup).toContain("Historique des statuts");
   });
 

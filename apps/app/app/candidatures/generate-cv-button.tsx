@@ -2,13 +2,18 @@
 
 import React, { useState } from "react";
 import { Button } from "@cvforge/ui";
-import { BASE_PROFILE_STORAGE_KEY } from "../profile/base-profile";
-import type { BaseProfile } from "../profile/base-profile";
+import {
+  getProfileForApplication,
+  loadApplicationProfileSelection,
+  loadProfileRegistryFromStorage,
+  type BaseProfile,
+} from "../profile/base-profile";
 import { AI_CANDIDATE_TOKEN } from "../profile/ai-prompt-profile";
 import type { CvGenerationRequest } from "@cvforge/types";
 
 type GenerateCvButtonProps = {
   applicationId: string;
+  sessionEmail: string;
 };
 
 function buildRequest(profile: BaseProfile): Omit<CvGenerationRequest, never> {
@@ -30,7 +35,10 @@ function buildRequest(profile: BaseProfile): Omit<CvGenerationRequest, never> {
   };
 }
 
-export function GenerateCvButton({ applicationId }: GenerateCvButtonProps) {
+export function GenerateCvButton({
+  applicationId,
+  sessionEmail,
+}: GenerateCvButtonProps) {
   const [state, setState] = useState<"idle" | "loading" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -41,8 +49,9 @@ export function GenerateCvButton({ applicationId }: GenerateCvButtonProps) {
     let profile: BaseProfile | null = null;
 
     try {
-      const raw = localStorage.getItem(BASE_PROFILE_STORAGE_KEY);
-      profile = raw ? (JSON.parse(raw) as BaseProfile) : null;
+      const registry = loadProfileRegistryFromStorage(sessionEmail, localStorage);
+      const selection = loadApplicationProfileSelection(localStorage);
+      profile = getProfileForApplication(applicationId, registry, selection);
     } catch {
       // ignore parse errors
     }
@@ -50,7 +59,7 @@ export function GenerateCvButton({ applicationId }: GenerateCvButtonProps) {
     if (!profile || !profile.identity.firstName.trim()) {
       setState("error");
       setErrorMessage(
-        "Votre profil de base est vide. Renseignez-le avant de générer un CV.",
+        "Le profil selectionne est vide. Renseignez-le avant de generer un CV.",
       );
       return;
     }

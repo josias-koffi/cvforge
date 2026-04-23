@@ -493,8 +493,8 @@ export default async function DashboardPage(props: DashboardPageProps) {
           <CardHeader>
             <CardTitle>Profil de base pret a etre enrichi</CardTitle>
             <p style={{ color: "#6B6860", lineHeight: 1.6, margin: 0 }}>
-              L&apos;onboarding alimente maintenant un profil de base unique que le candidat
-              peut consulter et editer avant les futures generations IA.
+              L&apos;onboarding alimente maintenant un premier profil socle que le candidat
+              peut dupliquer, specialiser et reutiliser avant les futures generations IA.
             </p>
           </CardHeader>
           <CardContent style={{ display: "grid", gap: "1rem" }}>
@@ -515,8 +515,8 @@ export default async function DashboardPage(props: DashboardPageProps) {
               <dd style={{ margin: 0 }}>{session.role}</dd>
             </dl>
             <p style={{ color: "#6B6860", lineHeight: 1.6, margin: 0 }}>
-              Le MVP conserve un seul profil de base par compte pour rester aligne
-              avec la contrainte sprint avant l'ouverture du multi-profils.
+              Les candidatures peuvent desormais pointer vers des profils differents
+              pour adapter le CV et la lettre au bon contexte.
             </p>
             <Link href="/candidatures" style={{ color: "#2C2C2A", fontWeight: 600 }}>
               Ouvrir le pipeline de candidatures

@@ -5,18 +5,21 @@ import { Button, Card, CardContent, CardHeader, CardTitle, Input, Label, Textare
 import Link from "next/link";
 import {
   countCompletedProfileSections,
-  createEmptyBaseProfile,
+  createAdditionalBaseProfile,
   createEmptyCertification,
   createEmptyEducation,
   createEmptyExperience,
+  createEmptyProfileRegistry,
   createEmptyProject,
   formatProfileSavedAt,
+  getActiveProfile,
   joinListInput,
-  loadBaseProfileFromStorage,
-  saveBaseProfileToStorage,
+  loadProfileRegistryFromStorage,
+  saveProfileRegistryToStorage,
   splitListInput,
   touchBaseProfile,
   type BaseProfile,
+  type BaseProfileRegistry,
   type CertificationEntry,
   type EducationEntry,
   type ExperienceEntry,
@@ -61,12 +64,27 @@ function SectionCard({
   );
 }
 
+function updateProfileInRegistry(
+  registry: BaseProfileRegistry,
+  profileId: string,
+  updater: (profile: BaseProfile) => BaseProfile,
+) {
+  return {
+    ...registry,
+    profiles: registry.profiles.map((profile) =>
+      profile.id === profileId ? touchBaseProfile(updater(profile)) : profile,
+    ),
+  };
+}
+
 export function ProfileEditor({ sessionEmail }: { sessionEmail: string }) {
-  const [profile, setProfile] = React.useState<BaseProfile>(() => createEmptyBaseProfile(sessionEmail));
+  const [registry, setRegistry] = React.useState<BaseProfileRegistry>(() =>
+    createEmptyProfileRegistry(sessionEmail),
+  );
   const [hydrated, setHydrated] = React.useState(false);
 
   React.useEffect(() => {
-    setProfile(loadBaseProfileFromStorage(sessionEmail, getStorage()));
+    setRegistry(loadProfileRegistryFromStorage(sessionEmail, getStorage()));
     setHydrated(true);
   }, [sessionEmail]);
 
@@ -75,12 +93,19 @@ export function ProfileEditor({ sessionEmail }: { sessionEmail: string }) {
       return;
     }
 
-    saveBaseProfileToStorage(profile, getStorage());
-  }, [hydrated, profile]);
+    saveProfileRegistryToStorage(registry, getStorage());
+  }, [hydrated, registry]);
 
-  const updateProfile = React.useCallback((updater: (current: BaseProfile) => BaseProfile) => {
-    setProfile((current) => touchBaseProfile(updater(current)));
-  }, []);
+  const profile = getActiveProfile(registry);
+  const completedSections = countCompletedProfileSections(profile);
+  const fullName = `${profile.identity.firstName} ${profile.identity.lastName}`.trim();
+
+  const updateProfile = React.useCallback(
+    (updater: (current: BaseProfile) => BaseProfile) => {
+      setRegistry((current) => updateProfileInRegistry(current, profile.id, updater));
+    },
+    [profile.id],
+  );
 
   const updateIdentityField = React.useCallback(
     (field: keyof BaseProfile["identity"], value: string) => {
@@ -100,6 +125,16 @@ export function ProfileEditor({ sessionEmail }: { sessionEmail: string }) {
       updateProfile((current) => ({
         ...current,
         headline: value,
+      }));
+    },
+    [updateProfile],
+  );
+
+  const updateLabel = React.useCallback(
+    (value: string) => {
+      updateProfile((current) => ({
+        ...current,
+        label: value,
       }));
     },
     [updateProfile],
@@ -185,17 +220,51 @@ export function ProfileEditor({ sessionEmail }: { sessionEmail: string }) {
     [updateProfile],
   );
 
-  const fullName = `${profile.identity.firstName} ${profile.identity.lastName}`.trim();
-  const completedSections = countCompletedProfileSections(profile);
+  const activateProfile = React.useCallback((profileId: string) => {
+    setRegistry((current) => ({
+      ...current,
+      activeProfileId: profileId,
+    }));
+  }, []);
+
+  const addProfile = React.useCallback(() => {
+    setRegistry((current) => {
+      const nextProfile = createAdditionalBaseProfile(sessionEmail, current.profiles.length);
+
+      return {
+        activeProfileId: nextProfile.id,
+        profiles: [...current.profiles, nextProfile],
+        version: 2,
+      };
+    });
+  }, [sessionEmail]);
+
+  const removeActiveProfile = React.useCallback(() => {
+    setRegistry((current) => {
+      if (current.profiles.length <= 1) {
+        return current;
+      }
+
+      const remainingProfiles = current.profiles.filter(
+        (entry) => entry.id !== current.activeProfileId,
+      );
+
+      return {
+        activeProfileId: remainingProfiles[0]?.id ?? current.activeProfileId,
+        profiles: remainingProfiles,
+        version: 2,
+      };
+    });
+  }, []);
 
   return (
-    <section aria-label="Profil de base" style={{ display: "grid", gap: "1rem" }}>
+    <section aria-label="Profils de base" style={{ display: "grid", gap: "1rem" }}>
       <Card>
         <CardHeader>
-          <CardTitle>Profil de base unique</CardTitle>
+          <CardTitle>Profils de base multiples</CardTitle>
           <p style={{ color: "#6B6860", lineHeight: 1.6, margin: 0 }}>
-            Le MVP limite chaque compte a un seul profil de base editable. Les donnees
-            de l&apos;onboarding sont reprises automatiquement au premier acces.
+            Chaque compte peut maintenant conserver plusieurs profils socles et changer
+            de profil actif selon le contexte de candidature.
           </p>
         </CardHeader>
         <CardContent style={{ display: "grid", gap: "1rem" }}>
@@ -210,9 +279,11 @@ export function ProfileEditor({ sessionEmail }: { sessionEmail: string }) {
               padding: "1.25rem",
             }}
           >
-            <SummaryRow label="Profil actif" value={fullName || sessionEmail} />
+            <SummaryRow label="Profil actif" value={profile.label || fullName || sessionEmail} />
+            <SummaryRow label="Nom candidat" value={fullName || sessionEmail} />
             <SummaryRow label="Email" value={profile.identity.email} />
             <SummaryRow label="Titre professionnel" value={profile.headline} />
+            <SummaryRow label="Profils disponibles" value={`${registry.profiles.length}`} />
             <SummaryRow
               label="Sections renseignees"
               value={`${completedSections} / 9 sections vision`}
@@ -220,19 +291,69 @@ export function ProfileEditor({ sessionEmail }: { sessionEmail: string }) {
             <SummaryRow label="Sauvegarde" value={formatProfileSavedAt(profile.meta.lastSavedAt)} />
           </dl>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "0.75rem" }}>
-            <Button type="button">Edition disponible</Button>
+            <Button onClick={addProfile} type="button">
+              Ajouter un profil
+            </Button>
+            <Button
+              disabled={registry.profiles.length <= 1}
+              onClick={removeActiveProfile}
+              type="button"
+              variant="ghost"
+            >
+              Supprimer le profil actif
+            </Button>
             <Link href="/dashboard" style={{ color: "#2C2C2A", fontWeight: 600, padding: "0.75rem 0" }}>
               Consulter le tableau de bord
             </Link>
+          </div>
+          <div
+            aria-label="Liste des profils"
+            style={{
+              display: "grid",
+              gap: "0.75rem",
+              gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+            }}
+          >
+            {registry.profiles.map((entry) => {
+              const isActive = entry.id === registry.activeProfileId;
+              const entryFullName = `${entry.identity.firstName} ${entry.identity.lastName}`.trim();
+
+              return (
+                <button
+                  key={entry.id}
+                  onClick={() => activateProfile(entry.id)}
+                  style={{
+                    backgroundColor: isActive ? "#F2F0EB" : "#FFFFFF",
+                    border: isActive ? "2px solid #2C2C2A" : "1px solid #D9D4CA",
+                    borderRadius: "1rem",
+                    cursor: "pointer",
+                    display: "grid",
+                    gap: "0.35rem",
+                    padding: "1rem",
+                    textAlign: "left",
+                  }}
+                  type="button"
+                >
+                  <strong style={{ color: "#1A1A18" }}>{entry.label}</strong>
+                  <span style={{ color: "#6B6860" }}>
+                    {entryFullName || entry.identity.email || "Profil incomplet"}
+                  </span>
+                  <span style={{ color: "#6B6860", fontSize: "0.9rem" }}>
+                    {countCompletedProfileSections(entry)} sections renseignees
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </CardContent>
       </Card>
 
       <SectionCard
         title="Identite du profil"
-        description="Coordonnees du candidat et liens utiles pour contextualiser le profil de base."
+        description="Nom interne, coordonnees du candidat et liens utiles pour contextualiser ce socle."
       >
         <div style={{ display: "grid", gap: "1rem", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
+          <LabeledInput id="profile-label" label="Nom du profil" onChange={updateLabel} value={profile.label} />
           <LabeledInput id="profile-first-name" label="Prenom" onChange={(value) => updateIdentityField("firstName", value)} value={profile.identity.firstName} />
           <LabeledInput id="profile-last-name" label="Nom" onChange={(value) => updateIdentityField("lastName", value)} value={profile.identity.lastName} />
           <LabeledInput id="profile-city" label="Ville" onChange={(value) => updateIdentityField("city", value)} value={profile.identity.city} />
@@ -278,7 +399,7 @@ export function ProfileEditor({ sessionEmail }: { sessionEmail: string }) {
           <ExperienceFields
             experience={experience}
             index={index}
-            key={`experience-${index}`}
+            key={`experience-${profile.id}-${index}`}
             onChange={(value) => updateEntry<ExperienceEntry>("experiences", index, value)}
             onRemove={() => removeEntry("experiences", index)}
           />
@@ -293,7 +414,7 @@ export function ProfileEditor({ sessionEmail }: { sessionEmail: string }) {
           <EducationFields
             education={education}
             index={index}
-            key={`education-${index}`}
+            key={`education-${profile.id}-${index}`}
             onChange={(value) => updateEntry<EducationEntry>("education", index, value)}
             onRemove={() => removeEntry("education", index)}
           />
@@ -334,7 +455,7 @@ export function ProfileEditor({ sessionEmail }: { sessionEmail: string }) {
           <CertificationFields
             certification={certification}
             index={index}
-            key={`certification-${index}`}
+            key={`certification-${profile.id}-${index}`}
             onChange={(value) =>
               updateEntry<CertificationEntry>("certifications", index, value)
             }
@@ -350,7 +471,7 @@ export function ProfileEditor({ sessionEmail }: { sessionEmail: string }) {
         {profile.sections.personalProjects.map((project, index) => (
           <ProjectFields
             index={index}
-            key={`project-${index}`}
+            key={`project-${profile.id}-${index}`}
             onChange={(value) => updateEntry<ProjectEntry>("personalProjects", index, value)}
             onRemove={() => removeEntry("personalProjects", index)}
             project={project}

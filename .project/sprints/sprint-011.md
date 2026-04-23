@@ -13,13 +13,13 @@ Ouvrir `V1.1` avec les fonctions de productivité candidat: profils multiples, i
 
 ## ✅ Tasks (3–8 max)
 
-- [ ] **[US-037]** Ajouter les profils de base multiples
+- [x] **[US-037]** Ajouter les profils de base multiples
   - Agent: `developer`
   - Workflow: `analyze-design-dev-review`
   - Acceptance criteria:
-    - [ ] Un utilisateur peut gérer plusieurs profils de base
-    - [ ] Le profil actif peut être sélectionné par candidature
-    - [ ] La compatibilité avec CV/LM existants est maintenue
+    - [x] Un utilisateur peut gérer plusieurs profils de base
+    - [x] Le profil actif peut être sélectionné par candidature
+    - [x] La compatibilité avec CV/LM existants est maintenue
   - Source: vision `§5.1`, `§16`
 - [ ] **[US-038]** Importer un CV existant avec extraction IA pseudonymisée
   - Agent: `tech-lead`

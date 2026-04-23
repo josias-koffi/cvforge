@@ -34,7 +34,7 @@ const baseNavigation: ShellNavItem[] = [
   {
     href: "/profile",
     label: "Profil de base",
-    description: "Edition du profil unique",
+    description: "Edition des profils socles",
     shortLabel: "PB",
   },
   {

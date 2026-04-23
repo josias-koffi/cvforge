@@ -1,16 +1,24 @@
 import { describe, expect, it, vi } from "vitest";
 import { ONBOARDING_DRAFT_STORAGE_KEY, createEmptyDraft } from "../onboarding/draft";
 import {
+  APPLICATION_PROFILE_SELECTION_STORAGE_KEY,
+  BASE_PROFILE_REGISTRY_STORAGE_KEY,
   BASE_PROFILE_STORAGE_KEY,
   countCompletedProfileSections,
   createEmptyCertification,
+  createAdditionalBaseProfile,
   createEmptyBaseProfile,
   createEmptyEducation,
   createEmptyExperience,
   createEmptyProject,
   formatProfileSavedAt,
+  getProfileForApplication,
+  getSelectedProfileIdForApplication,
   joinListInput,
+  loadApplicationProfileSelection,
   loadBaseProfileFromStorage,
+  loadProfileRegistryFromStorage,
+  saveApplicationProfileSelection,
   saveBaseProfileToStorage,
   sanitizeBaseProfile,
   splitListInput,
@@ -18,12 +26,20 @@ import {
 } from "./base-profile";
 
 describe("base profile helpers", () => {
-  it("creates a single empty profile for the authenticated user", () => {
+  it("creates an empty profile with an id for the authenticated user", () => {
     const profile = createEmptyBaseProfile("user@example.com");
 
+    expect(profile.id).toBeTruthy();
     expect(profile.identity.email).toBe("user@example.com");
-    expect(profile.meta.maxProfiles).toBe(1);
+    expect(profile.meta.maxProfiles).toBeNull();
     expect(profile.sections.experiences).toEqual([]);
+  });
+
+  it("creates additional profiles with distinct labels", () => {
+    const profile = createAdditionalBaseProfile("user@example.com", 1);
+
+    expect(profile.label).toBe("Profil 2");
+    expect(profile.id).toBeTruthy();
   });
 
   it("seeds the base profile from onboarding when no saved profile exists", () => {
@@ -37,6 +53,7 @@ describe("base profile helpers", () => {
     const storage = {
       getItem: (key: string) =>
         key === ONBOARDING_DRAFT_STORAGE_KEY ? JSON.stringify(onboardingDraft) : null,
+      setItem: vi.fn(),
     };
 
     const profile = loadBaseProfileFromStorage("seed@example.com", storage);
@@ -47,56 +64,106 @@ describe("base profile helpers", () => {
     expect(profile.meta.source).toBe("onboarding");
   });
 
-  it("reads the persisted profile instead of creating another one", () => {
+  it("migrates the legacy single-profile storage into the registry", () => {
+    const legacyProfile = {
+      headline: "Product designer",
+      identity: {
+        email: "stored@example.com",
+        firstName: "Stored",
+      },
+      meta: {
+        lastSavedAt: "2026-04-20T09:00:00.000Z",
+        source: "storage",
+      },
+      sections: {
+        experiences: [{ company: "CVforge", period: "2026", results: "Growth", role: "Lead" }],
+        technicalSkills: ["Figma", "UX writing"],
+      },
+    };
+    let savedRegistry = "";
     const storage = {
       getItem: (key: string) =>
-        key === BASE_PROFILE_STORAGE_KEY
+        key === BASE_PROFILE_STORAGE_KEY ? JSON.stringify(legacyProfile) : null,
+      setItem: (key: string, value: string) => {
+        if (key === BASE_PROFILE_REGISTRY_STORAGE_KEY) {
+          savedRegistry = value;
+        }
+      },
+    };
+
+    const registry = loadProfileRegistryFromStorage("stored@example.com", storage);
+
+    expect(registry.profiles).toHaveLength(1);
+    expect(registry.profiles[0]?.headline).toBe("Product designer");
+    expect(registry.profiles[0]?.meta.source).toBe("storage");
+    expect(savedRegistry).toContain("Product designer");
+  });
+
+  it("reads the active profile from the persisted registry", () => {
+    const firstProfile = createEmptyBaseProfile("stored@example.com", {
+      id: "profile-1",
+      label: "Principal",
+    });
+    const secondProfile = createEmptyBaseProfile("stored@example.com", {
+      id: "profile-2",
+      label: "Freelance",
+    });
+    secondProfile.headline = "Product designer";
+    secondProfile.sections.experiences = [
+      { company: "CVforge", period: "2026", results: "Growth", role: "Lead" },
+    ];
+    const storage = {
+      getItem: (key: string) =>
+        key === BASE_PROFILE_REGISTRY_STORAGE_KEY
           ? JSON.stringify({
-              headline: "Product designer",
-              identity: {
-                email: "stored@example.com",
-                firstName: "Stored",
-              },
-              meta: {
-                lastSavedAt: "2026-04-20T09:00:00.000Z",
-                source: "storage",
-              },
-              sections: {
-                experiences: [{ company: "CVforge", period: "2026", results: "Growth", role: "Lead" }],
-                technicalSkills: ["Figma", "UX writing"],
-              },
+              activeProfileId: "profile-2",
+              profiles: [firstProfile, secondProfile],
+              version: 2,
             })
           : null,
+      setItem: vi.fn(),
     };
 
     const profile = loadBaseProfileFromStorage("stored@example.com", storage);
 
-    expect(profile.headline).toBe("Product designer");
+    expect(profile.id).toBe("profile-2");
+    expect(profile.label).toBe("Freelance");
     expect(profile.sections.experiences).toHaveLength(1);
-    expect(profile.meta.maxProfiles).toBe(1);
-    expect(profile.meta.source).toBe("storage");
   });
 
-  it("persists the serialized profile when storage is available", () => {
-    let writtenKey = "";
-    let writtenValue = "";
+  it("persists the serialized profile in the registry when storage is available", () => {
+    let writtenRegistry = "";
+    let writtenLegacyValue = "";
     const storage = {
+      getItem: () => null,
       setItem: (key: string, value: string) => {
-        writtenKey = key;
-        writtenValue = value;
+        if (key === BASE_PROFILE_REGISTRY_STORAGE_KEY) {
+          writtenRegistry = value;
+        }
+
+        if (key === BASE_PROFILE_STORAGE_KEY) {
+          writtenLegacyValue = value;
+        }
       },
     };
 
-    saveBaseProfileToStorage(createEmptyBaseProfile("writer@example.com"), storage);
+    const profile = createEmptyBaseProfile("writer@example.com", {
+      id: "profile-writer",
+      label: "Writer",
+    });
 
-    expect(writtenKey).toBe(BASE_PROFILE_STORAGE_KEY);
-    expect(writtenValue).toContain("writer@example.com");
+    saveBaseProfileToStorage(profile, storage);
+
+    expect(writtenRegistry).toContain("profile-writer");
+    expect(writtenLegacyValue).toContain("writer@example.com");
   });
 
   it("returns empty defaults when storage is unavailable or invalid", () => {
     const emptyWithoutStorage = loadBaseProfileFromStorage("user@example.com", undefined);
     const emptyWithInvalidStorage = loadBaseProfileFromStorage("user@example.com", {
-      getItem: (key: string) => (key === BASE_PROFILE_STORAGE_KEY ? "{bad-json" : null),
+      getItem: (key: string) =>
+        key === BASE_PROFILE_REGISTRY_STORAGE_KEY ? "{bad-json" : null,
+      setItem: vi.fn(),
     });
 
     expect(emptyWithoutStorage.meta.source).toBe("empty");
@@ -108,6 +175,7 @@ describe("base profile helpers", () => {
     const storage = {
       getItem: (key: string) =>
         key === ONBOARDING_DRAFT_STORAGE_KEY ? JSON.stringify(emptyOnboardingDraft) : null,
+      setItem: vi.fn(),
     };
 
     const profile = loadBaseProfileFromStorage("blank@example.com", storage);
@@ -116,13 +184,15 @@ describe("base profile helpers", () => {
     expect(profile.identity.firstName).toBe("");
   });
 
-  it("sanitizes malformed persisted data and keeps the single-profile rule", () => {
+  it("sanitizes malformed persisted data and keeps the multi-profile shape safe", () => {
     const profile = sanitizeBaseProfile(
       {
+        id: 42,
         identity: {
           email: 12,
           firstName: "Jane",
         },
+        label: ["bad"],
         meta: {
           lastSavedAt: 24,
           maxProfiles: 4,
@@ -142,9 +212,10 @@ describe("base profile helpers", () => {
       "fallback@example.com",
     );
 
+    expect(profile.id).toBeTruthy();
     expect(profile.identity.email).toBe("fallback@example.com");
     expect(profile.meta.lastSavedAt).toBeNull();
-    expect(profile.meta.maxProfiles).toBe(1);
+    expect(profile.meta.maxProfiles).toBeNull();
     expect(profile.meta.source).toBe("empty");
     expect(profile.sections.certifications[0]?.year).toBe("");
     expect(profile.sections.softSkills).toEqual(["Communication"]);
@@ -180,6 +251,48 @@ describe("base profile helpers", () => {
   it("normalizes comma-separated skill input", () => {
     expect(splitListInput("TypeScript, UX,  React ")).toEqual(["TypeScript", "UX", "React"]);
     expect(joinListInput(["Node.js", "NestJS"])).toBe("Node.js, NestJS");
+  });
+
+  it("stores and resolves per-application profile selections", () => {
+    let writtenSelection = "";
+    const storage = {
+      getItem: (key: string) =>
+        key === APPLICATION_PROFILE_SELECTION_STORAGE_KEY
+          ? JSON.stringify({ app_123: "profile-2" })
+          : null,
+      setItem: (key: string, value: string) => {
+        if (key === APPLICATION_PROFILE_SELECTION_STORAGE_KEY) {
+          writtenSelection = value;
+        }
+      },
+    };
+    const firstProfile = createEmptyBaseProfile("user@example.com", {
+      id: "profile-1",
+      label: "Principal",
+    });
+    const secondProfile = createEmptyBaseProfile("user@example.com", {
+      id: "profile-2",
+      label: "Freelance",
+    });
+    const registry = {
+      activeProfileId: "profile-1",
+      profiles: [firstProfile, secondProfile],
+      version: 2 as const,
+    };
+
+    expect(loadApplicationProfileSelection(storage)).toEqual({ app_123: "profile-2" });
+    expect(
+      getSelectedProfileIdForApplication("app_123", registry, {
+        app_123: "profile-2",
+      }),
+    ).toBe("profile-2");
+    expect(
+      getProfileForApplication("app_123", registry, { app_123: "profile-2" })?.label,
+    ).toBe("Freelance");
+
+    saveApplicationProfileSelection({ app_123: "profile-1" }, storage);
+
+    expect(writtenSelection).toContain("profile-1");
   });
 
   it("covers the empty-entry factories and save-format fallbacks", () => {

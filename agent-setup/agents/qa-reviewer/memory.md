@@ -243,3 +243,10 @@
 - **Why**: The story could only pass once each GDPR acceptance criterion had direct executable evidence instead of remaining an operational note.
 - **Learned**: The feature is reviewable because the privacy slice centralizes server-held personal data while the app explicitly augments that export with the browser-local base profile.
 - **Open**: The audio purge is correctly documented as planned work until the interview-audio persistence layer exists.
+
+## 2026-04-23 — US-037 review
+
+- **Did**: Verified multi-profile management on `/profile`, candidature-level profile selection on `/candidatures`, legacy storage migration coverage, and passing `@cvforge/app` test/build/lint runs.
+- **Why**: The task could only pass once each acceptance criterion had direct UI/storage evidence and the existing CV/LM flow stayed regression-safe.
+- **Learned**: The story is reviewable because the new registry remains entirely backward compatible with the prior browser-local singleton.
+- **Open**: The selection is still browser-local, so device-to-device continuity is outside this story.

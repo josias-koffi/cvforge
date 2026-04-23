@@ -12,7 +12,7 @@ export default async function ProfilePage() {
   return (
     <AppShell
       title="Profil de base"
-      description="Edition du profil de base unique qui servira de socle pour les generations du MVP."
+      description="Gerez plusieurs profils de base et reutilisez le bon socle selon chaque candidature du MVP."
       headerAccessory={<NotificationBell />}
       navigation={getAppNavigation("/profile")}
     >

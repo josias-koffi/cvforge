@@ -264,3 +264,10 @@
 - **Why**: The workflow needed a precise product boundary so the story would not spill into email preferences, interview reminders, or later notification types.
 - **Learned**: Vision `§12.4` and `§14` are specific enough to derive a testable reminder rule and a concrete notification-center entry point without inventing extra product scope.
 - **Open**: US-036 can proceed independently once this in-app notification slice is closed.
+
+## 2026-04-23 — US-037 analyze
+
+- **Did**: Confirmed that US-037 is limited to browser-local multi-profile management plus candidature-level profile selection for document generation, with no new backend profile domain in this story.
+- **Why**: The workflow needed a precise product boundary so the task would solve the user-facing productivity gap without expanding scope into synced profile persistence.
+- **Learned**: Vision `§5.1` and `§16` are specific enough to justify multiple base profiles now because CV and LM generation already depend on a reusable socle.
+- **Open**: Cross-device profile sync remains a future product decision if local-only storage becomes a limitation.

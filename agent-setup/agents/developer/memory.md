@@ -341,3 +341,10 @@
 - **Why**: `US-036` required executable GDPR launch mechanics, not a documentation-only placeholder.
 - **Learned**: The browser-local base profile is the critical wrinkle in this codebase; the correct implementation is API-owned export/deletion plus app-side augmentation and local cleanup.
 - **Open**: The planned 30-day audio purge still needs a real scheduled implementation once interview audio persistence exists.
+
+## 2026-04-23 — US-037
+
+- **Did**: Replaced the single local base-profile helper with a migration-safe multi-profile registry, updated `/profile` to manage and edit multiple profiles, added per-candidature profile selection, and wired CV/LM generation to the selected profile; then verified app test/build/lint.
+- **Why**: US-037 required multiple reusable socles and candidature-specific selection without breaking the existing local generation pipeline.
+- **Learned**: The safest implementation is still browser-local because the previous profile model already lived in local storage; migrating legacy single-profile data on read keeps compatibility intact.
+- **Open**: Cross-device sync and richer profile actions like duplicate/archive remain future enhancements.

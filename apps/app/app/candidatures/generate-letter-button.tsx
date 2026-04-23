@@ -3,12 +3,17 @@
 import React, { useState } from "react";
 import { Button } from "@cvforge/ui";
 import type { LetterGenerationRequest } from "@cvforge/types";
-import { BASE_PROFILE_STORAGE_KEY } from "../profile/base-profile";
-import type { BaseProfile } from "../profile/base-profile";
+import {
+  getProfileForApplication,
+  loadApplicationProfileSelection,
+  loadProfileRegistryFromStorage,
+  type BaseProfile,
+} from "../profile/base-profile";
 import { AI_CANDIDATE_TOKEN } from "../profile/ai-prompt-profile";
 
 type GenerateLetterButtonProps = {
   applicationId: string;
+  sessionEmail: string;
 };
 
 function buildRequest(profile: BaseProfile): LetterGenerationRequest {
@@ -32,6 +37,7 @@ function buildRequest(profile: BaseProfile): LetterGenerationRequest {
 
 export function GenerateLetterButton({
   applicationId,
+  sessionEmail,
 }: GenerateLetterButtonProps) {
   const [state, setState] = useState<"idle" | "loading" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -43,8 +49,9 @@ export function GenerateLetterButton({
     let profile: BaseProfile | null = null;
 
     try {
-      const raw = localStorage.getItem(BASE_PROFILE_STORAGE_KEY);
-      profile = raw ? (JSON.parse(raw) as BaseProfile) : null;
+      const registry = loadProfileRegistryFromStorage(sessionEmail, localStorage);
+      const selection = loadApplicationProfileSelection(localStorage);
+      profile = getProfileForApplication(applicationId, registry, selection);
     } catch {
       // ignore parse errors
     }
@@ -52,7 +59,7 @@ export function GenerateLetterButton({
     if (!profile || !profile.identity.firstName.trim()) {
       setState("error");
       setErrorMessage(
-        "Votre profil de base est vide. Renseignez-le avant de générer une LM.",
+        "Le profil selectionne est vide. Renseignez-le avant de generer une LM.",
       );
       return;
     }
