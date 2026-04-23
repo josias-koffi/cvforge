@@ -11,7 +11,10 @@ import {
   StreamableFile,
   UnauthorizedException,
   Req,
+  UploadedFile,
+  UseInterceptors,
 } from "@nestjs/common";
+import { FileInterceptor } from "@nestjs/platform-express";
 import type {
   CvContentUpdateRequest,
   CvGenerationRequest,
@@ -19,6 +22,7 @@ import type {
   LetterGenerationRequest,
 } from "@cvforge/types";
 import { AuthService } from "../auth/auth.service";
+import { CvImportService, type CvImportFile } from "./cv-import.service";
 import { CvPdfExportService } from "./cv-pdf-export.service";
 import { CvGenerationService } from "./cv-generation.service";
 
@@ -33,6 +37,8 @@ export class CvGenerationController {
     private readonly cvGenerationService: CvGenerationService,
     @Inject(CvPdfExportService)
     private readonly cvPdfExportService: CvPdfExportService,
+    @Inject(CvImportService)
+    private readonly cvImportService: CvImportService,
     @Inject(AuthService) private readonly authService: AuthService,
   ) {}
 
@@ -57,6 +63,27 @@ export class CvGenerationController {
     );
 
     return { cvContent };
+  }
+
+  @Post("cv-import/extract")
+  @UseInterceptors(
+    FileInterceptor("cvFile", {
+      limits: { fileSize: 5 * 1024 * 1024 },
+    }),
+  )
+  async extractCvProfile(
+    @UploadedFile() file: CvImportFile | undefined,
+    @Req() request: RequestLike,
+  ) {
+    const session = this.authService.readSessionFromCookieHeader(
+      request.headers.cookie,
+    );
+
+    if (!session) {
+      throw new UnauthorizedException("A valid session is required.");
+    }
+
+    return this.cvImportService.extractProfileFromCv(session.email, file);
   }
 
   @Post(":applicationId/generate-letter")

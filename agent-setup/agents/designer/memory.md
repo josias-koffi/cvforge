@@ -236,3 +236,10 @@
 - **Why**: The story needed explicit interaction rules for switching socles without destabilizing the existing long-form profile editor.
 - **Learned**: The current card and form primitives are sufficient for multi-profile management when the active profile remains the only editable pane.
 - **Open**: A future refinement could add duplication or archiving patterns if users accumulate many profiles.
+
+## 2026-04-23 — US-038 design
+
+- **Did**: Designed a `/profile` CV import card with native file input, inline status feedback, explicit quality-limit copy, and a user-controlled apply step.
+- **Why**: Imported CV data must remain reviewable before it changes the active base profile.
+- **Learned**: The existing profile page can host the import flow without adding a new route-level IA workspace.
+- **Open**: A future OCR-quality improvement may need a richer preview/diff UI.

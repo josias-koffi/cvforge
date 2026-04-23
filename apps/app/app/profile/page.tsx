@@ -4,6 +4,7 @@ import Link from "next/link";
 import { requireSession } from "../auth/session";
 import { getAppNavigation } from "../content";
 import { NotificationBell } from "../notifications/notification-bell";
+import { CvImportPanel } from "./cv-import-panel";
 import { ProfileEditor } from "./profile-editor";
 
 export default async function ProfilePage() {
@@ -20,6 +21,9 @@ export default async function ProfilePage() {
         <Button asChild variant="secondary">
           <Link href="/profile/privacy">Export RGPD et suppression</Link>
         </Button>
+      </div>
+      <div style={{ marginBottom: "1rem" }}>
+        <CvImportPanel sessionEmail={session.email} />
       </div>
       <ProfileEditor sessionEmail={session.email} />
     </AppShell>

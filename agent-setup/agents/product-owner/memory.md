@@ -271,3 +271,10 @@
 - **Why**: The workflow needed a precise product boundary so the task would solve the user-facing productivity gap without expanding scope into synced profile persistence.
 - **Learned**: Vision `§5.1` and `§16` are specific enough to justify multiple base profiles now because CV and LM generation already depend on a reusable socle.
 - **Open**: Cross-device profile sync remains a future product decision if local-only storage becomes a limitation.
+
+## 2026-04-23 — US-038 analyze
+
+- **Did**: Confirmed CV import scope as a base-profile prefill flow on `/profile`, not a candidature import flow.
+- **Why**: The vision places existing-CV import in onboarding/profile creation and requires user validation before saving.
+- **Learned**: The current local profile registry can support import by applying a server-extracted patch to the active profile.
+- **Open**: Future work may need full OCR/PDF parsing if user CVs are mostly scanned or image-only.

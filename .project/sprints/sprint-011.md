@@ -21,13 +21,13 @@ Ouvrir `V1.1` avec les fonctions de productivité candidat: profils multiples, i
     - [x] Le profil actif peut être sélectionné par candidature
     - [x] La compatibilité avec CV/LM existants est maintenue
   - Source: vision `§5.1`, `§16`
-- [ ] **[US-038]** Importer un CV existant avec extraction IA pseudonymisée
+- [x] **[US-038]** Importer un CV existant avec extraction IA pseudonymisée
   - Agent: `tech-lead`
   - Workflow: `analyze-design-dev-review`
   - Acceptance criteria:
-    - [ ] L'import de CV est disponible
-    - [ ] Le pipeline d'extraction respecte la pseudonymisation
-    - [ ] Les limites de qualité sont documentées
+    - [x] L'import de CV est disponible
+    - [x] Le pipeline d'extraction respecte la pseudonymisation
+    - [x] Les limites de qualité sont documentées
   - Source: vision `§4`, `§15.3`, `§16`
 - [ ] **[US-039]** Ajouter l'export DOCX et l'historique des versions CV/LM
   - Agent: `developer`

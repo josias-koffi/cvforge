@@ -348,3 +348,10 @@
 - **Why**: US-037 required multiple reusable socles and candidature-specific selection without breaking the existing local generation pipeline.
 - **Learned**: The safest implementation is still browser-local because the previous profile model already lived in local storage; migrating legacy single-profile data on read keeps compatibility intact.
 - **Open**: Cross-device sync and richer profile actions like duplicate/archive remain future enhancements.
+
+## 2026-04-23 — US-038 implementation
+
+- **Did**: Added the CV import API/service, DOCX parser ADR, profile import UI/proxy, local profile patch merge, quality-limit docs, and tests.
+- **Why**: `US-038` required existing CV import with pseudonymised IA extraction and documented extraction limits.
+- **Learned**: The active local profile registry is the right merge point; OpenRouter should only receive stripped `pseudonymisedCvText`.
+- **Open**: PDF support is text-layer heuristic only; a full OCR/parser stack remains a future decision.

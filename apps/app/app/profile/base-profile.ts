@@ -1,3 +1,4 @@
+import type { ImportedCvProfilePatch } from "@cvforge/types";
 import { loadDraftFromStorage } from "../onboarding/draft";
 import {
   normalizeEmail,
@@ -528,6 +529,63 @@ export function touchBaseProfile(profile: BaseProfile): BaseProfile {
       lastSavedAt: new Date().toISOString(),
     },
   };
+}
+
+export function applyImportedCvProfilePatch(
+  profile: BaseProfile,
+  patch: ImportedCvProfilePatch,
+): BaseProfile {
+  return touchBaseProfile({
+    ...profile,
+    headline: normalizeShortText(patch.headline, 120) || profile.headline,
+    identity: {
+      ...profile.identity,
+      city: normalizeShortText(patch.identity.city, 120) || profile.identity.city,
+      firstName:
+        normalizeShortText(patch.identity.firstName, 80) ||
+        profile.identity.firstName,
+      github: normalizeUrlField(patch.identity.github) || profile.identity.github,
+      linkedIn:
+        normalizeUrlField(patch.identity.linkedIn) || profile.identity.linkedIn,
+      portfolio:
+        normalizeUrlField(patch.identity.portfolio) || profile.identity.portfolio,
+    },
+    meta: {
+      ...profile.meta,
+      source: "storage",
+    },
+    sections: {
+      certifications:
+        asCertificationList(patch.sections.certifications).length > 0
+          ? asCertificationList(patch.sections.certifications)
+          : profile.sections.certifications,
+      education:
+        asEducationList(patch.sections.education).length > 0
+          ? asEducationList(patch.sections.education)
+          : profile.sections.education,
+      experiences:
+        asExperienceList(patch.sections.experiences).length > 0
+          ? asExperienceList(patch.sections.experiences)
+          : profile.sections.experiences,
+      interests:
+        normalizeLongText(patch.sections.interests, 400) ||
+        profile.sections.interests,
+      personalProjects:
+        asProjectList(patch.sections.personalProjects).length > 0
+          ? asProjectList(patch.sections.personalProjects)
+          : profile.sections.personalProjects,
+      softSkills:
+        normalizeStringList(patch.sections.softSkills).length > 0
+          ? normalizeStringList(patch.sections.softSkills)
+          : profile.sections.softSkills,
+      summary:
+        normalizeLongText(patch.sections.summary) || profile.sections.summary,
+      technicalSkills:
+        normalizeStringList(patch.sections.technicalSkills).length > 0
+          ? normalizeStringList(patch.sections.technicalSkills)
+          : profile.sections.technicalSkills,
+    },
+  });
 }
 
 export function formatProfileSavedAt(value: string | null) {

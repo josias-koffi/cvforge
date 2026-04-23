@@ -1,5 +1,6 @@
 import {
   AI_CREDIT_ACTION_CV_GENERATION,
+  AI_CREDIT_ACTION_CV_IMPORT,
   AI_CREDIT_ACTION_LETTER_GENERATION,
   AI_CREDIT_ACTION_OFFER_ENRICHMENT,
   AI_CREDIT_COSTS,
@@ -30,6 +31,8 @@ function buildAiUsageNote(action: ConsumeCreditsInput["action"]) {
       return "Enrichissement contexte entreprise";
     case AI_CREDIT_ACTION_CV_GENERATION:
       return "Generation CV";
+    case AI_CREDIT_ACTION_CV_IMPORT:
+      return "Import CV";
     case AI_CREDIT_ACTION_LETTER_GENERATION:
       return "Generation lettre de motivation";
   }

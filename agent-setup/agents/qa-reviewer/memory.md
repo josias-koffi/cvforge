@@ -250,3 +250,10 @@
 - **Why**: The task could only pass once each acceptance criterion had direct UI/storage evidence and the existing CV/LM flow stayed regression-safe.
 - **Learned**: The story is reviewable because the new registry remains entirely backward compatible with the prior browser-local singleton.
 - **Open**: The selection is still browser-local, so device-to-device continuity is outside this story.
+
+## 2026-04-23 — US-038 review
+
+- **Did**: Verified CV import availability, pseudonymised extraction payload tests, quality-limit documentation, and repository lint/build/test/coverage gates.
+- **Why**: The task could only pass once all acceptance criteria and blocking engineering standards had direct evidence.
+- **Learned**: The repo-level coverage run exposed a landing branch gap, which was closed with a focused config test before approval.
+- **Open**: No blocking issues remain for US-038; PDF quality remains an advisory limitation by design.

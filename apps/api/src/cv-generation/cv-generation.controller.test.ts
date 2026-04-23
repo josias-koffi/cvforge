@@ -6,6 +6,7 @@ import {
 import { describe, expect, it, vi } from "vitest";
 import type { CVDocumentContent, LetterDocumentContent } from "@cvforge/types";
 import { AuthService } from "../auth/auth.service";
+import { CvImportService } from "./cv-import.service";
 import { CvGenerationController } from "./cv-generation.controller";
 import { CvPdfExportService } from "./cv-pdf-export.service";
 import { CvGenerationService } from "./cv-generation.service";
@@ -108,12 +109,48 @@ function makeController(
       pdf: Buffer.from([37, 80, 68, 70]),
     }),
   } as unknown as CvPdfExportService;
+  const cvImportService = {
+    extractProfileFromCv: vi.fn().mockResolvedValue({
+      extractedProfile: {
+        headline: "Senior Developer",
+        identity: {
+          city: "Paris",
+          firstName: "Jean",
+          github: "",
+          linkedIn: "",
+          portfolio: "",
+        },
+        sections: {
+          certifications: [],
+          education: [],
+          experiences: [],
+          interests: "",
+          personalProjects: [],
+          softSkills: [],
+          summary: "",
+          technicalSkills: [],
+        },
+      },
+      omittedFields: [],
+      qualityLimits: [],
+      source: {
+        filename: "cv.pdf",
+        mimeType: "application/pdf",
+        textLength: 200,
+      },
+    }),
+  } as unknown as CvImportService;
 
   const authService = {
     readSessionFromCookieHeader: vi.fn().mockReturnValue(sessionOverride),
   } as unknown as AuthService;
 
-  return new CvGenerationController(cvService, pdfService, authService);
+  return new CvGenerationController(
+    cvService,
+    pdfService,
+    cvImportService,
+    authService,
+  );
 }
 
 describe("CvGenerationController", () => {
@@ -151,6 +188,7 @@ describe("CvGenerationController", () => {
       const controller = new CvGenerationController(
         cvService,
         pdfService,
+        {} as unknown as CvImportService,
         authService,
       );
 
@@ -163,6 +201,35 @@ describe("CvGenerationController", () => {
         "app-001",
         VALID_BODY,
       );
+    });
+  });
+
+  describe("POST cv-import/extract", () => {
+    it("returns imported profile extraction for authenticated user", async () => {
+      const controller = makeController();
+      const result = await controller.extractCvProfile(
+        {
+          buffer: Buffer.from("cv text"),
+          mimetype: "application/pdf",
+          originalname: "cv.pdf",
+          size: 7,
+        },
+        { headers: { cookie: "cvforge_session=abc" } },
+      );
+
+      expect(result).toMatchObject({
+        source: {
+          filename: "cv.pdf",
+        },
+      });
+    });
+
+    it("throws UnauthorizedException when no session", async () => {
+      const controller = makeController(null);
+
+      await expect(
+        controller.extractCvProfile(undefined, { headers: {} }),
+      ).rejects.toBeInstanceOf(UnauthorizedException);
     });
   });
 
@@ -278,6 +345,7 @@ describe("CvGenerationController", () => {
       const controller = new CvGenerationController(
         cvService,
         pdfService,
+        {} as unknown as CvImportService,
         authService,
       );
 
@@ -363,6 +431,7 @@ describe("CvGenerationController", () => {
       const controller = new CvGenerationController(
         cvService,
         pdfService,
+        {} as unknown as CvImportService,
         authService,
       );
 
@@ -410,6 +479,7 @@ describe("CvGenerationController", () => {
       const controller = new CvGenerationController(
         cvService,
         pdfService,
+        {} as unknown as CvImportService,
         authService,
       );
 

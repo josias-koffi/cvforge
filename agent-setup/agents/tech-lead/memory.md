@@ -292,3 +292,10 @@
 - **Why**: Architecture governance required an explicit sign-off that the story extends the existing browser-local profile boundary coherently without inventing premature backend persistence.
 - **Learned**: The correct MVP architecture is a migration-safe client registry plus per-candidature preference mapping, because document generation was already driven from browser-local profile state.
 - **Open**: If profiles need to roam across devices later, that should become a separate backend-backed story rather than an incidental extension of this one.
+
+## 2026-04-23 — US-038 finalization
+
+- **Did**: Accepted `ADR-004`, closed the CV import workflow with a passing verdict, updated sprint/state bookkeeping, and kept Sprint 011 open for remaining tasks.
+- **Why**: Architecture governance required an ADR for the new DOCX parser and a clear final decision after QA passed.
+- **Learned**: The pragmatic V1.1 split is DOCX via `mammoth`, PDF via documented text-layer heuristic, and no raw CV file sent to IA.
+- **Open**: `US-039` should handle DOCX export/version history separately and not reuse import-parser decisions blindly.

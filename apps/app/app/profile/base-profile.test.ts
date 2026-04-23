@@ -4,6 +4,7 @@ import {
   APPLICATION_PROFILE_SELECTION_STORAGE_KEY,
   BASE_PROFILE_REGISTRY_STORAGE_KEY,
   BASE_PROFILE_STORAGE_KEY,
+  applyImportedCvProfilePatch,
   countCompletedProfileSections,
   createEmptyCertification,
   createAdditionalBaseProfile,
@@ -40,6 +41,47 @@ describe("base profile helpers", () => {
 
     expect(profile.label).toBe("Profil 2");
     expect(profile.id).toBeTruthy();
+  });
+
+  it("applies imported CV data without overwriting local sensitive fields", () => {
+    const profile = createEmptyBaseProfile("user@example.com");
+    profile.identity.lastName = "Dupont";
+    profile.identity.phone = "+33612345678";
+
+    const imported = applyImportedCvProfilePatch(profile, {
+      headline: "Senior Developer",
+      identity: {
+        city: "Paris",
+        firstName: "Jean",
+        github: "",
+        linkedIn: "https://linkedin.com/in/jean",
+        portfolio: "",
+      },
+      sections: {
+        certifications: [],
+        education: [],
+        experiences: [
+          {
+            company: "Acme",
+            period: "2020-2024",
+            results: "Built APIs",
+            role: "Backend Developer",
+          },
+        ],
+        interests: "",
+        personalProjects: [],
+        softSkills: ["Communication"],
+        summary: "Experienced backend developer",
+        technicalSkills: ["TypeScript"],
+      },
+    });
+
+    expect(imported.headline).toBe("Senior Developer");
+    expect(imported.identity.firstName).toBe("Jean");
+    expect(imported.identity.lastName).toBe("Dupont");
+    expect(imported.identity.phone).toBe("+33612345678");
+    expect(imported.sections.technicalSkills).toEqual(["TypeScript"]);
+    expect(imported.sections.experiences[0]?.role).toBe("Backend Developer");
   });
 
   it("seeds the base profile from onboarding when no saved profile exists", () => {

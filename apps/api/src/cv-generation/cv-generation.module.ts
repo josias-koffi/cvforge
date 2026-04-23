@@ -9,6 +9,7 @@ import { resolveTemplatesConfig } from "../templates/templates.config";
 import { FileTemplatesStore } from "../templates/templates.store";
 import { CvGenerationController } from "./cv-generation.controller";
 import { CvGenerationService } from "./cv-generation.service";
+import { CvImportService } from "./cv-import.service";
 import { CvPdfExportService } from "./cv-pdf-export.service";
 
 @Module({
@@ -39,6 +40,14 @@ import { CvPdfExportService } from "./cv-pdf-export.service";
             resolveApplicationsConfig(process.env).stateFilePath,
           ),
         ),
+    },
+    {
+      provide: CvImportService,
+      inject: [OPENROUTER_SERVICE, CreditsService],
+      useFactory: (
+        openRouterService: ConstructorParameters<typeof CvImportService>[0],
+        creditsService: ConstructorParameters<typeof CvImportService>[1],
+      ) => new CvImportService(openRouterService, creditsService),
     },
   ],
 })
