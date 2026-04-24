@@ -14,11 +14,24 @@ class FakeAudioBuffer {
   }
 }
 
+class FakeAnalyser {
+  fftSize = 256;
+  get frequencyBinCount() { return this.fftSize / 2; }
+  getByteFrequencyData(arr: Uint8Array) { arr.fill(0); }
+  disconnect() {}
+}
+
+class FakeMediaStreamSource {
+  connect() {}
+}
+
 class FakeAudioContext {
   async decodeAudioData() {
     return new FakeAudioBuffer();
   }
   async close() {}
+  createAnalyser() { return new FakeAnalyser(); }
+  createMediaStreamSource() { return new FakeMediaStreamSource(); }
 }
 
 class FakeMediaRecorder {
@@ -78,6 +91,8 @@ describe("InterviewStudio", () => {
     vi.stubGlobal("fetch", fetchMock);
     vi.stubGlobal("MediaRecorder", FakeMediaRecorder);
     vi.stubGlobal("AudioContext", FakeAudioContext);
+    vi.stubGlobal("requestAnimationFrame", (_cb: FrameRequestCallback) => 0);
+    vi.stubGlobal("cancelAnimationFrame", () => {});
     Object.defineProperty(globalThis.navigator, "mediaDevices", {
       configurable: true,
       value: {

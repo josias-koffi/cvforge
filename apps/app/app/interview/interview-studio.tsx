@@ -21,6 +21,8 @@ import type {
 
 const STORAGE_KEY_PREFIX = "cvforge-interview-session";
 const TARGET_WAV_SAMPLE_RATE = 16000;
+const VAD_THRESHOLD = 0.05;
+const VAD_FFT_SIZE = 256;
 
 type StudioState =
   | "idle"
@@ -43,6 +45,11 @@ type BrowserWindowWithAudioContext = Window &
   typeof globalThis & {
     webkitAudioContext?: typeof AudioContext;
   };
+
+type AudioContextWithAnalyser = AudioContext & {
+  createMediaStreamSource: (stream: MediaStream) => MediaStreamAudioSourceNode;
+  createAnalyser: () => AnalyserNode;
+};
 
 type SpeechVoice = SpeechSynthesisVoice;
 
@@ -196,6 +203,7 @@ export function InterviewStudio({ sessionEmail }: { sessionEmail: string }) {
   const [aiState, setAIState] = React.useState<AIState>("idle");
   const [aiText, setAIText] = React.useState("");
   const [pipelineEvents, setPipelineEvents] = React.useState<PipelineEvent[]>([]);
+  const [vadLevel, setVadLevel] = React.useState(0);
   const utteranceQueueRef = React.useRef<string[]>([]);
   const speakingRef = React.useRef(false);
   const recorderRef = React.useRef<MediaRecorder | null>(null);
@@ -203,6 +211,9 @@ export function InterviewStudio({ sessionEmail }: { sessionEmail: string }) {
   const sequenceRef = React.useRef(1);
   const recordingStartRef = React.useRef<number | null>(null);
   const audioChunksRef = React.useRef<Blob[]>([]);
+  const analyserRef = React.useRef<AnalyserNode | null>(null);
+  const vadCtxRef = React.useRef<AudioContext | null>(null);
+  const vadRafRef = React.useRef<number | null>(null);
 
   const updateSession = React.useCallback((nextSession: InterviewSessionSummary) => {
     startTransition(() => {
@@ -238,10 +249,23 @@ export function InterviewStudio({ sessionEmail }: { sessionEmail: string }) {
     [sessionEmail],
   );
 
+  const stopVad = React.useCallback(() => {
+    if (vadRafRef.current !== null) {
+      cancelAnimationFrame(vadRafRef.current);
+      vadRafRef.current = null;
+    }
+    analyserRef.current?.disconnect();
+    analyserRef.current = null;
+    void vadCtxRef.current?.close();
+    vadCtxRef.current = null;
+    setVadLevel(0);
+  }, []);
+
   const stopStream = React.useCallback(() => {
+    stopVad();
     streamRef.current?.getTracks().forEach((track) => track.stop());
     streamRef.current = null;
-  }, []);
+  }, [stopVad]);
 
   const hydrateSession = React.useCallback(
     async (sessionId: string) => {
@@ -508,6 +532,39 @@ export function InterviewStudio({ sessionEmail }: { sessionEmail: string }) {
       audioChunksRef.current = [];
       recordingStartRef.current = Date.now();
 
+      // VAD: analyse the live stream for voice activity
+      try {
+        const AudioContextCtor =
+          typeof window !== "undefined"
+            ? window.AudioContext ?? (window as BrowserWindowWithAudioContext).webkitAudioContext
+            : undefined;
+        if (AudioContextCtor) {
+          const ctx = new AudioContextCtor() as AudioContextWithAnalyser;
+          const source = ctx.createMediaStreamSource(stream);
+          const analyser = ctx.createAnalyser();
+          analyser.fftSize = VAD_FFT_SIZE;
+          source.connect(analyser);
+          analyserRef.current = analyser;
+          vadCtxRef.current = ctx;
+
+          const freqData = new Uint8Array(analyser.frequencyBinCount);
+          function vadLoop() {
+            analyser.getByteFrequencyData(freqData);
+            let sumSq = 0;
+            for (let i = 0; i < freqData.length; i++) {
+              const norm = (freqData[i] ?? 0) / 255;
+              sumSq += norm * norm;
+            }
+            const rms = Math.sqrt(sumSq / freqData.length);
+            setVadLevel(rms);
+            vadRafRef.current = requestAnimationFrame(vadLoop);
+          }
+          vadRafRef.current = requestAnimationFrame(vadLoop);
+        }
+      } catch {
+        // VAD is non-critical; degrade gracefully if AudioContext is unavailable
+      }
+
       recorder.ondataavailable = (event) => {
         if (event.data.size > 0) audioChunksRef.current.push(event.data);
       };
@@ -587,10 +644,20 @@ export function InterviewStudio({ sessionEmail }: { sessionEmail: string }) {
   }
 
   const isRecording = recorderRef.current?.state === "recording";
+  const isSpeaking = isRecording && vadLevel > VAD_THRESHOLD;
   const languageLocked = Boolean(session?.id);
 
   return (
     <div style={{ display: "grid", gap: "1rem" }}>
+      <style>{`
+        @keyframes mic-pulse {
+          0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(74,124,89,0.4); }
+          50% { opacity: 0.85; box-shadow: 0 0 0 6px rgba(74,124,89,0); }
+        }
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
       <Card>
         <CardHeader>
           <CardTitle>Streaming STT progressif</CardTitle>
@@ -609,13 +676,43 @@ export function InterviewStudio({ sessionEmail }: { sessionEmail: string }) {
               justifyContent: "space-between",
             }}
           >
-            <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-              <Badge
-                style={state === "error" ? { borderColor: "#E5B8AF", color: "#8A2C20" } : undefined}
-                variant="outline"
-              >
-                Etat: {state}
-              </Badge>
+            <div
+              aria-live="polite"
+              style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}
+            >
+              {isRecording ? (
+                <Badge
+                  aria-label={isSpeaking ? "Micro actif – parole détectée" : "Micro actif – silence"}
+                  style={{
+                    alignItems: "center",
+                    animation: "mic-pulse 1.2s ease-in-out infinite",
+                    borderColor: "#4A7C59",
+                    color: "#2D5A3D",
+                    display: "inline-flex",
+                    gap: "0.4rem",
+                  }}
+                  variant="outline"
+                >
+                  <span
+                    style={{
+                      background: "#4A7C59",
+                      borderRadius: "50%",
+                      display: "inline-block",
+                      height: isSpeaking ? "10px" : "8px",
+                      transition: "height 0.1s, width 0.1s",
+                      width: isSpeaking ? "10px" : "8px",
+                    }}
+                  />
+                  {isSpeaking ? "Parole détectée" : "Micro actif"}
+                </Badge>
+              ) : (
+                <Badge
+                  style={state === "error" ? { borderColor: "#E5B8AF", color: "#8A2C20" } : undefined}
+                  variant="outline"
+                >
+                  Etat: {state}
+                </Badge>
+              )}
               <Badge variant="outline">
                 Langue: {language === "fr" ? "FR" : "EN"}
               </Badge>
@@ -626,6 +723,27 @@ export function InterviewStudio({ sessionEmail }: { sessionEmail: string }) {
                 Chunks: {summarizeChunkCount(session)}
               </Badge>
             </div>
+            {isRecording && (
+              <div
+                aria-hidden="true"
+                style={{
+                  background: "#F0EDE8",
+                  borderRadius: "2px",
+                  height: "4px",
+                  overflow: "hidden",
+                }}
+              >
+                <div
+                  style={{
+                    background: isSpeaking ? "#4A7C59" : "#D9D4CA",
+                    borderRadius: "2px",
+                    height: "100%",
+                    transition: "width 0.05s linear, background 0.1s",
+                    width: `${Math.min(100, vadLevel * 100 * 4)}%`,
+                  }}
+                />
+              </div>
+            )}
             <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
               <label
                 style={{
@@ -742,13 +860,39 @@ export function InterviewStudio({ sessionEmail }: { sessionEmail: string }) {
               justifyContent: "space-between",
             }}
           >
-            <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-              <Badge
-                style={aiState === "error" ? { borderColor: "#E5B8AF", color: "#8A2C20" } : undefined}
-                variant="outline"
-              >
-                IA: {aiState}
-              </Badge>
+            <div
+              aria-live="assertive"
+              style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}
+            >
+              {aiState === "generating" ? (
+                <Badge
+                  aria-label="IA : génération en cours"
+                  style={{
+                    alignItems: "center",
+                    background: "#F5EFE6",
+                    borderColor: "#C8A96E",
+                    color: "#6B4C1E",
+                    display: "inline-flex",
+                    gap: "0.4rem",
+                  }}
+                  variant="outline"
+                >
+                  <span
+                    aria-hidden="true"
+                    style={{ animation: "spin 1s linear infinite", display: "inline-block" }}
+                  >
+                    ⟳
+                  </span>
+                  Thinking…
+                </Badge>
+              ) : (
+                <Badge
+                  style={aiState === "error" ? { borderColor: "#E5B8AF", color: "#8A2C20" } : undefined}
+                  variant="outline"
+                >
+                  IA: {aiState}
+                </Badge>
+              )}
             </div>
             <Button
               disabled={
