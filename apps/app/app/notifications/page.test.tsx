@@ -31,35 +31,49 @@ describe("NotificationsPage", () => {
       expiresAt: "2026-04-27T07:45:24.000Z",
       role: "user",
     });
-    fetchMock.mockResolvedValue({
-      json: async () => ({
-        notifications: [
-          {
-            createdAt: "2026-04-22T08:00:00.000Z",
-            id: "notif-001",
-            linkHref: "/candidatures?applicationId=app-001",
-            message: "Sept jours se sont ecoules depuis l'envoi de votre candidature.",
-            metadata: { applicationId: "app-001" },
-            readAt: null,
-            title: "Relancer Acme",
-            type: "application_follow_up",
-            userEmail: "user@example.com",
+    fetchMock
+      .mockResolvedValueOnce({
+        json: async () => ({
+          notifications: [
+            {
+              createdAt: "2026-04-22T08:00:00.000Z",
+              id: "notif-001",
+              linkHref: "/candidatures?applicationId=app-001",
+              message: "Sept jours se sont ecoules depuis l'envoi de votre candidature.",
+              metadata: { applicationId: "app-001" },
+              readAt: null,
+              title: "Relancer Acme",
+              type: "application_follow_up",
+              userEmail: "user@example.com",
+            },
+            {
+              createdAt: "2026-04-20T08:00:00.000Z",
+              id: "notif-002",
+              linkHref: "/candidatures?applicationId=app-002",
+              message: "Rappel deja consulte.",
+              metadata: { applicationId: "app-002" },
+              readAt: "2026-04-21T08:00:00.000Z",
+              title: "Relancer Globex",
+              type: "application_follow_up",
+              userEmail: "user@example.com",
+            },
+          ],
+        }),
+        ok: true,
+      })
+      .mockResolvedValueOnce({
+        json: async () => ({
+          emailDeliveryReady: true,
+          preferences: {
+            email: {
+              applicationFollowUp: true,
+              creditPurchaseConfirmed: false,
+            },
           },
-          {
-            createdAt: "2026-04-20T08:00:00.000Z",
-            id: "notif-002",
-            linkHref: "/candidatures?applicationId=app-002",
-            message: "Rappel deja consulte.",
-            metadata: { applicationId: "app-002" },
-            readAt: "2026-04-21T08:00:00.000Z",
-            title: "Relancer Globex",
-            type: "application_follow_up",
-            userEmail: "user@example.com",
-          },
-        ],
-      }),
-      ok: true,
-    });
+          provider: "resend",
+        }),
+        ok: true,
+      });
 
     const Page = await NotificationsPage();
     const markup = renderToStaticMarkup(Page);
@@ -68,6 +82,9 @@ describe("NotificationsPage", () => {
     expect(markup).toContain("Notifications");
     expect(markup).toContain("Relancer Acme");
     expect(markup).toContain("Relancer Globex");
+    expect(markup).toContain("Preferences email");
+    expect(markup).toContain("Provider configure");
+    expect(markup).toContain("Relance candidature J+7");
     expect(markup).toContain("Non lue");
     expect(markup).toContain("Lue");
     expect(markup).toContain("Marquer comme lue");

@@ -264,3 +264,10 @@
 - **Why**: The story could only pass once each acceptance criterion had direct route, service, UI, and test evidence.
 - **Learned**: The first coverage attempt hit a transient API bootstrap timeout, but the rerun passed with API `86.54%` lines / `74.29%` branches and app `82.72%` lines / `70.01%` branches.
 - **Open**: DOCX styling remains intentionally ATS-focused rather than template-faithful.
+
+## 2026-04-24 — US-041 review
+
+- **Did**: Verified email dispatch for follow-up reminders and credit purchases, persisted user preferences, provider readiness exposure, and passing targeted test/lint/build evidence for API and app.
+- **Why**: The task could only pass once each acceptance criterion had direct service, route, and UI evidence rather than a configuration-only claim.
+- **Learned**: The story is reviewable because it extends existing SMTP, notifications, and billing slices instead of adding a second notification pipeline.
+- **Open**: Interview reminder emails remain an advisory future gap because no interview datetime is stored yet.

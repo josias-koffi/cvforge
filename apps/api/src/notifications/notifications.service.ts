@@ -1,9 +1,14 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import {
   APPLICATION_STATUS_SENT,
+  CREDIT_PACK_PRO,
+  CREDIT_PACK_STARTER,
   NOTIFICATION_TYPE_APPLICATION_FOLLOW_UP,
+  type CreditPackId,
   type ApplicationStatusHistoryEntry,
   type InAppNotification,
+  type NotificationPreferences,
+  type NotificationPreferencesResponse,
   type NotificationSummary,
 } from "@cvforge/types";
 import { randomUUID } from "node:crypto";
@@ -15,6 +20,7 @@ import type {
   NotificationsConfig,
   NotificationsStore,
 } from "./notifications.types";
+import { NotificationsMailerService } from "./notifications-mailer.service";
 
 function addDays(date: Date, days: number) {
   const copy = new Date(date);
@@ -66,21 +72,31 @@ function buildReminderNotification(
   };
 }
 
+function createDefaultPreferences(): NotificationPreferences {
+  return {
+    email: {
+      applicationFollowUp: true,
+      creditPurchaseConfirmed: true,
+    },
+  };
+}
+
 @Injectable()
 export class NotificationsService {
   constructor(
     private readonly notificationsStore: NotificationsStore,
     private readonly applicationsStore: ApplicationsStore,
     private readonly config: NotificationsConfig,
+    private readonly notificationsMailer: NotificationsMailerService,
   ) {}
 
-  listNotifications(userEmail: string) {
-    this.ensureDueNotifications(userEmail);
+  async listNotifications(userEmail: string) {
+    await this.ensureDueNotifications(userEmail);
     return sortNotifications(this.notificationsStore.listByUserEmail(userEmail));
   }
 
-  getSummary(userEmail: string): NotificationSummary {
-    const notifications = this.listNotifications(userEmail);
+  async getSummary(userEmail: string): Promise<NotificationSummary> {
+    const notifications = await this.listNotifications(userEmail);
 
     return {
       unreadCount: notifications.filter((notification) => !notification.readAt)
@@ -88,8 +104,8 @@ export class NotificationsService {
     };
   }
 
-  markAsRead(userEmail: string, notificationId: string) {
-    this.ensureDueNotifications(userEmail);
+  async markAsRead(userEmail: string, notificationId: string) {
+    await this.ensureDueNotifications(userEmail);
     const notification = this.notificationsStore.findByIdForUserEmail(
       userEmail,
       notificationId,
@@ -111,8 +127,59 @@ export class NotificationsService {
     return this.notificationsStore.save(updatedNotification);
   }
 
-  private ensureDueNotifications(userEmail: string) {
+  getPreferences(userEmail: string): NotificationPreferencesResponse {
+    const { provider, ready } = this.notificationsMailer.getDeliveryStatus();
+
+    return {
+      emailDeliveryReady: ready,
+      preferences: this.readPreferences(userEmail),
+      provider,
+    };
+  }
+
+  updatePreferences(
+    userEmail: string,
+    partial: Partial<NotificationPreferences["email"]>,
+  ): NotificationPreferencesResponse {
+    const nextPreferences: NotificationPreferences = {
+      email: {
+        ...this.readPreferences(userEmail).email,
+        ...partial,
+      },
+    };
+
+    this.notificationsStore.savePreferences(userEmail, nextPreferences);
+    return this.getPreferences(userEmail);
+  }
+
+  async sendCreditPurchaseConfirmationEmail(input: {
+    amountCents: number;
+    credits: number;
+    packId: CreditPackId;
+    userEmail: string;
+  }) {
+    const preferences = this.readPreferences(input.userEmail);
+
+    if (!preferences.email.creditPurchaseConfirmed) {
+      return;
+    }
+
+    await this.notificationsMailer.sendCreditPurchaseConfirmationEmail({
+      amountCents: input.amountCents,
+      credits: input.credits,
+      packId:
+        input.packId === CREDIT_PACK_PRO ? CREDIT_PACK_PRO : CREDIT_PACK_STARTER,
+      to: input.userEmail,
+    });
+  }
+
+  private readPreferences(userEmail: string) {
+    return this.notificationsStore.readPreferences(userEmail) ?? createDefaultPreferences();
+  }
+
+  private async ensureDueNotifications(userEmail: string) {
     const notifications = this.notificationsStore.listByUserEmail(userEmail);
+    const preferences = this.readPreferences(userEmail);
     const existingApplicationReminderIds = new Set(
       notifications
         .filter(
@@ -124,18 +191,18 @@ export class NotificationsService {
     );
     const now = new Date();
 
-    this.applicationsStore.listByUserEmail(userEmail).forEach((application) => {
+    for (const application of this.applicationsStore.listByUserEmail(userEmail)) {
       if (
         application.status !== APPLICATION_STATUS_SENT ||
         existingApplicationReminderIds.has(application.id)
       ) {
-        return;
+        continue;
       }
 
       const sentEntry = findSentStatusEntry(application);
 
       if (!sentEntry) {
-        return;
+        continue;
       }
 
       const reminderAt = addDays(
@@ -144,13 +211,22 @@ export class NotificationsService {
       );
 
       if (reminderAt > now) {
-        return;
+        continue;
       }
 
-      this.notificationsStore.add(
+      const notification = this.notificationsStore.add(
         buildReminderNotification(application, reminderAt.toISOString()),
       );
       existingApplicationReminderIds.add(application.id);
-    });
+
+      if (preferences.email.applicationFollowUp) {
+        await this.notificationsMailer.sendApplicationFollowUpEmail({
+          companyName: application.extracted.companyName ?? "cette entreprise",
+          followUpUrl: notification.linkHref,
+          jobTitle: application.extracted.title,
+          to: userEmail,
+        });
+      }
+    }
   }
 }

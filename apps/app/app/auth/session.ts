@@ -20,10 +20,16 @@ async function fetchSession(endpoint: "/auth/session" | "/auth/session/admin") {
     .map(({ name, value }) => `${name}=${value}`)
     .join("; ");
 
-  const response = await fetch(`${getServerApiUrl()}${endpoint}`, {
-    cache: "no-store",
-    headers: cookieHeader ? { cookie: cookieHeader } : undefined,
-  });
+  let response: Response;
+
+  try {
+    response = await fetch(`${getServerApiUrl()}${endpoint}`, {
+      cache: "no-store",
+      headers: cookieHeader ? { cookie: cookieHeader } : undefined,
+    });
+  } catch {
+    redirect("/login?error=session_unavailable");
+  }
 
   if (response.status === 401) {
     redirect("/login?error=session_required");
@@ -31,6 +37,10 @@ async function fetchSession(endpoint: "/auth/session" | "/auth/session/admin") {
 
   if (response.status === 403) {
     redirect("/forbidden");
+  }
+
+  if (response.status >= 500) {
+    redirect("/login?error=session_unavailable");
   }
 
   if (!response.ok) {

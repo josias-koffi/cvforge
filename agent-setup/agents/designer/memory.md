@@ -250,3 +250,10 @@
 - **Why**: The export and history controls belong where users already edit and review documents.
 - **Learned**: An ordered history list is enough for auditability now without designing compare or restore flows outside the story scope.
 - **Open**: Template-specific DOCX styling can be refined later if visual fidelity becomes a product requirement.
+
+## 2026-04-24 — US-041 design
+
+- **Did**: Added a compact "Preferences email" card to `/notifications` with native checkbox controls, provider status, and one save action.
+- **Why**: Users need one obvious place to both read notifications and configure email delivery per type, matching vision `§14.2` and `§14.3`.
+- **Learned**: The existing notification center can absorb settings cleanly without introducing a separate account-settings information architecture.
+- **Open**: If more email-capable notification types arrive later, the same card can scale into grouped preference sections.

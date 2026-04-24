@@ -313,3 +313,10 @@
 - **Why**: Architecture governance required an ADR for the new DOCX parser and a clear final decision after QA passed.
 - **Learned**: The pragmatic V1.1 split is DOCX via `mammoth`, PDF via documented text-layer heuristic, and no raw CV file sent to IA.
 - **Open**: `US-039` should handle DOCX export/version history separately and not reuse import-parser decisions blindly.
+
+## 2026-04-24 — US-041 finalization
+
+- **Did**: Closed US-041 with a passing verdict after confirming SMTP-backed notification delivery, persisted user preferences, billing-triggered purchase confirmations, and passing API/app test-lint-build gates; then updated sprint and workflow bookkeeping.
+- **Why**: Architecture governance required a final sign-off that multichannel notifications reuse the existing provider and stay inside coherent module boundaries.
+- **Learned**: The right architecture is one notification service that owns preferences and delivery while allowing other domains, such as billing, to emit notification-worthy events through it.
+- **Open**: A future scheduling capability is needed before interview reminder emails from vision `§14.1` can be implemented cleanly.

@@ -1,4 +1,5 @@
 import {
+  Body,
   Controller,
   Get,
   Inject,
@@ -23,32 +24,60 @@ export class NotificationsController {
   ) {}
 
   @Get()
-  listNotifications(@Req() request: RequestLike) {
+  async listNotifications(@Req() request: RequestLike) {
     const session = this.readSession(request);
 
     return {
-      notifications: this.notificationsService.listNotifications(session.email),
+      notifications: await this.notificationsService.listNotifications(
+        session.email,
+      ),
     };
   }
 
   @Get("summary")
-  getSummary(@Req() request: RequestLike) {
+  async getSummary(@Req() request: RequestLike) {
     const session = this.readSession(request);
 
     return {
-      summary: this.notificationsService.getSummary(session.email),
+      summary: await this.notificationsService.getSummary(session.email),
     };
   }
 
+  @Get("preferences")
+  getPreferences(@Req() request: RequestLike) {
+    const session = this.readSession(request);
+
+    return this.notificationsService.getPreferences(session.email);
+  }
+
+  @Post("preferences")
+  updatePreferences(
+    @Body()
+    body: {
+      email?: {
+        applicationFollowUp?: boolean;
+        creditPurchaseConfirmed?: boolean;
+      };
+    },
+    @Req() request: RequestLike,
+  ) {
+    const session = this.readSession(request);
+
+    return this.notificationsService.updatePreferences(session.email, {
+      applicationFollowUp: body.email?.applicationFollowUp,
+      creditPurchaseConfirmed: body.email?.creditPurchaseConfirmed,
+    });
+  }
+
   @Post(":notificationId/read")
-  markAsRead(
+  async markAsRead(
     @Param("notificationId") notificationId: string,
     @Req() request: RequestLike,
   ) {
     const session = this.readSession(request);
 
     return {
-      notification: this.notificationsService.markAsRead(
+      notification: await this.notificationsService.markAsRead(
         session.email,
         notificationId,
       ),

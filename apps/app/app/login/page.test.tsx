@@ -35,4 +35,15 @@ describe("LoginPage", () => {
 
     expect(markup).toContain("Le consentement RGPD est requis");
   });
+
+  it("should render the session unavailability message when requested", async () => {
+    const Page = await LoginPage({
+      searchParams: Promise.resolve({
+        error: "session_unavailable",
+      }),
+    });
+    const markup = renderToStaticMarkup(Page);
+
+    expect(markup).toContain("Le service d&#x27;authentification est indisponible");
+  });
 });

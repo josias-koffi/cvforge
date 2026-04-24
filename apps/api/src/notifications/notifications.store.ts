@@ -1,15 +1,20 @@
-import type { InAppNotification } from "@cvforge/types";
+import type {
+  InAppNotification,
+  NotificationPreferences,
+} from "@cvforge/types";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 import type { NotificationsStore } from "./notifications.types";
 
 type PersistedNotificationsState = {
   notifications: InAppNotification[];
+  preferencesByUser: Record<string, NotificationPreferences>;
 };
 
 function createEmptyState(): PersistedNotificationsState {
   return {
     notifications: [],
+    preferencesByUser: {},
   };
 }
 
@@ -54,6 +59,12 @@ export class FileNotificationsStore implements NotificationsStore {
       .sort((left, right) => right.createdAt.localeCompare(left.createdAt));
   }
 
+  readPreferences(userEmail: string) {
+    const state = this.readState();
+
+    return state.preferencesByUser[userEmail] ?? null;
+  }
+
   save(notification: InAppNotification) {
     const state = this.readState();
     const normalized = normalizeNotification(notification);
@@ -70,6 +81,13 @@ export class FileNotificationsStore implements NotificationsStore {
 
     this.writeState(state);
     return normalized;
+  }
+
+  savePreferences(userEmail: string, preferences: NotificationPreferences) {
+    const state = this.readState();
+    state.preferencesByUser[userEmail] = preferences;
+    this.writeState(state);
+    return preferences;
   }
 
   deleteByUserEmail(userEmail: string) {
@@ -101,6 +119,12 @@ export class FileNotificationsStore implements NotificationsStore {
               normalizeNotification(notification),
             )
           : [],
+        preferencesByUser:
+          parsed.preferencesByUser &&
+          typeof parsed.preferencesByUser === "object" &&
+          !Array.isArray(parsed.preferencesByUser)
+            ? (parsed.preferencesByUser as Record<string, NotificationPreferences>)
+            : {},
       };
     } catch {
       return createEmptyState();

@@ -2,6 +2,7 @@ import { BadRequestException, ServiceUnavailableException } from "@nestjs/common
 import { createHmac } from "node:crypto";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { CreditsService } from "../credits/credits.service";
+import type { NotificationsService } from "../notifications/notifications.service";
 import { BillingService } from "./billing.service";
 import type { BillingConfig } from "./billing.types";
 
@@ -26,6 +27,9 @@ describe("BillingService", () => {
   const creditsService = {
     recordStripePurchase: vi.fn(),
   } as unknown as CreditsService;
+  const notificationsService = {
+    sendCreditPurchaseConfirmationEmail: vi.fn(),
+  } as unknown as NotificationsService;
 
   beforeEach(() => {
     fetchMock.mockReset();
@@ -33,6 +37,7 @@ describe("BillingService", () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2023-11-14T22:13:20.000Z"));
     vi.mocked(creditsService.recordStripePurchase).mockReset();
+    vi.mocked(notificationsService.sendCreditPurchaseConfirmationEmail).mockReset();
   });
 
   afterEach(() => {
@@ -51,7 +56,11 @@ describe("BillingService", () => {
       ),
     );
 
-    const service = new BillingService(BASE_CONFIG, creditsService);
+    const service = new BillingService(
+      BASE_CONFIG,
+      creditsService,
+      notificationsService,
+    );
     const result = await service.createCheckoutSession({
       packId: "starter",
       userEmail: "user@example.com",
@@ -74,6 +83,7 @@ describe("BillingService", () => {
     const service = new BillingService(
       { ...BASE_CONFIG, stripeSecretKey: "" },
       creditsService,
+      notificationsService,
     );
 
     await expect(
@@ -84,7 +94,7 @@ describe("BillingService", () => {
     ).rejects.toThrow(ServiceUnavailableException);
   });
 
-  it("credits the ledger for a verified checkout.session.completed event", () => {
+  it("credits the ledger for a verified checkout.session.completed event", async () => {
     vi.mocked(creditsService.recordStripePurchase).mockReturnValue({
       action: "stripe_purchase",
       amount: 550,
@@ -118,8 +128,12 @@ describe("BillingService", () => {
       },
     });
 
-    const service = new BillingService(BASE_CONFIG, creditsService);
-    const result = service.handleWebhook({
+    const service = new BillingService(
+      BASE_CONFIG,
+      creditsService,
+      notificationsService,
+    );
+    const result = await service.handleWebhook({
       payload,
       signatureHeader: signPayload(payload, BASE_CONFIG.stripeWebhookSecret),
     });
@@ -132,10 +146,18 @@ describe("BillingService", () => {
       stripePaymentIntentId: "pi_123",
       userEmail: "user@example.com",
     });
+    expect(
+      notificationsService.sendCreditPurchaseConfirmationEmail,
+    ).toHaveBeenCalledWith({
+      amountCents: 999,
+      credits: 550,
+      packId: "starter",
+      userEmail: "user@example.com",
+    });
     expect(result).toMatchObject({ handled: "credited" });
   });
 
-  it("acknowledges failed payment events without crediting", () => {
+  it("acknowledges failed payment events without crediting", async () => {
     const payload = JSON.stringify({
       id: "evt_123",
       type: "checkout.session.async_payment_failed",
@@ -147,30 +169,41 @@ describe("BillingService", () => {
       },
     });
 
-    const service = new BillingService(BASE_CONFIG, creditsService);
-    const result = service.handleWebhook({
+    const service = new BillingService(
+      BASE_CONFIG,
+      creditsService,
+      notificationsService,
+    );
+    const result = await service.handleWebhook({
       payload,
       signatureHeader: signPayload(payload, BASE_CONFIG.stripeWebhookSecret),
     });
 
     expect(result).toEqual({ handled: "payment_failed" });
     expect(creditsService.recordStripePurchase).not.toHaveBeenCalled();
+    expect(
+      notificationsService.sendCreditPurchaseConfirmationEmail,
+    ).not.toHaveBeenCalled();
   });
 
-  it("rejects webhook payloads with an invalid signature", () => {
+  it("rejects webhook payloads with an invalid signature", async () => {
     const payload = JSON.stringify({
       id: "evt_123",
       type: "checkout.session.completed",
       data: { object: { id: "cs_test_123" } },
     });
 
-    const service = new BillingService(BASE_CONFIG, creditsService);
+    const service = new BillingService(
+      BASE_CONFIG,
+      creditsService,
+      notificationsService,
+    );
 
-    expect(() =>
+    await expect(
       service.handleWebhook({
         payload,
         signatureHeader: "t=1700000000,v1=bad",
       }),
-    ).toThrow(BadRequestException);
+    ).rejects.toThrow(BadRequestException);
   });
 });

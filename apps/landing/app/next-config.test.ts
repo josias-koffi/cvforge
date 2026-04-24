@@ -7,12 +7,22 @@ describe("landing next config", () => {
   });
 
   it("uses NEXT_DIST_DIR when provided", async () => {
-    process.env.NEXT_DIST_DIR = ".next-test";
+    process.env.NEXT_DIST_DIR = "tmp/cvforge-landing-next";
     vi.resetModules();
     const { default: configured } = await import("../next.config");
     delete process.env.NEXT_DIST_DIR;
     vi.resetModules();
 
-    expect(configured).toEqual({ distDir: ".next-test" });
+    expect(configured).toEqual({ distDir: "tmp/cvforge-landing-next" });
+  });
+
+  it("ignores absolute NEXT_DIST_DIR values", async () => {
+    process.env.NEXT_DIST_DIR = "/tmp/cvforge-landing-next";
+    vi.resetModules();
+    const { default: configured } = await import("../next.config");
+    delete process.env.NEXT_DIST_DIR;
+    vi.resetModules();
+
+    expect(configured).toEqual({});
   });
 });

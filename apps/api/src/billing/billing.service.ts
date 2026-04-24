@@ -12,6 +12,7 @@ import {
   type CreateCheckoutSessionResponse,
 } from "@cvforge/types";
 import { CreditsService } from "../credits/credits.service";
+import { NotificationsService } from "../notifications/notifications.service";
 import type {
   BillingConfig,
   CreateCheckoutSessionInput,
@@ -63,6 +64,7 @@ export class BillingService {
   constructor(
     private readonly config: BillingConfig,
     private readonly creditsService: CreditsService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async createCheckoutSession(
@@ -162,7 +164,7 @@ export class BillingService {
     };
   }
 
-  handleWebhook(input: StripeWebhookInput) {
+  async handleWebhook(input: StripeWebhookInput) {
     this.ensureWebhookSecret();
 
     const event = this.verifyAndParseEvent(input);
@@ -172,7 +174,7 @@ export class BillingService {
       case "checkout.session.async_payment_succeeded":
         return {
           handled: "credited",
-          entry: this.recordCheckoutSession(event.data.object),
+          entry: await this.recordCheckoutSession(event.data.object),
         };
       case "checkout.session.async_payment_failed":
       case "payment_intent.payment_failed":
@@ -250,7 +252,7 @@ export class BillingService {
     );
   }
 
-  private recordCheckoutSession(session: StripeCheckoutSession) {
+  private async recordCheckoutSession(session: StripeCheckoutSession) {
     const metadata = session.metadata ?? {};
     const packId = metadata.packId ?? "";
     const userEmail = (metadata.userEmail ?? session.customer_email ?? "")
@@ -273,7 +275,7 @@ export class BillingService {
 
     const pack = creditPacks[packId];
 
-    return this.creditsService.recordStripePurchase({
+    const entry = this.creditsService.recordStripePurchase({
       amountCents: session.amount_total ?? pack.priceCents,
       credits: pack.credits,
       packId,
@@ -281,6 +283,15 @@ export class BillingService {
       stripePaymentIntentId: session.payment_intent,
       userEmail,
     });
+
+    await this.notificationsService.sendCreditPurchaseConfirmationEmail({
+      amountCents: session.amount_total ?? pack.priceCents,
+      credits: pack.credits,
+      packId,
+      userEmail,
+    });
+
+    return entry;
   }
 
   private ensureStripeSecret() {

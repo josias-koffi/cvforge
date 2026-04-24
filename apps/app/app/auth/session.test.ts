@@ -98,4 +98,32 @@ describe("app auth session guards", () => {
 
     await expect(requireAdminSession()).rejects.toThrow("redirect:/forbidden");
   });
+
+  it("should redirect to login when the session API is unreachable", async () => {
+    cookiesMock.mockResolvedValue({
+      getAll: () => [],
+    });
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError("fetch failed")));
+
+    await expect(requireSession()).rejects.toThrow(
+      "redirect:/login?error=session_unavailable",
+    );
+  });
+
+  it("should redirect to login when the session API returns a server error", async () => {
+    cookiesMock.mockResolvedValue({
+      getAll: () => [],
+    });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 503,
+      }),
+    );
+
+    await expect(requireSession()).rejects.toThrow(
+      "redirect:/login?error=session_unavailable",
+    );
+  });
 });

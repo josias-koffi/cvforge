@@ -27,6 +27,8 @@ export const CREDIT_PACK_STARTER = "starter" as const;
 export const CREDIT_PACK_PRO = "pro" as const;
 export const NOTIFICATION_TYPE_APPLICATION_FOLLOW_UP =
   "application_follow_up" as const;
+export const NOTIFICATION_TYPE_CREDIT_PURCHASE_CONFIRMED =
+  "credit_purchase_confirmed" as const;
 
 export const applicationStatuses = [
   APPLICATION_STATUS_DRAFT,
@@ -54,6 +56,7 @@ export const creditPackIds = [CREDIT_PACK_STARTER, CREDIT_PACK_PRO] as const;
 export type CreditPackId = (typeof creditPackIds)[number];
 export const notificationTypes = [
   NOTIFICATION_TYPE_APPLICATION_FOLLOW_UP,
+  NOTIFICATION_TYPE_CREDIT_PURCHASE_CONFIRMED,
 ] as const;
 export type NotificationType = (typeof notificationTypes)[number];
 export type TemplateKind =
@@ -323,11 +326,27 @@ export interface InAppNotification {
   readAt: string | null;
   metadata: {
     applicationId?: string;
+    packId?: string;
   };
 }
 
 export interface NotificationSummary {
   unreadCount: number;
+}
+
+export interface NotificationEmailPreferences {
+  applicationFollowUp: boolean;
+  creditPurchaseConfirmed: boolean;
+}
+
+export interface NotificationPreferences {
+  email: NotificationEmailPreferences;
+}
+
+export interface NotificationPreferencesResponse {
+  emailDeliveryReady: boolean;
+  preferences: NotificationPreferences;
+  provider: string | null;
 }
 
 export interface DraftApplication {

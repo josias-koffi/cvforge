@@ -9,7 +9,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@cvforge/ui";
-import type { InAppNotification } from "@cvforge/types";
+import type {
+  InAppNotification,
+  NotificationPreferencesResponse,
+} from "@cvforge/types";
 import { getServerApiUrl } from "../auth-config";
 import { getAppNavigation } from "../content";
 import { requireSession } from "../auth/session";
@@ -48,13 +51,31 @@ async function fetchNotifications() {
   return payload.notifications;
 }
 
+async function fetchNotificationPreferences() {
+  const cookieStore = await cookies();
+  const cookieHeader = getCookieHeader(cookieStore);
+  const response = await fetch(`${getServerApiUrl()}/notifications/preferences`, {
+    cache: "no-store",
+    headers: cookieHeader ? { cookie: cookieHeader } : undefined,
+  });
+
+  if (!response.ok) {
+    throw new Error("Impossible de recuperer les preferences de notification.");
+  }
+
+  return (await response.json()) as NotificationPreferencesResponse;
+}
+
 function resolveStatusMessage(
   error: string | undefined,
   updated: string | undefined,
 ) {
   if (updated && !error) {
     return {
-      text: "La notification a ete marquee comme lue.",
+      text:
+        updated === "preferences"
+          ? "Les preferences email ont ete enregistrees."
+          : "La notification a ete marquee comme lue.",
       tone: "success" as const,
     };
   }
@@ -67,6 +88,8 @@ function resolveStatusMessage(
     text:
       error === "notification_missing"
         ? "La notification cible est manquante."
+        : error === "preferences_update_failed"
+          ? "La mise a jour des preferences a echoue."
         : "La mise a jour de la notification a echoue.",
     tone: "error" as const,
   };
@@ -81,7 +104,10 @@ type NotificationsPageProps = {
 
 export default async function NotificationsPage(props: NotificationsPageProps) {
   const session = await requireSession();
-  const notifications = await fetchNotifications();
+  const [notifications, preferencesResponse] = await Promise.all([
+    fetchNotifications(),
+    fetchNotificationPreferences(),
+  ]);
   const resolvedSearchParams = await props?.searchParams;
   const statusMessage = resolveStatusMessage(
     resolvedSearchParams?.error,
@@ -89,6 +115,8 @@ export default async function NotificationsPage(props: NotificationsPageProps) {
   );
   const unreadCount = notifications.filter((notification) => !notification.readAt)
     .length;
+  const emailPreferences = preferencesResponse.preferences.email;
+  const providerLabel = preferencesResponse.provider ?? "SMTP";
 
   return (
     <AppShell
@@ -142,6 +170,73 @@ export default async function NotificationsPage(props: NotificationsPageProps) {
             </CardContent>
           </Card>
         </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Preferences email</CardTitle>
+          </CardHeader>
+          <CardContent style={{ display: "grid", gap: "1rem" }}>
+            <p style={{ color: "#6B6860", lineHeight: 1.6, margin: 0 }}>
+              Provider configure: <strong>{providerLabel}</strong>. Etat:{" "}
+              <strong>
+                {preferencesResponse.emailDeliveryReady ? "pret" : "non configure"}
+              </strong>
+              .
+            </p>
+            <form
+              action="/notifications/preferences"
+              method="POST"
+              style={{ display: "grid", gap: "1rem" }}
+            >
+              <label
+                style={{
+                  alignItems: "flex-start",
+                  display: "flex",
+                  gap: "0.75rem",
+                }}
+              >
+                <input
+                  defaultChecked={emailPreferences.applicationFollowUp}
+                  name="applicationFollowUp"
+                  type="checkbox"
+                />
+                <span style={{ display: "grid", gap: "0.2rem" }}>
+                  <strong>Relance candidature J+7</strong>
+                  <span style={{ color: "#6B6860", fontSize: "0.95rem" }}>
+                    Email envoye quand une candidature reste sans reponse 7 jours
+                    apres l&apos;envoi.
+                  </span>
+                </span>
+              </label>
+
+              <label
+                style={{
+                  alignItems: "flex-start",
+                  display: "flex",
+                  gap: "0.75rem",
+                }}
+              >
+                <input
+                  defaultChecked={emailPreferences.creditPurchaseConfirmed}
+                  name="creditPurchaseConfirmed"
+                  type="checkbox"
+                />
+                <span style={{ display: "grid", gap: "0.2rem" }}>
+                  <strong>Achat de credits confirme</strong>
+                  <span style={{ color: "#6B6860", fontSize: "0.95rem" }}>
+                    Email de confirmation envoye apres validation du webhook Stripe.
+                  </span>
+                </span>
+              </label>
+
+              <div>
+                <Button size="sm" type="submit">
+                  Enregistrer mes preferences
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
 
         <Card>
           <CardHeader>

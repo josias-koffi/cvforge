@@ -13,13 +13,13 @@ Compléter `V1.1` avec les rappels multicanaux, les analytics avancées et la m�
 
 ## ✅ Tasks (3–8 max)
 
-- [ ] **[US-041]** Envoyer les rappels et notifications email avec préférences utilisateur
+- [x] **[US-041]** Envoyer les rappels et notifications email avec préférences utilisateur
   - Agent: `developer`
   - Workflow: `analyze-design-dev-review`
   - Acceptance criteria:
-    - [ ] Les notifications email essentielles sont envoyées
-    - [ ] Les préférences utilisateur sont configurables
-    - [ ] Le provider email choisi est intégré
+    - [x] Les notifications email essentielles sont envoyées
+    - [x] Les préférences utilisateur sont configurables
+    - [x] Le provider email choisi est intégré
   - Source: vision `§14`, `§16`
 - [ ] **[US-042]** Exposer les graphiques avancés du dashboard
   - Agent: `analyst`

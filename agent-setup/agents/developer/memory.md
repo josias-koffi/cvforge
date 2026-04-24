@@ -362,3 +362,17 @@
 - **Why**: `US-038` required existing CV import with pseudonymised IA extraction and documented extraction limits.
 - **Learned**: The active local profile registry is the right merge point; OpenRouter should only receive stripped `pseudonymisedCvText`.
 - **Open**: PDF support is text-layer heuristic only; a full OCR/parser stack remains a future decision.
+
+## 2026-04-24 — US-041
+
+- **Did**: Added persisted notification email preferences, an SMTP-backed notifications mailer, email sending for J+7 follow-up reminders and Stripe purchase confirmations, API preference endpoints, app preference form handling, and tests; then verified lint and both package builds.
+- **Why**: Sprint 012 required multichannel notification delivery with user control while reusing the provider path already present in the repository.
+- **Learned**: The clean implementation is to keep email delivery inside the notifications boundary and let billing trigger purchase confirmation through that same service instead of duplicating mail logic.
+- **Open**: Interview reminder emails still need a future scheduling source in the application domain.
+
+## 2026-04-24 — run-agent developer: Next app recovery and session fallback
+
+- **Did**: Switched Compose `NEXT_DIST_DIR` values to project-local `tmp/...` folders, hardened both Next configs to ignore unsafe absolute dist dirs, repaired the generated Next TypeScript references to match the project-local output, redirected session transport and 5xx failures to `/login?error=session_unavailable`, added the login-state copy, and verified the fix with targeted tests plus app/landing lint and build.
+- **Why**: The app was failing in two ways from the provided logs: Next dev was mixing absolute `/tmp` metadata with project-local manifest paths, and SSR session checks were turning API outages into 500s on `/`.
+- **Learned**: For this repo, `distDir` only stays stable when it remains relative to each app root; once Next writes absolute type references, the generated metadata and manifest lookup paths diverge under container restarts.
+- **Open**: The running Docker Compose stack still needs a restart or recreate so the updated `NEXT_DIST_DIR` environment values take effect in the containers.

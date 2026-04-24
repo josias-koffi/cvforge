@@ -14,6 +14,8 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
       ? "Impossible de generer le magic link pour le moment."
       : resolvedSearchParams?.error === "consent_required"
         ? "Le consentement RGPD est requis pour creer un compte."
+        : resolvedSearchParams?.error === "session_unavailable"
+          ? "Le service d'authentification est indisponible pour le moment."
       : null;
 
   return (

@@ -1,4 +1,9 @@
-import type { InAppNotification, NotificationSummary } from "@cvforge/types";
+import type {
+  InAppNotification,
+  NotificationPreferences,
+  NotificationPreferencesResponse,
+  NotificationSummary,
+} from "@cvforge/types";
 
 export type NotificationsConfig = {
   followUpDelayDays: number;
@@ -12,7 +17,12 @@ export type NotificationsStore = {
     notificationId: string,
   ) => InAppNotification | null;
   listByUserEmail: (userEmail: string) => InAppNotification[];
+  readPreferences: (userEmail: string) => NotificationPreferences | null;
   save: (notification: InAppNotification) => InAppNotification;
+  savePreferences: (
+    userEmail: string,
+    preferences: NotificationPreferences,
+  ) => NotificationPreferences;
 };
 
 export type NotificationsListResponse = {
@@ -22,3 +32,5 @@ export type NotificationsListResponse = {
 export type NotificationsSummaryResponse = {
   summary: NotificationSummary;
 };
+
+export type NotificationsPreferencesResponse = NotificationPreferencesResponse;

@@ -285,3 +285,10 @@
 - **Why**: The vision places existing-CV import in onboarding/profile creation and requires user validation before saving.
 - **Learned**: The current local profile registry can support import by applying a server-extracted patch to the active profile.
 - **Open**: Future work may need full OCR/PDF parsing if user CVs are mostly scanned or image-only.
+
+## 2026-04-24 — US-041 analyze
+
+- **Did**: Framed US-041 around the notification events already present in code: J+7 candidature follow-up and Stripe credit-purchase confirmation, plus per-user email preferences in the notification center.
+- **Why**: The story had to satisfy vision `§14` without inventing unsupported triggers such as interview reminders before the underlying scheduling data exists.
+- **Learned**: The chosen provider decision is already embodied by the SMTP setup; the product gap was orchestration and user control, not a new provider integration.
+- **Open**: Interview reminder emails remain a later story once candidature/interview scheduling carries a real datetime.

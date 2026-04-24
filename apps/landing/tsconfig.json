@@ -4,7 +4,11 @@
     "jsx": "preserve",
     "baseUrl": ".",
     "moduleResolution": "bundler",
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
     "allowJs": true,
     "noEmit": true,
     "incremental": true,
@@ -16,10 +20,21 @@
       }
     ],
     "paths": {
-      "@cvforge/types": ["../../packages/types/src/index.ts"],
-      "@cvforge/ui": ["../../packages/ui/src/index.tsx"]
+      "@cvforge/types": [
+        "../../packages/types/src/index.ts"
+      ],
+      "@cvforge/ui": [
+        "../../packages/ui/src/index.tsx"
+      ]
     }
   },
-  "include": ["app/**/*.ts", "app/**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules"]
+  "include": [
+    ".next/types/**/*.ts",
+    "app/**/*.ts",
+    "app/**/*.tsx",
+    "tmp/cvforge-landing-next/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
 }
