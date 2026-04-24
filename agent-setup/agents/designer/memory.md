@@ -257,3 +257,10 @@
 - **Why**: Users need one obvious place to both read notifications and configure email delivery per type, matching vision `§14.2` and `§14.3`.
 - **Learned**: The existing notification center can absorb settings cleanly without introducing a separate account-settings information architecture.
 - **Open**: If more email-capable notification types arrive later, the same card can scale into grouped preference sections.
+
+## 2026-04-24 — US-043 design
+
+- **Did**: Designed the dashboard share section as a responsive two-column card with a live SVG preview, one download action, one native-share action, and one LinkedIn offsite share link.
+- **Why**: Vision `§12.5` calls for social sharing, but the solution needed to stay inside the existing "Papier & Crayon" visual system and work on mobile and desktop.
+- **Learned**: SVG is the right artifact for this MVP because it stays crisp, requires no extra backend service, and can still be posted manually when LinkedIn cannot preview a private dashboard route.
+- **Open**: If later product scope requires richer public sharing pages, the card can become the visual asset for that future public route.

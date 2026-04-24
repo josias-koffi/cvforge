@@ -278,3 +278,10 @@
 - **Why**: The `release` workflow required an explicit regression verdict before `US-042` could be marked complete.
 - **Learned**: The story stays reviewable because the dashboard reuses existing authenticated product data and makes absent interview-report data explicit instead of masking it with placeholder metrics.
 - **Open**: The remaining audit findings are non-blocking (`1 low`, `2 moderate`) and can be handled as follow-up maintenance.
+
+## 2026-04-24 — US-043 review
+
+- **Did**: Verified the generated dashboard share card, the LinkedIn offsite share link, the responsive render, and passing `pnpm --filter @cvforge/app lint`, `pnpm --filter @cvforge/app build`, and `pnpm test -- --coverage`.
+- **Why**: The task could only pass once each social-sharing acceptance criterion had direct UI and automated evidence.
+- **Learned**: The story is reviewable because it derives the share asset from the same authenticated KPI data already used by the dashboard instead of introducing unverifiable client-only numbers.
+- **Open**: LinkedIn preview richness remains limited by the private dashboard URL; the downloadable SVG is the reliable sharing asset for now.

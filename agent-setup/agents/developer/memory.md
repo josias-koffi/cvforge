@@ -383,3 +383,17 @@
 - **Why**: `US-042` required a richer dashboard surface in Sprint 012 while staying inside the current product data boundaries instead of inventing a separate analytics backend.
 - **Learned**: A pragmatic ATS trajectory can be derived from persisted CV versions versus stored offer metadata, which gives the dashboard meaningful score progression now without waiting for a future first-class ATS metric service.
 - **Open**: Real interview reports still need to land before the post-interview chart can display populated history outside its explicit empty state.
+
+## 2026-04-24 — US-043
+
+- **Did**: Added a dashboard share module with an SVG card generator, native share action, LinkedIn offsite share link, dashboard wiring, and regression tests; then verified app lint/build plus root coverage.
+- **Why**: `US-043` required a concrete social-sharing slice on top of live dashboard KPIs, not a placeholder CTA.
+- **Learned**: The smallest robust implementation is a client share panel backed by a pure SVG builder, because it avoids new infrastructure while still producing a real downloadable asset.
+- **Open**: A future public-sharing page could replace the private `/dashboard` URL in LinkedIn posts if the product later needs richer social previews.
+
+## 2026-04-24 — US-043 share refinement
+
+- **Did**: Reworked the dashboard share flow to export JPEG instead of SVG for user-facing download/share, added a public `/share/dashboard` page plus `/share/dashboard/og` image endpoint for Open Graph previews, and changed the LinkedIn/native share actions to use clipboard and file-aware fallbacks.
+- **Why**: The first implementation overstated what LinkedIn offsite sharing could do and did not provide a strong enough fallback when native sharing was unavailable.
+- **Learned**: The practical solution is split: a public OG-backed share URL for LinkedIn previews, a copied legend for manual paste, and a JPEG file for native/file-based sharing.
+- **Open**: If product needs a truly one-click social post with server-uploaded media and caption control, that will require a LinkedIn API integration with member authorization rather than a simple share URL.

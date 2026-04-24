@@ -299,3 +299,10 @@
 - **Why**: Product governance required the story to satisfy vision `§12.3` without inventing unsupported ATS or interview metrics beyond what the product currently persists.
 - **Learned**: The dashboard can move forward incrementally by surfacing richer visualizations from existing candidature data now, while reserving populated post-interview analytics for the later interview-report stories.
 - **Open**: Sprint 012 remains open for US-043 and the final sprint DoD pass.
+
+## 2026-04-24 — US-043 analyze
+
+- **Did**: Confirmed that US-043 is limited to a dashboard-level shareable card plus a LinkedIn offsite share action built from already persisted KPI data.
+- **Why**: The story needed a precise product boundary so the implementation would satisfy vision `§12.5` without inventing a public analytics backend or new social network features.
+- **Learned**: The acceptance criteria are satisfied by a generated card artifact and a working native share link; LinkedIn preview metadata for private dashboard pages is not required.
+- **Open**: Sprint 012 can close once implementation and QA evidence are recorded.

@@ -327,3 +327,10 @@
 - **Why**: The `release` workflow required explicit scope control and an architecture/security gate before the story could be marked complete.
 - **Learned**: The clean architecture choice is to derive dashboard analytics from the existing applications boundary and persisted CV versions, while keeping post-interview scoring tied to first-class saved reports instead of fabricated metrics.
 - **Open**: When interview reports become available, the next dashboard iteration should consume them directly rather than expanding the ATS heuristic beyond its current release-safe scope.
+
+## 2026-04-24 — US-043 finalization
+
+- **Did**: Closed US-043 with a passing verdict after confirming the SVG share-card generator, the native/share-offsite actions, responsive dashboard integration, and passing lint/build/coverage evidence; then updated sprint and workflow bookkeeping.
+- **Why**: Architecture governance required an explicit sign-off that the new social-sharing surface fits the existing app boundary and does not introduce an unnecessary backend or dependency.
+- **Learned**: A pure app-side SVG generation path is sufficient for the MVP social-share story and keeps the implementation aligned with the project’s lightweight dashboard architecture.
+- **Open**: If product later needs public share pages or richer Open Graph previews, that should become a separate story with an explicit public-route design.

@@ -283,6 +283,11 @@ describe("DashboardPage", () => {
     expect(markup).toContain("Acces rapides");
     expect(markup).toContain("Nouvelle candidature");
     expect(markup).toContain("Mode interview");
+    expect(markup).toContain("Carte partageable LinkedIn");
+    expect(markup).toContain("Telecharger en JPG");
+    expect(markup).toContain("Ouvrir LinkedIn + copier la legende");
+    expect(markup).toContain("Copier la legende");
+    expect(markup).toContain("/share/dashboard?");
     expect(markup).toContain("Dernieres candidatures");
     expect(markup).toContain("Product Engineer");
     expect(markup).toContain("Backend Engineer");

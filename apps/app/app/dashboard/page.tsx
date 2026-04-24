@@ -16,7 +16,7 @@ import {
   type CreditLedgerSummary,
 } from "@cvforge/types";
 import Link from "next/link";
-import { getServerApiUrl } from "../auth-config";
+import { getAppUrl, getServerApiUrl } from "../auth-config";
 import { requireSession } from "../auth/session";
 import { appContent, getAppNavigation } from "../content";
 import {
@@ -32,6 +32,8 @@ import {
   type DashboardApplication,
 } from "./analytics";
 import { DonutChartCard, LineChartCard } from "./charts";
+import { DashboardShareCard } from "./share-card";
+import { buildDashboardSharePageUrl, buildLinkedInShareUrl } from "./share-card-content";
 
 function getCookieHeader(cookieStore: Awaited<ReturnType<typeof cookies>>) {
   return cookieStore
@@ -186,6 +188,19 @@ export default async function DashboardPage(props: DashboardPageProps) {
   );
   const atsInsights = buildAtsInsights(applications);
   const interviewInsights = buildInterviewInsights(applications);
+  const shareData = {
+    averageAtsScore: atsInsights.averageScore,
+    averageInterviewScore: interviewInsights.averageScore,
+    generatedAt: new Intl.DateTimeFormat("fr-FR", {
+      dateStyle: "medium",
+    }).format(new Date()),
+    interviewCount: summary.statusCounts.interview_scheduled,
+    offerCount: summary.statusCounts.offer_received,
+    responseRate: summary.responseRate,
+    totalApplications: summary.totalCount,
+  };
+  const publicShareUrl = buildDashboardSharePageUrl(getAppUrl(), shareData);
+  const linkedInShareUrl = buildLinkedInShareUrl(publicShareUrl);
   const resolvedSearchParams = await resolveSearchParams(searchParams);
   const billingState = String(resolvedSearchParams.billing ?? "");
   const billingReason = String(resolvedSearchParams.reason ?? "");
@@ -486,6 +501,12 @@ export default async function DashboardPage(props: DashboardPageProps) {
             </Link>
           </CardContent>
         </Card>
+
+        <DashboardShareCard
+          data={shareData}
+          linkedInShareUrl={linkedInShareUrl}
+          publicShareUrl={publicShareUrl}
+        />
 
         <Card>
           <CardHeader>
