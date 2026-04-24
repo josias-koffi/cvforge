@@ -292,3 +292,10 @@
 - **Why**: The task could only pass once each interview-STT acceptance criterion had direct UI, route, service, and automated evidence.
 - **Learned**: The story is reviewable because the session/chunk contract is explicit end to end, which makes retries and partial transcript recovery deterministic.
 - **Open**: Live provider compatibility for the chosen browser MIME type remains a staging check rather than a CI-covered guarantee.
+
+## 2026-04-24 — US-046
+
+- **Did**: Reviewed the VAD + visual feedback implementation: verified all 3 acceptance criteria, confirmed 198 tests pass, lint clean, no new library, PR diff < 400 lines, WCAG 2.1 AA satisfied for both new indicators.
+- **Why**: Sprint 013 story required QA sign-off before the task could be ticked.
+- **Learned**: When new code uses RAF loops, the test harness must stub `requestAnimationFrame` as a no-op to prevent heap exhaustion in happy-dom environments. Advisory: `@keyframes` injected as inline style tags per render; acceptable now, should be CSS module if the page grows.
+- **Open**: None for this story.

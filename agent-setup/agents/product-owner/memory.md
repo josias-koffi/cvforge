@@ -313,3 +313,10 @@
 - **Why**: The workflow needed a strict boundary so the task would not drift into the later TTS, VAD, or latency-optimization stories already planned in Sprint 013.
 - **Learned**: Vision `§10` and `§16` are explicit enough to require 500ms progressive chunks and resumable error handling without adding new product requirements.
 - **Open**: `US-045` should reuse the same interview session boundary for the LLM -> TTS stream rather than creating a second pipeline.
+
+## 2026-04-24 — US-046 analyze
+
+- **Did**: Confirmed that US-046 is limited to browser-side VAD using `AnalyserNode` RMS detection plus mic and "Thinking" visual indicators, additive to the existing `InterviewStudio` workspace.
+- **Why**: The workflow needed a precise product boundary so the story would not drift into server-side VAD, animated waveforms, or multi-speaker diarization.
+- **Learned**: The threshold for speech detection (−30 dBFS / 0.05 normalized RMS) is an implementation detail, not a product decision; the vision's "retour visuel temps réel" requirement maps directly to the two badge-level indicators.
+- **Open**: US-047 should instrument latency measurement on top of this completed VAD + TTS pipeline.

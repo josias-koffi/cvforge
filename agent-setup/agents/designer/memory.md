@@ -271,3 +271,10 @@
 - **Why**: The story needed a usable shell for progressive STT evidence without prematurely designing VAD animations or the later voice-output experience.
 - **Learned**: The existing shell and card primitives are sufficient for a real-time audio MVP when the status language is explicit and the transcript stays central.
 - **Open**: `US-046` should add speaking/thinking feedback on top of this same workspace instead of replacing it.
+
+## 2026-04-24 — US-046
+
+- **Did**: Designed VAD and "Thinking" feedback as inline badge-row augmentations: an animated pulse ring mic indicator with aria-live and a slim RMS bar for recording, and an amber spinning ⟳ "Thinking…" badge for AI generation.
+- **Why**: The story required visible state feedback without adding a new card or disrupting the existing minimal layout.
+- **Learned**: CSS `@keyframes` animation on badge-level elements is enough to convey dynamic audio activity without canvas or WebGL; the existing "Papier & Crayon" palette has enough contrast room for both the green mic and amber thinking colors.
+- **Open**: US-047 may need a latency-visible indicator (e.g., a timestamp or timer badge) if perceived-latency measurement requires user-observable checkpoints.

@@ -29,13 +29,13 @@ Poser la base temps réel de `V1.2` pour l'interview vocal avec STT, TTS, stream
     - [x] Le premier chunk audio arrive avant la fin de génération complète
     - [x] Le pipeline complet est observable
   - Source: vision `§10`, `§16`
-- [ ] **[US-046]** Ajouter VAD navigateur et feedback visuel temps réel
+- [x] **[US-046]** Ajouter VAD navigateur et feedback visuel temps réel
   - Agent: `designer`
   - Workflow: `analyze-design-dev-review`
   - Acceptance criteria:
-    - [ ] Le VAD navigateur détecte les prises de parole
-    - [ ] Le micro et l'état "thinking" sont visibles
-    - [ ] Le flux reste exploitable sur une interface minimaliste
+    - [x] Le VAD navigateur détecte les prises de parole
+    - [x] Le micro et l'état "thinking" sont visibles
+    - [x] Le flux reste exploitable sur une interface minimaliste
   - Source: vision `§10`, `§16`
 - [ ] **[US-047]** Tenir la latence perçue cible `< 1,2 s` sur la boucle interview
   - Agent: `analyst`

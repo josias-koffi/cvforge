@@ -453,3 +453,10 @@
 - **Why**: Live transcripts were still hallucinating unrelated biographies instead of transcribing the spoken sentence, so the prior model choice was not robust enough for this path.
 - **Learned**: Staying on OpenRouter does not require using the same model for STT and text generation. Audio transcription reliability and interviewer text quality should be tuned independently.
 - **Open**: This fixes the default model selection, but the next live check should confirm whether your OpenRouter account routes `openai/gpt-audio` correctly for short French utterances like `le ciel est bleu`.
+
+## 2026-04-24 — US-046
+
+- **Did**: Added browser VAD to `InterviewStudio` using native `AnalyserNode` (fftSize 256, normalized RMS, threshold 0.05), an animated mic pulse badge with aria-live, a slim RMS level bar, and an amber "Thinking…" spinner badge during LLM generation; updated test stubs for `createAnalyser`/`createMediaStreamSource` and no-op `requestAnimationFrame`.
+- **Why**: US-046 required real-time visual feedback without introducing a new library or API surface.
+- **Learned**: Stubbing `requestAnimationFrame` as a no-op (returning 0, never calling the callback) is the cleanest way to prevent the VAD RAF loop from running in happy-dom tests without heap exhaustion. The `vadLevel` state driving badge rendering causes RAF-frequency React re-renders during recording; this is acceptable for this component but a direct DOM mutation approach would be more optimal at scale.
+- **Open**: US-047 latency instrumentation can attach timing checkpoints to the existing `pipelineEvents` log without new state.
