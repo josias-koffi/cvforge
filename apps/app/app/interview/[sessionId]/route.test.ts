@@ -12,9 +12,13 @@ describe("GET /interview/[sessionId]", () => {
       "fetch",
       vi.fn().mockResolvedValue({
         json: async () => ({
+          aiResponse: null,
+          aiResponseGeneratedAt: null,
+          aiStatus: "idle",
           chunks: [],
           createdAt: "2026-04-24T13:00:00.000Z",
           id: "session-001",
+          language: "fr",
           lastError: null,
           recoverable: true,
           status: "ready",
@@ -34,9 +38,13 @@ describe("GET /interview/[sessionId]", () => {
       expect.objectContaining({ cache: "no-store" }),
     );
     expect(await response.json()).toEqual({
+      aiResponse: null,
+      aiResponseGeneratedAt: null,
+      aiStatus: "idle",
       chunks: [],
       createdAt: "2026-04-24T13:00:00.000Z",
       id: "session-001",
+      language: "fr",
       lastError: null,
       recoverable: true,
       status: "ready",

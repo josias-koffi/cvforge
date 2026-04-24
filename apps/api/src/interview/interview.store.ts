@@ -1,7 +1,9 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 import {
+  INTERVIEW_AI_STATUS_IDLE,
   INTERVIEW_SESSION_STATUS_IDLE,
+  type Locale,
   type InterviewTranscriptChunk,
 } from "@cvforge/types";
 import type { InterviewStore, StoredInterviewSession } from "./interview.types";
@@ -52,9 +54,17 @@ function normalizeChunks(value: unknown): InterviewTranscriptChunk[] {
 }
 
 function normalizeSession(session: StoredInterviewSession): StoredInterviewSession {
+  const language = session.language === "en" ? "en" : "fr";
   return {
     ...session,
+    aiResponse: typeof session.aiResponse === "string" ? session.aiResponse : null,
+    aiResponseGeneratedAt:
+      typeof session.aiResponseGeneratedAt === "string"
+        ? session.aiResponseGeneratedAt
+        : null,
+    aiStatus: session.aiStatus ?? INTERVIEW_AI_STATUS_IDLE,
     chunks: normalizeChunks(session.chunks),
+    language: language as Locale,
     lastError: session.lastError ?? null,
     recoverable: session.recoverable ?? true,
     status: session.status ?? INTERVIEW_SESSION_STATUS_IDLE,

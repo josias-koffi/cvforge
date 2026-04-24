@@ -24,6 +24,12 @@ const nextDistDir = resolveNextDistDir(process.env.NEXT_DIST_DIR);
 
 const nextConfig = {
   ...(nextDistDir ? { distDir: nextDistDir } : {}),
+  experimental: {
+    middlewareClientMaxBodySize: "16mb",
+    serverActions: {
+      bodySizeLimit: "16mb",
+    },
+  },
   transpilePackages: ["@puckeditor/core"],
 };
 

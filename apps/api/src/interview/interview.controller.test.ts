@@ -6,9 +6,13 @@ import { InterviewController } from "./interview.controller";
 import { InterviewService } from "./interview.service";
 
 const SESSION_SUMMARY: InterviewSessionSummary = {
+  aiResponse: null,
+  aiResponseGeneratedAt: null,
+  aiStatus: "idle",
   chunks: [],
   createdAt: "2026-04-24T13:00:00.000Z",
   id: "session-001",
+  language: "fr",
   lastError: null,
   recoverable: true,
   status: "idle",
@@ -40,9 +44,12 @@ function makeController(sessionOverride: unknown = { email: "user@test.example" 
 describe("InterviewController", () => {
   it("starts a session for an authenticated user", () => {
     const controller = makeController();
-    const result = controller.startSession({
+    const result = controller.startSession(
+      { language: "fr" },
+      {
       headers: { cookie: "cvforge_session=abc" },
-    });
+      },
+    );
 
     expect(result).toEqual({
       session: SESSION_SUMMARY,
@@ -85,7 +92,7 @@ describe("InterviewController", () => {
     const controller = makeController(null);
 
     expect(() =>
-      controller.startSession({ headers: {} }),
+      controller.startSession(undefined, { headers: {} }),
     ).toThrow(UnauthorizedException);
   });
 

@@ -23,9 +23,13 @@ describe("POST /interview/[sessionId]/chunk", () => {
       "fetch",
       vi.fn().mockResolvedValue({
         json: async () => ({
+          aiResponse: null,
+          aiResponseGeneratedAt: null,
+          aiStatus: "idle",
           chunks: [],
           createdAt: "2026-04-24T13:00:00.000Z",
           id: "session-001",
+          language: "fr",
           lastError: null,
           recoverable: true,
           status: "recording",

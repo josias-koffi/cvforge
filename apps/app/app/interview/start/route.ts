@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import type { InterviewSessionStartRequest } from "@cvforge/types";
 import { getServerApiUrl } from "../../auth-config";
 
 function getCookieHeader(cookieStore: Awaited<ReturnType<typeof cookies>>) {
@@ -9,11 +10,25 @@ function getCookieHeader(cookieStore: Awaited<ReturnType<typeof cookies>>) {
     .join("; ");
 }
 
-export async function POST() {
+export async function POST(request: Request) {
+  let body: InterviewSessionStartRequest | undefined;
+
+  try {
+    body = (await request.json()) as InterviewSessionStartRequest;
+  } catch {
+    body = undefined;
+  }
+
   const cookieStore = await cookies();
   const cookieHeader = getCookieHeader(cookieStore);
   const apiResponse = await fetch(`${getServerApiUrl()}/interviews/sessions`, {
-    headers: cookieHeader ? { cookie: cookieHeader } : undefined,
+    body: JSON.stringify({
+      language: body?.language === "en" ? "en" : "fr",
+    }),
+    headers: {
+      "Content-Type": "application/json",
+      ...(cookieHeader ? { cookie: cookieHeader } : {}),
+    },
     method: "POST",
   });
 

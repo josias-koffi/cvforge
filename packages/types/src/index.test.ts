@@ -10,6 +10,7 @@ import {
   APPLICATION_STATUS_SENT,
   APPLICATION_SOURCE_URL,
   DIVIDER_STYLE_SOLID,
+  INTERVIEW_AI_STATUS_IDLE,
   INTERVIEW_CHUNK_STATUS_TRANSCRIBED,
   INTERVIEW_SESSION_STATUS_RECORDING,
   SECTION_TITLE_STYLE_ACCENT,
@@ -29,6 +30,7 @@ import {
   HEALTH_STATUS_OK,
   type InAppNotification,
   type InterviewSessionStartResponse,
+  type InterviewSessionStartRequest,
   type InterviewTranscriptionChunkRequest,
   type LetterDocumentContent,
   type Locale,
@@ -132,6 +134,9 @@ describe("types package", () => {
   });
 
   it("should shape the interview streaming transcription contracts", () => {
+    const startRequest: InterviewSessionStartRequest = {
+      language: "fr",
+    };
     const chunk: InterviewTranscriptionChunkRequest = {
       chunkBase64: "UklGRiQAAABXQVZF",
       chunkId: "chunk-001",
@@ -145,6 +150,9 @@ describe("types package", () => {
 
     const response: InterviewSessionStartResponse = {
       session: {
+        aiResponse: null,
+        aiResponseGeneratedAt: null,
+        aiStatus: INTERVIEW_AI_STATUS_IDLE,
         chunks: [
           {
             chunkId: "chunk-001",
@@ -161,6 +169,7 @@ describe("types package", () => {
         ],
         createdAt: "2026-04-24T13:00:00.000Z",
         id: "session-001",
+        language: "fr",
         lastError: null,
         recoverable: true,
         status: INTERVIEW_SESSION_STATUS_RECORDING,
@@ -170,9 +179,11 @@ describe("types package", () => {
       sessionId: "session-001",
     };
 
+    expect(startRequest.language).toBe("fr");
     expect(chunk.sequence).toBe(1);
     expect(response.session.status).toBe("recording");
     expect(response.session.chunks[0]?.transcript).toBe("bonjour");
+    expect(response.session.language).toBe("fr");
   });
 
   it("should expose the supported credit packs", () => {

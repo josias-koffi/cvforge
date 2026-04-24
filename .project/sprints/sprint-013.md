@@ -21,13 +21,13 @@ Poser la base temps réel de `V1.2` pour l'interview vocal avec STT, TTS, stream
     - [x] Les flux audio sont ingérés côté navigateur et backend
     - [x] Les cas de reprise/erreur sont gérés
   - Source: vision `§10`, `§16`
-- [ ] **[US-045]** Intégrer Voxtral TTS et le pipeline streaming LLM -> TTS
+- [x] **[US-045]** Intégrer Voxtral TTS et le pipeline streaming LLM -> TTS
   - Agent: `developer`
   - Workflow: `analyze-design-dev-review`
   - Acceptance criteria:
-    - [ ] La voix IA est générée via Voxtral TTS
-    - [ ] Le premier chunk audio arrive avant la fin de génération complète
-    - [ ] Le pipeline complet est observable
+    - [x] La voix IA est générée via Voxtral TTS
+    - [x] Le premier chunk audio arrive avant la fin de génération complète
+    - [x] Le pipeline complet est observable
   - Source: vision `§10`, `§16`
 - [ ] **[US-046]** Ajouter VAD navigateur et feedback visuel temps réel
   - Agent: `designer`

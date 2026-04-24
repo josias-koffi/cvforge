@@ -7,6 +7,20 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { InterviewStudio } from "./interview-studio";
 
+class FakeAudioBuffer {
+  sampleRate = 48000;
+  getChannelData() {
+    return new Float32Array([0.1, -0.1, 0.2]);
+  }
+}
+
+class FakeAudioContext {
+  async decodeAudioData() {
+    return new FakeAudioBuffer();
+  }
+  async close() {}
+}
+
 class FakeMediaRecorder {
   static isTypeSupported() {
     return true;
@@ -35,28 +49,19 @@ class FakeMediaRecorder {
     });
   }
 
-  requestData() {
-    return undefined;
-  }
-
   stop() {
+    if (this.state !== "recording") {
+      throw new DOMException("Recorder is inactive", "InvalidStateError");
+    }
     this.state = "inactive";
     this.onstop?.(new Event("stop"));
   }
 }
 
-class FakeFileReader {
-  error: Error | null = null;
-  onerror: (() => void) | null = null;
-  onloadend: (() => void) | null = null;
-  result: string | ArrayBuffer | null = null;
-
-  readAsDataURL() {
-    this.result = "data:audio/webm;base64,YXVkaW8=";
-    queueMicrotask(() => {
-      this.onloadend?.();
-    });
-  }
+function readWavSampleRate(base64: string) {
+  const binary = atob(base64);
+  const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
+  return new DataView(bytes.buffer).getUint32(24, true);
 }
 
 describe("InterviewStudio", () => {
@@ -72,7 +77,7 @@ describe("InterviewStudio", () => {
     root = createRoot(container);
     vi.stubGlobal("fetch", fetchMock);
     vi.stubGlobal("MediaRecorder", FakeMediaRecorder);
-    vi.stubGlobal("FileReader", FakeFileReader);
+    vi.stubGlobal("AudioContext", FakeAudioContext);
     Object.defineProperty(globalThis.navigator, "mediaDevices", {
       configurable: true,
       value: {
@@ -95,14 +100,18 @@ describe("InterviewStudio", () => {
     vi.unstubAllGlobals();
   });
 
-  it("starts a browser recording session and posts a chunk to the Next proxy", async () => {
+  it("accumulates blobs and uploads a WAV chunk when the user stops recording", async () => {
     fetchMock
       .mockResolvedValueOnce({
         json: async () => ({
           session: {
+            aiResponse: null,
+            aiResponseGeneratedAt: null,
+            aiStatus: "idle",
             chunks: [],
             createdAt: "2026-04-24T13:00:00.000Z",
             id: "session-001",
+            language: "fr",
             lastError: null,
             recoverable: true,
             status: "idle",
@@ -115,14 +124,17 @@ describe("InterviewStudio", () => {
       })
       .mockResolvedValueOnce({
         json: async () => ({
+          aiResponse: null,
+          aiResponseGeneratedAt: null,
+          aiStatus: "idle",
           chunks: [
             {
               chunkId: "session-001-chunk-1",
               createdAt: "2026-04-24T13:00:00.500Z",
               endedAt: "2026-04-24T13:00:00.500Z",
               errorMessage: null,
-              isFinal: false,
-              mimeType: "audio/webm",
+              isFinal: true,
+              mimeType: "audio/wav",
               sequence: 1,
               startedAt: "2026-04-24T13:00:00.000Z",
               status: "transcribed",
@@ -131,10 +143,92 @@ describe("InterviewStudio", () => {
           ],
           createdAt: "2026-04-24T13:00:00.000Z",
           id: "session-001",
+          language: "fr",
           lastError: null,
           recoverable: true,
-          status: "recording",
+          status: "ready",
           transcript: "bonjour",
+          updatedAt: "2026-04-24T13:00:00.500Z",
+        }),
+        ok: true,
+      });
+
+    await act(async () => {
+      root.render(<InterviewStudio sessionEmail="user@example.com" />);
+    });
+
+    // Click "Demarrer l'entretien"
+    await act(async () => {
+      container.querySelector("button")?.click();
+      await new Promise((r) => setTimeout(r, 0));
+      await new Promise((r) => setTimeout(r, 0));
+    });
+
+    // Click "Arreter" — triggers onstop → WAV conversion → upload
+    await act(async () => {
+      const buttons = [...container.querySelectorAll("button")];
+      const stopBtn = buttons.find((b) => b.textContent?.includes("Arreter"));
+      stopBtn?.click();
+      await new Promise((r) => setTimeout(r, 0));
+      await new Promise((r) => setTimeout(r, 0));
+      await new Promise((r) => setTimeout(r, 0));
+    });
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      "/interview/start",
+      expect.objectContaining({
+        body: JSON.stringify({ language: "fr" }),
+        method: "POST",
+      }),
+    );
+    const [chunkUrl, chunkInit] = fetchMock.mock.calls[1] as [string, RequestInit];
+    expect(chunkUrl).toBe("/interview/session-001/chunk");
+    expect(chunkInit.method).toBe("POST");
+    const body = JSON.parse(chunkInit.body as string) as { format: string; isFinal: boolean };
+    expect(body.format).toBe("wav");
+    expect(body.isFinal).toBe(true);
+    expect(
+      readWavSampleRate((body as { chunkBase64: string }).chunkBase64),
+    ).toBe(16000);
+    expect(container.textContent).toContain("bonjour");
+  });
+
+  it("ignores repeated stop actions after the recorder has already stopped", async () => {
+    fetchMock
+      .mockResolvedValueOnce({
+        json: async () => ({
+          session: {
+            aiResponse: null,
+            aiResponseGeneratedAt: null,
+            aiStatus: "idle",
+            chunks: [],
+            createdAt: "2026-04-24T13:00:00.000Z",
+            id: "session-003",
+            language: "fr",
+            lastError: null,
+            recoverable: true,
+            status: "idle",
+            transcript: "",
+            updatedAt: "2026-04-24T13:00:00.000Z",
+          },
+          sessionId: "session-003",
+        }),
+        ok: true,
+      })
+      .mockResolvedValue({
+        json: async () => ({
+          aiResponse: null,
+          aiResponseGeneratedAt: null,
+          aiStatus: "idle",
+          chunks: [],
+          createdAt: "2026-04-24T13:00:00.000Z",
+          id: "session-003",
+          language: "fr",
+          lastError: null,
+          recoverable: true,
+          status: "ready",
+          transcript: "",
           updatedAt: "2026-04-24T13:00:00.500Z",
         }),
         ok: true,
@@ -146,23 +240,22 @@ describe("InterviewStudio", () => {
 
     await act(async () => {
       container.querySelector("button")?.click();
-      await Promise.resolve();
-      await Promise.resolve();
-      await new Promise((resolve) => setTimeout(resolve, 0));
-      await new Promise((resolve) => setTimeout(resolve, 0));
+      await new Promise((r) => setTimeout(r, 0));
+      await new Promise((r) => setTimeout(r, 0));
     });
 
-    expect(fetchMock).toHaveBeenNthCalledWith(
-      1,
-      "/interview/start",
-      expect.objectContaining({ method: "POST" }),
-    );
-    expect(fetchMock).toHaveBeenNthCalledWith(
-      2,
-      "/interview/session-001/chunk",
-      expect.objectContaining({ method: "POST" }),
-    );
-    expect(container.textContent).toContain("bonjour");
+    await act(async () => {
+      const stopBtn = [...container.querySelectorAll("button")].find((button) =>
+        button.textContent?.includes("Arreter"),
+      );
+      stopBtn?.click();
+      stopBtn?.click();
+      await new Promise((r) => setTimeout(r, 0));
+      await new Promise((r) => setTimeout(r, 0));
+      await new Promise((r) => setTimeout(r, 0));
+    });
+
+    expect(container.textContent).not.toContain("deja ete arretee");
   });
 
   it("rehydrates a saved session from sessionStorage", async () => {
@@ -172,9 +265,13 @@ describe("InterviewStudio", () => {
     );
     fetchMock.mockResolvedValue({
       json: async () => ({
+        aiResponse: null,
+        aiResponseGeneratedAt: null,
+        aiStatus: "idle",
         chunks: [],
         createdAt: "2026-04-24T13:00:00.000Z",
         id: "session-002",
+        language: "fr",
         lastError: null,
         recoverable: true,
         status: "ready",
@@ -193,5 +290,54 @@ describe("InterviewStudio", () => {
       cache: "no-store",
     });
     expect(container.textContent).toContain("transcription hydratee");
+  });
+
+  it("lets the user choose English before starting the session", async () => {
+    fetchMock.mockResolvedValueOnce({
+      json: async () => ({
+        session: {
+          aiResponse: null,
+          aiResponseGeneratedAt: null,
+          aiStatus: "idle",
+          chunks: [],
+          createdAt: "2026-04-24T13:00:00.000Z",
+          id: "session-004",
+          language: "en",
+          lastError: null,
+          recoverable: true,
+          status: "idle",
+          transcript: "",
+          updatedAt: "2026-04-24T13:00:00.000Z",
+        },
+        sessionId: "session-004",
+      }),
+      ok: true,
+    });
+
+    await act(async () => {
+      root.render(<InterviewStudio sessionEmail="user@example.com" />);
+    });
+
+    await act(async () => {
+      const select = container.querySelector("select[aria-label=\"Langue de l'entretien\"]") as HTMLSelectElement | null;
+      if (!select) {
+        throw new Error("Language select not found");
+      }
+      select.value = "en";
+      select.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+
+    await act(async () => {
+      container.querySelector("button")?.click();
+      await new Promise((r) => setTimeout(r, 0));
+    });
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      "/interview/start",
+      expect.objectContaining({
+        body: JSON.stringify({ language: "en" }),
+      }),
+    );
   });
 });

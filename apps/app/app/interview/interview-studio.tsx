@@ -11,9 +11,16 @@ import {
   CardTitle,
   Textarea,
 } from "@cvforge/ui";
-import type { InterviewSessionSummary, InterviewTranscriptionChunkRequest } from "@cvforge/types";
+import type {
+  InterviewAIResponseEvent,
+  InterviewSessionStartRequest,
+  InterviewSessionSummary,
+  InterviewTranscriptionChunkRequest,
+  Locale,
+} from "@cvforge/types";
 
 const STORAGE_KEY_PREFIX = "cvforge-interview-session";
+const TARGET_WAV_SAMPLE_RATE = 16000;
 
 type StudioState =
   | "idle"
@@ -24,7 +31,20 @@ type StudioState =
   | "error"
   | "unsupported";
 
+type AIState = "idle" | "generating" | "speaking" | "done" | "error";
+
+type PipelineEvent = {
+  label: string;
+  timestamp: string;
+};
+
 type MediaRecorderConstructor = typeof MediaRecorder;
+type BrowserWindowWithAudioContext = Window &
+  typeof globalThis & {
+    webkitAudioContext?: typeof AudioContext;
+  };
+
+type SpeechVoice = SpeechSynthesisVoice;
 
 function getStorageKey(sessionEmail: string) {
   return `${STORAGE_KEY_PREFIX}:${sessionEmail}`;
@@ -63,28 +83,85 @@ function getPreferredMimeType() {
   );
 }
 
-function inferAudioFormat(mimeType: string) {
-  if (mimeType.includes("ogg")) return "ogg";
-  if (mimeType.includes("mp4")) return "m4a";
-  return "webm";
+// Voxtral only accepts complete MP3 or WAV files — not WebM/Opus stream fragments.
+// We accumulate all MediaRecorder blobs, then decode and re-encode as WAV on stop.
+function writeWavHeader(view: DataView, numSamples: number, sampleRate: number) {
+  const dataSize = numSamples * 2; // 16-bit mono
+  const setStr = (offset: number, s: string) => {
+    for (let i = 0; i < s.length; i++) view.setUint8(offset + i, s.charCodeAt(i));
+  };
+  setStr(0, "RIFF"); view.setUint32(4, 36 + dataSize, true);
+  setStr(8, "WAVE"); setStr(12, "fmt ");
+  view.setUint32(16, 16, true);   // chunk size
+  view.setUint16(20, 1, true);    // PCM
+  view.setUint16(22, 1, true);    // mono
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * 2, true); // byte rate
+  view.setUint16(32, 2, true);    // block align
+  view.setUint16(34, 16, true);   // bits per sample
+  setStr(36, "data"); view.setUint32(40, dataSize, true);
 }
 
-function blobToBase64(blob: Blob) {
-  return new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
+function resampleMonoPcm(input: Float32Array, inputSampleRate: number) {
+  if (inputSampleRate <= TARGET_WAV_SAMPLE_RATE) {
+    return { pcm: input, sampleRate: inputSampleRate };
+  }
 
-    reader.onloadend = () => {
-      if (typeof reader.result !== "string") {
-        reject(new Error("Audio encoding failed."));
-        return;
-      }
+  const ratio = inputSampleRate / TARGET_WAV_SAMPLE_RATE;
+  const outputLength = Math.max(1, Math.floor(input.length / ratio));
+  const output = new Float32Array(outputLength);
 
-      const [, payload = ""] = reader.result.split(",", 2);
-      resolve(payload);
-    };
-    reader.onerror = () => reject(reader.error ?? new Error("Audio encoding failed."));
-    reader.readAsDataURL(blob);
-  });
+  for (let outputIndex = 0; outputIndex < outputLength; outputIndex++) {
+    const start = Math.floor(outputIndex * ratio);
+    const end = Math.min(input.length, Math.floor((outputIndex + 1) * ratio));
+    let sum = 0;
+    let count = 0;
+
+    for (let inputIndex = start; inputIndex < end; inputIndex++) {
+      sum += input[inputIndex] ?? 0;
+      count += 1;
+    }
+
+    output[outputIndex] = count > 0 ? sum / count : 0;
+  }
+
+  return { pcm: output, sampleRate: TARGET_WAV_SAMPLE_RATE };
+}
+
+async function blobsToWavBase64(blobs: Blob[]): Promise<string> {
+  const combined = new Blob(blobs, { type: blobs[0]?.type ?? "audio/webm" });
+  const arrayBuffer = await combined.arrayBuffer();
+  const AudioContextCtor =
+    typeof window !== "undefined"
+      ? window.AudioContext ?? (window as BrowserWindowWithAudioContext).webkitAudioContext
+      : undefined;
+
+  if (!AudioContextCtor) {
+    throw new Error("La conversion audio WAV n'est pas disponible dans ce navigateur.");
+  }
+
+  const ctx = new AudioContextCtor();
+  let audioBuffer: AudioBuffer;
+  try {
+    audioBuffer = await ctx.decodeAudioData(arrayBuffer);
+  } finally {
+    await ctx.close();
+  }
+  const { pcm, sampleRate } = resampleMonoPcm(
+    audioBuffer.getChannelData(0),
+    audioBuffer.sampleRate,
+  );
+  const wav = new ArrayBuffer(44 + pcm.length * 2);
+  const view = new DataView(wav);
+  writeWavHeader(view, pcm.length, sampleRate);
+  for (let i = 0; i < pcm.length; i++) {
+    const s = Math.max(-1, Math.min(1, pcm[i]));
+    view.setInt16(44 + i * 2, s < 0 ? s * 0x8000 : s * 0x7fff, true);
+  }
+  const bytes = new Uint8Array(wav);
+  let binary = "";
+  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+  return btoa(binary);
 }
 
 function summarizeChunkCount(session: InterviewSessionSummary | null) {
@@ -98,24 +175,39 @@ function resolveStateFromSession(session: InterviewSessionSummary): StudioState 
   return "idle";
 }
 
+function stopRecorderIfRecording(recorder: MediaRecorder | null) {
+  if (!recorder || recorder.state !== "recording") {
+    return false;
+  }
+
+  recorder.stop();
+  return true;
+}
+
 export function InterviewStudio({ sessionEmail }: { sessionEmail: string }) {
   const [session, setSession] = React.useState<InterviewSessionSummary | null>(null);
+  const [language, setLanguage] = React.useState<Locale>("fr");
   const [state, setState] = React.useState<StudioState>(
     browserAudioSupported() ? "idle" : "unsupported",
   );
   const [message, setMessage] = React.useState(
     "Autorisez le microphone puis lancez un enregistrement par chunks de 500 ms.",
   );
+  const [aiState, setAIState] = React.useState<AIState>("idle");
+  const [aiText, setAIText] = React.useState("");
+  const [pipelineEvents, setPipelineEvents] = React.useState<PipelineEvent[]>([]);
+  const utteranceQueueRef = React.useRef<string[]>([]);
+  const speakingRef = React.useRef(false);
   const recorderRef = React.useRef<MediaRecorder | null>(null);
   const streamRef = React.useRef<MediaStream | null>(null);
   const sequenceRef = React.useRef(1);
-  const chunkStartedAtRef = React.useRef<number | null>(null);
-  const pendingStopRef = React.useRef(false);
-  const uploadQueueRef = React.useRef(Promise.resolve());
+  const recordingStartRef = React.useRef<number | null>(null);
+  const audioChunksRef = React.useRef<Blob[]>([]);
 
   const updateSession = React.useCallback((nextSession: InterviewSessionSummary) => {
     startTransition(() => {
       setSession(nextSession);
+      setLanguage(nextSession.language);
       setState(resolveStateFromSession(nextSession));
       if (nextSession.lastError) {
         setMessage(nextSession.lastError);
@@ -186,7 +278,7 @@ export function InterviewStudio({ sessionEmail }: { sessionEmail: string }) {
     void hydrateSession(storedSessionId);
 
     return () => {
-      recorderRef.current?.stop?.();
+      stopRecorderIfRecording(recorderRef.current);
       stopStream();
     };
   }, [hydrateSession, sessionEmail, stopStream]);
@@ -197,7 +289,12 @@ export function InterviewStudio({ sessionEmail }: { sessionEmail: string }) {
       return session.id;
     }
 
-    const response = await fetch("/interview/start", { method: "POST" });
+    const startPayload: InterviewSessionStartRequest = { language };
+    const response = await fetch("/interview/start", {
+      body: JSON.stringify(startPayload),
+      headers: { "Content-Type": "application/json" },
+      method: "POST",
+    });
     if (!response.ok) {
       throw new Error("Impossible de creer une session d'interview.");
     }
@@ -212,35 +309,27 @@ export function InterviewStudio({ sessionEmail }: { sessionEmail: string }) {
     return payload.sessionId;
   }
 
-  function enqueueUpload(task: () => Promise<void>) {
-    uploadQueueRef.current = uploadQueueRef.current.then(task, task);
-    return uploadQueueRef.current;
-  }
-
-  async function uploadChunk(
+  async function uploadWav(
     sessionId: string,
-    blob: Blob,
-    isFinal: boolean,
+    wavBase64: string,
     sequence: number,
     startedAtIso: string,
     endedAtIso: string,
   ) {
     const payload: InterviewTranscriptionChunkRequest = {
-      chunkBase64: await blobToBase64(blob),
+      chunkBase64: wavBase64,
       chunkId: `${sessionId}-chunk-${sequence}`,
       endedAt: endedAtIso,
-      format: inferAudioFormat(blob.type),
-      isFinal,
-      mimeType: blob.type || "audio/webm",
+      format: "wav",
+      isFinal: true,
+      mimeType: "audio/wav",
       sequence,
       startedAt: startedAtIso,
     };
 
     const response = await fetch(`/interview/${sessionId}/chunk`, {
       body: JSON.stringify(payload),
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       method: "POST",
     });
 
@@ -250,11 +339,144 @@ export function InterviewStudio({ sessionEmail }: { sessionEmail: string }) {
 
     if (!response.ok || !nextSession) {
       setState("error");
-      setMessage("Le backend n'a pas confirme la transcription du chunk.");
+      setMessage("La transcription Voxtral a echoue.");
       return;
     }
 
     updateSession(nextSession);
+  }
+
+  function addPipelineEvent(label: string) {
+    setPipelineEvents((prev) => [
+      ...prev,
+      { label, timestamp: new Date().toISOString() },
+    ]);
+  }
+
+  function speakNext() {
+    if (
+      typeof window === "undefined" ||
+      !("speechSynthesis" in window) ||
+      speakingRef.current ||
+      utteranceQueueRef.current.length === 0
+    ) {
+      return;
+    }
+
+    const text = utteranceQueueRef.current.shift();
+    if (!text) return;
+
+    speakingRef.current = true;
+    setAIState("speaking");
+    addPipelineEvent(`Audio utterance started: "${text.slice(0, 40)}..."`);
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = language === "fr" ? "fr-FR" : "en-US";
+    const voices = window.speechSynthesis.getVoices() as SpeechVoice[];
+    const preferredVoice = voices.find((voice) =>
+      voice.lang.toLowerCase().startsWith(language === "fr" ? "fr" : "en"),
+    );
+    if (preferredVoice) {
+      utterance.voice = preferredVoice;
+    }
+    utterance.onend = () => {
+      addPipelineEvent("Audio utterance ended");
+      speakingRef.current = false;
+      if (utteranceQueueRef.current.length > 0) {
+        speakNext();
+      } else if (aiState !== "generating") {
+        setAIState("done");
+      }
+    };
+    utterance.onerror = () => {
+      speakingRef.current = false;
+      addPipelineEvent("Audio utterance error");
+    };
+
+    window.speechSynthesis.speak(utterance);
+  }
+
+  async function streamAIResponse() {
+    if (!session?.id) return;
+
+    setAIState("generating");
+    setAIText("");
+    setPipelineEvents([]);
+    utteranceQueueRef.current = [];
+    speakingRef.current = false;
+    addPipelineEvent("LLM stream started");
+
+    const response = await fetch(`/interview/${session.id}/respond`, {
+      cache: "no-store",
+      headers: { Accept: "text/event-stream" },
+    });
+
+    if (!response.ok || !response.body) {
+      setAIState("error");
+      addPipelineEvent("Stream connection failed");
+      return;
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+    let sentenceBuffer = "";
+
+    addPipelineEvent("SSE connection established");
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? "";
+
+        for (const line of lines) {
+          if (!line.startsWith("data:")) continue;
+          const raw = line.slice(5).trim();
+
+          let event: InterviewAIResponseEvent;
+          try {
+            event = JSON.parse(raw) as InterviewAIResponseEvent;
+          } catch {
+            continue;
+          }
+
+          if (event.type === "chunk" && event.text) {
+            setAIText((prev) => prev + event.text);
+            sentenceBuffer += event.text;
+            addPipelineEvent(`LLM chunk received (${event.text.length} chars)`);
+
+            const sentenceEnd = sentenceBuffer.search(/[.!?]\s/u);
+            if (sentenceEnd !== -1) {
+              const sentence = sentenceBuffer.slice(0, sentenceEnd + 1).trim();
+              sentenceBuffer = sentenceBuffer.slice(sentenceEnd + 2);
+              if (sentence) {
+                utteranceQueueRef.current.push(sentence);
+                speakNext();
+              }
+            }
+          } else if (event.type === "done") {
+            addPipelineEvent("LLM generation complete");
+            if (sentenceBuffer.trim()) {
+              utteranceQueueRef.current.push(sentenceBuffer.trim());
+              sentenceBuffer = "";
+              speakNext();
+            }
+            if (!speakingRef.current && utteranceQueueRef.current.length === 0) {
+              setAIState("done");
+            }
+          } else if (event.type === "error") {
+            setAIState("error");
+            addPipelineEvent(`Error: ${event.message ?? "unknown"}`);
+          }
+        }
+      }
+    } finally {
+      reader.releaseLock();
+    }
   }
 
   async function startCapture() {
@@ -283,58 +505,50 @@ export function InterviewStudio({ sessionEmail }: { sessionEmail: string }) {
 
       streamRef.current = stream;
       recorderRef.current = recorder;
-      chunkStartedAtRef.current = Date.now();
-      pendingStopRef.current = false;
+      audioChunksRef.current = [];
+      recordingStartRef.current = Date.now();
 
       recorder.ondataavailable = (event) => {
-        if (event.data.size <= 0) {
-          return;
-        }
-
-        const startedAt = new Date(
-          chunkStartedAtRef.current ?? Date.now(),
-        ).toISOString();
-        const endedAt = new Date().toISOString();
-        const sequence = sequenceRef.current;
-        const isFinal = pendingStopRef.current;
-
-        sequenceRef.current += 1;
-        chunkStartedAtRef.current = Date.now();
-
-        void enqueueUpload(async () => {
-          setState("syncing");
-          setMessage(`Chunk ${sequence} envoye vers Voxtral Small.`);
-          await uploadChunk(
-            sessionId,
-            event.data,
-            isFinal,
-            sequence,
-            startedAt,
-            endedAt,
-          );
-          if (recorderRef.current?.state === "recording") {
-            setState("recording");
-          }
-        });
+        if (event.data.size > 0) audioChunksRef.current.push(event.data);
       };
 
       recorder.onerror = () => {
         setState("error");
         setMessage("Le navigateur a interrompu la capture audio. Reprenez la session.");
+        audioChunksRef.current = [];
         stopStream();
       };
 
       recorder.onstart = () => {
         setState("recording");
-        setMessage("Capture active. Les chunks de 500 ms partent vers le backend au fil de la parole.");
+        setMessage("Capture active. Parlez maintenant — la transcription démarrera à l'arrêt.");
       };
 
       recorder.onstop = () => {
-        if (state !== "error") {
-          setState("ready");
-        }
-        pendingStopRef.current = false;
+        recorderRef.current = null;
         stopStream();
+        const blobs = audioChunksRef.current;
+        audioChunksRef.current = [];
+
+        if (blobs.length === 0) {
+          setState("ready");
+          return;
+        }
+
+        const startedAt = new Date(recordingStartRef.current ?? Date.now()).toISOString();
+        const endedAt = new Date().toISOString();
+        const sequence = sequenceRef.current;
+        sequenceRef.current += 1;
+
+        setState("syncing");
+        setMessage("Conversion WAV et transcription Voxtral en cours...");
+
+        void blobsToWavBase64(blobs)
+          .then((wavBase64) => uploadWav(sessionId, wavBase64, sequence, startedAt, endedAt))
+          .catch((error) => {
+            setState("error");
+            setMessage(error instanceof Error ? error.message : "Conversion audio échouée.");
+          });
       };
 
       recorder.start(500);
@@ -350,19 +564,21 @@ export function InterviewStudio({ sessionEmail }: { sessionEmail: string }) {
   }
 
   function stopCapture() {
-    if (!recorderRef.current || recorderRef.current.state !== "recording") {
-      return;
+    try {
+      stopRecorderIfRecording(recorderRef.current);
+    } catch {
+      recorderRef.current = null;
+      stopStream();
+      setState("error");
+      setMessage("La capture audio a deja ete arretee. Reprenez une nouvelle capture.");
     }
-
-    pendingStopRef.current = true;
-    recorderRef.current.requestData();
-    recorderRef.current.stop();
   }
 
   function resetSession() {
-    recorderRef.current?.stop?.();
+    stopRecorderIfRecording(recorderRef.current);
     stopStream();
     recorderRef.current = null;
+    audioChunksRef.current = [];
     sequenceRef.current = 1;
     persistSessionId(null);
     setSession(null);
@@ -371,6 +587,7 @@ export function InterviewStudio({ sessionEmail }: { sessionEmail: string }) {
   }
 
   const isRecording = recorderRef.current?.state === "recording";
+  const languageLocked = Boolean(session?.id);
 
   return (
     <div style={{ display: "grid", gap: "1rem" }}>
@@ -400,6 +617,9 @@ export function InterviewStudio({ sessionEmail }: { sessionEmail: string }) {
                 Etat: {state}
               </Badge>
               <Badge variant="outline">
+                Langue: {language === "fr" ? "FR" : "EN"}
+              </Badge>
+              <Badge variant="outline">
                 Session: {session?.id ?? "pas encore creee"}
               </Badge>
               <Badge variant="outline">
@@ -407,6 +627,33 @@ export function InterviewStudio({ sessionEmail }: { sessionEmail: string }) {
               </Badge>
             </div>
             <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
+              <label
+                style={{
+                  alignItems: "center",
+                  color: "#4E4A43",
+                  display: "flex",
+                  gap: "0.5rem",
+                }}
+              >
+                <span>Langue</span>
+                <select
+                  aria-label="Langue de l'entretien"
+                  disabled={languageLocked || isRecording || state === "syncing"}
+                  onChange={(event) =>
+                    setLanguage(event.target.value === "en" ? "en" : "fr")
+                  }
+                  style={{
+                    background: "#FFFFFF",
+                    border: "1px solid #D9D4CA",
+                    borderRadius: "0.65rem",
+                    padding: "0.45rem 0.75rem",
+                  }}
+                  value={language}
+                >
+                  <option value="fr">Francais</option>
+                  <option value="en">English</option>
+                </select>
+              </label>
               <Button
                 disabled={state === "booting" || state === "syncing" || isRecording}
                 onClick={() => void startCapture()}
@@ -475,6 +722,79 @@ export function InterviewStudio({ sessionEmail }: { sessionEmail: string }) {
               </span>
             )) ?? <span>Aucun chunk traite pour le moment.</span>}
           </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Reponse IA (LLM → TTS)</CardTitle>
+          <CardDescription>
+            Le pipeline: transcript → LLM streaming → synthese vocale phrase par phrase avant la fin de generation.
+          </CardDescription>
+        </CardHeader>
+        <CardContent style={{ display: "grid", gap: "1rem" }}>
+          <div
+            style={{
+              alignItems: "center",
+              display: "flex",
+              flexWrap: "wrap",
+              gap: "0.75rem",
+              justifyContent: "space-between",
+            }}
+          >
+            <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+              <Badge
+                style={aiState === "error" ? { borderColor: "#E5B8AF", color: "#8A2C20" } : undefined}
+                variant="outline"
+              >
+                IA: {aiState}
+              </Badge>
+            </div>
+            <Button
+              disabled={
+                session?.status !== "ready" ||
+                aiState === "generating" ||
+                aiState === "speaking"
+              }
+              onClick={() => void streamAIResponse()}
+              type="button"
+            >
+              Generer la reponse IA
+            </Button>
+          </div>
+
+          <Textarea
+            aria-label="Reponse generee par le LLM"
+            readOnly
+            rows={6}
+            value={aiText}
+          />
+
+          {pipelineEvents.length > 0 && (
+            <div
+              role="log"
+              aria-label="Pipeline observable"
+              style={{
+                background: "#FAFAF7",
+                border: "1px solid #D9D4CA",
+                borderRadius: "0.75rem",
+                color: "#6B6860",
+                display: "grid",
+                fontSize: "0.85rem",
+                gap: "0.25rem",
+                maxHeight: "10rem",
+                overflowY: "auto",
+                padding: "0.75rem 1rem",
+              }}
+            >
+              {pipelineEvents.map((ev, i) => (
+                <span key={i}>
+                  <span style={{ color: "#9B978E" }}>{ev.timestamp.slice(11, 23)}</span>{" "}
+                  {ev.label}
+                </span>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

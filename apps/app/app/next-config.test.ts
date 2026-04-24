@@ -9,6 +9,12 @@ describe("app next config", () => {
 
   it("includes @puckeditor/core in transpilePackages for SSR-safe Puck integration", () => {
     expect(nextConfig).toMatchObject({
+      experimental: {
+        middlewareClientMaxBodySize: "16mb",
+        serverActions: {
+          bodySizeLimit: "16mb",
+        },
+      },
       transpilePackages: expect.arrayContaining(["@puckeditor/core"]),
     });
   });
@@ -20,6 +26,12 @@ describe("app next config", () => {
 
     expect(configured).toMatchObject({
       distDir: "tmp/cvforge-app-next",
+      experimental: {
+        middlewareClientMaxBodySize: "16mb",
+        serverActions: {
+          bodySizeLimit: "16mb",
+        },
+      },
       transpilePackages: expect.arrayContaining(["@puckeditor/core"]),
     });
   });

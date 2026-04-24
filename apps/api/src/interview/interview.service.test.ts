@@ -3,6 +3,12 @@ import type { OpenRouterService } from "../ai/openrouter.service";
 import type { InterviewStore } from "./interview.types";
 import { InterviewService } from "./interview.service";
 
+async function* asyncChunks(chunks: string[]): AsyncGenerator<string> {
+  for (const chunk of chunks) {
+    yield chunk;
+  }
+}
+
 function createStore(): InterviewStore {
   const sessions = new Map<string, ReturnType<InterviewService["startSession"]>["session"] & { userEmail: string }>();
 
@@ -34,6 +40,7 @@ describe("InterviewService", () => {
     expect(result.sessionId).toContain("interview_");
     expect(result.session.status).toBe("idle");
     expect(result.session.chunks).toEqual([]);
+    expect(result.session.language).toBe("fr");
   });
 
   it("appends transcribed chunks and concatenates the transcript", async () => {
@@ -103,6 +110,68 @@ describe("InterviewService", () => {
 
     expect(result.chunks).toHaveLength(1);
     expect(openRouter.transcribeAudio).toHaveBeenCalledTimes(1);
+  });
+
+  it("starts session with idle AI status", () => {
+    const service = new InterviewService(
+      createStore(),
+      { transcribeAudio: vi.fn() } as unknown as OpenRouterService,
+    );
+
+    const result = service.startSession("user@example.com");
+
+    expect(result.session.aiStatus).toBe("idle");
+    expect(result.session.aiResponse).toBeNull();
+    expect(result.session.aiResponseGeneratedAt).toBeNull();
+  });
+
+  it("stores the requested interview language on session start", () => {
+    const service = new InterviewService(
+      createStore(),
+      { transcribeAudio: vi.fn() } as unknown as OpenRouterService,
+    );
+
+    const result = service.startSession("user@example.com", "en");
+
+    expect(result.session.language).toBe("en");
+  });
+
+  it("streams AI response chunks and marks session done", async () => {
+    const openRouter = {
+      transcribeAudio: vi.fn().mockResolvedValue("Bonjour"),
+      streamChat: vi.fn().mockReturnValue(asyncChunks(["Bonne ", "reponse!"])),
+    } as unknown as OpenRouterService;
+    const service = new InterviewService(createStore(), openRouter);
+    const { sessionId } = service.startSession("user@example.com");
+
+    const session = service.getSession("user@example.com", sessionId);
+    const store = createStore();
+    store.save({ ...session, transcript: "Test transcript", userEmail: "user@example.com" });
+    const svc = new InterviewService(store, openRouter);
+
+    const events: string[] = [];
+    for await (const event of svc.streamAIResponse("user@example.com", sessionId)) {
+      events.push(event.type);
+    }
+
+    expect(events).toContain("chunk");
+    expect(events[events.length - 1]).toBe("done");
+  });
+
+  it("yields error event when no transcript is available", async () => {
+    const service = new InterviewService(
+      createStore(),
+      { streamChat: vi.fn() } as unknown as OpenRouterService,
+    );
+    const { sessionId } = service.startSession("user@example.com");
+
+    const events = [];
+    for await (const event of service.streamAIResponse("user@example.com", sessionId)) {
+      events.push(event);
+    }
+
+    expect(events[0]?.type).toBe("error");
+    expect(events[0]?.message).toContain("transcription");
   });
 
   it("stores recoverable errors when transcription fails", async () => {

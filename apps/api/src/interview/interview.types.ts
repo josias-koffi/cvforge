@@ -20,9 +20,13 @@ export function summarizeInterviewSession(
   session: StoredInterviewSession,
 ): InterviewSessionSummary {
   return {
+    aiResponse: session.aiResponse,
+    aiResponseGeneratedAt: session.aiResponseGeneratedAt,
+    aiStatus: session.aiStatus,
     chunks: session.chunks,
     createdAt: session.createdAt,
     id: session.id,
+    language: session.language,
     lastError: session.lastError,
     recoverable: session.recoverable,
     status: session.status,

@@ -398,9 +398,58 @@
 - **Learned**: The practical solution is split: a public OG-backed share URL for LinkedIn previews, a copied legend for manual paste, and a JPEG file for native/file-based sharing.
 - **Open**: If product needs a truly one-click social post with server-uploaded media and caption control, that will require a LinkedIn API integration with member authorization rather than a simple share URL.
 
+## 2026-04-24 — US-045
+
+- **Did**: Added `streamChat()` async generator to `OpenRouterService` (SSE parsing, `stream: true`), extended `InterviewSessionSummary` with `aiResponse`/`aiResponseGeneratedAt`/`aiStatus`, added `streamAIResponse()` to `InterviewService` (guards on empty transcript, yields `InterviewAIResponseEvent` chunks), added `@Sse()` endpoint to `InterviewController`, created Next.js proxy route for SSE stream, and updated `InterviewStudio` with sentence-boundary `SpeechSynthesis` TTS playback and observable pipeline event log.
+- **Why**: US-045 required the full LLM→TTS pipeline where the first audio chunk fires before generation completes.
+- **Learned**: NestJS `@Sse()` + RxJS `Observable<MessageEvent>` wrapping an async generator is the cleanest SSE pattern — avoids raw `@Res()` and keeps the service generator agnostic of HTTP. Web Speech API `SpeechSynthesis` covers the TTS need without a new dependency or ADR. Sentence-boundary flushing (`/[.!?]\s/u`) plus a `done` event flush ensures no text is dropped.
+- **Open**: `streamAIResponse()` in the studio does not cancel the SSE fetch on unmount — add `AbortController` in a future cleanup. The sentence-boundary regex may not cover all punctuation styles (ellipsis, em-dash pauses).
+
 ## 2026-04-24 — US-044
 
 - **Did**: Added shared interview STT contracts, extended the OpenRouter client for audio input, implemented a new Nest interview module with file-backed session/chunk persistence, and built the protected `/interview` page plus Next proxy routes and `MediaRecorder`-based client flow.
 - **Why**: US-044 required the first end-to-end interview audio ingestion path with progressive Voxtral Small transcription, resumable state, and recoverable chunk-level errors.
 - **Learned**: The clean MVP split is browser `MediaRecorder` 500ms chunks -> Next authenticated proxy -> Nest interview service -> OpenRouter `input_audio`; this keeps the future TTS and latency work additive instead of forcing a rewrite.
 - **Open**: A staging run still needs to confirm the preferred browser MIME type against the live OpenRouter/Voxtral provider path.
+
+## 2026-04-24 — fix STT stop action
+
+- **Did**: Hardened the interview studio stop path with a recording-state guard, cleared stale recorder refs when capture stops, added Safari `webkitAudioContext` fallback for WAV conversion, and added a regression test where `MediaRecorder.stop()` throws when inactive.
+- **Why**: Real browser `MediaRecorder.stop()` is not idempotent; hitting `Arreter` or cleanup paths after the recorder has already stopped can raise `InvalidStateError`.
+- **Learned**: The component test double must model inactive recorder failures, otherwise the suite hides the exact browser behavior that users hit.
+- **Open**: If users still see conversion failures, collect the browser/version and recorded MIME type to validate the WebM/Opus decode path against that engine.
+
+## 2026-04-24 — fix interview chunk 413
+
+- **Did**: Resampled browser WAV uploads to 16 kHz before base64 encoding, configured Next's request body cap for interview chunks to `16mb`, configured Nest JSON/urlencoded body parsers with the same cap, and added regression tests around config and WAV sample rate.
+- **Why**: The STT stop flow converted compressed browser audio into a much larger WAV payload, causing `/interview/:sessionId/chunk` to fail with `413 Payload Too Large` before transcription.
+- **Learned**: Browser `AudioContext` commonly decodes at 48 kHz; sending that as PCM WAV is unnecessarily large for speech recognition when 16 kHz mono is enough.
+- **Open**: The running Next/API dev processes or Docker containers must be restarted so the new body-limit configuration is active.
+
+## 2026-04-24 — fix Voxtral transcription path
+
+- **Did**: Switched interview transcription from OpenRouter chat completions to Mistral's `/v1/audio/transcriptions` endpoint, added dedicated Mistral config/env support, normalized legacy Voxtral model names to `voxtral-mini-latest`, and updated API tests plus env defaults.
+- **Why**: The previous integration sent audio as a chat prompt, which returned conversational refusal text instead of real STT output.
+- **Learned**: Voxtral transcription must be treated as an audio-upload API call with a Mistral API key, not as a generic multimodal chat completion.
+- **Open**: If product also wants spoken AI output, that remains a separate TTS path; the transcription endpoint only returns text.
+
+## 2026-04-24 — align Voxtral integration to OpenRouter-only
+
+- **Did**: Removed direct Mistral env/config usage, routed interview transcription back through OpenRouter `chat/completions` with `input_audio`, restored the OpenRouter Voxtral model id as the STT default, and updated tests plus env docs accordingly.
+- **Why**: The product constraint is single-provider billing and routing through OpenRouter only, with no direct vendor API dependency.
+- **Learned**: OpenRouter's official multimodal docs already cover audio input on chat completions, so vendor lock can be avoided while still using Voxtral for STT.
+- **Open**: If we replace browser speech synthesis with model-generated audio later, we should choose between OpenRouter's streamed audio response path and its dedicated TTS endpoint based on the target UX.
+
+## 2026-04-24 — improve interview language control and prompt discipline
+
+- **Did**: Added a session-level interview language (`fr` or `en`) end to end, strengthened the Voxtral transcription request with a strict system prompt plus low-temperature/short-output settings, defaulted interviewer generation to `INTERVIEW_AI_MODEL` or the same Voxtral model, and made browser speech synthesis follow the selected language.
+- **Why**: The previous flow let STT drift into generic assistant answers and let the interviewer reply language vary too much, which made spoken output sound unnatural.
+- **Learned**: For audio-capable chat models, explicit role separation and a session language contract matter more than generic "transcribe this" prompting. Carrying the same language into STT, LLM response, and TTS keeps the interaction noticeably more coherent.
+- **Open**: We still use browser `speechSynthesis` for audio output. If we want lower end-to-end latency or a more controlled voice, the next step is to prototype OpenRouter audio output on a model/provider that supports streamed `delta.audio`.
+
+## 2026-04-24 — switch interview STT default away from Voxtral
+
+- **Did**: Changed the default interview transcription model from `mistralai/voxtral-small-24b-2507` to `openai/gpt-audio` while keeping routing on OpenRouter, lowered the STT completion cap to `64` tokens, and separated the default interviewer reply model back to `mistralai/mistral-small-2603`.
+- **Why**: Live transcripts were still hallucinating unrelated biographies instead of transcribing the spoken sentence, so the prior model choice was not robust enough for this path.
+- **Learned**: Staying on OpenRouter does not require using the same model for STT and text generation. Audio transcription reliability and interviewer text quality should be tuned independently.
+- **Open**: This fixes the default model selection, but the next live check should confirm whether your OpenRouter account routes `openai/gpt-audio` correctly for short French utterances like `le ciel est bleu`.

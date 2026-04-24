@@ -50,4 +50,36 @@ describe('resolveOpenRouterConfig', () => {
     const config = resolveOpenRouterConfig();
     expect(config.defaultModel).toBe('mistralai/mistral-large');
   });
+
+  it('defaults enableZdrChat and enableZdrStt to false when unset', () => {
+    process.env.OPENROUTER_API_KEY = 'key';
+    delete process.env.ENABLE_ZDR_CHAT;
+    delete process.env.ENABLE_ZDR_STT;
+    const config = resolveOpenRouterConfig();
+    expect(config.enableZdrChat).toBe(false);
+    expect(config.enableZdrStt).toBe(false);
+  });
+
+  it('sets enableZdrChat to true when ENABLE_ZDR_CHAT=true', () => {
+    process.env.OPENROUTER_API_KEY = 'key';
+    process.env.ENABLE_ZDR_CHAT = 'true';
+    const config = resolveOpenRouterConfig();
+    expect(config.enableZdrChat).toBe(true);
+  });
+
+  it('sets enableZdrStt to true when ENABLE_ZDR_STT=true', () => {
+    process.env.OPENROUTER_API_KEY = 'key';
+    process.env.ENABLE_ZDR_STT = 'true';
+    const config = resolveOpenRouterConfig();
+    expect(config.enableZdrStt).toBe(true);
+  });
+
+  it('keeps ZDR flags false for values other than "true"', () => {
+    process.env.OPENROUTER_API_KEY = 'key';
+    process.env.ENABLE_ZDR_CHAT = '1';
+    process.env.ENABLE_ZDR_STT = 'yes';
+    const config = resolveOpenRouterConfig();
+    expect(config.enableZdrChat).toBe(false);
+    expect(config.enableZdrStt).toBe(false);
+  });
 });

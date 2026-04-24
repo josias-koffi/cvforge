@@ -6,9 +6,14 @@ import {
   Param,
   Post,
   Req,
+  Sse,
   UnauthorizedException,
 } from "@nestjs/common";
-import type { InterviewTranscriptionChunkRequest } from "@cvforge/types";
+import type {
+  InterviewSessionStartRequest,
+  InterviewTranscriptionChunkRequest,
+} from "@cvforge/types";
+import { Observable } from "rxjs";
 import { AuthService } from "../auth/auth.service";
 import { InterviewService } from "./interview.service";
 
@@ -25,9 +30,15 @@ export class InterviewController {
   ) {}
 
   @Post("sessions")
-  startSession(@Req() request: RequestLike) {
+  startSession(
+    @Body() body: InterviewSessionStartRequest | undefined,
+    @Req() request: RequestLike,
+  ) {
     const session = this.readSession(request);
-    return this.interviewService.startSession(session.email);
+    return this.interviewService.startSession(
+      session.email,
+      body?.language === "en" ? "en" : "fr",
+    );
   }
 
   @Get("sessions/:sessionId")
@@ -47,6 +58,31 @@ export class InterviewController {
   ) {
     const session = this.readSession(request);
     return this.interviewService.transcribeChunk(session.email, sessionId, body);
+  }
+
+  @Sse("sessions/:sessionId/respond")
+  streamAIResponse(
+    @Param("sessionId") sessionId: string,
+    @Req() request: RequestLike,
+  ): Observable<MessageEvent> {
+    const session = this.readSession(request);
+    const generator = this.interviewService.streamAIResponse(
+      session.email,
+      sessionId,
+    );
+
+    return new Observable<MessageEvent>((subscriber) => {
+      (async () => {
+        try {
+          for await (const event of generator) {
+            subscriber.next({ data: JSON.stringify(event) } as MessageEvent);
+          }
+          subscriber.complete();
+        } catch (error) {
+          subscriber.error(error);
+        }
+      })();
+    });
   }
 
   private readSession(request: RequestLike) {

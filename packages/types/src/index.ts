@@ -255,6 +255,11 @@ export const INTERVIEW_SESSION_STATUS_RECORDING = "recording" as const;
 export const INTERVIEW_SESSION_STATUS_READY = "ready" as const;
 export const INTERVIEW_SESSION_STATUS_ERROR = "error" as const;
 
+export const INTERVIEW_AI_STATUS_IDLE = "idle" as const;
+export const INTERVIEW_AI_STATUS_GENERATING = "generating" as const;
+export const INTERVIEW_AI_STATUS_DONE = "done" as const;
+export const INTERVIEW_AI_STATUS_ERROR = "error" as const;
+
 export type InterviewChunkStatus =
   | typeof INTERVIEW_CHUNK_STATUS_TRANSCRIBED
   | typeof INTERVIEW_CHUNK_STATUS_FAILED;
@@ -264,6 +269,25 @@ export type InterviewSessionStatus =
   | typeof INTERVIEW_SESSION_STATUS_RECORDING
   | typeof INTERVIEW_SESSION_STATUS_READY
   | typeof INTERVIEW_SESSION_STATUS_ERROR;
+
+export type InterviewAIStatus =
+  | typeof INTERVIEW_AI_STATUS_IDLE
+  | typeof INTERVIEW_AI_STATUS_GENERATING
+  | typeof INTERVIEW_AI_STATUS_DONE
+  | typeof INTERVIEW_AI_STATUS_ERROR;
+
+export interface InterviewAIResponseEvent {
+  type: "chunk" | "done" | "error";
+  text?: string;
+  index?: number;
+  fullText?: string;
+  message?: string;
+  timestamp: string;
+}
+
+export interface InterviewSessionStartRequest {
+  language?: Locale;
+}
 
 export interface InterviewSessionStartResponse {
   sessionId: string;
@@ -295,9 +319,13 @@ export interface InterviewTranscriptChunk {
 }
 
 export interface InterviewSessionSummary {
+  aiResponse: string | null;
+  aiResponseGeneratedAt: string | null;
+  aiStatus: InterviewAIStatus;
   chunks: InterviewTranscriptChunk[];
   createdAt: string;
   id: string;
+  language: Locale;
   lastError: string | null;
   recoverable: boolean;
   status: InterviewSessionStatus;
