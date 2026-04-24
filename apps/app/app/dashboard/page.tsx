@@ -14,7 +14,6 @@ import {
   creditPacks,
   type ApplicationsKpiSummary,
   type CreditLedgerSummary,
-  type DraftApplication,
 } from "@cvforge/types";
 import Link from "next/link";
 import { getServerApiUrl } from "../auth-config";
@@ -25,6 +24,14 @@ import {
   getApplicationStatusLabel,
 } from "../candidatures/status-metadata";
 import { NotificationBell } from "../notifications/notification-bell";
+import {
+  buildAtsInsights,
+  buildInterviewInsights,
+  buildMonthlyTrend,
+  buildStatusSegments,
+  type DashboardApplication,
+} from "./analytics";
+import { DonutChartCard, LineChartCard } from "./charts";
 
 function getCookieHeader(cookieStore: Awaited<ReturnType<typeof cookies>>) {
   return cookieStore
@@ -62,7 +69,9 @@ async function fetchApplications() {
     throw new Error("Impossible de recuperer les candidatures.");
   }
 
-  const payload = (await response.json()) as { applications: DraftApplication[] };
+  const payload = (await response.json()) as {
+    applications: DashboardApplication[];
+  };
 
   return payload.applications;
 }
@@ -91,7 +100,7 @@ function formatDate(value: string) {
   }).format(new Date(value));
 }
 
-function countApplicationsThisMonth(applications: DraftApplication[]) {
+function countApplicationsThisMonth(applications: DashboardApplication[]) {
   const now = new Date();
 
   return applications.filter((application) => {
@@ -104,7 +113,7 @@ function countApplicationsThisMonth(applications: DraftApplication[]) {
   }).length;
 }
 
-function getRecentApplications(applications: DraftApplication[]) {
+function getRecentApplications(applications: DashboardApplication[]) {
   return [...applications]
     .sort(
       (left, right) =>
@@ -168,6 +177,15 @@ export default async function DashboardPage(props: DashboardPageProps) {
   ]);
   const applicationsThisMonth = countApplicationsThisMonth(applications);
   const recentApplications = getRecentApplications(applications);
+  const monthlyTrend = buildMonthlyTrend(applications);
+  const statusSegments = buildStatusSegments(
+    applications,
+    Object.fromEntries(
+      applicationStatusOrder.map((status) => [status, getApplicationStatusLabel(status)]),
+    ) as Record<(typeof applicationStatusOrder)[number], string>,
+  );
+  const atsInsights = buildAtsInsights(applications);
+  const interviewInsights = buildInterviewInsights(applications);
   const resolvedSearchParams = await resolveSearchParams(searchParams);
   const billingState = String(resolvedSearchParams.billing ?? "");
   const billingReason = String(resolvedSearchParams.reason ?? "");
@@ -245,6 +263,24 @@ export default async function DashboardPage(props: DashboardPageProps) {
               <CardTitle>{credits.balance}</CardTitle>
             </CardHeader>
           </Card>
+          <Card>
+            <CardHeader>
+              <CardDescription>Score ATS moyen</CardDescription>
+              <CardTitle>
+                {atsInsights.averageScore === null ? "--" : `${atsInsights.averageScore}/100`}
+              </CardTitle>
+            </CardHeader>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardDescription>Score entretien moyen</CardDescription>
+              <CardTitle>
+                {interviewInsights.averageScore === null
+                  ? "--"
+                  : `${interviewInsights.averageScore}/100`}
+              </CardTitle>
+            </CardHeader>
+          </Card>
         </div>
 
         <Card>
@@ -283,6 +319,82 @@ export default async function DashboardPage(props: DashboardPageProps) {
                 </span>
               </div>
             ))}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Analytics avancees</CardTitle>
+            <p style={{ color: "#6B6860", lineHeight: 1.6, margin: 0 }}>
+              Vue detaillee des tendances candidature, de la repartition du pipeline
+              et des scores disponibles dans les donnees produit.
+            </p>
+          </CardHeader>
+          <CardContent
+            style={{
+              display: "grid",
+              gap: "1rem",
+              gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+            }}
+          >
+            <LineChartCard
+              color="#2C2C2A"
+              emptyMessage="Aucune candidature n'est encore presente dans la periode observee."
+              points={monthlyTrend}
+              title="Evolution mensuelle"
+            />
+            <DonutChartCard segments={statusSegments} title="Repartition par statut" />
+            <div
+              style={{
+                backgroundColor: "#FFFFFF",
+                border: "1px solid #D9D4CA",
+                borderRadius: "1rem",
+                display: "grid",
+                gap: "0.85rem",
+                padding: "1rem",
+              }}
+            >
+              <LineChartCard
+                color="#A88B5C"
+                emptyMessage="Les scores ATS apparaitront ici des qu'une candidature possedera des versions de CV exploitables."
+                maxValue={100}
+                points={atsInsights.points}
+                title="Progression ATS"
+              />
+              <p style={{ color: "#6B6860", lineHeight: 1.6, margin: 0 }}>
+                {atsInsights.focusApplicationTitle
+                  ? `Candidature suivie: ${atsInsights.focusApplicationTitle}`
+                  : "Aucune candidature ne dispose encore d'un historique ATS exploitable."}
+              </p>
+              {atsInsights.latestScores.length > 0 ? (
+                <div style={{ display: "grid", gap: "0.5rem" }}>
+                  {atsInsights.latestScores.map((entry) => (
+                    <div
+                      key={entry.applicationId}
+                      style={{
+                        alignItems: "center",
+                        display: "flex",
+                        gap: "0.75rem",
+                        justifyContent: "space-between",
+                      }}
+                    >
+                      <span style={{ color: "#1A1A18" }}>{entry.title}</span>
+                      <span style={{ color: "#6B6860" }}>
+                        {entry.score}/100 · {entry.versionCount} version
+                        {entry.versionCount > 1 ? "s" : ""}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+            <LineChartCard
+              color="#4A7C59"
+              emptyMessage="Les scores post-entretien seront traces ici des que les rapports d'entretien seront sauvegardes."
+              maxValue={100}
+              points={interviewInsights.points}
+              title="Scores post-entretien"
+            />
           </CardContent>
         </Card>
 

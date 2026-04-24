@@ -376,3 +376,10 @@
 - **Why**: The app was failing in two ways from the provided logs: Next dev was mixing absolute `/tmp` metadata with project-local manifest paths, and SSR session checks were turning API outages into 500s on `/`.
 - **Learned**: For this repo, `distDir` only stays stable when it remains relative to each app root; once Next writes absolute type references, the generated metadata and manifest lookup paths diverge under container restarts.
 - **Open**: The running Docker Compose stack still needs a restart or recreate so the updated `NEXT_DIST_DIR` environment values take effect in the containers.
+
+## 2026-04-24 — US-042
+
+- **Did**: Added advanced dashboard analytics with monthly application trend, status donut, ATS progression, and post-interview score cards, then added focused analytics tests and revalidated the workspace with lint, coverage, test, build, and audit commands.
+- **Why**: `US-042` required a richer dashboard surface in Sprint 012 while staying inside the current product data boundaries instead of inventing a separate analytics backend.
+- **Learned**: A pragmatic ATS trajectory can be derived from persisted CV versions versus stored offer metadata, which gives the dashboard meaningful score progression now without waiting for a future first-class ATS metric service.
+- **Open**: Real interview reports still need to land before the post-interview chart can display populated history outside its explicit empty state.

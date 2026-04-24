@@ -21,13 +21,13 @@ Compléter `V1.1` avec les rappels multicanaux, les analytics avancées et la m�
     - [x] Les préférences utilisateur sont configurables
     - [x] Le provider email choisi est intégré
   - Source: vision `§14`, `§16`
-- [ ] **[US-042]** Exposer les graphiques avancés du dashboard
+- [x] **[US-042]** Exposer les graphiques avancés du dashboard
   - Agent: `analyst`
   - Workflow: `release`
   - Acceptance criteria:
-    - [ ] L'évolution des candidatures, les statuts, la progression ATS et les scores post-interview sont visibles
-    - [ ] Les graphiques utilisent les données réelles
-    - [ ] Les indicateurs restent lisibles sur mobile et desktop
+    - [x] L'évolution des candidatures, les statuts, la progression ATS et les scores post-interview sont visibles
+    - [x] Les graphiques utilisent les données réelles
+    - [x] Les indicateurs restent lisibles sur mobile et desktop
   - Source: vision `§12.3`, `§16`
 - [ ] **[US-043]** Générer la carte partageable LinkedIn et le partage natif
   - Agent: `designer`

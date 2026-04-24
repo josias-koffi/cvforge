@@ -320,3 +320,10 @@
 - **Why**: Architecture governance required a final sign-off that multichannel notifications reuse the existing provider and stay inside coherent module boundaries.
 - **Learned**: The right architecture is one notification service that owns preferences and delivery while allowing other domains, such as billing, to emit notification-worthy events through it.
 - **Open**: A future scheduling capability is needed before interview reminder emails from vision `§14.1` can be implemented cleanly.
+
+## 2026-04-24 — US-042 freeze and audit
+
+- **Did**: Froze US-042 to the authenticated dashboard analytics surface, then audited the release candidate after successful workspace lint, coverage, test, build, and dependency-audit evidence.
+- **Why**: The `release` workflow required explicit scope control and an architecture/security gate before the story could be marked complete.
+- **Learned**: The clean architecture choice is to derive dashboard analytics from the existing applications boundary and persisted CV versions, while keeping post-interview scoring tied to first-class saved reports instead of fabricated metrics.
+- **Open**: When interview reports become available, the next dashboard iteration should consume them directly rather than expanding the ATS heuristic beyond its current release-safe scope.

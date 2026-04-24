@@ -55,6 +55,88 @@ describe("DashboardPage", () => {
             {
               createdAt: "2026-04-20T09:00:00.000Z",
               cvGeneratedAt: null,
+              cvVersions: [
+                {
+                  content: {
+                    candidate: {
+                      city: "Paris",
+                      email: "user@example.com",
+                      firstName: "Ada",
+                      github: "ada",
+                      lastName: "Lovelace",
+                      linkedin: "ada",
+                      phone: "000",
+                      summary: "Produit SaaS B2B avec automatisation ATS.",
+                      title: "Product Engineer ATS",
+                    },
+                    certifications: [],
+                    education: [],
+                    experiences: [
+                      {
+                        achievements: ["Automatisation ATS", "Pilotage KPI"],
+                        company: "Acme",
+                        description: "Analyse produit et dashboard candidature.",
+                        endDate: "2026",
+                        position: "Product Engineer",
+                        startDate: "2024",
+                      },
+                    ],
+                    languages: [],
+                    projects: [],
+                    skills: {
+                      hard: ["TypeScript", "ATS", "Analytics"],
+                      soft: ["Communication"],
+                    },
+                  },
+                  createdAt: "2026-04-20T09:00:00.000Z",
+                  id: "app-001-cv-v1",
+                  source: "generation",
+                  templateId: "template-cv-ats",
+                  versionNumber: 1,
+                },
+                {
+                  content: {
+                    candidate: {
+                      city: "Paris",
+                      email: "user@example.com",
+                      firstName: "Ada",
+                      github: "ada",
+                      lastName: "Lovelace",
+                      linkedin: "ada",
+                      phone: "000",
+                      summary: "Product analytics, ATS optimisation et suivi pipeline.",
+                      title: "Senior Product Engineer",
+                    },
+                    certifications: [],
+                    education: [],
+                    experiences: [
+                      {
+                        achievements: [
+                          "Automatisation ATS",
+                          "Pilotage KPI",
+                          "Entretiens structurés",
+                        ],
+                        company: "Acme",
+                        description: "Analyse produit, dashboard candidature et score ATS.",
+                        endDate: "2026",
+                        position: "Senior Product Engineer",
+                        startDate: "2024",
+                      },
+                    ],
+                    languages: [],
+                    projects: [],
+                    skills: {
+                      hard: ["TypeScript", "ATS", "Analytics", "Dashboard"],
+                      soft: ["Communication"],
+                    },
+                  },
+                  createdAt: "2026-04-21T09:00:00.000Z",
+                  id: "app-001-cv-v2",
+                  source: "manual_save",
+                  templateId: "template-cv-ats",
+                  versionNumber: 2,
+                },
+              ],
               extracted: {
                 companyName: "Acme",
                 contractType: null,
@@ -78,12 +160,59 @@ describe("DashboardPage", () => {
                   status: "sent",
                 },
               ],
+              interviewReports: [
+                {
+                  createdAt: "2026-04-23T08:30:00.000Z",
+                  overallScore: 78,
+                  summary: "Bonne structuration.",
+                },
+              ],
               updatedAt: "2026-04-21T18:30:00.000Z",
               userEmail: "user@example.com",
             },
             {
               createdAt: "2026-04-18T09:00:00.000Z",
               cvGeneratedAt: null,
+              cvVersions: [
+                {
+                  content: {
+                    candidate: {
+                      city: "Lyon",
+                      email: "user@example.com",
+                      firstName: "Ada",
+                      github: "ada",
+                      lastName: "Lovelace",
+                      linkedin: "ada",
+                      phone: "000",
+                      summary: "Backend APIs et candidature.",
+                      title: "Backend Engineer",
+                    },
+                    certifications: [],
+                    education: [],
+                    experiences: [
+                      {
+                        achievements: ["APIs", "NestJS"],
+                        company: "Globex",
+                        description: "Backend Node.js et APIs RH.",
+                        endDate: "2026",
+                        position: "Backend Engineer",
+                        startDate: "2023",
+                      },
+                    ],
+                    languages: [],
+                    projects: [],
+                    skills: {
+                      hard: ["NestJS", "Node.js"],
+                      soft: ["Collaboration"],
+                    },
+                  },
+                  createdAt: "2026-04-18T09:00:00.000Z",
+                  id: "app-002-cv-v1",
+                  source: "generation",
+                  templateId: "template-cv-ats",
+                  versionNumber: 1,
+                },
+              ],
               extracted: {
                 companyName: "Globex",
                 contractType: null,
@@ -139,7 +268,18 @@ describe("DashboardPage", () => {
     expect(markup).toContain("Entretiens planifies");
     expect(markup).toContain("Offres recues");
     expect(markup).toContain("Credits restants");
+    expect(markup).toContain("Score ATS moyen");
+    expect(markup).toContain("Score entretien moyen");
     expect(markup).toContain("Pipeline candidature");
+    expect(markup).toContain("Analytics avancees");
+    expect(markup).toContain("Evolution mensuelle");
+    expect(markup).toContain("Repartition par statut");
+    expect(markup).toContain("Progression ATS");
+    expect(markup).toContain("Scores post-entretien");
+    expect(markup).toContain("Candidature suivie: Product Engineer");
+    expect(markup).toContain("Product Engineer");
+    expect(markup).toContain("2 version");
+    expect(markup).toContain("78/100");
     expect(markup).toContain("Acces rapides");
     expect(markup).toContain("Nouvelle candidature");
     expect(markup).toContain("Mode interview");
@@ -206,5 +346,6 @@ describe("DashboardPage", () => {
     const markup = renderToStaticMarkup(Page);
 
     expect(markup).toContain("Le paiement a ete annule avant confirmation Stripe.");
+    expect(markup).toContain("Les scores post-entretien seront traces ici");
   });
 });

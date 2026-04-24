@@ -292,3 +292,10 @@
 - **Why**: The story had to satisfy vision `§14` without inventing unsupported triggers such as interview reminders before the underlying scheduling data exists.
 - **Learned**: The chosen provider decision is already embodied by the SMTP setup; the product gap was orchestration and user control, not a new provider integration.
 - **Open**: Interview reminder emails remain a later story once candidature/interview scheduling carries a real datetime.
+
+## 2026-04-24 — US-042 finalization
+
+- **Did**: Closed US-042 after verifying the advanced dashboard charts, the real-data sourcing, and the responsive readability evidence; then updated the sprint and release-workflow records.
+- **Why**: Product governance required the story to satisfy vision `§12.3` without inventing unsupported ATS or interview metrics beyond what the product currently persists.
+- **Learned**: The dashboard can move forward incrementally by surfacing richer visualizations from existing candidature data now, while reserving populated post-interview analytics for the later interview-report stories.
+- **Open**: Sprint 012 remains open for US-043 and the final sprint DoD pass.

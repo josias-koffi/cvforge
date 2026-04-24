@@ -271,3 +271,10 @@
 - **Why**: The task could only pass once each acceptance criterion had direct service, route, and UI evidence rather than a configuration-only claim.
 - **Learned**: The story is reviewable because it extends existing SMTP, notifications, and billing slices instead of adding a second notification pipeline.
 - **Open**: Interview reminder emails remain an advisory future gap because no interview datetime is stored yet.
+
+## 2026-04-24 — US-042 regression review
+
+- **Did**: Verified the advanced dashboard charts against the sprint criteria, confirmed real-data sourcing from the authenticated applications and credits flows, and rechecked `pnpm lint`, `pnpm test -- --coverage`, `pnpm build`, and `pnpm audit --audit-level high`.
+- **Why**: The `release` workflow required an explicit regression verdict before `US-042` could be marked complete.
+- **Learned**: The story stays reviewable because the dashboard reuses existing authenticated product data and makes absent interview-report data explicit instead of masking it with placeholder metrics.
+- **Open**: The remaining audit findings are non-blocking (`1 low`, `2 moderate`) and can be handled as follow-up maintenance.
