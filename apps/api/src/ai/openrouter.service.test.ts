@@ -122,4 +122,59 @@ describe('OpenRouterService', () => {
     const svc = new OpenRouterService(BASE_CONFIG);
     await expect(svc.chat(MESSAGES)).rejects.toThrow('no content');
   });
+
+  it('sends audio transcription requests with input_audio content', async () => {
+    const svc = new OpenRouterService(BASE_CONFIG);
+
+    await svc.transcribeAudio('UklGRiQAAABXQVZF', 'webm', 'Transcribe this chunk.');
+
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const body = JSON.parse(init.body as string);
+    expect(body.messages).toEqual([
+      {
+        content: [
+          {
+            text: 'Transcribe this chunk.',
+            type: 'text',
+          },
+          {
+            input_audio: {
+              data: 'UklGRiQAAABXQVZF',
+              format: 'webm',
+            },
+            type: 'input_audio',
+          },
+        ],
+        role: 'user',
+      },
+    ]);
+  });
+
+  it('extracts text from structured multimodal responses', async () => {
+    fetchMock.mockImplementation(() =>
+      Promise.resolve(
+        new Response(
+          JSON.stringify({
+            choices: [
+              {
+                message: {
+                  content: [{ text: 'Bonjour tout le monde', type: 'text' }],
+                },
+              },
+            ],
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        ),
+      ),
+    );
+
+    const svc = new OpenRouterService(BASE_CONFIG);
+    const result = await svc.transcribeAudio(
+      'UklGRiQAAABXQVZF',
+      'webm',
+      'Transcribe this chunk.',
+    );
+
+    expect(result).toBe('Bonjour tout le monde');
+  });
 });
