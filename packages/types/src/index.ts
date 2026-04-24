@@ -248,6 +248,63 @@ export interface ApplicationsKpiSummary {
   totalCount: number;
 }
 
+export const INTERVIEW_CHUNK_STATUS_TRANSCRIBED = "transcribed" as const;
+export const INTERVIEW_CHUNK_STATUS_FAILED = "failed" as const;
+export const INTERVIEW_SESSION_STATUS_IDLE = "idle" as const;
+export const INTERVIEW_SESSION_STATUS_RECORDING = "recording" as const;
+export const INTERVIEW_SESSION_STATUS_READY = "ready" as const;
+export const INTERVIEW_SESSION_STATUS_ERROR = "error" as const;
+
+export type InterviewChunkStatus =
+  | typeof INTERVIEW_CHUNK_STATUS_TRANSCRIBED
+  | typeof INTERVIEW_CHUNK_STATUS_FAILED;
+
+export type InterviewSessionStatus =
+  | typeof INTERVIEW_SESSION_STATUS_IDLE
+  | typeof INTERVIEW_SESSION_STATUS_RECORDING
+  | typeof INTERVIEW_SESSION_STATUS_READY
+  | typeof INTERVIEW_SESSION_STATUS_ERROR;
+
+export interface InterviewSessionStartResponse {
+  sessionId: string;
+  session: InterviewSessionSummary;
+}
+
+export interface InterviewTranscriptionChunkRequest {
+  chunkBase64: string;
+  chunkId: string;
+  endedAt: string;
+  format: string;
+  isFinal: boolean;
+  mimeType: string;
+  sequence: number;
+  startedAt: string;
+}
+
+export interface InterviewTranscriptChunk {
+  chunkId: string;
+  createdAt: string;
+  endedAt: string;
+  errorMessage: string | null;
+  isFinal: boolean;
+  mimeType: string;
+  sequence: number;
+  startedAt: string;
+  status: InterviewChunkStatus;
+  transcript: string;
+}
+
+export interface InterviewSessionSummary {
+  chunks: InterviewTranscriptChunk[];
+  createdAt: string;
+  id: string;
+  lastError: string | null;
+  recoverable: boolean;
+  status: InterviewSessionStatus;
+  transcript: string;
+  updatedAt: string;
+}
+
 export const AI_CREDIT_COSTS: Record<AiCreditAction, number> = {
   [AI_CREDIT_ACTION_CV_IMPORT]: 2,
   [AI_CREDIT_ACTION_OFFER_ENRICHMENT]: 1,

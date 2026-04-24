@@ -10,6 +10,8 @@ import {
   APPLICATION_STATUS_SENT,
   APPLICATION_SOURCE_URL,
   DIVIDER_STYLE_SOLID,
+  INTERVIEW_CHUNK_STATUS_TRANSCRIBED,
+  INTERVIEW_SESSION_STATUS_RECORDING,
   SECTION_TITLE_STYLE_ACCENT,
   TEMPLATE_KIND_CV,
   TEMPLATE_KIND_LETTER,
@@ -26,6 +28,8 @@ import {
   type DraftApplication,
   HEALTH_STATUS_OK,
   type InAppNotification,
+  type InterviewSessionStartResponse,
+  type InterviewTranscriptionChunkRequest,
   type LetterDocumentContent,
   type Locale,
   type NotificationSummary,
@@ -125,6 +129,50 @@ describe("types package", () => {
 
     expect(summary.responseRate).toBe(67);
     expect(summary.statusCounts.sent).toBe(1);
+  });
+
+  it("should shape the interview streaming transcription contracts", () => {
+    const chunk: InterviewTranscriptionChunkRequest = {
+      chunkBase64: "UklGRiQAAABXQVZF",
+      chunkId: "chunk-001",
+      endedAt: "2026-04-24T13:00:00.500Z",
+      format: "webm",
+      isFinal: false,
+      mimeType: "audio/webm",
+      sequence: 1,
+      startedAt: "2026-04-24T13:00:00.000Z",
+    };
+
+    const response: InterviewSessionStartResponse = {
+      session: {
+        chunks: [
+          {
+            chunkId: "chunk-001",
+            createdAt: "2026-04-24T13:00:00.600Z",
+            endedAt: "2026-04-24T13:00:00.500Z",
+            errorMessage: null,
+            isFinal: false,
+            mimeType: "audio/webm",
+            sequence: 1,
+            startedAt: "2026-04-24T13:00:00.000Z",
+            status: INTERVIEW_CHUNK_STATUS_TRANSCRIBED,
+            transcript: "bonjour",
+          },
+        ],
+        createdAt: "2026-04-24T13:00:00.000Z",
+        id: "session-001",
+        lastError: null,
+        recoverable: true,
+        status: INTERVIEW_SESSION_STATUS_RECORDING,
+        transcript: "bonjour",
+        updatedAt: "2026-04-24T13:00:00.600Z",
+      },
+      sessionId: "session-001",
+    };
+
+    expect(chunk.sequence).toBe(1);
+    expect(response.session.status).toBe("recording");
+    expect(response.session.chunks[0]?.transcript).toBe("bonjour");
   });
 
   it("should expose the supported credit packs", () => {
