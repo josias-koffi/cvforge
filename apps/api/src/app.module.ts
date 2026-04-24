@@ -10,6 +10,7 @@ import { CreditsModule } from "./credits/credits.module";
 import { NotificationsModule } from "./notifications/notifications.module";
 import { PrivacyModule } from "./privacy/privacy.module";
 import { TemplatesModule } from "./templates/templates.module";
+import { InterviewModule } from "./interview/interview.module";
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { TemplatesModule } from "./templates/templates.module";
     NotificationsModule,
     PrivacyModule,
     TemplatesModule,
+    InterviewModule,
   ],
   controllers: [AppController],
 })

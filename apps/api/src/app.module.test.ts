@@ -12,6 +12,7 @@ import { CreditsModule } from "./credits/credits.module";
 import { NotificationsModule } from "./notifications/notifications.module";
 import { PrivacyModule } from "./privacy/privacy.module";
 import { TemplatesModule } from "./templates/templates.module";
+import { InterviewModule } from "./interview/interview.module";
 
 describe("AppModule", () => {
   it("should register all core modules including CvGenerationModule", () => {
@@ -30,6 +31,7 @@ describe("AppModule", () => {
       NotificationsModule,
       PrivacyModule,
       TemplatesModule,
+      InterviewModule,
     ]);
   });
 
