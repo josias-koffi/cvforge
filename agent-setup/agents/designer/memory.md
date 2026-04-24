@@ -264,3 +264,10 @@
 - **Why**: Vision `§12.5` calls for social sharing, but the solution needed to stay inside the existing "Papier & Crayon" visual system and work on mobile and desktop.
 - **Learned**: SVG is the right artifact for this MVP because it stays crisp, requires no extra backend service, and can still be posted manually when LinkedIn cannot preview a private dashboard route.
 - **Open**: If later product scope requires richer public sharing pages, the card can become the visual asset for that future public route.
+
+## 2026-04-24 — US-044 design
+
+- **Did**: Designed `/interview` as a minimal two-card workspace with explicit state badges, start/stop/reset controls, resumable transcript display, and chunk-level incident feedback.
+- **Why**: The story needed a usable shell for progressive STT evidence without prematurely designing VAD animations or the later voice-output experience.
+- **Learned**: The existing shell and card primitives are sufficient for a real-time audio MVP when the status language is explicit and the transcript stays central.
+- **Open**: `US-046` should add speaking/thinking feedback on top of this same workspace instead of replacing it.

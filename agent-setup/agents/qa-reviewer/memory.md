@@ -285,3 +285,10 @@
 - **Why**: The task could only pass once each social-sharing acceptance criterion had direct UI and automated evidence.
 - **Learned**: The story is reviewable because it derives the share asset from the same authenticated KPI data already used by the dashboard instead of introducing unverifiable client-only numbers.
 - **Open**: LinkedIn preview richness remains limited by the private dashboard URL; the downloadable SVG is the reliable sharing asset for now.
+
+## 2026-04-24 — US-044 review
+
+- **Did**: Verified progressive 500ms chunk capture, authenticated browser/backend ingestion, resumable session hydration, duplicate-chunk protection, and recoverable error handling; then re-ran targeted tests plus touched-package lint/build for API and app.
+- **Why**: The task could only pass once each interview-STT acceptance criterion had direct UI, route, service, and automated evidence.
+- **Learned**: The story is reviewable because the session/chunk contract is explicit end to end, which makes retries and partial transcript recovery deterministic.
+- **Open**: Live provider compatibility for the chosen browser MIME type remains a staging check rather than a CI-covered guarantee.

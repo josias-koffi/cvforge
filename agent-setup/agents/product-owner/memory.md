@@ -306,3 +306,10 @@
 - **Why**: The story needed a precise product boundary so the implementation would satisfy vision `§12.5` without inventing a public analytics backend or new social network features.
 - **Learned**: The acceptance criteria are satisfied by a generated card artifact and a working native share link; LinkedIn preview metadata for private dashboard pages is not required.
 - **Open**: Sprint 012 can close once implementation and QA evidence are recorded.
+
+## 2026-04-24 — US-044 analyze
+
+- **Did**: Confirmed that US-044 is limited to the first interview STT slice: browser capture, backend session/chunk ingestion, and progressive Voxtral Small transcription only.
+- **Why**: The workflow needed a strict boundary so the task would not drift into the later TTS, VAD, or latency-optimization stories already planned in Sprint 013.
+- **Learned**: Vision `§10` and `§16` are explicit enough to require 500ms progressive chunks and resumable error handling without adding new product requirements.
+- **Open**: `US-045` should reuse the same interview session boundary for the LLM -> TTS stream rather than creating a second pipeline.

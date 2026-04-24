@@ -13,13 +13,13 @@ Poser la base temps réel de `V1.2` pour l'interview vocal avec STT, TTS, stream
 
 ## ✅ Tasks (3–8 max)
 
-- [ ] **[US-044]** Intégrer Voxtral Small pour le STT streaming progressif
+- [x] **[US-044]** Intégrer Voxtral Small pour le STT streaming progressif
   - Agent: `developer`
   - Workflow: `analyze-design-dev-review`
   - Acceptance criteria:
-    - [ ] Le STT fonctionne par chunks progressifs
-    - [ ] Les flux audio sont ingérés côté navigateur et backend
-    - [ ] Les cas de reprise/erreur sont gérés
+    - [x] Le STT fonctionne par chunks progressifs
+    - [x] Les flux audio sont ingérés côté navigateur et backend
+    - [x] Les cas de reprise/erreur sont gérés
   - Source: vision `§10`, `§16`
 - [ ] **[US-045]** Intégrer Voxtral TTS et le pipeline streaming LLM -> TTS
   - Agent: `developer`

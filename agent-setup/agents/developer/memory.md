@@ -397,3 +397,10 @@
 - **Why**: The first implementation overstated what LinkedIn offsite sharing could do and did not provide a strong enough fallback when native sharing was unavailable.
 - **Learned**: The practical solution is split: a public OG-backed share URL for LinkedIn previews, a copied legend for manual paste, and a JPEG file for native/file-based sharing.
 - **Open**: If product needs a truly one-click social post with server-uploaded media and caption control, that will require a LinkedIn API integration with member authorization rather than a simple share URL.
+
+## 2026-04-24 — US-044
+
+- **Did**: Added shared interview STT contracts, extended the OpenRouter client for audio input, implemented a new Nest interview module with file-backed session/chunk persistence, and built the protected `/interview` page plus Next proxy routes and `MediaRecorder`-based client flow.
+- **Why**: US-044 required the first end-to-end interview audio ingestion path with progressive Voxtral Small transcription, resumable state, and recoverable chunk-level errors.
+- **Learned**: The clean MVP split is browser `MediaRecorder` 500ms chunks -> Next authenticated proxy -> Nest interview service -> OpenRouter `input_audio`; this keeps the future TTS and latency work additive instead of forcing a rewrite.
+- **Open**: A staging run still needs to confirm the preferred browser MIME type against the live OpenRouter/Voxtral provider path.

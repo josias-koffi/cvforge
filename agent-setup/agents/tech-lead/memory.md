@@ -334,3 +334,10 @@
 - **Why**: Architecture governance required an explicit sign-off that the new social-sharing surface fits the existing app boundary and does not introduce an unnecessary backend or dependency.
 - **Learned**: A pure app-side SVG generation path is sufficient for the MVP social-share story and keeps the implementation aligned with the project’s lightweight dashboard architecture.
 - **Open**: If product later needs public share pages or richer Open Graph previews, that should become a separate story with an explicit public-route design.
+
+## 2026-04-24 — US-044 finalization
+
+- **Did**: Closed US-044 with a passing verdict after confirming the new interview module, authenticated Next proxies, browser chunk capture, resumable transcript session, and passing targeted tests plus touched-package lint/build gates.
+- **Why**: Architecture governance required an explicit sign-off that the interview STT slice extends the current app/API boundaries coherently before the later TTS and latency work lands.
+- **Learned**: The right architecture is session-first and additive: one persisted chunk/transcript boundary can now serve both the remaining voice-output work and later latency instrumentation without replacing the STT slice.
+- **Open**: The current file-backed interview store is acceptable for MVP parity with the repo, but multi-instance deployment will require moving this session state into shared persistence.
