@@ -37,19 +37,19 @@ Ouvrir `V1.1` avec les fonctions de productivité candidat: profils multiples, i
     - [x] Les versions successives des CV/LM sont historisées
     - [x] Le choix de la librairie DOCX est documenté par ADR si nécessaire
   - Source: vision `§6.6`, `§16`
-- [ ] **[US-040]** Ajouter la recherche de recruteur
+- [x] **[US-040]** Ajouter la recherche de recruteur
   - Agent: `analyst`
   - Workflow: `spike-research`
   - Acceptance criteria:
-    - [ ] Le cas d'usage est implémenté ou cadré précisément
-    - [ ] Les sources et limitations des données sont documentées
-    - [ ] Le flux s'intègre au parcours candidature
+    - [x] Le cas d'usage est implémenté ou cadré précisément
+    - [x] Les sources et limitations des données sont documentées
+    - [x] Le flux s'intègre au parcours candidature
   - Source: vision `§16`
 
 ## 📊 Sprint DoD
 
-- [ ] All tasks ticked
-- [ ] All acceptance criteria verified
+- [x] All tasks ticked
+- [x] All acceptance criteria verified
 - [ ] `run-tests` green
 - [ ] Coverage ≥ spec threshold
 - [ ] QA review ✅

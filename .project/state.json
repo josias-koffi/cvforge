@@ -12,8 +12,8 @@
   "specialized_workflows": [],
   "specialized_skills": [],
   "clarifications_pending": [],
-  "last_updated": "2026-04-23T12:13:31+02:00",
-  "last_workflow_run": "analyze-design-dev-review",
+  "last_updated": "2026-04-24T12:26:45+02:00",
+  "last_workflow_run": "spike-research",
   "last_workflow_stage": "Finalization",
   "last_workflow_result": "passed",
   "active_workflow_run": null,
@@ -296,9 +296,16 @@
       "task": "US-039",
       "workflow": "analyze-design-dev-review",
       "result": "passed"
+    },
+    {
+      "run_id": "spike-research-20260424122609",
+      "sprint": "011",
+      "task": "US-040",
+      "workflow": "spike-research",
+      "result": "passed"
     }
   ],
-  "last_task_completed": "US-039",
+  "last_task_completed": "US-040",
   "completed_sprints": [
     2,
     3,

@@ -26,3 +26,10 @@
 - **Why**: The project needed a complete delivery plan aligned with the full vision instead of the initial bootstrap-only backlog.
 - **Learned**: The vision is detailed enough to sequence delivery without inventing scope, but several implementation choices remain open around email, sessions, DOCX, and some V2 integrations.
 - **Open**: Provider email, final session duration, DOCX library choice, and the exact go/no-go threshold for fallback PDF import and interview latency enforcement.
+
+## 2026-04-24 — US-040
+
+- **Did**: Framed and investigated the recruiter-search story, then documented a scoped `V1.1` flow in `.project/spikes/SPIKE-003-recruiter-search.md` and the workflow artifacts under `.project/workflows/spike-research-20260424122609/`.
+- **Why**: Sprint `011` required either implementation or a precise, source-backed framing of recruiter search without inventing scope beyond the vision.
+- **Learned**: The current candidature flow already provides the right anchor points; recruiter search should be an assisted step on an existing application, not a separate sourcing product.
+- **Open**: Future implementation still needs a concrete persistence shape for recruiter contacts and a decision on which public search/provider boundary is acceptable operationally.

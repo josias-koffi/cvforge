@@ -223,6 +223,13 @@
 - **Learned**: The sprint-close path is now robust again because the root coverage command and the package-level tests agree on how coverage should be invoked.
 - **Open**: None for Sprint 008.
 
+## 2026-04-24 — US-040 finalization
+
+- **Did**: Reviewed the recruiter-search spike, approved a `proceed` decision for a candidature-linked assisted search flow, and finalized the sprint artifacts for `US-040`.
+- **Why**: The spike needed an explicit architectural decision before the sprint task could be marked complete.
+- **Learned**: `V1.1` can support recruiter-contact capture without expanding into the separate recruiter-facing capabilities reserved for `V2.0`.
+- **Open**: When implementation starts, the contact model must preserve source provenance and explicit user verification, and any external provider addition may require an ADR.
+
 ## 2026-04-21 — US-029 finalization
 
 - **Did**: Closed US-029 with a passing verdict after confirming the dedicated credit ledger, shared debit constants, AI-hook integration, and admin/user history endpoints, then updated sprint and workflow bookkeeping.
