@@ -2,8 +2,11 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 import {
   INTERVIEW_AI_STATUS_IDLE,
+  INTERVIEW_PROFILE_STANDARD,
+  INTERVIEW_SESSION_STATUS_COMPLETED,
   INTERVIEW_SESSION_STATUS_IDLE,
   type Locale,
+  type InterviewRecruiterProfile,
   type InterviewTranscriptChunk,
 } from "@cvforge/types";
 import type { InterviewStore, StoredInterviewSession } from "./interview.types";
@@ -55,6 +58,7 @@ function normalizeChunks(value: unknown): InterviewTranscriptChunk[] {
 
 function normalizeSession(session: StoredInterviewSession): StoredInterviewSession {
   const language = session.language === "en" ? "en" : "fr";
+  const profile = normalizeProfile(session.profile);
   return {
     ...session,
     aiResponse: typeof session.aiResponse === "string" ? session.aiResponse : null,
@@ -64,12 +68,40 @@ function normalizeSession(session: StoredInterviewSession): StoredInterviewSessi
         : null,
     aiStatus: session.aiStatus ?? INTERVIEW_AI_STATUS_IDLE,
     chunks: normalizeChunks(session.chunks),
+    completedAt:
+      typeof session.completedAt === "string" ? session.completedAt : null,
     language: language as Locale,
     lastError: session.lastError ?? null,
+    profile,
     recoverable: session.recoverable ?? true,
-    status: session.status ?? INTERVIEW_SESSION_STATUS_IDLE,
+    status: normalizeStatus(session.status),
     transcript: typeof session.transcript === "string" ? session.transcript : "",
   };
+}
+
+function normalizeProfile(value: unknown): InterviewRecruiterProfile {
+  switch (value) {
+    case "aggressive":
+    case "passive":
+    case "technical":
+    case "behavioral":
+    case "standard":
+      return value;
+    default:
+      return INTERVIEW_PROFILE_STANDARD;
+  }
+}
+
+function normalizeStatus(value: unknown) {
+  switch (value) {
+    case "recording":
+    case "ready":
+    case INTERVIEW_SESSION_STATUS_COMPLETED:
+    case "error":
+      return value;
+    default:
+      return INTERVIEW_SESSION_STATUS_IDLE;
+  }
 }
 
 export class FileInterviewStore implements InterviewStore {

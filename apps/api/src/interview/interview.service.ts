@@ -3,14 +3,21 @@ import {
   INTERVIEW_AI_STATUS_ERROR,
   INTERVIEW_AI_STATUS_GENERATING,
   INTERVIEW_AI_STATUS_IDLE,
+  INTERVIEW_PROFILE_AGGRESSIVE,
+  INTERVIEW_PROFILE_BEHAVIORAL,
+  INTERVIEW_PROFILE_PASSIVE,
+  INTERVIEW_PROFILE_STANDARD,
+  INTERVIEW_PROFILE_TECHNICAL,
   INTERVIEW_CHUNK_STATUS_FAILED,
   INTERVIEW_CHUNK_STATUS_TRANSCRIBED,
+  INTERVIEW_SESSION_STATUS_COMPLETED,
   INTERVIEW_SESSION_STATUS_ERROR,
   INTERVIEW_SESSION_STATUS_IDLE,
   INTERVIEW_SESSION_STATUS_READY,
   INTERVIEW_SESSION_STATUS_RECORDING,
   type Locale,
   type InterviewAIResponseEvent,
+  type InterviewRecruiterProfile,
   type InterviewTranscriptionChunkRequest,
 } from "@cvforge/types";
 import { Injectable, NotFoundException } from "@nestjs/common";
@@ -31,22 +38,12 @@ const INTERVIEW_PROVIDER = {
 } as const;
 
 type InterviewLanguageConfig = {
-  aiPrompt: string;
   label: string;
   transcriptionPrompt: string;
 };
 
 const LANGUAGE_CONFIG: Record<Locale, InterviewLanguageConfig> = {
   en: {
-    aiPrompt: [
-      "You are a human-sounding technical interviewer conducting a live mock interview.",
-      "Respond in English only.",
-      "Reply as spoken dialogue, not as an essay.",
-      "Use exactly one natural follow-up question unless one short piece of feedback is more useful.",
-      "Keep it concise: one short sentence, occasionally two.",
-      "Do not mention being an AI assistant.",
-      "Do not use bullet points, disclaimers, or generic helper phrasing.",
-    ].join(" "),
     label: "English",
     transcriptionPrompt: [
       "The speaker is expected to speak English.",
@@ -57,15 +54,6 @@ const LANGUAGE_CONFIG: Record<Locale, InterviewLanguageConfig> = {
     ].join(" "),
   },
   fr: {
-    aiPrompt: [
-      "Tu es un recruteur technique qui mene un entretien blanc en direct.",
-      "Reponds uniquement en francais.",
-      "Parle comme a l'oral, pas comme une fiche de cours.",
-      "Pose exactement une question de relance naturelle, sauf si une courte remarque de feedback est plus utile.",
-      "Reste concis: une phrase courte, parfois deux.",
-      "Ne dis jamais que tu es une IA.",
-      "N'utilise ni listes, ni avertissements, ni formulations d'assistant generique.",
-    ].join(" "),
     label: "French",
     transcriptionPrompt: [
       "La langue attendue du locuteur est le francais.",
@@ -74,6 +62,50 @@ const LANGUAGE_CONFIG: Record<Locale, InterviewLanguageConfig> = {
       "Si un mot est un peu flou, renvoie la meilleure approximation litterale au lieu de repondre comme un assistant.",
       "Retourne uniquement le texte transcrit.",
     ].join(" "),
+  },
+};
+
+const BASE_AI_PROMPTS: Record<Locale, string> = {
+  en: [
+    "You are a human-sounding mock interviewer conducting a live voice interview.",
+    "Respond in English only.",
+    "Reply as spoken dialogue, not as an essay.",
+    "Use exactly one natural follow-up question unless one short piece of feedback is more useful.",
+    "Keep it concise: one short sentence, occasionally two.",
+    "Do not mention being an AI assistant.",
+    "Do not use bullet points, disclaimers, or generic helper phrasing.",
+  ].join(" "),
+  fr: [
+    "Tu es un recruteur qui mene un entretien blanc en direct.",
+    "Reponds uniquement en francais.",
+    "Parle comme a l'oral, pas comme une fiche de cours.",
+    "Pose exactement une question de relance naturelle, sauf si une courte remarque de feedback est plus utile.",
+    "Reste concis: une phrase courte, parfois deux.",
+    "Ne dis jamais que tu es une IA.",
+    "N'utilise ni listes, ni avertissements, ni formulations d'assistant generique.",
+  ].join(" "),
+};
+
+const PROFILE_PROMPTS: Record<InterviewRecruiterProfile, Record<Locale, string>> = {
+  [INTERVIEW_PROFILE_STANDARD]: {
+    en: "Adopt a balanced HR interview style: calm, professional, and neutral.",
+    fr: "Adopte un style RH classique: calme, professionnel et neutre.",
+  },
+  [INTERVIEW_PROFILE_AGGRESSIVE]: {
+    en: "Be demanding and high-pressure with sharper follow-ups, but remain realistic and never insulting.",
+    fr: "Sois exigeant et met une pression realiste avec des relances plus incisives, sans jamais etre insultant.",
+  },
+  [INTERVIEW_PROFILE_PASSIVE]: {
+    en: "Be reserved and understated, with shorter prompts, occasional silence cues, and slightly vague follow-ups.",
+    fr: "Sois reserve et peu expressif, avec des relances plus courtes, parfois vagues, et des silences implicites.",
+  },
+  [INTERVIEW_PROFILE_TECHNICAL]: {
+    en: "Focus on hard skills, architecture, tools, debugging, and concrete technical scenarios.",
+    fr: "Concentre-toi sur les hard skills, l'architecture, les outils, le debug et les mises en situation techniques.",
+  },
+  [INTERVIEW_PROFILE_BEHAVIORAL]: {
+    en: "Focus on behavioral STAR questions covering situation, task, action, and result.",
+    fr: "Concentre-toi sur des questions comportementales de type STAR: situation, tache, action, resultat.",
   },
 };
 
@@ -101,17 +133,23 @@ export class InterviewService {
     private readonly openRouter: OpenRouterService,
   ) {}
 
-  startSession(userEmail: string, language: Locale = "fr") {
+  startSession(
+    userEmail: string,
+    language: Locale = "fr",
+    profile: InterviewRecruiterProfile = INTERVIEW_PROFILE_STANDARD,
+  ) {
     const createdAt = nowIso();
     const session: StoredInterviewSession = {
       aiResponse: null,
       aiResponseGeneratedAt: null,
       aiStatus: INTERVIEW_AI_STATUS_IDLE,
       chunks: [],
+      completedAt: null,
       createdAt,
       id: `interview_${Date.now().toString(36)}`,
       language,
       lastError: null,
+      profile,
       recoverable: true,
       status: INTERVIEW_SESSION_STATUS_IDLE,
       transcript: "",
@@ -129,6 +167,20 @@ export class InterviewService {
 
   getSession(userEmail: string, sessionId: string) {
     return summarizeInterviewSession(this.getOwnedSession(userEmail, sessionId));
+  }
+
+  finishSession(userEmail: string, sessionId: string) {
+    const session = this.getOwnedSession(userEmail, sessionId);
+    const completedAt = nowIso();
+
+    session.completedAt = completedAt;
+    session.lastError = null;
+    session.recoverable = false;
+    session.status = INTERVIEW_SESSION_STATUS_COMPLETED;
+    session.updatedAt = completedAt;
+    this.store.save(session);
+
+    return summarizeInterviewSession(session);
   }
 
   async transcribeChunk(
@@ -238,7 +290,10 @@ export class InterviewService {
       const languageConfig = this.getLanguageConfig(session.language);
       const stream = this.openRouter.streamChat(
         [
-          { role: "system", content: languageConfig.aiPrompt },
+          {
+            role: "system",
+            content: this.buildAiPrompt(session.language, session.profile),
+          },
           {
             role: "user",
             content: `Candidate transcript (${languageConfig.label}): ${session.transcript}`,
@@ -294,5 +349,21 @@ export class InterviewService {
 
   private getLanguageConfig(language: Locale): InterviewLanguageConfig {
     return LANGUAGE_CONFIG[language] ?? LANGUAGE_CONFIG.fr;
+  }
+
+  private buildAiPrompt(
+    language: Locale,
+    profile: InterviewRecruiterProfile,
+  ) {
+    const resolvedLanguage = language === "en" ? "en" : "fr";
+    const resolvedProfile =
+      PROFILE_PROMPTS[profile] !== undefined
+        ? profile
+        : INTERVIEW_PROFILE_STANDARD;
+
+    return [
+      BASE_AI_PROMPTS[resolvedLanguage],
+      PROFILE_PROMPTS[resolvedProfile][resolvedLanguage],
+    ].join(" ");
   }
 }

@@ -19,11 +19,20 @@ export async function POST(request: Request) {
     body = undefined;
   }
 
+  const profile =
+    body?.profile === "aggressive" ||
+    body?.profile === "passive" ||
+    body?.profile === "technical" ||
+    body?.profile === "behavioral"
+      ? body.profile
+      : "standard";
+
   const cookieStore = await cookies();
   const cookieHeader = getCookieHeader(cookieStore);
   const apiResponse = await fetch(`${getServerApiUrl()}/interviews/sessions`, {
     body: JSON.stringify({
       language: body?.language === "en" ? "en" : "fr",
+      profile,
     }),
     headers: {
       "Content-Type": "application/json",

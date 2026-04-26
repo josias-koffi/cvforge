@@ -13,6 +13,7 @@ import {
 } from "@cvforge/ui";
 import type {
   InterviewAIResponseEvent,
+  InterviewRecruiterProfile,
   InterviewSessionStartRequest,
   InterviewSessionSummary,
   InterviewTranscriptionChunkRequest,
@@ -30,6 +31,7 @@ type StudioState =
   | "recording"
   | "syncing"
   | "ready"
+  | "completed"
   | "error"
   | "unsupported";
 
@@ -43,6 +45,22 @@ type PipelineEvent = {
 type LatencyMeasure = {
   label: string;
   durationMs: number;
+};
+
+const INTERVIEW_PROFILE_LABELS: Record<InterviewRecruiterProfile, string> = {
+  aggressive: "Agressif",
+  behavioral: "Comportemental",
+  passive: "Passif",
+  standard: "Standard",
+  technical: "Technique",
+};
+
+const INTERVIEW_PROFILE_HINTS: Record<InterviewRecruiterProfile, string> = {
+  aggressive: "Questions pieges, pression et relances plus incisives.",
+  behavioral: "Questions STAR sur les situations vecues et les resultats.",
+  passive: "Tonalite sobre, silences implicites et relances plus vagues.",
+  standard: "Entretien RH classique, neutre et professionnel.",
+  technical: "Focus hard skills, architecture et mises en situation.",
 };
 
 function markLatency(name: string) {
@@ -198,6 +216,7 @@ function summarizeChunkCount(session: InterviewSessionSummary | null) {
 
 function resolveStateFromSession(session: InterviewSessionSummary): StudioState {
   if (session.status === "error") return "error";
+  if (session.status === "completed") return "completed";
   if (session.status === "recording") return "ready";
   if (session.status === "ready") return "ready";
   return "idle";
@@ -215,6 +234,8 @@ function stopRecorderIfRecording(recorder: MediaRecorder | null) {
 export function InterviewStudio({ sessionEmail }: { sessionEmail: string }) {
   const [session, setSession] = React.useState<InterviewSessionSummary | null>(null);
   const [language, setLanguage] = React.useState<Locale>("fr");
+  const [profile, setProfile] =
+    React.useState<InterviewRecruiterProfile>("standard");
   const [state, setState] = React.useState<StudioState>(
     browserAudioSupported() ? "idle" : "unsupported",
   );
@@ -242,8 +263,13 @@ export function InterviewStudio({ sessionEmail }: { sessionEmail: string }) {
     startTransition(() => {
       setSession(nextSession);
       setLanguage(nextSession.language);
+      setProfile(nextSession.profile);
       setState(resolveStateFromSession(nextSession));
-      if (nextSession.lastError) {
+      if (nextSession.status === "completed") {
+        setMessage(
+          "Session terminee proprement. Vous pouvez relire la transcription ou lancer une nouvelle session.",
+        );
+      } else if (nextSession.lastError) {
         setMessage(nextSession.lastError);
       } else if (nextSession.status === "ready") {
         setMessage("Transcription complete. Vous pouvez reprendre ou repartir d'une nouvelle session.");
@@ -336,7 +362,7 @@ export function InterviewStudio({ sessionEmail }: { sessionEmail: string }) {
       return session.id;
     }
 
-    const startPayload: InterviewSessionStartRequest = { language };
+    const startPayload: InterviewSessionStartRequest = { language, profile };
     const response = await fetch("/interview/start", {
       body: JSON.stringify(startPayload),
       headers: { "Content-Type": "application/json" },
@@ -354,6 +380,32 @@ export function InterviewStudio({ sessionEmail }: { sessionEmail: string }) {
     persistSessionId(payload.sessionId);
     updateSession(payload.session);
     return payload.sessionId;
+  }
+
+  async function finishSession() {
+    const sessionId = session?.id;
+    if (!sessionId) {
+      return;
+    }
+
+    stopRecorderIfRecording(recorderRef.current);
+    stopStream();
+
+    const response = await fetch(`/interview/${sessionId}/finish`, {
+      method: "POST",
+    });
+    const payload = (await response.json().catch(() => null)) as
+      | InterviewSessionSummary
+      | null;
+
+    if (!response.ok || !payload) {
+      setState("error");
+      setMessage("Impossible de terminer la session proprement.");
+      return;
+    }
+
+    persistSessionId(null);
+    updateSession(payload);
   }
 
   async function uploadWav(
@@ -681,6 +733,7 @@ export function InterviewStudio({ sessionEmail }: { sessionEmail: string }) {
     sequenceRef.current = 1;
     persistSessionId(null);
     setSession(null);
+    setProfile("standard");
     setState(browserAudioSupported() ? "idle" : "unsupported");
     setMessage("Nouvelle session prete. Lancez un nouvel enregistrement.");
   }
@@ -688,6 +741,13 @@ export function InterviewStudio({ sessionEmail }: { sessionEmail: string }) {
   const isRecording = recorderRef.current?.state === "recording";
   const isSpeaking = isRecording && vadLevel > VAD_THRESHOLD;
   const languageLocked = Boolean(session?.id);
+  const sessionCompleted = session?.status === "completed";
+  const canFinishSession =
+    Boolean(session?.id) &&
+    !sessionCompleted &&
+    state !== "booting" &&
+    state !== "syncing" &&
+    !isRecording;
 
   return (
     <div style={{ display: "grid", gap: "1rem" }}>
@@ -759,6 +819,9 @@ export function InterviewStudio({ sessionEmail }: { sessionEmail: string }) {
                 Langue: {language === "fr" ? "FR" : "EN"}
               </Badge>
               <Badge variant="outline">
+                Profil: {INTERVIEW_PROFILE_LABELS[profile]}
+              </Badge>
+              <Badge variant="outline">
                 Session: {session?.id ?? "pas encore creee"}
               </Badge>
               <Badge variant="outline">
@@ -814,8 +877,43 @@ export function InterviewStudio({ sessionEmail }: { sessionEmail: string }) {
                   <option value="en">English</option>
                 </select>
               </label>
+              <label
+                style={{
+                  alignItems: "center",
+                  color: "#4E4A43",
+                  display: "flex",
+                  gap: "0.5rem",
+                }}
+              >
+                <span>Profil</span>
+                <select
+                  aria-label="Profil du recruteur"
+                  disabled={languageLocked || isRecording || state === "syncing"}
+                  onChange={(event) =>
+                    setProfile(event.target.value as InterviewRecruiterProfile)
+                  }
+                  style={{
+                    background: "#FFFFFF",
+                    border: "1px solid #D9D4CA",
+                    borderRadius: "0.65rem",
+                    padding: "0.45rem 0.75rem",
+                  }}
+                  value={profile}
+                >
+                  <option value="standard">Standard</option>
+                  <option value="aggressive">Agressif</option>
+                  <option value="passive">Passif</option>
+                  <option value="technical">Technique</option>
+                  <option value="behavioral">Comportemental</option>
+                </select>
+              </label>
               <Button
-                disabled={state === "booting" || state === "syncing" || isRecording}
+                disabled={
+                  state === "booting" ||
+                  state === "syncing" ||
+                  isRecording ||
+                  sessionCompleted
+                }
                 onClick={() => void startCapture()}
                 type="button"
               >
@@ -829,11 +927,30 @@ export function InterviewStudio({ sessionEmail }: { sessionEmail: string }) {
               >
                 Arreter
               </Button>
+              <Button
+                disabled={!canFinishSession}
+                onClick={() => void finishSession()}
+                type="button"
+                variant="secondary"
+              >
+                Terminer la session
+              </Button>
               <Button onClick={resetSession} type="button" variant="ghost">
                 Nouvelle session
               </Button>
             </div>
           </div>
+
+          <p
+            style={{
+              color: "#6B6860",
+              fontSize: "0.95rem",
+              lineHeight: 1.5,
+              margin: 0,
+            }}
+          >
+            {INTERVIEW_PROFILE_HINTS[profile]}
+          </p>
 
           <p
             role={state === "error" ? "alert" : "status"}
@@ -939,6 +1056,7 @@ export function InterviewStudio({ sessionEmail }: { sessionEmail: string }) {
             <Button
               disabled={
                 session?.status !== "ready" ||
+                sessionCompleted ||
                 aiState === "generating" ||
                 aiState === "speaking"
               }

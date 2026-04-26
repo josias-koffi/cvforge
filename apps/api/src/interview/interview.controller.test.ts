@@ -10,10 +10,12 @@ const SESSION_SUMMARY: InterviewSessionSummary = {
   aiResponseGeneratedAt: null,
   aiStatus: "idle",
   chunks: [],
+  completedAt: null,
   createdAt: "2026-04-24T13:00:00.000Z",
   id: "session-001",
   language: "fr",
   lastError: null,
+  profile: "standard",
   recoverable: true,
   status: "idle",
   transcript: "",
@@ -26,6 +28,13 @@ function makeController(sessionOverride: unknown = { email: "user@test.example" 
     startSession: vi.fn().mockReturnValue({
       session: SESSION_SUMMARY,
       sessionId: "session-001",
+    }),
+    finishSession: vi.fn().mockReturnValue({
+      ...SESSION_SUMMARY,
+      completedAt: "2026-04-24T13:15:00.000Z",
+      recoverable: false,
+      status: "completed",
+      updatedAt: "2026-04-24T13:15:00.000Z",
     }),
     transcribeChunk: vi.fn().mockResolvedValue({
       ...SESSION_SUMMARY,
@@ -45,7 +54,7 @@ describe("InterviewController", () => {
   it("starts a session for an authenticated user", () => {
     const controller = makeController();
     const result = controller.startSession(
-      { language: "fr" },
+      { language: "fr", profile: "technical" },
       {
       headers: { cookie: "cvforge_session=abc" },
       },
@@ -64,6 +73,16 @@ describe("InterviewController", () => {
     });
 
     expect(result).toEqual(SESSION_SUMMARY);
+  });
+
+  it("finishes a stored session for an authenticated user", () => {
+    const controller = makeController();
+    const result = controller.finishSession("session-001", {
+      headers: { cookie: "cvforge_session=abc" },
+    });
+
+    expect(result.status).toBe("completed");
+    expect(result.completedAt).toBe("2026-04-24T13:15:00.000Z");
   });
 
   it("forwards chunk transcription to the service", async () => {

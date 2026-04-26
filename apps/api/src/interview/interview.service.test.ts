@@ -41,6 +41,8 @@ describe("InterviewService", () => {
     expect(result.session.status).toBe("idle");
     expect(result.session.chunks).toEqual([]);
     expect(result.session.language).toBe("fr");
+    expect(result.session.profile).toBe("standard");
+    expect(result.session.completedAt).toBeNull();
   });
 
   it("appends transcribed chunks and concatenates the transcript", async () => {
@@ -136,6 +138,21 @@ describe("InterviewService", () => {
     expect(result.session.language).toBe("en");
   });
 
+  it("stores the requested recruiter profile on session start", () => {
+    const service = new InterviewService(
+      createStore(),
+      { transcribeAudio: vi.fn() } as unknown as OpenRouterService,
+    );
+
+    const result = service.startSession(
+      "user@example.com",
+      "fr",
+      "technical",
+    );
+
+    expect(result.session.profile).toBe("technical");
+  });
+
   it("streams AI response chunks and marks session done", async () => {
     const openRouter = {
       transcribeAudio: vi.fn().mockResolvedValue("Bonjour"),
@@ -156,6 +173,21 @@ describe("InterviewService", () => {
 
     expect(events).toContain("chunk");
     expect(events[events.length - 1]).toBe("done");
+  });
+
+  it("marks a session completed when the user finishes cleanly", () => {
+    const service = new InterviewService(
+      createStore(),
+      { transcribeAudio: vi.fn() } as unknown as OpenRouterService,
+    );
+    const { sessionId } = service.startSession("user@example.com", "fr", "passive");
+
+    const completed = service.finishSession("user@example.com", sessionId);
+
+    expect(completed.status).toBe("completed");
+    expect(completed.completedAt).toBeTruthy();
+    expect(completed.recoverable).toBe(false);
+    expect(completed.profile).toBe("passive");
   });
 
   it("yields error event when no transcript is available", async () => {

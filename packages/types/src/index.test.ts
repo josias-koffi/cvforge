@@ -11,13 +11,17 @@ import {
   APPLICATION_SOURCE_URL,
   DIVIDER_STYLE_SOLID,
   INTERVIEW_AI_STATUS_IDLE,
+  INTERVIEW_PROFILE_BEHAVIORAL,
+  INTERVIEW_PROFILE_STANDARD,
   INTERVIEW_CHUNK_STATUS_TRANSCRIBED,
+  INTERVIEW_SESSION_STATUS_COMPLETED,
   INTERVIEW_SESSION_STATUS_RECORDING,
   SECTION_TITLE_STYLE_ACCENT,
   TEMPLATE_KIND_CV,
   TEMPLATE_KIND_LETTER,
   applicationStatusTransitions,
   applicationStatuses,
+  interviewRecruiterProfiles,
   type CVDocumentContent,
   type CvContentUpdateRequest,
   type LetterContentUpdateRequest,
@@ -136,6 +140,7 @@ describe("types package", () => {
   it("should shape the interview streaming transcription contracts", () => {
     const startRequest: InterviewSessionStartRequest = {
       language: "fr",
+      profile: INTERVIEW_PROFILE_STANDARD,
     };
     const chunk: InterviewTranscriptionChunkRequest = {
       chunkBase64: "UklGRiQAAABXQVZF",
@@ -167,10 +172,12 @@ describe("types package", () => {
             transcript: "bonjour",
           },
         ],
+        completedAt: null,
         createdAt: "2026-04-24T13:00:00.000Z",
         id: "session-001",
         language: "fr",
         lastError: null,
+        profile: INTERVIEW_PROFILE_STANDARD,
         recoverable: true,
         status: INTERVIEW_SESSION_STATUS_RECORDING,
         transcript: "bonjour",
@@ -184,6 +191,41 @@ describe("types package", () => {
     expect(response.session.status).toBe("recording");
     expect(response.session.chunks[0]?.transcript).toBe("bonjour");
     expect(response.session.language).toBe("fr");
+    expect(response.session.profile).toBe(INTERVIEW_PROFILE_STANDARD);
+  });
+
+  it("should expose the interview recruiter profiles and completion state", () => {
+    expect(interviewRecruiterProfiles).toEqual([
+      "standard",
+      "aggressive",
+      "passive",
+      "technical",
+      "behavioral",
+    ]);
+
+    const completedSession: InterviewSessionStartResponse = {
+      session: {
+        aiResponse: "Merci, nous avons termine.",
+        aiResponseGeneratedAt: "2026-04-24T13:10:00.000Z",
+        aiStatus: INTERVIEW_AI_STATUS_IDLE,
+        chunks: [],
+        completedAt: "2026-04-24T13:11:00.000Z",
+        createdAt: "2026-04-24T13:00:00.000Z",
+        id: "session-002",
+        language: "en",
+        lastError: null,
+        profile: INTERVIEW_PROFILE_BEHAVIORAL,
+        recoverable: false,
+        status: INTERVIEW_SESSION_STATUS_COMPLETED,
+        transcript: "Thank you for your time.",
+        updatedAt: "2026-04-24T13:11:00.000Z",
+      },
+      sessionId: "session-002",
+    };
+
+    expect(completedSession.session.completedAt).toBeTruthy();
+    expect(completedSession.session.profile).toBe("behavioral");
+    expect(completedSession.session.status).toBe("completed");
   });
 
   it("should expose the supported credit packs", () => {

@@ -124,10 +124,12 @@ describe("InterviewStudio", () => {
             aiResponseGeneratedAt: null,
             aiStatus: "idle",
             chunks: [],
+            completedAt: null,
             createdAt: "2026-04-24T13:00:00.000Z",
             id: "session-001",
             language: "fr",
             lastError: null,
+            profile: "standard",
             recoverable: true,
             status: "idle",
             transcript: "",
@@ -156,10 +158,12 @@ describe("InterviewStudio", () => {
               transcript: "bonjour",
             },
           ],
+          completedAt: null,
           createdAt: "2026-04-24T13:00:00.000Z",
           id: "session-001",
           language: "fr",
           lastError: null,
+          profile: "standard",
           recoverable: true,
           status: "ready",
           transcript: "bonjour",
@@ -193,7 +197,7 @@ describe("InterviewStudio", () => {
       1,
       "/interview/start",
       expect.objectContaining({
-        body: JSON.stringify({ language: "fr" }),
+        body: JSON.stringify({ language: "fr", profile: "standard" }),
         method: "POST",
       }),
     );
@@ -218,10 +222,12 @@ describe("InterviewStudio", () => {
             aiResponseGeneratedAt: null,
             aiStatus: "idle",
             chunks: [],
+            completedAt: null,
             createdAt: "2026-04-24T13:00:00.000Z",
             id: "session-003",
             language: "fr",
             lastError: null,
+            profile: "standard",
             recoverable: true,
             status: "idle",
             transcript: "",
@@ -237,10 +243,12 @@ describe("InterviewStudio", () => {
           aiResponseGeneratedAt: null,
           aiStatus: "idle",
           chunks: [],
+          completedAt: null,
           createdAt: "2026-04-24T13:00:00.000Z",
           id: "session-003",
           language: "fr",
           lastError: null,
+          profile: "standard",
           recoverable: true,
           status: "ready",
           transcript: "",
@@ -284,10 +292,12 @@ describe("InterviewStudio", () => {
         aiResponseGeneratedAt: null,
         aiStatus: "idle",
         chunks: [],
+        completedAt: null,
         createdAt: "2026-04-24T13:00:00.000Z",
         id: "session-002",
         language: "fr",
         lastError: null,
+        profile: "standard",
         recoverable: true,
         status: "ready",
         transcript: "transcription hydratee",
@@ -315,10 +325,12 @@ describe("InterviewStudio", () => {
           aiResponseGeneratedAt: null,
           aiStatus: "idle",
           chunks: [],
+          completedAt: null,
           createdAt: "2026-04-24T13:00:00.000Z",
           id: "session-004",
           language: "en",
           lastError: null,
+          profile: "standard",
           recoverable: true,
           status: "idle",
           transcript: "",
@@ -351,8 +363,132 @@ describe("InterviewStudio", () => {
       1,
       "/interview/start",
       expect.objectContaining({
-        body: JSON.stringify({ language: "en" }),
+        body: JSON.stringify({ language: "en", profile: "standard" }),
       }),
     );
+  });
+
+  it("lets the user choose a recruiter profile before starting the session", async () => {
+    fetchMock.mockResolvedValueOnce({
+      json: async () => ({
+        session: {
+          aiResponse: null,
+          aiResponseGeneratedAt: null,
+          aiStatus: "idle",
+          chunks: [],
+          completedAt: null,
+          createdAt: "2026-04-24T13:00:00.000Z",
+          id: "session-005",
+          language: "fr",
+          lastError: null,
+          profile: "technical",
+          recoverable: true,
+          status: "idle",
+          transcript: "",
+          updatedAt: "2026-04-24T13:00:00.000Z",
+        },
+        sessionId: "session-005",
+      }),
+      ok: true,
+    });
+
+    await act(async () => {
+      root.render(<InterviewStudio sessionEmail="user@example.com" />);
+    });
+
+    await act(async () => {
+      const select = container.querySelector(
+        "select[aria-label=\"Profil du recruteur\"]",
+      ) as HTMLSelectElement | null;
+      if (!select) {
+        throw new Error("Profile select not found");
+      }
+      select.value = "technical";
+      select.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+
+    await act(async () => {
+      container.querySelector("button")?.click();
+      await new Promise((r) => setTimeout(r, 0));
+    });
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      "/interview/start",
+      expect.objectContaining({
+        body: JSON.stringify({ language: "fr", profile: "technical" }),
+      }),
+    );
+    expect(container.textContent).toContain("Technique");
+  });
+
+  it("finishes a session cleanly and clears the persisted session id", async () => {
+    window.sessionStorage.setItem(
+      "cvforge-interview-session:user@example.com",
+      "session-006",
+    );
+
+    fetchMock
+      .mockResolvedValueOnce({
+        json: async () => ({
+          aiResponse: null,
+          aiResponseGeneratedAt: null,
+          aiStatus: "done",
+          chunks: [],
+          completedAt: null,
+          createdAt: "2026-04-24T13:00:00.000Z",
+          id: "session-006",
+          language: "fr",
+          lastError: null,
+          profile: "standard",
+          recoverable: true,
+          status: "ready",
+          transcript: "transcription hydratee",
+          updatedAt: "2026-04-24T13:05:00.000Z",
+        }),
+        ok: true,
+      })
+      .mockResolvedValueOnce({
+        json: async () => ({
+          aiResponse: "Merci pour cet entretien.",
+          aiResponseGeneratedAt: "2026-04-24T13:10:00.000Z",
+          aiStatus: "done",
+          chunks: [],
+          completedAt: "2026-04-24T13:12:00.000Z",
+          createdAt: "2026-04-24T13:00:00.000Z",
+          id: "session-006",
+          language: "fr",
+          lastError: null,
+          profile: "standard",
+          recoverable: false,
+          status: "completed",
+          transcript: "transcription hydratee",
+          updatedAt: "2026-04-24T13:12:00.000Z",
+        }),
+        ok: true,
+      });
+
+    await act(async () => {
+      root.render(<InterviewStudio sessionEmail="user@example.com" />);
+      await Promise.resolve();
+    });
+
+    await act(async () => {
+      const finishBtn = [...container.querySelectorAll("button")].find((button) =>
+        button.textContent?.includes("Terminer la session"),
+      );
+      finishBtn?.click();
+      await new Promise((r) => setTimeout(r, 0));
+    });
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      "/interview/session-006/finish",
+      expect.objectContaining({ method: "POST" }),
+    );
+    expect(
+      window.sessionStorage.getItem("cvforge-interview-session:user@example.com"),
+    ).toBeNull();
+    expect(container.textContent).toContain("Session terminee proprement");
   });
 });

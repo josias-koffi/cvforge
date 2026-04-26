@@ -10,6 +10,7 @@ import {
   UnauthorizedException,
 } from "@nestjs/common";
 import type {
+  InterviewRecruiterProfile,
   InterviewSessionStartRequest,
   InterviewTranscriptionChunkRequest,
 } from "@cvforge/types";
@@ -38,6 +39,7 @@ export class InterviewController {
     return this.interviewService.startSession(
       session.email,
       body?.language === "en" ? "en" : "fr",
+      this.readProfile(body?.profile),
     );
   }
 
@@ -58,6 +60,15 @@ export class InterviewController {
   ) {
     const session = this.readSession(request);
     return this.interviewService.transcribeChunk(session.email, sessionId, body);
+  }
+
+  @Post("sessions/:sessionId/finish")
+  finishSession(
+    @Param("sessionId") sessionId: string,
+    @Req() request: RequestLike,
+  ) {
+    const session = this.readSession(request);
+    return this.interviewService.finishSession(session.email, sessionId);
   }
 
   @Sse("sessions/:sessionId/respond")
@@ -95,5 +106,18 @@ export class InterviewController {
     }
 
     return session;
+  }
+
+  private readProfile(value: string | undefined): InterviewRecruiterProfile {
+    switch (value) {
+      case "aggressive":
+      case "passive":
+      case "technical":
+      case "behavioral":
+      case "standard":
+        return value;
+      default:
+        return "standard";
+    }
   }
 }

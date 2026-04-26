@@ -253,12 +253,26 @@ export const INTERVIEW_CHUNK_STATUS_FAILED = "failed" as const;
 export const INTERVIEW_SESSION_STATUS_IDLE = "idle" as const;
 export const INTERVIEW_SESSION_STATUS_RECORDING = "recording" as const;
 export const INTERVIEW_SESSION_STATUS_READY = "ready" as const;
+export const INTERVIEW_SESSION_STATUS_COMPLETED = "completed" as const;
 export const INTERVIEW_SESSION_STATUS_ERROR = "error" as const;
+export const INTERVIEW_PROFILE_STANDARD = "standard" as const;
+export const INTERVIEW_PROFILE_AGGRESSIVE = "aggressive" as const;
+export const INTERVIEW_PROFILE_PASSIVE = "passive" as const;
+export const INTERVIEW_PROFILE_TECHNICAL = "technical" as const;
+export const INTERVIEW_PROFILE_BEHAVIORAL = "behavioral" as const;
 
 export const INTERVIEW_AI_STATUS_IDLE = "idle" as const;
 export const INTERVIEW_AI_STATUS_GENERATING = "generating" as const;
 export const INTERVIEW_AI_STATUS_DONE = "done" as const;
 export const INTERVIEW_AI_STATUS_ERROR = "error" as const;
+
+export const interviewRecruiterProfiles = [
+  INTERVIEW_PROFILE_STANDARD,
+  INTERVIEW_PROFILE_AGGRESSIVE,
+  INTERVIEW_PROFILE_PASSIVE,
+  INTERVIEW_PROFILE_TECHNICAL,
+  INTERVIEW_PROFILE_BEHAVIORAL,
+] as const;
 
 export type InterviewChunkStatus =
   | typeof INTERVIEW_CHUNK_STATUS_TRANSCRIBED
@@ -268,7 +282,11 @@ export type InterviewSessionStatus =
   | typeof INTERVIEW_SESSION_STATUS_IDLE
   | typeof INTERVIEW_SESSION_STATUS_RECORDING
   | typeof INTERVIEW_SESSION_STATUS_READY
+  | typeof INTERVIEW_SESSION_STATUS_COMPLETED
   | typeof INTERVIEW_SESSION_STATUS_ERROR;
+
+export type InterviewRecruiterProfile =
+  (typeof interviewRecruiterProfiles)[number];
 
 export type InterviewAIStatus =
   | typeof INTERVIEW_AI_STATUS_IDLE
@@ -287,6 +305,7 @@ export interface InterviewAIResponseEvent {
 
 export interface InterviewSessionStartRequest {
   language?: Locale;
+  profile?: InterviewRecruiterProfile;
 }
 
 export interface InterviewSessionStartResponse {
@@ -323,10 +342,12 @@ export interface InterviewSessionSummary {
   aiResponseGeneratedAt: string | null;
   aiStatus: InterviewAIStatus;
   chunks: InterviewTranscriptChunk[];
+  completedAt: string | null;
   createdAt: string;
   id: string;
   language: Locale;
   lastError: string | null;
+  profile: InterviewRecruiterProfile;
   recoverable: boolean;
   status: InterviewSessionStatus;
   transcript: string;
