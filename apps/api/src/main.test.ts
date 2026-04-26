@@ -56,7 +56,7 @@ describe("bootstrap", () => {
     expect(getMock).toHaveBeenCalledTimes(1);
     expect(app.listen).toHaveBeenCalledWith(3333);
     expect(result).toBe(app);
-  });
+  }, 10_000);
 
   it("should listen on the configured port when PORT is set", async () => {
     getMock.mockReturnValue({

@@ -37,22 +37,22 @@ Poser la base temps réel de `V1.2` pour l'interview vocal avec STT, TTS, stream
     - [x] Le micro et l'état "thinking" sont visibles
     - [x] Le flux reste exploitable sur une interface minimaliste
   - Source: vision `§10`, `§16`
-- [ ] **[US-047]** Tenir la latence perçue cible `< 1,2 s` sur la boucle interview
+- [x] **[US-047]** Tenir la latence perçue cible `< 1,2 s` sur la boucle interview
   - Agent: `analyst`
   - Workflow: `spike-research`
   - Acceptance criteria:
-    - [ ] La mesure de latence perçue est instrumentée
-    - [ ] Les optimisations critiques sont identifiées et exécutées
-    - [ ] La cible `< 1,2 s` est démontrée ou l'écart est documenté
+    - [x] La mesure de latence perçue est instrumentée
+    - [x] Les optimisations critiques sont identifiées et exécutées
+    - [x] La cible `< 1,2 s` est démontrée ou l'écart est documenté
   - Source: vision `§10`, `§16`
 
 ## 📊 Sprint DoD
 
-- [ ] All tasks ticked
-- [ ] All acceptance criteria verified
-- [ ] `run-tests` green
-- [ ] Coverage ≥ spec threshold
-- [ ] QA review ✅
+- [x] All tasks ticked
+- [x] All acceptance criteria verified
+- [x] `run-tests` green
+- [x] Coverage ≥ spec threshold
+- [x] QA review ✅
 
 ## 🚧 Risks
 

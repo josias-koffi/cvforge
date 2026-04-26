@@ -335,6 +335,13 @@
 - **Learned**: A pure app-side SVG generation path is sufficient for the MVP social-share story and keeps the implementation aligned with the project’s lightweight dashboard architecture.
 - **Open**: If product later needs public share pages or richer Open Graph previews, that should become a separate story with an explicit public-route design.
 
+## 2026-04-24 — US-047 decide and finalization
+
+- **Did**: Approved the proceed decision for the perceived-latency spike; confirmed instrumentation additions and auto-trigger change are strictly within the Interface layer; closed the workflow with a passing verdict.
+- **Why**: Architecture governance required a final sign-off before US-047 could be ticked and Sprint 013 could proceed to DoD evaluation.
+- **Learned**: Eliminating the manual AI-generation button is not just a UX improvement — it is a prerequisite for a measurable latency KPI. Future auto-triggered pipelines should follow the same pattern: chain the backend round-trip directly to the next step in `onstop`/`onComplete` handlers.
+- **Open**: If production P95 > 1500 ms, open a follow-up story for direct Mistral API integration to bypass OpenRouter network variance.
+
 ## 2026-04-24 — US-044 finalization
 
 - **Did**: Closed US-044 with a passing verdict after confirming the new interview module, authenticated Next proxies, browser chunk capture, resumable transcript session, and passing targeted tests plus touched-package lint/build gates.

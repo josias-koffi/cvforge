@@ -40,6 +40,27 @@ type PipelineEvent = {
   timestamp: string;
 };
 
+type LatencyMeasure = {
+  label: string;
+  durationMs: number;
+};
+
+function markLatency(name: string) {
+  if (typeof performance !== "undefined") {
+    performance.mark(name);
+  }
+}
+
+function measureLatency(label: string, start: string, end: string): LatencyMeasure | null {
+  if (typeof performance === "undefined") return null;
+  try {
+    const entry = performance.measure(label, start, end);
+    return { label, durationMs: Math.round(entry.duration) };
+  } catch {
+    return null;
+  }
+}
+
 type MediaRecorderConstructor = typeof MediaRecorder;
 type BrowserWindowWithAudioContext = Window &
   typeof globalThis & {
@@ -203,7 +224,9 @@ export function InterviewStudio({ sessionEmail }: { sessionEmail: string }) {
   const [aiState, setAIState] = React.useState<AIState>("idle");
   const [aiText, setAIText] = React.useState("");
   const [pipelineEvents, setPipelineEvents] = React.useState<PipelineEvent[]>([]);
+  const [latencyMeasures, setLatencyMeasures] = React.useState<LatencyMeasure[]>([]);
   const [vadLevel, setVadLevel] = React.useState(0);
+  const autoAISessionIdRef = React.useRef<string | null>(null);
   const utteranceQueueRef = React.useRef<string[]>([]);
   const speakingRef = React.useRef(false);
   const recorderRef = React.useRef<MediaRecorder | null>(null);
@@ -392,6 +415,11 @@ export function InterviewStudio({ sessionEmail }: { sessionEmail: string }) {
 
     speakingRef.current = true;
     setAIState("speaking");
+    markLatency("tts_start");
+    const perceivedLatency = measureLatency("Latence percue (T0→TTS)", "recording_stop", "tts_start");
+    if (perceivedLatency) setLatencyMeasures((prev) => (prev.some((m) => m.label === perceivedLatency.label) ? prev : [...prev, perceivedLatency]));
+    const sttToTts = measureLatency("STT→TTS total", "recording_stop", "tts_start");
+    if (sttToTts) setLatencyMeasures((prev) => prev);
     addPipelineEvent(`Audio utterance started: "${text.slice(0, 40)}..."`);
 
     const utterance = new SpeechSynthesisUtterance(text);
@@ -420,17 +448,20 @@ export function InterviewStudio({ sessionEmail }: { sessionEmail: string }) {
     window.speechSynthesis.speak(utterance);
   }
 
-  async function streamAIResponse() {
-    if (!session?.id) return;
+  async function streamAIResponse(overrideSessionId?: string) {
+    const sid = overrideSessionId ?? session?.id;
+    if (!sid) return;
 
     setAIState("generating");
     setAIText("");
     setPipelineEvents([]);
+    setLatencyMeasures([]);
     utteranceQueueRef.current = [];
     speakingRef.current = false;
+    markLatency("llm_start");
     addPipelineEvent("LLM stream started");
 
-    const response = await fetch(`/interview/${session.id}/respond`, {
+    const response = await fetch(`/interview/${sid}/respond`, {
       cache: "no-store",
       headers: { Accept: "text/event-stream" },
     });
@@ -471,6 +502,9 @@ export function InterviewStudio({ sessionEmail }: { sessionEmail: string }) {
           if (event.type === "chunk" && event.text) {
             setAIText((prev) => prev + event.text);
             sentenceBuffer += event.text;
+            markLatency("llm_first_token");
+            const ttft = measureLatency("TTFT (LLM)", "llm_start", "llm_first_token");
+            if (ttft) setLatencyMeasures((prev) => (prev.some((m) => m.label === ttft.label) ? prev : [...prev, ttft]));
             addPipelineEvent(`LLM chunk received (${event.text.length} chars)`);
 
             const sentenceEnd = sentenceBuffer.search(/[.!?]\s/u);
@@ -582,6 +616,7 @@ export function InterviewStudio({ sessionEmail }: { sessionEmail: string }) {
       };
 
       recorder.onstop = () => {
+        markLatency("recording_stop");
         recorderRef.current = null;
         stopStream();
         const blobs = audioChunksRef.current;
@@ -599,9 +634,16 @@ export function InterviewStudio({ sessionEmail }: { sessionEmail: string }) {
 
         setState("syncing");
         setMessage("Conversion WAV et transcription Voxtral en cours...");
+        autoAISessionIdRef.current = sessionId;
 
         void blobsToWavBase64(blobs)
-          .then((wavBase64) => uploadWav(sessionId, wavBase64, sequence, startedAt, endedAt))
+          .then(async (wavBase64) => {
+            await uploadWav(sessionId, wavBase64, sequence, startedAt, endedAt);
+            markLatency("stt_done");
+            const sttLatency = measureLatency("STT (Voxtral)", "recording_stop", "stt_done");
+            if (sttLatency) setLatencyMeasures((prev) => [...prev, sttLatency]);
+            await streamAIResponse(sessionId);
+          })
           .catch((error) => {
             setState("error");
             setMessage(error instanceof Error ? error.message : "Conversion audio échouée.");
@@ -901,9 +943,10 @@ export function InterviewStudio({ sessionEmail }: { sessionEmail: string }) {
                 aiState === "speaking"
               }
               onClick={() => void streamAIResponse()}
+              title="Déclenche manuellement si la génération automatique a échoué"
               type="button"
             >
-              Generer la reponse IA
+              Relancer la réponse IA
             </Button>
           </div>
 
@@ -913,6 +956,29 @@ export function InterviewStudio({ sessionEmail }: { sessionEmail: string }) {
             rows={6}
             value={aiText}
           />
+
+          {latencyMeasures.length > 0 && (
+            <div
+              aria-label="Mesures de latence"
+              style={{
+                background: "#F0EDE8",
+                border: "1px solid #D9D4CA",
+                borderRadius: "0.75rem",
+                display: "grid",
+                fontSize: "0.85rem",
+                gap: "0.25rem",
+                padding: "0.75rem 1rem",
+              }}
+            >
+              <strong style={{ color: "#4E4A43", fontSize: "0.8rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>Latence perçue</strong>
+              {latencyMeasures.map((m) => (
+                <span key={m.label} style={{ color: m.label.startsWith("Latence") && m.durationMs > 1200 ? "#8A2C20" : "#4E4A43" }}>
+                  {m.label}: <strong>{m.durationMs} ms</strong>
+                  {m.label.startsWith("Latence") && (m.durationMs <= 1200 ? " ✓ cible atteinte" : " ✗ cible manquée (> 1200 ms)")}
+                </span>
+              ))}
+            </div>
+          )}
 
           {pipelineEvents.length > 0 && (
             <div

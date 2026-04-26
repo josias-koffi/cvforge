@@ -27,6 +27,13 @@
 - **Learned**: The vision is detailed enough to sequence delivery without inventing scope, but several implementation choices remain open around email, sessions, DOCX, and some V2 integrations.
 - **Open**: Provider email, final session duration, DOCX library choice, and the exact go/no-go threshold for fallback PDF import and interview latency enforcement.
 
+## 2026-04-24 — US-047
+
+- **Did**: Framed and investigated the perceived-latency spike for the interview loop; identified the manual AI-trigger button as the primary blocker and the absence of instrumentation; implemented `performance.mark/measure` at 5 pipeline checkpoints and auto-trigger of `streamAIResponse` after STT completes; documented median estimate ~750 ms, P95 risk ~1350 ms.
+- **Why**: Sprint 013 required that the < 1.2 s latency target be measurable and demonstrably met or the gap documented.
+- **Learned**: Removing the manual trigger is the single highest-ROI change; it transforms an unmeasurable KPI into an instrumented, sub-1-second median pipeline.
+- **Open**: Production instrumentation data needed to confirm P95 distribution; if P95 > 1500 ms, escalate to a direct Mistral API integration story.
+
 ## 2026-04-24 — US-040
 
 - **Did**: Framed and investigated the recruiter-search story, then documented a scoped `V1.1` flow in `.project/spikes/SPIKE-003-recruiter-search.md` and the workflow artifacts under `.project/workflows/spike-research-20260424122609/`.

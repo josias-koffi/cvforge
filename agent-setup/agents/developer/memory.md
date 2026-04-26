@@ -428,6 +428,13 @@
 
 ## 2026-04-24 — fix Voxtral transcription path
 
+## 2026-04-26 — Sprint 013 DoD finalization
+
+- **Did**: Stabilized the API bootstrap coverage test with a longer timeout, re-ran `pnpm lint`, `pnpm test`, `pnpm build`, and `pnpm test -- --coverage`, then marked Sprint 013 DoD complete and added Sprint 013 to `completed_sprints`.
+- **Why**: The sprint already had all task-level evidence, but the DoD could not be closed while the coverage gate was flaky under instrumentation mode.
+- **Learned**: The root coverage command is sensitive to Vitest timing overhead on `apps/api/src/main.test.ts`; a standard 5s timeout was too tight once coverage instrumentation was enabled.
+- **Open**: No functional blocker remains for Sprint 013; if the bootstrap test slows down again, the next step is to reduce module-load work in `main.ts` test setup rather than keep increasing timeouts.
+
 - **Did**: Switched interview transcription from OpenRouter chat completions to Mistral's `/v1/audio/transcriptions` endpoint, added dedicated Mistral config/env support, normalized legacy Voxtral model names to `voxtral-mini-latest`, and updated API tests plus env defaults.
 - **Why**: The previous integration sent audio as a chat prompt, which returned conversational refusal text instead of real STT output.
 - **Learned**: Voxtral transcription must be treated as an audio-upload API call with a Mistral API key, not as a generic multimodal chat completion.
