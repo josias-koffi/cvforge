@@ -376,3 +376,10 @@
 - **Why**: Architecture governance required the interview report to become a first-class persisted artifact instead of a transient UI computation before dashboard analytics could depend on it.
 - **Learned**: The right boundary is to keep session generation inside the interview module but persist the resulting score/report under the application aggregate consumed by product analytics.
 - **Open**: The current JSON-file persistence remains acceptable for single-node development, but report concurrency and multi-instance consistency should move to shared storage before production scale.
+
+## 2026-04-26 — US-050 finalization
+
+- **Did**: Closed US-050 with a passing verdict after confirming browser-side audio replay, free-practice mode fix, RGPD purge service, and pre-generation prefetch are all implemented, tested (446 tests green), and lint/build clean. Ticked sprint-014 DoD and added sprint 14 to `completed_sprints`.
+- **Why**: Architecture governance required an explicit sign-off that all four acceptance criteria are evidenced before the sprint can close.
+- **Learned**: The shared `INTERVIEW_STORE` token pattern is the correct NestJS idiom when two services need the same infrastructure provider without circular dependency. The purge service interval approach is acceptable for the file store but must migrate to BullMQ when MinIO audio persistence ships.
+- **Open**: Audio replay is transient (Object URL). MinIO-backed replay + a proper cron-based purge are deferred to the next sprint once MinIO is wired.

@@ -292,3 +292,10 @@
 - **Why**: The report only makes sense if its ownership is explicit, and the dashboard story depends on candidature-linked scores rather than anonymous practice sessions.
 - **Learned**: Reusing the current three-card workspace was the right move; the missing UX element was traceability to a candidature plus a readable score summary after completion.
 - **Open**: Free-practice mode should become a separate branch of the same workspace in `US-050`, not a hidden bypass of candidature-linked interviews.
+
+## 2026-04-26 — US-050 design
+
+- **Did**: Designed audio replay `<audio controls>` in the report card (transient Object URL, WCAG-compliant native element), updated candidature selector with free-practice default option, and kept pre-generation and purge as invisible features.
+- **Why**: Audio replay and free-practice are the only user-visible changes; the rest are backend or infrastructure.
+- **Learned**: Native `<audio controls>` is the correct MVP approach — no custom player library needed, WCAG AA compliance is automatic.
+- **Open**: If product later requires waveform visualization or chapter markers, a custom player would be needed.

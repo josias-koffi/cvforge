@@ -313,3 +313,10 @@
 - **Why**: `US-049` could only pass once each acceptance criterion had direct backend, UI, and analytics evidence rather than placeholder dashboard data.
 - **Learned**: The story is reviewable because the dashboard now consumes persisted interview reports from the same application aggregate used elsewhere in the product.
 - **Open**: Sprint 014 DoD is still blocked by the remaining unticked `US-050` work, not by `US-049`.
+
+## 2026-04-26 — US-050 review
+
+- **Did**: Verified all four acceptance criteria: audio `<audio controls>` with Object URL, free-practice mode without candidature guard, `InterviewPurgeService` with 30-day cutoff and updated policy status, prefetch endpoint with short-circuit in streaming. Confirmed 446 tests green, lint clean, build clean.
+- **Why**: Sprint 014 DoD required all US-050 criteria verified before sprint closure.
+- **Learned**: Browser-side Object URL is a correct MVP for audio replay when MinIO is not yet wired; the transient nature must be communicated in the UI.
+- **Open**: Sprint 014 is now complete. Next sprint should address MinIO audio persistence and a proper cron-backed purge.

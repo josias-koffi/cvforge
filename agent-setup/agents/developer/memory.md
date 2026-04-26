@@ -481,3 +481,10 @@
 - **Why**: US-046 required real-time visual feedback without introducing a new library or API surface.
 - **Learned**: Stubbing `requestAnimationFrame` as a no-op (returning 0, never calling the callback) is the cleanest way to prevent the VAD RAF loop from running in happy-dom tests without heap exhaustion. The `vadLevel` state driving badge rendering causes RAF-frequency React re-renders during recording; this is acceptable for this component but a direct DOM mutation approach would be more optimal at scale.
 - **Open**: US-047 latency instrumentation can attach timing checkpoints to the existing `pipelineEvents` log without new state.
+
+## 2026-04-26 — US-050 implementation
+
+- **Did**: Implemented audio replay (Object URL ref + `<audio>` element), free practice mode (removed `Boolean(applicationId)` gate + selector option), RGPD purge service (`InterviewPurgeService`, 24h `setInterval`, 30-day cutoff, `purgeCompletedBefore` in store), and pre-generation (`prefetchNextQuestion` endpoint + `streamAIResponse` short-circuit + frontend `triggerPrefetch`).
+- **Why**: All four US-050 acceptance criteria required code changes; the free-practice fix was a one-line UI bug; the purge service was the most architecturally significant addition.
+- **Learned**: Sharing the `INTERVIEW_STORE` token between `InterviewService` and `InterviewPurgeService` via a named provider constant is the correct pattern for NestJS when two services need the same infrastructure object.
+- **Open**: Audio blob URL is transient — MinIO-backed persistence is a future sprint. Purge `setInterval` should become a BullMQ cron job once MinIO lands.

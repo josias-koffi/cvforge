@@ -29,23 +29,23 @@ Transformer la base technique interview en expérience produit complète, scoré
     - [x] Les notes et métriques sont persistées
     - [x] Le dashboard peut consommer ces scores
   - Source: vision `§10`, `§12.3`, `§16`
-- [ ] **[US-050]** Ajouter réécoute audio, transcription, mode pratique libre, purge RGPD et pré-génération
+- [x] **[US-050]** Ajouter réécoute audio, transcription, mode pratique libre, purge RGPD et pré-génération
   - Agent: `tech-lead`
   - Workflow: `analyze-design-dev-review`
   - Acceptance criteria:
-    - [ ] La réécoute audio et la transcription sont disponibles
-    - [ ] Le mode pratique libre fonctionne
-    - [ ] La purge automatique audio respecte la politique RGPD
-    - [ ] La pré-génération de la question suivante est intégrée si la latence le permet
+    - [x] La réécoute audio et la transcription sont disponibles
+    - [x] Le mode pratique libre fonctionne
+    - [x] La purge automatique audio respecte la politique RGPD
+    - [x] La pré-génération de la question suivante est intégrée si la latence le permet
   - Source: vision `§10`, `§15.5`, `§16`
 
 ## 📊 Sprint DoD
 
-- [ ] All tasks ticked
-- [ ] All acceptance criteria verified
-- [ ] `run-tests` green
-- [ ] Coverage ≥ spec threshold
-- [ ] QA review ✅
+- [x] All tasks ticked
+- [x] All acceptance criteria verified
+- [x] `run-tests` green
+- [x] Coverage ≥ spec threshold
+- [x] QA review ✅
 
 ## 🚧 Risks
 

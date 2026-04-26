@@ -348,3 +348,10 @@
 - **Why**: Vision `§10`, `§12.3`, and `§16` require real post-interview scoring, not a local-only interview recap disconnected from the candidature record.
 - **Learned**: The product boundary is tighter than the original sprint metadata suggested: a release-only gate could not pass because the underlying report and persistence contract did not exist yet.
 - **Open**: `US-050` can now safely focus on replay, free-practice, and retention policy because the scoring/report layer is first-class.
+
+## 2026-04-26 — US-050 analyze
+
+- **Did**: Scoped US-050 to four concrete gaps: browser-side audio replay (Object URL, transient), free practice mode (remove `Boolean(applicationId)` gate), RGPD purge service (NestJS 24h interval, 30-day cutoff), and pre-generation prefetch endpoint (non-streaming LLM + short-circuit in `streamAIResponse`).
+- **Why**: Vision §10.8, §15.5, and §16 require all four before the sprint can close; MinIO audio persistence is deferred to a future story.
+- **Learned**: The free-practice gate was a pure UI bug — the backend already handled `applicationId = null`. Product scope was already correct.
+- **Open**: MinIO-backed audio replay and replay persistence across page reloads remain future work once MinIO is wired.
