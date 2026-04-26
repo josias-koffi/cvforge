@@ -218,6 +218,13 @@
 
 ## 2026-04-20 — US-056
 
+## 2026-04-26 — US-048
+
+- **Did**: Added recruiter-profile types/constants and completed-session state in `@cvforge/types`, extended the Nest interview service/controller/store with profile-aware prompt shaping plus `finish` handling, added the Next finish route, updated `InterviewStudio` with profile selection and clean session termination, and verified targeted tests plus touched-package lint/build.
+- **Why**: US-048 required the interview mode to match the vision's recruiter profiles and give QA a real launch/finish lifecycle instead of a client-only reset.
+- **Learned**: The existing interview slice was already structurally sound; the cleanest fix was to enrich the shared contract and keep app/API behavior aligned around it.
+- **Open**: Numeric coverage was not re-measured in this run; US-049 should decide whether the completed session also needs a persisted summary payload before report generation starts.
+
 ## 2026-04-22 — publish notifications sprint work
 
 - **Did**: Verified the notifications center branch state, ran `pre-commit run --all-files`, `pnpm lint`, `pnpm test`, and `pnpm build`, then grouped the pending changes for publish on `develop`.

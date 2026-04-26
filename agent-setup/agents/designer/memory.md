@@ -278,3 +278,10 @@
 - **Why**: The story required visible state feedback without adding a new card or disrupting the existing minimal layout.
 - **Learned**: CSS `@keyframes` animation on badge-level elements is enough to convey dynamic audio activity without canvas or WebGL; the existing "Papier & Crayon" palette has enough contrast room for both the green mic and amber thinking colors.
 - **Open**: US-047 may need a latency-visible indicator (e.g., a timestamp or timer badge) if perceived-latency measurement requires user-observable checkpoints.
+
+## 2026-04-26 — US-048 design
+
+- **Did**: Extended the existing `/interview` control row with recruiter-profile selection, profile helper copy, a visible active-profile badge, and a dedicated completion action that preserves transcript context while closing the session cleanly.
+- **Why**: The story needed the missing recruiter persona choice and a clearer end-state without replacing the already valid three-card interview workspace.
+- **Learned**: Locking language/profile once a session exists keeps the scenario coherent and avoids mid-session semantic drift.
+- **Open**: US-049 can reuse the completed-session state to anchor the future report CTA and score display.

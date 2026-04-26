@@ -320,3 +320,10 @@
 - **Why**: The workflow needed a precise product boundary so the story would not drift into server-side VAD, animated waveforms, or multi-speaker diarization.
 - **Learned**: The threshold for speech detection (−30 dBFS / 0.05 normalized RMS) is an implementation detail, not a product decision; the vision's "retour visuel temps réel" requirement maps directly to the two badge-level indicators.
 - **Open**: US-047 should instrument latency measurement on top of this completed VAD + TTS pipeline.
+
+## 2026-04-26 — US-048 analyze
+
+- **Did**: Confirmed that US-048 closes the MVP interview loop by keeping the existing voice flow, adding the missing recruiter-profile contract, and requiring a real end-of-session action.
+- **Why**: Vision `§10.4` and `§10.5` explicitly require named interview profiles and a session lifecycle that can be verified, while report/replay/free mode stay in later stories.
+- **Learned**: The current interview slice was already close to the target; the primary product gap was not transport but missing scenario/persona semantics.
+- **Open**: US-049 should build on the completed session record to generate and persist the post-interview report.

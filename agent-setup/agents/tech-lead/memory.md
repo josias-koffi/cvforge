@@ -218,6 +218,13 @@
 
 ## 2026-04-21 — Sprint 008 DoD retry finalization
 
+## 2026-04-26 — US-048 finalization
+
+- **Did**: Closed US-048 with a passing verdict after confirming recruiter-profile support across the shared contract, backend prompt behavior, and app UI, plus a dedicated session-finish endpoint and successful targeted lint/test/build evidence.
+- **Why**: Architecture governance and sprint bookkeeping require an explicit final sign-off once the interview slice matches the vision's session lifecycle and persona requirements.
+- **Learned**: The correct architecture is to keep interview persona semantics in the shared type contract and let the API translate them into prompt behavior, while the app remains a thin orchestration surface.
+- **Open**: US-049 should treat the new completed-session state as the source event for persisted interview scoring/report generation.
+
 - **Did**: Closed the sprint-level retry workflow with a passing verdict, marked the remaining DoD checkboxes complete, and added Sprint 008 to `completed_sprints`.
 - **Why**: Governance required one final explicit sign-off once the engineering blockers were actually fixed.
 - **Learned**: The sprint-close path is now robust again because the root coverage command and the package-level tests agree on how coverage should be invoked.

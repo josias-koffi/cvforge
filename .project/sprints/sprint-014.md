@@ -13,13 +13,13 @@ Transformer la base technique interview en expérience produit complète, scoré
 
 ## ✅ Tasks (3–8 max)
 
-- [ ] **[US-048]** Livrer le mode interview vocal complet avec profils recruteur
+- [x] **[US-048]** Livrer le mode interview vocal complet avec profils recruteur
   - Agent: `developer`
   - Workflow: `analyze-design-dev-review`
   - Acceptance criteria:
-    - [ ] Le mode interview vocal fonctionne de bout en bout
-    - [ ] Les profils `Standard`, `Agressif`, `Passif`, `Technique`, `Comportemental` existent
-    - [ ] L'utilisateur peut lancer et terminer proprement une session
+    - [x] Le mode interview vocal fonctionne de bout en bout
+    - [x] Les profils `Standard`, `Agressif`, `Passif`, `Technique`, `Comportemental` existent
+    - [x] L'utilisateur peut lancer et terminer proprement une session
   - Source: vision `§10`, `§16`
 - [ ] **[US-049]** Générer le rapport post-interview avec métriques et notes
   - Agent: `analyst`

@@ -299,3 +299,10 @@
 - **Why**: Sprint 013 story required QA sign-off before the task could be ticked.
 - **Learned**: When new code uses RAF loops, the test harness must stub `requestAnimationFrame` as a no-op to prevent heap exhaustion in happy-dom environments. Advisory: `@keyframes` injected as inline style tags per render; acceptable now, should be CSS module if the page grows.
 - **Open**: None for this story.
+
+## 2026-04-26 — US-048 review
+
+- **Did**: Verified the updated interview flow against all three sprint criteria, rechecked targeted interview suites in app/API/types, and confirmed touched-package lint/build pass including `@cvforge/app build`.
+- **Why**: The task could only pass once recruiter profiles and the clean session-completion path had direct route, service, UI, and automated evidence.
+- **Learned**: The story is reviewable because the profile and completion state now live in one shared contract instead of being implied separately in frontend copy and backend prompts.
+- **Open**: Numeric coverage was not re-collected during this workflow run, so sprint-level coverage DoD remains a separate closure gate.
