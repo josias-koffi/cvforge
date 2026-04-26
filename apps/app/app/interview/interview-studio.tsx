@@ -283,6 +283,7 @@ export function InterviewStudio({
   const analyserRef = React.useRef<AnalyserNode | null>(null);
   const vadCtxRef = React.useRef<AudioContext | null>(null);
   const vadRafRef = React.useRef<number | null>(null);
+  const audioBlobUrlRef = React.useRef<string | null>(null);
 
   const updateSession = React.useCallback((nextSession: InterviewSessionSummary) => {
     startTransition(() => {
@@ -610,6 +611,10 @@ export function InterviewStudio({
             if (!speakingRef.current && utteranceQueueRef.current.length === 0) {
               setAIState("done");
             }
+            // background prefetch for next turn
+            const prefetchSid = sid;
+            addPipelineEvent("Prefetch next question triggered");
+            triggerPrefetch(prefetchSid);
           } else if (event.type === "error") {
             setAIState("error");
             addPipelineEvent(`Error: ${event.message ?? "unknown"}`);
@@ -711,6 +716,14 @@ export function InterviewStudio({
           return;
         }
 
+        // Capture a replay URL from the raw blobs before WAV conversion
+        if (audioBlobUrlRef.current) {
+          URL.revokeObjectURL(audioBlobUrlRef.current);
+        }
+        audioBlobUrlRef.current = URL.createObjectURL(
+          new Blob(blobs, { type: blobs[0]?.type ?? "audio/webm" }),
+        );
+
         const startedAt = new Date(recordingStartRef.current ?? Date.now()).toISOString();
         const endedAt = new Date().toISOString();
         const sequence = sequenceRef.current;
@@ -763,11 +776,21 @@ export function InterviewStudio({
     recorderRef.current = null;
     audioChunksRef.current = [];
     sequenceRef.current = 1;
+    if (audioBlobUrlRef.current) {
+      URL.revokeObjectURL(audioBlobUrlRef.current);
+      audioBlobUrlRef.current = null;
+    }
     persistSessionId(null);
     setSession(null);
     setProfile("standard");
     setState(browserAudioSupported() ? "idle" : "unsupported");
     setMessage("Nouvelle session prete. Lancez un nouvel enregistrement.");
+  }
+
+  function triggerPrefetch(sid: string) {
+    void fetch(`/interview/${sid}/prefetch`, { method: "POST" }).catch(() => {
+      // prefetch is best-effort
+    });
   }
 
   const isRecording = recorderRef.current?.state === "recording";
@@ -783,7 +806,6 @@ export function InterviewStudio({
     state !== "syncing" &&
     !isRecording;
   const canStartInterview =
-    Boolean(applicationId) &&
     state !== "booting" &&
     state !== "syncing" &&
     !isRecording &&
@@ -968,9 +990,7 @@ export function InterviewStudio({
                   }}
                   value={applicationId}
                 >
-                  {applications.length === 0 ? (
-                    <option value="">Aucune candidature exploitable</option>
-                  ) : null}
+                  <option value="">Aucune (mode pratique libre)</option>
                   {applications.map((application) => (
                     <option key={application.id} value={application.id}>
                       {application.title}
@@ -1031,7 +1051,7 @@ export function InterviewStudio({
                     ? ` · ${selectedApplication.companyName}`
                     : ""
                 }.`
-              : "Selectionnez une candidature pour lier le rapport post-entretien au dashboard."}
+              : "Mode pratique libre — le rapport ne sera pas lié à une candidature."}
           </p>
 
           <p
@@ -1060,6 +1080,22 @@ export function InterviewStudio({
           </CardDescription>
         </CardHeader>
         <CardContent style={{ display: "grid", gap: "1rem" }}>
+          {sessionCompleted && audioBlobUrlRef.current && (
+            <div style={{ display: "grid", gap: "0.4rem" }}>
+              <strong style={{ color: "#1A1A18", fontSize: "0.9rem" }}>
+                Réécoute de l&apos;enregistrement
+              </strong>
+              <audio
+                aria-label="Réécoute de la session d'entretien"
+                controls
+                src={audioBlobUrlRef.current}
+                style={{ width: "100%" }}
+              />
+              <span style={{ color: "#9B978E", fontSize: "0.8rem" }}>
+                Fichier local — perdu au rechargement de la page.
+              </span>
+            </div>
+          )}
           {session?.report ? (
             <>
               <div
