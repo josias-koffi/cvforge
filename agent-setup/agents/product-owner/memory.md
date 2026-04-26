@@ -362,3 +362,10 @@
 - **Why**: Vision §10.8, §15.5, and §16 require all four before the sprint can close; MinIO audio persistence is deferred to a future story.
 - **Learned**: The free-practice gate was a pure UI bug — the backend already handled `applicationId = null`. Product scope was already correct.
 - **Open**: MinIO-backed audio replay and replay persistence across page reloads remain future work once MinIO is wired.
+
+## 2026-04-26 — E15 UX Redesign — backlog + sprints 016–019
+
+- **Did**: Added epic E15 (UX Redesign desktop-first, V2.1) to the backlog, created 14 new user stories US-060–US-073, added E15 to the dependency matrix and technical gates, and created sprint files 016–019 with acceptance criteria.
+- **Why**: User feedback identified 7 structural UX problems requiring a full redesign: mobile-first mismatch, missing intermediate screens, no tables, broken interview UX, Puck misplacement, information overload, and weak navigation.
+- **Learned**: US-068 (remove Puck from user editor) explicitly contradicts vision §8 — must be confirmed as a product decision before Sprint 018 begins. Sprint 015 B2B work (US-052/053/054) can run in parallel with Sprint 016 since they touch separate domains.
+- **Open**: Confirm US-068 product decision. Confirm whether "Papier & Crayon" tokens survive on print surfaces post-E15 polish sprint (US-071).

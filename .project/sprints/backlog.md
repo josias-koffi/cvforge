@@ -23,6 +23,7 @@
 | E12 | V1.2 | Plateforme interview temps réel | Le streaming STT/TTS/LLM, le VAD et le feedback visuel tiennent l'objectif perçu `< 1,2 s` pour la boucle interview | 013 | vision `§10`, `§16` |
 | E13 | V1.2 | Produit interview complet et conformité audio | Le mode interview vocal, les profils d'interview, le rapport noté, la réécoute/transcription, le mode libre et la purge audio RGPD sont disponibles | 014 | vision `§10`, `§15.5`, `§16` |
 | E14 | V2.0 | Offre recruteur et extension entreprise | Les rôles recruteur, organisations, import PDF d'offre, extension browser, analytics admin avancés et étude enterprise OpenRouter sont cadrés et livrés | 015 | vision `§13.4`, `§16` |
+| E15 | V2.1 | UX Redesign desktop-first + refonte interview et éditeur | App desktop-first shadcn-minimal; tables candidatures/documents; interview VAD auto sans bouton; continuité agent via messages[] Redis; Puck admin full-screen uniquement; écrans intermédiaires; dashboard épuré | 016–019 | vision `§2.5`, `§2.6`, `§6`, `§8`, `§10`, feedback 2026-04-26 |
 
 ## Estimate Scale
 
@@ -95,6 +96,20 @@ Référence de gate: le spec impose des branches courtes et des PRs <= 400 ligne
 | US-052 | Ajouter l'import PDF d'offre et la connexion sociale à évaluer | E14 | M | P2 | 015 | vision `§3.1`, `§16` |
 | US-053 | Ajouter l'extension browser pour le scraping d'offres | E14 | M | P2 | 015 | vision `§16` |
 | US-054 | Ajouter analytics admin avancés, export CSV et évaluer OpenRouter enterprise | E14 | M | P2 | 015 | vision `§13.4`, `§15.5`, `§16` |
+| US-060 | Refondre la navigation en sidebar desktop-first avec drawer mobile | E15 | M | P0 | 016 | vision `§2.5`, `§2.6` |
+| US-061 | Convertir la liste candidatures en table filtrée avec slide-over détail | E15 | L | P0 | 016 | vision `§7` |
+| US-062 | Créer l'écran détail candidature avec onglets Offre/CV/LM/Interviews/Historique | E15 | L | P0 | 016 | vision `§7`, `§8`, `§9`, `§10` |
+| US-063 | Créer l'écran setup entretien `/interview/new` (sélection candidature, profil, langue) | E15 | M | P0 | 017 | vision `§10` |
+| US-064 | Refondre l'Interview Studio avec VAD automatique (sans bouton push-to-talk) | E15 | L | P0 | 017 | vision `§10` |
+| US-065 | Corriger la continuité de l'agent: messages[] server-side par sessionId (Redis) | E15 | M | P0 | 017 | vision `§10` |
+| US-066 | Créer l'écran rapport entretien `/interview/[id]/report` | E15 | M | P1 | 017 | vision `§10` |
+| US-067 | Créer le Documents Hub `/documents` avec table CV/LM et actions PDF/DOCX/Éditer | E15 | M | P0 | 018 | vision `§6`, `§8`, `§9` |
+| US-068 | Remplacer l'éditeur document utilisateur par formulaire structuré (sans Puck) | E15 | L | P0 | 018 | vision `§8` ⚠️ product decision |
+| US-069 | Passer l'éditeur Puck admin en mode full-screen viewport (admin-only) | E15 | M | P0 | 018 | ADR-003, vision `§6.7`, `§13.3` |
+| US-070 | Refondre le Dashboard: 3 KPI + 2 tables récentes + quick actions | E15 | M | P1 | 018 | vision `§12.1`–`§12.4` |
+| US-071 | Appliquer le design token shadcn-minimal à l'ensemble de l'app | E15 | M | P1 | 019 | vision `§2.6` |
+| US-072 | Refondre la page Crédits avec table ledger et cards packs | E15 | S | P1 | 019 | vision `§11` |
+| US-073 | Refondre la page Profil: accordions par section + switcher multi-profil | E15 | M | P1 | 019 | vision `§5`, `§5.1` |
 
 ## Clarifications Pendantes
 
@@ -127,6 +142,7 @@ Référence de gate: le spec impose des branches courtes et des PRs <= 400 ligne
 | `E12` | `E3`, `E4` | L'interview vocal requiert auth, profil et fondations UX stables |
 | `E13` | `E12` | Les fonctions interview avancées dépendent du socle temps réel |
 | `E14` | `E5`, `E9` | Le versant recruteur/entreprise dépend des workflows candidature et admin |
+| `E15` | `E2`, `E12`, `E13` | La refonte UX s'appuie sur le design system, le pipeline interview et les écrans documentaires existants |
 
 ## Technical Gates
 
@@ -141,6 +157,8 @@ Référence de gate: le spec impose des branches courtes et des PRs <= 400 ligne
 | `010` | Gate RGPD de lancement MVP | `tech-lead` + `product-owner` |
 | `013` | Gate observabilité et latence interview | `tech-lead` + `analyst` |
 | `014` | Gate purge audio et conservation RGPD | `tech-lead` |
+| `017` | Gate continuité agent interview (messages[] Redis) + VAD auto | `tech-lead` + `qa-reviewer` |
+| `018` | Gate cohérence Puck admin-only: aucune surface Puck côté user | `tech-lead` + `qa-reviewer` |
 
 ## ADR Watchlist
 

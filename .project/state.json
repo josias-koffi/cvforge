@@ -13,7 +13,7 @@
   "specialized_skills": [],
   "clarifications_pending": [],
   "last_updated": "2026-04-26T21:15:00+02:00",
-  "last_workflow_run": "none",
+  "last_workflow_run": "designer-product-owner",
   "last_workflow_stage": "product-owner",
   "last_workflow_result": "passed",
   "active_workflow_run": null,
@@ -393,6 +393,13 @@
       "sprint": "015",
       "task": "US-051",
       "workflow": "none",
+      "result": "passed"
+    },
+    {
+      "run_id": "designer-product-owner-20260426220000",
+      "sprint": null,
+      "task": "UX redesign desktop-first + backlog + sprints 016-019",
+      "workflow": "designer-product-owner",
       "result": "passed"
     }
   ],

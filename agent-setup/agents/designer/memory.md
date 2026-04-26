@@ -299,3 +299,10 @@
 - **Why**: Audio replay and free-practice are the only user-visible changes; the rest are backend or infrastructure.
 - **Learned**: Native `<audio controls>` is the correct MVP approach — no custom player library needed, WCAG AA compliance is automatic.
 - **Open**: If product later requires waveform visualization or chapter markers, a custom player would be needed.
+
+## 2026-04-26 — UX Redesign desktop-first (E15)
+
+- **Did**: Produced a full desktop-first UX redesign spec covering: shadcn-minimal design direction, new screen architecture (11 screens), sidebar navigation, candidature table with filters, candidature detail with tabs, interview setup screen, VAD-driven interview studio (no push-to-talk), interview report screen, documents hub, structured form document editor (Puck admin-only full-screen), dashboard simplification, and the agent continuity fix contract.
+- **Why**: The current mobile-first app was identified as producing poor UX; primary use case is desktop; too much information density; interview mode was button-per-turn; Puck was misplaced for users; no intermediate screens.
+- **Learned**: The VAD-driven approach removes push-to-talk entirely — this is a behavior removal, not just an addition, and requires developer awareness. The Puck-for-users replacement with a structured form conflicts with vision §8 and needs explicit product owner confirmation before Sprint 018.
+- **Open**: Confirm US-068 product decision (structured form vs Puck for user document editor). Confirm whether "Papier & Crayon" tokens are fully replaced or kept for print surfaces (CV/LM PDF).
