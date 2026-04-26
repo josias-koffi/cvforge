@@ -218,6 +218,20 @@
 
 ## 2026-04-21 — Sprint 008 DoD retry finalization
 
+## 2026-04-26 — US-049 release freeze
+
+- **Did**: Ran the `release` workflow for `US-049`, froze the scope against the current interview and dashboard contracts, and failed the workflow at the Freeze stage with recorded artifacts under `.project/workflows/release-20260426203140/`.
+- **Why**: The sprint task is assigned to a release-only workflow, so the correct release gate action was to verify whether the feature already exists rather than invent implementation inside the release run.
+- **Learned**: The interview slice currently persists transcript and AI reply only; there is no application-linked interview report model, no persisted notes/metrics, and no live dashboard data source for post-interview scores.
+- **Open**: Reassign `US-049` to an implementation workflow, then add the report contract, persistence, and dashboard integration before rerunning release.
+
+## 2026-04-26 — US-049 release freeze rerun
+
+- **Did**: Re-ran the sprint workflow for `US-049` exactly as declared in sprint `014`, confirmed the task still resolves to `release`, and recorded a second Freeze failure under `.project/workflows/release-20260426203735/`.
+- **Why**: The user re-invoked the sprint command without a workflow override, so the correct orchestration behavior was to validate releasability again rather than silently switching into implementation.
+- **Learned**: The repo state changed only in workflow artifacts and bookkeeping; there were still no product-code changes that could alter the release verdict.
+- **Open**: The next valid path is either a workflow override to `analyze-design-dev-review` or a sprint metadata correction before another rerun.
+
 ## 2026-04-26 — US-048 finalization
 
 - **Did**: Closed US-048 with a passing verdict after confirming recruiter-profile support across the shared contract, backend prompt behavior, and app UI, plus a dedicated session-finish endpoint and successful targeted lint/test/build evidence.
@@ -355,3 +369,10 @@
 - **Why**: Architecture governance required an explicit sign-off that the interview STT slice extends the current app/API boundaries coherently before the later TTS and latency work lands.
 - **Learned**: The right architecture is session-first and additive: one persisted chunk/transcript boundary can now serve both the remaining voice-output work and later latency instrumentation without replacing the STT slice.
 - **Open**: The current file-backed interview store is acceptable for MVP parity with the repo, but multi-instance deployment will require moving this session state into shared persistence.
+
+## 2026-04-26 — US-049 finalization
+
+- **Did**: Approved the application-linked reporting design, closed `US-049` with a passing verdict, and updated sprint/workflow bookkeeping after successful lint, build, and coverage evidence.
+- **Why**: Architecture governance required the interview report to become a first-class persisted artifact instead of a transient UI computation before dashboard analytics could depend on it.
+- **Learned**: The right boundary is to keep session generation inside the interview module but persist the resulting score/report under the application aggregate consumed by product analytics.
+- **Open**: The current JSON-file persistence remains acceptable for single-node development, but report concurrency and multi-instance consistency should move to shared storage before production scale.

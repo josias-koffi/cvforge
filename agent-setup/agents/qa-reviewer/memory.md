@@ -306,3 +306,10 @@
 - **Why**: The task could only pass once recruiter profiles and the clean session-completion path had direct route, service, UI, and automated evidence.
 - **Learned**: The story is reviewable because the profile and completion state now live in one shared contract instead of being implied separately in frontend copy and backend prompts.
 - **Open**: Numeric coverage was not re-collected during this workflow run, so sprint-level coverage DoD remains a separate closure gate.
+
+## 2026-04-26 — US-049 review
+
+- **Did**: Verified structured report generation, report persistence on the linked application, dashboard score consumption, and passing targeted app/API/types suites plus workspace lint/build/coverage gates.
+- **Why**: `US-049` could only pass once each acceptance criterion had direct backend, UI, and analytics evidence rather than placeholder dashboard data.
+- **Learned**: The story is reviewable because the dashboard now consumes persisted interview reports from the same application aggregate used elsewhere in the product.
+- **Open**: Sprint 014 DoD is still blocked by the remaining unticked `US-050` work, not by `US-049`.

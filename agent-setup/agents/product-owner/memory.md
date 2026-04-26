@@ -218,6 +218,20 @@
 
 ## 2026-04-22 — US-031 analyze
 
+## 2026-04-26 — US-049 release failure
+
+- **Did**: Closed the `release` workflow for `US-049` with a failing summary after verifying that the current interview flow does not yet produce or persist a structured post-interview report.
+- **Why**: The product workflow must not mark the story complete when its acceptance criteria are not evidenced in the shipped code, even if the dashboard already contains placeholder analytics hooks.
+- **Learned**: The sprint metadata is mismatched for this story: `release` can validate delivery, but `US-049` still needs implementation across interview, application, and dashboard boundaries.
+- **Open**: Move `US-049` to an implementation workflow and define the exact report schema expected at session completion and on the dashboard.
+
+## 2026-04-26 — US-049 release failure rerun
+
+- **Did**: Reconfirmed the `US-049` failure on a second `release` workflow run and recorded that no product implementation occurred between the two attempts.
+- **Why**: The sprint command was reissued without a workflow override, so the product decision had to remain tied to the declared sprint metadata.
+- **Learned**: Re-running a release-only workflow does not advance a story that still lacks implementation; it only strengthens the evidence that the sprint metadata should change.
+- **Open**: Override the workflow to an implementation path or edit the sprint file before attempting this task again.
+
 ## 2026-04-23 — US-036
 
 - **Did**: Framed `US-036` around a self-service export/delete flow, confirmed the browser-local profile had to be merged into the export, and closed the open retention blocker with an explicit MVP policy plus a planned 30-day audio purge.
@@ -327,3 +341,10 @@
 - **Why**: Vision `§10.4` and `§10.5` explicitly require named interview profiles and a session lifecycle that can be verified, while report/replay/free mode stay in later stories.
 - **Learned**: The current interview slice was already close to the target; the primary product gap was not transport but missing scenario/persona semantics.
 - **Open**: US-049 should build on the completed session record to generate and persist the post-interview report.
+
+## 2026-04-26 — US-049 analyze
+
+- **Did**: Confirmed that US-049 must bind each interview to a candidature, generate the structured report only when the session ends, and persist scores where dashboard analytics already read application data.
+- **Why**: Vision `§10`, `§12.3`, and `§16` require real post-interview scoring, not a local-only interview recap disconnected from the candidature record.
+- **Learned**: The product boundary is tighter than the original sprint metadata suggested: a release-only gate could not pass because the underlying report and persistence contract did not exist yet.
+- **Open**: `US-050` can now safely focus on replay, free-practice, and retention policy because the scoring/report layer is first-class.

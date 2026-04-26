@@ -285,3 +285,10 @@
 - **Why**: The story needed the missing recruiter persona choice and a clearer end-state without replacing the already valid three-card interview workspace.
 - **Learned**: Locking language/profile once a session exists keeps the scenario coherent and avoids mid-session semantic drift.
 - **Open**: US-049 can reuse the completed-session state to anchor the future report CTA and score display.
+
+## 2026-04-26 — US-049 design
+
+- **Did**: Added candidature selection as a prerequisite to starting an interview and designed a dedicated post-session report card inside the existing interview workspace.
+- **Why**: The report only makes sense if its ownership is explicit, and the dashboard story depends on candidature-linked scores rather than anonymous practice sessions.
+- **Learned**: Reusing the current three-card workspace was the right move; the missing UX element was traceability to a candidature plus a readable score summary after completion.
+- **Open**: Free-practice mode should become a separate branch of the same workspace in `US-050`, not a hidden bypass of candidature-linked interviews.

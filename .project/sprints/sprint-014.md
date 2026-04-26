@@ -21,13 +21,13 @@ Transformer la base technique interview en expérience produit complète, scoré
     - [x] Les profils `Standard`, `Agressif`, `Passif`, `Technique`, `Comportemental` existent
     - [x] L'utilisateur peut lancer et terminer proprement une session
   - Source: vision `§10`, `§16`
-- [ ] **[US-049]** Générer le rapport post-interview avec métriques et notes
+- [x] **[US-049]** Générer le rapport post-interview avec métriques et notes
   - Agent: `analyst`
-  - Workflow: `release`
+  - Workflow: `analyze-design-dev-review`
   - Acceptance criteria:
-    - [ ] Un rapport structuré est généré en fin de session
-    - [ ] Les notes et métriques sont persistées
-    - [ ] Le dashboard peut consommer ces scores
+    - [x] Un rapport structuré est généré en fin de session
+    - [x] Les notes et métriques sont persistées
+    - [x] Le dashboard peut consommer ces scores
   - Source: vision `§10`, `§12.3`, `§16`
 - [ ] **[US-050]** Ajouter réécoute audio, transcription, mode pratique libre, purge RGPD et pré-génération
   - Agent: `tech-lead`

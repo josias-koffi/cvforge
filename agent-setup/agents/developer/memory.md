@@ -442,6 +442,13 @@
 - **Learned**: The root coverage command is sensitive to Vitest timing overhead on `apps/api/src/main.test.ts`; a standard 5s timeout was too tight once coverage instrumentation was enabled.
 - **Open**: No functional blocker remains for Sprint 013; if the bootstrap test slows down again, the next step is to reduce module-load work in `main.ts` test setup rather than keep increasing timeouts.
 
+## 2026-04-26 — US-049 implementation
+
+- **Did**: Added candidature-linked interview sessions, generated structured post-interview reports at session completion, persisted reports on both interview sessions and applications, and wired the interview/dashboard app surfaces to consume that data.
+- **Why**: The story could not pass with UI-only placeholders; the missing contract was end-to-end across shared types, API persistence, and dashboard analytics.
+- **Learned**: The cleanest implementation is to treat interview reporting as application-owned analytics while keeping the raw session summary as the generation source of truth.
+- **Open**: `InterviewStudio` now carries more UI/state responsibility; if the interview surface grows again in `US-050`, splitting the report and control panels into subcomponents will improve maintainability.
+
 - **Did**: Switched interview transcription from OpenRouter chat completions to Mistral's `/v1/audio/transcriptions` endpoint, added dedicated Mistral config/env support, normalized legacy Voxtral model names to `voxtral-mini-latest`, and updated API tests plus env defaults.
 - **Why**: The previous integration sent audio as a chat prompt, which returned conversational refusal text instead of real STT output.
 - **Learned**: Voxtral transcription must be treated as an audio-upload API call with a Mistral API key, not as a generic multimodal chat completion.
