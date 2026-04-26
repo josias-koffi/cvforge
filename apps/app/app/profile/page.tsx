@@ -12,10 +12,13 @@ export default async function ProfilePage() {
 
   return (
     <AppShell
-      title="Profil de base"
+      breadcrumb="Profil"
       description="Gerez plusieurs profils de base et reutilisez le bon socle selon chaque candidature du MVP."
       headerAccessory={<NotificationBell />}
-      navigation={getAppNavigation("/profile")}
+      navigation={getAppNavigation("/profile", session.role)}
+      title="Profil de base"
+      userEmail={session.email}
+      userRole={session.role}
     >
       <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "1rem" }}>
         <Button asChild variant="secondary">

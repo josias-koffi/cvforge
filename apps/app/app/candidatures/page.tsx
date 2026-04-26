@@ -153,10 +153,13 @@ export default async function ApplicationsPage({
 
   return (
     <AppShell
-      title="Candidatures"
+      breadcrumb="Candidatures"
       description="Importez une offre depuis son URL pour creer un brouillon de candidature avec les champs essentiels deja extraits."
       headerAccessory={<NotificationBell />}
-      navigation={getAppNavigation("/candidatures")}
+      navigation={getAppNavigation("/candidatures", session.role)}
+      title="Candidatures"
+      userEmail={session.email}
+      userRole={session.role}
     >
       <div style={{ display: "grid", gap: "1.5rem" }}>
         <div

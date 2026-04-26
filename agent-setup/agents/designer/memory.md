@@ -306,3 +306,10 @@
 - **Why**: The current mobile-first app was identified as producing poor UX; primary use case is desktop; too much information density; interview mode was button-per-turn; Puck was misplaced for users; no intermediate screens.
 - **Learned**: The VAD-driven approach removes push-to-talk entirely — this is a behavior removal, not just an addition, and requires developer awareness. The Puck-for-users replacement with a structured form conflicts with vision §8 and needs explicit product owner confirmation before Sprint 018.
 - **Open**: Confirm US-068 product decision (structured form vs Puck for user document editor). Confirm whether "Papier & Crayon" tokens are fully replaced or kept for print surfaces (CV/LM PDF).
+
+## 2026-04-26 — US-060
+
+- **Did**: Specified the desktop-first navigation architecture: 240px fixed sidebar at ≥1024px, mobile drawer slide-in with hamburger at <768px, top bar with breadcrumb + avatar + notification bell, role-gated Admin item, focus rings meeting WCAG 2.1 AA on all interactive elements.
+- **Why**: Sprint 016 E15 redesign — primary use case is desktop; the old mobile-first bottom-bar nav was a UX regression.
+- **Learned**: The 768px-1023px gap shows the hamburger until ≥768px where it hides. The topbar brand badge only shows ≥768px, giving tablet users a clean entry point.
+- **Open**: None.

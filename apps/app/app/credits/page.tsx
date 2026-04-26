@@ -101,10 +101,13 @@ export default async function CreditsPage() {
 
   return (
     <AppShell
-      title="Mes credits"
+      breadcrumb="Crédits"
       description="Solde disponible, transparence du ledger et acces direct au rechargement Stripe."
       headerAccessory={<NotificationBell />}
-      navigation={getAppNavigation("/credits")}
+      navigation={getAppNavigation("/credits", session.role)}
+      title="Mes credits"
+      userEmail={session.email}
+      userRole={session.role}
     >
       <div style={{ display: "grid", gap: "1.5rem" }}>
         {summary.isLowBalance ? (

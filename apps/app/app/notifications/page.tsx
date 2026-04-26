@@ -120,10 +120,13 @@ export default async function NotificationsPage(props: NotificationsPageProps) {
 
   return (
     <AppShell
+      breadcrumb="Notifications"
       description="Centre in-app pour les rappels de candidature et les notifications produit."
       headerAccessory={<NotificationBell />}
-      navigation={getAppNavigation("/notifications")}
+      navigation={getAppNavigation("/notifications", session.role)}
       title="Centre de notifications"
+      userEmail={session.email}
+      userRole={session.role}
     >
       <div style={{ display: "grid", gap: "1.5rem" }}>
         {statusMessage ? (

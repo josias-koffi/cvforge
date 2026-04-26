@@ -37,6 +37,6 @@ describe("HomePage", () => {
     expect(markup).toContain("user@example.com");
     expect(markup).toContain("Informations personnelles");
     expect(markup).toContain("Recapitulatif &amp; validation");
-    expect(markup).toContain("Sections principales");
+    expect(markup).toContain("Navigation principale");
   });
 });

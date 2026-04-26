@@ -488,3 +488,10 @@
 - **Why**: All four US-050 acceptance criteria required code changes; the free-practice fix was a one-line UI bug; the purge service was the most architecturally significant addition.
 - **Learned**: Sharing the `INTERVIEW_STORE` token between `InterviewService` and `InterviewPurgeService` via a named provider constant is the correct pattern for NestJS when two services need the same infrastructure object.
 - **Open**: Audio blob URL is transient — MinIO-backed persistence is a future sprint. Purge `setInterval` should become a BullMQ cron job once MinIO lands.
+
+## 2026-04-26 — US-060
+
+- **Did**: Refactored `AppShell` in `packages/ui` for desktop-first navigation: new `MobileDrawerNav` `"use client"` component with hamburger + slide-in drawer; updated `ShellTopBar` with breadcrumb + avatar + notification bell; 240px fixed sidebar at ≥1024px; role-gated Admin nav item via `filterNavForRole()`; updated 12 authenticated pages to pass `userEmail`/`userRole`/`breadcrumb` from their existing sessions; updated `content.ts` with canonical 8-item nav; 204 tests passing.
+- **Why**: US-060 sprint 016 — desktop-first UX redesign baseline navigation.
+- **Learned**: `"use client"` components work cleanly in `packages/ui` for Next.js App Router; SSR-safe because `useState(false)` means drawer stays closed on initial render. The `MobileDrawerNav` hamburger renders in `renderToStaticMarkup` tests, enabling full coverage without Next.js runtime.
+- **Open**: Focus-trap within drawer is advisory (tab cycles outside drawer on some screen readers). Consider a proper `focus-trap-react` library if UX testing reveals issues.

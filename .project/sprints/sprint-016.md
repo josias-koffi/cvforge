@@ -13,15 +13,15 @@ Refondre la navigation et la gestion des candidatures en desktop-first : sidebar
 
 ## ✅ Tasks (3–8 max)
 
-- [ ] **[US-060]** Refondre la navigation en sidebar desktop-first avec drawer mobile
+- [x] **[US-060]** Refondre la navigation en sidebar desktop-first avec drawer mobile
   - Agent: `designer` + `developer`
   - Workflow: `analyze-design-dev-review`
   - Acceptance criteria:
-    - [ ] Sidebar fixe 240px présente sur tous les écrans authentifiés `≥ 1024px`
-    - [ ] Drawer mobile slide-in présent pour `< 768px` avec hamburger
-    - [ ] Items nav: Dashboard, Candidatures, Interview, Documents, Crédits, Profil, Notifications, Admin (role-gated)
-    - [ ] Focus ring visible sur tous les items (WCAG 2.1 AA)
-    - [ ] Top bar avec breadcrumb + avatar + notification bell
+    - [x] Sidebar fixe 240px présente sur tous les écrans authentifiés `≥ 1024px`
+    - [x] Drawer mobile slide-in présent pour `< 768px` avec hamburger
+    - [x] Items nav: Dashboard, Candidatures, Interview, Documents, Crédits, Profil, Notifications, Admin (role-gated)
+    - [x] Focus ring visible sur tous les items (WCAG 2.1 AA)
+    - [x] Top bar avec breadcrumb + avatar + notification bell
   - Source: vision `§2.5`, `§2.6`
 
 - [ ] **[US-061]** Convertir la liste candidatures en table filtrée avec slide-over détail
@@ -66,4 +66,4 @@ Refondre la navigation et la gestion des candidatures en desktop-first : sidebar
 
 ## ⚠️ To Clarify
 
-- Confirmer si le slide-over est préféré à la navigation directe (décision UX).
+- Confirmer si le slide-over est préféré à la navigation directe (décision UX). -> oui on confirme

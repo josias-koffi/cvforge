@@ -394,10 +394,13 @@ export default async function AdminTemplatesPage({
     <>
       <PaperStyles />
       <AppShell
-        title="Templates admin"
+        breadcrumb="Admin · Templates"
         description="Creation, edition et aperçu des templates CV ATS et LM ATS."
         headerAccessory={<NotificationBell />}
-        navigation={getAppNavigation("/admin/templates")}
+        navigation={getAppNavigation("/admin/templates", session.role)}
+        title="Templates admin"
+        userEmail={session.email}
+        userRole={session.role}
       >
         <div
           style={{

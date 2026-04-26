@@ -167,10 +167,13 @@ export default async function AdminPage(props: AdminPageProps) {
 
   return (
     <AppShell
-      title="Espace admin"
+      breadcrumb="Admin"
       description="Pilotage des utilisateurs, credits et acces admin depuis un registre unique."
       headerAccessory={<NotificationBell />}
-      navigation={getAppNavigation("/admin")}
+      navigation={getAppNavigation("/admin", session.role)}
+      title="Espace admin"
+      userEmail={session.email}
+      userRole={session.role}
     >
       <div style={{ display: "grid", gap: "1.5rem" }}>
         {statusMessage ? (

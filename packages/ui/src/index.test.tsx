@@ -98,31 +98,82 @@ describe("toPuckConfig", () => {
 });
 
 describe("AppShell", () => {
-  it("should render the provided title and description", () => {
+  it("renders topbar with breadcrumb and nav items", () => {
     const markup = renderToStaticMarkup(
       <>
         <PaperStyles />
         <AppShell
-          title="Paper Shell"
+          breadcrumb="Paper Shell"
           description="Rendered for coverage."
           headerAccessory={<span>Notifications</span>}
           navigation={shellNavigation}
+          title="Paper Shell"
         />
       </>,
     );
 
     expect(markup).toContain("Paper Shell");
-    expect(markup).toContain("Rendered for coverage.");
-    expect(markup).toContain("Papier &amp; Crayon");
+    expect(markup).toContain("CVforge");
     expect(markup).toContain("Navigation principale");
-    expect(markup).toContain("Sections principales");
     expect(markup).toContain("Dashboard");
     expect(markup).toContain("Notifications");
-    expect(markup).toContain("Composants de base disponibles");
-    expect(markup).toContain("WCAG AA ready");
     expect(markup).toContain("--paper-canvas");
     expect(markup).toContain("@media (min-width: 768px)");
     expect(markup).toContain("@media (min-width: 1024px)");
+  });
+
+  it("shows admin nav item for admin role and hides it for user role", () => {
+    const adminItems: ShellNavItem[] = [
+      ...shellNavigation,
+      { href: "/admin", label: "Admin", description: "Espace admin", requiresAdmin: true },
+    ];
+
+    const adminMarkup = renderToStaticMarkup(
+      <AppShell
+        description="Admin"
+        navigation={adminItems}
+        title="Admin"
+        userRole="admin"
+      />,
+    );
+    const userMarkup = renderToStaticMarkup(
+      <AppShell
+        description="User"
+        navigation={adminItems}
+        title="User"
+        userRole="user"
+      />,
+    );
+
+    expect(adminMarkup).toContain("Espace admin");
+    expect(userMarkup).not.toContain("Espace admin");
+  });
+
+  it("renders avatar with email initial when userEmail provided", () => {
+    const markup = renderToStaticMarkup(
+      <AppShell
+        description="Test"
+        navigation={shellNavigation}
+        title="Test"
+        userEmail="jane@example.com"
+      />,
+    );
+
+    expect(markup).toContain("J");
+    expect(markup).toContain("jane@example.com");
+  });
+
+  it("renders hamburger button for mobile nav", () => {
+    const markup = renderToStaticMarkup(
+      <AppShell
+        description="Test"
+        navigation={shellNavigation}
+        title="Test"
+      />,
+    );
+
+    expect(markup).toContain("Ouvrir le menu");
+    expect(markup).toContain("cvforge-shell__hamburger");
   });
 });
 

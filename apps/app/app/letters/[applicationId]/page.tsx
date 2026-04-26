@@ -69,7 +69,7 @@ async function fetchLetterVersions(
 }
 
 export default async function LetterPage({ params }: LetterPageProps) {
-  await requireSession();
+  const session = await requireSession();
   const { applicationId } = await params;
   const [letterContent, versions] = await Promise.all([
     fetchLetterContent(applicationId),
@@ -82,10 +82,13 @@ export default async function LetterPage({ params }: LetterPageProps) {
 
   return (
     <AppShell
+      breadcrumb="Documents · LM"
       description="Editez la lettre de motivation générée dans le template LM ATS par défaut."
       headerAccessory={<NotificationBell />}
-      navigation={getAppNavigation("/candidatures")}
+      navigation={getAppNavigation("/candidatures", session.role)}
       title="Edition de la LM"
+      userEmail={session.email}
+      userRole={session.role}
     >
       <LetterEditor
         applicationId={applicationId}

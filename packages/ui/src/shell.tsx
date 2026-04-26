@@ -1,16 +1,7 @@
 import React from "react";
 import { paperTokenCssVars } from "./design-system";
 import { Badge } from "./badge";
-import { Button } from "./button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "./card";
-import { Input, Label, Textarea } from "./field";
+import { MobileDrawerNav } from "./shell-mobile-nav";
 
 export type ShellNavItem = {
   href: string;
@@ -18,6 +9,7 @@ export type ShellNavItem = {
   description: string;
   shortLabel?: string;
   isActive?: boolean;
+  requiresAdmin?: boolean;
 };
 
 type AppShellProps = {
@@ -26,195 +18,143 @@ type AppShellProps = {
   eyebrow?: string;
   headerAccessory?: React.ReactNode;
   navigation: ShellNavItem[];
+  userEmail?: string;
+  userRole?: "user" | "admin";
+  breadcrumb?: string;
   children?: React.ReactNode;
 };
 
-const defaultSections = (
-  <section className="cvforge-shell__grid" aria-label="Design system foundations">
-    <Card>
-      <CardHeader>
-        <CardTitle>Composants de base disponibles</CardTitle>
-        <CardDescription>
-          Les primitives suivent les conventions shadcn/ui et restent stylées
-          via les tokens partagés du design system.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="cvforge-shell__stack">
-        <Button size="sm">Primary</Button>
-        <Button size="sm" variant="secondary">
-          Secondary
-        </Button>
-        <Button size="sm" variant="ghost">
-          Ghost
-        </Button>
-        <Badge>Accent</Badge>
-      </CardContent>
-      <CardFooter>
-        <p className="cvforge-shell__meta">
-          Palette ivoire, contrastes lisibles, et surfaces tactiles coherentes
-          sur mobile comme sur desktop.
-        </p>
-      </CardFooter>
-    </Card>
+function getEmailInitial(email?: string): string {
+  if (!email) return "?";
+  return email.charAt(0).toUpperCase();
+}
 
-    <Card>
-      <CardHeader>
-        <CardTitle>Formulaires accessibles</CardTitle>
-        <CardDescription>
-          Labels explicites, focus visibles, et champs confortables pour les
-          etapes d&apos;onboarding et d&apos;edition.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form className="cvforge-shell__form">
-          <div className="cvforge-shell__field">
-            <Label htmlFor="job-title">Poste cible</Label>
-            <Input id="job-title" placeholder="Ex. Product Designer" />
-          </div>
-          <div className="cvforge-shell__field">
-            <Label htmlFor="motivation">Resume de motivation</Label>
-            <Textarea
-              id="motivation"
-              placeholder="Decrivez votre angle de candidature."
-            />
-          </div>
-        </form>
-      </CardContent>
-      <CardFooter>
-        <Button variant="secondary">Preremplir depuis le profil</Button>
-      </CardFooter>
-    </Card>
+function filterNavForRole(
+  items: ShellNavItem[],
+  role?: "user" | "admin",
+): ShellNavItem[] {
+  return items.filter((item) => !item.requiresAdmin || role === "admin");
+}
 
-    <Card>
-      <CardHeader>
-        <CardTitle>Patterns mobile-first</CardTitle>
-        <CardDescription>
-          Le shell reste en colonne unique par defaut et s&apos;ouvre en grille
-          des la tablette.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <ul className="cvforge-shell__list">
-          <li>Actions prioritaires groupees au-dessus de la ligne de flottaison</li>
-          <li>Champs pleine largeur avec libelles associes</li>
-          <li>Cards reutilisables pour dashboard, onboarding et landing</li>
-        </ul>
-      </CardContent>
-    </Card>
-  </section>
-);
-
-function NavigationList({
-  items,
-  className,
+function DesktopSidebar({
+  eyebrow,
+  navigation,
 }: {
-  items: ShellNavItem[];
-  className: string;
+  eyebrow: string;
+  navigation: ShellNavItem[];
 }) {
   return (
-    <ul className={className}>
-      {items.map((item) => (
-        <li key={item.href}>
-          <a
-            aria-current={item.isActive ? "page" : undefined}
-            className="cvforge-shell__nav-link"
-            href={item.href}
-          >
-            <span className="cvforge-shell__nav-label">{item.label}</span>
-            <span className="cvforge-shell__nav-description">
-              {item.description}
-            </span>
-          </a>
-        </li>
-      ))}
-    </ul>
+    <aside className="cvforge-shell__sidebar">
+      <div className="cvforge-shell__sidebar-brand">
+        <Badge className="cvforge-shell__eyebrow" variant="outline">
+          {eyebrow}
+        </Badge>
+      </div>
+      <nav aria-label="Navigation principale" className="cvforge-shell__sidebar-nav">
+        <ul className="cvforge-shell__sidebar-nav-list">
+          {navigation.map((item) => (
+            <li key={item.href}>
+              <a
+                aria-current={item.isActive ? "page" : undefined}
+                className="cvforge-shell__nav-link"
+                href={item.href}
+              >
+                <span className="cvforge-shell__nav-label">{item.label}</span>
+                <span className="cvforge-shell__nav-description">
+                  {item.description}
+                </span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </nav>
+    </aside>
   );
 }
 
-function MobileNavigation({ items }: { items: ShellNavItem[] }) {
+function ShellTopBar({
+  breadcrumb,
+  eyebrow,
+  headerAccessory,
+  navigation,
+  userEmail,
+}: {
+  eyebrow: string;
+  breadcrumb?: string;
+  headerAccessory?: React.ReactNode;
+  userEmail?: string;
+  navigation: ShellNavItem[];
+}) {
   return (
-    <nav
-      aria-label="Sections principales"
-      className="cvforge-shell__mobile-nav"
-    >
-      <ul className="cvforge-shell__mobile-nav-list">
-        {items.map((item) => (
-          <li key={item.href}>
-            <a
-              aria-current={item.isActive ? "page" : undefined}
-              className="cvforge-shell__mobile-nav-link"
-              href={item.href}
-            >
-              <span className="cvforge-shell__mobile-nav-kicker">
-                {item.shortLabel ?? item.label.slice(0, 2).toUpperCase()}
-              </span>
-              <span className="cvforge-shell__mobile-nav-label">{item.label}</span>
-            </a>
-          </li>
-        ))}
-      </ul>
-    </nav>
+    <header className="cvforge-shell__topbar">
+      <div className="cvforge-shell__topbar-left">
+        <div className="cvforge-shell__topbar-mobile-controls">
+          <MobileDrawerNav items={navigation} />
+        </div>
+        <Badge className="cvforge-shell__eyebrow cvforge-shell__topbar-brand" variant="outline">
+          {eyebrow}
+        </Badge>
+        {breadcrumb ? (
+          <nav aria-label="Fil d'Ariane" className="cvforge-shell__breadcrumb">
+            <ol className="cvforge-shell__breadcrumb-list">
+              <li className="cvforge-shell__breadcrumb-item">
+                <span aria-current="page">{breadcrumb}</span>
+              </li>
+            </ol>
+          </nav>
+        ) : null}
+      </div>
+      <div className="cvforge-shell__topbar-right">
+        {headerAccessory ? (
+          <div className="cvforge-shell__topbar-accessory">{headerAccessory}</div>
+        ) : null}
+        {userEmail ? (
+          <div
+            aria-label={userEmail}
+            className="cvforge-shell__avatar"
+            role="img"
+            title={userEmail}
+          >
+            {getEmailInitial(userEmail)}
+          </div>
+        ) : null}
+      </div>
+    </header>
   );
 }
 
 export function AppShell({
   title,
   description,
-  eyebrow = "CVforge · Papier & Crayon",
+  eyebrow = "CVforge",
   headerAccessory,
   navigation,
+  userEmail,
+  userRole,
+  breadcrumb,
   children,
 }: AppShellProps) {
+  const filteredNav = filterNavForRole(navigation, userRole);
+
   return (
-    <main className="cvforge-shell" style={paperTokenCssVars()}>
-      <section className="cvforge-shell__frame">
-        <aside className="cvforge-shell__sidebar">
-          <div className="cvforge-shell__sidebar-header">
-            <Badge className="cvforge-shell__eyebrow" variant="outline">
-              {eyebrow}
-            </Badge>
-            <p className="cvforge-shell__sidebar-copy">
-              Shell partage pour landing, app et futurs parcours authentifies.
-            </p>
+    <div className="cvforge-shell" style={paperTokenCssVars()}>
+      <ShellTopBar
+        breadcrumb={breadcrumb ?? title}
+        eyebrow={eyebrow}
+        headerAccessory={headerAccessory}
+        navigation={filteredNav}
+        userEmail={userEmail}
+      />
+      <div className="cvforge-shell__body">
+        <DesktopSidebar eyebrow={eyebrow} navigation={filteredNav} />
+        <main className="cvforge-shell__main">
+          <div className="cvforge-shell__page-header">
+            <h1 className="cvforge-shell__page-title">{title}</h1>
+            <p className="cvforge-shell__page-description">{description}</p>
           </div>
-          <nav aria-label="Navigation principale" className="cvforge-shell__sidebar-nav">
-            <NavigationList
-              className="cvforge-shell__sidebar-nav-list"
-              items={navigation}
-            />
-          </nav>
-        </aside>
-
-        <section className="cvforge-shell__main">
-          <Card className="cvforge-shell__hero">
-            <div className="cvforge-shell__hero-topline">
-              <Badge className="cvforge-shell__eyebrow" variant="outline">
-                {eyebrow}
-              </Badge>
-              {headerAccessory ? (
-                <div className="cvforge-shell__hero-accessory">
-                  {headerAccessory}
-                </div>
-              ) : null}
-            </div>
-            <div className="cvforge-shell__hero-copy">
-              <h1 className="cvforge-shell__title">{title}</h1>
-              <p className="cvforge-shell__description">{description}</p>
-            </div>
-            <div className="cvforge-shell__actions">
-              <Button size="lg">Commencer un CV</Button>
-              <Button size="lg" variant="secondary">
-                Voir les templates
-              </Button>
-              <Badge variant="success">WCAG AA ready</Badge>
-            </div>
-          </Card>
-
-          {children ?? defaultSections}
-        </section>
-      </section>
-
-      <MobileNavigation items={navigation} />
-    </main>
+          {children}
+        </main>
+      </div>
+    </div>
   );
 }

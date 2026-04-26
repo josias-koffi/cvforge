@@ -65,7 +65,7 @@ async function fetchCvVersions(
 }
 
 export default async function CvPage({ params }: CvPageProps) {
-  await requireSession();
+  const session = await requireSession();
   const { applicationId } = await params;
   const [cvContent, versions] = await Promise.all([
     fetchCvContent(applicationId),
@@ -80,10 +80,13 @@ export default async function CvPage({ params }: CvPageProps) {
 
   return (
     <AppShell
+      breadcrumb="Documents · CV"
       description="Editez le CV généré dans une structure WYSIWYG compatible avec l'export PDF."
       headerAccessory={<NotificationBell />}
-      navigation={getAppNavigation("/candidatures")}
+      navigation={getAppNavigation("/candidatures", session.role)}
       title="Edition du CV"
+      userEmail={session.email}
+      userRole={session.role}
     >
       <CvEditor
         applicationId={applicationId}

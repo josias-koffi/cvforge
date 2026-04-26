@@ -213,10 +213,13 @@ export default async function DashboardPage(props: DashboardPageProps) {
 
   return (
     <AppShell
-      title="Tableau de bord candidat"
+      breadcrumb="Dashboard"
       description="Point d'entree du parcours apres validation de l'onboarding et edition du profil."
       headerAccessory={<NotificationBell />}
-      navigation={getAppNavigation("/dashboard")}
+      navigation={getAppNavigation("/dashboard", session.role)}
+      title="Tableau de bord candidat"
+      userEmail={session.email}
+      userRole={session.role}
     >
       <div style={{ display: "grid", gap: "1.5rem" }}>
         {billingMessage ? (

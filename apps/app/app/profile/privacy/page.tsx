@@ -40,10 +40,13 @@ export default async function ProfilePrivacyPage() {
 
   return (
     <AppShell
-      title="Confidentialite et RGPD"
+      breadcrumb="Profil · Confidentialité"
       description="Acces aux donnees personnelles exportables, suppression irreversible du compte et politique de retention MVP."
       headerAccessory={<NotificationBell />}
-      navigation={getAppNavigation("/profile")}
+      navigation={getAppNavigation("/profile", session.role)}
+      title="Confidentialite et RGPD"
+      userEmail={session.email}
+      userRole={session.role}
     >
       <PrivacyManager
         retentionPolicy={retentionPolicy}

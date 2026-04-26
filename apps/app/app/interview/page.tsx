@@ -50,10 +50,13 @@ export default async function InterviewPage() {
 
   return (
     <AppShell
+      breadcrumb="Interview"
       description="Prototype V1.2 du pipeline interview vocal: capture navigateur, ingestion backend et STT progressif."
       headerAccessory={<NotificationBell />}
-      navigation={getAppNavigation("/interview")}
+      navigation={getAppNavigation("/interview", session.role)}
       title="Interview vocal"
+      userEmail={session.email}
+      userRole={session.role}
     >
       <InterviewStudio
         applications={interviewApplications}

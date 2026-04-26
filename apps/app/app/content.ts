@@ -1,47 +1,22 @@
 import type { ShellNavItem } from "@cvforge/ui";
 
-type AppRoute =
-  | "/"
+export type AppRoute =
   | "/dashboard"
-  | "/credits"
-  | "/notifications"
-  | "/profile"
-  | "/cv"
   | "/candidatures"
   | "/interview"
+  | "/cv"
+  | "/credits"
+  | "/profile"
+  | "/notifications"
   | "/admin"
   | "/admin/templates";
 
 const baseNavigation: ShellNavItem[] = [
   {
-    href: "/",
-    label: "Onboarding",
-    description: "Profil initial en 5 etapes",
-    shortLabel: "ON",
-  },
-  {
     href: "/dashboard",
-    label: "Tableau de bord",
-    description: "Suivi du profil",
-    shortLabel: "TD",
-  },
-  {
-    href: "/credits",
-    label: "Mes credits",
-    description: "Solde et historique",
-    shortLabel: "CR",
-  },
-  {
-    href: "/profile",
-    label: "Profil de base",
-    description: "Edition des profils socles",
-    shortLabel: "PB",
-  },
-  {
-    href: "/cv",
-    label: "CV",
-    description: "Edition et exports",
-    shortLabel: "CV",
+    label: "Dashboard",
+    description: "Vue d'ensemble",
+    shortLabel: "DB",
   },
   {
     href: "/candidatures",
@@ -52,28 +27,52 @@ const baseNavigation: ShellNavItem[] = [
   {
     href: "/interview",
     label: "Interview",
-    description: "Preparation vocale",
+    description: "Préparation vocale",
     shortLabel: "IV",
+  },
+  {
+    href: "/cv",
+    label: "Documents",
+    description: "CV, lettres et exports",
+    shortLabel: "DC",
+  },
+  {
+    href: "/credits",
+    label: "Crédits",
+    description: "Solde et historique",
+    shortLabel: "CR",
+  },
+  {
+    href: "/profile",
+    label: "Profil",
+    description: "Profils socles",
+    shortLabel: "PR",
+  },
+  {
+    href: "/notifications",
+    label: "Notifications",
+    description: "Rappels et alertes",
+    shortLabel: "NT",
   },
   {
     href: "/admin",
     label: "Admin",
-    description: "Espace reserve",
+    description: "Espace réservé",
     shortLabel: "AD",
-  },
-  {
-    href: "/admin/templates",
-    label: "Templates admin",
-    description: "Editor Puck",
-    shortLabel: "TP",
+    requiresAdmin: true,
   },
 ];
 
-export function getAppNavigation(activeHref: AppRoute): ShellNavItem[] {
-  return baseNavigation.map((item) => ({
-    ...item,
-    isActive: item.href === activeHref,
-  }));
+export function getAppNavigation(
+  activeHref: AppRoute,
+  role?: "user" | "admin",
+): ShellNavItem[] {
+  return baseNavigation
+    .filter((item) => !item.requiresAdmin || role === "admin")
+    .map((item) => ({
+      ...item,
+      isActive: item.href === activeHref || activeHref.startsWith(item.href + "/"),
+    }));
 }
 
 export const appContent = {

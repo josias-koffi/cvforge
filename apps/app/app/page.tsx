@@ -10,10 +10,13 @@ export default async function HomePage() {
 
   return (
     <AppShell
-      title="Onboarding candidat"
+      breadcrumb="Onboarding"
       description="Premier parcours mobile-first pour collecter les informations du profil candidat."
       headerAccessory={<NotificationBell />}
-      navigation={getAppNavigation("/")}
+      navigation={getAppNavigation("/dashboard", session.role)}
+      title="Onboarding candidat"
+      userEmail={session.email}
+      userRole={session.role}
     >
       <OnboardingWizard sessionEmail={session.email} />
     </AppShell>
