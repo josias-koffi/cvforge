@@ -380,6 +380,7 @@ export interface InterviewSessionSummary {
   id: string;
   language: Locale;
   lastError: string | null;
+  prefetchedQuestion: string | null;
   profile: InterviewRecruiterProfile;
   report: InterviewReport | null;
   recoverable: boolean;
