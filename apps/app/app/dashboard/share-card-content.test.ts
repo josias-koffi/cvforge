@@ -11,7 +11,7 @@ import {
 describe("dashboard share card content", () => {
   const baseData = {
     averageAtsScore: 82,
-    averageInterviewScore: 76,
+    averageInterviewScore: 8,
     generatedAt: "24 avr. 2026",
     interviewCount: 3,
     offerCount: 1,
@@ -26,7 +26,7 @@ describe("dashboard share card content", () => {
     expect(svg).toContain("24 avr. 2026");
     expect(svg).toContain("67%");
     expect(svg).toContain("82/100");
-    expect(svg).toContain("76/100");
+    expect(svg).toContain("8/10");
   });
 
   it("encodes the offsite LinkedIn sharing url", () => {

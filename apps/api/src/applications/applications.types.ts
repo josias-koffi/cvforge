@@ -5,6 +5,7 @@ import type {
   CVDocumentVersionEntry,
   DraftApplication,
   ExtractedOfferFields,
+  InterviewReport,
   LetterDocumentContent,
   LetterDocumentVersionEntry,
 } from "@cvforge/types";
@@ -16,6 +17,7 @@ export type ApplicationsConfig = {
 export type StoredApplication = DraftApplication & {
   cvContent: CVDocumentContent | null;
   cvVersions?: CVDocumentVersionEntry[];
+  interviewReports?: InterviewReport[];
   letterContent?: LetterDocumentContent | null;
   letterVersions?: LetterDocumentVersionEntry[];
   rawOfferText: string;

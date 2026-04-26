@@ -40,6 +40,7 @@ export class InterviewController {
       session.email,
       body?.language === "en" ? "en" : "fr",
       this.readProfile(body?.profile),
+      typeof body?.applicationId === "string" ? body.applicationId.trim() : "",
     );
   }
 
@@ -63,7 +64,7 @@ export class InterviewController {
   }
 
   @Post("sessions/:sessionId/finish")
-  finishSession(
+  async finishSession(
     @Param("sessionId") sessionId: string,
     @Req() request: RequestLike,
   ) {

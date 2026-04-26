@@ -127,8 +127,34 @@ describe("dashboard analytics", () => {
         createdAt: "2026-03-11T10:00:00.000Z",
         id: "app-mar",
         interviewReports: [
-          { createdAt: "2026-03-20T09:00:00.000Z", overallScore: 71 },
-          { createdAt: "2026-03-25T09:00:00.000Z", overallScore: 84 },
+          {
+            createdAt: "2026-03-20T09:00:00.000Z",
+            improvements: ["Structurer davantage la conclusion."],
+            metrics: [],
+            overallScore: 7,
+            summary: "Bon entretien.",
+            transcriptStats: {
+              averageResponseDurationSeconds: 35,
+              hesitationCount: 2,
+              keywordCoverage: 50,
+              keywordMentions: ["ats"],
+              responseCount: 3,
+            },
+          },
+          {
+            createdAt: "2026-03-25T09:00:00.000Z",
+            improvements: ["Mieux illustrer les resultats."],
+            metrics: [],
+            overallScore: 8,
+            summary: "Entretien solide.",
+            transcriptStats: {
+              averageResponseDurationSeconds: 32,
+              hesitationCount: 1,
+              keywordCoverage: 70,
+              keywordMentions: ["ats", "dashboard"],
+              responseCount: 4,
+            },
+          },
         ],
         status: "interview_scheduled",
         updatedAt: "2026-03-12T10:00:00.000Z",
@@ -159,6 +185,6 @@ describe("dashboard analytics", () => {
       segments.find((segment) => segment.status === "interview_scheduled")?.count,
     ).toBe(1);
     expect(interviews.points).toHaveLength(2);
-    expect(interviews.averageScore).toBe(78);
+    expect(interviews.averageScore).toBe(8);
   });
 });

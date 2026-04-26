@@ -26,11 +26,14 @@ export async function POST(request: Request) {
     body?.profile === "behavioral"
       ? body.profile
       : "standard";
+  const applicationId =
+    typeof body?.applicationId === "string" ? body.applicationId.trim() : "";
 
   const cookieStore = await cookies();
   const cookieHeader = getCookieHeader(cookieStore);
   const apiResponse = await fetch(`${getServerApiUrl()}/interviews/sessions`, {
     body: JSON.stringify({
+      applicationId: applicationId || undefined,
       language: body?.language === "en" ? "en" : "fr",
       profile,
     }),

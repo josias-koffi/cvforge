@@ -40,6 +40,7 @@ export function LineChartCard({
 }: LineChartProps) {
   const values = points.map(getPointValue);
   const safeMax = Math.max(maxValue ?? 0, ...values, 1);
+  const scoreSuffix = safeMax <= 10 ? "/10" : "/100";
   const chartPoints = buildChartPoints(values, safeMax);
   const polyline = createPolyline(chartPoints);
 
@@ -111,7 +112,7 @@ export function LineChartCard({
                 <span style={{ color: SUBTLE_TEXT, fontSize: "0.9rem" }}>{point.label}</span>
                 <strong style={{ color: "#1A1A18" }}>
                   {getPointValue(point)}
-                  {"score" in point ? "/100" : ""}
+                  {"score" in point ? scoreSuffix : ""}
                 </strong>
               </div>
             ))}

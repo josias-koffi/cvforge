@@ -17,11 +17,15 @@ import {
   INTERVIEW_SESSION_STATUS_RECORDING,
   type Locale,
   type InterviewAIResponseEvent,
+  type InterviewReport,
+  type InterviewReportMetric,
   type InterviewRecruiterProfile,
   type InterviewTranscriptionChunkRequest,
 } from "@cvforge/types";
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { Injectable, BadRequestException, NotFoundException } from "@nestjs/common";
 import type { OpenRouterService } from "../ai/openrouter.service";
+import type { ApplicationsService } from "../applications/applications.service";
+import type { StoredApplication } from "../applications/applications.types";
 import type { InterviewStore, StoredInterviewSession } from "./interview.types";
 import { sortChunks, summarizeInterviewSession } from "./interview.types";
 
@@ -35,6 +39,61 @@ const INTERVIEW_PROVIDER = {
   allow_fallbacks: false,
   order: ["mistral"] as string[],
   require_parameters: true,
+} as const;
+const HESITATION_TOKENS = [
+  "euh",
+  "heu",
+  "hum",
+  "uh",
+  "um",
+  "erm",
+] as const;
+const REPORT_RESPONSE_FORMAT = {
+  type: "json_schema",
+  json_schema: {
+    name: "interview_report",
+    strict: true,
+    schema: {
+      type: "object",
+      additionalProperties: false,
+      properties: {
+        overallScore: { type: "integer", minimum: 0, maximum: 10 },
+        summary: { type: "string" },
+        improvements: {
+          type: "array",
+          items: { type: "string" },
+          minItems: 1,
+          maxItems: 3,
+        },
+        metrics: {
+          type: "array",
+          minItems: 5,
+          maxItems: 5,
+          items: {
+            type: "object",
+            additionalProperties: false,
+            properties: {
+              key: {
+                type: "string",
+                enum: [
+                  "clarity",
+                  "keywords",
+                  "pacing",
+                  "hesitations",
+                  "relevance",
+                ],
+              },
+              label: { type: "string" },
+              score: { type: "integer", minimum: 0, maximum: 10 },
+              detail: { type: "string" },
+            },
+            required: ["key", "label", "score", "detail"],
+          },
+        },
+      },
+      required: ["overallScore", "summary", "improvements", "metrics"],
+    },
+  },
 } as const;
 
 type InterviewLanguageConfig = {
@@ -126,20 +185,80 @@ function joinTranscript(session: StoredInterviewSession) {
     .trim();
 }
 
+function normalizeToken(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, " ");
+}
+
+function extractKeywords(values: Array<string | null | undefined>) {
+  return [...new Set(
+    values
+      .flatMap((value) => normalizeToken(value ?? "").split(/\s+/))
+      .map((token) => token.trim())
+      .filter((token) => token.length >= 4),
+  )];
+}
+
+function countHesitations(transcript: string) {
+  const normalized = normalizeToken(transcript);
+
+  return HESITATION_TOKENS.reduce(
+    (count, token) =>
+      count +
+      (normalized.match(new RegExp(`\\b${token}\\b`, "g"))?.length ?? 0),
+    0,
+  );
+}
+
+function averageChunkDurationSeconds(chunks: StoredInterviewSession["chunks"]) {
+  const durations = chunks
+    .map((chunk) => {
+      const startedAt = new Date(chunk.startedAt).getTime();
+      const endedAt = new Date(chunk.endedAt).getTime();
+
+      if (!Number.isFinite(startedAt) || !Number.isFinite(endedAt) || endedAt <= startedAt) {
+        return null;
+      }
+
+      return (endedAt - startedAt) / 1000;
+    })
+    .filter((value): value is number => value !== null);
+
+  if (durations.length === 0) {
+    return null;
+  }
+
+  return Math.round(
+    durations.reduce((sum, value) => sum + value, 0) / durations.length,
+  );
+}
+
 @Injectable()
 export class InterviewService {
   constructor(
     private readonly store: InterviewStore,
     private readonly openRouter: OpenRouterService,
+    private readonly applicationsService: ApplicationsService,
   ) {}
 
   startSession(
     userEmail: string,
     language: Locale = "fr",
     profile: InterviewRecruiterProfile = INTERVIEW_PROFILE_STANDARD,
+    applicationId = "",
   ) {
+    const linkedApplicationId = applicationId.trim() || null;
+
+    if (linkedApplicationId) {
+      this.applicationsService.getOwnedApplication(userEmail, linkedApplicationId);
+    }
+
     const createdAt = nowIso();
     const session: StoredInterviewSession = {
+      applicationId: linkedApplicationId,
       aiResponse: null,
       aiResponseGeneratedAt: null,
       aiStatus: INTERVIEW_AI_STATUS_IDLE,
@@ -150,6 +269,7 @@ export class InterviewService {
       language,
       lastError: null,
       profile,
+      report: null,
       recoverable: true,
       status: INTERVIEW_SESSION_STATUS_IDLE,
       transcript: "",
@@ -170,15 +290,39 @@ export class InterviewService {
   }
 
   finishSession(userEmail: string, sessionId: string) {
+    return this.finishSessionInternal(userEmail, sessionId);
+  }
+
+  private async finishSessionInternal(userEmail: string, sessionId: string) {
     const session = this.getOwnedSession(userEmail, sessionId);
-    const completedAt = nowIso();
+
+    if (!session.transcript.trim()) {
+      throw new BadRequestException(
+        "Aucune transcription disponible pour generer le rapport.",
+      );
+    }
+
+    const linkedApplication = session.applicationId
+      ? this.applicationsService.getOwnedApplication(userEmail, session.applicationId)
+      : null;
+    const report = await this.generateInterviewReport(session, linkedApplication);
+    const completedAt = report.createdAt;
 
     session.completedAt = completedAt;
     session.lastError = null;
+    session.report = report;
     session.recoverable = false;
     session.status = INTERVIEW_SESSION_STATUS_COMPLETED;
     session.updatedAt = completedAt;
     this.store.save(session);
+
+    if (linkedApplication) {
+      this.applicationsService.appendInterviewReport(
+        userEmail,
+        linkedApplication.id,
+        report,
+      );
+    }
 
     return summarizeInterviewSession(session);
   }
@@ -349,6 +493,144 @@ export class InterviewService {
 
   private getLanguageConfig(language: Locale): InterviewLanguageConfig {
     return LANGUAGE_CONFIG[language] ?? LANGUAGE_CONFIG.fr;
+  }
+
+  private async generateInterviewReport(
+    session: StoredInterviewSession,
+    application: StoredApplication | null,
+  ): Promise<InterviewReport> {
+    const createdAt = nowIso();
+    const transcriptStats = this.buildTranscriptStats(session, application);
+    const applicationContext = application
+      ? [
+          `Offer title: ${application.extracted.title}`,
+          `Company: ${application.extracted.companyName ?? "Unknown"}`,
+          `Summary: ${application.extracted.summary}`,
+          `Requirements: ${application.extracted.requirements.join(", ") || "None"}`,
+          `Responsibilities: ${application.extracted.responsibilities.join(", ") || "None"}`,
+        ].join("\n")
+      : "No linked application context.";
+    const reportPrompt =
+      session.language === "en"
+        ? [
+            "You are evaluating a mock interview transcript.",
+            "Score each metric from 0 to 10.",
+            "Use the provided transcript statistics as supporting evidence, but assess the transcript content directly.",
+            "Keep details concise, factual, and useful for a candidate.",
+          ].join(" ")
+        : [
+            "Tu evalues la transcription d'un entretien blanc.",
+            "Note chaque metrique de 0 a 10.",
+            "Utilise les statistiques fournies comme indices, mais evalue directement le contenu de la transcription.",
+            "Les details doivent rester concis, factuels et actionnables pour le candidat.",
+          ].join(" ");
+
+    const raw = await this.openRouter.chat(
+      [
+        {
+          role: "system",
+          content: reportPrompt,
+        },
+        {
+          role: "user",
+          content: [
+            `Interview language: ${session.language}`,
+            `Recruiter profile: ${session.profile}`,
+            applicationContext,
+            `Transcript: ${session.transcript}`,
+            `Average response duration (seconds): ${
+              transcriptStats.averageResponseDurationSeconds ?? "unknown"
+            }`,
+            `Hesitation count: ${transcriptStats.hesitationCount}`,
+            `Keyword coverage (%): ${transcriptStats.keywordCoverage}`,
+            `Keyword mentions: ${
+              transcriptStats.keywordMentions.join(", ") || "none"
+            }`,
+            `Response count: ${transcriptStats.responseCount}`,
+          ].join("\n\n"),
+        },
+      ],
+      {
+        maxTokens: 500,
+        model: AI_MODEL,
+        provider: INTERVIEW_PROVIDER,
+        responseFormat: REPORT_RESPONSE_FORMAT,
+        temperature: 0.2,
+      },
+    );
+
+    const parsed = JSON.parse(raw) as {
+      improvements?: string[];
+      metrics?: InterviewReportMetric[];
+      overallScore?: number;
+      summary?: string;
+    };
+    const metrics = Array.isArray(parsed.metrics)
+      ? parsed.metrics
+          .map((metric) => ({
+            detail: typeof metric.detail === "string" ? metric.detail.trim() : "",
+            key: metric.key,
+            label: typeof metric.label === "string" ? metric.label.trim() : "",
+            score:
+              typeof metric.score === "number"
+                ? Math.max(0, Math.min(10, Math.round(metric.score)))
+                : 0,
+          }))
+          .filter(
+            (metric): metric is InterviewReportMetric =>
+              metric.key === "clarity" ||
+              metric.key === "keywords" ||
+              metric.key === "pacing" ||
+              metric.key === "hesitations" ||
+              metric.key === "relevance",
+          )
+      : [];
+
+    return {
+      createdAt,
+      improvements: Array.isArray(parsed.improvements)
+        ? parsed.improvements
+            .map((item) => (typeof item === "string" ? item.trim() : ""))
+            .filter((item) => item.length > 0)
+        : [],
+      metrics,
+      overallScore:
+        typeof parsed.overallScore === "number"
+          ? Math.max(0, Math.min(10, Math.round(parsed.overallScore)))
+          : 0,
+      summary: typeof parsed.summary === "string" ? parsed.summary.trim() : "",
+      transcriptStats,
+    };
+  }
+
+  private buildTranscriptStats(
+    session: StoredInterviewSession,
+    application: StoredApplication | null,
+  ) {
+    const keywords = application
+      ? extractKeywords([
+          application.extracted.title,
+          application.extracted.summary,
+          application.extracted.companyName,
+          ...application.extracted.requirements,
+          ...application.extracted.responsibilities,
+        ])
+      : [];
+    const transcriptKeywords = new Set(extractKeywords([session.transcript]));
+    const keywordMentions = keywords.filter((keyword) =>
+      transcriptKeywords.has(keyword),
+    );
+
+    return {
+      averageResponseDurationSeconds: averageChunkDurationSeconds(session.chunks),
+      hesitationCount: countHesitations(session.transcript),
+      keywordCoverage:
+        keywords.length === 0
+          ? 0
+          : Math.round((keywordMentions.length / keywords.length) * 100),
+      keywordMentions,
+      responseCount: session.chunks.length,
+    };
   }
 
   private buildAiPrompt(

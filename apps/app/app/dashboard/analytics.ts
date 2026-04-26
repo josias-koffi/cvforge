@@ -2,17 +2,12 @@ import type {
   ApplicationStatus,
   CVDocumentVersionEntry,
   DraftApplication,
+  InterviewReport,
 } from "@cvforge/types";
-
-export type InterviewReportEntry = {
-  createdAt: string;
-  overallScore: number;
-  summary?: string;
-};
 
 export type DashboardApplication = DraftApplication & {
   cvVersions?: CVDocumentVersionEntry[];
-  interviewReports?: InterviewReportEntry[];
+  interviewReports?: InterviewReport[];
 };
 
 export type TrendPoint = {
@@ -347,7 +342,7 @@ export function buildInterviewInsights(
       (application.interviewReports ?? []).map((report, index) => ({
         createdAt: report.createdAt,
         label: `${application.extracted.title} ${index + 1}`,
-        score: roundScore(report.overallScore),
+        score: Math.max(0, Math.min(10, Math.round(report.overallScore))),
       })),
     )
     .sort(
@@ -361,7 +356,16 @@ export function buildInterviewInsights(
     averageScore:
       points.length === 0
         ? null
-        : roundScore(points.reduce((sum, point) => sum + point.score, 0) / points.length),
+        : Math.max(
+            0,
+            Math.min(
+              10,
+              Math.round(
+                points.reduce((sum, point) => sum + point.score, 0) /
+                  points.length,
+              ),
+            ),
+          ),
     points,
   };
 }

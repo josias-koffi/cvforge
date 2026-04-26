@@ -31,6 +31,7 @@ import {
   type CreateCheckoutSessionRequest,
   type CreateCheckoutSessionResponse,
   type DraftApplication,
+  type InterviewReport,
   HEALTH_STATUS_OK,
   type InAppNotification,
   type InterviewSessionStartResponse,
@@ -70,6 +71,7 @@ describe("types package", () => {
       createdAt: "2026-04-20T12:00:00.000Z",
       cvGeneratedAt: null,
       id: "app_123",
+      interviewReports: [],
       letterGeneratedAt: null,
       offerUrl: "https://example.com/jobs/123",
       offerTextPreview: "Lead the platform team and improve reliability.",
@@ -139,6 +141,7 @@ describe("types package", () => {
 
   it("should shape the interview streaming transcription contracts", () => {
     const startRequest: InterviewSessionStartRequest = {
+      applicationId: "app_123",
       language: "fr",
       profile: INTERVIEW_PROFILE_STANDARD,
     };
@@ -158,6 +161,7 @@ describe("types package", () => {
         aiResponse: null,
         aiResponseGeneratedAt: null,
         aiStatus: INTERVIEW_AI_STATUS_IDLE,
+        applicationId: "app_123",
         chunks: [
           {
             chunkId: "chunk-001",
@@ -178,6 +182,7 @@ describe("types package", () => {
         language: "fr",
         lastError: null,
         profile: INTERVIEW_PROFILE_STANDARD,
+        report: null,
         recoverable: true,
         status: INTERVIEW_SESSION_STATUS_RECORDING,
         transcript: "bonjour",
@@ -187,6 +192,7 @@ describe("types package", () => {
     };
 
     expect(startRequest.language).toBe("fr");
+    expect(startRequest.applicationId).toBe("app_123");
     expect(chunk.sequence).toBe(1);
     expect(response.session.status).toBe("recording");
     expect(response.session.chunks[0]?.transcript).toBe("bonjour");
@@ -208,6 +214,7 @@ describe("types package", () => {
         aiResponse: "Merci, nous avons termine.",
         aiResponseGeneratedAt: "2026-04-24T13:10:00.000Z",
         aiStatus: INTERVIEW_AI_STATUS_IDLE,
+        applicationId: "app_123",
         chunks: [],
         completedAt: "2026-04-24T13:11:00.000Z",
         createdAt: "2026-04-24T13:00:00.000Z",
@@ -215,6 +222,27 @@ describe("types package", () => {
         language: "en",
         lastError: null,
         profile: INTERVIEW_PROFILE_BEHAVIORAL,
+        report: {
+          createdAt: "2026-04-24T13:11:00.000Z",
+          improvements: ["Raccourcir certaines reponses."],
+          metrics: [
+            {
+              detail: "Reponses claires et structurees.",
+              key: "clarity",
+              label: "Clarte des reponses",
+              score: 8,
+            },
+          ],
+          overallScore: 8,
+          summary: "Entretien solide avec une bonne adequation au poste.",
+          transcriptStats: {
+            averageResponseDurationSeconds: 42,
+            hesitationCount: 2,
+            keywordCoverage: 67,
+            keywordMentions: ["typescript", "ats"],
+            responseCount: 3,
+          },
+        },
         recoverable: false,
         status: INTERVIEW_SESSION_STATUS_COMPLETED,
         transcript: "Thank you for your time.",
@@ -226,6 +254,43 @@ describe("types package", () => {
     expect(completedSession.session.completedAt).toBeTruthy();
     expect(completedSession.session.profile).toBe("behavioral");
     expect(completedSession.session.status).toBe("completed");
+    expect(completedSession.session.report?.overallScore).toBe(8);
+  });
+
+  it("should shape the persisted interview report contract", () => {
+    const report: InterviewReport = {
+      createdAt: "2026-04-24T13:11:00.000Z",
+      improvements: [
+        "Mieux illustrer les resultats obtenus.",
+        "Faire des reponses plus courtes.",
+      ],
+      metrics: [
+        {
+          detail: "Le discours reste clair et logique.",
+          key: "clarity",
+          label: "Clarte des reponses",
+          score: 8,
+        },
+        {
+          detail: "Les mots-cles majeurs de l'offre apparaissent.",
+          key: "keywords",
+          label: "Mots-cles metier mentionnes",
+          score: 7,
+        },
+      ],
+      overallScore: 8,
+      summary: "Bonne prestation globale avec quelques longueurs.",
+      transcriptStats: {
+        averageResponseDurationSeconds: 38,
+        hesitationCount: 3,
+        keywordCoverage: 60,
+        keywordMentions: ["typescript", "produit"],
+        responseCount: 4,
+      },
+    };
+
+    expect(report.metrics[0]?.score).toBe(8);
+    expect(report.transcriptStats.keywordCoverage).toBe(60);
   });
 
   it("should expose the supported credit packs", () => {

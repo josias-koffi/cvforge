@@ -7,6 +7,15 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { InterviewStudio } from "./interview-studio";
 
+const APPLICATIONS = [
+  {
+    companyName: "Acme",
+    id: "app-001",
+    status: "interview_scheduled",
+    title: "Product Engineer",
+  },
+];
+
 class FakeAudioBuffer {
   sampleRate = 48000;
   getChannelData() {
@@ -173,7 +182,12 @@ describe("InterviewStudio", () => {
       });
 
     await act(async () => {
-      root.render(<InterviewStudio sessionEmail="user@example.com" />);
+      root.render(
+        <InterviewStudio
+          applications={APPLICATIONS}
+          sessionEmail="user@example.com"
+        />,
+      );
     });
 
     // Click "Demarrer l'entretien"
@@ -197,7 +211,11 @@ describe("InterviewStudio", () => {
       1,
       "/interview/start",
       expect.objectContaining({
-        body: JSON.stringify({ language: "fr", profile: "standard" }),
+        body: JSON.stringify({
+          applicationId: "app-001",
+          language: "fr",
+          profile: "standard",
+        }),
         method: "POST",
       }),
     );
@@ -258,7 +276,12 @@ describe("InterviewStudio", () => {
       });
 
     await act(async () => {
-      root.render(<InterviewStudio sessionEmail="user@example.com" />);
+      root.render(
+        <InterviewStudio
+          applications={APPLICATIONS}
+          sessionEmail="user@example.com"
+        />,
+      );
     });
 
     await act(async () => {
@@ -307,7 +330,12 @@ describe("InterviewStudio", () => {
     });
 
     await act(async () => {
-      root.render(<InterviewStudio sessionEmail="user@example.com" />);
+      root.render(
+        <InterviewStudio
+          applications={APPLICATIONS}
+          sessionEmail="user@example.com"
+        />,
+      );
       await Promise.resolve();
     });
 
@@ -342,7 +370,12 @@ describe("InterviewStudio", () => {
     });
 
     await act(async () => {
-      root.render(<InterviewStudio sessionEmail="user@example.com" />);
+      root.render(
+        <InterviewStudio
+          applications={APPLICATIONS}
+          sessionEmail="user@example.com"
+        />,
+      );
     });
 
     await act(async () => {
@@ -363,7 +396,11 @@ describe("InterviewStudio", () => {
       1,
       "/interview/start",
       expect.objectContaining({
-        body: JSON.stringify({ language: "en", profile: "standard" }),
+        body: JSON.stringify({
+          applicationId: "app-001",
+          language: "en",
+          profile: "standard",
+        }),
       }),
     );
   });
@@ -393,7 +430,12 @@ describe("InterviewStudio", () => {
     });
 
     await act(async () => {
-      root.render(<InterviewStudio sessionEmail="user@example.com" />);
+      root.render(
+        <InterviewStudio
+          applications={APPLICATIONS}
+          sessionEmail="user@example.com"
+        />,
+      );
     });
 
     await act(async () => {
@@ -416,7 +458,11 @@ describe("InterviewStudio", () => {
       1,
       "/interview/start",
       expect.objectContaining({
-        body: JSON.stringify({ language: "fr", profile: "technical" }),
+        body: JSON.stringify({
+          applicationId: "app-001",
+          language: "fr",
+          profile: "technical",
+        }),
       }),
     );
     expect(container.textContent).toContain("Technique");
@@ -469,7 +515,12 @@ describe("InterviewStudio", () => {
       });
 
     await act(async () => {
-      root.render(<InterviewStudio sessionEmail="user@example.com" />);
+      root.render(
+        <InterviewStudio
+          applications={APPLICATIONS}
+          sessionEmail="user@example.com"
+        />,
+      );
       await Promise.resolve();
     });
 

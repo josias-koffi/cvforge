@@ -50,7 +50,7 @@ export function buildShareLegend(data: DashboardShareCardData) {
     data.averageAtsScore === null ? null : `ATS moyen: ${data.averageAtsScore}/100.`,
     data.averageInterviewScore === null
       ? null
-      : `Score entretien moyen: ${data.averageInterviewScore}/100.`,
+      : `Score entretien moyen: ${data.averageInterviewScore}/10.`,
     "Carte generee depuis mon tableau de bord CVforge.",
   ]
     .filter(Boolean)
@@ -148,7 +148,7 @@ export function buildDashboardShareCardSvg(data: DashboardShareCardData) {
     },
     {
       label: "Score entretien",
-      value: formatMetric(data.averageInterviewScore, "/100"),
+      value: formatMetric(data.averageInterviewScore, "/10"),
       x: 444,
       y: 332,
     },

@@ -163,8 +163,17 @@ describe("DashboardPage", () => {
               interviewReports: [
                 {
                   createdAt: "2026-04-23T08:30:00.000Z",
-                  overallScore: 78,
+                  improvements: ["Illustrer davantage les resultats."],
+                  metrics: [],
+                  overallScore: 8,
                   summary: "Bonne structuration.",
+                  transcriptStats: {
+                    averageResponseDurationSeconds: 34,
+                    hesitationCount: 2,
+                    keywordCoverage: 63,
+                    keywordMentions: ["ats", "analytics"],
+                    responseCount: 3,
+                  },
                 },
               ],
               updatedAt: "2026-04-21T18:30:00.000Z",
@@ -279,7 +288,7 @@ describe("DashboardPage", () => {
     expect(markup).toContain("Candidature suivie: Product Engineer");
     expect(markup).toContain("Product Engineer");
     expect(markup).toContain("2 version");
-    expect(markup).toContain("78/100");
+    expect(markup).toContain("8/10");
     expect(markup).toContain("Acces rapides");
     expect(markup).toContain("Nouvelle candidature");
     expect(markup).toContain("Mode interview");

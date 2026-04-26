@@ -9,6 +9,7 @@ const SESSION_SUMMARY: InterviewSessionSummary = {
   aiResponse: null,
   aiResponseGeneratedAt: null,
   aiStatus: "idle",
+  applicationId: "app-001",
   chunks: [],
   completedAt: null,
   createdAt: "2026-04-24T13:00:00.000Z",
@@ -16,6 +17,7 @@ const SESSION_SUMMARY: InterviewSessionSummary = {
   language: "fr",
   lastError: null,
   profile: "standard",
+  report: null,
   recoverable: true,
   status: "idle",
   transcript: "",
@@ -54,7 +56,7 @@ describe("InterviewController", () => {
   it("starts a session for an authenticated user", () => {
     const controller = makeController();
     const result = controller.startSession(
-      { language: "fr", profile: "technical" },
+      { applicationId: "app-001", language: "fr", profile: "technical" },
       {
       headers: { cookie: "cvforge_session=abc" },
       },
@@ -75,9 +77,9 @@ describe("InterviewController", () => {
     expect(result).toEqual(SESSION_SUMMARY);
   });
 
-  it("finishes a stored session for an authenticated user", () => {
+  it("finishes a stored session for an authenticated user", async () => {
     const controller = makeController();
-    const result = controller.finishSession("session-001", {
+    const result = await controller.finishSession("session-001", {
       headers: { cookie: "cvforge_session=abc" },
     });
 

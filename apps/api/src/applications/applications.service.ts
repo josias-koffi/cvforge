@@ -20,6 +20,7 @@ import {
   type ApplicationsKpiSummary,
   type DraftApplication,
   type ExtractedOfferFields,
+  type InterviewReport,
 } from "@cvforge/types";
 import { randomUUID } from "node:crypto";
 import type { OpenRouterService } from "../ai/openrouter.service";
@@ -218,6 +219,32 @@ export class ApplicationsService {
     };
   }
 
+  getOwnedApplication(userEmail: string, applicationId: string): StoredApplication {
+    const application = this.store.findByIdForUserEmail(userEmail, applicationId);
+
+    if (!application) {
+      throw new NotFoundException("La candidature est introuvable.");
+    }
+
+    return application;
+  }
+
+  appendInterviewReport(
+    userEmail: string,
+    applicationId: string,
+    report: InterviewReport,
+  ): DraftApplication {
+    const application = this.getOwnedApplication(userEmail, applicationId);
+    const timestamp = report.createdAt;
+    const updatedApplication: StoredApplication = {
+      ...application,
+      interviewReports: [...(application.interviewReports ?? []), report],
+      updatedAt: timestamp,
+    };
+
+    return stripRawOfferText(this.store.save(updatedApplication));
+  }
+
   updateStatus(
     userEmail: string,
     applicationId: string,
@@ -227,11 +254,7 @@ export class ApplicationsService {
       throw new BadRequestException("Le statut cible est invalide.");
     }
 
-    const application = this.store.findByIdForUserEmail(userEmail, applicationId);
-
-    if (!application) {
-      throw new NotFoundException("La candidature est introuvable.");
-    }
+    const application = this.getOwnedApplication(userEmail, applicationId);
 
     if (application.status === nextStatusValue) {
       throw new BadRequestException("La candidature possede deja ce statut.");

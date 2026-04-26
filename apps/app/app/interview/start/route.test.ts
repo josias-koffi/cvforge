@@ -16,6 +16,7 @@ describe("POST /interview/start", () => {
             aiResponse: null,
             aiResponseGeneratedAt: null,
             aiStatus: "idle",
+            applicationId: "app-001",
             chunks: [],
             completedAt: null,
             createdAt: "2026-04-24T13:00:00.000Z",
@@ -23,6 +24,7 @@ describe("POST /interview/start", () => {
             language: "fr",
             lastError: null,
             profile: "standard",
+            report: null,
             recoverable: true,
             status: "idle",
             transcript: "",
@@ -36,7 +38,11 @@ describe("POST /interview/start", () => {
 
     const response = await POST(
       new Request("http://localhost/interview/start", {
-        body: JSON.stringify({ language: "fr", profile: "technical" }),
+        body: JSON.stringify({
+          applicationId: "app-001",
+          language: "fr",
+          profile: "technical",
+        }),
         headers: { "Content-Type": "application/json" },
         method: "POST",
       }),
@@ -45,7 +51,11 @@ describe("POST /interview/start", () => {
     expect(fetch).toHaveBeenCalledWith(
       "http://localhost:3333/interviews/sessions",
       expect.objectContaining({
-        body: JSON.stringify({ language: "fr", profile: "technical" }),
+        body: JSON.stringify({
+          applicationId: "app-001",
+          language: "fr",
+          profile: "technical",
+        }),
         method: "POST",
       }),
     );
@@ -54,6 +64,7 @@ describe("POST /interview/start", () => {
         aiResponse: null,
         aiResponseGeneratedAt: null,
         aiStatus: "idle",
+        applicationId: "app-001",
         chunks: [],
         completedAt: null,
         createdAt: "2026-04-24T13:00:00.000Z",
@@ -61,6 +72,7 @@ describe("POST /interview/start", () => {
         language: "fr",
         lastError: null,
         profile: "standard",
+        report: null,
         recoverable: true,
         status: "idle",
         transcript: "",

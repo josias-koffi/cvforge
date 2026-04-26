@@ -4,6 +4,7 @@ import {
   type ApplicationStatus,
   type ApplicationStatusHistoryEntry,
   type CVDocumentVersionEntry,
+  type InterviewReport,
   type LetterDocumentVersionEntry,
 } from "@cvforge/types";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -72,6 +73,7 @@ function normalizeStoredApplication(
     cvContent: application.cvContent ?? null,
     cvGeneratedAt: application.cvGeneratedAt ?? null,
     cvTemplateId: application.cvTemplateId ?? null,
+    interviewReports: normalizeInterviewReports(application.interviewReports),
     letterContent: application.letterContent ?? null,
     letterGeneratedAt: application.letterGeneratedAt ?? null,
     letterTemplateId: application.letterTemplateId ?? null,
@@ -84,6 +86,96 @@ function normalizeStoredApplication(
       fallbackChangedAt,
     ),
   };
+}
+
+function normalizeInterviewReports(value: unknown): InterviewReport[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .map((entry) => {
+      if (!entry || typeof entry !== "object") {
+        return null;
+      }
+
+      const report = entry as Record<string, unknown>;
+      const transcriptStats =
+        report.transcriptStats && typeof report.transcriptStats === "object"
+          ? (report.transcriptStats as Record<string, unknown>)
+          : {};
+
+      const metrics = Array.isArray(report.metrics)
+        ? report.metrics
+            .map((metric) => {
+              if (!metric || typeof metric !== "object") {
+                return null;
+              }
+
+              const record = metric as Record<string, unknown>;
+              const score = typeof record.score === "number" ? record.score : 0;
+
+              return {
+                detail:
+                  typeof record.detail === "string" ? record.detail : "",
+                key:
+                  record.key === "clarity" ||
+                  record.key === "keywords" ||
+                  record.key === "pacing" ||
+                  record.key === "hesitations" ||
+                  record.key === "relevance"
+                    ? record.key
+                    : "clarity",
+                label:
+                  typeof record.label === "string" ? record.label : "",
+                score: Math.max(0, Math.min(10, Math.round(score))),
+              };
+            })
+            .filter((metric): metric is InterviewReport["metrics"][number] => metric !== null)
+        : [];
+
+      return {
+        createdAt:
+          typeof report.createdAt === "string"
+            ? report.createdAt
+            : new Date(0).toISOString(),
+        improvements: Array.isArray(report.improvements)
+          ? report.improvements
+              .map((item) => (typeof item === "string" ? item.trim() : ""))
+              .filter((item) => item.length > 0)
+          : [],
+        metrics,
+        overallScore:
+          typeof report.overallScore === "number"
+            ? Math.max(0, Math.min(10, Math.round(report.overallScore)))
+            : 0,
+        summary: typeof report.summary === "string" ? report.summary : "",
+        transcriptStats: {
+          averageResponseDurationSeconds:
+            typeof transcriptStats.averageResponseDurationSeconds === "number"
+              ? transcriptStats.averageResponseDurationSeconds
+              : null,
+          hesitationCount:
+            typeof transcriptStats.hesitationCount === "number"
+              ? Math.max(0, Math.round(transcriptStats.hesitationCount))
+              : 0,
+          keywordCoverage:
+            typeof transcriptStats.keywordCoverage === "number"
+              ? Math.max(0, Math.min(100, Math.round(transcriptStats.keywordCoverage)))
+              : 0,
+          keywordMentions: Array.isArray(transcriptStats.keywordMentions)
+            ? transcriptStats.keywordMentions
+                .map((item) => (typeof item === "string" ? item.trim() : ""))
+                .filter((item) => item.length > 0)
+            : [],
+          responseCount:
+            typeof transcriptStats.responseCount === "number"
+              ? Math.max(0, Math.round(transcriptStats.responseCount))
+              : 0,
+        },
+      };
+    })
+    .filter((report): report is InterviewReport => report !== null);
 }
 
 function normalizeCvVersions(

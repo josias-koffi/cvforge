@@ -13,6 +13,7 @@ import {
 } from "@cvforge/ui";
 import type {
   InterviewAIResponseEvent,
+  InterviewReport,
   InterviewRecruiterProfile,
   InterviewSessionStartRequest,
   InterviewSessionSummary,
@@ -45,6 +46,13 @@ type PipelineEvent = {
 type LatencyMeasure = {
   label: string;
   durationMs: number;
+};
+
+export type InterviewApplicationOption = {
+  companyName: string | null;
+  id: string;
+  status: string;
+  title: string;
 };
 
 const INTERVIEW_PROFILE_LABELS: Record<InterviewRecruiterProfile, string> = {
@@ -231,8 +239,25 @@ function stopRecorderIfRecording(recorder: MediaRecorder | null) {
   return true;
 }
 
-export function InterviewStudio({ sessionEmail }: { sessionEmail: string }) {
+function formatReportMetric(metric: InterviewReport["metrics"][number]) {
+  return `${metric.label} - ${metric.score}/10`;
+}
+
+function formatSeconds(value: number | null) {
+  return value === null ? "n/a" : `${value}s`;
+}
+
+export function InterviewStudio({
+  applications,
+  sessionEmail,
+}: {
+  applications: InterviewApplicationOption[];
+  sessionEmail: string;
+}) {
   const [session, setSession] = React.useState<InterviewSessionSummary | null>(null);
+  const [applicationId, setApplicationId] = React.useState(
+    applications[0]?.id ?? "",
+  );
   const [language, setLanguage] = React.useState<Locale>("fr");
   const [profile, setProfile] =
     React.useState<InterviewRecruiterProfile>("standard");
@@ -262,6 +287,9 @@ export function InterviewStudio({ sessionEmail }: { sessionEmail: string }) {
   const updateSession = React.useCallback((nextSession: InterviewSessionSummary) => {
     startTransition(() => {
       setSession(nextSession);
+      if (nextSession.applicationId) {
+        setApplicationId(nextSession.applicationId);
+      }
       setLanguage(nextSession.language);
       setProfile(nextSession.profile);
       setState(resolveStateFromSession(nextSession));
@@ -362,7 +390,11 @@ export function InterviewStudio({ sessionEmail }: { sessionEmail: string }) {
       return session.id;
     }
 
-    const startPayload: InterviewSessionStartRequest = { language, profile };
+    const startPayload: InterviewSessionStartRequest = {
+      applicationId: applicationId || undefined,
+      language,
+      profile,
+    };
     const response = await fetch("/interview/start", {
       body: JSON.stringify(startPayload),
       headers: { "Content-Type": "application/json" },
@@ -742,12 +774,20 @@ export function InterviewStudio({ sessionEmail }: { sessionEmail: string }) {
   const isSpeaking = isRecording && vadLevel > VAD_THRESHOLD;
   const languageLocked = Boolean(session?.id);
   const sessionCompleted = session?.status === "completed";
+  const selectedApplication =
+    applications.find((application) => application.id === applicationId) ?? null;
   const canFinishSession =
     Boolean(session?.id) &&
     !sessionCompleted &&
     state !== "booting" &&
     state !== "syncing" &&
     !isRecording;
+  const canStartInterview =
+    Boolean(applicationId) &&
+    state !== "booting" &&
+    state !== "syncing" &&
+    !isRecording &&
+    !sessionCompleted;
 
   return (
     <div style={{ display: "grid", gap: "1rem" }}>
@@ -907,13 +947,39 @@ export function InterviewStudio({ sessionEmail }: { sessionEmail: string }) {
                   <option value="behavioral">Comportemental</option>
                 </select>
               </label>
+              <label
+                style={{
+                  alignItems: "center",
+                  color: "#4E4A43",
+                  display: "flex",
+                  gap: "0.5rem",
+                }}
+              >
+                <span>Candidature</span>
+                <select
+                  aria-label="Candidature liee"
+                  disabled={languageLocked || isRecording || state === "syncing"}
+                  onChange={(event) => setApplicationId(event.target.value)}
+                  style={{
+                    background: "#FFFFFF",
+                    border: "1px solid #D9D4CA",
+                    borderRadius: "0.65rem",
+                    padding: "0.45rem 0.75rem",
+                  }}
+                  value={applicationId}
+                >
+                  {applications.length === 0 ? (
+                    <option value="">Aucune candidature exploitable</option>
+                  ) : null}
+                  {applications.map((application) => (
+                    <option key={application.id} value={application.id}>
+                      {application.title}
+                    </option>
+                  ))}
+                </select>
+              </label>
               <Button
-                disabled={
-                  state === "booting" ||
-                  state === "syncing" ||
-                  isRecording ||
-                  sessionCompleted
-                }
+                disabled={!canStartInterview}
                 onClick={() => void startCapture()}
                 type="button"
               >
@@ -951,6 +1017,22 @@ export function InterviewStudio({ sessionEmail }: { sessionEmail: string }) {
           >
             {INTERVIEW_PROFILE_HINTS[profile]}
           </p>
+          <p
+            style={{
+              color: "#6B6860",
+              fontSize: "0.95rem",
+              lineHeight: 1.5,
+              margin: 0,
+            }}
+          >
+            {selectedApplication
+              ? `Rapport sauvegarde sur ${selectedApplication.title}${
+                  selectedApplication.companyName
+                    ? ` · ${selectedApplication.companyName}`
+                    : ""
+                }.`
+              : "Selectionnez une candidature pour lier le rapport post-entretien au dashboard."}
+          </p>
 
           <p
             role={state === "error" ? "alert" : "status"}
@@ -966,6 +1048,122 @@ export function InterviewStudio({ sessionEmail }: { sessionEmail: string }) {
           >
             {message}
           </p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Rapport post-entretien</CardTitle>
+          <CardDescription>
+            Rapport structure genere a la fin de la session puis persiste sur la
+            candidature liee pour alimentation du dashboard.
+          </CardDescription>
+        </CardHeader>
+        <CardContent style={{ display: "grid", gap: "1rem" }}>
+          {session?.report ? (
+            <>
+              <div
+                style={{
+                  display: "grid",
+                  gap: "1rem",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+                }}
+              >
+                <div
+                  style={{
+                    background: "#FFFFFF",
+                    border: "1px solid #D9D4CA",
+                    borderRadius: "1rem",
+                    padding: "1rem",
+                  }}
+                >
+                  <strong style={{ color: "#1A1A18" }}>Score global</strong>
+                  <div style={{ color: "#4A7C59", fontSize: "2rem", marginTop: "0.35rem" }}>
+                    {session.report.overallScore}/10
+                  </div>
+                </div>
+                <div
+                  style={{
+                    background: "#FFFFFF",
+                    border: "1px solid #D9D4CA",
+                    borderRadius: "1rem",
+                    padding: "1rem",
+                  }}
+                >
+                  <strong style={{ color: "#1A1A18" }}>Duree moyenne</strong>
+                  <div style={{ color: "#2C2C2A", fontSize: "1.4rem", marginTop: "0.35rem" }}>
+                    {formatSeconds(
+                      session.report.transcriptStats.averageResponseDurationSeconds,
+                    )}
+                  </div>
+                </div>
+                <div
+                  style={{
+                    background: "#FFFFFF",
+                    border: "1px solid #D9D4CA",
+                    borderRadius: "1rem",
+                    padding: "1rem",
+                  }}
+                >
+                  <strong style={{ color: "#1A1A18" }}>Couverture mots-cles</strong>
+                  <div style={{ color: "#2C2C2A", fontSize: "1.4rem", marginTop: "0.35rem" }}>
+                    {session.report.transcriptStats.keywordCoverage}%
+                  </div>
+                </div>
+                <div
+                  style={{
+                    background: "#FFFFFF",
+                    border: "1px solid #D9D4CA",
+                    borderRadius: "1rem",
+                    padding: "1rem",
+                  }}
+                >
+                  <strong style={{ color: "#1A1A18" }}>Hesitations</strong>
+                  <div style={{ color: "#2C2C2A", fontSize: "1.4rem", marginTop: "0.35rem" }}>
+                    {session.report.transcriptStats.hesitationCount}
+                  </div>
+                </div>
+              </div>
+              <p style={{ color: "#4E4A43", lineHeight: 1.6, margin: 0 }}>
+                {session.report.summary}
+              </p>
+              <div style={{ display: "grid", gap: "0.75rem" }}>
+                {session.report.metrics.map((metric) => (
+                  <div
+                    key={metric.key}
+                    style={{
+                      background: "#FFFFFF",
+                      border: "1px solid #D9D4CA",
+                      borderRadius: "1rem",
+                      display: "grid",
+                      gap: "0.35rem",
+                      padding: "0.9rem 1rem",
+                    }}
+                  >
+                    <strong style={{ color: "#1A1A18" }}>
+                      {formatReportMetric(metric)}
+                    </strong>
+                    <span style={{ color: "#6B6860", lineHeight: 1.5 }}>
+                      {metric.detail}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              <div style={{ display: "grid", gap: "0.4rem" }}>
+                <strong style={{ color: "#1A1A18" }}>Pistes d'amelioration</strong>
+                <ul style={{ color: "#6B6860", margin: 0, paddingLeft: "1.25rem" }}>
+                  {session.report.improvements.map((improvement) => (
+                    <li key={improvement}>{improvement}</li>
+                  ))}
+                </ul>
+              </div>
+            </>
+          ) : (
+            <p style={{ color: "#6B6860", lineHeight: 1.6, margin: 0 }}>
+              Terminez une session liee a une candidature pour generer ici le
+              rapport structure et le rendre disponible dans le dashboard.
+            </p>
+          )}
         </CardContent>
       </Card>
 

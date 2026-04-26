@@ -292,7 +292,7 @@ export default async function DashboardPage(props: DashboardPageProps) {
               <CardTitle>
                 {interviewInsights.averageScore === null
                   ? "--"
-                  : `${interviewInsights.averageScore}/100`}
+                  : `${interviewInsights.averageScore}/10`}
               </CardTitle>
             </CardHeader>
           </Card>
@@ -406,7 +406,7 @@ export default async function DashboardPage(props: DashboardPageProps) {
             <LineChartCard
               color="#4A7C59"
               emptyMessage="Les scores post-entretien seront traces ici des que les rapports d'entretien seront sauvegardes."
-              maxValue={100}
+              maxValue={10}
               points={interviewInsights.points}
               title="Scores post-entretien"
             />

@@ -304,8 +304,40 @@ export interface InterviewAIResponseEvent {
 }
 
 export interface InterviewSessionStartRequest {
+  applicationId?: string;
   language?: Locale;
   profile?: InterviewRecruiterProfile;
+}
+
+export type InterviewReportMetricKey =
+  | "clarity"
+  | "keywords"
+  | "pacing"
+  | "hesitations"
+  | "relevance";
+
+export interface InterviewReportMetric {
+  detail: string;
+  key: InterviewReportMetricKey;
+  label: string;
+  score: number;
+}
+
+export interface InterviewTranscriptStats {
+  averageResponseDurationSeconds: number | null;
+  hesitationCount: number;
+  keywordCoverage: number;
+  keywordMentions: string[];
+  responseCount: number;
+}
+
+export interface InterviewReport {
+  createdAt: string;
+  improvements: string[];
+  metrics: InterviewReportMetric[];
+  overallScore: number;
+  summary: string;
+  transcriptStats: InterviewTranscriptStats;
 }
 
 export interface InterviewSessionStartResponse {
@@ -338,6 +370,7 @@ export interface InterviewTranscriptChunk {
 }
 
 export interface InterviewSessionSummary {
+  applicationId: string | null;
   aiResponse: string | null;
   aiResponseGeneratedAt: string | null;
   aiStatus: InterviewAIStatus;
@@ -348,6 +381,7 @@ export interface InterviewSessionSummary {
   language: Locale;
   lastError: string | null;
   profile: InterviewRecruiterProfile;
+  report: InterviewReport | null;
   recoverable: boolean;
   status: InterviewSessionStatus;
   transcript: string;
@@ -460,6 +494,7 @@ export interface DraftApplication {
   cvGeneratedAt: string | null;
   cvTemplateId?: string | null;
   id: string;
+  interviewReports?: InterviewReport[];
   letterGeneratedAt?: string | null;
   letterTemplateId?: string | null;
   offerUrl: string | null;

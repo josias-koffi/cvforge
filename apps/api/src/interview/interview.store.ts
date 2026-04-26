@@ -10,7 +10,7 @@ import {
   type InterviewTranscriptChunk,
 } from "@cvforge/types";
 import type { InterviewStore, StoredInterviewSession } from "./interview.types";
-import { sortChunks } from "./interview.types";
+import { normalizeInterviewReport, sortChunks } from "./interview.types";
 
 type PersistedInterviewState = {
   sessions: Record<string, StoredInterviewSession>;
@@ -61,6 +61,8 @@ function normalizeSession(session: StoredInterviewSession): StoredInterviewSessi
   const profile = normalizeProfile(session.profile);
   return {
     ...session,
+    applicationId:
+      typeof session.applicationId === "string" ? session.applicationId : null,
     aiResponse: typeof session.aiResponse === "string" ? session.aiResponse : null,
     aiResponseGeneratedAt:
       typeof session.aiResponseGeneratedAt === "string"
@@ -73,6 +75,7 @@ function normalizeSession(session: StoredInterviewSession): StoredInterviewSessi
     language: language as Locale,
     lastError: session.lastError ?? null,
     profile,
+    report: normalizeInterviewReport(session.report),
     recoverable: session.recoverable ?? true,
     status: normalizeStatus(session.status),
     transcript: typeof session.transcript === "string" ? session.transcript : "",
