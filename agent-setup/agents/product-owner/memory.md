@@ -349,6 +349,13 @@
 - **Learned**: The product boundary is tighter than the original sprint metadata suggested: a release-only gate could not pass because the underlying report and persistence contract did not exist yet.
 - **Open**: `US-050` can now safely focus on replay, free-practice, and retention policy because the scoring/report layer is first-class.
 
+## 2026-04-26 — US-051 recruiter-role-orgs
+
+- **Did**: Modeled the `recruiter` role as a third `AuthRole` value, defined the `Organization` entity with member lifecycle and `org-admin` sub-role, and produced a permission matrix separating recruiter from `user` and `admin`.
+- **Why**: Sprint 015 opens V2.0 B2B scope; the product-owner task with `Workflow: none` required spec artifacts rather than code.
+- **Learned**: Three open questions remain unresolved (org storage medium, recruiter dashboard route, B2B billing scope) — these must be answered before the developer implementation story is written.
+- **Open**: Future US must decide whether org membership lives in the JSON flat file or a proper DB table before any recruiter story can ship.
+
 ## 2026-04-26 — US-050 analyze
 
 - **Did**: Scoped US-050 to four concrete gaps: browser-side audio replay (Object URL, transient), free practice mode (remove `Boolean(applicationId)` gate), RGPD purge service (NestJS 24h interval, 30-day cutoff), and pre-generation prefetch endpoint (non-streaming LLM + short-circuit in `streamAIResponse`).

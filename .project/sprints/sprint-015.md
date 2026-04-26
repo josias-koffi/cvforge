@@ -13,13 +13,13 @@ Ouvrir `V2.0` en étendant CVforge vers les usages recruteur et entreprise, tout
 
 ## ✅ Tasks (3–8 max)
 
-- [ ] **[US-051]** Ajouter le rôle recruteur et les organisations / comptes entreprise
+- [x] **[US-051]** Ajouter le rôle recruteur et les organisations / comptes entreprise
   - Agent: `product-owner`
   - Workflow: `none`
   - Acceptance criteria:
-    - [ ] Le rôle recruteur est modélisé
-    - [ ] Les organisations et comptes entreprise sont gérés
-    - [ ] Les permissions sont séparées des rôles `user` et `admin`
+    - [x] Le rôle recruteur est modélisé
+    - [x] Les organisations et comptes entreprise sont gérés
+    - [x] Les permissions sont séparées des rôles `user` et `admin`
   - Source: vision `§16`
 - [ ] **[US-052]** Ajouter l'import PDF d'offre et la connexion sociale à évaluer
   - Agent: `analyst`
