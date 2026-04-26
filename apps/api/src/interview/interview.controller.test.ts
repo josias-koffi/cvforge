@@ -16,6 +16,7 @@ const SESSION_SUMMARY: InterviewSessionSummary = {
   id: "session-001",
   language: "fr",
   lastError: null,
+  prefetchedQuestion: null,
   profile: "standard",
   report: null,
   recoverable: true,

@@ -72,6 +72,15 @@ export class InterviewController {
     return this.interviewService.finishSession(session.email, sessionId);
   }
 
+  @Post("sessions/:sessionId/prefetch")
+  async prefetchNextQuestion(
+    @Param("sessionId") sessionId: string,
+    @Req() request: RequestLike,
+  ) {
+    const session = this.readSession(request);
+    return this.interviewService.prefetchNextQuestion(session.email, sessionId);
+  }
+
   @Sse("sessions/:sessionId/respond")
   streamAIResponse(
     @Param("sessionId") sessionId: string,

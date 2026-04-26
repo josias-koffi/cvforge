@@ -4,10 +4,10 @@ export const AUDIO_RETENTION_DAYS = 30;
 
 export const PRIVACY_RETENTION_POLICY: PrivacyRetentionPolicy = {
   audioPurgePlan: {
-    execution: "Daily purge job at 03:00 UTC once interview audio storage ships.",
+    execution: "InterviewPurgeService runs at module init and every 24h, removing completed sessions older than the retention window.",
     retentionDays: AUDIO_RETENTION_DAYS,
-    scope: "Interview audio files and derived transcripts stored in MinIO.",
-    status: "planned",
+    scope: "Completed interview sessions (transcript + report) stored in interviews-state.json. Audio files in MinIO will be covered by the same policy once MinIO storage ships.",
+    status: "implemented",
   },
   documentedAt: "2026-04-23",
   rules: [

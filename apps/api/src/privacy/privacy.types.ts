@@ -15,7 +15,7 @@ export type PrivacyRetentionPolicy = {
     execution: string;
     retentionDays: number;
     scope: string;
-    status: "planned";
+    status: "planned" | "implemented";
   };
   documentedAt: string;
   rules: PrivacyRetentionRule[];

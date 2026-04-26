@@ -268,6 +268,7 @@ export class InterviewService {
       id: `interview_${Date.now().toString(36)}`,
       language,
       lastError: null,
+      prefetchedQuestion: null,
       profile,
       report: null,
       recoverable: true,
@@ -291,6 +292,33 @@ export class InterviewService {
 
   finishSession(userEmail: string, sessionId: string) {
     return this.finishSessionInternal(userEmail, sessionId);
+  }
+
+  async prefetchNextQuestion(userEmail: string, sessionId: string) {
+    const session = this.getOwnedSession(userEmail, sessionId);
+
+    if (!session.transcript || session.status === INTERVIEW_SESSION_STATUS_COMPLETED) {
+      return summarizeInterviewSession(session);
+    }
+
+    try {
+      const languageConfig = this.getLanguageConfig(session.language);
+      const question = await this.openRouter.chat(
+        [
+          { role: "system", content: this.buildAiPrompt(session.language, session.profile) },
+          { role: "user", content: `Candidate transcript (${languageConfig.label}): ${session.transcript}` },
+        ],
+        { maxTokens: 120, model: AI_MODEL, provider: INTERVIEW_PROVIDER, temperature: 0.35 },
+      );
+
+      session.prefetchedQuestion = question.trim();
+      session.updatedAt = nowIso();
+      this.store.save(session);
+    } catch {
+      // prefetch is best-effort; never fail the session on prefetch error
+    }
+
+    return summarizeInterviewSession(session);
   }
 
   private async finishSessionInternal(userEmail: string, sessionId: string) {
@@ -418,6 +446,20 @@ export class InterviewService {
 
     if (!session.transcript) {
       yield { type: "error", message: "Aucune transcription disponible pour generer une reponse.", timestamp: nowIso() };
+      return;
+    }
+
+    // Use prefetched question when available and clear it for the next turn
+    if (session.prefetchedQuestion) {
+      const fullText = session.prefetchedQuestion;
+      session.prefetchedQuestion = null;
+      session.aiResponse = fullText;
+      session.aiResponseGeneratedAt = nowIso();
+      session.aiStatus = INTERVIEW_AI_STATUS_DONE;
+      session.updatedAt = nowIso();
+      this.store.save(session);
+      yield { index: 0, text: fullText, timestamp: nowIso(), type: "chunk" };
+      yield { fullText, timestamp: nowIso(), type: "done" };
       return;
     }
 

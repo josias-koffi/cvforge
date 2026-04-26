@@ -15,6 +15,7 @@ export type InterviewStore = {
     sessionId: string,
   ) => StoredInterviewSession | null;
   save: (session: StoredInterviewSession) => StoredInterviewSession;
+  purgeCompletedBefore: (cutoffIso: string) => number;
 };
 
 export function summarizeInterviewSession(
@@ -31,6 +32,7 @@ export function summarizeInterviewSession(
     id: session.id,
     language: session.language,
     lastError: session.lastError,
+    prefetchedQuestion: session.prefetchedQuestion ?? null,
     profile: session.profile,
     report: session.report,
     recoverable: session.recoverable,

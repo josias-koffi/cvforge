@@ -26,6 +26,7 @@ function createStore(): InterviewStore {
       sessions.set(session.id, session);
       return session;
     },
+    purgeCompletedBefore: () => 0,
   };
 }
 

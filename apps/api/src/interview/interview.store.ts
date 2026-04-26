@@ -74,6 +74,10 @@ function normalizeSession(session: StoredInterviewSession): StoredInterviewSessi
       typeof session.completedAt === "string" ? session.completedAt : null,
     language: language as Locale,
     lastError: session.lastError ?? null,
+    prefetchedQuestion:
+      typeof session.prefetchedQuestion === "string"
+        ? session.prefetchedQuestion
+        : null,
     profile,
     report: normalizeInterviewReport(session.report),
     recoverable: session.recoverable ?? true,
@@ -130,6 +134,28 @@ export class FileInterviewStore implements InterviewStore {
     state.sessions[session.id] = normalizeSession(session);
     this.writeState(state);
     return session;
+  }
+
+  purgeCompletedBefore(cutoffIso: string): number {
+    const state = this.readState();
+    const cutoffMs = new Date(cutoffIso).getTime();
+    let removed = 0;
+
+    for (const [id, session] of Object.entries(state.sessions)) {
+      if (
+        session.completedAt &&
+        new Date(session.completedAt).getTime() < cutoffMs
+      ) {
+        delete state.sessions[id];
+        removed += 1;
+      }
+    }
+
+    if (removed > 0) {
+      this.writeState(state);
+    }
+
+    return removed;
   }
 
   private readState(): PersistedInterviewState {
