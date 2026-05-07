@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { Button, Label } from "@cvforge/ui";
 import type { ApplicationStatus, DraftApplication } from "@cvforge/types";
 import { applicationStatuses } from "@cvforge/types";
@@ -49,6 +50,7 @@ export function CandidaturesTable({
   sessionEmail,
   submittedUrl = "",
 }: CandidaturesTableProps) {
+  const router = useRouter();
   const [statusFilter, setStatusFilter] = useState<ApplicationStatus[]>([]);
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
@@ -366,7 +368,7 @@ export function CandidaturesTable({
                 return (
                   <tr
                     key={app.id}
-                    onClick={() => setSelectedApp(app)}
+                    onClick={() => router.push(`/candidatures/${app.id}`)}
                     style={{
                       borderBottom: "1px solid #EBE7E0",
                       cursor: "pointer",
@@ -431,7 +433,7 @@ export function CandidaturesTable({
                         aria-label={`Voir le détail de ${app.extracted.title}`}
                         onClick={(e) => {
                           e.stopPropagation();
-                          setSelectedApp(app);
+                          router.push(`/candidatures/${app.id}`);
                         }}
                         style={{
                           backgroundColor: "transparent",

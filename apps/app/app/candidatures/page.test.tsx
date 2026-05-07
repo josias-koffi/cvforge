@@ -16,6 +16,10 @@ vi.mock("next/headers", () => ({
   }),
 }));
 
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: vi.fn() }),
+}));
+
 vi.mock("./generate-cv-button", () => ({
   GenerateCvButton: ({ applicationId }: { applicationId: string }) => (
     <button data-testid={`gen-cv-${applicationId}`} type="button">
