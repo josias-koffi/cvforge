@@ -249,9 +249,11 @@ function formatSeconds(value: number | null) {
 
 export function InterviewStudio({
   applications,
+  preloadedSessionId,
   sessionEmail,
 }: {
   applications: InterviewApplicationOption[];
+  preloadedSessionId?: string;
   sessionEmail: string;
 }) {
   const [session, setSession] = React.useState<InterviewSessionSummary | null>(null);
@@ -369,21 +371,21 @@ export function InterviewStudio({
       return;
     }
 
-    const storedSessionId = window.sessionStorage.getItem(
-      getStorageKey(sessionEmail),
-    );
+    const sessionIdToLoad =
+      preloadedSessionId ??
+      window.sessionStorage.getItem(getStorageKey(sessionEmail));
 
-    if (!storedSessionId) {
+    if (!sessionIdToLoad) {
       return;
     }
 
-    void hydrateSession(storedSessionId);
+    void hydrateSession(sessionIdToLoad);
 
     return () => {
       stopRecorderIfRecording(recorderRef.current);
       stopStream();
     };
-  }, [hydrateSession, sessionEmail, stopStream]);
+  }, [hydrateSession, preloadedSessionId, sessionEmail, stopStream]);
 
   async function ensureSessionId() {
     if (session?.id) {

@@ -376,19 +376,26 @@ export function CandidatureDetailTabs({ application }: Props) {
               Créée le {renderDate(application.createdAt)}
             </p>
           </div>
-          <span
-            style={{
-              ...tone,
-              border: "1px solid",
-              borderRadius: "999px",
-              fontSize: "0.85rem",
-              fontWeight: 600,
-              padding: "0.3rem 0.8rem",
-              whiteSpace: "nowrap",
-            }}
-          >
-            {getApplicationStatusLabel(application.status)}
-          </span>
+          <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+            <span
+              style={{
+                ...tone,
+                border: "1px solid",
+                borderRadius: "999px",
+                fontSize: "0.85rem",
+                fontWeight: 600,
+                padding: "0.3rem 0.8rem",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {getApplicationStatusLabel(application.status)}
+            </span>
+            <Link href={`/interview/new?candidatureId=${application.id}`}>
+              <Button size="sm" variant="outline">
+                🎙️ Préparer un entretien
+              </Button>
+            </Link>
+          </div>
         </div>
       </div>
 
