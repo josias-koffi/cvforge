@@ -391,7 +391,7 @@ export function CandidatureDetailTabs({ application }: Props) {
               {getApplicationStatusLabel(application.status)}
             </span>
             <Link href={`/interview/new?candidatureId=${application.id}`}>
-              <Button size="sm" variant="outline">
+              <Button size="sm" variant="secondary">
                 🎙️ Préparer un entretien
               </Button>
             </Link>
