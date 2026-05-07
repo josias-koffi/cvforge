@@ -25,6 +25,7 @@ const STORAGE_KEY_PREFIX = "cvforge-interview-session";
 const TARGET_WAV_SAMPLE_RATE = 16000;
 const VAD_THRESHOLD = 0.05;
 const VAD_FFT_SIZE = 256;
+const SILENCE_FRAMES_TO_STOP = 45;
 
 type StudioState =
   | "idle"
@@ -37,6 +38,10 @@ type StudioState =
   | "unsupported";
 
 type AIState = "idle" | "generating" | "speaking" | "done" | "error";
+
+type VadStatus = "listening" | "recording" | "processing" | "muted";
+
+type ChatMessage = { role: "user" | "ai"; text: string; ts: string };
 
 type PipelineEvent = {
   label: string;
@@ -247,6 +252,12 @@ function formatSeconds(value: number | null) {
   return value === null ? "n/a" : `${value}s`;
 }
 
+function formatTimer(seconds: number) {
+  const m = Math.floor(seconds / 60).toString().padStart(2, "0");
+  const s = (seconds % 60).toString().padStart(2, "0");
+  return `${m}:${s}`;
+}
+
 export function InterviewStudio({
   applications,
   preloadedSessionId,
@@ -256,6 +267,8 @@ export function InterviewStudio({
   preloadedSessionId?: string;
   sessionEmail: string;
 }) {
+  const isAutoVadMode = Boolean(preloadedSessionId);
+
   const [session, setSession] = React.useState<InterviewSessionSummary | null>(null);
   const [applicationId, setApplicationId] = React.useState(
     applications[0]?.id ?? "",
@@ -267,13 +280,27 @@ export function InterviewStudio({
     browserAudioSupported() ? "idle" : "unsupported",
   );
   const [message, setMessage] = React.useState(
-    "Autorisez le microphone puis lancez un enregistrement par chunks de 500 ms.",
+    isAutoVadMode
+      ? "Connexion au microphone en cours..."
+      : "Autorisez le microphone puis lancez un enregistrement par chunks de 500 ms.",
   );
   const [aiState, setAIState] = React.useState<AIState>("idle");
   const [aiText, setAIText] = React.useState("");
   const [pipelineEvents, setPipelineEvents] = React.useState<PipelineEvent[]>([]);
   const [latencyMeasures, setLatencyMeasures] = React.useState<LatencyMeasure[]>([]);
   const [vadLevel, setVadLevel] = React.useState(0);
+  const [vadStatus, setVadStatus] = React.useState<VadStatus>("listening");
+  const [isMuted, setIsMuted] = React.useState(false);
+  const [messages, setMessages] = React.useState<ChatMessage[]>([]);
+  const [elapsedSeconds, setElapsedSeconds] = React.useState(0);
+
+  const vadStatusRef = React.useRef<VadStatus>("listening");
+  const isMutedRef = React.useRef(false);
+  const sessionIdRef = React.useRef<string | null>(preloadedSessionId ?? null);
+  const lastChunkCountRef = React.useRef(0);
+  const silenceFramesRef = React.useRef(0);
+  const transcriptEndRef = React.useRef<HTMLDivElement | null>(null);
+  const currentAiTextRef = React.useRef("");
   const autoAISessionIdRef = React.useRef<string | null>(null);
   const utteranceQueueRef = React.useRef<string[]>([]);
   const speakingRef = React.useRef(false);
@@ -287,7 +314,29 @@ export function InterviewStudio({
   const vadRafRef = React.useRef<number | null>(null);
   const audioBlobUrlRef = React.useRef<string | null>(null);
 
+  function updateVadStatus(s: VadStatus) {
+    vadStatusRef.current = s;
+    setVadStatus(s);
+  }
+
+  // Auto-scroll when messages change
+  React.useEffect(() => {
+    transcriptEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  // Session timer
+  React.useEffect(() => {
+    if (!session?.id || session.status === "completed") return;
+    const start = new Date(session.createdAt).getTime();
+    setElapsedSeconds(Math.floor((Date.now() - start) / 1000));
+    const interval = setInterval(() => {
+      setElapsedSeconds(Math.floor((Date.now() - start) / 1000));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [session?.id, session?.status, session?.createdAt]);
+
   const updateSession = React.useCallback((nextSession: InterviewSessionSummary) => {
+    sessionIdRef.current = nextSession.id;
     startTransition(() => {
       setSession(nextSession);
       if (nextSession.applicationId) {
@@ -296,6 +345,19 @@ export function InterviewStudio({
       setLanguage(nextSession.language);
       setProfile(nextSession.profile);
       setState(resolveStateFromSession(nextSession));
+
+      // Sync new transcript chunks as user messages
+      if (nextSession.chunks.length > lastChunkCountRef.current) {
+        const newChunks = nextSession.chunks.slice(lastChunkCountRef.current);
+        lastChunkCountRef.current = nextSession.chunks.length;
+        const newUserMsgs: ChatMessage[] = newChunks
+          .filter((c) => c.status === "transcribed" && c.transcript)
+          .map((c) => ({ role: "user" as const, text: c.transcript, ts: c.endedAt }));
+        if (newUserMsgs.length > 0) {
+          setMessages((prev) => [...prev, ...newUserMsgs]);
+        }
+      }
+
       if (nextSession.status === "completed") {
         setMessage(
           "Session terminee proprement. Vous pouvez relire la transcription ou lancer une nouvelle session.",
@@ -349,7 +411,7 @@ export function InterviewStudio({
 
   const hydrateSession = React.useCallback(
     async (sessionId: string) => {
-      const response = await fetch(`/interview/${sessionId}`, {
+      const response = await fetch(`/interview/${sessionId}/session`, {
         cache: "no-store",
       });
 
@@ -360,7 +422,18 @@ export function InterviewStudio({
 
       const payload = (await response.json()) as InterviewSessionSummary;
       sequenceRef.current = summarizeChunkCount(payload) + 1;
+      lastChunkCountRef.current = payload.chunks.length;
       updateSession(payload);
+
+      // Initialize chat from existing session data
+      const userMsgs: ChatMessage[] = payload.chunks
+        .filter((c) => c.status === "transcribed" && c.transcript)
+        .map((c) => ({ role: "user" as const, text: c.transcript, ts: c.endedAt }));
+      const aiMsgs: ChatMessage[] = payload.aiResponse
+        ? [{ role: "ai" as const, text: payload.aiResponse, ts: payload.aiResponseGeneratedAt ?? payload.updatedAt }]
+        : [];
+      setMessages([...userMsgs, ...aiMsgs]);
+
       return payload;
     },
     [persistSessionId, updateSession],
@@ -379,7 +452,12 @@ export function InterviewStudio({
       return;
     }
 
-    void hydrateSession(sessionIdToLoad);
+    void (async () => {
+      const loaded = await hydrateSession(sessionIdToLoad);
+      if (loaded && preloadedSessionId && browserAudioSupported()) {
+        await initMicStream();
+      }
+    })();
 
     return () => {
       stopRecorderIfRecording(recorderRef.current);
@@ -425,6 +503,7 @@ export function InterviewStudio({
 
     stopRecorderIfRecording(recorderRef.current);
     stopStream();
+    updateVadStatus("listening");
 
     const response = await fetch(`/interview/${sessionId}/finish`, {
       method: "POST",
@@ -505,8 +584,6 @@ export function InterviewStudio({
     markLatency("tts_start");
     const perceivedLatency = measureLatency("Latence percue (T0→TTS)", "recording_stop", "tts_start");
     if (perceivedLatency) setLatencyMeasures((prev) => (prev.some((m) => m.label === perceivedLatency.label) ? prev : [...prev, perceivedLatency]));
-    const sttToTts = measureLatency("STT→TTS total", "recording_stop", "tts_start");
-    if (sttToTts) setLatencyMeasures((prev) => prev);
     addPipelineEvent(`Audio utterance started: "${text.slice(0, 40)}..."`);
 
     const utterance = new SpeechSynthesisUtterance(text);
@@ -541,6 +618,7 @@ export function InterviewStudio({
 
     setAIState("generating");
     setAIText("");
+    currentAiTextRef.current = "";
     setPipelineEvents([]);
     setLatencyMeasures([]);
     utteranceQueueRef.current = [];
@@ -587,6 +665,7 @@ export function InterviewStudio({
           }
 
           if (event.type === "chunk" && event.text) {
+            currentAiTextRef.current += event.text;
             setAIText((prev) => prev + event.text);
             sentenceBuffer += event.text;
             markLatency("llm_first_token");
@@ -613,10 +692,20 @@ export function InterviewStudio({
             if (!speakingRef.current && utteranceQueueRef.current.length === 0) {
               setAIState("done");
             }
-            // background prefetch for next turn
-            const prefetchSid = sid;
+
+            // Append finalized AI message to chat
+            const finalText = currentAiTextRef.current.trim();
+            if (finalText) {
+              setMessages((prev) => [
+                ...prev,
+                { role: "ai" as const, text: finalText, ts: new Date().toISOString() },
+              ]);
+            }
+            currentAiTextRef.current = "";
+
+            // Background prefetch for next turn
             addPipelineEvent("Prefetch next question triggered");
-            triggerPrefetch(prefetchSid);
+            triggerPrefetch(sid);
           } else if (event.type === "error") {
             setAIState("error");
             addPipelineEvent(`Error: ${event.message ?? "unknown"}`);
@@ -628,6 +717,173 @@ export function InterviewStudio({
     }
   }
 
+  // Initializes mic stream and starts VAD-driven auto-recording (auto-VAD mode)
+  async function initMicStream() {
+    if (!browserAudioSupported()) {
+      setState("unsupported");
+      setMessage("MediaRecorder n'est pas disponible dans ce navigateur.");
+      return;
+    }
+
+    setState("booting");
+    setMessage("Connexion au microphone...");
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          channelCount: 1,
+          echoCancellation: true,
+          noiseSuppression: true,
+        },
+      });
+
+      streamRef.current = stream;
+
+      const AudioContextCtor =
+        typeof window !== "undefined"
+          ? window.AudioContext ?? (window as BrowserWindowWithAudioContext).webkitAudioContext
+          : undefined;
+
+      if (AudioContextCtor) {
+        const ctx = new AudioContextCtor() as AudioContextWithAnalyser;
+        const source = ctx.createMediaStreamSource(stream);
+        const analyser = ctx.createAnalyser();
+        analyser.fftSize = VAD_FFT_SIZE;
+        source.connect(analyser);
+        analyserRef.current = analyser;
+        vadCtxRef.current = ctx;
+
+        const freqData = new Uint8Array(analyser.frequencyBinCount);
+
+        function vadLoop() {
+          analyser.getByteFrequencyData(freqData);
+          let sumSq = 0;
+          for (let i = 0; i < freqData.length; i++) {
+            const norm = (freqData[i] ?? 0) / 255;
+            sumSq += norm * norm;
+          }
+          const rms = Math.sqrt(sumSq / freqData.length);
+          setVadLevel(rms);
+
+          const currentVadStatus = vadStatusRef.current;
+
+          if (currentVadStatus === "listening" && !isMutedRef.current) {
+            if (rms > VAD_THRESHOLD) {
+              silenceFramesRef.current = 0;
+              autoStartRecording();
+            }
+          } else if (currentVadStatus === "recording") {
+            if (rms <= VAD_THRESHOLD) {
+              silenceFramesRef.current++;
+              if (silenceFramesRef.current >= SILENCE_FRAMES_TO_STOP) {
+                silenceFramesRef.current = 0;
+                stopCapture();
+              }
+            } else {
+              silenceFramesRef.current = 0;
+            }
+          }
+
+          vadRafRef.current = requestAnimationFrame(vadLoop);
+        }
+
+        vadRafRef.current = requestAnimationFrame(vadLoop);
+      }
+
+      setState("ready");
+      updateVadStatus("listening");
+      setMessage("Microphone actif. L'enregistrement démarre automatiquement dès que vous parlez.");
+    } catch (error) {
+      setState("error");
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "Impossible d'accéder au microphone.",
+      );
+    }
+  }
+
+  // Called from VAD loop when speech is detected (auto-VAD mode)
+  function autoStartRecording() {
+    if (recorderRef.current || !streamRef.current) return;
+    const sid = sessionIdRef.current;
+    if (!sid) return;
+
+    updateVadStatus("recording");
+
+    const mimeType = getPreferredMimeType();
+    const recorder = mimeType
+      ? new MediaRecorder(streamRef.current, { mimeType })
+      : new MediaRecorder(streamRef.current);
+
+    recorderRef.current = recorder;
+    audioChunksRef.current = [];
+    recordingStartRef.current = Date.now();
+
+    recorder.ondataavailable = (event) => {
+      if (event.data.size > 0) audioChunksRef.current.push(event.data);
+    };
+
+    recorder.onerror = () => {
+      recorderRef.current = null;
+      setState("error");
+      setMessage("Le navigateur a interrompu la capture audio. Reprenez la session.");
+      audioChunksRef.current = [];
+      updateVadStatus("listening");
+    };
+
+    recorder.onstart = () => {
+      setState("recording");
+    };
+
+    recorder.onstop = () => {
+      markLatency("recording_stop");
+      recorderRef.current = null;
+      const blobs = audioChunksRef.current;
+      audioChunksRef.current = [];
+
+      if (blobs.length === 0) {
+        updateVadStatus("listening");
+        setState("ready");
+        return;
+      }
+
+      if (audioBlobUrlRef.current) {
+        URL.revokeObjectURL(audioBlobUrlRef.current);
+      }
+      audioBlobUrlRef.current = URL.createObjectURL(
+        new Blob(blobs, { type: blobs[0]?.type ?? "audio/webm" }),
+      );
+
+      const startedAt = new Date(recordingStartRef.current ?? Date.now()).toISOString();
+      const endedAt = new Date().toISOString();
+      const sequence = sequenceRef.current;
+      sequenceRef.current += 1;
+
+      updateVadStatus("processing");
+      setState("syncing");
+      setMessage("Transcription en cours...");
+
+      void blobsToWavBase64(blobs)
+        .then(async (wavBase64) => {
+          await uploadWav(sid, wavBase64, sequence, startedAt, endedAt);
+          markLatency("stt_done");
+          const sttLatency = measureLatency("STT (Voxtral)", "recording_stop", "stt_done");
+          if (sttLatency) setLatencyMeasures((prev) => [...prev, sttLatency]);
+          await streamAIResponse(sid);
+          updateVadStatus("listening");
+        })
+        .catch((error) => {
+          setState("error");
+          setMessage(error instanceof Error ? error.message : "Conversion audio échouée.");
+          updateVadStatus("listening");
+        });
+    };
+
+    recorder.start(500);
+  }
+
+  // Manual capture start (legacy mode — no preloadedSessionId)
   async function startCapture() {
     if (!browserAudioSupported()) {
       setState("unsupported");
@@ -718,7 +974,6 @@ export function InterviewStudio({
           return;
         }
 
-        // Capture a replay URL from the raw blobs before WAV conversion
         if (audioBlobUrlRef.current) {
           URL.revokeObjectURL(audioBlobUrlRef.current);
         }
@@ -787,6 +1042,10 @@ export function InterviewStudio({
     setProfile("standard");
     setState(browserAudioSupported() ? "idle" : "unsupported");
     setMessage("Nouvelle session prete. Lancez un nouvel enregistrement.");
+    setMessages([]);
+    updateVadStatus("listening");
+    setIsMuted(false);
+    isMutedRef.current = false;
   }
 
   function triggerPrefetch(sid: string) {
@@ -795,23 +1054,31 @@ export function InterviewStudio({
     });
   }
 
-  const isRecording = recorderRef.current?.state === "recording";
-  const isSpeaking = isRecording && vadLevel > VAD_THRESHOLD;
+  const isLegacyRecording = !isAutoVadMode && recorderRef.current?.state === "recording";
+  const isSpeaking = isLegacyRecording && vadLevel > VAD_THRESHOLD;
   const languageLocked = Boolean(session?.id);
   const sessionCompleted = session?.status === "completed";
-  const selectedApplication =
-    applications.find((application) => application.id === applicationId) ?? null;
   const canFinishSession =
     Boolean(session?.id) &&
     !sessionCompleted &&
     state !== "booting" &&
     state !== "syncing" &&
-    !isRecording;
+    vadStatus !== "recording" &&
+    vadStatus !== "processing";
   const canStartInterview =
     state !== "booting" &&
     state !== "syncing" &&
-    !isRecording &&
+    !isLegacyRecording &&
     !sessionCompleted;
+  const selectedApplication =
+    applications.find((application) => application.id === applicationId) ?? null;
+
+  const vadBadge = {
+    listening: { emoji: "🟢", label: "À l'écoute", color: "#2D5A3D", bg: "#E8F0EB", border: "#4A7C59" },
+    recording: { emoji: "🔴", label: "Enregistrement", color: "#8A2C20", bg: "#FBEAE7", border: "#E5B8AF" },
+    processing: { emoji: "🟡", label: "Traitement", color: "#6B4C1E", bg: "#F5EFE6", border: "#C8A96E" },
+    muted: { emoji: "⚫", label: "Muet", color: "#4E4A43", bg: "#F0EDE8", border: "#D9D4CA" },
+  }[vadStatus];
 
   return (
     <div style={{ display: "grid", gap: "1rem" }}>
@@ -824,255 +1091,422 @@ export function InterviewStudio({
           to { transform: rotate(360deg); }
         }
       `}</style>
+
+      {/* ── Auto-VAD session header ── */}
+      {isAutoVadMode && (
+        <div
+          style={{
+            alignItems: "center",
+            background: "#FAFAF7",
+            border: "1px solid #D9D4CA",
+            borderRadius: "0.75rem",
+            display: "flex",
+            flexWrap: "wrap",
+            gap: "0.75rem",
+            justifyContent: "space-between",
+            padding: "0.875rem 1rem",
+          }}
+        >
+          <div aria-live="polite" style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+            <Badge
+              aria-label={`VAD: ${vadBadge.label}`}
+              style={{
+                background: vadBadge.bg,
+                borderColor: vadBadge.border,
+                color: vadBadge.color,
+                fontWeight: 600,
+              }}
+              variant="outline"
+            >
+              {vadBadge.emoji} {vadBadge.label}
+            </Badge>
+            {session?.id && (
+              <Badge aria-label="Timer de session" variant="outline">
+                ⏱ {formatTimer(elapsedSeconds)}
+              </Badge>
+            )}
+            <Badge variant="outline">
+              {INTERVIEW_PROFILE_LABELS[profile]} · {language === "fr" ? "FR" : "EN"}
+            </Badge>
+          </div>
+          <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+            <Button
+              onClick={() => {
+                const next = !isMuted;
+                isMutedRef.current = next;
+                setIsMuted(next);
+                updateVadStatus(next ? "muted" : "listening");
+              }}
+              title={isMuted ? "Réactiver le micro" : "Couper le micro"}
+              type="button"
+              variant="secondary"
+            >
+              {isMuted ? "🎙️ Activer" : "🔇 Muet"}
+            </Button>
+            <Button
+              disabled={!canFinishSession}
+              onClick={() => void finishSession()}
+              type="button"
+              variant="secondary"
+            >
+              Fin de session
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Chat transcript ── */}
       <Card>
         <CardHeader>
-          <CardTitle>Streaming STT progressif</CardTitle>
-          <CardDescription>
-            Le navigateur decoupe la parole en chunks de 500 ms et le backend
-            envoie chaque segment a Voxtral Small via OpenRouter.
-          </CardDescription>
+          <CardTitle>{isAutoVadMode ? "Entretien en cours" : "Transcription partielle"}</CardTitle>
+          {!isAutoVadMode && (
+            <CardDescription>
+              Reprise resiliente: la session courante est conservee dans le navigateur
+              et rehydratee si vous revenez sur la page.
+            </CardDescription>
+          )}
         </CardHeader>
-        <CardContent style={{ display: "grid", gap: "1rem" }}>
+        <CardContent style={{ display: "grid", gap: "0.75rem" }}>
           <div
+            aria-label="Transcript de l'entretien"
+            aria-live="polite"
             style={{
-              alignItems: "center",
               display: "flex",
-              flexWrap: "wrap",
+              flexDirection: "column",
               gap: "0.75rem",
-              justifyContent: "space-between",
+              maxHeight: "22rem",
+              minHeight: "6rem",
+              overflowY: "auto",
+              padding: "0.25rem",
             }}
           >
-            <div
-              aria-live="polite"
-              style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}
-            >
-              {isRecording ? (
-                <Badge
-                  aria-label={isSpeaking ? "Micro actif – parole détectée" : "Micro actif – silence"}
-                  style={{
-                    alignItems: "center",
-                    animation: "mic-pulse 1.2s ease-in-out infinite",
-                    borderColor: "#4A7C59",
-                    color: "#2D5A3D",
-                    display: "inline-flex",
-                    gap: "0.4rem",
-                  }}
-                  variant="outline"
-                >
-                  <span
-                    style={{
-                      background: "#4A7C59",
-                      borderRadius: "50%",
-                      display: "inline-block",
-                      height: isSpeaking ? "10px" : "8px",
-                      transition: "height 0.1s, width 0.1s",
-                      width: isSpeaking ? "10px" : "8px",
-                    }}
-                  />
-                  {isSpeaking ? "Parole détectée" : "Micro actif"}
-                </Badge>
-              ) : (
-                <Badge
-                  style={state === "error" ? { borderColor: "#E5B8AF", color: "#8A2C20" } : undefined}
-                  variant="outline"
-                >
-                  Etat: {state}
-                </Badge>
-              )}
-              <Badge variant="outline">
-                Langue: {language === "fr" ? "FR" : "EN"}
-              </Badge>
-              <Badge variant="outline">
-                Profil: {INTERVIEW_PROFILE_LABELS[profile]}
-              </Badge>
-              <Badge variant="outline">
-                Session: {session?.id ?? "pas encore creee"}
-              </Badge>
-              <Badge variant="outline">
-                Chunks: {summarizeChunkCount(session)}
-              </Badge>
-            </div>
-            {isRecording && (
+            {messages.length === 0 && (
+              <span style={{ color: "#9B978E", fontSize: "0.9rem", alignSelf: "center", marginTop: "1rem" }}>
+                {isAutoVadMode ? "Parlez pour démarrer l'entretien…" : "Aucun message pour le moment."}
+              </span>
+            )}
+            {messages.map((msg, i) => (
               <div
-                aria-hidden="true"
+                key={i}
                 style={{
-                  background: "#F0EDE8",
-                  borderRadius: "2px",
-                  height: "4px",
-                  overflow: "hidden",
+                  alignSelf: msg.role === "user" ? "flex-end" : "flex-start",
+                  background: msg.role === "user" ? "#E8F0EB" : "#FAFAF7",
+                  border: "1px solid #D9D4CA",
+                  borderRadius: msg.role === "user" ? "1rem 1rem 0.25rem 1rem" : "1rem 1rem 1rem 0.25rem",
+                  color: "#2C2C2A",
+                  fontSize: "0.95rem",
+                  lineHeight: 1.5,
+                  maxWidth: "80%",
+                  padding: "0.65rem 0.9rem",
                 }}
               >
-                <div
-                  style={{
-                    background: isSpeaking ? "#4A7C59" : "#D9D4CA",
-                    borderRadius: "2px",
-                    height: "100%",
-                    transition: "width 0.05s linear, background 0.1s",
-                    width: `${Math.min(100, vadLevel * 100 * 4)}%`,
-                  }}
-                />
+                {msg.text}
+              </div>
+            ))}
+            {/* Streaming AI response (in-progress) */}
+            {aiState === "generating" && aiText && (
+              <div
+                aria-label="Réponse IA en cours"
+                style={{
+                  alignSelf: "flex-start",
+                  background: "#FAFAF7",
+                  border: "1px dashed #C8A96E",
+                  borderRadius: "1rem 1rem 1rem 0.25rem",
+                  color: "#4E4A43",
+                  fontSize: "0.95rem",
+                  lineHeight: 1.5,
+                  maxWidth: "80%",
+                  padding: "0.65rem 0.9rem",
+                }}
+              >
+                {aiText}
               </div>
             )}
-            <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
-              <label
-                style={{
-                  alignItems: "center",
-                  color: "#4E4A43",
-                  display: "flex",
-                  gap: "0.5rem",
-                }}
-              >
-                <span>Langue</span>
-                <select
-                  aria-label="Langue de l'entretien"
-                  disabled={languageLocked || isRecording || state === "syncing"}
-                  onChange={(event) =>
-                    setLanguage(event.target.value === "en" ? "en" : "fr")
-                  }
-                  style={{
-                    background: "#FFFFFF",
-                    border: "1px solid #D9D4CA",
-                    borderRadius: "0.65rem",
-                    padding: "0.45rem 0.75rem",
-                  }}
-                  value={language}
-                >
-                  <option value="fr">Francais</option>
-                  <option value="en">English</option>
-                </select>
-              </label>
-              <label
-                style={{
-                  alignItems: "center",
-                  color: "#4E4A43",
-                  display: "flex",
-                  gap: "0.5rem",
-                }}
-              >
-                <span>Profil</span>
-                <select
-                  aria-label="Profil du recruteur"
-                  disabled={languageLocked || isRecording || state === "syncing"}
-                  onChange={(event) =>
-                    setProfile(event.target.value as InterviewRecruiterProfile)
-                  }
-                  style={{
-                    background: "#FFFFFF",
-                    border: "1px solid #D9D4CA",
-                    borderRadius: "0.65rem",
-                    padding: "0.45rem 0.75rem",
-                  }}
-                  value={profile}
-                >
-                  <option value="standard">Standard</option>
-                  <option value="aggressive">Agressif</option>
-                  <option value="passive">Passif</option>
-                  <option value="technical">Technique</option>
-                  <option value="behavioral">Comportemental</option>
-                </select>
-              </label>
-              <label
-                style={{
-                  alignItems: "center",
-                  color: "#4E4A43",
-                  display: "flex",
-                  gap: "0.5rem",
-                }}
-              >
-                <span>Candidature</span>
-                <select
-                  aria-label="Candidature liee"
-                  disabled={languageLocked || isRecording || state === "syncing"}
-                  onChange={(event) => setApplicationId(event.target.value)}
-                  style={{
-                    background: "#FFFFFF",
-                    border: "1px solid #D9D4CA",
-                    borderRadius: "0.65rem",
-                    padding: "0.45rem 0.75rem",
-                  }}
-                  value={applicationId}
-                >
-                  <option value="">Aucune (mode pratique libre)</option>
-                  {applications.map((application) => (
-                    <option key={application.id} value={application.id}>
-                      {application.title}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <Button
-                disabled={!canStartInterview}
-                onClick={() => void startCapture()}
-                type="button"
-              >
-                {session ? "Reprendre la capture" : "Demarrer l'entretien"}
-              </Button>
-              <Button
-                disabled={!isRecording}
-                onClick={stopCapture}
-                type="button"
-                variant="secondary"
-              >
-                Arreter
-              </Button>
-              <Button
-                disabled={!canFinishSession}
-                onClick={() => void finishSession()}
-                type="button"
-                variant="secondary"
-              >
-                Terminer la session
-              </Button>
-              <Button onClick={resetSession} type="button" variant="ghost">
-                Nouvelle session
-              </Button>
-            </div>
+            <div ref={transcriptEndRef} />
           </div>
 
-          <p
-            style={{
-              color: "#6B6860",
-              fontSize: "0.95rem",
-              lineHeight: 1.5,
-              margin: 0,
-            }}
-          >
-            {INTERVIEW_PROFILE_HINTS[profile]}
-          </p>
-          <p
-            style={{
-              color: "#6B6860",
-              fontSize: "0.95rem",
-              lineHeight: 1.5,
-              margin: 0,
-            }}
-          >
-            {selectedApplication
-              ? `Rapport sauvegarde sur ${selectedApplication.title}${
-                  selectedApplication.companyName
-                    ? ` · ${selectedApplication.companyName}`
-                    : ""
-                }.`
-              : "Mode pratique libre — le rapport ne sera pas lié à une candidature."}
-          </p>
-
-          <p
-            role={state === "error" ? "alert" : "status"}
-            style={{
-              backgroundColor: state === "error" ? "#FBEAE7" : "#FAFAF7",
-              border: "1px solid #D9D4CA",
-              borderRadius: "0.75rem",
-              color: state === "error" ? "#8A2C20" : "#4E4A43",
-              lineHeight: 1.6,
-              margin: 0,
-              padding: "0.875rem 1rem",
-            }}
-          >
-            {message}
-          </p>
+          {/* Legacy transcript for non-auto-VAD mode */}
+          {!isAutoVadMode && (
+            <>
+              <Textarea
+                aria-label="Transcription de l'entretien"
+                readOnly
+                rows={8}
+                value={session?.transcript ?? ""}
+              />
+              <div
+                style={{
+                  color: "#6B6860",
+                  display: "grid",
+                  fontSize: "0.95rem",
+                  gap: "0.4rem",
+                }}
+              >
+                {session?.chunks.map((chunk) => (
+                  <span key={chunk.chunkId}>
+                    Chunk {chunk.sequence}: {chunk.status}
+                    {chunk.errorMessage ? ` — ${chunk.errorMessage}` : ""}
+                  </span>
+                )) ?? <span>Aucun chunk traite pour le moment.</span>}
+              </div>
+            </>
+          )}
         </CardContent>
       </Card>
 
+      {/* ── Legacy manual controls (old /interview page only) ── */}
+      {!isAutoVadMode && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Streaming STT progressif</CardTitle>
+            <CardDescription>
+              Le navigateur decoupe la parole en chunks de 500 ms et le backend
+              envoie chaque segment a Voxtral Small via OpenRouter.
+            </CardDescription>
+          </CardHeader>
+          <CardContent style={{ display: "grid", gap: "1rem" }}>
+            <div
+              style={{
+                alignItems: "center",
+                display: "flex",
+                flexWrap: "wrap",
+                gap: "0.75rem",
+                justifyContent: "space-between",
+              }}
+            >
+              <div
+                aria-live="polite"
+                style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}
+              >
+                {isLegacyRecording ? (
+                  <Badge
+                    aria-label={isSpeaking ? "Micro actif – parole détectée" : "Micro actif – silence"}
+                    style={{
+                      alignItems: "center",
+                      animation: "mic-pulse 1.2s ease-in-out infinite",
+                      borderColor: "#4A7C59",
+                      color: "#2D5A3D",
+                      display: "inline-flex",
+                      gap: "0.4rem",
+                    }}
+                    variant="outline"
+                  >
+                    <span
+                      style={{
+                        background: "#4A7C59",
+                        borderRadius: "50%",
+                        display: "inline-block",
+                        height: isSpeaking ? "10px" : "8px",
+                        transition: "height 0.1s, width 0.1s",
+                        width: isSpeaking ? "10px" : "8px",
+                      }}
+                    />
+                    {isSpeaking ? "Parole détectée" : "Micro actif"}
+                  </Badge>
+                ) : (
+                  <Badge
+                    style={state === "error" ? { borderColor: "#E5B8AF", color: "#8A2C20" } : undefined}
+                    variant="outline"
+                  >
+                    Etat: {state}
+                  </Badge>
+                )}
+                <Badge variant="outline">
+                  Langue: {language === "fr" ? "FR" : "EN"}
+                </Badge>
+                <Badge variant="outline">
+                  Profil: {INTERVIEW_PROFILE_LABELS[profile]}
+                </Badge>
+                <Badge variant="outline">
+                  Session: {session?.id ?? "pas encore creee"}
+                </Badge>
+                <Badge variant="outline">
+                  Chunks: {summarizeChunkCount(session)}
+                </Badge>
+              </div>
+              {isLegacyRecording && (
+                <div
+                  aria-hidden="true"
+                  style={{
+                    background: "#F0EDE8",
+                    borderRadius: "2px",
+                    height: "4px",
+                    overflow: "hidden",
+                  }}
+                >
+                  <div
+                    style={{
+                      background: isSpeaking ? "#4A7C59" : "#D9D4CA",
+                      borderRadius: "2px",
+                      height: "100%",
+                      transition: "width 0.05s linear, background 0.1s",
+                      width: `${Math.min(100, vadLevel * 100 * 4)}%`,
+                    }}
+                  />
+                </div>
+              )}
+              <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
+                <label
+                  style={{
+                    alignItems: "center",
+                    color: "#4E4A43",
+                    display: "flex",
+                    gap: "0.5rem",
+                  }}
+                >
+                  <span>Langue</span>
+                  <select
+                    aria-label="Langue de l'entretien"
+                    disabled={languageLocked || isLegacyRecording || state === "syncing"}
+                    onChange={(event) =>
+                      setLanguage(event.target.value === "en" ? "en" : "fr")
+                    }
+                    style={{
+                      background: "#FFFFFF",
+                      border: "1px solid #D9D4CA",
+                      borderRadius: "0.65rem",
+                      padding: "0.45rem 0.75rem",
+                    }}
+                    value={language}
+                  >
+                    <option value="fr">Francais</option>
+                    <option value="en">English</option>
+                  </select>
+                </label>
+                <label
+                  style={{
+                    alignItems: "center",
+                    color: "#4E4A43",
+                    display: "flex",
+                    gap: "0.5rem",
+                  }}
+                >
+                  <span>Profil</span>
+                  <select
+                    aria-label="Profil du recruteur"
+                    disabled={languageLocked || isLegacyRecording || state === "syncing"}
+                    onChange={(event) =>
+                      setProfile(event.target.value as InterviewRecruiterProfile)
+                    }
+                    style={{
+                      background: "#FFFFFF",
+                      border: "1px solid #D9D4CA",
+                      borderRadius: "0.65rem",
+                      padding: "0.45rem 0.75rem",
+                    }}
+                    value={profile}
+                  >
+                    <option value="standard">Standard</option>
+                    <option value="aggressive">Agressif</option>
+                    <option value="passive">Passif</option>
+                    <option value="technical">Technique</option>
+                    <option value="behavioral">Comportemental</option>
+                  </select>
+                </label>
+                <label
+                  style={{
+                    alignItems: "center",
+                    color: "#4E4A43",
+                    display: "flex",
+                    gap: "0.5rem",
+                  }}
+                >
+                  <span>Candidature</span>
+                  <select
+                    aria-label="Candidature liee"
+                    disabled={languageLocked || isLegacyRecording || state === "syncing"}
+                    onChange={(event) => setApplicationId(event.target.value)}
+                    style={{
+                      background: "#FFFFFF",
+                      border: "1px solid #D9D4CA",
+                      borderRadius: "0.65rem",
+                      padding: "0.45rem 0.75rem",
+                    }}
+                    value={applicationId}
+                  >
+                    <option value="">Aucune (mode pratique libre)</option>
+                    {applications.map((application) => (
+                      <option key={application.id} value={application.id}>
+                        {application.title}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <Button
+                  disabled={!canStartInterview}
+                  onClick={() => void startCapture()}
+                  type="button"
+                >
+                  {session ? "Reprendre la capture" : "Demarrer l'entretien"}
+                </Button>
+                <Button
+                  disabled={!isLegacyRecording}
+                  onClick={stopCapture}
+                  type="button"
+                  variant="secondary"
+                >
+                  Arreter
+                </Button>
+                <Button
+                  disabled={!canFinishSession}
+                  onClick={() => void finishSession()}
+                  type="button"
+                  variant="secondary"
+                >
+                  Terminer la session
+                </Button>
+                <Button onClick={resetSession} type="button" variant="ghost">
+                  Nouvelle session
+                </Button>
+              </div>
+            </div>
+
+            <p
+              style={{
+                color: "#6B6860",
+                fontSize: "0.95rem",
+                lineHeight: 1.5,
+                margin: 0,
+              }}
+            >
+              {INTERVIEW_PROFILE_HINTS[profile]}
+            </p>
+            <p
+              style={{
+                color: "#6B6860",
+                fontSize: "0.95rem",
+                lineHeight: 1.5,
+                margin: 0,
+              }}
+            >
+              {selectedApplication
+                ? `Rapport sauvegarde sur ${selectedApplication.title}${
+                    selectedApplication.companyName
+                      ? ` · ${selectedApplication.companyName}`
+                      : ""
+                  }.`
+                : "Mode pratique libre — le rapport ne sera pas lié à une candidature."}
+            </p>
+
+            <p
+              role={state === "error" ? "alert" : "status"}
+              style={{
+                backgroundColor: state === "error" ? "#FBEAE7" : "#FAFAF7",
+                border: "1px solid #D9D4CA",
+                borderRadius: "0.75rem",
+                color: state === "error" ? "#8A2C20" : "#4E4A43",
+                lineHeight: 1.6,
+                margin: 0,
+                padding: "0.875rem 1rem",
+              }}
+            >
+              {message}
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* ── Report ── */}
       <Card>
         <CardHeader>
           <CardTitle>Rapport post-entretien</CardTitle>
@@ -1205,39 +1639,7 @@ export function InterviewStudio({
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Transcription partielle</CardTitle>
-          <CardDescription>
-            Reprise resiliente: la session courante est conservee dans le navigateur
-            et rehydratee si vous revenez sur la page.
-          </CardDescription>
-        </CardHeader>
-        <CardContent style={{ display: "grid", gap: "1rem" }}>
-          <Textarea
-            aria-label="Transcription de l'entretien"
-            readOnly
-            rows={10}
-            value={session?.transcript ?? ""}
-          />
-          <div
-            style={{
-              color: "#6B6860",
-              display: "grid",
-              fontSize: "0.95rem",
-              gap: "0.4rem",
-            }}
-          >
-            {session?.chunks.map((chunk) => (
-              <span key={chunk.chunkId}>
-                Chunk {chunk.sequence}: {chunk.status}
-                {chunk.errorMessage ? ` — ${chunk.errorMessage}` : ""}
-              </span>
-            )) ?? <span>Aucun chunk traite pour le moment.</span>}
-          </div>
-        </CardContent>
-      </Card>
-
+      {/* ── AI Response (LLM → TTS) ── */}
       <Card>
         <CardHeader>
           <CardTitle>Reponse IA (LLM → TTS)</CardTitle>
