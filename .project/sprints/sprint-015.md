@@ -21,13 +21,13 @@ Ouvrir `V2.0` en étendant CVforge vers les usages recruteur et entreprise, tout
     - [x] Les organisations et comptes entreprise sont gérés
     - [x] Les permissions sont séparées des rôles `user` et `admin`
   - Source: vision `§16`
-- [ ] **[US-052]** Ajouter l'import PDF d'offre et la connexion sociale à évaluer
+- [x] **[US-052]** Ajouter l'import PDF d'offre et la connexion sociale à évaluer
   - Agent: `analyst`
   - Workflow: `spike-research`
   - Acceptance criteria:
-    - [ ] L'import PDF d'offre est intégré ou cadré précisément
-    - [ ] La connexion sociale Google/LinkedIn est évaluée avec impacts sécurité et RGPD
-    - [ ] Les choix sont documentés sans sortir du périmètre V2.0
+    - [x] L'import PDF d'offre est intégré ou cadré précisément
+    - [x] La connexion sociale Google/LinkedIn est évaluée avec impacts sécurité et RGPD
+    - [x] Les choix sont documentés sans sortir du périmètre V2.0
   - Source: vision `§3.1`, `§16`
 - [ ] **[US-053]** Ajouter l'extension browser pour le scraping d'offres
   - Agent: `developer`
