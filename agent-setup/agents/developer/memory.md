@@ -517,6 +517,13 @@
 - **Learned**: `renderToStaticMarkup` renders client components with their initial state — this is the key test isolation pattern for `"use client"` components. Modals/panels that start closed don't appear in SSR markup; tests must be updated accordingly (remove assertions for content inside initially-closed overlays).
 - **Open**: `<tr onClick>` row activation is click-only; keyboard (Enter/Space) requires an additional `onKeyDown` handler for full keyboard accessibility — advisory for a future pass.
 
+## 2026-05-07 — US-064
+
+- **Did**: Refactored `InterviewStudio` for auto-VAD: added `VadStatus` state machine (`listening/recording/processing/muted`), `initMicStream()` for auto-mic on mount with `preloadedSessionId`, `autoStartRecording()` triggered by VAD speech detection, 45-frame silence threshold for auto-stop. Added chat transcript (alternating bubbles from `session.chunks` + streamed AI), session timer, "Fin de session" at top, mute toggle. Moved `[sessionId]/route.ts` → `[sessionId]/session/route.ts` to resolve page+route routing conflict from US-063. Fixed TypeScript build error in `candidature-detail-tabs.tsx`. Added 8 new VAD tests.
+- **Why**: US-064 removes push-to-talk and replaces with fully automatic VAD-driven recording. Routing conflict fix was a prerequisite for a clean build.
+- **Learned**: Next.js App Router can't have both `[param]/page.tsx` and `[param]/route.ts` at the same path segment — must nest the route. VAD RAF loop must use refs (not state) for all values it acts on to avoid stale closures. `SILENCE_FRAMES_TO_STOP = 45` (~750ms at 60fps) is a reasonable auto-stop threshold for speech interaction.
+- **Open**: AbortController not wired on unmount for SSE stream in `streamAIResponse` (pre-existing). Language/aiState stale closures in `speakNext` (pre-existing).
+
 ## 2026-05-07 — US-063
 
 - **Did**: Created `/interview/new` 3-step setup wizard (candidature select → profile cards → language/params), `/interview/[sessionId]/page.tsx` shell, extended `InterviewStudio` with `preloadedSessionId` prop, and added "Préparer un entretien" CTA to candidature detail. 12 new tests added; all 263 tests green.

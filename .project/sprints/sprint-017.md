@@ -24,18 +24,18 @@ Refondre l'expérience interview : écran de setup, VAD automatique (plus de bou
     - [x] URL param `?candidatureId=` pré-sélectionne la candidature (appelé depuis `/candidatures/[id]`)
   - Source: vision `§10`
 
-- [ ] **[US-064]** Refondre l'Interview Studio avec VAD automatique
+- [x] **[US-064]** Refondre l'Interview Studio avec VAD automatique
   - Agent: `developer`
   - Workflow: `analyze-design-dev-review`
   - Acceptance criteria:
-    - [ ] Le bouton push-to-talk manuel est **supprimé**
-    - [ ] Le VAD `AnalyserNode` est actif dès l'entrée en session
-    - [ ] Les états VAD sont affichés: `🟢 À l'écoute` / `🔴 Enregistrement` / `🟡 Traitement` / `⚫ Muet`
-    - [ ] Mute toggle disponible (optionnel, ne casse pas le VAD)
-    - [ ] Transcript défilant avec messages AI et utilisateur alternés
-    - [ ] Timer de session visible
-    - [ ] Bouton "Fin de session" en haut (pas en bas)
-    - [ ] Auto-scroll du transcript au dernier message
+    - [x] Le bouton push-to-talk manuel est **supprimé**
+    - [x] Le VAD `AnalyserNode` est actif dès l'entrée en session
+    - [x] Les états VAD sont affichés: `🟢 À l'écoute` / `🔴 Enregistrement` / `🟡 Traitement` / `⚫ Muet`
+    - [x] Mute toggle disponible (optionnel, ne casse pas le VAD)
+    - [x] Transcript défilant avec messages AI et utilisateur alternés
+    - [x] Timer de session visible
+    - [x] Bouton "Fin de session" en haut (pas en bas)
+    - [x] Auto-scroll du transcript au dernier message
   - Source: vision `§10`
 
 - [ ] **[US-065]** Corriger la continuité de l'agent: messages[] server-side par sessionId
