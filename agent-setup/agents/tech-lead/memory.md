@@ -377,6 +377,13 @@
 - **Learned**: The right boundary is to keep session generation inside the interview module but persist the resulting score/report under the application aggregate consumed by product analytics.
 - **Open**: The current JSON-file persistence remains acceptable for single-node development, but report concurrency and multi-instance consistency should move to shared storage before production scale.
 
+## 2026-05-07 — US-052 decide
+
+- **Did**: Approved PROCEED decisions for both PDF import (hybrid pdfjs-dist + Mistral fallback) and social login (Passport.js OAuth2), mandated ADR-006 and ADR-007 before implementation.
+- **Why**: Both features are V2.0 scope per vision §3.1 and §16; the spike needed architectural gate decisions before implementation stories can be opened.
+- **Learned**: The hybrid PDF approach is the only option that satisfies both RGPD §15 (no personal data to Mistral) and handles scanned PDFs. For OAuth2, Passport.js is the right NestJS-native choice — Auth.js would create a split auth boundary between Next.js and NestJS.
+- **Open**: ADR-006 and ADR-007 are blocking prerequisites. Social login also requires a privacy policy update and a token revocation endpoint.
+
 ## 2026-04-26 — US-050 finalization
 
 - **Did**: Closed US-050 with a passing verdict after confirming browser-side audio replay, free-practice mode fix, RGPD purge service, and pre-generation prefetch are all implemented, tested (446 tests green), and lint/build clean. Ticked sprint-014 DoD and added sprint 14 to `completed_sprints`.

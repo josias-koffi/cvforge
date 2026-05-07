@@ -40,3 +40,10 @@
 - **Why**: Sprint `011` required either implementation or a precise, source-backed framing of recruiter search without inventing scope beyond the vision.
 - **Learned**: The current candidature flow already provides the right anchor points; recruiter search should be an assisted step on an existing application, not a separate sourcing product.
 - **Open**: Future implementation still needs a concrete persistence shape for recruiter contacts and a decision on which public search/provider boundary is acceptable operationally.
+
+## 2026-05-07 — US-052
+
+- **Did**: Framed and investigated PDF offer import and social login (Google/LinkedIn) for V2.0, producing SPIKE-004 and workflow artifacts under `.project/workflows/spike-research-20260507120000/`.
+- **Why**: Sprint 015 required these two V2.0 features to be precisely framed or integrated, with security and RGPD impacts documented.
+- **Learned**: Hybrid approach for PDF (pdfjs-dist local first, Mistral vision fallback) is the only RGPD-safe option given §15 constraints. For social login, Passport.js is coherent with NestJS architecture; Auth.js is a Next.js-only solution and would break the monorepo boundary separation.
+- **Open**: ADR-006 (pdfjs-dist) and ADR-007 (Passport.js OAuth2) must be created before any implementation story can be opened for these features.
