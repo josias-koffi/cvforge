@@ -55,6 +55,27 @@ export class ApplicationsController {
     };
   }
 
+  @Get(":applicationId")
+  getApplication(
+    @Param("applicationId") applicationId: string,
+    @Req() request: RequestLike,
+  ) {
+    const session = this.authService.readSessionFromCookieHeader(
+      request.headers.cookie,
+    );
+
+    if (!session) {
+      throw new UnauthorizedException("A valid session is required.");
+    }
+
+    return {
+      application: this.applicationsService.getApplicationForUser(
+        session.email,
+        applicationId,
+      ),
+    };
+  }
+
   @Post("import-from-url")
   async importFromUrl(
     @Body() body: { url?: string },

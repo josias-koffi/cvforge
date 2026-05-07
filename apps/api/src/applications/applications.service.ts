@@ -219,6 +219,16 @@ export class ApplicationsService {
     };
   }
 
+  getApplicationForUser(userEmail: string, applicationId: string): DraftApplication {
+    const application = this.store.findByIdForUserEmail(userEmail, applicationId);
+
+    if (!application) {
+      throw new NotFoundException("La candidature est introuvable.");
+    }
+
+    return stripRawOfferText(application);
+  }
+
   getOwnedApplication(userEmail: string, applicationId: string): StoredApplication {
     const application = this.store.findByIdForUserEmail(userEmail, applicationId);
 

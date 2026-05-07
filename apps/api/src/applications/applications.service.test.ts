@@ -386,4 +386,39 @@ describe("ApplicationsService", () => {
     });
     expect(third.status).toBe("draft");
   });
+
+  it("getApplicationForUser returns a DraftApplication for the owner", async () => {
+    openRouterService.chat.mockResolvedValue(
+      JSON.stringify({ title: "Engineer", companyName: "Acme", summary: "Build APIs", requirements: [], responsibilities: [] }),
+    );
+    const service = new ApplicationsService(
+      createStore(),
+      openRouterService as never,
+      creditsService,
+    );
+
+    const offerText = "Software Engineer role at Acme Corp. "
+      + "We are looking for a talented engineer with strong TypeScript skills. "
+      + "Responsibilities include building APIs and mentoring junior developers. "
+      + "Requirements include Node.js, TypeScript, PostgreSQL, and cloud infrastructure experience.";
+
+    const created = await service.importFromText("user@example.com", offerText);
+    const found = service.getApplicationForUser("user@example.com", created.id);
+
+    expect(found.id).toBe(created.id);
+    expect(found).not.toHaveProperty("rawOfferText");
+    expect(found).not.toHaveProperty("cvContent");
+  });
+
+  it("getApplicationForUser throws NotFoundException for unknown id", () => {
+    const service = new ApplicationsService(
+      createStore(),
+      openRouterService as never,
+      creditsService,
+    );
+
+    expect(() =>
+      service.getApplicationForUser("user@example.com", "not-found"),
+    ).toThrow(NotFoundException);
+  });
 });
