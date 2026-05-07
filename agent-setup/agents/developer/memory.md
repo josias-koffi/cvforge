@@ -524,6 +524,13 @@
 - **Learned**: Next.js App Router can't have both `[param]/page.tsx` and `[param]/route.ts` at the same path segment — must nest the route. VAD RAF loop must use refs (not state) for all values it acts on to avoid stale closures. `SILENCE_FRAMES_TO_STOP = 45` (~750ms at 60fps) is a reasonable auto-stop threshold for speech interaction.
 - **Open**: AbortController not wired on unmount for SSE stream in `streamAIResponse` (pre-existing). Language/aiState stale closures in `speakNext` (pre-existing).
 
+## 2026-05-07 — US-065
+
+- **Did**: Added `InterviewMessage` type and `messages: InterviewMessage[]` field to `InterviewSessionSummary`. Added `normalizeMessages()` in `interview.types.ts` and called it in `interview.store.ts`. In `interview.service.ts`: added `appendMessage()` helper with `MAX_MESSAGES=20` cap, added `buildConversation()` private method, initialized `messages: []` in `startSession()`, appended user messages on each successful STT chunk, appended assistant messages after each AI response (both stream and prefetch paths), and replaced the flat `user(transcript)` call with `buildConversation(session.messages)` in `streamAIResponse()` and `prefetchNextQuestion()`. Fixed `messages` field in 4 test fixtures. Added 4 new service tests including the 3-exchange context continuity assertion.
+- **Why**: The LLM was stateless — it received only the flat `session.transcript` string and had no knowledge of its own prior turns, causing it to repeat itself and ignore context.
+- **Learned**: The correct pattern for multi-turn LLM continuity is to persist `messages[]` in the session store (not reconstruct from chunks), append to it on the server side, and pass the full array as the OpenAI-style messages array each call. The file-backed store satisfies all AC including RGPD purge without Redis.
+- **Open**: `MAX_MESSAGES=20` drops oldest messages without guaranteeing user+assistant pair alignment — advisory only at current session lengths.
+
 ## 2026-05-07 — US-063
 
 - **Did**: Created `/interview/new` 3-step setup wizard (candidature select → profile cards → language/params), `/interview/[sessionId]/page.tsx` shell, extended `InterviewStudio` with `preloadedSessionId` prop, and added "Préparer un entretien" CTA to candidature detail. 12 new tests added; all 263 tests green.

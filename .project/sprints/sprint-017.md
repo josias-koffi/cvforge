@@ -38,16 +38,16 @@ Refondre l'expérience interview : écran de setup, VAD automatique (plus de bou
     - [x] Auto-scroll du transcript au dernier message
   - Source: vision `§10`
 
-- [ ] **[US-065]** Corriger la continuité de l'agent: messages[] server-side par sessionId
+- [x] **[US-065]** Corriger la continuité de l'agent: messages[] server-side par sessionId
   - Agent: `developer`
   - Workflow: `analyze-design-dev-review`
   - Acceptance criteria:
-    - [ ] Chaque session interview a une clé Redis `interview:session:[sessionId]:messages` contenant un tableau de messages `{role, content, timestamp}`
-    - [ ] Chaque chunk STT reçu est **ajouté** au tableau existant (pas de remplacement)
-    - [ ] Le tableau complet est envoyé au LLM à chaque tour (contexte total)
-    - [ ] La session est terminée proprement: le tableau est purgé après `ttl` (conforme RGPD §15.5)
-    - [ ] Aucun "reset" implicite du contexte LLM mid-session
-    - [ ] Test: après 3 échanges, le LLM répond en tenant compte des messages précédents
+    - [x] Chaque session interview a une clé Redis `interview:session:[sessionId]:messages` contenant un tableau de messages `{role, content, timestamp}`
+    - [x] Chaque chunk STT reçu est **ajouté** au tableau existant (pas de remplacement)
+    - [x] Le tableau complet est envoyé au LLM à chaque tour (contexte total)
+    - [x] La session est terminée proprement: le tableau est purgé après `ttl` (conforme RGPD §15.5)
+    - [x] Aucun "reset" implicite du contexte LLM mid-session
+    - [x] Test: après 3 échanges, le LLM répond en tenant compte des messages précédents
   - Source: vision `§10`
 
 - [ ] **[US-066]** Créer l'écran rapport entretien `/interview/[id]/report`
