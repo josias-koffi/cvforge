@@ -516,3 +516,10 @@
 - **Why**: US-061 sprint 016 — desktop-first table UX replacing the verbose card list.
 - **Learned**: `renderToStaticMarkup` renders client components with their initial state — this is the key test isolation pattern for `"use client"` components. Modals/panels that start closed don't appear in SSR markup; tests must be updated accordingly (remove assertions for content inside initially-closed overlays).
 - **Open**: `<tr onClick>` row activation is click-only; keyboard (Enter/Space) requires an additional `onKeyDown` handler for full keyboard accessibility — advisory for a future pass.
+
+## 2026-05-07 — US-063
+
+- **Did**: Created `/interview/new` 3-step setup wizard (candidature select → profile cards → language/params), `/interview/[sessionId]/page.tsx` shell, extended `InterviewStudio` with `preloadedSessionId` prop, and added "Préparer un entretien" CTA to candidature detail. 12 new tests added; all 263 tests green.
+- **Why**: Sprint 017 US-063 — decouples session configuration from the active studio, enabling the setup→studio navigation flow.
+- **Learned**: Client components using `useRouter` must have `next/navigation` mocked in server-render tests; page-level tests use `renderToStaticMarkup` which executes initial client state.
+- **Open**: US-064 will remove push-to-talk and refactor the in-session studio; the locked dropdowns in `InterviewStudio` are acceptable until then.

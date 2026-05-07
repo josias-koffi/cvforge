@@ -369,3 +369,10 @@
 - **Why**: User feedback identified 7 structural UX problems requiring a full redesign: mobile-first mismatch, missing intermediate screens, no tables, broken interview UX, Puck misplacement, information overload, and weak navigation.
 - **Learned**: US-068 (remove Puck from user editor) explicitly contradicts vision §8 — must be confirmed as a product decision before Sprint 018 begins. Sprint 015 B2B work (US-052/053/054) can run in parallel with Sprint 016 since they touch separate domains.
 - **Open**: Confirm US-068 product decision. Confirm whether "Papier & Crayon" tokens survive on print surfaces post-E15 polish sprint (US-071).
+
+## 2026-05-07 — US-063 analyze
+
+- **Did**: Confirmed US-063 scope as a 3-step setup wizard at `/interview/new` plus a `/interview/[sessionId]` page shell and a "Préparer un entretien" CTA in the candidature detail. No new API changes needed.
+- **Why**: Sprint 017 required separating session configuration from the active studio experience.
+- **Learned**: The existing `/interview/start` route already handles session creation — the wizard just needs a client-side redirect after the POST response.
+- **Open**: US-064 will refactor the in-session studio to replace push-to-talk with auto-VAD.

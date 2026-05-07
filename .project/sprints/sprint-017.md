@@ -13,15 +13,15 @@ Refondre l'expérience interview : écran de setup, VAD automatique (plus de bou
 
 ## ✅ Tasks (3–8 max)
 
-- [ ] **[US-063]** Créer l'écran setup entretien `/interview/new`
+- [x] **[US-063]** Créer l'écran setup entretien `/interview/new`
   - Agent: `designer` + `developer`
   - Workflow: `analyze-design-dev-review`
   - Acceptance criteria:
-    - [ ] Étape 1: sélection candidature (search/select) ou "Mode libre"
-    - [ ] Étape 2: sélection du profil recruteur (liste de cards)
-    - [ ] Étape 3: sélection langue et difficulté
-    - [ ] CTA "Démarrer" crée la session et redirige vers `/interview/[sessionId]`
-    - [ ] URL param `?candidatureId=` pré-sélectionne la candidature (appelé depuis `/candidatures/[id]`)
+    - [x] Étape 1: sélection candidature (search/select) ou "Mode libre"
+    - [x] Étape 2: sélection du profil recruteur (liste de cards)
+    - [x] Étape 3: sélection langue et difficulté
+    - [x] CTA "Démarrer" crée la session et redirige vers `/interview/[sessionId]`
+    - [x] URL param `?candidatureId=` pré-sélectionne la candidature (appelé depuis `/candidatures/[id]`)
   - Source: vision `§10`
 
 - [ ] **[US-064]** Refondre l'Interview Studio avec VAD automatique

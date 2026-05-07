@@ -397,3 +397,10 @@
 - **Why**: Architecture governance sign-off before sprint-016 closure.
 - **Learned**: Roving tabindex (`tabIndex={-1}` on inactive tabs) is the correct ARIA pattern for keyboard navigation within a tablist; it does not require focus-trap.
 - **Open**: Sprint 016 is complete (US-060 ✓ US-061 ✓ US-062 ✓). Sprint DoD pending.
+
+## 2026-05-07 — US-063
+
+- **Did**: Signed off US-063 — setup wizard at `/interview/new`, session page shell at `/interview/[sessionId]`, candidature detail CTA. No new library, no ADR required. All tests and lint green.
+- **Why**: Architecture governance sign-off — server/client split is clean, backward-compatible prop extension pattern used.
+- **Learned**: Adding an optional prop to `InterviewStudio` is the right way to extend a large client component without breaking the existing `/interview` entry point.
+- **Open**: US-064 will refactor the in-session studio (remove push-to-talk, add auto-VAD). The locked dropdowns advisory can be cleared then.

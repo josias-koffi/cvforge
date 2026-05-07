@@ -327,3 +327,10 @@
 - **Why**: Sprint 016 QA gate before marking US-062 complete.
 - **Learned**: Tab panels must always be rendered (with display:none for inactive) for SSR tests to pass — conditional unmounting hides content from `renderToStaticMarkup`. Always mock `useRouter` from `next/navigation` in table/page tests when components import it.
 - **Open**: None — US-062 fully verified.
+
+## 2026-05-07 — US-063
+
+- **Did**: Verified all 5 acceptance criteria for the `/interview/new` setup wizard — 3-step stepper, profile cards, language toggle, CTA creates session and redirects, `?candidatureId=` pre-selects. Confirmed 263 tests green, lint 0 errors, WCAG 2.1 AA (role attributes, aria-checked, aria-label, aria-current).
+- **Why**: Sprint 017 QA gate before marking US-063 complete.
+- **Learned**: Step indicator accessibility requires `aria-current="step"` on the active step button. Wizard step navigation tests should click the actual button text rather than rely on DOM order.
+- **Open**: None — US-063 fully verified.
