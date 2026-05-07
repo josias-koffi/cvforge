@@ -369,6 +369,12 @@ export interface InterviewTranscriptChunk {
   transcript: string;
 }
 
+export interface InterviewMessage {
+  role: "user" | "assistant";
+  content: string;
+  timestamp: string;
+}
+
 export interface InterviewSessionSummary {
   applicationId: string | null;
   aiResponse: string | null;
@@ -380,6 +386,7 @@ export interface InterviewSessionSummary {
   id: string;
   language: Locale;
   lastError: string | null;
+  messages: InterviewMessage[];
   prefetchedQuestion: string | null;
   profile: InterviewRecruiterProfile;
   report: InterviewReport | null;

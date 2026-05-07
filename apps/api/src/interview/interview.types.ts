@@ -1,4 +1,5 @@
 import type {
+  InterviewMessage,
   InterviewReport,
   InterviewSessionSummary,
   InterviewTranscriptChunk,
@@ -32,6 +33,7 @@ export function summarizeInterviewSession(
     id: session.id,
     language: session.language,
     lastError: session.lastError,
+    messages: session.messages,
     prefetchedQuestion: session.prefetchedQuestion ?? null,
     profile: session.profile,
     report: session.report,
@@ -40,6 +42,28 @@ export function summarizeInterviewSession(
     transcript: session.transcript,
     updatedAt: session.updatedAt,
   };
+}
+
+export function normalizeMessages(value: unknown): InterviewMessage[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .map((entry) => {
+      if (!entry || typeof entry !== "object") {
+        return null;
+      }
+
+      const msg = entry as Record<string, unknown>;
+      const role = msg.role === "assistant" ? "assistant" : "user";
+      const content = typeof msg.content === "string" ? msg.content : "";
+      const timestamp =
+        typeof msg.timestamp === "string" ? msg.timestamp : new Date(0).toISOString();
+
+      return { role, content, timestamp } as InterviewMessage;
+    })
+    .filter((msg): msg is InterviewMessage => msg !== null && msg.content.length > 0);
 }
 
 export function normalizeInterviewReport(

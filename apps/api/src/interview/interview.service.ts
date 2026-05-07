@@ -17,6 +17,7 @@ import {
   INTERVIEW_SESSION_STATUS_RECORDING,
   type Locale,
   type InterviewAIResponseEvent,
+  type InterviewMessage,
   type InterviewReport,
   type InterviewReportMetric,
   type InterviewRecruiterProfile,
@@ -40,6 +41,7 @@ const INTERVIEW_PROVIDER = {
   order: ["mistral"] as string[],
   require_parameters: true,
 } as const;
+const MAX_MESSAGES = 20;
 const HESITATION_TOKENS = [
   "euh",
   "heu",
@@ -172,6 +174,15 @@ function nowIso() {
   return new Date().toISOString();
 }
 
+function appendMessage(messages: InterviewMessage[], msg: InterviewMessage): InterviewMessage[] {
+  const updated = [...messages, msg];
+  if (updated.length <= MAX_MESSAGES) {
+    return updated;
+  }
+  // Drop the oldest user+assistant pair to stay within context budget
+  return updated.slice(updated.length - MAX_MESSAGES);
+}
+
 function normalizeTranscript(value: string) {
   return value.replace(/\s+/g, " ").trim();
 }
@@ -268,6 +279,7 @@ export class InterviewService {
       id: `interview_${Date.now().toString(36)}`,
       language,
       lastError: null,
+      messages: [],
       prefetchedQuestion: null,
       profile,
       report: null,
@@ -302,12 +314,9 @@ export class InterviewService {
     }
 
     try {
-      const languageConfig = this.getLanguageConfig(session.language);
+      const conversation = this.buildConversation(session.language, session.profile, session.messages);
       const question = await this.openRouter.chat(
-        [
-          { role: "system", content: this.buildAiPrompt(session.language, session.profile) },
-          { role: "user", content: `Candidate transcript (${languageConfig.label}): ${session.transcript}` },
-        ],
+        conversation,
         { maxTokens: 120, model: AI_MODEL, provider: INTERVIEW_PROVIDER, temperature: 0.35 },
       );
 
@@ -384,11 +393,12 @@ export class InterviewService {
         ),
       );
 
+      const chunkTimestamp = nowIso();
       session.chunks = sortChunks([
         ...session.chunks,
         {
           chunkId: request.chunkId,
-          createdAt: nowIso(),
+          createdAt: chunkTimestamp,
           endedAt: request.endedAt,
           errorMessage: null,
           isFinal: request.isFinal,
@@ -405,6 +415,13 @@ export class InterviewService {
         ? INTERVIEW_SESSION_STATUS_READY
         : INTERVIEW_SESSION_STATUS_RECORDING;
       session.transcript = joinTranscript(session);
+      if (transcript) {
+        session.messages = appendMessage(session.messages, {
+          role: "user",
+          content: transcript,
+          timestamp: chunkTimestamp,
+        });
+      }
       session.updatedAt = nowIso();
       this.store.save(session);
     } catch (error) {
@@ -452,13 +469,19 @@ export class InterviewService {
     // Use prefetched question when available and clear it for the next turn
     if (session.prefetchedQuestion) {
       const fullText = session.prefetchedQuestion;
+      const prefetchTimestamp = nowIso();
+      session.messages = appendMessage(session.messages, {
+        role: "assistant",
+        content: fullText,
+        timestamp: prefetchTimestamp,
+      });
       session.prefetchedQuestion = null;
       session.aiResponse = fullText;
-      session.aiResponseGeneratedAt = nowIso();
+      session.aiResponseGeneratedAt = prefetchTimestamp;
       session.aiStatus = INTERVIEW_AI_STATUS_DONE;
-      session.updatedAt = nowIso();
+      session.updatedAt = prefetchTimestamp;
       this.store.save(session);
-      yield { index: 0, text: fullText, timestamp: nowIso(), type: "chunk" };
+      yield { index: 0, text: fullText, timestamp: prefetchTimestamp, type: "chunk" };
       yield { fullText, timestamp: nowIso(), type: "done" };
       return;
     }
@@ -473,18 +496,9 @@ export class InterviewService {
     let chunkIndex = 0;
 
     try {
-      const languageConfig = this.getLanguageConfig(session.language);
+      const conversation = this.buildConversation(session.language, session.profile, session.messages);
       const stream = this.openRouter.streamChat(
-        [
-          {
-            role: "system",
-            content: this.buildAiPrompt(session.language, session.profile),
-          },
-          {
-            role: "user",
-            content: `Candidate transcript (${languageConfig.label}): ${session.transcript}`,
-          },
-        ],
+        conversation,
         {
           maxTokens: 120,
           model: AI_MODEL,
@@ -503,10 +517,16 @@ export class InterviewService {
         };
       }
 
+      const aiTimestamp = nowIso();
+      session.messages = appendMessage(session.messages, {
+        role: "assistant",
+        content: fullText,
+        timestamp: aiTimestamp,
+      });
       session.aiResponse = fullText;
-      session.aiResponseGeneratedAt = nowIso();
+      session.aiResponseGeneratedAt = aiTimestamp;
       session.aiStatus = INTERVIEW_AI_STATUS_DONE;
-      session.updatedAt = nowIso();
+      session.updatedAt = aiTimestamp;
       this.store.save(session);
 
       yield { fullText, timestamp: nowIso(), type: "done" };
@@ -689,5 +709,17 @@ export class InterviewService {
       BASE_AI_PROMPTS[resolvedLanguage],
       PROFILE_PROMPTS[resolvedProfile][resolvedLanguage],
     ].join(" ");
+  }
+
+  private buildConversation(
+    language: Locale,
+    profile: InterviewRecruiterProfile,
+    messages: InterviewMessage[],
+  ): Array<{ role: "system" | "user" | "assistant"; content: string }> {
+    const recentMessages = messages.slice(-MAX_MESSAGES);
+    return [
+      { role: "system", content: this.buildAiPrompt(language, profile) },
+      ...recentMessages.map((m) => ({ role: m.role, content: m.content })),
+    ];
   }
 }

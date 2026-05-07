@@ -14,6 +14,7 @@ function makeSession(overrides: Partial<StoredInterviewSession> = {}): StoredInt
     id: "s1",
     language: "fr",
     lastError: null,
+    messages: [],
     prefetchedQuestion: null,
     profile: "standard",
     recoverable: true,

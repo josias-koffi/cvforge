@@ -10,7 +10,7 @@ import {
   type InterviewTranscriptChunk,
 } from "@cvforge/types";
 import type { InterviewStore, StoredInterviewSession } from "./interview.types";
-import { normalizeInterviewReport, sortChunks } from "./interview.types";
+import { normalizeInterviewReport, normalizeMessages, sortChunks } from "./interview.types";
 
 type PersistedInterviewState = {
   sessions: Record<string, StoredInterviewSession>;
@@ -74,6 +74,7 @@ function normalizeSession(session: StoredInterviewSession): StoredInterviewSessi
       typeof session.completedAt === "string" ? session.completedAt : null,
     language: language as Locale,
     lastError: session.lastError ?? null,
+    messages: normalizeMessages(session.messages),
     prefetchedQuestion:
       typeof session.prefetchedQuestion === "string"
         ? session.prefetchedQuestion

@@ -207,7 +207,12 @@ describe("InterviewService", () => {
 
     const session = service.getSession("user@example.com", sessionId);
     const store = createStore();
-    store.save({ ...session, transcript: "Test transcript", userEmail: "user@example.com" });
+    store.save({
+      ...session,
+      messages: [{ role: "user", content: "Test transcript", timestamp: new Date().toISOString() }],
+      transcript: "Test transcript",
+      userEmail: "user@example.com",
+    });
     const svc = new InterviewService(store, openRouter, applicationsService);
 
     const events: string[] = [];
@@ -355,5 +360,125 @@ describe("InterviewService", () => {
     );
 
     expect(result.session.applicationId).toBe("app-001");
+  });
+
+  it("initialises session with an empty messages array", () => {
+    const service = new InterviewService(
+      createStore(),
+      { transcribeAudio: vi.fn() } as unknown as OpenRouterService,
+      createApplicationsService(),
+    );
+
+    const { session } = service.startSession("user@example.com");
+
+    expect(session.messages).toEqual([]);
+  });
+
+  it("appends a user message to messages[] after each transcribed chunk", async () => {
+    const openRouter = {
+      transcribeAudio: vi
+        .fn()
+        .mockResolvedValueOnce("Bonjour")
+        .mockResolvedValueOnce("je suis prêt"),
+    } as unknown as OpenRouterService;
+    const service = new InterviewService(createStore(), openRouter, createApplicationsService());
+    const { sessionId } = service.startSession("user@example.com");
+
+    await service.transcribeChunk("user@example.com", sessionId, {
+      chunkBase64: "AAA",
+      chunkId: "c1",
+      endedAt: "2026-05-07T10:00:01Z",
+      format: "webm",
+      isFinal: false,
+      mimeType: "audio/webm",
+      sequence: 1,
+      startedAt: "2026-05-07T10:00:00Z",
+    });
+    const after2 = await service.transcribeChunk("user@example.com", sessionId, {
+      chunkBase64: "BBB",
+      chunkId: "c2",
+      endedAt: "2026-05-07T10:00:03Z",
+      format: "webm",
+      isFinal: true,
+      mimeType: "audio/webm",
+      sequence: 2,
+      startedAt: "2026-05-07T10:00:02Z",
+    });
+
+    expect(after2.messages).toHaveLength(2);
+    expect(after2.messages[0]).toMatchObject({ role: "user", content: "Bonjour" });
+    expect(after2.messages[1]).toMatchObject({ role: "user", content: "je suis prêt" });
+  });
+
+  it("sends the full messages[] to the LLM on each AI turn (no context reset)", async () => {
+    const streamChatMock = vi
+      .fn()
+      .mockReturnValueOnce(asyncChunks(["Première question."]))
+      .mockReturnValueOnce(asyncChunks(["Deuxième question."]))
+      .mockReturnValueOnce(asyncChunks(["Troisième question."]));
+    const transcribeAudioMock = vi
+      .fn()
+      .mockResolvedValueOnce("Réponse 1")
+      .mockResolvedValueOnce("Réponse 2")
+      .mockResolvedValueOnce("Réponse 3");
+
+    const openRouter = { transcribeAudio: transcribeAudioMock, streamChat: streamChatMock } as unknown as OpenRouterService;
+    const service = new InterviewService(createStore(), openRouter, createApplicationsService());
+    const { sessionId } = service.startSession("user@example.com");
+
+    const chunkBase = { format: "webm", mimeType: "audio/webm", isFinal: true };
+
+    for (let i = 1; i <= 3; i++) {
+      await service.transcribeChunk("user@example.com", sessionId, {
+        ...chunkBase,
+        chunkBase64: `chunk${i}`,
+        chunkId: `c${i}`,
+        endedAt: `2026-05-07T10:0${i}:01Z`,
+        sequence: i,
+        startedAt: `2026-05-07T10:0${i}:00Z`,
+      });
+
+      const events = [];
+      for await (const event of service.streamAIResponse("user@example.com", sessionId)) {
+        events.push(event);
+      }
+      expect(events.at(-1)?.type).toBe("done");
+    }
+
+    const thirdCallMessages = streamChatMock.mock.calls[2]?.[0] as Array<{ role: string }>;
+    // system + 3 user + 2 assistant = 6 messages by the third turn
+    expect(thirdCallMessages.length).toBeGreaterThanOrEqual(6);
+    expect(thirdCallMessages[0]?.role).toBe("system");
+    // Prior assistant messages are included (no context reset)
+    const assistantMessages = thirdCallMessages.filter((m) => m.role === "assistant");
+    expect(assistantMessages).toHaveLength(2);
+  });
+
+  it("appends assistant message to messages[] after AI response", async () => {
+    const openRouter = {
+      transcribeAudio: vi.fn().mockResolvedValue("Bonjour"),
+      streamChat: vi.fn().mockReturnValue(asyncChunks(["Super réponse."])),
+    } as unknown as OpenRouterService;
+    const service = new InterviewService(createStore(), openRouter, createApplicationsService());
+    const { sessionId } = service.startSession("user@example.com");
+
+    await service.transcribeChunk("user@example.com", sessionId, {
+      chunkBase64: "AAA",
+      chunkId: "c1",
+      endedAt: "2026-05-07T10:00:01Z",
+      format: "webm",
+      isFinal: true,
+      mimeType: "audio/webm",
+      sequence: 1,
+      startedAt: "2026-05-07T10:00:00Z",
+    });
+
+    for await (const _ of service.streamAIResponse("user@example.com", sessionId)) {
+      // drain
+    }
+
+    const session = service.getSession("user@example.com", sessionId);
+    expect(session.messages).toHaveLength(2);
+    expect(session.messages[1]).toMatchObject({ role: "assistant", content: "Super réponse." });
   });
 });
