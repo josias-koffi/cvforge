@@ -24,16 +24,16 @@ Refondre la navigation et la gestion des candidatures en desktop-first : sidebar
     - [x] Top bar avec breadcrumb + avatar + notification bell
   - Source: vision `§2.5`, `§2.6`
 
-- [ ] **[US-061]** Convertir la liste candidatures en table filtrée avec slide-over détail
+- [x] **[US-061]** Convertir la liste candidatures en table filtrée avec slide-over détail
   - Agent: `developer`
   - Workflow: `analyze-design-dev-review`
   - Acceptance criteria:
-    - [ ] Table avec colonnes: Poste, Entreprise, Statut (badge), Date, Score entretien, Actions
-    - [ ] Barre de filtres: statut, date range, recherche texte
-    - [ ] Tri par colonne activé (`<th scope="col" aria-sort>`)
-    - [ ] Clic sur ligne → slide-over preview OU navigation vers `/candidatures/[id]`
-    - [ ] CTA "Nouvelle candidature" en haut à droite
-    - [ ] Table paginée (≥ 20 lignes par page)
+    - [x] Table avec colonnes: Poste, Entreprise, Statut (badge), Date, Score entretien, Actions
+    - [x] Barre de filtres: statut, date range, recherche texte
+    - [x] Tri par colonne activé (`<th scope="col" aria-sort>`)
+    - [x] Clic sur ligne → slide-over preview OU navigation vers `/candidatures/[id]`
+    - [x] CTA "Nouvelle candidature" en haut à droite
+    - [x] Table paginée (≥ 20 lignes par page)
   - Source: vision `§7`
 
 - [ ] **[US-062]** Créer l'écran détail candidature `/candidatures/[id]` avec onglets

@@ -495,3 +495,10 @@
 - **Why**: US-060 sprint 016 — desktop-first UX redesign baseline navigation.
 - **Learned**: `"use client"` components work cleanly in `packages/ui` for Next.js App Router; SSR-safe because `useState(false)` means drawer stays closed on initial render. The `MobileDrawerNav` hamburger renders in `renderToStaticMarkup` tests, enabling full coverage without Next.js runtime.
 - **Open**: Focus-trap within drawer is advisory (tab cycles outside drawer on some screen readers). Consider a proper `focus-trap-react` library if UX testing reveals issues.
+
+## 2026-05-07 — US-061
+
+- **Did**: Converted the candidatures list from a card-per-row layout to a filtered/sorted/paginated table with a slide-over detail panel. Created `CandidaturesTable` (client, filters + sort + pagination + slide-over trigger), `CandidaturesSlideOver` (client, `role="dialog"`, ESC/backdrop close, full detail + actions), and `NouvelleCondidatureModal` (client, URL + text import forms). Refactored `page.tsx` to a lean server component. Added 27 new tests (233 total). Lint, tests, and build all green.
+- **Why**: US-061 sprint 016 — desktop-first table UX replacing the verbose card list.
+- **Learned**: `renderToStaticMarkup` renders client components with their initial state — this is the key test isolation pattern for `"use client"` components. Modals/panels that start closed don't appear in SSR markup; tests must be updated accordingly (remove assertions for content inside initially-closed overlays).
+- **Open**: `<tr onClick>` row activation is click-only; keyboard (Enter/Space) requires an additional `onKeyDown` handler for full keyboard accessibility — advisory for a future pass.
