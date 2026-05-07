@@ -390,3 +390,10 @@
 - **Why**: Architecture governance required an explicit sign-off that all four acceptance criteria are evidenced before the sprint can close.
 - **Learned**: The shared `INTERVIEW_STORE` token pattern is the correct NestJS idiom when two services need the same infrastructure provider without circular dependency. The purge service interval approach is acceptable for the file store but must migrate to BullMQ when MinIO audio persistence ships.
 - **Open**: Audio replay is transient (Object URL). MinIO-backed replay + a proper cron-based purge are deferred to the next sprint once MinIO is wired.
+
+## 2026-05-07 — US-062
+
+- **Did**: Signed off US-062 after verifying: new `GET /applications/:applicationId` endpoint follows existing auth/store boundary pattern; client/server boundary in Next.js App Router is correct (SSC fetches, client for tabs); no new library, no ADR required; all tests and build green.
+- **Why**: Architecture governance sign-off before sprint-016 closure.
+- **Learned**: Roving tabindex (`tabIndex={-1}` on inactive tabs) is the correct ARIA pattern for keyboard navigation within a tablist; it does not require focus-trap.
+- **Open**: Sprint 016 is complete (US-060 ✓ US-061 ✓ US-062 ✓). Sprint DoD pending.

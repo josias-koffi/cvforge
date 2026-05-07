@@ -320,3 +320,10 @@
 - **Why**: Sprint 014 DoD required all US-050 criteria verified before sprint closure.
 - **Learned**: Browser-side Object URL is a correct MVP for audio replay when MinIO is not yet wired; the transient nature must be communicated in the UI.
 - **Open**: Sprint 014 is now complete. Next sprint should address MinIO audio persistence and a proper cron-backed purge.
+
+## 2026-05-07 — US-062
+
+- **Did**: Verified all 8 acceptance criteria for the `/candidatures/[id]` detail screen — header, 5 tabs, offer data, CV/LM actions, interviews table, historique timeline, breadcrumb. Confirmed 251 app + 244 API tests green, lint clean, build clean, WCAG 2.1 AA satisfied (role=tablist/tab/tabpanel, aria-selected, keyboard ArrowLeft/Right, focus rings).
+- **Why**: Sprint 016 QA gate before marking US-062 complete.
+- **Learned**: Tab panels must always be rendered (with display:none for inactive) for SSR tests to pass — conditional unmounting hides content from `renderToStaticMarkup`. Always mock `useRouter` from `next/navigation` in table/page tests when components import it.
+- **Open**: None — US-062 fully verified.

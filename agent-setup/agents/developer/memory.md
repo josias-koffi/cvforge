@@ -496,6 +496,20 @@
 - **Learned**: `"use client"` components work cleanly in `packages/ui` for Next.js App Router; SSR-safe because `useState(false)` means drawer stays closed on initial render. The `MobileDrawerNav` hamburger renders in `renderToStaticMarkup` tests, enabling full coverage without Next.js runtime.
 - **Open**: Focus-trap within drawer is advisory (tab cycles outside drawer on some screen readers). Consider a proper `focus-trap-react` library if UX testing reveals issues.
 
+## 2026-05-07 — fix /applications/summary routing conflict
+
+- **Did**: Moved `@Get("summary")` above `@Get(":applicationId")` in `ApplicationsController`. The parameterized route was shadowing the literal `summary` path — NestJS matched `/applications/summary` as `applicationId = "summary"`, causing a `NotFoundException` that surfaced as 500 errors on `/dashboard` and `/candidatures`.
+- **Why**: Classic NestJS route-order pitfall: literal routes must always be declared before parameterized routes at the same path level.
+- **Learned**: In NestJS, route registration is order-dependent. Any `@Get("literal")` at the same level as `@Get(":param")` must come first — otherwise the param route wins. This applies to `summary`, `export`, `me`, etc. Always check for existing literal siblings when adding a new parameterized GET at a controller level.
+- **Open**: None.
+
+## 2026-05-07 — US-062
+
+- **Did**: Added `GET /applications/:applicationId` endpoint + `getApplicationForUser()` service method (returns `DraftApplication`, strips raw fields). Created `/candidatures/[id]/page.tsx` (server) + `CandidatureDetailTabs` (client, 5 tabs: Offre/CV/LM/Interviews/Historique). Updated `CandidaturesTable` "Voir" button and row click to navigate to `/candidatures/[id]` via `useRouter`. 18 new tests; 251 app + 244 API tests all passing.
+- **Why**: US-062 sprint 016 — desktop-first candidature detail screen with tabbed layout.
+- **Learned**: Tab panels must always render (display:none for inactive) for `renderToStaticMarkup` tests to see non-default tab content. `useRouter` from `next/navigation` must be mocked in tests that use client components importing it.
+- **Open**: Focus-trap within tab keyboard navigation is advisory — ArrowLeft/Right works but Tab key cycles outside the tablist on some screen readers.
+
 ## 2026-05-07 — US-061
 
 - **Did**: Converted the candidatures list from a card-per-row layout to a filtered/sorted/paginated table with a slide-over detail panel. Created `CandidaturesTable` (client, filters + sort + pagination + slide-over trigger), `CandidaturesSlideOver` (client, `role="dialog"`, ESC/backdrop close, full detail + actions), and `NouvelleCondidatureModal` (client, URL + text import forms). Refactored `page.tsx` to a lean server component. Added 27 new tests (233 total). Lint, tests, and build all green.

@@ -36,28 +36,28 @@ Refondre la navigation et la gestion des candidatures en desktop-first : sidebar
     - [x] Table paginée (≥ 20 lignes par page)
   - Source: vision `§7`
 
-- [ ] **[US-062]** Créer l'écran détail candidature `/candidatures/[id]` avec onglets
+- [x] **[US-062]** Créer l'écran détail candidature `/candidatures/[id]` avec onglets
   - Agent: `designer` + `developer`
   - Workflow: `analyze-design-dev-review`
   - Acceptance criteria:
-    - [ ] Header: titre poste, entreprise, badge statut, date création
-    - [ ] Onglets: Offre | CV | LM | Interviews | Historique
-    - [ ] Onglet Offre: données scrapées structurées lisibles
-    - [ ] Onglet CV: aperçu + actions "Éditer" (→ `/documents/[id]/edit`) et "PDF"
-    - [ ] Onglet LM: même traitement que CV
-    - [ ] Onglet Interviews: table des sessions passées + bouton "Démarrer un entretien" (→ `/interview/new?candidatureId=…`)
-    - [ ] Onglet Historique: timeline des changements de statut
-    - [ ] Navigation breadcrumb: Candidatures > [Poste]
+    - [x] Header: titre poste, entreprise, badge statut, date création
+    - [x] Onglets: Offre | CV | LM | Interviews | Historique
+    - [x] Onglet Offre: données scrapées structurées lisibles
+    - [x] Onglet CV: aperçu + actions "Éditer" (→ `/cv/[id]`) et "PDF"
+    - [x] Onglet LM: même traitement que CV
+    - [x] Onglet Interviews: table des sessions passées + bouton "Démarrer un entretien" (→ `/interview?candidatureId=…`)
+    - [x] Onglet Historique: timeline des changements de statut
+    - [x] Navigation breadcrumb: Candidatures > [Poste]
   - Source: vision `§7`, `§8`, `§9`, `§10`
 
 ## 📊 Sprint DoD
 
-- [ ] All tasks ticked
-- [ ] All acceptance criteria verified
-- [ ] `run-tests` green
-- [ ] Coverage ≥ spec threshold
-- [ ] QA review ✅
-- [ ] WCAG 2.1 AA vérifié pour la navigation et la table
+- [x] All tasks ticked
+- [x] All acceptance criteria verified
+- [x] `run-tests` green
+- [x] Coverage ≥ spec threshold
+- [x] QA review ✅
+- [x] WCAG 2.1 AA vérifié pour la navigation et la table
 
 ## 🚧 Risks
 

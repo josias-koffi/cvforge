@@ -307,6 +307,13 @@
 - **Learned**: The VAD-driven approach removes push-to-talk entirely — this is a behavior removal, not just an addition, and requires developer awareness. The Puck-for-users replacement with a structured form conflicts with vision §8 and needs explicit product owner confirmation before Sprint 018.
 - **Open**: Confirm US-068 product decision (structured form vs Puck for user document editor). Confirm whether "Papier & Crayon" tokens are fully replaced or kept for print surfaces (CV/LM PDF).
 
+## 2026-05-07 — US-062
+
+- **Did**: Designed the `/candidatures/[id]` detail screen with a two-block layout: header card (title, company, status badge, date) + tabbed card (5 tabs: Offre, CV, LM, Interviews, Historique). Specified roving tabindex keyboard pattern, `display:none` inactive panels, and status timeline UI.
+- **Why**: Sprint 016 — complete the candidature detail screen after the table and sidebar work were already shipped.
+- **Learned**: All panels must be rendered in the DOM (hidden via CSS) to be testable with `renderToStaticMarkup`; conditional rendering blocks SSR testing of inactive tabs.
+- **Open**: CV/LM tabs link to `/cv/[id]` and `/letters/[id]` editors — the Puck editor flow is unchanged.
+
 ## 2026-04-26 — US-060
 
 - **Did**: Specified the desktop-first navigation architecture: 240px fixed sidebar at ≥1024px, mobile drawer slide-in with hamburger at <768px, top bar with breadcrumb + avatar + notification bell, role-gated Admin item, focus rings meeting WCAG 2.1 AA on all interactive elements.
