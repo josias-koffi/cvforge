@@ -36,4 +36,4 @@ COPY --from=builder /workspace/packages/config ./packages/config
 
 EXPOSE 3333
 
-CMD ["node", "apps/api/dist/main.js"]
+CMD ["node", "apps/api/dist/apps/api/src/main.js"]
