@@ -4,9 +4,13 @@
   "scripts": {
     "lint": "eslint src --ext .ts --max-warnings=0",
     "test": "vitest run",
-    "build": "tsc -p tsconfig.json --noEmit"
+    "build": "tsc -p tsconfig.json"
   },
   "exports": {
-    ".": "./src/index.ts"
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.js",
+      "types": "./src/index.ts"
+    }
   }
 }
