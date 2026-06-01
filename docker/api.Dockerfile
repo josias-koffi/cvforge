@@ -13,6 +13,7 @@ FROM deps AS builder
 COPY apps/api apps/api
 COPY packages/types packages/types
 COPY packages/config packages/config
+RUN pnpm --filter @cvforge/types build
 RUN pnpm --filter @cvforge/api build
 
 # Stage 3: Production runner
@@ -31,8 +32,7 @@ COPY --from=builder /workspace/packages/config/package.json ./packages/config/pa
 RUN pnpm install --frozen-lockfile --prod
 
 COPY --from=builder /workspace/apps/api/dist ./apps/api/dist
-COPY --from=builder /workspace/packages/types ./packages/types
-COPY --from=builder /workspace/packages/config ./packages/config
+COPY --from=builder /workspace/packages/types/dist ./packages/types/dist
 
 EXPOSE 3333
 
