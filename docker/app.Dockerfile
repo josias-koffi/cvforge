@@ -34,7 +34,6 @@ COPY --from=builder /workspace/packages/config/package.json ./packages/config/pa
 RUN pnpm install --frozen-lockfile --prod
 
 COPY --from=builder /workspace/apps/app/.next ./apps/app/.next
-COPY --from=builder /workspace/apps/app/public ./apps/app/public
 COPY --from=builder /workspace/packages/ui ./packages/ui
 COPY --from=builder /workspace/packages/types ./packages/types
 COPY --from=builder /workspace/packages/config ./packages/config
