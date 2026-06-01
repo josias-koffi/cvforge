@@ -1,11 +1,19 @@
 <!-- generated-by: /init-project -->
+---
+tags: [workflow/definition, workflow/analyze-design-dev-review]
+parent: "[[_README]]"
+---
 # Workflow: Analyze -> Design -> Dev -> Review
 
 ## Mode
 orchestrated
 
+## Used by
+<!-- Auto-appended by `sprint` / `run-workflow` when this workflow is triggered. -->
+<!-- - [[sprints/sprint-NNN#US-XXX]] — YYYY-MM-DD → [[workflows/runs/<run-id>]] -->
+
 ## Stage 1 - Analyze
-Agent: product-owner
+Agent: [[agents/product-owner/agent|product-owner]]
 Inputs:
 - Task record from sprint or ad hoc request
 - `.project/vision.md`
@@ -20,7 +28,7 @@ OnFailure:
 - Stop and report unresolved scope gaps
 
 ## Stage 2 - Design
-Agent: designer
+Agent: [[agents/designer/agent|designer]]
 Inputs:
 - `.project/workflows/<run-id>/01-analyze.md`
 - UI or UX constraints from the vision
@@ -33,7 +41,7 @@ OnFailure:
 - Stop and return to Stage 1 if the problem framing changed
 
 ## Stage 3 - Implement
-Agent: developer
+Agent: [[agents/developer/agent|developer]]
 Inputs:
 - `.project/workflows/<run-id>/01-analyze.md`
 - `.project/workflows/<run-id>/02-design.md`
@@ -44,11 +52,12 @@ Pass:
 - Code changes are described
 - Tests and quality gates are run or explicitly blocked
 - Coverage impact is stated
+- Active refactoring honored on touched files (no new duplication or dead code; file size within language target or split per §9)
 OnFailure:
 - Stop and document the blocking engineering issue
 
 ## Stage 4 - Review
-Agent: qa-reviewer
+Agent: [[agents/qa-reviewer/agent|qa-reviewer]]
 Inputs:
 - `.project/workflows/<run-id>/03-implement.md`
 - Acceptance criteria
@@ -61,7 +70,7 @@ OnFailure:
 - Stop and send the task back to implementation with the blocking findings
 
 ## Finalization
-Agent: tech-lead
+Agent: [[agents/tech-lead/agent|tech-lead]]
 Inputs:
 - `.project/workflows/<run-id>/04-review.md`
 Outputs:

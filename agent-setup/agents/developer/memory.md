@@ -537,3 +537,10 @@
 - **Why**: Sprint 017 US-063 — decouples session configuration from the active studio, enabling the setup→studio navigation flow.
 - **Learned**: Client components using `useRouter` must have `next/navigation` mocked in server-render tests; page-level tests use `renderToStaticMarkup` which executes initial client state.
 - **Open**: US-064 will remove push-to-talk and refactor the in-session studio; the locked dropdowns in `InterviewStudio` are acceptable until then.
+
+## 2026-06-01 — PDF CV/LM fond blanc + tient sur une page (ad hoc · analyze-design-dev-review-20260601100000)
+
+- **Did**: Découpé `cv-pdf-export.service.ts` (840L) en 4 modules : `cv-pdf-styles.ts` (styles CSS partagés, fond blanc #fff + accents rouge #b22222), `cv-html-templates.ts` (renderCvPdfHtml + renderLetterPdfHtml), `cv-docx-templates.ts` (renderCvDocx + renderLetterDocx), service réduit à 246L. Corrigé `background: #f6f3ed → #ffffff`, réduit font-size (11.5pt→10.5pt), line-height (1.5→1.3), marges (12mm→10mm), gaps de section (~-40%). Extrait `callPuppeteer()` pour dédupliquer gestion erreur Puppeteer.
+- **Why**: Le PDF exporté avait un fond crème visible et dépassait la page A4 — insatisfaisant pour des recruteurs. Le fichier source était 840L, au-dessus du seuil warning §9.
+- **Learned**: `printBackground: true` dans Puppeteer imprime la `background-color` CSS — donc changer la couleur de fond CSS suffit, pas besoin de modifier les options Puppeteer. Quand on extrait une constante CSS partagée (`SHARED_PDF_STYLES`), s'assurer qu'elle n'inclut pas les propriétés `h2` qui divergent entre les deux templates.
+- **Open**: `cv-html-templates.ts` à 319L (>300 target, <400 warning) — contenu template, acceptable en l'état.

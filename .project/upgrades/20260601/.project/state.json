@@ -1,0 +1,470 @@
+{
+  "project_name": "cvforge",
+  "project_type": "greenfield",
+  "stack": "node",
+  "architecture_style": "monorepo (source: vision §2)",
+  "vision_source": ".project/vision.md",
+  "vision_mode": "verbatim",
+  "engineering_spec": "agent-setup/spec/engineering-standards.md",
+  "current_sprint": 17,
+  "active_agents": [],
+  "specialized_agents": [],
+  "specialized_workflows": [],
+  "specialized_skills": [],
+  "clarifications_pending": [],
+  "last_updated": "2026-05-07T22:45:00+02:00",
+  "last_workflow_run": "analyze-design-dev-review",
+  "last_workflow_stage": "tech-lead",
+  "last_workflow_result": "passed",
+  "active_workflow_run": null,
+  "last_task_completed": "US-065",
+  "workflow_runs": [
+    {
+      "run_id": "20260419-191212-us-006",
+      "sprint": "002",
+      "task": "US-006",
+      "workflow": "analyze-design-dev-review",
+      "result": "passed"
+    },
+    {
+      "run_id": "20260419-193131-us-007",
+      "sprint": "002",
+      "task": "US-007",
+      "workflow": "analyze-design-dev-review",
+      "result": "passed"
+    },
+    {
+      "run_id": "20260419-195435-us-008",
+      "sprint": "002",
+      "task": "US-008",
+      "workflow": "analyze-design-dev-review",
+      "result": "passed"
+    },
+    {
+      "run_id": "20260419-200800-smtp-backend-setup",
+      "task": "smtp backend setup",
+      "workflow": "analyze-design-dev-review",
+      "result": "passed"
+    },
+    {
+      "run_id": "20260419-201909-us-009",
+      "sprint": "003",
+      "task": "US-009",
+      "workflow": "analyze-design-dev-review",
+      "result": "passed"
+    },
+    {
+      "run_id": "20260419-211615-us-010",
+      "sprint": "003",
+      "task": "US-010",
+      "workflow": "analyze-design-dev-review",
+      "result": "passed"
+    },
+    {
+      "run_id": "20260420-065506-us-011",
+      "sprint": "003",
+      "task": "US-011",
+      "workflow": "analyze-design-dev-review",
+      "result": "passed"
+    },
+    {
+      "run_id": "20260420-074111-us-012",
+      "sprint": "003",
+      "task": "US-012",
+      "workflow": "bug-triage",
+      "result": "failed"
+    },
+    {
+      "run_id": "20260420-074524-us-012",
+      "sprint": "003",
+      "task": "US-012",
+      "workflow": "analyze-design-dev-review",
+      "result": "passed"
+    },
+    {
+      "run_id": "20260420-082232-us-013",
+      "sprint": "004",
+      "task": "US-013",
+      "workflow": "analyze-design-dev-review",
+      "result": "passed"
+    },
+    {
+      "run_id": "20260420-093040-us-014",
+      "sprint": "004",
+      "task": "US-014",
+      "workflow": "analyze-design-dev-review",
+      "result": "passed"
+    },
+    {
+      "run_id": "20260420-103754-us-015",
+      "sprint": "004",
+      "task": "US-015",
+      "workflow": "analyze-design-dev-review",
+      "result": "passed"
+    },
+    {
+      "run_id": "20260420-105647-us-016",
+      "sprint": "004",
+      "task": "US-016",
+      "workflow": "analyze-design-dev-review",
+      "result": "passed"
+    },
+    {
+      "run_id": "20260420-110000-us-017",
+      "sprint": "005",
+      "task": "US-017",
+      "workflow": "analyze-design-dev-review",
+      "result": "passed"
+    },
+    {
+      "run_id": "20260420-135201-us-018",
+      "sprint": "005",
+      "task": "US-018",
+      "workflow": "analyze-design-dev-review",
+      "result": "passed"
+    },
+    {
+      "run_id": "20260420-140806-us-019",
+      "sprint": "005",
+      "task": "US-019",
+      "workflow": "analyze-design-dev-review",
+      "result": "passed"
+    },
+    {
+      "run_id": "20260420-143133-us-020",
+      "sprint": "005",
+      "task": "US-020",
+      "workflow": "analyze-design-dev-review",
+      "result": "passed"
+    },
+    {
+      "run_id": "20260420-151416-us-021",
+      "sprint": "006",
+      "task": "US-021",
+      "workflow": "analyze-design-dev-review",
+      "result": "passed"
+    },
+    {
+      "run_id": "20260420-155000-us-022",
+      "sprint": "006",
+      "task": "US-022",
+      "workflow": "analyze-design-dev-review",
+      "result": "passed"
+    },
+    {
+      "run_id": "20260420-160000-us-023",
+      "sprint": "006",
+      "task": "US-023",
+      "workflow": "analyze-design-dev-review",
+      "result": "passed"
+    },
+    {
+      "run_id": "20260420-170000-us-025",
+      "sprint": "007",
+      "task": "US-025",
+      "workflow": "analyze-design-dev-review",
+      "result": "passed"
+    },
+    {
+      "run_id": "20260420-205354-us-026",
+      "sprint": "007",
+      "task": "US-026",
+      "workflow": "analyze-design-dev-review",
+      "result": "passed"
+    },
+    {
+      "run_id": "20260420-193410-us-027",
+      "sprint": "007",
+      "task": "US-027",
+      "workflow": "analyze-design-dev-review",
+      "result": "passed"
+    },
+    {
+      "run_id": "20260420-223118-us-028",
+      "sprint": "007",
+      "task": "US-028",
+      "workflow": "analyze-design-dev-review",
+      "result": "passed"
+    },
+    {
+      "run_id": "20260420-230000-us-055",
+      "sprint": "008",
+      "task": "US-055",
+      "workflow": "analyze-design-dev-review",
+      "result": "passed"
+    },
+    {
+      "run_id": "20260420-231000-us-056",
+      "sprint": "008",
+      "task": "US-056",
+      "workflow": "analyze-design-dev-review",
+      "result": "passed"
+    },
+    {
+      "run_id": "20260420-233000-us-057",
+      "sprint": "008",
+      "task": "US-057",
+      "workflow": "analyze-design-dev-review",
+      "result": "passed"
+    },
+    {
+      "run_id": "analyze-design-dev-review-20260421130055",
+      "sprint": "008",
+      "task": "all",
+      "workflow": "analyze-design-dev-review",
+      "result": "failed"
+    },
+    {
+      "run_id": "analyze-design-dev-review-20260421131733",
+      "sprint": "008",
+      "task": "all",
+      "workflow": "analyze-design-dev-review",
+      "result": "passed"
+    },
+    {
+      "run_id": "analyze-design-dev-review-20260421141319",
+      "sprint": "009",
+      "task": "US-029",
+      "workflow": "analyze-design-dev-review",
+      "result": "passed"
+    },
+    {
+      "run_id": "analyze-design-dev-review-20260421150543",
+      "sprint": "009",
+      "task": "US-030",
+      "workflow": "analyze-design-dev-review",
+      "result": "passed"
+    },
+    {
+      "run_id": "analyze-design-dev-review-20260422082829",
+      "sprint": "009",
+      "task": "US-031",
+      "workflow": "analyze-design-dev-review",
+      "result": "passed"
+    },
+    {
+      "run_id": "release-20260422101638",
+      "sprint": "009",
+      "task": "US-032",
+      "workflow": "release",
+      "result": "passed"
+    },
+    {
+      "run_id": "analyze-design-dev-review-20260422120740",
+      "sprint": "010",
+      "task": "US-033",
+      "workflow": "analyze-design-dev-review",
+      "result": "passed"
+    },
+    {
+      "run_id": "analyze-design-dev-review-20260422130621",
+      "sprint": "010",
+      "task": "US-034",
+      "workflow": "analyze-design-dev-review",
+      "result": "passed"
+    },
+    {
+      "run_id": "analyze-design-dev-review-20260422133042",
+      "sprint": "010",
+      "task": "US-035",
+      "workflow": "analyze-design-dev-review",
+      "result": "passed"
+    },
+    {
+      "run_id": "analyze-design-dev-review-20260423081010",
+      "sprint": "010",
+      "task": "US-036",
+      "workflow": "analyze-design-dev-review",
+      "result": "passed"
+    },
+    {
+      "run_id": "analyze-design-dev-review-20260423092915",
+      "sprint": "011",
+      "task": "US-037",
+      "workflow": "analyze-design-dev-review",
+      "result": "passed"
+    },
+    {
+      "run_id": "analyze-design-dev-review-20260423100628",
+      "sprint": "011",
+      "task": "US-038",
+      "workflow": "analyze-design-dev-review",
+      "result": "passed"
+    },
+    {
+      "run_id": "analyze-design-dev-review-20260423121331",
+      "sprint": "011",
+      "task": "US-039",
+      "workflow": "analyze-design-dev-review",
+      "result": "passed"
+    },
+    {
+      "run_id": "spike-research-20260424122609",
+      "sprint": "011",
+      "task": "US-040",
+      "workflow": "spike-research",
+      "result": "passed"
+    },
+    {
+      "run_id": "analyze-design-dev-review-20260424124702",
+      "sprint": "012",
+      "task": "US-041",
+      "workflow": "analyze-design-dev-review",
+      "result": "passed"
+    },
+    {
+      "run_id": "release-20260424135148",
+      "sprint": "012",
+      "task": "US-042",
+      "workflow": "release",
+      "result": "passed"
+    },
+    {
+      "run_id": "analyze-design-dev-review-20260424142216",
+      "sprint": "012",
+      "task": "US-043",
+      "workflow": "analyze-design-dev-review",
+      "result": "passed"
+    },
+    {
+      "run_id": "analyze-design-dev-review-20260424150944",
+      "sprint": "013",
+      "task": "US-044",
+      "workflow": "analyze-design-dev-review",
+      "result": "passed"
+    },
+    {
+      "run_id": "analyze-design-dev-review-20260424160000",
+      "sprint": "013",
+      "task": "US-045",
+      "workflow": "analyze-design-dev-review",
+      "result": "passed"
+    },
+    {
+      "run_id": "analyze-design-dev-review-20260424170000",
+      "sprint": "013",
+      "task": "US-046",
+      "workflow": "analyze-design-dev-review",
+      "result": "passed"
+    },
+    {
+      "run_id": "spike-research-20260424220000",
+      "sprint": "013",
+      "task": "US-047",
+      "workflow": "spike-research",
+      "result": "passed"
+    },
+    {
+      "run_id": "analyze-design-dev-review-20260426200559",
+      "sprint": "014",
+      "task": "US-048",
+      "workflow": "analyze-design-dev-review",
+      "result": "passed"
+    },
+    {
+      "run_id": "release-20260426203140",
+      "sprint": "014",
+      "task": "US-049",
+      "workflow": "release",
+      "result": "failed"
+    },
+    {
+      "run_id": "release-20260426203735",
+      "sprint": "014",
+      "task": "US-049",
+      "workflow": "release",
+      "result": "failed"
+    },
+    {
+      "run_id": "analyze-design-dev-review-20260426204050",
+      "sprint": "014",
+      "task": "US-049",
+      "workflow": "analyze-design-dev-review",
+      "result": "passed"
+    },
+    {
+      "run_id": "analyze-design-dev-review-20260426210000",
+      "sprint": "014",
+      "task": "US-050",
+      "workflow": "analyze-design-dev-review",
+      "result": "passed"
+    },
+    {
+      "run_id": "product-owner-20260426211500",
+      "sprint": "015",
+      "task": "US-051",
+      "workflow": "none",
+      "result": "passed"
+    },
+    {
+      "run_id": "designer-product-owner-20260426220000",
+      "sprint": null,
+      "task": "UX redesign desktop-first + backlog + sprints 016-019",
+      "workflow": "designer-product-owner",
+      "result": "passed"
+    },
+    {
+      "run_id": "analyze-design-dev-review-20260426222000",
+      "sprint": "016",
+      "task": "US-060",
+      "workflow": "analyze-design-dev-review",
+      "result": "passed"
+    },
+    {
+      "run_id": "spike-research-20260507120000",
+      "sprint": "015",
+      "task": "US-052",
+      "workflow": "spike-research",
+      "result": "passed"
+    },
+    {
+      "run_id": "analyze-design-dev-review-20260507140000",
+      "sprint": "016",
+      "task": "US-061",
+      "workflow": "analyze-design-dev-review",
+      "result": "passed"
+    },
+    {
+      "run_id": "analyze-design-dev-review-20260507150000",
+      "sprint": "016",
+      "task": "US-062",
+      "workflow": "analyze-design-dev-review",
+      "result": "passed"
+    },
+    {
+      "run_id": "analyze-design-dev-review-20260507160000",
+      "sprint": "017",
+      "task": "US-063",
+      "workflow": "analyze-design-dev-review",
+      "result": "passed"
+    },
+    {
+      "run_id": "analyze-design-dev-review-20260507170000",
+      "sprint": "017",
+      "task": "US-064",
+      "workflow": "analyze-design-dev-review",
+      "result": "passed"
+    },
+    {
+      "run_id": "analyze-design-dev-review-20260507220000",
+      "sprint": "017",
+      "task": "US-065",
+      "workflow": "analyze-design-dev-review",
+      "result": "passed"
+    }
+  ],
+  "completed_sprints": [
+    2,
+    3,
+    4,
+    5,
+    8,
+    9,
+    10,
+    12,
+    13,
+    14,
+    16
+  ],
+  "repos": []
+}

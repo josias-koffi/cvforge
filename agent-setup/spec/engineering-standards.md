@@ -1,24 +1,21 @@
 <!-- generated-by: /init-project | adapt to detected stack when possible -->
 <!-- vars: STACK, COVERAGE_TOOL, TODAY_ISO -->
-
 # Engineering Standards
 
 > Non-negotiable standards for this project. Agents refuse to ship code that violates blocking rules.
-> Last updated: 2026-04-18
+> Last updated: 2026-06-01
 
 ## 1. Clean Architecture (blocking)
 
 **Rule**: Dependencies point inward. Outer layers depend on inner layers, never the reverse.
 
 Layers (adapted to node):
-
 - **Domain** — pure business logic, no framework imports
 - **Application** — use cases, orchestrates domain
 - **Infrastructure** — DB, HTTP clients, external APIs
 - **Interface** — controllers, CLI, UI adapters
 
 Enforcement:
-
 - Domain must not import from Application, Infrastructure, or Interface
 - Application must not import from Infrastructure or Interface
 - Violations are blocking — QA Reviewer refuses the PR
@@ -32,7 +29,7 @@ If the project already uses a different architecture, document it here and keep 
 - New code in a PR: **90%** line coverage minimum
 - Coverage drop vs main: **blocks** the PR
 
-Measured with: `pnpm test -- --coverage`
+Measured with: `jest`
 
 ## 3. Conventional Commits + SemVer (blocking on commit)
 
@@ -41,12 +38,11 @@ Format: `<type>(<scope>): <description>`
 Allowed types: `feat`, `fix`, `chore`, `docs`, `refactor`, `test`, `style`, `perf`, `ci`, `build`.
 
 Examples:
-
 - `feat(auth): add passwordless login`
 - `fix(billing): correct VAT calculation for EU customers`
+- `refactor(auth): extract token validation, remove dead branch`
 
 Versioning:
-
 - `feat` → minor bump
 - `fix` → patch bump
 - Breaking change (`!` after type or `BREAKING CHANGE:` in body) → major bump
@@ -65,7 +61,6 @@ Required when: adding a new library (non-patch), changing data store, changing a
 Location: `.project/decisions/ADR-NNN-<slug>.md`
 
 Template:
-
 ```
 # ADR-NNN: <title>
 Date: <date>
@@ -112,26 +107,50 @@ Tested with: axe-core or equivalent in CI.
 - **Metrics**: request rate, error rate, p50/p95/p99 latency per endpoint
 - **Health endpoints**: `/health` (liveness) and `/ready` (readiness)
 
-## 9. Advisory standards (non-blocking)
+## 9. Active Refactoring (core principle)
+
+**Active refactoring is part of every task — never a separate sprint.** On every file touched by the current task, the developer must:
+
+- **Eliminate duplication**: near-identical functions in the same module are merged or extracted.
+- **Remove dead code**: unreferenced symbols, unused branches, commented-out code, over-abstractions with a single caller.
+- **Fix obviously optimisable code**: O(n²) loops over already-indexed data, redundant DB roundtrips, repeated parses of the same input.
+- **Human readability**: speaking names; no cryptic one-liners; comments only for the *why* that the code can't already express.
+- **File-size ceiling per language** (touched files only):
+
+  | Language | Target | Warning (split required) |
+  |---|---|---|
+  | Python, JavaScript, TypeScript, Ruby, Kotlin | 300 | 400 |
+  | Rust, Swift | 350 | 450 |
+  | Go, Java, C#, C++ | 400 | 550 |
+  | HTML, JSX/Vue/Svelte templates, YAML config | 500 | 700 |
+  | SQL migrations, fixtures, snapshots | unlimited | — |
+
+**Mode (hybrid)**:
+- **Touched files**: above the target threshold → advisory but the developer acts; above the warning threshold → blocking, must split before merge.
+- **Untouched files**: silent. No out-of-scope opportunistic refactors. Surface them as backlog items if useful, do not act.
+
+The lines saved by an opportunistic refactor count inside the current task's diff. Use a separate `refactor:` Conventional Commit when it improves PR readability, or fold it into the main `feat:`/`fix:` commit otherwise.
+
+## 10. Advisory standards (non-blocking)
 
 These are enforced by the QA Reviewer in a warning mode. Agents should fix them but a single advisory failure does not block the PR.
 
 - Naming: `camelCase` for variables/functions, `PascalCase` for types/classes, `SCREAMING_SNAKE` for constants
 - Max function length: 50 lines (warning beyond)
-- Max file length: 400 lines (warning beyond)
 - Documentation: every exported symbol has a docstring/JSDoc
 - Magic numbers: replace with named constants
 
 ## Enforcement summary
 
-| Rule                          | Mode                | Gate                  |
-| ----------------------------- | ------------------- | --------------------- |
-| Clean architecture            | Blocking            | Pre-commit, PR review |
-| Test coverage (80% / 90% new) | Blocking            | CI                    |
-| Conventional Commits          | Blocking            | commit-msg hook       |
-| Trunk-based + PR size         | Blocking            | PR review             |
-| ADR for stack changes         | Blocking            | PR review             |
-| Accessibility (WCAG AA)       | Blocking (UI)       | CI (axe)              |
-| Security baseline             | Blocking            | CI + pre-commit       |
-| Observability                 | Blocking (services) | PR review             |
-| Naming / length / docs        | Advisory            | PR review             |
+| Rule | Mode | Gate |
+|---|---|---|
+| Clean architecture | Blocking | Pre-commit, PR review |
+| Test coverage (80% / 90% new) | Blocking | CI |
+| Conventional Commits | Blocking | commit-msg hook |
+| Trunk-based + PR size | Blocking | PR review |
+| ADR for stack changes | Blocking | PR review |
+| Accessibility (WCAG AA) | Blocking (UI) | CI (axe) |
+| Security baseline | Blocking | CI + pre-commit |
+| Observability | Blocking (services) | PR review |
+| Active refactoring (touched files) | Blocking above warning threshold / Advisory at target | Dev + QA review |
+| Naming / function length / docs | Advisory | PR review |

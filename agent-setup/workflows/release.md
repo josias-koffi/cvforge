@@ -1,11 +1,19 @@
 <!-- generated-by: /init-project -->
+---
+tags: [workflow/definition, workflow/release]
+parent: "[[_README]]"
+---
 # Workflow: Release
 
 ## Mode
 orchestrated
 
+## Used by
+<!-- Auto-appended by `sprint` / `run-workflow` when this workflow is triggered. -->
+<!-- - [[sprints/sprint-NNN#US-XXX]] — YYYY-MM-DD → [[workflows/runs/<run-id>]] -->
+
 ## Stage 1 - Freeze
-Agent: tech-lead
+Agent: [[agents/tech-lead/agent|tech-lead]]
 Inputs:
 - Sprint completion status
 - Release scope
@@ -18,7 +26,7 @@ OnFailure:
 - Stop and return to sprint execution
 
 ## Stage 2 - Regression
-Agent: qa-reviewer
+Agent: [[agents/qa-reviewer/agent|qa-reviewer]]
 Inputs:
 - `.project/workflows/<run-id>/01-freeze.md`
 - Test plan and quality gates
@@ -30,7 +38,7 @@ OnFailure:
 - Stop and return the release candidate to engineering
 
 ## Stage 3 - Audit
-Agent: tech-lead
+Agent: [[agents/tech-lead/agent|tech-lead]]
 Inputs:
 - `.project/workflows/<run-id>/02-regression.md`
 Outputs:
@@ -41,7 +49,7 @@ OnFailure:
 - Stop and require remediation before deploy
 
 ## Stage 4 - Deploy
-Agent: developer
+Agent: [[agents/developer/agent|developer]]
 Inputs:
 - `.project/workflows/<run-id>/03-audit.md`
 Outputs:
@@ -53,7 +61,7 @@ OnFailure:
 - Stop and record rollback actions
 
 ## Finalization
-Agent: product-owner
+Agent: [[agents/product-owner/agent|product-owner]]
 Inputs:
 - `.project/workflows/<run-id>/04-deploy.md`
 Outputs:

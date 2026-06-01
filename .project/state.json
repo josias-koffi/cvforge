@@ -17,6 +17,7 @@
   "last_workflow_stage": "tech-lead",
   "last_workflow_result": "passed",
   "active_workflow_run": null,
+  "last_adhoc_run": "analyze-design-dev-review-20260601100000",
   "last_task_completed": "US-065",
   "workflow_runs": [
     {
@@ -451,6 +452,13 @@
       "task": "US-065",
       "workflow": "analyze-design-dev-review",
       "result": "passed"
+    },
+    {
+      "run_id": "analyze-design-dev-review-20260601100000",
+      "sprint": null,
+      "task": "fix CV/LM PDF background white + single-page fit",
+      "workflow": "analyze-design-dev-review",
+      "result": "passed"
     }
   ],
   "completed_sprints": [
@@ -466,5 +474,7 @@
     14,
     16
   ],
-  "repos": []
+  "repos": [],
+  "vault_path": null,
+  "vault_project_path": null
 }

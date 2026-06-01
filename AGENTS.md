@@ -12,8 +12,8 @@ This repository uses a multi-agent workflow for Codex CLI sessions.
 - Workflow artifacts: `.project/workflows/`
 
 ## Stack
-- node + Next.js + NestJS + PostgreSQL + Redis + Docker + Turborepo + pnpm workspaces (source: vision §2)
-- Architecture: monorepo (source: vision §2)
+- Next.js + NestJS + PostgreSQL + Redis + Docker + Turborepo + pnpm workspaces
+- Architecture: monorepo
 
 ## Commands
 - Lint: `pnpm lint`
@@ -44,9 +44,19 @@ This repository uses a multi-agent workflow for Codex CLI sessions.
 - Never check a sprint task box unless every acceptance criterion is verified
 - Never add features absent from `.project/vision.md` without explicit user approval
 - Never introduce a new framework without an ADR in `.project/decisions/`
+- **Active refactoring is part of every task** — on every touched file, fix obvious duplication, dead code, and size violations (see `agent-setup/spec/engineering-standards.md` §9). On existing/active projects this is in-scope of the current task, not a separate sprint. Untouched files stay untouched.
+- After every `$sprint`, `$run-agent`, or `$run-workflow` call: tick verified sprint checkboxes, update `.project/state.json` (last_updated, last_workflow_run, last_task_completed, last_workflow_result; add to completed_sprints only if DoD is met), append a dated entry to relevant agent memory files, and update the backlog with any newly discovered items — no exceptions
 
 ## Memory protocol
 After completing a task or workflow stage, append a dated entry to `agent-setup/agents/<own-role>/memory.md`.
+
+## MCP servers
+Codex CLI reads project-local config from `.codex/config.toml`; Claude Code reads `.mcp.json`. Both ship the same defaults, installed by `bootstrap.sh`.
+
+- `context7` — up-to-date docs. Optional `CONTEXT7_API_KEY` for higher rate limits.
+- `cve-mcp` — `mukul975/cve-mcp-server`, vendored at `$HOME/.agent-setup/vendor/cve-mcp-server` with its own venv. Optional env keys: `NVD_API_KEY`, `GITHUB_TOKEN`, `ABUSEIPDB_KEY`, `GREYNOISE_API_KEY`, `SHODAN_KEY`.
+
+Skip CVE install with `bash bootstrap.sh --no-mcp`; then remove the `cve-mcp` block from both config files.
 
 ## Project commands
 ```text

@@ -1,11 +1,19 @@
 <!-- generated-by: /init-project -->
+---
+tags: [workflow/definition, workflow/spike-research]
+parent: "[[_README]]"
+---
 # Workflow: Spike Research
 
 ## Mode
 orchestrated
 
+## Used by
+<!-- Auto-appended by `sprint` / `run-workflow` when this workflow is triggered. -->
+<!-- - [[sprints/sprint-NNN#US-XXX]] — YYYY-MM-DD → [[workflows/runs/<run-id>]] -->
+
 ## Stage 1 - Frame
-Agent: analyst
+Agent: [[agents/analyst/agent|analyst]]
 Inputs:
 - Question or uncertainty to investigate
 - Vision constraints
@@ -18,7 +26,7 @@ OnFailure:
 - Stop and ask for a narrower research scope
 
 ## Stage 2 - Investigate
-Agent: analyst
+Agent: [[agents/analyst/agent|analyst]]
 Inputs:
 - `.project/workflows/<run-id>/01-frame.md`
 Outputs:
@@ -30,7 +38,7 @@ OnFailure:
 - Stop and report that the time box was insufficient
 
 ## Stage 3 - Decide
-Agent: tech-lead
+Agent: [[agents/tech-lead/agent|tech-lead]]
 Inputs:
 - `.project/workflows/<run-id>/02-investigate.md`
 Outputs:
@@ -42,7 +50,7 @@ OnFailure:
 - Stop and request a follow-up spike or clarification
 
 ## Finalization
-Agent: tech-lead
+Agent: [[agents/tech-lead/agent|tech-lead]]
 Inputs:
 - `.project/workflows/<run-id>/03-decide.md`
 Outputs:
