@@ -6,6 +6,7 @@ dist
 coverage
 .env
 .env.local
+.env.prod
 .data
 .project/workflows/*/.data
 .DS_Store
