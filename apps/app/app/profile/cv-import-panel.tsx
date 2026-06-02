@@ -116,7 +116,7 @@ export function CvImportPanel({ sessionEmail }: { sessionEmail: string }) {
           style={{
             backgroundColor: "#FAFAF7",
             border: "1px solid #D9D4CA",
-            borderRadius: "0.875rem",
+            borderRadius: "0.375rem",
             color: "#6B6860",
             lineHeight: 1.6,
             padding: "1rem",
@@ -136,7 +136,7 @@ export function CvImportPanel({ sessionEmail }: { sessionEmail: string }) {
             style={{
               backgroundColor: state === "error" ? "#FBEAE7" : "#EDF7F0",
               border: `1px solid ${state === "error" ? "#E5B8AF" : "#BFD8C7"}`,
-              borderRadius: "0.75rem",
+              borderRadius: "0.25rem",
               color: state === "error" ? "#8A2C20" : "#2F5D3A",
               lineHeight: 1.6,
               margin: 0,

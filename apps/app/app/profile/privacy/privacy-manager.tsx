@@ -221,7 +221,7 @@ export function PrivacyManager({
                 key={`${rule.dataType}-${rule.retention}`}
                 style={{
                   border: "1px solid #D9D4CA",
-                  borderRadius: "1rem",
+                  borderRadius: "0.375rem",
                   display: "grid",
                   gap: "0.4rem",
                   padding: "1rem",
@@ -237,7 +237,7 @@ export function PrivacyManager({
           <div
             style={{
               backgroundColor: "#FFF7E6",
-              borderRadius: "1rem",
+              borderRadius: "0.375rem",
               color: "#6B4E16",
               padding: "1rem",
             }}
