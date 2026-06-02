@@ -17,7 +17,7 @@
   "last_workflow_stage": "tech-lead",
   "last_workflow_result": "passed",
   "active_workflow_run": null,
-  "last_adhoc_run": "analyze-design-dev-review-20260601110000",
+  "last_adhoc_run": "analyze-design-dev-review-20260602170000",
   "last_task_completed": "US-065",
   "workflow_runs": [
     {
@@ -478,6 +478,27 @@
       "run_id": "analyze-design-dev-review-20260602140000",
       "sprint": null,
       "task": "améliorer formatage et contenu LM",
+      "workflow": "analyze-design-dev-review",
+      "result": "passed"
+    },
+    {
+      "run_id": "analyze-design-dev-review-20260602150000",
+      "sprint": null,
+      "task": "améliorer la génération de CV — mise en forme + contenu prompt",
+      "workflow": "analyze-design-dev-review",
+      "result": "passed"
+    },
+    {
+      "run_id": "analyze-design-dev-review-20260602160000",
+      "sprint": null,
+      "task": "CV ATS une page — typographie, layout, prompt density",
+      "workflow": "analyze-design-dev-review",
+      "result": "passed"
+    },
+    {
+      "run_id": "analyze-design-dev-review-20260602170000",
+      "sprint": null,
+      "task": "compétences structurées par catégories — format listing",
       "workflow": "analyze-design-dev-review",
       "result": "passed"
     }

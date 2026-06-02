@@ -572,3 +572,24 @@
 - **Why**: Instructions utilisateur détaillées pour améliorer la qualité et le formatage de la LM générée.
 - **Learned**: `paragraph4` optionnel est la bonne approche pour rétrocompatibilité — les lettres existantes sans paragraph4 continuent de fonctionner. Le `normalizeUpdatedLetterContent` doit aussi gérer paragraph4 pour la sauvegarde manuelle.
 - **Open**: `letter-editor.tsx` maintenant ~610L (dépasse le warning threshold 400). Candidat à split en plusieurs composants dans le prochain sprint.
+
+## 2026-06-02 — améliorer la génération de CV — mise en forme + contenu (stage 03 · [[workflows/runs/analyze-design-dev-review-20260602150000]])
+- **Context**: ad hoc · [[workflows/runs/analyze-design-dev-review-20260602150000/03-implement]]
+- **Did**: 3 fichiers modifiés — `cv-pdf-styles.ts` marges 20mm/25mm, 24pt bold, 10pt/1.15; `cv-html-templates.ts` h2 small-caps, h3 bold 10.5pt, .company italic, .date-range, compétences 2 blocs ul distincts, langues avec "—"; `cv-generation.service.ts` CV_SYSTEM_PROMPT enrichi avec 8 règles (titre, summary, dates, contexte, achievements, skills, langues, cohérence). 247 tests passés, lint vert.
+- **Why**: Instructions utilisateur détaillées (cahier de 40+ règles) pour améliorer la qualité visuelle du PDF CV et le contenu généré par l'IA.
+- **Learned**: La séparation CSS entre `SHARED_PDF_STYLES` (partagé CV+LM) et les styles inline du template CV est la bonne architecture — ne pas mettre les règles `h2`/`h3` dans SHARED pour éviter des conflits avec le template LM qui a sa propre hiérarchie.
+- **Open**: `cv-generation.service.ts` ~800L — CV_SYSTEM_PROMPT candidat à extraction en constante dans fichier séparé dans prochain sprint. DOCX templates non alignés sur le format de date "Jan. 2022".
+
+## 2026-06-02 — CV ATS une page — typographie, layout, prompt density (stage 03 · [[workflows/runs/analyze-design-dev-review-20260602160000]])
+- **Context**: ad hoc · [[workflows/runs/analyze-design-dev-review-20260602160000/03-implement]]
+- **Did**: 3 fichiers modifiés — `cv-pdf-styles.ts` marges `1.5cm`, 18pt name, 9.5pt/1.05; `cv-html-templates.ts` h2 10pt, h3/company 9.5pt, items 4pt gap, skills → single `<p>` inline dots (hard only, soft supprimé), langues → single `<p>`, certifications → single `<p>`, formation → `<p>` flat par entrée, dead `.skills-block` CSS supprimé; `cv-generation.service.ts` CV_SYSTEM_PROMPT summary 3 lignes max, achievements 4/2 bullets selon type, formation compacte, soft skills `[]`. 247 tests passés, lint vert.
+- **Why**: Instructions utilisateur ATS one-page avec contraintes précises de typographie et densité.
+- **Learned**: La colonne CSS grid pour les compétences est incompatible avec les parseurs ATS — le rendu inline ` · ` est la seule approche ATS-safe. Supprimer les soft skills du prompt évite que l'AI les génère alors que le template ne les affiche plus.
+- **Open**: `cv-generation.service.ts` CV_SYSTEM_PROMPT candidat à extraction dans fichier séparé. DOCX templates non alignés sur format compact formation.
+
+## 2026-06-02 — compétences structurées par catégories (stage 03 · [[workflows/runs/analyze-design-dev-review-20260602170000]])
+- **Context**: ad hoc · [[workflows/runs/analyze-design-dev-review-20260602170000/03-implement]]
+- **Did**: 3 fichiers modifiés — `packages/types/src/index.ts` : `SkillCategory` + `categories?` dans `CVDocumentContent.skills` ; `cv-generation.service.ts` : import `SkillCategory`, `RawCvJson.skills.categories`, CV_SYSTEM_PROMPT 3 catégories (outils/métier/transverses), `normalizeSkillCategories()`, `buildSkills()` (hard = concat catégories) ; `cv-html-templates.ts` : `skillsSection` computed (catégories si présentes, fallback flat), placement après Profil/avant Expériences, `.skills-section border-top`. 259 tests passés, lint vert.
+- **Why**: Section compétences sous forme de bloc structuré par catégories pour meilleure lisibilité ATS et recruteur.
+- **Learned**: Ajouter `categories?` optionnel préserve la compat Puck sans toucher aucun mapper. `buildSkills()` centralise la logique hard=flat(categories) pour que l'éditeur Puck continue de recevoir une liste plate.
+- **Open**: Placement des compétences dans le Puck editor reste après les expériences (old mapping) — divergence acceptable non bloquante.
