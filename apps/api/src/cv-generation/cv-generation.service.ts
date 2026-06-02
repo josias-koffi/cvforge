@@ -86,6 +86,7 @@ Règles impératives :
 5. Ne génère JAMAIS de numéro de téléphone ni d'adresse email.
 6. Laisse les champs phone et email vides ("").
 7. Utilise l'entreprise et le poste de l'offre pour l'objet et l'argumentaire.
+8. Si un champ "refinement" est fourni dans la requête, intègre ces éléments de motivation spécifiques dans la lettre de façon naturelle — sans les citer mot pour mot.
 
 Retourne UNIQUEMENT un JSON valide avec cette structure exacte :
 {
@@ -562,16 +563,18 @@ export class CvGenerationService {
       userEmail,
     });
 
+    const userPayload: Record<string, unknown> = {
+      pseudonymisedProfile: request.promptProfile,
+      offerContext,
+    };
+    if (request.refinement?.trim()) {
+      userPayload.refinement = request.refinement.trim();
+    }
+
     const rawResponse = await this.openRouterService.chat(
       [
         { role: "system", content: LETTER_SYSTEM_PROMPT },
-        {
-          role: "user",
-          content: JSON.stringify({
-            pseudonymisedProfile: request.promptProfile,
-            offerContext,
-          }),
-        },
+        { role: "user", content: JSON.stringify(userPayload) },
       ],
       { temperature: 0.4 },
     );

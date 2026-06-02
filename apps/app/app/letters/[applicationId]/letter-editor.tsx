@@ -13,8 +13,14 @@ import {
   Label,
   Textarea,
 } from "@cvforge/ui";
-import type { LetterDocumentContent } from "@cvforge/types";
+import type { LetterDocumentContent, LetterGenerationRequest } from "@cvforge/types";
 import type { LetterDocumentVersionEntry } from "@cvforge/types";
+import {
+  getProfileForApplication,
+  loadApplicationProfileSelection,
+  loadProfileRegistryFromStorage,
+} from "../../profile/base-profile";
+import { AI_CANDIDATE_TOKEN } from "../../profile/ai-prompt-profile";
 import { LetterDocumentPreview } from "./letter-document-preview";
 
 function resolveDownloadFilename(
@@ -96,6 +102,9 @@ export function LetterEditor({
     "idle" | "saving" | "saved" | "downloading" | "error"
   >("idle");
   const [message, setMessage] = React.useState<string | null>(null);
+  const [refinement, setRefinement] = React.useState("");
+  const [regenStatus, setRegenStatus] = React.useState<"idle" | "loading" | "error">("idle");
+  const [regenMessage, setRegenMessage] = React.useState<string | null>(null);
 
   function updateCandidate(
     field: keyof LetterDocumentContent["candidate"],
@@ -149,6 +158,90 @@ export function LetterEditor({
         error instanceof Error
           ? error.message
           : "La sauvegarde de la LM a échoué.",
+      );
+    }
+  }
+
+  async function regenerateLetter() {
+    setRegenStatus("loading");
+    setRegenMessage(null);
+
+    let requestBody: LetterGenerationRequest & { refinement?: string } = {
+      localFields: { email: "", lastName: "", phone: "" },
+      promptProfile: {
+        headline: "",
+        identity: { candidateToken: AI_CANDIDATE_TOKEN, city: "", firstName: "" },
+        profileSections: {
+          certifications: [],
+          education: [],
+          experiences: [],
+          interests: "",
+          personalProjects: [],
+          softSkills: [],
+          summary: "",
+          technicalSkills: [],
+        },
+      },
+    };
+
+    try {
+      const registry = loadProfileRegistryFromStorage(draft.candidate.email, localStorage);
+      const selection = loadApplicationProfileSelection(localStorage);
+      const profile = getProfileForApplication(applicationId, registry, selection);
+      if (profile) {
+        requestBody = {
+          localFields: {
+            email: profile.identity.email.trim(),
+            lastName: profile.identity.lastName.trim(),
+            phone: profile.identity.phone.trim(),
+          },
+          promptProfile: {
+            headline: profile.headline.trim(),
+            identity: {
+              candidateToken: AI_CANDIDATE_TOKEN,
+              city: profile.identity.city.trim(),
+              firstName: profile.identity.firstName.trim(),
+            },
+            profileSections: profile.sections,
+          },
+        };
+      }
+    } catch {
+      // use default empty payload if profile unavailable
+    }
+
+    const trimmedRefinement = refinement.trim();
+    if (trimmedRefinement) {
+      requestBody.refinement = trimmedRefinement;
+    }
+
+    try {
+      const response = await fetch(`/letters/${applicationId}/regenerate`, {
+        body: JSON.stringify(requestBody),
+        headers: { "Content-Type": "application/json" },
+        method: "POST",
+      });
+
+      const payload = (await response.json().catch(() => ({}))) as {
+        letterContent?: LetterDocumentContent;
+        message?: string;
+      };
+
+      if (!response.ok) {
+        throw new Error(payload.message ?? "La régénération a échoué.");
+      }
+
+      if (payload.letterContent) {
+        setDraft(payload.letterContent);
+      }
+
+      setRegenStatus("idle");
+      setRegenMessage("LM régénérée avec succès.");
+      setRefinement("");
+    } catch (error) {
+      setRegenStatus("error");
+      setRegenMessage(
+        error instanceof Error ? error.message : "La régénération a échoué.",
       );
     }
   }
@@ -277,6 +370,61 @@ export function LetterEditor({
           {message}
         </p>
       ) : null}
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Régénérer la LM</CardTitle>
+          <CardDescription>
+            Ajoutez un texte de raffinement pour enrichir la prochaine génération avec votre motivation spécifique.
+          </CardDescription>
+        </CardHeader>
+        <CardContent style={{ display: "grid", gap: "1rem" }}>
+          <div style={{ display: "grid", gap: "0.4rem" }}>
+            <label
+              htmlFor="letter-refinement"
+              style={{ color: "#1A1A18", fontSize: "0.875rem", fontWeight: 500 }}
+            >
+              Raffinement <span style={{ color: "#6B6860", fontWeight: 400 }}>(optionnel)</span>
+            </label>
+            <Textarea
+              id="letter-refinement"
+              maxLength={500}
+              placeholder="Ex. : Je suis particulièrement attiré par leur approche open-source…"
+              rows={3}
+              value={refinement}
+              onChange={(e) => setRefinement(e.target.value)}
+            />
+            <p style={{ color: "#6B6860", fontSize: "0.75rem", margin: 0, textAlign: "right" }}>
+              {refinement.length} / 500
+            </p>
+          </div>
+          <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
+            <Button
+              disabled={regenStatus === "loading"}
+              onClick={() => void regenerateLetter()}
+              type="button"
+              variant="secondary"
+            >
+              {regenStatus === "loading" ? "Régénération en cours…" : "Régénérer la LM"}
+            </Button>
+          </div>
+          {regenMessage ? (
+            <p
+              style={{
+                backgroundColor: regenStatus === "error" ? "#FBEAE7" : "#EEF6ED",
+                border: `1px solid ${regenStatus === "error" ? "#E5B8AF" : "#BFD6BF"}`,
+                borderRadius: "0.75rem",
+                color: regenStatus === "error" ? "#8A2C20" : "#2F5E3C",
+                lineHeight: 1.6,
+                margin: 0,
+                padding: "0.75rem 1rem",
+              }}
+            >
+              {regenMessage}
+            </p>
+          ) : null}
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

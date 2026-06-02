@@ -1,9 +1,9 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
-import type { LetterGenerationRequest } from "@cvforge/types";
-import { getServerApiUrl } from "../../auth-config";
+import type { LetterDocumentContent, LetterGenerationRequest } from "@cvforge/types";
+import { getServerApiUrl } from "../../../auth-config";
 
-type GenerateLetterBody = LetterGenerationRequest & { applicationId: string };
+type RegenerateBody = LetterGenerationRequest & { applicationId?: string };
 
 function getCookieHeader(cookieStore: Awaited<ReturnType<typeof cookies>>) {
   return cookieStore
@@ -12,11 +12,14 @@ function getCookieHeader(cookieStore: Awaited<ReturnType<typeof cookies>>) {
     .join("; ");
 }
 
-export async function POST(request: Request) {
-  let body: Partial<GenerateLetterBody>;
+export async function POST(
+  request: Request,
+  { params }: { params: Promise<{ applicationId: string }> },
+) {
+  let body: Partial<RegenerateBody>;
 
   try {
-    body = (await request.json()) as Partial<GenerateLetterBody>;
+    body = (await request.json()) as Partial<RegenerateBody>;
   } catch {
     return NextResponse.json(
       { message: "Corps de requête invalide." },
@@ -24,18 +27,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const applicationId =
-    typeof body.applicationId === "string" ? body.applicationId.trim() : "";
-
-  if (!applicationId) {
-    return NextResponse.json(
-      { message: "applicationId manquant." },
-      { status: 400 },
-    );
-  }
-
-  const cookieStore = await cookies();
-  const cookieHeader = getCookieHeader(cookieStore);
+  const { applicationId } = await params;
 
   const refinement =
     typeof body.refinement === "string" && body.refinement.trim()
@@ -61,6 +53,9 @@ export async function POST(request: Request) {
     ...(refinement ? { refinement } : {}),
   };
 
+  const cookieStore = await cookies();
+  const cookieHeader = getCookieHeader(cookieStore);
+
   const apiResponse = await fetch(
     `${getServerApiUrl()}/applications/${applicationId}/generate-letter`,
     {
@@ -74,7 +69,7 @@ export async function POST(request: Request) {
   );
 
   if (!apiResponse.ok) {
-    let message = "La génération de la LM a échoué.";
+    let message = "La régénération de la LM a échoué.";
 
     try {
       const data = (await apiResponse.json()) as { message?: string };
@@ -90,5 +85,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ message }, { status: statusCode });
   }
 
-  return NextResponse.json({ applicationId });
+  const payload = (await apiResponse.json()) as {
+    letterContent: LetterDocumentContent;
+  };
+  return NextResponse.json({ letterContent: payload.letterContent });
 }

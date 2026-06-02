@@ -560,7 +560,9 @@ export interface CvGenerationRequest {
   promptProfile: PromptSafeProfile;
 }
 
-export type LetterGenerationRequest = CvGenerationRequest;
+export interface LetterGenerationRequest extends CvGenerationRequest {
+  refinement?: string;
+}
 
 export interface ImportedCvProfilePatch {
   headline: string;
