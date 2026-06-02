@@ -19,6 +19,7 @@ export type AuthConfig = {
   magicLinkTtlMinutes: number;
   sessionTtlDays: number;
   cookieName: string;
+  cookieDomain: string | undefined;
   sessionSecret: string;
   secureCookies: boolean;
   stateFilePath: string;

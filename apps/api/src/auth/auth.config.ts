@@ -47,6 +47,7 @@ export function resolveAuthConfig(
   return {
     apiUrl,
     appUrl,
+    cookieDomain: env.COOKIE_DOMAIN?.trim() || undefined,
     magicLinkTtlMinutes: parsePositiveInt(
       env.AUTH_MAGIC_LINK_TTL_MINUTES,
       DEFAULT_MAGIC_LINK_TTL_MINUTES,
