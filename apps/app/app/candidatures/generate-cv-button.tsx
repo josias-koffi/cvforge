@@ -58,9 +58,7 @@ export function GenerateCvButton({
 
     if (!profile || !profile.identity.firstName.trim()) {
       setState("error");
-      setErrorMessage(
-        "Le profil selectionne est vide. Renseignez-le avant de generer un CV.",
-      );
+      setErrorMessage("profile_empty");
       return;
     }
 
@@ -96,7 +94,7 @@ export function GenerateCvButton({
       >
         {state === "loading" ? "Génération en cours…" : "Générer le CV"}
       </Button>
-      {state === "error" && errorMessage ? (
+      {state === "error" ? (
         <p
           style={{
             backgroundColor: "#FBEAE7",
@@ -108,7 +106,16 @@ export function GenerateCvButton({
             padding: "0.75rem 1rem",
           }}
         >
-          {errorMessage}
+          {errorMessage === "profile_empty" ? (
+            <>
+              Aucun profil renseigné.{" "}
+              <a href="/profile" style={{ color: "#8A2C20", fontWeight: 600 }}>
+                Créez votre profil →
+              </a>
+            </>
+          ) : (
+            errorMessage
+          )}
         </p>
       ) : null}
     </div>
