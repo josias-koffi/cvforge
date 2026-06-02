@@ -13,6 +13,7 @@ import { AI_CANDIDATE_TOKEN } from "../profile/ai-prompt-profile";
 
 type GenerateLetterButtonProps = {
   applicationId: string;
+  refinement?: string;
   sessionEmail: string;
 };
 
@@ -37,6 +38,7 @@ function buildRequest(profile: BaseProfile): LetterGenerationRequest {
 
 export function GenerateLetterButton({
   applicationId,
+  refinement,
   sessionEmail,
 }: GenerateLetterButtonProps) {
   const [state, setState] = useState<"idle" | "loading" | "error">("idle");
@@ -65,8 +67,13 @@ export function GenerateLetterButton({
     }
 
     try {
+      const trimmedRefinement = refinement?.trim();
       const response = await fetch(`/candidatures/generate-letter`, {
-        body: JSON.stringify({ applicationId, ...buildRequest(profile) }),
+        body: JSON.stringify({
+          applicationId,
+          ...buildRequest(profile),
+          ...(trimmedRefinement ? { refinement: trimmedRefinement } : {}),
+        }),
         headers: { "Content-Type": "application/json" },
         method: "POST",
       });

@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { Button } from "@cvforge/ui";
+import { Button, Textarea } from "@cvforge/ui";
 import type { DraftApplication } from "@cvforge/types";
 import {
   getApplicationStatusLabel,
@@ -113,6 +113,38 @@ function OffreTab({ application }: { application: DraftApplication }) {
   );
 }
 
+const REFINEMENT_MAX = 500;
+
+function RefinementField({
+  onChange,
+  value,
+}: {
+  onChange: (v: string) => void;
+  value: string;
+}) {
+  return (
+    <div style={{ display: "grid", gap: "0.35rem" }}>
+      <label htmlFor="lm-refinement" style={{ color: "#1A1A18", fontSize: "0.875rem", fontWeight: 500 }}>
+        Raffinement <span style={{ color: "#6B6860", fontWeight: 400 }}>(optionnel)</span>
+      </label>
+      <p style={{ color: "#6B6860", fontSize: "0.8rem", margin: 0 }}>
+        Précisez votre motivation spécifique pour ce poste. Ce texte enrichit la génération de la LM.
+      </p>
+      <Textarea
+        id="lm-refinement"
+        maxLength={REFINEMENT_MAX}
+        placeholder="Ex. : Je suis particulièrement attiré par leur approche open-source et leur culture de l'autonomie…"
+        rows={3}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+      />
+      <p style={{ color: "#6B6860", fontSize: "0.75rem", margin: 0, textAlign: "right" }}>
+        {value.length} / {REFINEMENT_MAX}
+      </p>
+    </div>
+  );
+}
+
 function CvTab({
   application,
   sessionEmail,
@@ -152,6 +184,7 @@ function LmTab({
   sessionEmail: string;
 }) {
   const id = application.id;
+  const [refinement, setRefinement] = useState("");
   return (
     <div style={{ display: "grid", gap: "1.25rem" }}>
       {!application.letterGeneratedAt ? null : (
@@ -169,7 +202,8 @@ function LmTab({
       )}
       <div style={{ display: "grid", gap: "0.75rem" }}>
         <ApplicationProfileSelector applicationId={id} sessionEmail={sessionEmail} />
-        <GenerateLetterButton applicationId={id} sessionEmail={sessionEmail} />
+        <RefinementField value={refinement} onChange={setRefinement} />
+        <GenerateLetterButton applicationId={id} refinement={refinement} sessionEmail={sessionEmail} />
       </div>
     </div>
   );

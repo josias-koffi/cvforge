@@ -545,9 +545,23 @@
 - **Learned**: `printBackground: true` dans Puppeteer imprime la `background-color` CSS — donc changer la couleur de fond CSS suffit, pas besoin de modifier les options Puppeteer. Quand on extrait une constante CSS partagée (`SHARED_PDF_STYLES`), s'assurer qu'elle n'inclut pas les propriétés `h2` qui divergent entre les deux templates.
 - **Open**: `cv-html-templates.ts` à 319L (>300 target, <400 warning) — contenu template, acceptable en l'état.
 
+## 2026-06-02 — koklo-infra: fix data loss + add backup strategy (ad hoc · run-agent)
+- **Context**: ad hoc · last sprint [[sprints/sprint-017]] · last run [[workflows/runs/analyze-design-dev-review-20260601110000]]
+- **Did**: Diagnostiqué la perte de données sur VPS20 après `make deploy-cvforge`. Ajouté service `db_backup` (nightly pg_dump, 7j/4s/6m, `prodrigestivill/postgres-backup-local`) dans `stacks/cvforge/docker-compose.yml`. Supprimé `--force-recreate` du Ansible deploy loop (remplacé par `docker compose up -d` — images updated by `pull`). Ajouté pré-deploy pg_dump dans `setup-vps20.yml`. Ajouté `backup-cvforge`, `restore-cvforge`, `volumes-cvforge` dans Makefile.
+- **Why**: Les volumes Docker nommés sont locaux au VPS — aucun backup n'existait. La perte de données a probablement eu lieu lors d'un recréation du VPS ou d'un `docker compose down -v` accidentel. `--force-recreate` était inutile après `docker compose pull` et causait des restarts non nécessaires sur postgres/redis.
+- **Learned**: `--force-recreate` ne supprime pas les volumes mais est redondant après `docker compose pull` (Docker Compose recrée automatiquement les conteneurs dont l'image a changé). La vraie protection contre la perte de données est un backup off-VPS ; les volumes Docker seuls ne résistent pas à une destruction du VPS.
+- **Open**: Le backup `db_backup` reste sur le VPS (volume `db_backups`) — il ne survit pas à un wipe du VPS. Pour une durabilité réelle, ajouter un sync vers un S3 externe (Scaleway, Backblaze) via `rclone` ou un second job cron.
+
 ## 2026-06-01 — profile CRUD + border-radius (stage 03 · [[workflows/runs/analyze-design-dev-review-20260601110000]])
 - **Context**: ad hoc · [[workflows/runs/analyze-design-dev-review-20260601110000/03-implement]]
 - **Did**: Splité `profile-editor.tsx` (668L→292L) en extrayant les sub-composants dans `profile-entry-fields.tsx` (202L). Créé `profile-list.tsx` (160L) pour le listing CRUD en table. Créé `/profile/new` et `/profile/[id]/edit` routes Next.js. Réduit `radius.sm/md/lg` dans `design-system.ts` et synchronisé 4 fichiers inline.
 - **Why**: La page profil était monolithique (un seul fichier gérant listing + édition), dépassait le seuil warning §9. L'utilisateur demandait un CRUD classique et des bords moins arrondis.
 - **Learned**: `useRouter()` dans un composant client Next.js échoue en test `renderToStaticMarkup` sans mock `next/navigation` — toujours ajouter le mock dans les tests de pages qui importent des composants client avec `useRouter`.
 - **Open**: None.
+
+## 2026-06-02 — champ raffinement génération LM (stage 03 · [[workflows/runs/analyze-design-dev-review-20260602120000]])
+- **Context**: ad hoc · [[workflows/runs/analyze-design-dev-review-20260602120000/03-implement]]
+- **Did**: Ajouté `refinement?: string` à `LetterGenerationRequest` (interface dédiée). Propagé à travers 3 surfaces UI (slide-over, LmTab, LetterEditor), route proxy Next.js, et NestJS service + prompt. Créé `/letters/[applicationId]/regenerate/route.ts`. Lint propre, 273 tests passés.
+- **Why**: L'utilisateur voulait enrichir la génération de LM avec un contexte de motivation libre.
+- **Learned**: Le `LetterEditor` charge le profil depuis localStorage (same pattern que `GenerateLetterButton`) pour la régénération — le profil n'est pas disponible côté serveur sur cette page.
+- **Open**: `letter-editor.tsx` ~460L (advisory warning threshold 400). Candidat à split `LetterRegenerateCard` dans prochain sprint.

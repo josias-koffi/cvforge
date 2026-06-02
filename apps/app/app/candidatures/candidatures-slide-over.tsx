@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
-import { Button } from "@cvforge/ui";
+import React, { useEffect, useRef, useState } from "react";
+import { Button, Textarea } from "@cvforge/ui";
 import type { DraftApplication } from "@cvforge/types";
 import {
   applicationStatusActionLabels,
@@ -40,6 +40,7 @@ export function CandidaturesSlideOver({
   const closeRef = useRef<HTMLButtonElement>(null);
   const score = getLatestInterviewScore(application);
   const transitions = applicationStatusTransitions[application.status];
+  const [letterRefinement, setLetterRefinement] = useState("");
 
   useEffect(() => {
     closeRef.current?.focus();
@@ -255,9 +256,27 @@ export function CandidaturesSlideOver({
             <strong style={{ color: "#1A1A18", fontSize: "0.9rem" }}>
               Génération de la LM
             </strong>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+            <div style={{ display: "grid", gap: "0.5rem" }}>
+              <div style={{ display: "grid", gap: "0.25rem" }}>
+                <label htmlFor="slide-lm-refinement" style={{ color: "#1A1A18", fontSize: "0.8rem", fontWeight: 500 }}>
+                  Raffinement <span style={{ color: "#6B6860", fontWeight: 400 }}>(optionnel)</span>
+                </label>
+                <Textarea
+                  id="slide-lm-refinement"
+                  maxLength={500}
+                  placeholder="Précisez votre motivation spécifique…"
+                  rows={2}
+                  value={letterRefinement}
+                  onChange={(e) => setLetterRefinement(e.target.value)}
+                />
+                <p style={{ color: "#6B6860", fontSize: "0.7rem", margin: 0, textAlign: "right" }}>
+                  {letterRefinement.length} / 500
+                </p>
+              </div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
               <GenerateLetterButton
                 applicationId={application.id}
+                refinement={letterRefinement}
                 sessionEmail={sessionEmail}
               />
               {application.letterGeneratedAt ? (
@@ -278,6 +297,7 @@ export function CandidaturesSlideOver({
                   Voir la LM
                 </a>
               ) : null}
+              </div>
             </div>
           </div>
 
