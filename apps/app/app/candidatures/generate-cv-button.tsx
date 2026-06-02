@@ -41,10 +41,12 @@ export function GenerateCvButton({
 }: GenerateCvButtonProps) {
   const [state, setState] = useState<"idle" | "loading" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [profileEditUrl, setProfileEditUrl] = useState<string | null>(null);
 
   async function handleClick() {
     setState("loading");
     setErrorMessage(null);
+    setProfileEditUrl(null);
 
     let profile: BaseProfile | null = null;
 
@@ -58,7 +60,12 @@ export function GenerateCvButton({
 
     if (!profile || !profile.identity.firstName.trim()) {
       setState("error");
-      setErrorMessage("profile_empty");
+      if (profile) {
+        setErrorMessage("profile_no_firstname");
+        setProfileEditUrl(`/profile/${profile.id}/edit`);
+      } else {
+        setErrorMessage("profile_empty");
+      }
       return;
     }
 
@@ -111,6 +118,13 @@ export function GenerateCvButton({
               Aucun profil renseigné.{" "}
               <a href="/profile" style={{ color: "#8A2C20", fontWeight: 600 }}>
                 Créez votre profil →
+              </a>
+            </>
+          ) : errorMessage === "profile_no_firstname" ? (
+            <>
+              Le prénom est requis pour générer un CV.{" "}
+              <a href={profileEditUrl ?? "/profile"} style={{ color: "#8A2C20", fontWeight: 600 }}>
+                Modifier le profil →
               </a>
             </>
           ) : (
