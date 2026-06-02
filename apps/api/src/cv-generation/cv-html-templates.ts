@@ -27,6 +27,32 @@ function renderList(items: string[]) {
 export function renderCvPdfHtml(cvContent: CVDocumentContent) {
   const candidate = cvContent.candidate;
 
+  const skillsSection = (() => {
+    const categories = cvContent.skills.categories;
+    if (categories && categories.length > 0) {
+      return `
+        <section class="section skills-section">
+          <h2>Compétences clés</h2>
+          ${categories
+            .map(
+              (cat) =>
+                `<p><strong>${escapeHtml(cat.label)}</strong> : ${cat.items.map((i) => escapeHtml(i)).join(" · ")}</p>`,
+            )
+            .join("")}
+        </section>
+      `;
+    }
+    if (cvContent.skills.hard.length > 0) {
+      return `
+        <section class="section skills-section">
+          <h2>Compétences</h2>
+          <p class="skills-inline">${cvContent.skills.hard.slice(0, 12).map((s) => escapeHtml(s)).join(" · ")}</p>
+        </section>
+      `;
+    }
+    return "";
+  })();
+
   const sections = [
     cvContent.candidate.summary
       ? `
@@ -36,6 +62,7 @@ export function renderCvPdfHtml(cvContent: CVDocumentContent) {
         </section>
       `
       : "",
+    skillsSection,
     cvContent.experiences.length > 0
       ? `
         <section class="section">
@@ -47,13 +74,13 @@ export function renderCvPdfHtml(cvContent: CVDocumentContent) {
                   <div class="item__header">
                     <div>
                       <h3>${escapeHtml(experience.position)}</h3>
-                      <p class="muted">${escapeHtml(experience.company)}</p>
+                      <p class="company">${escapeHtml(experience.company)}</p>
                     </div>
-                    <p class="muted">${escapeHtml(
-                      `${experience.startDate} - ${experience.endDate}`,
+                    <p class="date-range">${escapeHtml(
+                      `${experience.startDate} – ${experience.endDate}`,
                     )}</p>
                   </div>
-                  <p>${escapeHtml(experience.description)}</p>
+                  ${experience.description ? `<p>${escapeHtml(experience.description)}</p>` : ""}
                   ${renderList(experience.achievements)}
                 </article>
               `,
@@ -67,43 +94,13 @@ export function renderCvPdfHtml(cvContent: CVDocumentContent) {
         <section class="section">
           <h2>Formation</h2>
           ${cvContent.education
-            .map(
-              (education) => `
-                <article class="item">
-                  <div class="item__header">
-                    <h3>${escapeHtml(education.degree)}</h3>
-                    <p class="muted">${escapeHtml(education.year)}</p>
-                  </div>
-                  <p>${escapeHtml(
-                    education.mention
-                      ? `${education.institution} · ${education.mention}`
-                      : education.institution,
-                  )}</p>
-                </article>
-              `,
-            )
+            .map((education) => {
+              const parts = [education.degree, education.institution];
+              if (education.mention) parts.push(education.mention);
+              if (education.year) parts.push(education.year);
+              return `<p>${escapeHtml(parts.join(" — "))}</p>`;
+            })
             .join("")}
-        </section>
-      `
-      : "",
-    cvContent.skills.hard.length > 0 || cvContent.skills.soft.length > 0
-      ? `
-        <section class="section">
-          <h2>Compétences</h2>
-          ${
-            cvContent.skills.hard.length > 0
-              ? `<p><strong>Hard skills :</strong> ${escapeHtml(
-                  cvContent.skills.hard.join(", "),
-                )}</p>`
-              : ""
-          }
-          ${
-            cvContent.skills.soft.length > 0
-              ? `<p><strong>Soft skills :</strong> ${escapeHtml(
-                  cvContent.skills.soft.join(", "),
-                )}</p>`
-              : ""
-          }
         </section>
       `
       : "",
@@ -111,12 +108,9 @@ export function renderCvPdfHtml(cvContent: CVDocumentContent) {
       ? `
         <section class="section">
           <h2>Langues</h2>
-          ${cvContent.languages
-            .map(
-              (language) =>
-                `<p>${escapeHtml(language.language)} · ${escapeHtml(language.level)}</p>`,
-            )
-            .join("")}
+          <p>${cvContent.languages
+            .map((language) => escapeHtml(`${language.language} ${language.level}`))
+            .join(" · ")}</p>
         </section>
       `
       : "",
@@ -124,12 +118,9 @@ export function renderCvPdfHtml(cvContent: CVDocumentContent) {
       ? `
         <section class="section">
           <h2>Certifications</h2>
-          ${cvContent.certifications
-            .map(
-              (certification) =>
-                `<p><strong>${escapeHtml(certification.title)}</strong> · ${escapeHtml(certification.issuer)} · ${escapeHtml(certification.year)}</p>`,
-            )
-            .join("")}
+          <p>${cvContent.certifications
+            .map((c) => escapeHtml(`${c.title} (${c.year}) · ${c.issuer}`))
+            .join(" · ")}</p>
         </section>
       `
       : "",
@@ -179,18 +170,39 @@ export function renderCvPdfHtml(cvContent: CVDocumentContent) {
       }
 
       h2 {
-        font-size: 9.5pt;
-        letter-spacing: 0.12em;
-        text-transform: uppercase;
-        color: #1a1a18;
-        border-bottom: 1px solid #1a1a18;
+        font-size: 10pt;
+        font-variant: small-caps;
+        font-weight: bold;
+        letter-spacing: 0.08em;
+        color: #1a1a1a;
+        border-bottom: 1px solid #d0cdc8;
         padding-bottom: 0.15rem;
-        margin-bottom: 0.3rem;
+        margin-top: 5pt;
+        margin-bottom: 0.2rem;
       }
 
       h3 {
-        font-size: 11pt;
-        line-height: 1.15;
+        font-size: 10pt;
+        font-weight: bold;
+        line-height: 1.1;
+      }
+
+      h4 {
+        font-size: 9.5pt;
+        font-weight: bold;
+        margin-bottom: 0.1rem;
+      }
+
+      .company {
+        font-size: 9.5pt;
+        font-style: italic;
+        color: #1a1a1a;
+      }
+
+      .date-range {
+        font-size: 9pt;
+        color: #6b6860;
+        white-space: nowrap;
       }
 
       .section {
@@ -202,7 +214,8 @@ export function renderCvPdfHtml(cvContent: CVDocumentContent) {
 
       .item {
         display: grid;
-        gap: 0.2rem;
+        gap: 0.1rem;
+        margin-bottom: 4pt;
         break-inside: avoid;
         page-break-inside: avoid;
       }
@@ -219,8 +232,28 @@ export function renderCvPdfHtml(cvContent: CVDocumentContent) {
         padding-left: 1.1rem;
       }
 
+      li {
+        font-size: 9.5pt;
+        line-height: 1.1;
+      }
+
       li + li {
-        margin-top: 0.1rem;
+        margin-top: 0.05rem;
+      }
+
+      .skills-inline {
+        font-size: 9.5pt;
+        line-height: 1.4;
+      }
+
+      .skills-section {
+        border-top: 1px solid #d0cdc8;
+        padding-top: 0.2rem;
+      }
+
+      .skills-section p {
+        font-size: 9.5pt;
+        line-height: 1.35;
       }
     </style>
   </head>

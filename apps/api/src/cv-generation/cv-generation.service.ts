@@ -12,6 +12,7 @@ import {
   type LanguageItemProps,
   type CertificationItemProps,
   type ProjectItemProps,
+  type SkillCategory,
   AI_CREDIT_ACTION_CV_GENERATION,
   AI_CREDIT_ACTION_LETTER_GENERATION,
   TEMPLATE_KIND_CV,
@@ -34,14 +35,47 @@ const CV_SYSTEM_PROMPT = `Tu es un Expert en Recrutement Senior et Spécialiste 
 À partir du profil pseudonymisé du candidat et du texte de l'offre fournis, génère un CV optimisé ATS.
 
 Règles impératives :
-1. Analyse les 5 hard-skills et 3 soft-skills prioritaires de l'offre.
-2. Adapte le titre professionnel et l'accroche au poste.
-3. Reformule les expériences avec des verbes d'action et les mots-clés de l'offre.
-4. Regroupe les compétences pour les scanners ATS.
-5. Détecte la langue de l'offre et rédige le CV dans cette langue.
-6. Utilise "[CANDIDATE]" comme nom de famille — ne l'invente pas.
-7. Ne génère JAMAIS de numéro de téléphone ni d'adresse email.
-8. Laisse les champs phone et email vides ("").
+
+TITRE PROFESSIONNEL (candidate.title) :
+- Doit correspondre EXACTEMENT au poste visé dans l'offre (6-8 mots maximum, une seule ligne).
+
+PROFIL / ACCROCHE (candidate.summary) :
+- Ne jamais commencer par "Je suis", "Étudiant(e) en" ou "Passionné(e) par".
+- Commencer par le titre métier ou la compétence principale.
+- Structure : [Profil clé] + [X ans d'expérience] + [domaine de spécialité] + [valeur apportée].
+- 3 lignes maximum (environ 40 mots). Pas de listes. Supprimer les formules creuses.
+- Terminer sur ce que le candidat APPORTE, pas sur ce qu'il cherche.
+
+EXPÉRIENCES (experiences[]) :
+- description : une phrase de contexte obligatoire (secteur, taille de l'entreprise ou périmètre, portée géographique si pertinente). Maximum 15 mots.
+- achievements : 3 à 4 items maximum pour le poste principal (CDI / temps plein). 2 items maximum pour les postes freelance ou secondaires. Chaque item commence par un verbe d'action fort (Piloté, Créé, Lancé, Développé, Géré, Conçu, Augmenté, Réduit…). Chaque item tient sur une seule ligne (max 12 mots). Chaque item doit idéalement contenir un résultat chiffré (%, nombre, volume, durée) ou décrire l'impact. Prioriser les bullets à impact fort ; supprimer les bullets de veille technologique ou généralistes.
+- startDate / endDate : format OBLIGATOIRE "Jan. 2022" / "Fév. 2023" (abréviation 3 lettres + point + espace + année). Pour un poste en cours : "Présent". JAMAIS de format "2022-01" ou "YYYY-MM".
+
+COMPÉTENCES CLÉS (skills.categories) :
+- Générer exactement 3 catégories dans skills.categories. Ne jamais en générer plus.
+- Catégorie 1 (label selon profil, ex. "Outils digitaux", "Stack technique", "Logiciels & Plateformes") : outils, logiciels, plateformes (Canva, HubSpot, Salesforce, Excel…). C'est ce que les ATS cherchent en priorité.
+- Catégorie 2 (label selon profil, ex. "Compétences métier", "Savoir-faire opérationnel") : compétences métier et savoir-faire opérationnels.
+- Catégorie 3 (label selon profil, ex. "Compétences transverses", "Soft skills", "Communication") : compétences transversales, soft skills ou compétence clé spécifique au poste.
+- 6 à 10 items par catégorie. Chaque item : 1 à 3 mots maximum.
+- Utiliser UNIQUEMENT des compétences déjà mentionnées ailleurs dans le CV — ne jamais inventer.
+- skills.hard : tableau plat de TOUS les items de toutes les catégories (concaténation) — pour compatibilité.
+- skills.soft : laisser vide ([]).
+
+LANGUES (languages[]) :
+- level : format OBLIGATOIRE "Niveau / Descriptif" (ex. "C1 / Courant", "B2 / Intermédiaire avancé", "TOEFL 110 / Courant"). Ne jamais écrire uniquement "Courant" sans niveau certifié.
+
+FORMATION (education[]) :
+- Les 3 formations les plus récentes uniquement.
+- Chaque formation sur une ligne compacte. degree = intitulé du diplôme (sans "Bac+5" si le niveau RNCP est dans mention). institution = école / université. mention = niveau RNCP ou équivalent (ex. "RNCP Niv. 7"). year = année d'obtention.
+- Diplômes antérieurs : omis ou condensés en un seul item à intitulé court.
+- Corriger les fautes d'orthographe dans les intitulés de diplômes.
+
+COHÉRENCE GLOBALE :
+- Le titre, le résumé, les mots-clés d'expériences et les compétences doivent tous pointer vers le MÊME poste cible.
+- Analyser les 5 hard-skills et 3 soft-skills prioritaires de l'offre et les intégrer.
+- Détecter la langue de l'offre et rédiger le CV dans cette langue.
+- Utiliser "[CANDIDATE]" comme nom de famille — ne l'inventer pas.
+- Ne jamais générer de numéro de téléphone ni d'adresse email. Laisser phone et email vides ("").
 
 Retourne UNIQUEMENT un JSON valide avec cette structure exacte :
 {
@@ -69,7 +103,13 @@ Retourne UNIQUEMENT un JSON valide avec cette structure exacte :
   "education": [
     { "degree": "", "institution": "", "year": "", "mention": "" }
   ],
-  "skills": { "hard": [], "soft": [] },
+  "skills": {
+    "hard": [],
+    "soft": [],
+    "categories": [
+      { "label": "", "items": [] }
+    ]
+  },
   "certifications": [{ "title": "", "issuer": "", "year": "" }],
   "languages": [{ "language": "", "level": "" }],
   "projects": [{ "title": "", "description": "", "url": "" }]
@@ -137,7 +177,7 @@ type RawCvJson = {
   };
   experiences?: unknown[];
   education?: unknown[];
-  skills?: { hard?: unknown; soft?: unknown };
+  skills?: { hard?: unknown; soft?: unknown; categories?: unknown };
   certifications?: unknown[];
   languages?: unknown[];
   projects?: unknown[];
@@ -243,6 +283,22 @@ function normalizeLanguages(raw: unknown[]): LanguageItemProps[] {
     .filter((l): l is LanguageItemProps => l !== null);
 }
 
+function normalizeSkillCategories(raw: unknown): SkillCategory[] | undefined {
+  if (!Array.isArray(raw) || raw.length === 0) return undefined;
+  const categories = raw
+    .map((item) => {
+      if (!item || typeof item !== "object") return null;
+      const c = item as Record<string, unknown>;
+      const label = toStr(c.label);
+      const items = toStrArray(c.items);
+      if (!label || items.length === 0) return null;
+      return { label, items: items.slice(0, 10) };
+    })
+    .filter((c): c is SkillCategory => c !== null)
+    .slice(0, 3);
+  return categories.length > 0 ? categories : undefined;
+}
+
 function normalizeProjects(raw: unknown[]): ProjectItemProps[] {
   return raw
     .map((item) => {
@@ -278,6 +334,14 @@ function extractJsonFromContent<T>(raw: string): T {
   }
 }
 
+function buildSkills(raw: RawCvJson["skills"]): CVDocumentContent["skills"] {
+  const categories = normalizeSkillCategories(raw?.categories);
+  const hard = categories
+    ? categories.flatMap((c) => c.items)
+    : toStrArray(raw?.hard);
+  return { hard, soft: [], categories };
+}
+
 function normalizeCvJson(
   raw: RawCvJson,
   localFields: CvGenerationRequest["localFields"],
@@ -311,10 +375,7 @@ function normalizeCvJson(
     projects: normalizeProjects(
       Array.isArray(raw.projects) ? raw.projects : [],
     ),
-    skills: {
-      hard: toStrArray(raw.skills?.hard),
-      soft: toStrArray(raw.skills?.soft),
-    },
+    skills: buildSkills(raw.skills),
   };
 }
 
