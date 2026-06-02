@@ -214,6 +214,7 @@ export class AuthService {
         path: "/",
         sameSite: "lax",
         secure: this.config.secureCookies,
+        ...(this.config.cookieDomain ? { domain: this.config.cookieDomain } : {}),
       },
     };
   }
@@ -275,6 +276,7 @@ export class AuthService {
         path: "/",
         sameSite: "lax",
         secure: this.config.secureCookies,
+        ...(this.config.cookieDomain ? { domain: this.config.cookieDomain } : {}),
       },
     };
   }
