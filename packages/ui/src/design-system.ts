@@ -30,9 +30,9 @@ export const paperTokens = {
     "4xl": "4rem",
   },
   radius: {
-    sm: "0.75rem",
-    md: "1rem",
-    lg: "1.5rem",
+    sm: "0.25rem",
+    md: "0.375rem",
+    lg: "0.5rem",
     pill: "999px",
   },
   shadow: {
