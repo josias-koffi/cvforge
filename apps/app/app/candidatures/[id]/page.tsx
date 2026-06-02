@@ -59,7 +59,7 @@ export default async function CandidatureDetailPage({
       userEmail={session.email}
       userRole={session.role}
     >
-      <CandidatureDetailTabs application={application} />
+      <CandidatureDetailTabs application={application} sessionEmail={session.email} />
     </AppShell>
   );
 }

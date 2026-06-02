@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useMemo, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import React, { useState, useMemo, useCallback, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button, Label } from "@cvforge/ui";
 import type { ApplicationStatus, DraftApplication } from "@cvforge/types";
 import { applicationStatuses } from "@cvforge/types";
@@ -51,6 +51,7 @@ export function CandidaturesTable({
   submittedUrl = "",
 }: CandidaturesTableProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [statusFilter, setStatusFilter] = useState<ApplicationStatus[]>([]);
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
@@ -60,6 +61,16 @@ export function CandidaturesTable({
   const [page, setPage] = useState(1);
   const [selectedApp, setSelectedApp] = useState<DraftApplication | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+
+  useEffect(() => {
+    const openId = searchParams.get("open");
+    if (!openId) return;
+    const app = applications.find((a) => a.id === openId);
+    if (app) {
+      setSelectedApp(app);
+      setModalOpen(true);
+    }
+  }, [searchParams, applications]);
 
   const handleSort = useCallback(
     (col: SortColumn) => {

@@ -8,6 +8,9 @@ import {
   getApplicationStatusLabel,
   getApplicationStatusTone,
 } from "../status-metadata";
+import { ApplicationProfileSelector } from "../application-profile-selector";
+import { GenerateCvButton } from "../generate-cv-button";
+import { GenerateLetterButton } from "../generate-letter-button";
 
 type Tab = "offre" | "cv" | "lm" | "interviews" | "historique";
 
@@ -19,7 +22,7 @@ const TABS: { id: Tab; label: string }[] = [
   { id: "historique", label: "Historique" },
 ];
 
-type Props = { application: DraftApplication };
+type Props = { application: DraftApplication; sessionEmail: string };
 
 function renderDate(value: string) {
   return new Date(value).toLocaleDateString("fr-FR", { dateStyle: "medium" });
@@ -110,76 +113,64 @@ function OffreTab({ application }: { application: DraftApplication }) {
   );
 }
 
-function CvTab({ application }: { application: DraftApplication }) {
+function CvTab({
+  application,
+  sessionEmail,
+}: {
+  application: DraftApplication;
+  sessionEmail: string;
+}) {
   const id = application.id;
-  if (!application.cvGeneratedAt) {
-    return (
-      <div style={{ color: "#6B6860", padding: "1rem 0" }}>
-        <p style={{ marginTop: 0 }}>Aucun CV généré pour cette candidature.</p>
-        <Link href={`/candidatures?open=${id}`}>
-          <Button type="button">Générer un CV</Button>
-        </Link>
-      </div>
-    );
-  }
   return (
-    <div style={{ display: "flex", flexWrap: "wrap", gap: "0.75rem", padding: "0.5rem 0" }}>
-      <Link href={`/cv/${id}`}>
-        <Button type="button">Éditer le CV</Button>
-      </Link>
-      <a
-        href={`/cv/${id}/pdf`}
-        rel="noopener noreferrer"
-        style={downloadLinkStyle}
-        target="_blank"
-      >
-        Télécharger PDF
-      </a>
-      <a
-        href={`/cv/${id}/docx`}
-        rel="noopener noreferrer"
-        style={downloadLinkStyle}
-        target="_blank"
-      >
-        Télécharger DOCX
-      </a>
+    <div style={{ display: "grid", gap: "1.25rem" }}>
+      {!application.cvGeneratedAt ? null : (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.75rem" }}>
+          <Link href={`/cv/${id}`}>
+            <Button type="button">Éditer le CV</Button>
+          </Link>
+          <a href={`/cv/${id}/pdf`} rel="noopener noreferrer" style={downloadLinkStyle} target="_blank">
+            Télécharger PDF
+          </a>
+          <a href={`/cv/${id}/docx`} rel="noopener noreferrer" style={downloadLinkStyle} target="_blank">
+            Télécharger DOCX
+          </a>
+        </div>
+      )}
+      <div style={{ display: "grid", gap: "0.75rem" }}>
+        <ApplicationProfileSelector applicationId={id} sessionEmail={sessionEmail} />
+        <GenerateCvButton applicationId={id} sessionEmail={sessionEmail} />
+      </div>
     </div>
   );
 }
 
-function LmTab({ application }: { application: DraftApplication }) {
+function LmTab({
+  application,
+  sessionEmail,
+}: {
+  application: DraftApplication;
+  sessionEmail: string;
+}) {
   const id = application.id;
-  if (!application.letterGeneratedAt) {
-    return (
-      <div style={{ color: "#6B6860", padding: "1rem 0" }}>
-        <p style={{ marginTop: 0 }}>Aucune lettre de motivation générée pour cette candidature.</p>
-        <Link href={`/candidatures?open=${id}`}>
-          <Button type="button">Générer une LM</Button>
-        </Link>
-      </div>
-    );
-  }
   return (
-    <div style={{ display: "flex", flexWrap: "wrap", gap: "0.75rem", padding: "0.5rem 0" }}>
-      <Link href={`/letters/${id}`}>
-        <Button type="button">Éditer la LM</Button>
-      </Link>
-      <a
-        href={`/letters/${id}/pdf`}
-        rel="noopener noreferrer"
-        style={downloadLinkStyle}
-        target="_blank"
-      >
-        Télécharger PDF
-      </a>
-      <a
-        href={`/letters/${id}/docx`}
-        rel="noopener noreferrer"
-        style={downloadLinkStyle}
-        target="_blank"
-      >
-        Télécharger DOCX
-      </a>
+    <div style={{ display: "grid", gap: "1.25rem" }}>
+      {!application.letterGeneratedAt ? null : (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.75rem" }}>
+          <Link href={`/letters/${id}`}>
+            <Button type="button">Éditer la LM</Button>
+          </Link>
+          <a href={`/letters/${id}/pdf`} rel="noopener noreferrer" style={downloadLinkStyle} target="_blank">
+            Télécharger PDF
+          </a>
+          <a href={`/letters/${id}/docx`} rel="noopener noreferrer" style={downloadLinkStyle} target="_blank">
+            Télécharger DOCX
+          </a>
+        </div>
+      )}
+      <div style={{ display: "grid", gap: "0.75rem" }}>
+        <ApplicationProfileSelector applicationId={id} sessionEmail={sessionEmail} />
+        <GenerateLetterButton applicationId={id} sessionEmail={sessionEmail} />
+      </div>
     </div>
   );
 }
@@ -331,7 +322,7 @@ const tdStyle: React.CSSProperties = {
   verticalAlign: "top",
 };
 
-export function CandidatureDetailTabs({ application }: Props) {
+export function CandidatureDetailTabs({ application, sessionEmail }: Props) {
   const [activeTab, setActiveTab] = useState<Tab>("offre");
 
   function handleKeyDown(e: React.KeyboardEvent, tabIndex: number) {
@@ -460,8 +451,8 @@ export function CandidatureDetailTabs({ application }: Props) {
             style={{ display: activeTab === tab.id ? "block" : "none", padding: "1.5rem" }}
           >
             {tab.id === "offre" ? <OffreTab application={application} /> : null}
-            {tab.id === "cv" ? <CvTab application={application} /> : null}
-            {tab.id === "lm" ? <LmTab application={application} /> : null}
+            {tab.id === "cv" ? <CvTab application={application} sessionEmail={sessionEmail} /> : null}
+            {tab.id === "lm" ? <LmTab application={application} sessionEmail={sessionEmail} /> : null}
             {tab.id === "interviews" ? <InterviewsTab application={application} /> : null}
             {tab.id === "historique" ? <HistoriqueTab application={application} /> : null}
           </div>
