@@ -122,6 +122,11 @@ export interface EducationItemProps {
   year: string;
 }
 
+export interface SkillCategory {
+  label: string;
+  items: string[];
+}
+
 export interface SkillsListProps {
   hardSkills: string[];
   softSkills: string[];
@@ -182,6 +187,7 @@ export interface CVDocumentContent {
   skills: {
     hard: string[];
     soft: string[];
+    categories?: SkillCategory[];
   };
 }
 
