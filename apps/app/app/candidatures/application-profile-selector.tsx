@@ -45,7 +45,16 @@ export function ApplicationProfileSelector({
       })),
     );
     setValue(selectedProfileId);
-    setHasContent(registry.profiles.some((p) => p.identity.firstName.trim() !== ""));
+    setHasContent(
+      registry.profiles.some(
+        (p) =>
+          p.identity.firstName.trim() !== "" ||
+          p.identity.lastName.trim() !== "" ||
+          p.identity.city.trim() !== "" ||
+          p.headline.trim() !== "" ||
+          p.sections.summary.trim() !== "",
+      ),
+    );
   }, [applicationId, sessionEmail]);
 
   function handleChange(nextValue: string) {
