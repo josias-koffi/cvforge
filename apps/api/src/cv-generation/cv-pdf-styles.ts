@@ -1,7 +1,7 @@
 export const SHARED_PDF_STYLES = `
   @page {
     size: A4;
-    margin: 10mm;
+    margin: 1.5cm;
   }
 
   :root {
@@ -13,23 +13,26 @@ export const SHARED_PDF_STYLES = `
     margin: 0;
     padding: 0;
     background: #ffffff;
-    color: #1a1a18;
+    color: #1a1a1a;
     font-family: "EB Garamond", "Libre Baskerville", Georgia, serif;
-    font-size: 10.5pt;
-    line-height: 1.3;
+    font-size: 9.5pt;
+    line-height: 1.05;
   }
 
   h1,
   h2,
   h3,
+  h4,
   p {
     margin: 0;
   }
 
   h1 {
     font-size: 18pt;
+    font-weight: bold;
     line-height: 1.05;
-    letter-spacing: -0.03em;
+    letter-spacing: -0.02em;
+    color: #1a1a1a;
   }
 
   .muted {
@@ -37,17 +40,19 @@ export const SHARED_PDF_STYLES = `
   }
 
   .contact {
+    font-size: 9.5pt;
     color: #6b6860;
   }
 
   .title {
-    color: #1a1a18;
+    font-size: 10.5pt;
+    color: #1a1a1a;
   }
 
   .hero {
     display: grid;
-    gap: 0.3rem;
-    padding-bottom: 0.4rem;
-    border-bottom: 1px solid #1a1a18;
+    gap: 0.25rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #1a1a1a;
   }
 `;
