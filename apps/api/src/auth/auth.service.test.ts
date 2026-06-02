@@ -14,6 +14,7 @@ const config: AuthConfig = {
   magicLinkTtlMinutes: 15,
   sessionTtlDays: 7,
   cookieName: "cvforge_session",
+  cookieDomain: undefined,
   sessionSecret: "test-secret",
   secureCookies: false,
   stateFilePath: "/tmp/cvforge-auth-state-test.json",
