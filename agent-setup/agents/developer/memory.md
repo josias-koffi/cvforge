@@ -565,3 +565,10 @@
 - **Why**: L'utilisateur voulait enrichir la génération de LM avec un contexte de motivation libre.
 - **Learned**: Le `LetterEditor` charge le profil depuis localStorage (same pattern que `GenerateLetterButton`) pour la régénération — le profil n'est pas disponible côté serveur sur cette page.
 - **Open**: `letter-editor.tsx` ~460L (advisory warning threshold 400). Candidat à split `LetterRegenerateCard` dans prochain sprint.
+
+## 2026-06-02 — améliorer formatage et contenu LM (stage 03 · [[workflows/runs/analyze-design-dev-review-20260602140000]])
+- **Context**: ad hoc · [[workflows/runs/analyze-design-dev-review-20260602140000/03-implement]]
+- **Did**: 7 fichiers modifiés — paragraph4 optionnel dans types/UI/PDF/DOCX/editor; marges PDF 25/20mm; couleur nom #1a1a1a; titre italic dans LMHeader React; spacing letter-meta 0.6rem; placeDate avant signature (PDF+React+DOCX); LETTER_SYSTEM_PROMPT 4 paragraphes avec métriques + personnalisation + formule de politesse. 247 tests API passés.
+- **Why**: Instructions utilisateur détaillées pour améliorer la qualité et le formatage de la LM générée.
+- **Learned**: `paragraph4` optionnel est la bonne approche pour rétrocompatibilité — les lettres existantes sans paragraph4 continuent de fonctionner. Le `normalizeUpdatedLetterContent` doit aussi gérer paragraph4 pour la sauvegarde manuelle.
+- **Open**: `letter-editor.tsx` maintenant ~610L (dépasse le warning threshold 400). Candidat à split en plusieurs composants dans le prochain sprint.

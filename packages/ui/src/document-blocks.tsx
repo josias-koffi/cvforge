@@ -190,16 +190,21 @@ export function LMHeader(props: LMHeaderProps) {
   return (
     <header style={documentRootStyle}>
       <div>
-        <h1 style={headingStyle}>
+        <h1 style={{ ...headingStyle, color: "#1a1a1a" }}>
           {props.firstName} {props.lastName}
         </h1>
         <HeaderMeta {...props} />
+        {props.title ? (
+          <p style={{ ...subtleTextStyle, fontStyle: "italic", marginTop: "0.2rem" }}>
+            {props.title}
+          </p>
+        ) : null}
       </div>
-      <div style={subtleTextStyle}>
+      <div style={{ ...subtleTextStyle, display: "grid", gap: "0.15rem" }}>
         <p style={{ margin: 0 }}>{props.companyName}</p>
         <p style={{ margin: 0 }}>{props.companyCity}</p>
-        <p style={{ margin: "0.5rem 0 0" }}>{props.date}</p>
       </div>
+      <p style={{ margin: 0 }}>{props.date}</p>
       <p style={{ margin: 0 }}>
         <strong>Objet :</strong> {props.object}
       </p>
@@ -213,6 +218,7 @@ export function LMBody(props: LMBodyProps) {
       <p style={{ margin: 0 }}>{props.paragraph1}</p>
       <p style={{ margin: 0 }}>{props.paragraph2}</p>
       <p style={{ margin: 0 }}>{props.paragraph3}</p>
+      {props.paragraph4 ? <p style={{ margin: 0 }}>{props.paragraph4}</p> : null}
     </section>
   );
 }

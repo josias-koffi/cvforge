@@ -76,17 +76,22 @@ Retourne UNIQUEMENT un JSON valide avec cette structure exacte :
 }`;
 
 const LETTER_SYSTEM_PROMPT = `Tu es un Expert en Recrutement Senior et Spécialiste ATS.
-À partir du profil pseudonymisé du candidat et du texte de l'offre fournis, génère une lettre de motivation ATS, sobre et crédible.
+À partir du profil pseudonymisé du candidat et du texte de l'offre fournis, génère une lettre de motivation ATS, sobre, crédible et percutante.
 
 Règles impératives :
 1. Utilise exactement les mêmes sources métier que pour le CV : profil pseudonymisé + contexte d'offre.
 2. Détecte la langue de l'offre et rédige la lettre dans cette langue.
-3. Structure la lettre en 3 paragraphes : accroche, argumentaire, conclusion avec appel à l'action.
+3. Structure la lettre en 4 paragraphes distincts :
+   - paragraph1 : accroche en 2 phrases courtes — commence par ce que le candidat APPORTE concrètement, puis exprime sa motivation.
+   - paragraph2 : expériences digitales / spécialisation (ex. gestion de campagnes, e-commerce, social media, outils tech) — intègre des métriques chiffrées si disponibles (+X% engagement, X produits lancés, communauté de X abonnés, etc.).
+   - paragraph3 : expériences terrain / retail / activation (ex. relation client, gestion de rayon, animation commerciale) — intègre également des métriques si disponibles.
+   - paragraph4 : conclusion personnalisée mentionnant un élément SPÉCIFIQUE à l'entreprise cible (positionnement, valeurs, campagne récente, produit phare), appel à l'action, puis terminer par la formule de politesse : "Veuillez agréer, Madame, Monsieur, l'expression de mes salutations distinguées."
 4. Utilise "[CANDIDATE]" comme nom de famille si nécessaire — ne l'invente pas.
 5. Ne génère JAMAIS de numéro de téléphone ni d'adresse email.
 6. Laisse les champs phone et email vides ("").
 7. Utilise l'entreprise et le poste de l'offre pour l'objet et l'argumentaire.
 8. Si un champ "refinement" est fourni dans la requête, intègre ces éléments de motivation spécifiques dans la lettre de façon naturelle — sans les citer mot pour mot.
+9. Maintiens un ton professionnel mais dynamique tout au long.
 
 Retourne UNIQUEMENT un JSON valide avec cette structure exacte :
 {
@@ -109,7 +114,8 @@ Retourne UNIQUEMENT un JSON valide avec cette structure exacte :
   "body": {
     "paragraph1": "",
     "paragraph2": "",
-    "paragraph3": ""
+    "paragraph3": "",
+    "paragraph4": ""
   },
   "signature": {
     "firstName": "",
@@ -142,6 +148,7 @@ type RawLetterJson = {
     paragraph1?: unknown;
     paragraph2?: unknown;
     paragraph3?: unknown;
+    paragraph4?: unknown;
   };
   candidate?: {
     city?: unknown;
@@ -362,11 +369,14 @@ function normalizeLetterJson(
   const candidate = raw.candidate ?? {};
   const signature = raw.signature ?? {};
 
+  const paragraph4 = toStr(raw.body?.paragraph4);
+
   return {
     body: {
       paragraph1: toStr(raw.body?.paragraph1),
       paragraph2: toStr(raw.body?.paragraph2),
       paragraph3: toStr(raw.body?.paragraph3),
+      ...(paragraph4 ? { paragraph4 } : {}),
     },
     candidate: {
       city: toStr(candidate.city),
@@ -394,11 +404,13 @@ function normalizeLetterJson(
 function normalizeUpdatedLetterContent(
   value: LetterContentUpdateRequest["letterContent"],
 ): LetterDocumentContent {
+  const paragraph4 = toStr(value.body.paragraph4);
   return {
     body: {
       paragraph1: toStr(value.body.paragraph1),
       paragraph2: toStr(value.body.paragraph2),
       paragraph3: toStr(value.body.paragraph3),
+      ...(paragraph4 ? { paragraph4 } : {}),
     },
     candidate: {
       city: toStr(value.candidate.city),

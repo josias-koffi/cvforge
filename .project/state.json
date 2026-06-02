@@ -473,6 +473,13 @@
       "task": "champ raffinement génération LM",
       "workflow": "analyze-design-dev-review",
       "result": "passed"
+    },
+    {
+      "run_id": "analyze-design-dev-review-20260602140000",
+      "sprint": null,
+      "task": "améliorer formatage et contenu LM",
+      "workflow": "analyze-design-dev-review",
+      "result": "passed"
     }
   ],
   "completed_sprints": [

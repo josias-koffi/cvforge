@@ -572,6 +572,22 @@ export function LetterEditor({
                   }
                 />
               </Field>
+              <Field id="paragraph-4" label="Paragraphe 4 (conclusion + formule de politesse)">
+                <Textarea
+                  id="paragraph-4"
+                  rows={5}
+                  value={draft.body.paragraph4 ?? ""}
+                  onChange={(event) =>
+                    setDraft((current) => ({
+                      ...current,
+                      body: {
+                        ...current.body,
+                        paragraph4: event.target.value || undefined,
+                      },
+                    }))
+                  }
+                />
+              </Field>
             </SectionCard>
           </div>
 

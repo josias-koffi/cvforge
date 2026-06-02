@@ -251,6 +251,10 @@ export function renderLetterPdfHtml(letterContent: LetterDocumentContent) {
     .map((value) => escapeHtml(value))
     .join(" · ");
 
+  const placeDate = [candidate.city, letterContent.date]
+    .filter((value) => value.length > 0)
+    .join(", le ");
+
   return `<!doctype html>
 <html lang="fr">
   <head>
@@ -259,6 +263,15 @@ export function renderLetterPdfHtml(letterContent: LetterDocumentContent) {
     <title>CVforge Letter export</title>
     <style>
       ${SHARED_PDF_STYLES}
+
+      @page {
+        size: A4;
+        margin: 20mm 25mm;
+      }
+
+      h1 {
+        color: #1a1a1a;
+      }
 
       main {
         display: grid;
@@ -274,6 +287,16 @@ export function renderLetterPdfHtml(letterContent: LetterDocumentContent) {
         font-style: italic;
       }
 
+      .letter-meta {
+        display: grid;
+        gap: 0.6rem;
+      }
+
+      .company-block {
+        display: grid;
+        gap: 0.1rem;
+      }
+
       .company-name {
         font-weight: bold;
       }
@@ -284,7 +307,6 @@ export function renderLetterPdfHtml(letterContent: LetterDocumentContent) {
 
       .letter-date {
         text-align: right;
-        margin-top: -0.8rem;
       }
 
       .body {
@@ -294,9 +316,14 @@ export function renderLetterPdfHtml(letterContent: LetterDocumentContent) {
         text-align: justify;
       }
 
+      .letter-place-date {
+        color: #6b6860;
+        margin-top: 1rem;
+      }
+
       .letter-signature {
         font-weight: bold;
-        margin-top: 1rem;
+        margin-top: 0.25rem;
       }
     </style>
   </head>
@@ -308,17 +335,21 @@ export function renderLetterPdfHtml(letterContent: LetterDocumentContent) {
           <p class="contact">${contactLine}</p>
           ${candidate.title ? `<p class="contact-program">${escapeHtml(candidate.title)}</p>` : ""}
         </header>
-        <div>
-          <p class="company-name">${escapeHtml(letterContent.company.name)}</p>
-          <p class="company-secondary">${escapeHtml(letterContent.company.city)}</p>
+        <div class="letter-meta">
+          <div class="company-block">
+            <p class="company-name">${escapeHtml(letterContent.company.name)}</p>
+            <p class="company-secondary">${escapeHtml(letterContent.company.city)}</p>
+          </div>
+          <p class="letter-date">${escapeHtml(letterContent.date)}</p>
+          <p><strong>Objet :</strong> ${escapeHtml(letterContent.object)}</p>
         </div>
-        <p class="letter-date">${escapeHtml(letterContent.date)}</p>
-        <p><strong>Objet :</strong> ${escapeHtml(letterContent.object)}</p>
         <div class="body">
           <p>${escapeHtml(letterContent.body.paragraph1)}</p>
           <p>${escapeHtml(letterContent.body.paragraph2)}</p>
           <p>${escapeHtml(letterContent.body.paragraph3)}</p>
+          ${letterContent.body.paragraph4 ? `<p>${escapeHtml(letterContent.body.paragraph4)}</p>` : ""}
         </div>
+        ${placeDate ? `<p class="letter-place-date">${escapeHtml(placeDate)}</p>` : ""}
         <p class="letter-signature">${escapeHtml(`${letterContent.signature.firstName} ${letterContent.signature.lastName}`.trim())}</p>
       </section>
     </main>

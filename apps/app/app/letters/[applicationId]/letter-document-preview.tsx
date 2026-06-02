@@ -33,6 +33,14 @@ export function LetterDocumentPreview({
         <Divider style="spaced" />
         <LMBody {...letterContent.body} />
         <Divider style="spaced" />
+        {(() => {
+          const placeDate = [letterContent.candidate.city, letterContent.date]
+            .filter(Boolean)
+            .join(", le ");
+          return placeDate ? (
+            <p style={{ color: "#6B6860", margin: 0 }}>{placeDate}</p>
+          ) : null;
+        })()}
         <LMSignature {...letterContent.signature} />
       </div>
     </div>
