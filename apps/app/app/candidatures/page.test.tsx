@@ -18,6 +18,7 @@ vi.mock("next/headers", () => ({
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn() }),
+  useSearchParams: () => new URLSearchParams(),
 }));
 
 vi.mock("./generate-cv-button", () => ({
