@@ -5,30 +5,33 @@ const { requireSessionMock } = vi.hoisted(() => ({
   requireSessionMock: vi.fn(),
 }));
 
-vi.mock("../auth/session", () => ({
+vi.mock("../../auth/session", () => ({
   requireSession: requireSessionMock,
 }));
 
-import ProfilePage from "./page";
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: vi.fn() }),
+}));
 
-describe("ProfilePage", () => {
+import NewProfilePage from "./page";
+
+describe("NewProfilePage", () => {
   beforeEach(() => {
     requireSessionMock.mockReset();
   });
 
-  it("renders the profile listing screen", async () => {
+  it("renders the profile creation form", async () => {
     requireSessionMock.mockResolvedValue({
       email: "user@example.com",
       expiresAt: "2026-04-27T07:45:24.000Z",
       role: "user",
     });
 
-    const Page = await ProfilePage();
+    const Page = await NewProfilePage();
     const markup = renderToStaticMarkup(Page);
 
-    expect(markup).toContain("Profil de base");
-    expect(markup).toContain("Profils de base multiples");
-    expect(markup).toContain("user@example.com");
-    expect(markup).toContain("/profile/privacy");
+    expect(markup).toContain("Nouveau profil");
+    expect(markup).toContain("Creer un profil");
+    expect(markup).toContain("/profile");
   });
 });

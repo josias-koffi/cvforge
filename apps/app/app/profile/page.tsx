@@ -4,8 +4,7 @@ import Link from "next/link";
 import { requireSession } from "../auth/session";
 import { getAppNavigation } from "../content";
 import { NotificationBell } from "../notifications/notification-bell";
-import { CvImportPanel } from "./cv-import-panel";
-import { ProfileEditor } from "./profile-editor";
+import { ProfileList } from "./profile-list";
 
 export default async function ProfilePage() {
   const session = await requireSession();
@@ -20,15 +19,12 @@ export default async function ProfilePage() {
       userEmail={session.email}
       userRole={session.role}
     >
-      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "1rem" }}>
-        <Button asChild variant="secondary">
+      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "1rem", gap: "0.75rem", flexWrap: "wrap" }}>
+        <Button asChild variant="ghost">
           <Link href="/profile/privacy">Export RGPD et suppression</Link>
         </Button>
       </div>
-      <div style={{ marginBottom: "1rem" }}>
-        <CvImportPanel sessionEmail={session.email} />
-      </div>
-      <ProfileEditor sessionEmail={session.email} />
+      <ProfileList sessionEmail={session.email} />
     </AppShell>
   );
 }
