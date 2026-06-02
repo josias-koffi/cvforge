@@ -544,3 +544,10 @@
 - **Why**: Le PDF exporté avait un fond crème visible et dépassait la page A4 — insatisfaisant pour des recruteurs. Le fichier source était 840L, au-dessus du seuil warning §9.
 - **Learned**: `printBackground: true` dans Puppeteer imprime la `background-color` CSS — donc changer la couleur de fond CSS suffit, pas besoin de modifier les options Puppeteer. Quand on extrait une constante CSS partagée (`SHARED_PDF_STYLES`), s'assurer qu'elle n'inclut pas les propriétés `h2` qui divergent entre les deux templates.
 - **Open**: `cv-html-templates.ts` à 319L (>300 target, <400 warning) — contenu template, acceptable en l'état.
+
+## 2026-06-01 — profile CRUD + border-radius (stage 03 · [[workflows/runs/analyze-design-dev-review-20260601110000]])
+- **Context**: ad hoc · [[workflows/runs/analyze-design-dev-review-20260601110000/03-implement]]
+- **Did**: Splité `profile-editor.tsx` (668L→292L) en extrayant les sub-composants dans `profile-entry-fields.tsx` (202L). Créé `profile-list.tsx` (160L) pour le listing CRUD en table. Créé `/profile/new` et `/profile/[id]/edit` routes Next.js. Réduit `radius.sm/md/lg` dans `design-system.ts` et synchronisé 4 fichiers inline.
+- **Why**: La page profil était monolithique (un seul fichier gérant listing + édition), dépassait le seuil warning §9. L'utilisateur demandait un CRUD classique et des bords moins arrondis.
+- **Learned**: `useRouter()` dans un composant client Next.js échoue en test `renderToStaticMarkup` sans mock `next/navigation` — toujours ajouter le mock dans les tests de pages qui importent des composants client avec `useRouter`.
+- **Open**: None.

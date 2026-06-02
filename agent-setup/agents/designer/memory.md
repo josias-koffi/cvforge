@@ -320,3 +320,9 @@
 - **Why**: Sprint 016 E15 redesign — primary use case is desktop; the old mobile-first bottom-bar nav was a UX regression.
 - **Learned**: The 768px-1023px gap shows the hamburger until ≥768px where it hides. The topbar brand badge only shows ≥768px, giving tablet users a clean entry point.
 - **Open**: None.
+
+## 2026-06-01 — profile CRUD + border-radius (stage 02)
+- **Did**: Spécifié l'architecture CRUD en 3 routes (listing table, création rapide, édition complète). Défini les nouvelles valeurs radius (sm→0.25rem, md→0.375rem, lg→0.5rem) avec justification éditorial.
+- **Why**: La page profil monolithique cachait la structure multi-profils. Réduire les radius renforce le caractère éditorial "Papier & Crayon".
+- **Learned**: La réduction de ~60% des border-radius donne un look sensiblement plus professionnel et moins "app mobile" sans casser le système de tokens.
+- **Open**: None.
