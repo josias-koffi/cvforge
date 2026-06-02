@@ -26,6 +26,7 @@ export function ApplicationProfileSelector({
 }) {
   const [options, setOptions] = React.useState<Array<{ id: string; label: string }>>([]);
   const [value, setValue] = React.useState("");
+  const [hasContent, setHasContent] = React.useState(true);
 
   React.useEffect(() => {
     const storage = getStorage();
@@ -44,6 +45,7 @@ export function ApplicationProfileSelector({
       })),
     );
     setValue(selectedProfileId);
+    setHasContent(registry.profiles.some((p) => p.identity.firstName.trim() !== ""));
   }, [applicationId, sessionEmail]);
 
   function handleChange(nextValue: string) {
@@ -58,6 +60,28 @@ export function ApplicationProfileSelector({
         [applicationId]: nextValue,
       },
       storage,
+    );
+  }
+
+  if (!hasContent) {
+    return (
+      <p
+        style={{
+          backgroundColor: "#FDF6E3",
+          border: "1px solid #DCC7A0",
+          borderRadius: "0.75rem",
+          color: "#7A5A26",
+          lineHeight: 1.6,
+          margin: 0,
+          padding: "0.75rem 1rem",
+        }}
+      >
+        Aucun profil configuré.{" "}
+        <a href="/profile" style={{ color: "#7A5A26", fontWeight: 600 }}>
+          Créez votre profil →
+        </a>{" "}
+        avant de générer un CV.
+      </p>
     );
   }
 
