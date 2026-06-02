@@ -146,24 +146,37 @@ export function renderCvDocx(content: CVDocumentContent) {
 
 export function renderLetterDocx(content: LetterDocumentContent) {
   const candidate = content.candidate;
+  const placeDate = [candidate.city, content.date].filter(Boolean).join(", le ");
+  const bodyParagraphs = [
+    paragraph(content.body.paragraph1),
+    paragraph(content.body.paragraph2),
+    paragraph(content.body.paragraph3),
+    ...(content.body.paragraph4 ? [paragraph(content.body.paragraph4)] : []),
+  ];
   const children = [
-    paragraph(`${candidate.firstName} ${candidate.lastName}`.trim(), {
-      bold: true,
+    new Paragraph({
+      children: [
+        new TextRun({
+          bold: true,
+          size: 28,
+          text: `${candidate.firstName} ${candidate.lastName}`.trim(),
+        }),
+      ],
+      spacing: { after: 80 },
     }),
-    paragraph(candidate.title),
+    ...(candidate.title ? [paragraph(candidate.title)] : []),
     paragraph(
       [candidate.phone, candidate.email, candidate.city, candidate.linkedin]
         .filter(Boolean)
-        .join(" | "),
+        .join(" · "),
     ),
     paragraph(content.company.name),
     paragraph(content.company.city),
     paragraph(content.date),
-    paragraph(`Objet: ${content.object}`, { bold: true }),
-    paragraph(content.body.paragraph1),
-    paragraph(content.body.paragraph2),
-    paragraph(content.body.paragraph3),
-    paragraph(`${content.signature.firstName} ${content.signature.lastName}`.trim()),
+    paragraph(`Objet : ${content.object}`, { bold: true }),
+    ...bodyParagraphs,
+    ...(placeDate ? [paragraph(placeDate)] : []),
+    paragraph(`${content.signature.firstName} ${content.signature.lastName}`.trim(), { bold: true }),
   ];
 
   return Packer.toBuffer(new Document({ sections: [{ children }] }));
