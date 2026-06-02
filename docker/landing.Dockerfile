@@ -11,6 +11,10 @@ RUN pnpm install --frozen-lockfile
 
 # Stage 2: Build
 FROM deps AS builder
+ARG NEXT_PUBLIC_APP_URL=http://localhost:3000
+ARG NEXT_PUBLIC_API_URL=http://localhost:3333
+ENV NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 COPY apps/landing apps/landing
 COPY packages/ui packages/ui
 COPY packages/types packages/types

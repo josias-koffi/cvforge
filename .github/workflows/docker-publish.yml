@@ -25,15 +25,23 @@ jobs:
           - service: cvforge-app
             dockerfile: docker/app.Dockerfile
             port: 3000
+            build_args: |
+              NEXT_PUBLIC_APP_URL=https://cvforge-app.koklo.dev
+              NEXT_PUBLIC_API_URL=https://cvforge-api.koklo.dev
           - service: cvforge-landing
             dockerfile: docker/landing.Dockerfile
             port: 3001
+            build_args: |
+              NEXT_PUBLIC_APP_URL=https://cvforge-app.koklo.dev
+              NEXT_PUBLIC_API_URL=https://cvforge-api.koklo.dev
           - service: cvforge-api
             dockerfile: docker/api.Dockerfile
             port: 3333
+            build_args: ""
           - service: cvforge-puppeteer
             dockerfile: docker/puppeteer.Dockerfile
             port: 3000
+            build_args: ""
 
     steps:
       - name: Checkout repository
@@ -67,5 +75,6 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          build-args: ${{ matrix.build_args }}
           cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.OWNER }}/${{ matrix.service }}:cache
           cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.OWNER }}/${{ matrix.service }}:cache,mode=max
