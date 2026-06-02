@@ -1,7 +1,8 @@
 "use client";
 
 import React from "react";
-import { Label } from "@cvforge/ui";
+import Link from "next/link";
+import type { BaseProfile } from "../profile/base-profile";
 import {
   getSelectedProfileIdForApplication,
   loadApplicationProfileSelection,
@@ -17,6 +18,86 @@ function getStorage() {
   return window.localStorage;
 }
 
+function hasMeaningfulContent(profile: BaseProfile) {
+  return Boolean(
+    profile.identity.firstName.trim() ||
+      profile.identity.lastName.trim() ||
+      profile.identity.city.trim() ||
+      profile.headline.trim() ||
+      profile.sections.summary.trim(),
+  );
+}
+
+function ProfileCard({
+  profile,
+  selected,
+  onSelect,
+}: {
+  profile: BaseProfile;
+  selected: boolean;
+  onSelect: (id: string) => void;
+}) {
+  const fullName = [profile.identity.firstName, profile.identity.lastName]
+    .filter(Boolean)
+    .join(" ");
+
+  return (
+    <button
+      onClick={() => onSelect(profile.id)}
+      type="button"
+      style={{
+        background: selected ? "#F3EEE3" : "#FFFFFF",
+        border: selected ? "2px solid #C8A96E" : "1px solid #D9D4CA",
+        borderRadius: "0.75rem",
+        cursor: "pointer",
+        display: "grid",
+        gap: "0.2rem",
+        padding: "0.75rem 1rem",
+        textAlign: "left",
+        width: "100%",
+      }}
+    >
+      <span
+        style={{
+          color: "#1A1A18",
+          fontSize: "0.9rem",
+          fontWeight: 600,
+        }}
+      >
+        {profile.label || "Profil sans nom"}
+      </span>
+      {fullName ? (
+        <span style={{ color: "#6B6860", fontSize: "0.82rem" }}>{fullName}</span>
+      ) : null}
+      {profile.headline ? (
+        <span
+          style={{
+            color: "#6B6860",
+            fontSize: "0.82rem",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {profile.headline}
+        </span>
+      ) : null}
+      {!hasMeaningfulContent(profile) ? (
+        <span style={{ color: "#C0392B", fontSize: "0.78rem" }}>
+          Prénom manquant —{" "}
+          <Link
+            href={`/profile/${profile.id}/edit`}
+            onClick={(e) => e.stopPropagation()}
+            style={{ color: "#C0392B" }}
+          >
+            compléter →
+          </Link>
+        </span>
+      ) : null}
+    </button>
+  );
+}
+
 export function ApplicationProfileSelector({
   applicationId,
   sessionEmail,
@@ -24,55 +105,32 @@ export function ApplicationProfileSelector({
   applicationId: string;
   sessionEmail: string;
 }) {
-  const [options, setOptions] = React.useState<Array<{ id: string; label: string }>>([]);
-  const [value, setValue] = React.useState("");
-  const [hasContent, setHasContent] = React.useState(true);
+  const [profiles, setProfiles] = React.useState<BaseProfile[]>([]);
+  const [selectedId, setSelectedId] = React.useState("");
 
   React.useEffect(() => {
     const storage = getStorage();
     const registry = loadProfileRegistryFromStorage(sessionEmail, storage);
     const selection = loadApplicationProfileSelection(storage);
-    const selectedProfileId = getSelectedProfileIdForApplication(
-      applicationId,
-      registry,
-      selection,
-    );
+    const activeId = getSelectedProfileIdForApplication(applicationId, registry, selection);
 
-    setOptions(
-      registry.profiles.map((profile) => ({
-        id: profile.id,
-        label: profile.label || profile.identity.email,
-      })),
-    );
-    setValue(selectedProfileId);
-    setHasContent(
-      registry.profiles.some(
-        (p) =>
-          p.identity.firstName.trim() !== "" ||
-          p.identity.lastName.trim() !== "" ||
-          p.identity.city.trim() !== "" ||
-          p.headline.trim() !== "" ||
-          p.sections.summary.trim() !== "",
-      ),
-    );
+    setProfiles(registry.profiles);
+    setSelectedId(activeId);
   }, [applicationId, sessionEmail]);
 
-  function handleChange(nextValue: string) {
-    setValue(nextValue);
+  function handleSelect(profileId: string) {
+    setSelectedId(profileId);
 
     const storage = getStorage();
     const selection = loadApplicationProfileSelection(storage);
 
     saveApplicationProfileSelection(
-      {
-        ...selection,
-        [applicationId]: nextValue,
-      },
+      { ...selection, [applicationId]: profileId },
       storage,
     );
   }
 
-  if (!hasContent) {
+  if (profiles.length === 0 || !profiles.some(hasMeaningfulContent)) {
     return (
       <p
         style={{
@@ -86,41 +144,29 @@ export function ApplicationProfileSelector({
         }}
       >
         Aucun profil configuré.{" "}
-        <a href="/profile" style={{ color: "#7A5A26", fontWeight: 600 }}>
+        <Link href="/profile" style={{ color: "#7A5A26", fontWeight: 600 }}>
           Créez votre profil →
-        </a>{" "}
+        </Link>{" "}
         avant de générer un CV.
       </p>
     );
   }
 
   return (
-    <div style={{ display: "grid", gap: "0.4rem" }}>
-      <Label htmlFor={`application-profile-${applicationId}`}>
-        Profil actif pour cette candidature
-      </Label>
-      <select
-        id={`application-profile-${applicationId}`}
-        onChange={(event) => handleChange(event.target.value)}
-        style={{
-          backgroundColor: "#FFFFFF",
-          border: "1px solid #D9D4CA",
-          borderRadius: "0.75rem",
-          color: "#1A1A18",
-          minHeight: "2.75rem",
-          padding: "0.75rem 0.9rem",
-        }}
-        value={value}
-      >
-        {options.map((option) => (
-          <option key={option.id} value={option.id}>
-            {option.label}
-          </option>
-        ))}
-      </select>
-      <p style={{ color: "#6B6860", lineHeight: 1.5, margin: 0 }}>
-        Ce choix est memorise localement et sera reutilise pour les futures generations
-        de CV et de lettre sur cette candidature.
+    <div style={{ display: "grid", gap: "0.5rem" }}>
+      <strong style={{ color: "#1A1A18", fontSize: "0.85rem" }}>
+        Choisir le profil de base
+      </strong>
+      {profiles.map((profile) => (
+        <ProfileCard
+          key={profile.id}
+          onSelect={handleSelect}
+          profile={profile}
+          selected={profile.id === selectedId}
+        />
+      ))}
+      <p style={{ color: "#6B6860", fontSize: "0.8rem", lineHeight: 1.5, margin: 0 }}>
+        Le profil sélectionné sera utilisé comme base pour la génération IA.
       </p>
     </div>
   );
