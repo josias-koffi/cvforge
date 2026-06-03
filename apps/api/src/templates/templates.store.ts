@@ -1,7 +1,7 @@
 import {
   TEMPLATE_KIND_CV,
   TEMPLATE_KIND_LETTER,
-  type PuckData,
+  type TemplateLayoutData,
   type TemplateRecord,
 } from "@cvforge/types";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -12,7 +12,7 @@ type PersistedTemplatesState = {
   templates: Record<string, StoredTemplate>;
 };
 
-function createSeedLayout(kind: TemplateRecord["kind"]): PuckData {
+function createSeedLayout(kind: TemplateRecord["kind"]): TemplateLayoutData {
   if (kind === TEMPLATE_KIND_LETTER) {
     return {
       content: [
@@ -147,7 +147,7 @@ function createSeedState(): PersistedTemplatesState {
   };
 }
 
-function isPuckData(value: unknown): value is PuckData {
+function isTemplateLayoutData(value: unknown): value is TemplateLayoutData {
   if (!value || typeof value !== "object") {
     return false;
   }
@@ -173,10 +173,10 @@ function normalizeTemplate(template: StoredTemplate): StoredTemplate {
     isDefault: Boolean(template.isDefault),
     kind:
       template.kind === TEMPLATE_KIND_LETTER ? TEMPLATE_KIND_LETTER : TEMPLATE_KIND_CV,
-    layout: isPuckData(template.layout)
+    layout: isTemplateLayoutData(template.layout)
       ? {
-          content: (template.layout as PuckData).content.filter(
-            (item): item is PuckData["content"][number] => {
+          content: (template.layout as TemplateLayoutData).content.filter(
+            (item): item is TemplateLayoutData["content"][number] => {
               if (!item || typeof item !== "object") {
                 return false;
               }
@@ -190,7 +190,7 @@ function normalizeTemplate(template: StoredTemplate): StoredTemplate {
               );
             },
           ),
-          root: (template.layout as PuckData).root,
+          root: (template.layout as TemplateLayoutData).root,
         }
       : createSeedLayout(template.kind),
     locale: template.locale === "en" ? "en" : "fr",

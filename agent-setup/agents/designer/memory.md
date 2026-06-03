@@ -334,3 +334,11 @@
 - **Why**: Le changement de suivi doit rester proche du contexte candidature sans créer une nouvelle carte ou page.
 - **Learned**: Quand un statut est final, un libellé "Suivi finalisé" est plus clair qu'un select désactivé.
 - **Open**: None.
+
+## 2026-06-03 — retrait Puck Editor (stage 02 · [[workflows/runs/analyze-design-dev-review-20260603145814]])
+
+- **Context**: ad hoc · [[workflows/runs/analyze-design-dev-review-20260603145814/02-design]]
+- **Did**: Défini un CV utilisateur par champs structurés + aperçu live et un atelier admin de blocs métier sans drag-and-drop.
+- **Why**: Le besoin réel est l'édition ciblée de contenu, pas un canvas WYSIWYG lourd.
+- **Learned**: Le registre de blocs partagé suffit comme source d'options admin et de rendu preview.
+- **Open**: Le fichier LM reste à splitter si une prochaine évolution le touche.

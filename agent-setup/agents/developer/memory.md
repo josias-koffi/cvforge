@@ -624,3 +624,11 @@
 - **Why**: L'utilisateur doit modifier le suivi depuis la candidature consultée, avec validation backend existante et retour au bon contexte.
 - **Learned**: La route status pouvait rester inchangée côté API ; seul le proxy Next avait besoin d'un retour configurable.
 - **Open**: None.
+
+## 2026-06-03 — retrait Puck Editor (stage 03 · [[workflows/runs/analyze-design-dev-review-20260603145814]])
+
+- **Context**: ad hoc · [[workflows/runs/analyze-design-dev-review-20260603145814/03-implement]]
+- **Did**: Supprimé `@puckeditor/core`, les loaders/adapters Puck, remplacé le CV par formulaire + preview, ajouté `TemplateLayoutEditor`, et renommé le contrat en `TemplateLayoutData`.
+- **Why**: L'éditeur externe était lourd et cassait le design ; un éditeur par blocs métier couvre le besoin admin sans nouvelle dépendance.
+- **Learned**: Extraire `template-page-components.tsx` était nécessaire pour ramener la page admin sous le warning §9 après modification.
+- **Open**: `letter-editor.tsx` reste volumineux mais non touché ; à splitter lors d'une prochaine évolution LM.

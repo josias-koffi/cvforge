@@ -1,8 +1,6 @@
 "use client";
 
 import React, { useState } from "react";
-import { Render } from "@puckeditor/core";
-import type { Data } from "@puckeditor/core";
 import {
   Badge,
   Button,
@@ -11,16 +9,15 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  toPuckConfig,
-  documentBlockRegistry,
 } from "@cvforge/ui";
-import type { CVDocumentVersionEntry, PuckData } from "@cvforge/types";
-import { PuckCvEditorLoader } from "./puck-cv-editor-loader";
+import type { CVDocumentContent, CVDocumentVersionEntry } from "@cvforge/types";
+import { CvDocumentPreview } from "./cv-document-preview";
+import { CvEditorFields } from "./cv-editor-fields";
 
 type CvEditorProps = {
   applicationId: string;
-  puckData: PuckData;
-  versions: CVDocumentVersionEntry[];
+  cvContent: CVDocumentContent;
+  versions?: CVDocumentVersionEntry[];
 };
 
 function resolveDownloadFilename(
@@ -46,17 +43,53 @@ function fallbackFilename(applicationId: string, format: "docx" | "pdf") {
   return `cv-${applicationId}.${format}`;
 }
 
-export function CvEditor({ applicationId, puckData, versions }: CvEditorProps) {
-  const documentVersions = versions ?? [];
-  const [dlStatus, setDlStatus] = useState<"idle" | "downloading" | "error">(
-    "idle",
-  );
-  const [dlMessage, setDlMessage] = useState<string | null>(null);
-  const config = toPuckConfig(documentBlockRegistry, "cv");
+export function CvEditor({
+  applicationId,
+  cvContent,
+  versions = [],
+}: CvEditorProps) {
+  const [draft, setDraft] = useState(cvContent);
+  const [status, setStatus] = useState<
+    "idle" | "saving" | "saved" | "downloading" | "error"
+  >("idle");
+  const [message, setMessage] = useState<string | null>(null);
+
+  async function saveCv() {
+    setStatus("saving");
+    setMessage(null);
+
+    try {
+      const response = await fetch(`/cv/${applicationId}/save`, {
+        body: JSON.stringify({ cvContent: draft }),
+        headers: { "Content-Type": "application/json" },
+        method: "PUT",
+      });
+      const payload = (await response.json().catch(() => ({}))) as {
+        cvContent?: CVDocumentContent;
+        message?: string;
+      };
+
+      if (!response.ok) {
+        throw new Error(payload.message ?? "La sauvegarde du CV a échoué.");
+      }
+
+      if (payload.cvContent) {
+        setDraft(payload.cvContent);
+      }
+
+      setStatus("saved");
+      setMessage(payload.message ?? "CV sauvegardé.");
+    } catch (error) {
+      setStatus("error");
+      setMessage(
+        error instanceof Error ? error.message : "La sauvegarde du CV a échoué.",
+      );
+    }
+  }
 
   async function downloadDocument(format: "docx" | "pdf") {
-    setDlStatus("downloading");
-    setDlMessage(null);
+    setStatus("downloading");
+    setMessage(null);
 
     try {
       const response = await fetch(`/cv/${applicationId}/${format}`);
@@ -65,7 +98,9 @@ export function CvEditor({ applicationId, puckData, versions }: CvEditorProps) {
         const payload = (await response.json().catch(() => ({}))) as {
           message?: string;
         };
-        throw new Error(payload.message ?? `L'export ${format.toUpperCase()} a échoué.`);
+        throw new Error(
+          payload.message ?? `L'export ${format.toUpperCase()} a échoué.`,
+        );
       }
 
       const contentType = response.headers.get("content-type") ?? "";
@@ -97,11 +132,11 @@ export function CvEditor({ applicationId, puckData, versions }: CvEditorProps) {
       link.remove();
       window.URL.revokeObjectURL(objectUrl);
 
-      setDlStatus("idle");
-      setDlMessage(`Le ${format.toUpperCase()} a été téléchargé.`);
+      setStatus("saved");
+      setMessage(`Le ${format.toUpperCase()} a été téléchargé.`);
     } catch (error) {
-      setDlStatus("error");
-      setDlMessage(
+      setStatus("error");
+      setMessage(
         error instanceof Error
           ? error.message
           : `L'export ${format.toUpperCase()} a échoué.`,
@@ -110,95 +145,91 @@ export function CvEditor({ applicationId, puckData, versions }: CvEditorProps) {
   }
 
   return (
-    <section
-      aria-label="Editeur du CV"
-      style={{ display: "grid", gap: "1rem" }}
-    >
-      <Card>
-        <CardHeader>
-          <div
-            style={{
-              display: "flex",
-              flexWrap: "wrap",
-              gap: "0.75rem",
-              justifyContent: "space-between",
-            }}
-          >
-            <div style={{ display: "grid", gap: "0.35rem" }}>
-              <CardTitle>Edition du CV par contenu</CardTitle>
-              <CardDescription>
-                Modifiez les valeurs de chaque bloc. La structure reste
-                compatible avec l&apos;export PDF.
-              </CardDescription>
-            </div>
-            <Badge style={{ backgroundColor: "#C8A96E", color: "#1A1A18" }}>
-              Lecture seule sur mobile
-            </Badge>
-          </div>
-        </CardHeader>
-        <CardContent style={{ display: "grid", gap: "0.75rem" }}>
-          <p style={{ color: "#6B6860", lineHeight: 1.65, margin: 0 }}>
-            L&apos;édition est disponible sur écran large. Sur mobile, le CV
-            reste consultable en lecture seule pour garder une expérience stable
-            et lisible. Cliquez sur &ldquo;Publier&rdquo; dans l&apos;éditeur
-            pour enregistrer vos modifications.
+    <section aria-label="Editeur du CV" style={{ display: "grid", gap: "1.5rem" }}>
+      <div
+        style={{
+          alignItems: "center",
+          display: "flex",
+          flexWrap: "wrap",
+          gap: "0.75rem",
+          justifyContent: "space-between",
+        }}
+      >
+        <div style={{ display: "grid", gap: "0.35rem" }}>
+          <h2 style={{ margin: 0 }}>Edition WYSIWYG du CV</h2>
+          <p style={{ color: "#6B6860", lineHeight: 1.6, margin: 0 }}>
+            Modifiez les champs nécessaires, puis contrôlez immédiatement le
+            rendu ATS dans l'aperçu.
           </p>
-          <div>
-            <Button
-              disabled={dlStatus === "downloading"}
-              onClick={() => void downloadDocument("pdf")}
-              type="button"
-              variant="secondary"
-            >
-              {dlStatus === "downloading"
-                ? "Préparation du PDF…"
-                : "Télécharger le PDF"}
-            </Button>
-            <Button
-              disabled={dlStatus === "downloading"}
-              onClick={() => void downloadDocument("docx")}
-              type="button"
-            >
-              {dlStatus === "downloading"
-                ? "Préparation du DOCX…"
-                : "Télécharger le DOCX"}
-            </Button>
-          </div>
-          {dlMessage ? (
-            <p
-              aria-live="polite"
-              style={{
-                backgroundColor: dlStatus === "error" ? "#FBEAE7" : "#EDF4EE",
-                border: `1px solid ${dlStatus === "error" ? "#E5B8AF" : "#C9DCCF"}`,
-                borderRadius: "0.75rem",
-                color: dlStatus === "error" ? "#8A2C20" : "#30543A",
-                lineHeight: 1.6,
-                margin: 0,
-                padding: "0.9rem 1rem",
-              }}
-            >
-              {dlMessage}
-            </p>
-          ) : null}
-        </CardContent>
-      </Card>
+        </div>
+        <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: "0.75rem" }}>
+          {status === "saved" ? <Badge>Sauvegardé</Badge> : null}
+          <Button
+            disabled={status === "saving" || status === "downloading"}
+            onClick={() => setDraft(cvContent)}
+            type="button"
+            variant="ghost"
+          >
+            Réinitialiser
+          </Button>
+          <Button
+            disabled={status === "saving" || status === "downloading"}
+            onClick={() => void saveCv()}
+            type="button"
+            variant="secondary"
+          >
+            {status === "saving" ? "Sauvegarde…" : "Sauvegarder le CV"}
+          </Button>
+          <Button
+            disabled={status === "saving" || status === "downloading"}
+            onClick={() => void downloadDocument("pdf")}
+            type="button"
+          >
+            {status === "downloading" ? "Téléchargement…" : "Télécharger le PDF"}
+          </Button>
+          <Button
+            disabled={status === "saving" || status === "downloading"}
+            onClick={() => void downloadDocument("docx")}
+            type="button"
+            variant="secondary"
+          >
+            {status === "downloading" ? "Téléchargement…" : "Télécharger le DOCX"}
+          </Button>
+        </div>
+      </div>
+
+      {message ? (
+        <p
+          aria-live="polite"
+          style={{
+            backgroundColor: status === "error" ? "#FBEAE7" : "#EEF6ED",
+            border: `1px solid ${status === "error" ? "#E5B8AF" : "#BFD6BF"}`,
+            borderRadius: "0.75rem",
+            color: status === "error" ? "#8A2C20" : "#2F5E3C",
+            lineHeight: 1.6,
+            margin: 0,
+            padding: "0.75rem 1rem",
+          }}
+        >
+          {message}
+        </p>
+      ) : null}
 
       <Card>
         <CardHeader>
           <CardTitle>Historique des versions CV</CardTitle>
           <CardDescription>
-            Chaque génération et chaque publication enregistrée crée une version
-            horodatée.
+            Chaque génération et chaque sauvegarde créent une version horodatée.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {documentVersions.length === 0 ? (
+          {versions.length === 0 ? (
             <p style={{ color: "#6B6860", margin: 0 }}>
               Aucune version historisée.
             </p>
           ) : (
             <ol style={{ display: "grid", gap: "0.5rem", margin: 0 }}>
-              {documentVersions.map((version) => (
+              {versions.map((version) => (
                 <li key={version.id}>
                   Version {version.versionNumber} -{" "}
                   {version.source === "generation" ? "génération" : "sauvegarde"}{" "}
@@ -210,25 +241,12 @@ export function CvEditor({ applicationId, puckData, versions }: CvEditorProps) {
         </CardContent>
       </Card>
 
-      <div className="cvforge-cv-editor__mobile-only">
-        <div
-          style={{
-            backgroundColor: "#FFFFFF",
-            border: "1px solid #D9D4CA",
-            borderRadius: "1rem",
-            boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
-            display: "grid",
-            fontFamily: '"EB Garamond", "Libre Baskerville", Georgia, serif',
-            gap: "1rem",
-            padding: "1.5rem",
-          }}
-        >
-          <Render config={config} data={puckData as Data} />
+      <div style={{ display: "grid", gap: "1.5rem", gridTemplateColumns: "minmax(0, 1fr)" }}>
+        <CvEditorFields draft={draft} onChange={setDraft} />
+        <div style={{ display: "grid", gap: "0.75rem" }}>
+          <h3 style={{ margin: 0 }}>Aperçu live</h3>
+          <CvDocumentPreview cvContent={draft} />
         </div>
-      </div>
-
-      <div className="cvforge-cv-editor__desktop-only">
-        <PuckCvEditorLoader applicationId={applicationId} initialData={puckData} />
       </div>
     </section>
   );

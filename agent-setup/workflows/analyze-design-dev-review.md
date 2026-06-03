@@ -12,6 +12,7 @@ orchestrated
 <!-- Auto-appended by `sprint` / `run-workflow` when this workflow is triggered. -->
 <!-- - [[sprints/sprint-NNN#US-XXX]] — YYYY-MM-DD → [[workflows/runs/<run-id>]] -->
 - ad hoc — 2026-06-03 → [[workflows/runs/analyze-design-dev-review-20260603130216]]
+- ad hoc — 2026-06-03 → [[workflows/runs/analyze-design-dev-review-20260603145814]]
 
 ## Stage 1 - Analyze
 Agent: [[agents/product-owner/agent|product-owner]]

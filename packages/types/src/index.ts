@@ -597,16 +597,16 @@ export interface ImportedCvExtractionResult {
   };
 }
 
-export interface PuckDataItem {
+export interface TemplateLayoutItem {
   type: string;
   props: Record<string, unknown> & { id?: string };
   readOnly?: Record<string, boolean>;
 }
 
-export interface PuckData {
-  content: PuckDataItem[];
+export interface TemplateLayoutData {
+  content: TemplateLayoutItem[];
   root: { props: Record<string, unknown>; readOnly?: Record<string, boolean> };
-  zones?: Record<string, PuckDataItem[]>;
+  zones?: Record<string, TemplateLayoutItem[]>;
 }
 
 export interface TemplateRecord {
@@ -616,7 +616,7 @@ export interface TemplateRecord {
   id: string;
   isDefault: boolean;
   kind: TemplateKind;
-  layout: PuckData;
+  layout: TemplateLayoutData;
   locale: Locale;
   name: string;
   updatedAt: string;
@@ -648,7 +648,7 @@ export type TemplateUpsertInput = {
   categories?: string[];
   isDefault?: boolean;
   kind?: TemplateKind;
-  layout?: PuckData;
+  layout?: TemplateLayoutData;
   locale?: Locale;
   name?: string;
 };
