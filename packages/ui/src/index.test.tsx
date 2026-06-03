@@ -77,8 +77,12 @@ describe("toPuckConfig", () => {
     const experience = (config.components ?? {})["ExperienceItem"];
     const fields = experience?.fields ?? {};
 
-    expect((fields as Record<string, { type: string }>)["company"]?.type).toBe("text");
-    expect((fields as Record<string, { type: string }>)["achievements"]?.type).toBe("array");
+    expect((fields as Record<string, { type: string }>)["company"]?.type).toBe(
+      "text",
+    );
+    expect(
+      (fields as Record<string, { type: string }>)["achievements"]?.type,
+    ).toBe("array");
   });
 
   it("sets label and defaultProps on each component config", () => {
@@ -86,7 +90,9 @@ describe("toPuckConfig", () => {
     const header = (config.components ?? {})["CVHeader"];
 
     expect(header?.label).toBe("CV Header");
-    expect((header?.defaultProps as Record<string, unknown>)?.["firstName"]).toBe("Jane");
+    expect(
+      (header?.defaultProps as Record<string, unknown>)?.["firstName"],
+    ).toBe("Jane");
   });
 
   it("attaches a render function to each component", () => {
@@ -125,7 +131,12 @@ describe("AppShell", () => {
   it("shows admin nav item for admin role and hides it for user role", () => {
     const adminItems: ShellNavItem[] = [
       ...shellNavigation,
-      { href: "/admin", label: "Admin", description: "Espace admin", requiresAdmin: true },
+      {
+        href: "/admin",
+        label: "Admin",
+        description: "Espace admin",
+        requiresAdmin: true,
+      },
     ];
 
     const adminMarkup = renderToStaticMarkup(
@@ -165,11 +176,7 @@ describe("AppShell", () => {
 
   it("renders hamburger button for mobile nav", () => {
     const markup = renderToStaticMarkup(
-      <AppShell
-        description="Test"
-        navigation={shellNavigation}
-        title="Test"
-      />,
+      <AppShell description="Test" navigation={shellNavigation} title="Test" />,
     );
 
     expect(markup).toContain("Ouvrir le menu");
@@ -237,6 +244,13 @@ describe("document blocks", () => {
       "description",
       "achievements",
     ]);
+    expect(documentBlockRegistry.EducationItem.fields).toEqual([
+      "degree",
+      "institution",
+      "year",
+      "mention",
+      "description",
+    ]);
   });
 
   it("should let admin and user flows reuse the same block definitions", () => {
@@ -259,9 +273,10 @@ describe("document blocks", () => {
           "Divider",
           "ExperienceItem",
         ].map((blockName) => {
-          const definition = documentBlockRegistry[
-            blockName as keyof typeof documentBlockRegistry
-          ];
+          const definition =
+            documentBlockRegistry[
+              blockName as keyof typeof documentBlockRegistry
+            ];
           const Component = definition.component as (
             props: (typeof definition)["defaultProps"],
           ) => React.ReactElement;
@@ -272,7 +287,9 @@ describe("document blocks", () => {
     );
 
     expect(adminPalette).toContain("CV Header:firstName,lastName,title");
-    expect(adminPalette).toContain("Letter Body:paragraph1,paragraph2,paragraph3");
+    expect(adminPalette).toContain(
+      "Letter Body:paragraph1,paragraph2,paragraph3",
+    );
     expect(userDocument).toContain("Jane Doe");
     expect(userDocument).toContain("Senior Product Engineer");
     expect(userDocument).toContain("Owned the document editor roadmap");
@@ -294,7 +311,9 @@ describe("document blocks", () => {
     expect(markup).toContain("Solutions Architect Associate");
     expect(markup).toContain("Template Studio");
     expect(markup).toContain("Application for Senior Frontend Engineer");
-    expect(markup).toContain("I would welcome the opportunity to discuss this role further.");
+    expect(markup).toContain(
+      "I would welcome the opportunity to discuss this role further.",
+    );
   });
 
   it("renders CV_PREVIEW_FIXTURE with all main sections covered", () => {
@@ -344,6 +363,7 @@ describe("document blocks", () => {
     expect(markupExp).toContain("Banque Crédit Sud");
     expect(markupSkills).toContain("Gestion de projet");
     expect(markupEdu).toContain("Paris-Dauphine");
+    expect(markupEdu).toContain("gouvernance SI");
   });
 
   it("should handle the optional document block branches", () => {
@@ -355,6 +375,7 @@ describe("document blocks", () => {
         />
         <documentBlockRegistry.EducationItem.component
           {...documentBlockRegistry.EducationItem.defaultProps}
+          description=""
           mention=""
         />
         <documentBlockRegistry.ProjectItem.component

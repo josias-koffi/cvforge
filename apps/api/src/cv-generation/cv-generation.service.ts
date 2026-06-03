@@ -66,9 +66,13 @@ LANGUES (languages[]) :
 
 FORMATION (education[]) :
 - Les 3 formations les plus récentes uniquement.
-- Chaque formation sur une ligne compacte. degree = intitulé du diplôme (sans "Bac+5" si le niveau RNCP est dans mention). institution = école / université. mention = niveau RNCP ou équivalent (ex. "RNCP Niv. 7"). year = année d'obtention.
+- Chaque formation suit le même modèle que les expériences : degree = intitulé du diplôme, year = date sur le côté, institution = école / université sous le titre, description = résumé court de la formation si le profil en fournit un, mention = niveau RNCP ou équivalent (ex. "RNCP Niv. 7").
 - Diplômes antérieurs : omis ou condensés en un seul item à intitulé court.
 - Corriger les fautes d'orthographe dans les intitulés de diplômes.
+
+CENTRES D'INTÉRÊT (interests) :
+- Reprendre les centres d'intérêt du profil s'ils sont présents, sans les inventer.
+- Laisser une chaîne vide si le profil n'en fournit pas.
 
 COHÉRENCE GLOBALE :
 - Le titre, le résumé, les mots-clés d'expériences et les compétences doivent tous pointer vers le MÊME poste cible.
@@ -101,8 +105,9 @@ Retourne UNIQUEMENT un JSON valide avec cette structure exacte :
     }
   ],
   "education": [
-    { "degree": "", "institution": "", "year": "", "mention": "" }
+    { "degree": "", "institution": "", "year": "", "mention": "", "description": "" }
   ],
+  "interests": "",
   "skills": {
     "hard": [],
     "soft": [],
@@ -177,6 +182,7 @@ type RawCvJson = {
   };
   experiences?: unknown[];
   education?: unknown[];
+  interests?: unknown;
   skills?: { hard?: unknown; soft?: unknown; categories?: unknown };
   certifications?: unknown[];
   languages?: unknown[];
@@ -247,6 +253,7 @@ function normalizeEducation(raw: unknown[]): EducationItemProps[] {
       if (!item || typeof item !== "object") return null;
       const e = item as Record<string, unknown>;
       return {
+        description: toStr(e.description),
         degree: toStr(e.degree),
         institution: toStr(e.institution),
         mention: toStr(e.mention),
@@ -345,6 +352,7 @@ function buildSkills(raw: RawCvJson["skills"]): CVDocumentContent["skills"] {
 function normalizeCvJson(
   raw: RawCvJson,
   localFields: CvGenerationRequest["localFields"],
+  promptProfile: CvGenerationRequest["promptProfile"],
 ): CVDocumentContent {
   const candidate = raw.candidate ?? {};
 
@@ -369,6 +377,8 @@ function normalizeCvJson(
     experiences: normalizeExperiences(
       Array.isArray(raw.experiences) ? raw.experiences : [],
     ),
+    interests:
+      toStr(promptProfile.profileSections.interests) || toStr(raw.interests),
     languages: normalizeLanguages(
       Array.isArray(raw.languages) ? raw.languages : [],
     ),
@@ -403,6 +413,7 @@ function normalizeUpdatedCvContent(
     experiences: normalizeExperiences(
       Array.isArray(value.experiences) ? value.experiences : [],
     ),
+    interests: toStr(value.interests),
     languages: normalizeLanguages(
       Array.isArray(value.languages) ? value.languages : [],
     ),
@@ -509,10 +520,12 @@ function assertLocalFieldsProvided(
 function nextVersionNumber(
   versions: Array<{ versionNumber: number }> | undefined,
 ) {
-  return (versions?.reduce(
-    (highest, version) => Math.max(highest, version.versionNumber),
-    0,
-  ) ?? 0) + 1;
+  return (
+    (versions?.reduce(
+      (highest, version) => Math.max(highest, version.versionNumber),
+      0,
+    ) ?? 0) + 1
+  );
 }
 
 function appendCvVersion(
@@ -599,7 +612,11 @@ export class CvGenerationService {
     );
 
     const rawJson = extractJsonFromContent<RawCvJson>(rawResponse);
-    const cvContent = normalizeCvJson(rawJson, request.localFields);
+    const cvContent = normalizeCvJson(
+      rawJson,
+      request.localFields,
+      request.promptProfile,
+    );
     const cvTemplateId = this.resolveDefaultTemplateId(TEMPLATE_KIND_CV);
 
     const timestamp = new Date().toISOString();
@@ -660,7 +677,8 @@ export class CvGenerationService {
       application.extracted.location,
       `Candidature au poste de ${application.extracted.title}`,
     );
-    const letterTemplateId = this.resolveDefaultTemplateId(TEMPLATE_KIND_LETTER);
+    const letterTemplateId =
+      this.resolveDefaultTemplateId(TEMPLATE_KIND_LETTER);
 
     const timestamp = new Date().toISOString();
     const resolvedTemplateId =
@@ -700,7 +718,8 @@ export class CvGenerationService {
     const cvContent = normalizeUpdatedCvContent(request.cvContent);
     const timestamp = new Date().toISOString();
     const cvTemplateId =
-      application.cvTemplateId ?? this.resolveDefaultTemplateId(TEMPLATE_KIND_CV);
+      application.cvTemplateId ??
+      this.resolveDefaultTemplateId(TEMPLATE_KIND_CV);
 
     this.store.save({
       ...application,
@@ -787,7 +806,10 @@ export class CvGenerationService {
   }
 
   private getApplicationForUser(userEmail: string, applicationId: string) {
-    const application = this.store.findByIdForUserEmail(userEmail, applicationId);
+    const application = this.store.findByIdForUserEmail(
+      userEmail,
+      applicationId,
+    );
 
     if (!application) {
       throw new NotFoundException("La candidature est introuvable.");
@@ -797,7 +819,9 @@ export class CvGenerationService {
   }
 
   private buildOfferContext(
-    application: NonNullable<ReturnType<ApplicationsStore["findByIdForUserEmail"]>>,
+    application: NonNullable<
+      ReturnType<ApplicationsStore["findByIdForUserEmail"]>
+    >,
   ) {
     return {
       title: application.extracted.title,
@@ -815,8 +839,9 @@ export class CvGenerationService {
   ) {
     const templates = this.templatesStore?.list() ?? [];
     const defaultTemplate =
-      templates.find((template) => template.kind === kind && template.isDefault) ??
-      templates.find((template) => template.kind === kind);
+      templates.find(
+        (template) => template.kind === kind && template.isDefault,
+      ) ?? templates.find((template) => template.kind === kind);
 
     return defaultTemplate?.id ?? null;
   }
