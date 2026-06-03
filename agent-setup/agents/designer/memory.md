@@ -326,3 +326,11 @@
 - **Why**: La page profil monolithique cachait la structure multi-profils. Réduire les radius renforce le caractère éditorial "Papier & Crayon".
 - **Learned**: La réduction de ~60% des border-radius donne un look sensiblement plus professionnel et moins "app mobile" sans casser le système de tokens.
 - **Open**: None.
+
+## 2026-06-03 — description formation éditable (stage 02 · [[workflows/runs/analyze-design-dev-review-20260603081446]])
+
+- **Context**: ad hoc · [[workflows/runs/analyze-design-dev-review-20260603081446/02-design]]
+- **Did**: Placé le champ "Description de la formation" sous la grille diplôme/école/année/mention avec `LabeledTextarea` 3 lignes.
+- **Why**: La description est un contenu long optionnel ; la placer sous les champs courts garde la hiérarchie de saisie lisible.
+- **Learned**: Les formations suivent déjà un composant dédié (`EducationFields`), ce qui permet d'ajouter le champ sans modifier la structure de page.
+- **Open**: None.
