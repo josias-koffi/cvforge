@@ -16,7 +16,6 @@ import {
   Label,
   LETTER_PREVIEW_FIXTURE,
   PaperStyles,
-  toPuckConfig,
   type ShellNavItem,
   Textarea,
 } from "./index";
@@ -44,10 +43,9 @@ const shellNavigation: ShellNavItem[] = [
   },
 ];
 
-describe("toPuckConfig", () => {
+describe("documentBlockRegistry", () => {
   it("returns only CV blocks when kind is cv", () => {
-    const config = toPuckConfig(documentBlockRegistry, TEMPLATE_KIND_CV);
-    const names = Object.keys(config.components ?? {});
+    const names = getBlocksForTemplateKind(TEMPLATE_KIND_CV).map(([name]) => name);
 
     expect(names).toContain("CVHeader");
     expect(names).toContain("SummaryBlock");
@@ -60,8 +58,7 @@ describe("toPuckConfig", () => {
   });
 
   it("returns only letter blocks when kind is letter", () => {
-    const config = toPuckConfig(documentBlockRegistry, TEMPLATE_KIND_LETTER);
-    const names = Object.keys(config.components ?? {});
+    const names = getBlocksForTemplateKind(TEMPLATE_KIND_LETTER).map(([name]) => name);
 
     expect(names).toContain("LMHeader");
     expect(names).toContain("LMBody");
@@ -72,34 +69,24 @@ describe("toPuckConfig", () => {
     expect(names).not.toContain("ExperienceItem");
   });
 
-  it("creates text fields for scalar props and array fields for array props", () => {
-    const config = toPuckConfig(documentBlockRegistry, TEMPLATE_KIND_CV);
-    const experience = (config.components ?? {})["ExperienceItem"];
-    const fields = experience?.fields ?? {};
+  it("exposes scalar and array defaults for custom layout fields", () => {
+    const experience = documentBlockRegistry.ExperienceItem;
 
-    expect((fields as Record<string, { type: string }>)["company"]?.type).toBe(
-      "text",
-    );
-    expect(
-      (fields as Record<string, { type: string }>)["achievements"]?.type,
-    ).toBe("array");
+    expect(experience.fields).toContain("company");
+    expect(Array.isArray(experience.defaultProps.achievements)).toBe(true);
   });
 
   it("sets label and defaultProps on each component config", () => {
-    const config = toPuckConfig(documentBlockRegistry, TEMPLATE_KIND_CV);
-    const header = (config.components ?? {})["CVHeader"];
+    const header = documentBlockRegistry.CVHeader;
 
-    expect(header?.label).toBe("CV Header");
-    expect(
-      (header?.defaultProps as Record<string, unknown>)?.["firstName"],
-    ).toBe("Jane");
+    expect(header.label).toBe("CV Header");
+    expect(header.defaultProps.firstName).toBe("Jane");
   });
 
-  it("attaches a render function to each component", () => {
-    const config = toPuckConfig(documentBlockRegistry, TEMPLATE_KIND_CV);
-    const summary = (config.components ?? {})["SummaryBlock"];
+  it("attaches a component function to each block", () => {
+    const summary = documentBlockRegistry.SummaryBlock;
 
-    expect(typeof summary?.render).toBe("function");
+    expect(typeof summary.component).toBe("function");
   });
 });
 

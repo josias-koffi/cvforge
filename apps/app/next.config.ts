@@ -30,7 +30,6 @@ const nextConfig = {
       bodySizeLimit: "16mb",
     },
   },
-  transpilePackages: ["@puckeditor/core"],
 };
 
 export default nextConfig;

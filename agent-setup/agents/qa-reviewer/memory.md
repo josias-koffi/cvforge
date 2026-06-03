@@ -342,3 +342,11 @@
 - **Why**: Le workflow ne pouvait passer que si le suivi était modifiable sans quitter le détail candidature.
 - **Learned**: Le test route `returnTo` verrouille le comportement sans dépendre d'un navigateur.
 - **Open**: Avertissements `act(...)` interview préexistants dans la suite complète.
+
+## 2026-06-03 — retrait Puck Editor (stage 04 · [[workflows/runs/analyze-design-dev-review-20260603145814]])
+
+- **Context**: ad hoc · [[workflows/runs/analyze-design-dev-review-20260603145814/04-review]]
+- **Did**: Vérifié absence de dépendance Puck, tests ciblés, lint workspace, build workspace et tailles des fichiers touchés.
+- **Why**: Le retrait d'une dépendance d'éditeur et le renommage du contrat partagé devaient être validés au-delà des tests de page.
+- **Learned**: Le build Next confirme que les routes CV/admin restent compilables sans transpilation Puck.
+- **Open**: `apps/app/tsconfig.tsbuildinfo` reste un artefact local non suivi préexistant.

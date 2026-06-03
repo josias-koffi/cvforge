@@ -7,7 +7,7 @@ describe("app next config", () => {
     vi.resetModules();
   });
 
-  it("includes @puckeditor/core in transpilePackages for SSR-safe Puck integration", () => {
+  it("keeps the server action body limit for large document payloads", () => {
     expect(nextConfig).toMatchObject({
       experimental: {
         middlewareClientMaxBodySize: "16mb",
@@ -15,8 +15,8 @@ describe("app next config", () => {
           bodySizeLimit: "16mb",
         },
       },
-      transpilePackages: expect.arrayContaining(["@puckeditor/core"]),
     });
+    expect(nextConfig).not.toHaveProperty("transpilePackages");
   });
 
   it("uses a project-local NEXT_DIST_DIR when provided", async () => {
@@ -32,7 +32,6 @@ describe("app next config", () => {
           bodySizeLimit: "16mb",
         },
       },
-      transpilePackages: expect.arrayContaining(["@puckeditor/core"]),
     });
   });
 
@@ -41,9 +40,7 @@ describe("app next config", () => {
     vi.resetModules();
     const { default: configured } = await import("../next.config");
 
-    expect(configured).toMatchObject({
-      transpilePackages: expect.arrayContaining(["@puckeditor/core"]),
-    });
     expect(configured).not.toHaveProperty("distDir");
+    expect(configured).not.toHaveProperty("transpilePackages");
   });
 });

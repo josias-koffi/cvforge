@@ -1,4 +1,3 @@
-import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -17,31 +16,6 @@ vi.mock("../../auth/session", () => ({
 
 vi.mock("../../auth-config", () => ({
   getServerApiUrl: () => "http://api.test",
-}));
-
-vi.mock("@puckeditor/core", () => ({
-  Render: ({
-    data,
-  }: {
-    data: {
-      content: Array<{ type: string; props: Record<string, unknown> }>;
-    };
-  }) =>
-    React.createElement(
-      "div",
-      { "data-testid": "puck-render" },
-      data.content
-        .filter(
-          (item) => item.type === "CVHeader" || item.type === "SkillsList",
-        )
-        .map((item, i) =>
-          React.createElement(
-            "span",
-            { key: i },
-            Object.values(item.props).join(" "),
-          ),
-        ),
-    ),
 }));
 
 import CvPage from "./page";
@@ -107,7 +81,7 @@ describe("CvPage", () => {
       } as Response);
   }
 
-  it("renders the CV editor page with correct title and Puck editor", async () => {
+  it("renders the CV editor page with structured fields", async () => {
     setupMocks();
 
     const Page = await CvPage({
@@ -116,14 +90,14 @@ describe("CvPage", () => {
     const markup = renderToStaticMarkup(Page);
 
     expect(markup).toContain("Edition du CV");
-    expect(markup).toContain("Edition du CV par contenu");
-    expect(markup).toContain("Lecture seule sur mobile");
+    expect(markup).toContain("Edition WYSIWYG du CV");
+    expect(markup).toContain("Sauvegarder le CV");
     expect(markup).toContain("Télécharger le PDF");
     expect(markup).toContain("Télécharger le DOCX");
     expect(markup).toContain("Historique des versions CV");
   });
 
-  it("renders the mobile read-only view with candidate data via Puck Render", async () => {
+  it("renders the live preview with candidate data", async () => {
     setupMocks();
 
     const Page = await CvPage({
@@ -135,7 +109,7 @@ describe("CvPage", () => {
     expect(markup).toContain("TypeScript");
   });
 
-  it("shows the mobile read-only explanatory copy", async () => {
+  it("shows structured edit fields", async () => {
     setupMocks();
 
     const Page = await CvPage({
@@ -143,7 +117,7 @@ describe("CvPage", () => {
     });
     const markup = renderToStaticMarkup(Page);
 
-    expect(markup).toContain("lecture seule");
-    expect(markup).toContain("Publier");
+    expect(markup).toContain("Compétences techniques");
+    expect(markup).toContain("Aperçu live");
   });
 });

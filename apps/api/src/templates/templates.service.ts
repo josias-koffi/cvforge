@@ -7,7 +7,7 @@ import {
 import {
   TEMPLATE_KIND_CV,
   TEMPLATE_KIND_LETTER,
-  type PuckData,
+  type TemplateLayoutData,
   type TemplateAnalyticsSummary,
   type TemplateUsageMetric,
 } from "@cvforge/types";
@@ -40,7 +40,7 @@ function normalizeCategories(value: unknown) {
     .slice(0, 10);
 }
 
-function normalizeLayout(value: unknown): PuckData {
+function normalizeLayout(value: unknown): TemplateLayoutData {
   if (!value || typeof value !== "object") {
     throw new BadRequestException("Le template doit contenir un layout JSON.");
   }
@@ -50,13 +50,13 @@ function normalizeLayout(value: unknown): PuckData {
 
   if (!Array.isArray(content)) {
     throw new BadRequestException(
-      "Le layout du template doit contenir un tableau 'content' (format Puck Data).",
+      "Le layout du template doit contenir un tableau 'content'.",
     );
   }
 
   const root =
     candidate.root && typeof candidate.root === "object"
-      ? (candidate.root as PuckData["root"])
+      ? (candidate.root as TemplateLayoutData["root"])
       : { props: {} };
 
   return {

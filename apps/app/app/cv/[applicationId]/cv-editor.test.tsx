@@ -1,85 +1,67 @@
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it, vi } from "vitest";
-
-vi.mock("@puckeditor/core", () => ({
-  Render: ({
-    data,
-  }: {
-    data: {
-      content: Array<{ type: string; props: Record<string, unknown> }>;
-    };
-  }) =>
-    React.createElement(
-      "div",
-      { "data-testid": "puck-render" },
-      data.content
-        .filter((item) => item.type === "CVHeader")
-        .map((item, i) =>
-          React.createElement("span", { key: i }, String(item.props.firstName)),
-        ),
-    ),
-}));
-
-vi.mock("./puck-cv-editor-loader", () => ({
-  PuckCvEditorLoader: () =>
-    React.createElement("div", { "data-testid": "puck-editor-loader" }),
-}));
-
+import { describe, expect, it } from "vitest";
 import { CvEditor } from "./cv-editor";
-import type { PuckData } from "@cvforge/types";
+import type { CVDocumentContent } from "@cvforge/types";
 
-const samplePuckData: PuckData = {
-  content: [
+const sampleCvContent: CVDocumentContent = {
+  candidate: {
+    city: "Paris",
+    email: "alice@example.com",
+    firstName: "Alice",
+    github: "",
+    lastName: "Martin",
+    linkedin: "",
+    phone: "+33600000000",
+    summary: "Expert TypeScript developer",
+    title: "Engineer",
+  },
+  certifications: [],
+  education: [],
+  experiences: [
     {
-      type: "CVHeader",
-      props: {
-        id: "cv-header",
-        firstName: "Alice",
-        lastName: "Martin",
-        city: "Paris",
-        email: "alice@example.com",
-        github: "",
-        linkedin: "",
-        phone: "+33600000000",
-        title: "Engineer",
-      },
+      achievements: ["Reduced latency"],
+      company: "CVforge",
+      description: "Built document workflows",
+      endDate: "2026",
+      position: "Engineer",
+      startDate: "2024",
     },
   ],
-  root: { props: {} },
+  interests: "Lecture",
+  languages: [{ language: "Français", level: "C2" }],
+  projects: [],
+  skills: { hard: ["TypeScript"], soft: ["Communication"] },
 };
 
 describe("CvEditor", () => {
-  it("renders the section header with title, badge and PDF button", () => {
+  it("renders the structured editor header and export buttons", () => {
     const markup = renderToStaticMarkup(
-      React.createElement(CvEditor, {
-        applicationId: "app-001",
-        puckData: samplePuckData,
-      }),
+      <CvEditor applicationId="app-001" cvContent={sampleCvContent} />,
     );
 
-    expect(markup).toContain("Edition du CV par contenu");
-    expect(markup).toContain("Lecture seule sur mobile");
+    expect(markup).toContain("Edition WYSIWYG du CV");
+    expect(markup).toContain("Sauvegarder le CV");
     expect(markup).toContain("Télécharger le PDF");
     expect(markup).toContain("Télécharger le DOCX");
   });
 
   it("renders CV version history when versions are provided", () => {
     const markup = renderToStaticMarkup(
-      React.createElement(CvEditor, {
-        applicationId: "app-001",
-        puckData: samplePuckData,
-        versions: [
+      <CvEditor
+        applicationId="app-001"
+        cvContent={sampleCvContent}
+        versions={[
           {
-            content: {} as never,
+            content: sampleCvContent,
             createdAt: "2026-04-23T10:00:00.000Z",
             id: "app-001-cv-v1",
             source: "generation",
             templateId: "template-cv-ats",
             versionNumber: 1,
           },
-        ],
-      }),
+        ]}
+      />,
     );
 
     expect(markup).toContain("Historique des versions CV");
@@ -87,51 +69,25 @@ describe("CvEditor", () => {
     expect(markup).toContain("génération");
   });
 
-  it("renders the mobile Puck Render component with candidate data", () => {
+  it("renders editable fields and live preview with candidate data", () => {
     const markup = renderToStaticMarkup(
-      React.createElement(CvEditor, {
-        applicationId: "app-001",
-        puckData: samplePuckData,
-      }),
+      <CvEditor applicationId="app-001" cvContent={sampleCvContent} />,
     );
 
-    expect(markup).toContain("puck-render");
+    expect(markup).toContain("En-tête");
+    expect(markup).toContain("Compétences techniques");
+    expect(markup).toContain("Aperçu live");
     expect(markup).toContain("Alice");
+    expect(markup).toContain("TypeScript");
   });
 
-  it("renders the desktop Puck editor loader in the desktop-only section", () => {
+  it("does not render legacy editor desktop/mobile sections", () => {
     const markup = renderToStaticMarkup(
-      React.createElement(CvEditor, {
-        applicationId: "app-001",
-        puckData: samplePuckData,
-      }),
+      <CvEditor applicationId="app-001" cvContent={sampleCvContent} />,
     );
 
-    expect(markup).toContain("puck-editor-loader");
-    expect(markup).toContain("cvforge-cv-editor__desktop-only");
-  });
-
-  it("renders mobile and desktop sections with correct CSS classes", () => {
-    const markup = renderToStaticMarkup(
-      React.createElement(CvEditor, {
-        applicationId: "app-001",
-        puckData: samplePuckData,
-      }),
-    );
-
-    expect(markup).toContain("cvforge-cv-editor__mobile-only");
-    expect(markup).toContain("cvforge-cv-editor__desktop-only");
-  });
-
-  it("includes explanatory copy about desktop editing and Publish action", () => {
-    const markup = renderToStaticMarkup(
-      React.createElement(CvEditor, {
-        applicationId: "app-001",
-        puckData: samplePuckData,
-      }),
-    );
-
-    expect(markup).toContain("lecture seule");
-    expect(markup).toContain("Publier");
+    expect(markup).not.toContain("legacy-render");
+    expect(markup).not.toContain("legacy-editor-loader");
+    expect(markup).not.toContain("cvforge-cv-editor__desktop-only");
   });
 });

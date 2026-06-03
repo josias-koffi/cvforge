@@ -139,9 +139,10 @@ describe("AdminTemplatesPage", () => {
     expect(markup).toContain("Templates admin");
     expect(markup).toContain("CV ATS par defaut");
     expect(markup).toContain("LM ATS par defaut");
-    expect(markup).toContain("Editeur Puck");
+    expect(markup).toContain("Editeur de layout");
     expect(markup).toContain("Aperçu live");
     expect(markup).toContain("CVHeader");
+    expect(markup).toContain("Blocs disponibles");
     expect(markup).toContain("Analytics");
   });
 
