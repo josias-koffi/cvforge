@@ -33,6 +33,31 @@ describe("POST /candidatures/status", () => {
     );
   });
 
+  it("redirects back to the provided candidature detail path", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+      }),
+    );
+
+    const formData = new FormData();
+    formData.set("applicationId", "app_123");
+    formData.set("nextStatus", "sent");
+    formData.set("returnTo", "/candidatures/app_123");
+
+    const response = await POST(
+      new Request("http://localhost:3000/candidatures/status", {
+        body: formData,
+        method: "POST",
+      }),
+    );
+
+    expect(response.headers.get("location")).toBe(
+      "http://localhost:3000/candidatures/app_123?statusUpdated=app_123",
+    );
+  });
+
   it("maps forbidden transitions to a stable page error code", async () => {
     vi.stubGlobal(
       "fetch",

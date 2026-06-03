@@ -616,3 +616,11 @@
 - **Why**: Le CV généré devait afficher les formations comme les expériences, reprendre les centres d'intérêt du profil et supprimer la barre entre Profil et Compétences.
 - **Learned**: Les centres d'intérêt existent déjà dans `BaseProfile.sections`; la bonne réinjection CV vient du `promptProfile`, pas des `localFields` réservés aux données personnelles.
 - **Open**: None.
+
+## 2026-06-03 — suivi candidature detail (stage 03 · [[workflows/runs/analyze-design-dev-review-20260603130216]])
+
+- **Context**: ad hoc · [[workflows/runs/analyze-design-dev-review-20260603130216/03-implement]]
+- **Did**: Ajouté le header de suivi, `returnTo` sur la route status, tests header/page/route, et split header + historique pour ramener `candidature-detail-tabs.tsx` à 386 lignes.
+- **Why**: L'utilisateur doit modifier le suivi depuis la candidature consultée, avec validation backend existante et retour au bon contexte.
+- **Learned**: La route status pouvait rester inchangée côté API ; seul le proxy Next avait besoin d'un retour configurable.
+- **Open**: None.

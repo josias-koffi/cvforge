@@ -27,9 +27,13 @@ vi.mock("../../notifications/notification-bell", () => ({
 }));
 
 vi.mock("./candidature-detail-tabs", () => ({
-  CandidatureDetailTabs: ({ application }: { application: { extracted: { title: string } } }) => (
-    <div data-testid="tabs">{application.extracted.title}</div>
-  ),
+  CandidatureDetailTabs: ({
+    application,
+    statusUpdated,
+  }: {
+    application: { extracted: { title: string } };
+    statusUpdated?: boolean;
+  }) => <div data-testid="tabs">{application.extracted.title}:{String(statusUpdated)}</div>,
 }));
 
 vi.stubGlobal("fetch", fetchMock);
@@ -83,6 +87,23 @@ describe("CandidatureDetailPage", () => {
     );
 
     expect(html).toContain("Dev Frontend");
+  });
+
+  it("passes status update feedback when the query matches the application", async () => {
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({ application: baseApp }),
+    });
+
+    const html = renderToStaticMarkup(
+      await CandidatureDetailPage({
+        params: Promise.resolve({ id: "app_abc" }),
+        searchParams: Promise.resolve({ statusUpdated: "app_abc" }),
+      }),
+    );
+
+    expect(html).toContain("Dev Frontend:true");
   });
 
   it("calls notFound when the API returns 404", async () => {

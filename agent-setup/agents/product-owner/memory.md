@@ -376,3 +376,11 @@
 - **Why**: Sprint 017 required separating session configuration from the active studio experience.
 - **Learned**: The existing `/interview/start` route already handles session creation — the wizard just needs a client-side redirect after the POST response.
 - **Open**: US-064 will refactor the in-session studio to replace push-to-talk with auto-VAD.
+
+## 2026-06-03 — suivi candidature detail (stage 01 · [[workflows/runs/analyze-design-dev-review-20260603130216]])
+
+- **Context**: ad hoc · [[workflows/runs/analyze-design-dev-review-20260603130216/01-analyze]]
+- **Did**: Validé le besoin de modifier le statut directement dans la vue détail candidature.
+- **Why**: Le suivi des candidatures est un pilier vision ; revenir à la liste pour changer le statut casse le flux de suivi.
+- **Learned**: Les transitions existantes suffisent ; aucun nouveau statut produit n'est nécessaire.
+- **Open**: None.

@@ -334,3 +334,11 @@
 - **Why**: Sprint 017 QA gate before marking US-063 complete.
 - **Learned**: Step indicator accessibility requires `aria-current="step"` on the active step button. Wizard step navigation tests should click the actual button text rather than rely on DOM order.
 - **Open**: None — US-063 fully verified.
+
+## 2026-06-03 — suivi candidature detail (stage 04 · [[workflows/runs/analyze-design-dev-review-20260603130216]])
+
+- **Context**: ad hoc · [[workflows/runs/analyze-design-dev-review-20260603130216/04-review]]
+- **Did**: Vérifié le contrôle de statut, la redirection détail, le feedback, l'historique et les gates tests/lint.
+- **Why**: Le workflow ne pouvait passer que si le suivi était modifiable sans quitter le détail candidature.
+- **Learned**: Le test route `returnTo` verrouille le comportement sans dépendre d'un navigateur.
+- **Open**: Avertissements `act(...)` interview préexistants dans la suite complète.

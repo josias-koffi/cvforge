@@ -404,3 +404,11 @@
 - **Why**: Architecture governance sign-off — server/client split is clean, backward-compatible prop extension pattern used.
 - **Learned**: Adding an optional prop to `InterviewStudio` is the right way to extend a large client component without breaking the existing `/interview` entry point.
 - **Open**: US-064 will refactor the in-session studio (remove push-to-talk, add auto-VAD). The locked dropdowns advisory can be cleared then.
+
+## 2026-06-03 — suivi candidature detail (finalization · [[workflows/runs/analyze-design-dev-review-20260603130216]])
+
+- **Context**: ad hoc · [[workflows/runs/analyze-design-dev-review-20260603130216/final-summary]]
+- **Did**: Signé le workflow après ajout du suivi éditable dans la vue détail et validation complète lint/tests.
+- **Why**: Le changement reste dans la frontière UI/proxy existante et réutilise la validation métier backend.
+- **Learned**: Extraire les sous-composants de détail candidature évite que les petites évolutions UI aggravent les fichiers >400 lignes.
+- **Open**: None.
