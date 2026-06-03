@@ -616,3 +616,11 @@
 - **Why**: Le CV généré devait afficher les formations comme les expériences, reprendre les centres d'intérêt du profil et supprimer la barre entre Profil et Compétences.
 - **Learned**: Les centres d'intérêt existent déjà dans `BaseProfile.sections`; la bonne réinjection CV vient du `promptProfile`, pas des `localFields` réservés aux données personnelles.
 - **Open**: None.
+
+## 2026-06-03 — description formation éditable (stage 03 · [[workflows/runs/analyze-design-dev-review-20260603081446]])
+
+- **Context**: ad hoc · [[workflows/runs/analyze-design-dev-review-20260603081446/03-implement]]
+- **Did**: Ajouté `EducationEntry.description`, sa normalisation, le textarea d'édition, les tests UI/persistance et splitté `base-profile.ts` en modules core/types pour rester sous 400 lignes.
+- **Why**: La génération CV avait désormais besoin d'une description formation fournie par l'utilisateur avant adaptation à l'offre.
+- **Learned**: `next build` régénère `next-env.d.ts` vers `.next/types`; il faut remettre les chemins `tmp/cvforge-*-next` versionnés avant de finaliser.
+- **Open**: `base-profile.test.ts` reste à 387 lignes, sous le seuil bloquant mais au-dessus de la cible idéale.

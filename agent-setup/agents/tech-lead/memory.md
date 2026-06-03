@@ -404,3 +404,11 @@
 - **Why**: Architecture governance sign-off — server/client split is clean, backward-compatible prop extension pattern used.
 - **Learned**: Adding an optional prop to `InterviewStudio` is the right way to extend a large client component without breaking the existing `/interview` entry point.
 - **Open**: US-064 will refactor the in-session studio (remove push-to-talk, add auto-VAD). The locked dropdowns advisory can be cleared then.
+
+## 2026-06-03 — description formation éditable (finalization · [[workflows/runs/analyze-design-dev-review-20260603081446]])
+
+- **Context**: ad hoc · [[workflows/runs/analyze-design-dev-review-20260603081446/final-summary]]
+- **Did**: Signé le workflow après ajout rétrocompatible du champ description formation, split du module profil et validation tests/lint/build.
+- **Why**: Le changement reste dans le contrat profil local et ne justifie ni migration serveur ni ADR.
+- **Learned**: Pour les champs profil consommés par la génération IA, la meilleure frontière est de normaliser dans `BaseProfile` puis de laisser le prompt consommer `profileSections`.
+- **Open**: None.

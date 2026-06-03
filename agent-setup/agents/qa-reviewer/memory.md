@@ -334,3 +334,11 @@
 - **Why**: Sprint 017 QA gate before marking US-063 complete.
 - **Learned**: Step indicator accessibility requires `aria-current="step"` on the active step button. Wizard step navigation tests should click the actual button text rather than rely on DOM order.
 - **Open**: None — US-063 fully verified.
+
+## 2026-06-03 — description formation éditable (stage 04 · [[workflows/runs/analyze-design-dev-review-20260603081446]])
+
+- **Context**: ad hoc · [[workflows/runs/analyze-design-dev-review-20260603081446/04-review]]
+- **Did**: Vérifié le champ UI, la persistance/sanitization, la compatibilité des anciennes formations et les non-régressions génération CV. Confirmé tests ciblés 51/51, lint, build et Impeccable detect verts.
+- **Why**: Le workflow ne pouvait passer que si la description était réellement éditable et disponible dans le profil consommé par la génération.
+- **Learned**: Un test composant ciblé sur `EducationFields` suffit à verrouiller la présence du textarea sans lancer un navigateur complet.
+- **Open**: Pas de capture Playwright ; risque faible car le champ réutilise le composant `LabeledTextarea`.
