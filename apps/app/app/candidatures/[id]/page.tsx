@@ -11,6 +11,10 @@ import { CandidatureDetailTabs } from "./candidature-detail-tabs";
 
 type CandidatureDetailPageProps = {
   params: Promise<{ id: string }>;
+  searchParams?: Promise<{
+    error?: string;
+    statusUpdated?: string;
+  }>;
 };
 
 function getCookieHeader(cookieStore: Awaited<ReturnType<typeof cookies>>) {
@@ -38,9 +42,11 @@ async function fetchApplication(id: string): Promise<DraftApplication | null> {
 
 export default async function CandidatureDetailPage({
   params,
+  searchParams,
 }: CandidatureDetailPageProps) {
   const session = await requireSession();
   const { id } = await params;
+  const query = searchParams ? await searchParams : {};
   const application = await fetchApplication(id);
 
   if (!application) {
@@ -59,7 +65,12 @@ export default async function CandidatureDetailPage({
       userEmail={session.email}
       userRole={session.role}
     >
-      <CandidatureDetailTabs application={application} sessionEmail={session.email} />
+      <CandidatureDetailTabs
+        application={application}
+        sessionEmail={session.email}
+        statusError={query.error}
+        statusUpdated={query.statusUpdated === application.id}
+      />
     </AppShell>
   );
 }

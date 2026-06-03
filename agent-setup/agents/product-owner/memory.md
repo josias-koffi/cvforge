@@ -377,10 +377,10 @@
 - **Learned**: The existing `/interview/start` route already handles session creation — the wizard just needs a client-side redirect after the POST response.
 - **Open**: US-064 will refactor the in-session studio to replace push-to-talk with auto-VAD.
 
-## 2026-06-03 — description formation éditable (stage 01 · [[workflows/runs/analyze-design-dev-review-20260603081446]])
+## 2026-06-03 — suivi candidature detail (stage 01 · [[workflows/runs/analyze-design-dev-review-20260603130216]])
 
-- **Context**: ad hoc · [[workflows/runs/analyze-design-dev-review-20260603081446/01-analyze]]
-- **Did**: Validé le besoin produit : la description ajoutée au modèle de formation doit être saisissable dans l'édition de profil et reprise par le flux CV.
-- **Why**: Sans champ éditable, l'utilisateur ne peut pas fournir la matière que l'IA doit ensuite adapter à l'offre.
-- **Learned**: Le flux CV consomme déjà les formations depuis `BaseProfile.sections.education`, donc la bonne frontière produit reste le profil local.
+- **Context**: ad hoc · [[workflows/runs/analyze-design-dev-review-20260603130216/01-analyze]]
+- **Did**: Validé le besoin de modifier le statut directement dans la vue détail candidature.
+- **Why**: Le suivi des candidatures est un pilier vision ; revenir à la liste pour changer le statut casse le flux de suivi.
+- **Learned**: Les transitions existantes suffisent ; aucun nouveau statut produit n'est nécessaire.
 - **Open**: None.
