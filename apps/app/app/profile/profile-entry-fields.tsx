@@ -131,6 +131,13 @@ export function EducationFields({
           <LabeledInput id={`education-year-${index}`} label="Annee" onChange={(value) => onChange({ ...education, year: value })} value={education.year} />
           <LabeledInput id={`education-honors-${index}`} label="Mention" onChange={(value) => onChange({ ...education, honors: value })} value={education.honors} />
         </div>
+        <LabeledTextarea
+          id={`education-description-${index}`}
+          label="Description de la formation"
+          onChange={(value) => onChange({ ...education, description: value })}
+          rows={3}
+          value={education.description}
+        />
         <Button onClick={onRemove} type="button" variant="ghost">
           Retirer cette formation
         </Button>

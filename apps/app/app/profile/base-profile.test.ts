@@ -242,7 +242,15 @@ describe("base profile helpers", () => {
         },
         sections: {
           certifications: [{ issuer: "RNCP", title: "Certif", year: 2026 }],
-          education: [{ degree: "Master", honors: true, institution: "Paris", year: 2025 }],
+          education: [
+            {
+              degree: "Master",
+              description: " Parcours IA ",
+              honors: true,
+              institution: "Paris",
+              year: 2025,
+            },
+          ],
           experiences: [{ company: "CVforge", period: "2026", results: null, role: "Engineer" }],
           interests: ["running"],
           personalProjects: [{ description: "App", link: null, title: "Portfolio" }],
@@ -260,6 +268,7 @@ describe("base profile helpers", () => {
     expect(profile.meta.maxProfiles).toBeNull();
     expect(profile.meta.source).toBe("empty");
     expect(profile.sections.certifications[0]?.year).toBe("");
+    expect(profile.sections.education[0]?.description).toBe("Parcours IA");
     expect(profile.sections.softSkills).toEqual(["Communication"]);
     expect(profile.sections.technicalSkills).toEqual(["TypeScript"]);
   });
@@ -273,7 +282,15 @@ describe("base profile helpers", () => {
       headline: "Developpeuse full-stack",
       sections: {
         certifications: [],
-        education: [{ degree: "Master", honors: "", institution: "Paris", year: "2025" }],
+        education: [
+          {
+            degree: "Master",
+            description: "Recherche appliquee et projets produit.",
+            honors: "",
+            institution: "Paris",
+            year: "2025",
+          },
+        ],
         experiences: [{ company: "CVforge", period: "2026", results: "120% pipeline", role: "Engineer" }],
         interests: "Course a pied",
         personalProjects: [],
@@ -345,6 +362,7 @@ describe("base profile helpers", () => {
       role: "",
     });
     expect(createEmptyEducation()).toEqual({
+      description: "",
       degree: "",
       honors: "",
       institution: "",
