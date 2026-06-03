@@ -53,6 +53,7 @@ const fullPuckData: PuckData = {
       type: "EducationItem",
       props: {
         id: "edu-0",
+        description: "Computer science and distributed systems.",
         degree: "Master",
         institution: "Paris XI",
         mention: "TB",
@@ -66,6 +67,10 @@ const fullPuckData: PuckData = {
         hardSkills: ["TypeScript", "React"],
         softSkills: ["Mentoring"],
       },
+    },
+    {
+      type: "SummaryBlock",
+      props: { id: "interests", summary: "Trail running, photography" },
     },
     {
       type: "LanguageItem",
@@ -96,6 +101,7 @@ describe("puckDataToCvContent", () => {
     expect(result.candidate.summary).toBe("");
     expect(result.experiences).toEqual([]);
     expect(result.education).toEqual([]);
+    expect(result.interests).toBe("");
     expect(result.skills.hard).toEqual([]);
     expect(result.skills.soft).toEqual([]);
   });
@@ -122,7 +128,9 @@ describe("puckDataToCvContent", () => {
     expect(result.experiences).toHaveLength(1);
     expect(result.experiences[0].company).toBe("TechCorp");
     expect(result.experiences[0].position).toBe("Staff Engineer");
-    expect(result.experiences[0].achievements).toEqual(["Improved performance"]);
+    expect(result.experiences[0].achievements).toEqual([
+      "Improved performance",
+    ]);
   });
 
   it("extracts all EducationItem blocks into education array", () => {
@@ -131,6 +139,16 @@ describe("puckDataToCvContent", () => {
     expect(result.education).toHaveLength(1);
     expect(result.education[0].degree).toBe("Master");
     expect(result.education[0].institution).toBe("Paris XI");
+    expect(result.education[0].description).toBe(
+      "Computer science and distributed systems.",
+    );
+  });
+
+  it("extracts interests from the dedicated SummaryBlock", () => {
+    const result = puckDataToCvContent(fullPuckData);
+
+    expect(result.interests).toBe("Trail running, photography");
+    expect(result.candidate.summary).toBe("Expert TypeScript developer");
   });
 
   it("maps hardSkills/softSkills from SkillsList to skills.hard/soft", () => {

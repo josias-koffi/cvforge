@@ -99,17 +99,31 @@ export function renderCvDocx(content: CVDocumentContent) {
       if (education.mention) {
         children.push(paragraph(education.mention));
       }
+      if (education.description) {
+        children.push(paragraph(education.description));
+      }
     });
   }
 
   if (content.skills.hard.length > 0 || content.skills.soft.length > 0) {
     children.push(sectionHeading("Competences"));
     if (content.skills.hard.length > 0) {
-      children.push(paragraph(`Hard skills: ${content.skills.hard.join(", ")}`));
+      children.push(
+        paragraph(`Hard skills: ${content.skills.hard.join(", ")}`),
+      );
     }
     if (content.skills.soft.length > 0) {
-      children.push(paragraph(`Soft skills: ${content.skills.soft.join(", ")}`));
+      children.push(
+        paragraph(`Soft skills: ${content.skills.soft.join(", ")}`),
+      );
     }
+  }
+
+  if (content.interests) {
+    children.push(
+      sectionHeading("Centres d'interet"),
+      paragraph(content.interests),
+    );
   }
 
   if (content.languages.length > 0) {
@@ -146,7 +160,9 @@ export function renderCvDocx(content: CVDocumentContent) {
 
 export function renderLetterDocx(content: LetterDocumentContent) {
   const candidate = content.candidate;
-  const placeDate = [candidate.city, content.date].filter(Boolean).join(", le ");
+  const placeDate = [candidate.city, content.date]
+    .filter(Boolean)
+    .join(", le ");
   const bodyParagraphs = [
     paragraph(content.body.paragraph1),
     paragraph(content.body.paragraph2),
@@ -176,7 +192,10 @@ export function renderLetterDocx(content: LetterDocumentContent) {
     paragraph(`Objet : ${content.object}`, { bold: true }),
     ...bodyParagraphs,
     ...(placeDate ? [paragraph(placeDate)] : []),
-    paragraph(`${content.signature.firstName} ${content.signature.lastName}`.trim(), { bold: true }),
+    paragraph(
+      `${content.signature.firstName} ${content.signature.lastName}`.trim(),
+      { bold: true },
+    ),
   ];
 
   return Packer.toBuffer(new Document({ sections: [{ children }] }));

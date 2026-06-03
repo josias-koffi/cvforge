@@ -14,7 +14,13 @@ export function puckDataToCvContent(data: PuckData): CVDocumentContent {
   const headerProps =
     data.content.find((item) => item.type === "CVHeader")?.props ?? {};
   const summaryProps =
-    data.content.find((item) => item.type === "SummaryBlock")?.props ?? {};
+    data.content.find(
+      (item) => item.type === "SummaryBlock" && item.props.id !== "interests",
+    )?.props ?? {};
+  const interestsProps =
+    data.content.find(
+      (item) => item.type === "SummaryBlock" && item.props.id === "interests",
+    )?.props ?? {};
   const skillsProps =
     data.content.find((item) => item.type === "SkillsList")?.props ?? {};
 
@@ -32,6 +38,7 @@ export function puckDataToCvContent(data: PuckData): CVDocumentContent {
   const education = data.content
     .filter((item) => item.type === "EducationItem")
     .map((item) => ({
+      description: str(item.props.description),
       degree: str(item.props.degree),
       institution: str(item.props.institution),
       mention: str(item.props.mention),
@@ -76,6 +83,7 @@ export function puckDataToCvContent(data: PuckData): CVDocumentContent {
     certifications,
     education,
     experiences,
+    interests: str(interestsProps.summary),
     languages,
     projects,
     skills: {

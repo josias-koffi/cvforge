@@ -177,8 +177,8 @@
 ## 2026-04-20 — fix OpenRouter 404 on candidature creation
 
 - **Did**: Removed all per-request provider routing constraints (`provider.only`, `provider.order`, `allow_fallbacks`, `data_collection: "deny"`, `zdr: true`) from `OPENROUTER_DEFAULTS` in `openrouter.service.ts`; kept only `transforms: []`; added response body capture to the error throw; updated all test assertions.
-- **Why**: Creating a candidature triggered `"No endpoints found for mistralai/mistral-small-2603"`. Root cause: `data_collection: "deny"` in the request body acts as an *endpoint capability filter* (only route through providers that advertise ZDR support) — neither the Mistral nor Venice endpoint advertises it, so OpenRouter found no valid route. ZDR is enforced at the OpenRouter account level ("Always enforce ZDR" toggle), not per-request.
-- **Learned**: OpenRouter ZDR operates on two separate layers: (1) **account-level** — "Always enforce ZDR" in the web UI applies to every request from that API key transparently; (2) **per-request `data_collection: "deny"`** — this is a *routing filter*, not a ZDR signal, and blocks routing when no endpoint advertises ZDR support. Never add `data_collection: "deny"` to requests when account-level ZDR is enabled — it is redundant and breaks routing. Always include the response body in error messages; `404 Not Found` alone is not enough to diagnose OpenRouter failures.
+- **Why**: Creating a candidature triggered `"No endpoints found for mistralai/mistral-small-2603"`. Root cause: `data_collection: "deny"` in the request body acts as an _endpoint capability filter_ (only route through providers that advertise ZDR support) — neither the Mistral nor Venice endpoint advertises it, so OpenRouter found no valid route. ZDR is enforced at the OpenRouter account level ("Always enforce ZDR" toggle), not per-request.
+- **Learned**: OpenRouter ZDR operates on two separate layers: (1) **account-level** — "Always enforce ZDR" in the web UI applies to every request from that API key transparently; (2) **per-request `data_collection: "deny"`** — this is a _routing filter_, not a ZDR signal, and blocks routing when no endpoint advertises ZDR support. Never add `data_collection: "deny"` to requests when account-level ZDR is enabled — it is redundant and breaks routing. Always include the response body in error messages; `404 Not Found` alone is not enough to diagnose OpenRouter failures.
 - **Open**: None — ZDR is enforced via account setting; `transforms: []` disables prompt logging at the OpenRouter layer.
 
 ## 2026-04-20 — fix delete form RSC error
@@ -546,6 +546,7 @@
 - **Open**: `cv-html-templates.ts` à 319L (>300 target, <400 warning) — contenu template, acceptable en l'état.
 
 ## 2026-06-02 — koklo-infra: fix data loss + add backup strategy (ad hoc · run-agent)
+
 - **Context**: ad hoc · last sprint [[sprints/sprint-017]] · last run [[workflows/runs/analyze-design-dev-review-20260601110000]]
 - **Did**: Diagnostiqué la perte de données sur VPS20 après `make deploy-cvforge`. Ajouté service `db_backup` (nightly pg_dump, 7j/4s/6m, `prodrigestivill/postgres-backup-local`) dans `stacks/cvforge/docker-compose.yml`. Supprimé `--force-recreate` du Ansible deploy loop (remplacé par `docker compose up -d` — images updated by `pull`). Ajouté pré-deploy pg_dump dans `setup-vps20.yml`. Ajouté `backup-cvforge`, `restore-cvforge`, `volumes-cvforge` dans Makefile.
 - **Why**: Les volumes Docker nommés sont locaux au VPS — aucun backup n'existait. La perte de données a probablement eu lieu lors d'un recréation du VPS ou d'un `docker compose down -v` accidentel. `--force-recreate` était inutile après `docker compose pull` et causait des restarts non nécessaires sur postgres/redis.
@@ -553,6 +554,7 @@
 - **Open**: Le backup `db_backup` reste sur le VPS (volume `db_backups`) — il ne survit pas à un wipe du VPS. Pour une durabilité réelle, ajouter un sync vers un S3 externe (Scaleway, Backblaze) via `rclone` ou un second job cron.
 
 ## 2026-06-01 — profile CRUD + border-radius (stage 03 · [[workflows/runs/analyze-design-dev-review-20260601110000]])
+
 - **Context**: ad hoc · [[workflows/runs/analyze-design-dev-review-20260601110000/03-implement]]
 - **Did**: Splité `profile-editor.tsx` (668L→292L) en extrayant les sub-composants dans `profile-entry-fields.tsx` (202L). Créé `profile-list.tsx` (160L) pour le listing CRUD en table. Créé `/profile/new` et `/profile/[id]/edit` routes Next.js. Réduit `radius.sm/md/lg` dans `design-system.ts` et synchronisé 4 fichiers inline.
 - **Why**: La page profil était monolithique (un seul fichier gérant listing + édition), dépassait le seuil warning §9. L'utilisateur demandait un CRUD classique et des bords moins arrondis.
@@ -560,6 +562,7 @@
 - **Open**: None.
 
 ## 2026-06-02 — champ raffinement génération LM (stage 03 · [[workflows/runs/analyze-design-dev-review-20260602120000]])
+
 - **Context**: ad hoc · [[workflows/runs/analyze-design-dev-review-20260602120000/03-implement]]
 - **Did**: Ajouté `refinement?: string` à `LetterGenerationRequest` (interface dédiée). Propagé à travers 3 surfaces UI (slide-over, LmTab, LetterEditor), route proxy Next.js, et NestJS service + prompt. Créé `/letters/[applicationId]/regenerate/route.ts`. Lint propre, 273 tests passés.
 - **Why**: L'utilisateur voulait enrichir la génération de LM avec un contexte de motivation libre.
@@ -567,6 +570,7 @@
 - **Open**: `letter-editor.tsx` ~460L (advisory warning threshold 400). Candidat à split `LetterRegenerateCard` dans prochain sprint.
 
 ## 2026-06-02 — améliorer formatage et contenu LM (stage 03 · [[workflows/runs/analyze-design-dev-review-20260602140000]])
+
 - **Context**: ad hoc · [[workflows/runs/analyze-design-dev-review-20260602140000/03-implement]]
 - **Did**: 7 fichiers modifiés — paragraph4 optionnel dans types/UI/PDF/DOCX/editor; marges PDF 25/20mm; couleur nom #1a1a1a; titre italic dans LMHeader React; spacing letter-meta 0.6rem; placeDate avant signature (PDF+React+DOCX); LETTER_SYSTEM_PROMPT 4 paragraphes avec métriques + personnalisation + formule de politesse. 247 tests API passés.
 - **Why**: Instructions utilisateur détaillées pour améliorer la qualité et le formatage de la LM générée.
@@ -574,6 +578,7 @@
 - **Open**: `letter-editor.tsx` maintenant ~610L (dépasse le warning threshold 400). Candidat à split en plusieurs composants dans le prochain sprint.
 
 ## 2026-06-02 — améliorer la génération de CV — mise en forme + contenu (stage 03 · [[workflows/runs/analyze-design-dev-review-20260602150000]])
+
 - **Context**: ad hoc · [[workflows/runs/analyze-design-dev-review-20260602150000/03-implement]]
 - **Did**: 3 fichiers modifiés — `cv-pdf-styles.ts` marges 20mm/25mm, 24pt bold, 10pt/1.15; `cv-html-templates.ts` h2 small-caps, h3 bold 10.5pt, .company italic, .date-range, compétences 2 blocs ul distincts, langues avec "—"; `cv-generation.service.ts` CV_SYSTEM_PROMPT enrichi avec 8 règles (titre, summary, dates, contexte, achievements, skills, langues, cohérence). 247 tests passés, lint vert.
 - **Why**: Instructions utilisateur détaillées (cahier de 40+ règles) pour améliorer la qualité visuelle du PDF CV et le contenu généré par l'IA.
@@ -581,15 +586,33 @@
 - **Open**: `cv-generation.service.ts` ~800L — CV_SYSTEM_PROMPT candidat à extraction en constante dans fichier séparé dans prochain sprint. DOCX templates non alignés sur le format de date "Jan. 2022".
 
 ## 2026-06-02 — CV ATS une page — typographie, layout, prompt density (stage 03 · [[workflows/runs/analyze-design-dev-review-20260602160000]])
+
 - **Context**: ad hoc · [[workflows/runs/analyze-design-dev-review-20260602160000/03-implement]]
 - **Did**: 3 fichiers modifiés — `cv-pdf-styles.ts` marges `1.5cm`, 18pt name, 9.5pt/1.05; `cv-html-templates.ts` h2 10pt, h3/company 9.5pt, items 4pt gap, skills → single `<p>` inline dots (hard only, soft supprimé), langues → single `<p>`, certifications → single `<p>`, formation → `<p>` flat par entrée, dead `.skills-block` CSS supprimé; `cv-generation.service.ts` CV_SYSTEM_PROMPT summary 3 lignes max, achievements 4/2 bullets selon type, formation compacte, soft skills `[]`. 247 tests passés, lint vert.
 - **Why**: Instructions utilisateur ATS one-page avec contraintes précises de typographie et densité.
-- **Learned**: La colonne CSS grid pour les compétences est incompatible avec les parseurs ATS — le rendu inline ` · ` est la seule approche ATS-safe. Supprimer les soft skills du prompt évite que l'AI les génère alors que le template ne les affiche plus.
+- **Learned**: La colonne CSS grid pour les compétences est incompatible avec les parseurs ATS — le rendu inline `·` est la seule approche ATS-safe. Supprimer les soft skills du prompt évite que l'AI les génère alors que le template ne les affiche plus.
 - **Open**: `cv-generation.service.ts` CV_SYSTEM_PROMPT candidat à extraction dans fichier séparé. DOCX templates non alignés sur format compact formation.
 
 ## 2026-06-02 — compétences structurées par catégories (stage 03 · [[workflows/runs/analyze-design-dev-review-20260602170000]])
+
 - **Context**: ad hoc · [[workflows/runs/analyze-design-dev-review-20260602170000/03-implement]]
 - **Did**: 3 fichiers modifiés — `packages/types/src/index.ts` : `SkillCategory` + `categories?` dans `CVDocumentContent.skills` ; `cv-generation.service.ts` : import `SkillCategory`, `RawCvJson.skills.categories`, CV_SYSTEM_PROMPT 3 catégories (outils/métier/transverses), `normalizeSkillCategories()`, `buildSkills()` (hard = concat catégories) ; `cv-html-templates.ts` : `skillsSection` computed (catégories si présentes, fallback flat), placement après Profil/avant Expériences, `.skills-section border-top`. 259 tests passés, lint vert.
 - **Why**: Section compétences sous forme de bloc structuré par catégories pour meilleure lisibilité ATS et recruteur.
 - **Learned**: Ajouter `categories?` optionnel préserve la compat Puck sans toucher aucun mapper. `buildSkills()` centralise la logique hard=flat(categories) pour que l'éditeur Puck continue de recevoir une liste plate.
 - **Open**: Placement des compétences dans le Puck editor reste après les expériences (old mapping) — divergence acceptable non bloquante.
+
+## 2026-06-02 — fix deployment data loss — koklo-infra volume path (stage 03 · [[workflows/runs/analyze-design-dev-review-20260602180000]])
+
+- **Context**: ad hoc · [[workflows/runs/analyze-design-dev-review-20260602180000/03-implement]]
+- **Did**: 1 ligne modifiée dans `koklo-infra/stacks/cvforge/docker-compose.yml` — volume mount api_data corrigé de `/workspace/apps/api/.data` vers `/workspace/.data`.
+- **Why**: WORKDIR dans `docker/api.Dockerfile` (runner stage) est `/workspace` → `process.cwd()` = `/workspace` → tous les stores écrivent dans `/workspace/.data/` mais le volume était monté ailleurs → perte totale des données à chaque `--force-recreate`.
+- **Learned**: Toujours vérifier que le chemin du volume Docker correspond exactement à `process.cwd()/.data` pour les stores file-based. Vérifier aussi le WORKDIR du Dockerfile runner avant de définir les volumes dans docker-compose.
+- **Open**: Données existantes dans la couche éphémère du container seront perdues au prochain déploiement — recommander `docker cp cvforge-api-1:/workspace/.data/ ./backups/` sur VPS20 avant le redéploiement.
+
+## 2026-06-03 — rendu CV formations et centres d'intérêt (ad hoc · run-agent)
+
+- **Context**: ad hoc · last sprint [[sprints/sprint-017]] · last run [[workflows/runs/analyze-design-dev-review]]
+- **Did**: Étendu `CVDocumentContent` avec `education.description` et `interests`, mis à jour génération, aperçu, Puck, PDF et DOCX, retiré le séparateur avant Compétences quand Profil est présent.
+- **Why**: Le CV généré devait afficher les formations comme les expériences, reprendre les centres d'intérêt du profil et supprimer la barre entre Profil et Compétences.
+- **Learned**: Les centres d'intérêt existent déjà dans `BaseProfile.sections`; la bonne réinjection CV vient du `promptProfile`, pas des `localFields` réservés aux données personnelles.
+- **Open**: None.

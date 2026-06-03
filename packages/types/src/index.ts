@@ -116,6 +116,7 @@ export interface ExperienceItemProps {
 }
 
 export interface EducationItemProps {
+  description: string;
   degree: string;
   institution: string;
   mention: string;
@@ -182,6 +183,7 @@ export interface CVDocumentContent {
   certifications: CertificationItemProps[];
   education: EducationItemProps[];
   experiences: ExperienceItemProps[];
+  interests: string;
   languages: LanguageItemProps[];
   projects: ProjectItemProps[];
   skills: {
@@ -538,6 +540,7 @@ export interface PromptSafeIdentity {
 export interface PromptSafeProfileSections {
   certifications: Array<{ issuer: string; title: string; year: string }>;
   education: Array<{
+    description?: string;
     degree: string;
     honors: string;
     institution: string;

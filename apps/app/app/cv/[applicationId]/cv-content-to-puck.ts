@@ -19,7 +19,10 @@ export function cvContentToPuckData(cvContent: CVDocumentContent): PuckData {
   });
 
   if (cvContent.candidate.summary) {
-    items.push({ type: "Divider", props: { id: "divider-summary", style: "solid" } });
+    items.push({
+      type: "Divider",
+      props: { id: "divider-summary", style: "solid" },
+    });
     items.push({
       type: "SectionTitle",
       props: { id: "section-profil", label: "Profil", style: "accent" },
@@ -31,7 +34,10 @@ export function cvContentToPuckData(cvContent: CVDocumentContent): PuckData {
   }
 
   if (cvContent.experiences.length > 0) {
-    items.push({ type: "Divider", props: { id: "divider-exp", style: "solid" } });
+    items.push({
+      type: "Divider",
+      props: { id: "divider-exp", style: "solid" },
+    });
     items.push({
       type: "SectionTitle",
       props: { id: "section-exp", label: "Expériences", style: "accent" },
@@ -42,7 +48,10 @@ export function cvContentToPuckData(cvContent: CVDocumentContent): PuckData {
   }
 
   if (cvContent.education.length > 0) {
-    items.push({ type: "Divider", props: { id: "divider-edu", style: "solid" } });
+    items.push({
+      type: "Divider",
+      props: { id: "divider-edu", style: "solid" },
+    });
     items.push({
       type: "SectionTitle",
       props: { id: "section-edu", label: "Formation", style: "accent" },
@@ -53,7 +62,17 @@ export function cvContentToPuckData(cvContent: CVDocumentContent): PuckData {
   }
 
   if (cvContent.skills.hard.length > 0 || cvContent.skills.soft.length > 0) {
-    items.push({ type: "Divider", props: { id: "divider-skills", style: "solid" } });
+    const skillsFollowProfile =
+      cvContent.candidate.summary &&
+      cvContent.experiences.length === 0 &&
+      cvContent.education.length === 0;
+
+    if (!skillsFollowProfile) {
+      items.push({
+        type: "Divider",
+        props: { id: "divider-skills", style: "solid" },
+      });
+    }
     items.push({
       type: "SectionTitle",
       props: { id: "section-skills", label: "Compétences", style: "accent" },
@@ -68,8 +87,30 @@ export function cvContentToPuckData(cvContent: CVDocumentContent): PuckData {
     });
   }
 
+  if (cvContent.interests) {
+    items.push({
+      type: "Divider",
+      props: { id: "divider-interests", style: "solid" },
+    });
+    items.push({
+      type: "SectionTitle",
+      props: {
+        id: "section-interests",
+        label: "Centres d'intérêt",
+        style: "accent",
+      },
+    });
+    items.push({
+      type: "SummaryBlock",
+      props: { id: "interests", summary: cvContent.interests },
+    });
+  }
+
   if (cvContent.languages.length > 0) {
-    items.push({ type: "Divider", props: { id: "divider-lang", style: "solid" } });
+    items.push({
+      type: "Divider",
+      props: { id: "divider-lang", style: "solid" },
+    });
     items.push({
       type: "SectionTitle",
       props: { id: "section-lang", label: "Langues", style: "accent" },
@@ -80,18 +121,27 @@ export function cvContentToPuckData(cvContent: CVDocumentContent): PuckData {
   }
 
   if (cvContent.certifications.length > 0) {
-    items.push({ type: "Divider", props: { id: "divider-cert", style: "solid" } });
+    items.push({
+      type: "Divider",
+      props: { id: "divider-cert", style: "solid" },
+    });
     items.push({
       type: "SectionTitle",
       props: { id: "section-cert", label: "Certifications", style: "accent" },
     });
     cvContent.certifications.forEach((cert, i) => {
-      items.push({ type: "CertificationItem", props: { id: `cert-${i}`, ...cert } });
+      items.push({
+        type: "CertificationItem",
+        props: { id: `cert-${i}`, ...cert },
+      });
     });
   }
 
   if (cvContent.projects.length > 0) {
-    items.push({ type: "Divider", props: { id: "divider-proj", style: "solid" } });
+    items.push({
+      type: "Divider",
+      props: { id: "divider-proj", style: "solid" },
+    });
     items.push({
       type: "SectionTitle",
       props: { id: "section-proj", label: "Projets", style: "accent" },

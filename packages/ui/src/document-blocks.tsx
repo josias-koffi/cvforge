@@ -79,7 +79,9 @@ export function CVHeader(props: CVHeaderProps) {
         <h1 style={headingStyle}>
           {props.firstName} {props.lastName}
         </h1>
-        <p style={{ ...subtleTextStyle, marginTop: "0.35rem" }}>{props.title}</p>
+        <p style={{ ...subtleTextStyle, marginTop: "0.35rem" }}>
+          {props.title}
+        </p>
       </div>
       <HeaderMeta {...props} />
     </header>
@@ -132,13 +134,18 @@ export function EducationItem(props: EducationItemProps) {
           justifyContent: "space-between",
         }}
       >
-        <h3 style={{ margin: 0 }}>{props.degree}</h3>
+        <div>
+          <h3 style={{ margin: 0 }}>{props.degree}</h3>
+          <p style={{ ...subtleTextStyle, margin: 0 }}>
+            {props.institution}
+            {props.mention ? ` · ${props.mention}` : ""}
+          </p>
+        </div>
         <p style={{ ...subtleTextStyle, margin: 0 }}>{props.year}</p>
       </div>
-      <p style={{ margin: 0 }}>
-        {props.institution}
-        {props.mention ? ` · ${props.mention}` : ""}
-      </p>
+      {props.description ? (
+        <p style={{ margin: 0 }}>{props.description}</p>
+      ) : null}
     </article>
   );
 }
@@ -195,7 +202,13 @@ export function LMHeader(props: LMHeaderProps) {
         </h1>
         <HeaderMeta {...props} />
         {props.title ? (
-          <p style={{ ...subtleTextStyle, fontStyle: "italic", marginTop: "0.2rem" }}>
+          <p
+            style={{
+              ...subtleTextStyle,
+              fontStyle: "italic",
+              marginTop: "0.2rem",
+            }}
+          >
             {props.title}
           </p>
         ) : null}
@@ -218,7 +231,9 @@ export function LMBody(props: LMBodyProps) {
       <p style={{ margin: 0 }}>{props.paragraph1}</p>
       <p style={{ margin: 0 }}>{props.paragraph2}</p>
       <p style={{ margin: 0 }}>{props.paragraph3}</p>
-      {props.paragraph4 ? <p style={{ margin: 0 }}>{props.paragraph4}</p> : null}
+      {props.paragraph4 ? (
+        <p style={{ margin: 0 }}>{props.paragraph4}</p>
+      ) : null}
     </section>
   );
 }
@@ -285,7 +300,8 @@ export const documentBlockRegistry = {
   SummaryBlock: {
     component: SummaryBlock,
     defaultProps: {
-      summary: "Engineer focused on resilient product delivery and collaboration.",
+      summary:
+        "Engineer focused on resilient product delivery and collaboration.",
     },
     fields: ["summary"],
     label: "Summary",
@@ -315,12 +331,14 @@ export const documentBlockRegistry = {
   EducationItem: {
     component: EducationItem,
     defaultProps: {
+      description:
+        "Parcours axe sur les systemes distribues et la qualite logicielle.",
       degree: "Master Informatique",
       institution: "Universite de Lille",
       mention: "Bien",
       year: "2018",
     },
-    fields: ["degree", "institution", "year", "mention"],
+    fields: ["degree", "institution", "year", "mention", "description"],
     label: "Education",
     templateKinds: [TEMPLATE_KIND_CV],
   } satisfies DocumentBlockDefinition<EducationItemProps>,
@@ -402,8 +420,10 @@ export const documentBlockRegistry = {
     component: LMBody,
     defaultProps: {
       paragraph1: "I am applying for your open role with strong enthusiasm.",
-      paragraph2: "My product and frontend experience matches the scope described.",
-      paragraph3: "I would welcome the opportunity to discuss this role further.",
+      paragraph2:
+        "My product and frontend experience matches the scope described.",
+      paragraph3:
+        "I would welcome the opportunity to discuss this role further.",
     },
     fields: ["paragraph1", "paragraph2", "paragraph3"],
     label: "Letter Body",
