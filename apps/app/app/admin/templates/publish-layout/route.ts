@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { getServerApiUrl } from "../../../auth-config";
-import type { PuckData } from "@cvforge/types";
+import type { TemplateLayoutData } from "@cvforge/types";
 
 interface PublishLayoutBody {
   templateId: string;
-  layout: PuckData;
+  layout: TemplateLayoutData;
 }
 
 export async function POST(request: Request) {

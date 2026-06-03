@@ -384,3 +384,11 @@
 - **Why**: Le suivi des candidatures est un pilier vision ; revenir à la liste pour changer le statut casse le flux de suivi.
 - **Learned**: Les transitions existantes suffisent ; aucun nouveau statut produit n'est nécessaire.
 - **Open**: None.
+
+## 2026-06-03 — retrait Puck Editor (stage 01 · [[workflows/runs/analyze-design-dev-review-20260603145814]])
+
+- **Context**: ad hoc · [[workflows/runs/analyze-design-dev-review-20260603145814/01-analyze]]
+- **Did**: Confirmé la décision produit de retirer Puck de l'application et d'aligner le CV utilisateur sur le modèle LM formulaire + aperçu.
+- **Why**: Puck était trop lourd pour le besoin actuel et contredisait la direction UX redesign déjà identifiée.
+- **Learned**: Le contrat template peut rester un layout JSON simple sans dépendre du runtime Puck.
+- **Open**: Mettre à jour la vision manuellement si elle doit refléter cette décision durablement.

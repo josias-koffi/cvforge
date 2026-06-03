@@ -412,3 +412,11 @@
 - **Why**: Le changement reste dans la frontière UI/proxy existante et réutilise la validation métier backend.
 - **Learned**: Extraire les sous-composants de détail candidature évite que les petites évolutions UI aggravent les fichiers >400 lignes.
 - **Open**: None.
+
+## 2026-06-03 — retrait Puck Editor (finalization · [[workflows/runs/analyze-design-dev-review-20260603145814]])
+
+- **Context**: ad hoc · [[workflows/runs/analyze-design-dev-review-20260603145814/final-summary]]
+- **Did**: Signé le workflow après retrait de Puck, maintien du contrat JSON de layout, et validation tests/lint/build.
+- **Why**: Le changement réduit le poids frontend sans introduire de nouveau framework ni migration de stockage.
+- **Learned**: Renommer le contrat en `TemplateLayoutData` clarifie qu'il n'est plus couplé à un éditeur tiers.
+- **Open**: La vision projet contient encore les anciennes mentions Puck et devra être corrigée par décision explicite.

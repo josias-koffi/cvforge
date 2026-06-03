@@ -7,7 +7,6 @@ import { getServerApiUrl } from "../../auth-config";
 import { requireSession } from "../../auth/session";
 import { getAppNavigation } from "../../content";
 import { NotificationBell } from "../../notifications/notification-bell";
-import { cvContentToPuckData } from "./cv-content-to-puck";
 import { CvEditor } from "./cv-editor";
 
 type CvPageProps = {
@@ -76,12 +75,10 @@ export default async function CvPage({ params }: CvPageProps) {
     notFound();
   }
 
-  const puckData = cvContentToPuckData(cvContent);
-
   return (
     <AppShell
       breadcrumb="Documents · CV"
-      description="Editez le CV généré dans une structure WYSIWYG compatible avec l'export PDF."
+      description="Editez les champs du CV généré et contrôlez le rendu avant export."
       headerAccessory={<NotificationBell />}
       navigation={getAppNavigation("/candidatures", session.role)}
       title="Edition du CV"
@@ -90,7 +87,7 @@ export default async function CvPage({ params }: CvPageProps) {
     >
       <CvEditor
         applicationId={applicationId}
-        puckData={puckData}
+        cvContent={cvContent}
         versions={versions}
       />
     </AppShell>
