@@ -4,13 +4,11 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { Button, Textarea } from "@cvforge/ui";
 import type { DraftApplication } from "@cvforge/types";
-import {
-  getApplicationStatusLabel,
-  getApplicationStatusTone,
-} from "../status-metadata";
 import { ApplicationProfileSelector } from "../application-profile-selector";
 import { GenerateCvButton } from "../generate-cv-button";
 import { GenerateLetterButton } from "../generate-letter-button";
+import { CandidatureDetailHeader } from "./candidature-detail-header";
+import { CandidatureHistoryTab } from "./candidature-history-tab";
 
 type Tab = "offre" | "cv" | "lm" | "interviews" | "historique";
 
@@ -22,35 +20,18 @@ const TABS: { id: Tab; label: string }[] = [
   { id: "historique", label: "Historique" },
 ];
 
-type Props = { application: DraftApplication; sessionEmail: string };
-
-function renderDate(value: string) {
-  return new Date(value).toLocaleDateString("fr-FR", { dateStyle: "medium" });
-}
+type Props = {
+  application: DraftApplication;
+  sessionEmail: string;
+  statusError?: string;
+  statusUpdated?: boolean;
+};
 
 function renderDatetime(value: string) {
   return new Date(value).toLocaleString("fr-FR", {
     dateStyle: "medium",
     timeStyle: "short",
   });
-}
-
-function StatusBadge({ status }: { status: DraftApplication["status"] }) {
-  return (
-    <span
-      style={{
-        ...getApplicationStatusTone(status),
-        border: "1px solid",
-        borderRadius: "999px",
-        fontSize: "0.8rem",
-        fontWeight: 600,
-        padding: "0.25rem 0.65rem",
-        whiteSpace: "nowrap",
-      }}
-    >
-      {getApplicationStatusLabel(status)}
-    </span>
-  );
 }
 
 function OffreTab({ application }: { application: DraftApplication }) {
@@ -105,7 +86,7 @@ function OffreTab({ application }: { application: DraftApplication }) {
             style={{ color: "#305A7A", fontSize: "0.875rem" }}
             target="_blank"
           >
-            Voir l'offre originale →
+            Voir l&apos;offre originale →
           </a>
         </p>
       ) : null}
@@ -253,60 +234,6 @@ function InterviewsTab({ application }: { application: DraftApplication }) {
   );
 }
 
-function HistoriqueTab({ application }: { application: DraftApplication }) {
-  const history = [...(application.statusHistory ?? [])].reverse();
-  return (
-    <div style={{ display: "grid", gap: "0" }}>
-      {history.map((entry, i) => (
-        <div
-          key={i}
-          style={{
-            alignItems: "flex-start",
-            display: "flex",
-            gap: "1rem",
-            paddingBottom: i < history.length - 1 ? "1.25rem" : 0,
-          }}
-        >
-          <div
-            style={{
-              alignItems: "center",
-              display: "flex",
-              flexDirection: "column",
-              flexShrink: 0,
-              gap: 0,
-            }}
-          >
-            <div
-              style={{
-                backgroundColor: "#6B6860",
-                borderRadius: "50%",
-                height: "10px",
-                width: "10px",
-              }}
-            />
-            {i < history.length - 1 ? (
-              <div
-                style={{
-                  backgroundColor: "#D8D2C8",
-                  flexGrow: 1,
-                  marginTop: "4px",
-                  width: "2px",
-                }}
-              />
-            ) : null}
-          </div>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", paddingTop: "0" }}>
-            <span style={{ color: "#6B6860", fontSize: "0.875rem" }}>
-              {renderDate(entry.changedAt)}
-            </span>
-            <StatusBadge status={entry.status} />
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 const chipStyle: React.CSSProperties = {
   backgroundColor: "#F2F0EB",
   border: "1px solid #D8D2C8",
@@ -356,7 +283,12 @@ const tdStyle: React.CSSProperties = {
   verticalAlign: "top",
 };
 
-export function CandidatureDetailTabs({ application, sessionEmail }: Props) {
+export function CandidatureDetailTabs({
+  application,
+  sessionEmail,
+  statusError,
+  statusUpdated,
+}: Props) {
   const [activeTab, setActiveTab] = useState<Tab>("offre");
 
   function handleKeyDown(e: React.KeyboardEvent, tabIndex: number) {
@@ -369,60 +301,13 @@ export function CandidatureDetailTabs({ application, sessionEmail }: Props) {
     }
   }
 
-  const tone = getApplicationStatusTone(application.status);
-
   return (
     <div style={{ display: "grid", gap: "1.5rem" }}>
-      {/* Header */}
-      <div
-        style={{
-          backgroundColor: "#FFFFFF",
-          border: "1px solid #D8D2C8",
-          borderRadius: "0.75rem",
-          padding: "1.25rem 1.5rem",
-        }}
-      >
-        <div
-          style={{
-            alignItems: "flex-start",
-            display: "flex",
-            flexWrap: "wrap",
-            gap: "0.75rem",
-            justifyContent: "space-between",
-          }}
-        >
-          <div>
-            <h1 style={{ fontSize: "1.5rem", fontWeight: 700, margin: "0 0 0.35rem" }}>
-              {application.extracted.title}
-            </h1>
-            <p style={{ color: "#6B6860", fontSize: "0.9rem", margin: 0 }}>
-              {application.extracted.companyName ?? "Entreprise inconnue"}
-              {" · "}
-              Créée le {renderDate(application.createdAt)}
-            </p>
-          </div>
-          <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-            <span
-              style={{
-                ...tone,
-                border: "1px solid",
-                borderRadius: "999px",
-                fontSize: "0.85rem",
-                fontWeight: 600,
-                padding: "0.3rem 0.8rem",
-                whiteSpace: "nowrap",
-              }}
-            >
-              {getApplicationStatusLabel(application.status)}
-            </span>
-            <Link href={`/interview/new?candidatureId=${application.id}`}>
-              <Button size="sm" variant="secondary">
-                🎙️ Préparer un entretien
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </div>
+      <CandidatureDetailHeader
+        application={application}
+        statusError={statusError}
+        statusUpdated={statusUpdated}
+      />
 
       {/* Tabs + Panel */}
       <div
@@ -488,7 +373,7 @@ export function CandidatureDetailTabs({ application, sessionEmail }: Props) {
             {tab.id === "cv" ? <CvTab application={application} sessionEmail={sessionEmail} /> : null}
             {tab.id === "lm" ? <LmTab application={application} sessionEmail={sessionEmail} /> : null}
             {tab.id === "interviews" ? <InterviewsTab application={application} /> : null}
-            {tab.id === "historique" ? <HistoriqueTab application={application} /> : null}
+            {tab.id === "historique" ? <CandidatureHistoryTab application={application} /> : null}
           </div>
         ))}
       </div>

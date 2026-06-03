@@ -326,3 +326,11 @@
 - **Why**: La page profil monolithique cachait la structure multi-profils. Réduire les radius renforce le caractère éditorial "Papier & Crayon".
 - **Learned**: La réduction de ~60% des border-radius donne un look sensiblement plus professionnel et moins "app mobile" sans casser le système de tokens.
 - **Open**: None.
+
+## 2026-06-03 — suivi candidature detail (stage 02 · [[workflows/runs/analyze-design-dev-review-20260603130216]])
+
+- **Context**: ad hoc · [[workflows/runs/analyze-design-dev-review-20260603130216/02-design]]
+- **Did**: Placé le contrôle de suivi dans l'en-tête de détail avec badge courant, select libellé et feedback discret.
+- **Why**: Le changement de suivi doit rester proche du contexte candidature sans créer une nouvelle carte ou page.
+- **Learned**: Quand un statut est final, un libellé "Suivi finalisé" est plus clair qu'un select désactivé.
+- **Open**: None.

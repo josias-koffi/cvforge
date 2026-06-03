@@ -14,11 +14,22 @@ function mapErrorCode(status: number) {
   }
 }
 
+function getRedirectUrl(formData: FormData) {
+  const rawReturnTo = String(formData.get("returnTo") ?? "").trim();
+  const fallbackUrl = new URL("/candidatures", getAppUrl());
+
+  if (!rawReturnTo.startsWith("/candidatures")) {
+    return fallbackUrl;
+  }
+
+  return new URL(rawReturnTo, getAppUrl());
+}
+
 export async function POST(request: Request) {
   const formData = await request.formData();
   const applicationId = String(formData.get("applicationId") ?? "").trim();
   const nextStatus = String(formData.get("nextStatus") ?? "").trim();
-  const redirectUrl = new URL("/candidatures", getAppUrl());
+  const redirectUrl = getRedirectUrl(formData);
 
   if (!applicationId || !nextStatus) {
     redirectUrl.searchParams.set("error", "status_invalid");
