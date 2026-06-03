@@ -27,12 +27,15 @@ export const CV_PREVIEW_FIXTURE: CVDocumentContent = {
   ],
   education: [
     {
+      description:
+        "Formation orientee pilotage de programmes digitaux, conduite du changement et gouvernance SI.",
       degree: "Master Management de Projets Digitaux",
       institution: "Université Paris-Dauphine",
       mention: "Très Bien",
       year: "2018",
     },
     {
+      description: "",
       degree: "Licence Informatique de Gestion",
       institution: "Université Lyon 3",
       mention: "",
@@ -65,6 +68,7 @@ export const CV_PREVIEW_FIXTURE: CVDocumentContent = {
       startDate: "2018",
     },
   ],
+  interests: "Course a pied, photographie urbaine, mentorat associatif",
   languages: [
     { language: "Français", level: "Langue maternelle" },
     { language: "Anglais", level: "C1 — Courant" },
@@ -84,8 +88,20 @@ export const CV_PREVIEW_FIXTURE: CVDocumentContent = {
     },
   ],
   skills: {
-    hard: ["Gestion de projet", "Agile / Scrum", "SAP S/4HANA", "JIRA", "Power BI", "SQL"],
-    soft: ["Leadership", "Communication", "Résolution de problèmes", "Gestion du stress"],
+    hard: [
+      "Gestion de projet",
+      "Agile / Scrum",
+      "SAP S/4HANA",
+      "JIRA",
+      "Power BI",
+      "SQL",
+    ],
+    soft: [
+      "Leadership",
+      "Communication",
+      "Résolution de problèmes",
+      "Gestion du stress",
+    ],
   },
 };
 

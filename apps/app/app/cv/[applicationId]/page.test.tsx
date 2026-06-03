@@ -31,7 +31,9 @@ vi.mock("@puckeditor/core", () => ({
       "div",
       { "data-testid": "puck-render" },
       data.content
-        .filter((item) => item.type === "CVHeader" || item.type === "SkillsList")
+        .filter(
+          (item) => item.type === "CVHeader" || item.type === "SkillsList",
+        )
         .map((item, i) =>
           React.createElement(
             "span",
@@ -66,6 +68,7 @@ describe("CvPage", () => {
     certifications: [],
     education: [],
     experiences: [],
+    interests: "",
     languages: [],
     projects: [],
     skills: { hard: ["TypeScript"], soft: ["Communication"] },

@@ -12,12 +12,12 @@
   "specialized_workflows": [],
   "specialized_skills": [],
   "clarifications_pending": [],
-  "last_updated": "2026-06-02T00:00:00+02:00",
+  "last_updated": "2026-06-03T08:04:00+02:00",
   "last_workflow_run": "analyze-design-dev-review",
   "last_workflow_stage": "tech-lead",
   "last_workflow_result": "passed",
   "active_workflow_run": null,
-  "last_adhoc_run": "analyze-design-dev-review-20260602170000",
+  "last_adhoc_run": "analyze-design-dev-review-20260602180000",
   "last_task_completed": "US-065",
   "workflow_runs": [
     {
@@ -501,21 +501,16 @@
       "task": "compétences structurées par catégories — format listing",
       "workflow": "analyze-design-dev-review",
       "result": "passed"
+    },
+    {
+      "run_id": "analyze-design-dev-review-20260602180000",
+      "sprint": null,
+      "task": "fix deployment data loss — koklo-infra cvforge volume path mismatch",
+      "workflow": "analyze-design-dev-review",
+      "result": "passed"
     }
   ],
-  "completed_sprints": [
-    2,
-    3,
-    4,
-    5,
-    8,
-    9,
-    10,
-    12,
-    13,
-    14,
-    16
-  ],
+  "completed_sprints": [2, 3, 4, 5, 8, 9, 10, 12, 13, 14, 16],
   "repos": [],
   "vault_path": null,
   "vault_project_path": null

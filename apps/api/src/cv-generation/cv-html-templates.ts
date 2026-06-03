@@ -46,7 +46,10 @@ export function renderCvPdfHtml(cvContent: CVDocumentContent) {
       return `
         <section class="section skills-section">
           <h2>Compétences</h2>
-          <p class="skills-inline">${cvContent.skills.hard.slice(0, 12).map((s) => escapeHtml(s)).join(" · ")}</p>
+          <p class="skills-inline">${cvContent.skills.hard
+            .slice(0, 12)
+            .map((s) => escapeHtml(s))
+            .join(" · ")}</p>
         </section>
       `;
     }
@@ -94,13 +97,33 @@ export function renderCvPdfHtml(cvContent: CVDocumentContent) {
         <section class="section">
           <h2>Formation</h2>
           ${cvContent.education
-            .map((education) => {
-              const parts = [education.degree, education.institution];
-              if (education.mention) parts.push(education.mention);
-              if (education.year) parts.push(education.year);
-              return `<p>${escapeHtml(parts.join(" — "))}</p>`;
-            })
+            .map(
+              (education) => `
+                <article class="item">
+                  <div class="item__header">
+                    <div>
+                      <h3>${escapeHtml(education.degree)}</h3>
+                      <p class="company">${escapeHtml(
+                        [education.institution, education.mention]
+                          .filter(Boolean)
+                          .join(" · "),
+                      )}</p>
+                    </div>
+                    <p class="date-range">${escapeHtml(education.year)}</p>
+                  </div>
+                  ${education.description ? `<p>${escapeHtml(education.description)}</p>` : ""}
+                </article>
+              `,
+            )
             .join("")}
+        </section>
+      `
+      : "",
+    cvContent.interests
+      ? `
+        <section class="section">
+          <h2>Centres d'intérêt</h2>
+          <p>${escapeHtml(cvContent.interests)}</p>
         </section>
       `
       : "",
@@ -109,7 +132,9 @@ export function renderCvPdfHtml(cvContent: CVDocumentContent) {
         <section class="section">
           <h2>Langues</h2>
           <p>${cvContent.languages
-            .map((language) => escapeHtml(`${language.language} ${language.level}`))
+            .map((language) =>
+              escapeHtml(`${language.language} ${language.level}`),
+            )
             .join(" · ")}</p>
         </section>
       `
@@ -264,7 +289,13 @@ export function renderCvPdfHtml(cvContent: CVDocumentContent) {
           <h1>${escapeHtml(`${candidate.firstName} ${candidate.lastName}`.trim())}</h1>
           <p class="title">${escapeHtml(candidate.title)}</p>
           <p class="contact">
-            ${[candidate.phone, candidate.email, candidate.city, candidate.linkedin, candidate.github]
+            ${[
+              candidate.phone,
+              candidate.email,
+              candidate.city,
+              candidate.linkedin,
+              candidate.github,
+            ]
               .filter((value) => value.length > 0)
               .map((value) => escapeHtml(value))
               .join(" · ")}
@@ -279,7 +310,13 @@ export function renderCvPdfHtml(cvContent: CVDocumentContent) {
 
 export function renderLetterPdfHtml(letterContent: LetterDocumentContent) {
   const candidate = letterContent.candidate;
-  const contactLine = [candidate.phone, candidate.email, candidate.city, candidate.linkedin, candidate.github]
+  const contactLine = [
+    candidate.phone,
+    candidate.email,
+    candidate.city,
+    candidate.linkedin,
+    candidate.github,
+  ]
     .filter((value) => value.length > 0)
     .map((value) => escapeHtml(value))
     .join(" · ");

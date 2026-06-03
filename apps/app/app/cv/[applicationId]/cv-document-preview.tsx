@@ -34,6 +34,11 @@ export function CvDocumentPreview({
 }: {
   cvContent: CVDocumentContent;
 }) {
+  const skillsFollowProfile =
+    cvContent.candidate.summary &&
+    cvContent.experiences.length === 0 &&
+    cvContent.education.length === 0;
+
   return (
     <div style={previewShellStyle}>
       <div style={{ display: "grid", gap: "1.5rem" }}>
@@ -82,13 +87,23 @@ export function CvDocumentPreview({
         {cvContent.skills.hard.length > 0 ||
         cvContent.skills.soft.length > 0 ? (
           <>
-            <Divider style="solid" />
+            {skillsFollowProfile ? null : <Divider style="solid" />}
             <div style={sectionStyle}>
               <SectionTitle label="Compétences" style="accent" />
               <SkillsList
                 hardSkills={cvContent.skills.hard}
                 softSkills={cvContent.skills.soft}
               />
+            </div>
+          </>
+        ) : null}
+
+        {cvContent.interests ? (
+          <>
+            <Divider style="solid" />
+            <div style={sectionStyle}>
+              <SectionTitle label="Centres d'intérêt" style="accent" />
+              <SummaryBlock summary={cvContent.interests} />
             </div>
           </>
         ) : null}

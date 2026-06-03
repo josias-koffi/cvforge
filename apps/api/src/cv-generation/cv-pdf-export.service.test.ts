@@ -27,6 +27,7 @@ function makeStoredApplication(
       certifications: [],
       education: [],
       experiences: [],
+      interests: "",
       languages: [],
       projects: [],
       skills: { hard: ["TypeScript"], soft: ["Communication"] },
@@ -155,11 +156,10 @@ describe("CvPdfExportService", () => {
             summary: "Experienced profile",
             title: "Staff Developer",
           },
-          certifications: [
-            { issuer: "AWS", title: "Architect", year: "2025" },
-          ],
+          certifications: [{ issuer: "AWS", title: "Architect", year: "2025" }],
           education: [
             {
+              description: "Parcours IA et systemes distribues.",
               degree: "Master Informatique",
               institution: "Sorbonne",
               mention: "Bien",
@@ -176,6 +176,7 @@ describe("CvPdfExportService", () => {
               startDate: "2020",
             },
           ],
+          interests: "Course a pied",
           languages: [{ language: "English", level: "C1" }],
           projects: [
             {
@@ -245,9 +246,7 @@ describe("CvPdfExportService", () => {
 
     const result = await service.exportPdf("user@test.example", "app-001");
 
-    expect(result.filename).toBe(
-      "CANDIDAT_Candidat_Contrat_Poste.pdf",
-    );
+    expect(result.filename).toBe("CANDIDAT_Candidat_Contrat_Poste.pdf");
   });
 
   it("throws when the application is missing", async () => {
@@ -272,9 +271,7 @@ describe("CvPdfExportService", () => {
       "app-001",
     );
 
-    expect(result.filename).toBe(
-      "DUPONT_Jean_CDI_Senior_Developer_LM.docx",
-    );
+    expect(result.filename).toBe("DUPONT_Jean_CDI_Senior_Developer_LM.docx");
     expect(result.docx).toBeInstanceOf(Buffer);
     expect(result.docx.subarray(0, 2).toString()).toBe("PK");
   });
@@ -319,15 +316,19 @@ describe("CvPdfExportService", () => {
       }),
     );
 
-    const result = await service.exportLetterPdf("user@test.example", "app-001");
+    const result = await service.exportLetterPdf(
+      "user@test.example",
+      "app-001",
+    );
 
     expect(result.filename).toBe("DUPONT_Jean_CDI_Senior_Developer_LM.pdf");
     const payload = JSON.parse(
       (vi.mocked(fetch).mock.calls[0]?.[1] as RequestInit).body as string,
     ) as { html: string };
     expect(payload.html).toContain("<title>CVforge Letter export</title>");
-    expect(payload.html).toContain("Objet :</strong> Candidature au poste de Senior Developer");
+    expect(payload.html).toContain(
+      "Objet :</strong> Candidature au poste de Senior Developer",
+    );
     expect(payload.html).not.toContain('meta name="author"');
   });
-
 });

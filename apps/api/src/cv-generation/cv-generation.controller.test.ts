@@ -26,6 +26,7 @@ const MOCK_CV: CVDocumentContent = {
   certifications: [],
   education: [],
   experiences: [],
+  interests: "",
   languages: [],
   projects: [],
   skills: { hard: [], soft: [] },

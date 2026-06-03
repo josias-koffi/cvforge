@@ -358,6 +358,8 @@ describe("types package", () => {
       ],
       education: [
         {
+          description:
+            "Focused on distributed systems and product engineering.",
           degree: "Master Informatique",
           institution: "Universite de Lille",
           mention: "Bien",
@@ -387,6 +389,7 @@ describe("types package", () => {
           url: "https://example.com/template-studio",
         },
       ],
+      interests: "Running, photography",
       skills: {
         hard: ["TypeScript", "React"],
         soft: ["Facilitation", "Mentoring"],

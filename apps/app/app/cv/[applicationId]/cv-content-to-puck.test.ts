@@ -17,6 +17,7 @@ const minimalCvContent: CVDocumentContent = {
   certifications: [],
   education: [],
   experiences: [],
+  interests: "",
   languages: [],
   projects: [],
   skills: { hard: [], soft: [] },
@@ -36,7 +37,13 @@ const fullCvContent: CVDocumentContent = {
   },
   certifications: [{ issuer: "AWS", title: "SAA", year: "2024" }],
   education: [
-    { degree: "Master", institution: "Paris XI", mention: "TB", year: "2015" },
+    {
+      description: "Computer science and distributed systems.",
+      degree: "Master",
+      institution: "Paris XI",
+      mention: "TB",
+      year: "2015",
+    },
   ],
   experiences: [
     {
@@ -50,8 +57,13 @@ const fullCvContent: CVDocumentContent = {
   ],
   languages: [{ language: "English", level: "C1" }],
   projects: [
-    { description: "Open source tool", title: "MyLib", url: "https://mylib.dev" },
+    {
+      description: "Open source tool",
+      title: "MyLib",
+      url: "https://mylib.dev",
+    },
   ],
+  interests: "Trail running, photography",
   skills: { hard: ["TypeScript", "React"], soft: ["Mentoring"] },
 };
 
@@ -105,6 +117,9 @@ describe("cvContentToPuckData", () => {
     expect(eduBlocks).toHaveLength(1);
     expect(eduBlocks[0].props.degree).toBe("Master");
     expect(eduBlocks[0].props.institution).toBe("Paris XI");
+    expect(eduBlocks[0].props.description).toBe(
+      "Computer science and distributed systems.",
+    );
   });
 
   it("maps skills to a SkillsList block with hardSkills/softSkills", () => {
@@ -116,6 +131,33 @@ describe("cvContentToPuckData", () => {
     expect(skillsBlock).toBeDefined();
     expect(skillsBlock?.props.hardSkills).toEqual(["TypeScript", "React"]);
     expect(skillsBlock?.props.softSkills).toEqual(["Mentoring"]);
+  });
+
+  it("maps interests to a dedicated SummaryBlock section", () => {
+    const result = cvContentToPuckData(fullCvContent);
+    const interestsBlock = result.content.find(
+      (item) => item.type === "SummaryBlock" && item.props.id === "interests",
+    );
+
+    expect(interestsBlock?.props.summary).toBe("Trail running, photography");
+    expect(
+      result.content.some((item) => item.props.id === "divider-skills"),
+    ).toBe(true);
+  });
+
+  it("does not insert a divider when skills follow the profile directly", () => {
+    const result = cvContentToPuckData({
+      ...minimalCvContent,
+      candidate: {
+        ...minimalCvContent.candidate,
+        summary: "Product engineer",
+      },
+      skills: { hard: ["TypeScript"], soft: [] },
+    });
+
+    expect(
+      result.content.some((item) => item.props.id === "divider-skills"),
+    ).toBe(false);
   });
 
   it("maps certifications, languages, and projects correctly", () => {
@@ -174,5 +216,8 @@ describe("cvContentToPuckData", () => {
     expect(types).not.toContain("LanguageItem");
     expect(types).not.toContain("CertificationItem");
     expect(types).not.toContain("ProjectItem");
+    expect(
+      result.content.some((item) => item.props.id === "section-interests"),
+    ).toBe(false);
   });
 });
