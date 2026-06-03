@@ -236,7 +236,7 @@ export function ProfileEditor({
         <Button onClick={() => addEntry("experiences")} type="button">Ajouter une experience</Button>
       </SectionCard>
 
-      <SectionCard title="Formations" description="Diplome, etablissement, annee et mention.">
+      <SectionCard title="Formations" description="Diplome, etablissement, annee, mention et description exploitable pour le CV.">
         {profile.sections.education.map((education, index) => (
           <EducationFields
             education={education}

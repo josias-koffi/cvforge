@@ -1,353 +1,34 @@
 import type { ImportedCvProfilePatch } from "@cvforge/types";
-import { loadDraftFromStorage } from "../onboarding/draft";
 import {
-  normalizeEmail,
+  APPLICATION_PROFILE_SELECTION_STORAGE_KEY,
+  BASE_PROFILE_REGISTRY_STORAGE_KEY,
+  BASE_PROFILE_STORAGE_KEY,
+  type ApplicationProfileSelection,
+  type BaseProfile,
+  type BaseProfileRegistry,
+} from "./base-profile-types";
+import {
+  asCertificationList,
+  asEducationList,
+  asExperienceList,
+  asProjectList,
+  createEmptyBaseProfile,
+  createEmptyProfileRegistry,
+  createProfileFromOnboarding,
+  createProfileLabel,
+  hasMeaningfulProfileContent,
+  normalizeStringList,
+  sanitizeBaseProfile,
+  touchBaseProfile,
+} from "./base-profile-core";
+import {
   normalizeLongText,
-  normalizePhone,
   normalizeShortText,
   normalizeUrlField,
 } from "../input-guards";
 
-export const BASE_PROFILE_STORAGE_KEY = "cvforge-base-profile";
-export const BASE_PROFILE_REGISTRY_STORAGE_KEY = "cvforge-base-profiles";
-export const APPLICATION_PROFILE_SELECTION_STORAGE_KEY =
-  "cvforge-application-profile-selection";
-
-export type ExperienceEntry = {
-  company: string;
-  period: string;
-  results: string;
-  role: string;
-};
-
-export type EducationEntry = {
-  degree: string;
-  honors: string;
-  institution: string;
-  year: string;
-};
-
-export type CertificationEntry = {
-  issuer: string;
-  title: string;
-  year: string;
-};
-
-export type ProjectEntry = {
-  description: string;
-  link: string;
-  title: string;
-};
-
-export type BaseProfile = {
-  headline: string;
-  id: string;
-  identity: {
-    city: string;
-    email: string;
-    firstName: string;
-    github: string;
-    lastName: string;
-    linkedIn: string;
-    otherLink: string;
-    phone: string;
-    portfolio: string;
-  };
-  label: string;
-  meta: {
-    lastSavedAt: string | null;
-    maxProfiles: number | null;
-    source: "empty" | "onboarding" | "storage";
-  };
-  sections: {
-    certifications: CertificationEntry[];
-    education: EducationEntry[];
-    experiences: ExperienceEntry[];
-    interests: string;
-    personalProjects: ProjectEntry[];
-    softSkills: string[];
-    summary: string;
-    technicalSkills: string[];
-  };
-};
-
-export type BaseProfileRegistry = {
-  activeProfileId: string;
-  profiles: BaseProfile[];
-  version: 2;
-};
-
-export type ApplicationProfileSelection = Record<string, string>;
-
-function createProfileId() {
-  if (typeof globalThis.crypto?.randomUUID === "function") {
-    return globalThis.crypto.randomUUID();
-  }
-
-  return `profile_${Date.now().toString(36)}`;
-}
-
-function createProfileLabel(index: number) {
-  return index === 1 ? "Profil principal" : `Profil ${index}`;
-}
-
-export function createEmptyExperience(): ExperienceEntry {
-  return {
-    company: "",
-    period: "",
-    results: "",
-    role: "",
-  };
-}
-
-export function createEmptyEducation(): EducationEntry {
-  return {
-    degree: "",
-    honors: "",
-    institution: "",
-    year: "",
-  };
-}
-
-export function createEmptyCertification(): CertificationEntry {
-  return {
-    issuer: "",
-    title: "",
-    year: "",
-  };
-}
-
-export function createEmptyProject(): ProjectEntry {
-  return {
-    description: "",
-    link: "",
-    title: "",
-  };
-}
-
-export function createEmptyBaseProfile(
-  sessionEmail: string,
-  options?: { id?: string; label?: string },
-): BaseProfile {
-  return {
-    headline: "",
-    id: normalizeShortText(options?.id, 80) || createProfileId(),
-    identity: {
-      city: "",
-      email: sessionEmail,
-      firstName: "",
-      github: "",
-      lastName: "",
-      linkedIn: "",
-      otherLink: "",
-      phone: "",
-      portfolio: "",
-    },
-    label: normalizeShortText(options?.label, 80) || createProfileLabel(1),
-    meta: {
-      lastSavedAt: null,
-      maxProfiles: null,
-      source: "empty",
-    },
-    sections: {
-      certifications: [],
-      education: [],
-      experiences: [],
-      interests: "",
-      personalProjects: [],
-      softSkills: [],
-      summary: "",
-      technicalSkills: [],
-    },
-  };
-}
-
-export function createEmptyProfileRegistry(sessionEmail: string): BaseProfileRegistry {
-  const profile = createEmptyBaseProfile(sessionEmail);
-
-  return {
-    activeProfileId: profile.id,
-    profiles: [profile],
-    version: 2,
-  };
-}
-
-export function createAdditionalBaseProfile(
-  sessionEmail: string,
-  profileCount: number,
-): BaseProfile {
-  return createEmptyBaseProfile(sessionEmail, {
-    label: createProfileLabel(profileCount + 1),
-  });
-}
-
-function asExperienceList(value: unknown) {
-  if (!Array.isArray(value)) {
-    return [];
-  }
-
-  return value.map((item) => ({
-    company: normalizeShortText((item as ExperienceEntry | undefined)?.company, 120),
-    period: normalizeShortText((item as ExperienceEntry | undefined)?.period, 80),
-    results: normalizeLongText((item as ExperienceEntry | undefined)?.results, 600),
-    role: normalizeShortText((item as ExperienceEntry | undefined)?.role, 120),
-  }));
-}
-
-function asEducationList(value: unknown) {
-  if (!Array.isArray(value)) {
-    return [];
-  }
-
-  return value.map((item) => ({
-    degree: normalizeShortText((item as EducationEntry | undefined)?.degree, 120),
-    honors: normalizeShortText((item as EducationEntry | undefined)?.honors, 120),
-    institution: normalizeShortText((item as EducationEntry | undefined)?.institution, 120),
-    year: normalizeShortText((item as EducationEntry | undefined)?.year, 16),
-  }));
-}
-
-function asCertificationList(value: unknown) {
-  if (!Array.isArray(value)) {
-    return [];
-  }
-
-  return value.map((item) => ({
-    issuer: normalizeShortText((item as CertificationEntry | undefined)?.issuer, 120),
-    title: normalizeShortText((item as CertificationEntry | undefined)?.title, 120),
-    year: normalizeShortText((item as CertificationEntry | undefined)?.year, 16),
-  }));
-}
-
-function asProjectList(value: unknown) {
-  if (!Array.isArray(value)) {
-    return [];
-  }
-
-  return value.map((item) => ({
-    description: normalizeLongText((item as ProjectEntry | undefined)?.description, 600),
-    link: normalizeUrlField((item as ProjectEntry | undefined)?.link),
-    title: normalizeShortText((item as ProjectEntry | undefined)?.title, 120),
-  }));
-}
-
-export function createProfileFromOnboarding(
-  sessionEmail: string,
-  storage: Pick<Storage, "getItem">,
-  options?: { id?: string; label?: string },
-): BaseProfile {
-  const draft = loadDraftFromStorage(sessionEmail, storage);
-
-  return {
-    headline: "",
-    id: normalizeShortText(options?.id, 80) || createProfileId(),
-    identity: {
-      city: draft.personal.city,
-      email: draft.personal.professionalEmail || sessionEmail,
-      firstName: draft.personal.firstName,
-      github: draft.links.github,
-      lastName: draft.personal.lastName,
-      linkedIn: draft.links.linkedIn,
-      otherLink: draft.links.other,
-      phone: draft.personal.phone,
-      portfolio: draft.links.portfolio,
-    },
-    label: normalizeShortText(options?.label, 80) || createProfileLabel(1),
-    meta: {
-      lastSavedAt: null,
-      maxProfiles: null,
-      source: "onboarding",
-    },
-    sections: {
-      certifications: [],
-      education: [],
-      experiences: [],
-      interests: "",
-      personalProjects: [],
-      softSkills: [],
-      summary: draft.importCv.notes.trim(),
-      technicalSkills: [],
-    },
-  };
-}
-
-export function sanitizeBaseProfile(
-  value: unknown,
-  sessionEmail: string,
-  fallback?: BaseProfile,
-): BaseProfile {
-  const emptyProfile = fallback ?? createEmptyBaseProfile(sessionEmail);
-
-  if (!value || typeof value !== "object") {
-    return emptyProfile;
-  }
-
-  const candidate = value as Partial<BaseProfile>;
-
-  return {
-    headline: normalizeShortText(candidate.headline, 120),
-    id: normalizeShortText(candidate.id, 80) || emptyProfile.id,
-    identity: {
-      city: normalizeShortText(candidate.identity?.city, 120),
-      email: normalizeEmail(candidate.identity?.email, sessionEmail) || sessionEmail,
-      firstName: normalizeShortText(candidate.identity?.firstName, 80),
-      github: normalizeUrlField(candidate.identity?.github),
-      lastName: normalizeShortText(candidate.identity?.lastName, 80),
-      linkedIn: normalizeUrlField(candidate.identity?.linkedIn),
-      otherLink: normalizeUrlField(candidate.identity?.otherLink),
-      phone: normalizePhone(candidate.identity?.phone),
-      portfolio: normalizeUrlField(candidate.identity?.portfolio),
-    },
-    label:
-      normalizeShortText(candidate.label, 80) || emptyProfile.label || createProfileLabel(1),
-    meta: {
-      lastSavedAt:
-        typeof candidate.meta?.lastSavedAt === "string"
-          ? candidate.meta.lastSavedAt
-          : null,
-      maxProfiles: null,
-      source:
-        candidate.meta?.source === "onboarding" || candidate.meta?.source === "storage"
-          ? candidate.meta.source
-          : "empty",
-    },
-    sections: {
-      certifications: asCertificationList(candidate.sections?.certifications),
-      education: asEducationList(candidate.sections?.education),
-      experiences: asExperienceList(candidate.sections?.experiences),
-      interests: normalizeLongText(candidate.sections?.interests, 400),
-      personalProjects: asProjectList(candidate.sections?.personalProjects),
-      softSkills: normalizeStringList(candidate.sections?.softSkills),
-      summary: normalizeLongText(candidate.sections?.summary),
-      technicalSkills: normalizeStringList(candidate.sections?.technicalSkills),
-    },
-  };
-}
-
-function normalizeStringList(value: unknown) {
-  if (!Array.isArray(value)) {
-    return [];
-  }
-
-  return value
-    .map((item) => normalizeShortText(item, 80))
-    .filter(Boolean);
-}
-
-function hasMeaningfulProfileContent(profile: BaseProfile) {
-  return Boolean(
-    profile.identity.firstName.trim() ||
-      profile.identity.lastName.trim() ||
-      profile.identity.city.trim() ||
-      profile.identity.phone.trim() ||
-      profile.identity.linkedIn.trim() ||
-      profile.identity.github.trim() ||
-      profile.identity.portfolio.trim() ||
-      profile.identity.otherLink.trim() ||
-      profile.headline.trim() ||
-      profile.sections.summary.trim(),
-  );
-}
+export * from "./base-profile-core";
+export * from "./base-profile-types";
 
 function migrateLegacyProfile(
   sessionEmail: string,
@@ -357,7 +38,11 @@ function migrateLegacyProfile(
     return null;
   }
 
-  const migratedProfile = sanitizeBaseProfile(legacyValue, sessionEmail, createEmptyBaseProfile(sessionEmail));
+  const migratedProfile = sanitizeBaseProfile(
+    legacyValue,
+    sessionEmail,
+    createEmptyBaseProfile(sessionEmail),
+  );
 
   return {
     activeProfileId: migratedProfile.id,
@@ -519,16 +204,6 @@ export function clearBaseProfileFromStorage(
   storage.removeItem(BASE_PROFILE_STORAGE_KEY);
   storage.removeItem(BASE_PROFILE_REGISTRY_STORAGE_KEY);
   storage.removeItem(APPLICATION_PROFILE_SELECTION_STORAGE_KEY);
-}
-
-export function touchBaseProfile(profile: BaseProfile): BaseProfile {
-  return {
-    ...profile,
-    meta: {
-      ...profile.meta,
-      lastSavedAt: new Date().toISOString(),
-    },
-  };
 }
 
 export function applyImportedCvProfilePatch(
