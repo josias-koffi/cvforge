@@ -350,3 +350,11 @@
 - **Why**: Le retrait d'une dépendance d'éditeur et le renommage du contrat partagé devaient être validés au-delà des tests de page.
 - **Learned**: Le build Next confirme que les routes CV/admin restent compilables sans transpilation Puck.
 - **Open**: `apps/app/tsconfig.tsbuildinfo` reste un artefact local non suivi préexistant.
+
+## 2026-06-10 — structuration predictive des competences CV (stage 04 · [[workflows/runs/analyze-design-dev-review-20260610104253]])
+
+- **Context**: ad hoc · [[workflows/runs/analyze-design-dev-review-20260610104253/04-review]]
+- **Did**: Verifie contrat, normalisation, retrocompatibilite, tailles, lint, tests, couverture et build.
+- **Why**: La sortie IA devait rester exploitable meme avec une cle `category` ou des doublons.
+- **Learned**: La couverture source CV est conforme, mais le total racine est pollue par `dist` et `.next`.
+- **Open**: Les warnings React `act(...)` interview et les gates globales restent a traiter.
