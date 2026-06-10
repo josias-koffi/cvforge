@@ -55,4 +55,30 @@ export const SHARED_PDF_STYLES = `
     padding-bottom: 0.5rem;
     border-bottom: 1px solid #1a1a1a;
   }
+
+  @media screen {
+    html {
+      min-height: 100%;
+    }
+
+    body {
+      box-sizing: border-box;
+      min-height: 100vh;
+      padding: var(--preview-margin-block, 5.05%)
+        var(--preview-margin-inline, 7.143%);
+    }
+  }
 `;
+
+export function escapeHtml(value: string) {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+export function escapeAttribute(value: string) {
+  return escapeHtml(value);
+}

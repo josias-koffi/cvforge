@@ -99,7 +99,8 @@ describe("LetterPage", () => {
     expect(markup).toContain("Edition de la LM");
     expect(markup).toContain("Edition WYSIWYG de la LM");
     expect(markup).toContain("Template LM ATS par défaut");
-    expect(markup).toContain("Aperçu live");
+    expect(markup).toContain("Aperçu PDF");
+    expect(markup).toContain('data-document-preview="pdf"');
     expect(markup).toContain("Example Corp");
     expect(markup).toContain("Telecharger le DOCX");
     expect(markup).toContain("Historique des versions LM");

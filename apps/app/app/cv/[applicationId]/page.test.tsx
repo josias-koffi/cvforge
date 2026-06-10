@@ -118,6 +118,6 @@ describe("CvPage", () => {
     const markup = renderToStaticMarkup(Page);
 
     expect(markup).toContain("Compétences techniques");
-    expect(markup).toContain("Aperçu live");
+    expect(markup).toContain("Aperçu PDF");
   });
 });

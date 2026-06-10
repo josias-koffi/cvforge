@@ -10,13 +10,16 @@ services:
       NEXT_PUBLIC_APP_URL: http://localhost:3000
       NEXT_PUBLIC_API_URL: http://localhost:3333
       API_INTERNAL_URL: http://api:3333
-      NEXT_DIST_DIR: tmp/cvforge-app-next
       CHOKIDAR_USEPOLLING: "true"
       WATCHPACK_POLLING: "true"
     depends_on:
       - api
     volumes:
       - ./apps/app:/workspace/apps/app
+      - /workspace/apps/app/.next
+      - /workspace/apps/app/node_modules
+      - ./packages/document-renderer:/workspace/packages/document-renderer
+      - /workspace/packages/document-renderer/dist
       - ./packages/ui:/workspace/packages/ui
       - ./packages/types:/workspace/packages/types
       - ./packages/config:/workspace/packages/config
@@ -73,6 +76,9 @@ services:
       - puppeteer
     volumes:
       - ./apps/api:/workspace/apps/api
+      - /workspace/apps/api/node_modules
+      - ./packages/document-renderer:/workspace/packages/document-renderer
+      - /workspace/packages/document-renderer/dist
       - ./packages/types:/workspace/packages/types
       - ./packages/config:/workspace/packages/config
 
