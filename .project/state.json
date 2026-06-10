@@ -12,13 +12,13 @@
   "specialized_workflows": [],
   "specialized_skills": [],
   "clarifications_pending": [],
-  "last_updated": "2026-06-10T13:18:15.834Z",
+  "last_updated": "2026-06-10T15:39:16+02:00",
   "last_workflow_run": "analyze-design-dev-review",
   "last_workflow_stage": "tech-lead",
   "last_workflow_result": "passed",
   "active_workflow_run": null,
-  "last_adhoc_run": "analyze-design-dev-review-20260610150733",
-  "last_task_completed": "rationalisation frontend desktop",
+  "last_adhoc_run": "analyze-design-dev-review-20260610153104",
+  "last_task_completed": "fidélité aperçu PDF CV et LM",
   "workflow_runs": [
     {
       "run_id": "20260419-191212-us-006",
@@ -532,6 +532,13 @@
       "run_id": "analyze-design-dev-review-20260610150733",
       "sprint": null,
       "task": "rationalisation frontend desktop",
+      "workflow": "analyze-design-dev-review",
+      "result": "passed"
+    },
+    {
+      "run_id": "analyze-design-dev-review-20260610153104",
+      "sprint": null,
+      "task": "fidélité aperçu PDF CV et LM",
       "workflow": "analyze-design-dev-review",
       "result": "passed"
     }

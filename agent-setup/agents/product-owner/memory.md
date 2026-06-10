@@ -407,3 +407,10 @@
 - **Why**: E15 prévoit déjà de corriger le biais mobile-first et la demande confirme cette direction produit.
 - **Learned**: Les routes métier restent utiles; la rationalisation doit viser les entrées redondantes et la composition avant la suppression.
 - **Open**: Le Documents Hub US-067 reste hors de ce run.
+
+## 2026-06-10 — fidélité aperçu PDF (stage 01 · [[workflows/runs/analyze-design-dev-review-20260610153104]])
+- **Context**: ad hoc · [[workflows/runs/analyze-design-dev-review-20260610153104/01-analyze]]
+- **Did**: Défini le PDF téléchargé comme référence unique pour les aperçus CV et LM.
+- **Why**: Deux rendus divergents empêchaient l’utilisateur de valider son document avant export.
+- **Learned**: La parité doit être structurelle via un renderer commun, pas visuelle par duplication.
+- **Open**: None.

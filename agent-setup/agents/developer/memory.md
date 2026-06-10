@@ -662,3 +662,9 @@
 - **Why**: Le flux principal et les documents sont utilisés sur ordinateur; l'ancienne composition mobile-first créait trop de défilement.
 - **Learned**: Le split CSS existant pouvait être réutilisé; l'éditeur LM devait être découpé avant toute évolution.
 - **Open**: Décider du devenir du wizard onboarding sans route principale.
+## 2026-06-10 — fidélité aperçu PDF (stage 03 · [[workflows/runs/analyze-design-dev-review-20260610153104]])
+- **Context**: ad hoc · [[workflows/runs/analyze-design-dev-review-20260610153104/03-implement]]
+- **Did**: Extrait `@cvforge/document-renderer` et branché API Puppeteer, aperçu CV et aperçu LM sur la même source.
+- **Why**: Supprimer définitivement la divergence entre rendu écran et fichier téléchargé.
+- **Learned**: Les marges `@page` doivent avoir un équivalent `@media screen` pour l’aperçu iframe.
+- **Open**: None.

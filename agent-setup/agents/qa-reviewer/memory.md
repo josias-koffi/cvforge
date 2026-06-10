@@ -365,3 +365,10 @@
 - **Why**: La refonte touche le parcours d'entrée et plusieurs surfaces utilisateur critiques.
 - **Learned**: Deux tests ciblés sur les sections LM maintiennent la couverture globale au-dessus du seuil.
 - **Open**: Aucun test visuel navigateur automatisé; warnings `act(...)` interview préexistants.
+
+## 2026-06-10 — fidélité aperçu PDF (stage 04 · [[workflows/runs/analyze-design-dev-review-20260610153104]])
+- **Context**: ad hoc · [[workflows/runs/analyze-design-dev-review-20260610153104/04-review]]
+- **Did**: Vérifié source commune, isolation iframe, sections, échappement, lint, tests, build et couverture.
+- **Why**: La parité devait être démontrée pour les deux documents et rester résistante aux évolutions.
+- **Learned**: Une source HTML commune offre une garantie plus forte qu’un snapshot visuel séparé.
+- **Open**: Warnings React `act(...)` interview préexistants.
