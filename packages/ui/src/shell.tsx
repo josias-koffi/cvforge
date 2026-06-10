@@ -36,21 +36,13 @@ function filterNavForRole(
   return items.filter((item) => !item.requiresAdmin || role === "admin");
 }
 
-function DesktopSidebar({
-  eyebrow,
-  navigation,
-}: {
-  eyebrow: string;
-  navigation: ShellNavItem[];
-}) {
+function DesktopSidebar({ navigation }: { navigation: ShellNavItem[] }) {
   return (
-    <aside className="cvforge-shell__sidebar">
-      <div className="cvforge-shell__sidebar-brand">
-        <Badge className="cvforge-shell__eyebrow" variant="outline">
-          {eyebrow}
-        </Badge>
-      </div>
-      <nav aria-label="Navigation principale" className="cvforge-shell__sidebar-nav">
+    <aside className="cvforge-shell__sidebar" style={{ width: "216px" }}>
+      <nav
+        aria-label="Navigation principale"
+        className="cvforge-shell__sidebar-nav"
+      >
         <ul className="cvforge-shell__sidebar-nav-list">
           {navigation.map((item) => (
             <li key={item.href}>
@@ -91,7 +83,10 @@ function ShellTopBar({
         <div className="cvforge-shell__topbar-mobile-controls">
           <MobileDrawerNav items={navigation} />
         </div>
-        <Badge className="cvforge-shell__eyebrow cvforge-shell__topbar-brand" variant="outline">
+        <Badge
+          className="cvforge-shell__eyebrow cvforge-shell__topbar-brand"
+          variant="outline"
+        >
           {eyebrow}
         </Badge>
         {breadcrumb ? (
@@ -106,7 +101,9 @@ function ShellTopBar({
       </div>
       <div className="cvforge-shell__topbar-right">
         {headerAccessory ? (
-          <div className="cvforge-shell__topbar-accessory">{headerAccessory}</div>
+          <div className="cvforge-shell__topbar-accessory">
+            {headerAccessory}
+          </div>
         ) : null}
         {userEmail ? (
           <div
@@ -146,8 +143,18 @@ export function AppShell({
         userEmail={userEmail}
       />
       <div className="cvforge-shell__body">
-        <DesktopSidebar eyebrow={eyebrow} navigation={filteredNav} />
-        <main className="cvforge-shell__main">
+        <DesktopSidebar navigation={filteredNav} />
+        <main
+          className="cvforge-shell__main"
+          style={{
+            boxSizing: "border-box",
+            gap: "1rem",
+            margin: "0 auto",
+            maxWidth: "1600px",
+            padding: "1.25rem",
+            width: "100%",
+          }}
+        >
           <div className="cvforge-shell__page-header">
             <h1 className="cvforge-shell__page-title">{title}</h1>
             <p className="cvforge-shell__page-description">{description}</p>

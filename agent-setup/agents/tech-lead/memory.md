@@ -428,3 +428,10 @@
 - **Why**: Le changement reste dans la couche application IA, sans nouvelle dependance ni migration de stockage.
 - **Learned**: Une temperature 0.1 et une normalisation defensive completent le prompt pour une sortie plus previsible.
 - **Open**: Exclure les artefacts generes des gates globales de format et couverture.
+
+## 2026-06-10 — rationalisation frontend desktop (finalization · [[workflows/runs/analyze-design-dev-review-20260610150733]])
+- **Context**: ad hoc · [[workflows/runs/analyze-design-dev-review-20260610150733/final-summary]]
+- **Did**: Signé la refonte après vérification des redirections, du découpage LM et des gates frontend.
+- **Why**: Le changement reste dans l'interface, réduit du code mort et n'introduit ni dépendance ni nouveau modèle de données.
+- **Learned**: Conserver `/login/success` comme callback serveur simplifie l'UX sans casser le contrat d'auth.
+- **Open**: Le wizard onboarding historique nécessite une décision de cycle de vie.

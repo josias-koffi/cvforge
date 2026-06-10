@@ -48,11 +48,7 @@ function StatusBadge({ status }: { status: ApplicationStatus }) {
   );
 }
 
-function StatusUpdateForm({
-  application,
-  statusError,
-  statusUpdated,
-}: Props) {
+function StatusUpdateForm({ application, statusError, statusUpdated }: Props) {
   const nextStatuses = applicationStatusTransitions[
     application.status
   ] as readonly ApplicationStatus[];
@@ -80,7 +76,11 @@ function StatusUpdateForm({
       }}
     >
       <input name="applicationId" type="hidden" value={application.id} />
-      <input name="returnTo" type="hidden" value={`/candidatures/${application.id}`} />
+      <input
+        name="returnTo"
+        type="hidden"
+        value={`/candidatures/${application.id}`}
+      />
       <div style={{ display: "grid", gap: "0.25rem" }}>
         <label
           htmlFor="next-candidature-status"
@@ -125,7 +125,8 @@ function StatusUpdateForm({
         }}
       >
         {statusError
-          ? STATUS_ERROR_MESSAGES[statusError] ?? STATUS_ERROR_MESSAGES.status_request_failed
+          ? (STATUS_ERROR_MESSAGES[statusError] ??
+            STATUS_ERROR_MESSAGES.status_request_failed)
           : statusUpdated
             ? "Suivi mis a jour."
             : ""}
@@ -145,7 +146,7 @@ export function CandidatureDetailHeader({
         backgroundColor: "#FFFFFF",
         border: "1px solid #D8D2C8",
         borderRadius: "0.75rem",
-        padding: "1.25rem 1.5rem",
+        padding: "1rem 1.25rem",
       }}
     >
       <div
@@ -153,12 +154,18 @@ export function CandidatureDetailHeader({
           alignItems: "flex-start",
           display: "flex",
           flexWrap: "wrap",
-          gap: "1rem",
+          gap: "0.75rem",
           justifyContent: "space-between",
         }}
       >
         <div>
-          <h1 style={{ fontSize: "1.5rem", fontWeight: 700, margin: "0 0 0.35rem" }}>
+          <h1
+            style={{
+              fontSize: "1.5rem",
+              fontWeight: 700,
+              margin: "0 0 0.35rem",
+            }}
+          >
             {application.extracted.title}
           </h1>
           <p style={{ color: "#6B6860", fontSize: "0.9rem", margin: 0 }}>
@@ -175,7 +182,14 @@ export function CandidatureDetailHeader({
             justifyItems: "end",
           }}
         >
-          <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+          <div
+            style={{
+              alignItems: "center",
+              display: "flex",
+              flexWrap: "wrap",
+              gap: "0.5rem",
+            }}
+          >
             <StatusBadge status={application.status} />
             <Link href={`/interview/new?candidatureId=${application.id}`}>
               <Button size="sm" variant="secondary">

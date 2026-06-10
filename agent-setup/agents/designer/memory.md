@@ -181,6 +181,13 @@
 - **Learned**: Quality-gate recovery work can close a sprint without reopening any product or UX scope.
 - **Open**: None.
 
+## 2026-06-10 — rationalisation frontend desktop (stage 02 · [[workflows/runs/analyze-design-dev-review-20260610150733]])
+- **Context**: ad hoc · [[workflows/runs/analyze-design-dev-review-20260610150733/02-design]]
+- **Did**: Défini un bureau de travail compact, une sidebar sans marque doublonnée et des éditeurs documentaires en deux colonnes.
+- **Why**: Les usages CV/LM se font principalement sur ordinateur et l'espace actuel ralentit le balayage visuel.
+- **Learned**: L'identité Papier & Crayon peut rester dans les tokens et aperçus sans imposer une faible densité à toute l'interface.
+- **Open**: Le hub documents complet reste couvert par US-067.
+
 ## 2026-04-21 — US-029 design
 
 - **Did**: Marked the design stage as a non-UI skip and documented the API-first credit-ledger contract for future user/admin surfaces.

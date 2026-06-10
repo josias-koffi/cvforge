@@ -116,6 +116,8 @@ Référence de gate: le spec impose des branches courtes et des PRs <= 400 ligne
 - 2026-06-03 — Splitter `apps/app/app/letters/[applicationId]/letter-editor.tsx` lors de la prochaine évolution LM : le fichier reste à ~611 lignes, au-dessus du seuil warning TSX, mais n'a pas été touché pendant le retrait de Puck.
 - 2026-06-10 — Exclure `.agents` du script `pnpm format` ou le passer en lecture seule dans la configuration Prettier.
 - 2026-06-10 — Exclure `dist`, `.next` et les artefacts de couverture du rapport Vitest racine pour mesurer uniquement les sources.
+- 2026-06-10 — Décider du devenir de `app/onboarding/wizard.tsx`: `/` redirige désormais vers `/dashboard`; supprimer le wizard legacy ou l'exposer comme parcours volontaire depuis `/profile`.
+- 2026-06-10 — Remplacer les liens internes restants vers `/` par leur destination explicite (`/dashboard` ou landing) pour éviter une redirection intermédiaire.
 
 ## Clarifications Pendantes
 

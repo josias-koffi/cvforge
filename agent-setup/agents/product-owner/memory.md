@@ -400,3 +400,10 @@
 - **Why**: Le prompt existant imposait une repartition trop rigide et contradictoire avec le rendu attendu.
 - **Learned**: Le contrat interne `label/items` peut rester stable tout en acceptant `category/items` en entree IA.
 - **Open**: Une competence omise par le modele ne peut pas etre restauree sans second passage IA.
+
+## 2026-06-10 — rationalisation frontend desktop (stage 01 · [[workflows/runs/analyze-design-dev-review-20260610150733]])
+- **Context**: ad hoc · [[workflows/runs/analyze-design-dev-review-20260610150733/01-analyze]]
+- **Did**: Cadre la densification desktop, le retour post-login au dashboard et les surfaces candidatures/documents.
+- **Why**: E15 prévoit déjà de corriger le biais mobile-first et la demande confirme cette direction produit.
+- **Learned**: Les routes métier restent utiles; la rationalisation doit viser les entrées redondantes et la composition avant la suppression.
+- **Open**: Le Documents Hub US-067 reste hors de ce run.
