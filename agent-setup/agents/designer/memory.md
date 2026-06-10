@@ -358,3 +358,9 @@
 - **Why**: Le rendu categorise existe deja; le risque porte sur le contrat et la conservation des donnees.
 - **Learned**: La sauvegarde manuelle doit preserver les categories meme si l'editeur expose encore les listes plates.
 - **Open**: None.
+## 2026-06-10 — fidélité aperçu PDF (stage 02 · [[workflows/runs/analyze-design-dev-review-20260610153104]])
+- **Context**: ad hoc · [[workflows/runs/analyze-design-dev-review-20260610153104/02-design]]
+- **Did**: Spécifié une feuille A4 isolée, responsive et alimentée par le HTML exact du PDF.
+- **Why**: Le document doit rester la référence visuelle sans interférence du CSS applicatif.
+- **Learned**: Un iframe sandboxé garantit mieux la fidélité qu’une reconstruction React.
+- **Open**: None.

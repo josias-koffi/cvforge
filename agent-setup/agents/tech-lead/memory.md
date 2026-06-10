@@ -435,3 +435,10 @@
 - **Why**: Le changement reste dans l'interface, réduit du code mort et n'introduit ni dépendance ni nouveau modèle de données.
 - **Learned**: Conserver `/login/success` comme callback serveur simplifie l'UX sans casser le contrat d'auth.
 - **Open**: Le wizard onboarding historique nécessite une décision de cycle de vie.
+
+## 2026-06-10 — fidélité aperçu PDF (finalization · [[workflows/runs/analyze-design-dev-review-20260610153104]])
+- **Context**: ad hoc · [[workflows/runs/analyze-design-dev-review-20260610153104/final-summary]]
+- **Did**: Validé le package renderer partagé et la suppression des implémentations d’aperçu divergentes.
+- **Why**: La source unique réduit la dette et maintient la cohérence entre interface et infrastructure d’export.
+- **Learned**: Un package pur TypeScript suffit; aucune dépendance externe ni ADR n’est nécessaire.
+- **Open**: None.
