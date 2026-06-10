@@ -632,3 +632,18 @@
 - **Why**: L'éditeur externe était lourd et cassait le design ; un éditeur par blocs métier couvre le besoin admin sans nouvelle dépendance.
 - **Learned**: Extraire `template-page-components.tsx` était nécessaire pour ramener la page admin sous le warning §9 après modification.
 - **Open**: `letter-editor.tsx` reste volumineux mais non touché ; à splitter lors d'une prochaine évolution LM.
+
+## 2026-06-03 — diagnostic deploy-cvforge GHCR pull reset (ad hoc · run-agent)
+
+- **Context**: ad hoc · last sprint [[sprints/sprint-017]] · last run [[workflows/runs/analyze-design-dev-review]]
+- **Did**: Analysé l'échec `make deploy-cvforge` dans `koklo-infra`; le playbook exécute un `docker compose pull` sans retry et l'erreur vient d'une coupure TCP pendant le pull GHCR.
+- **Why**: Identifier si l'échec venait de l'application CVForge, du playbook Ansible, du registre Docker ou du réseau VPS.
+- **Learned**: `read tcp [2a02:...]->[2606:50c0:8000::154]:443: connection reset by peer` indique une connexion IPv6 vers GHCR interrompue pendant un téléchargement de couche, pas une erreur applicative ni un problème d'authentification.
+- **Open**: Ajouter des retries Ansible autour de `docker compose pull` dans `koklo-infra` si l'instabilité réseau se répète.
+
+## 2026-06-10 — réinstallation Impeccable
+
+- **Did**: Réinstallé la dernière version de `pbakaus/impeccable` avec le CLI `skills` et mis à jour son verrouillage local.
+- **Why**: La première tentative pendant l'upgrade avait échoué à cause d'un jeton npm invalide.
+- **Learned**: Le CLI installe désormais le skill partagé sous `.agents/skills/impeccable`; l'ancienne source `anthropics/claude-code#plugins/frontend-design` n'est plus une branche Git valide.
+- **Open**: Mettre à jour le framework `upgrade-project` quand une nouvelle source officielle pour `frontend-design` sera disponible.

@@ -16,7 +16,7 @@ Run the full test suite with coverage; block on failure or coverage below spec.
 
 ## Procedure (strict order)
 1. Run tests with coverage: `pnpm test`
-2. Parse coverage output from `jest`.
+2. Parse coverage output from `vitest coverage-v8`.
 3. Compare against `agent-setup/spec/engineering-standards.md` thresholds (overall ≥ 80%, new code ≥ 90%).
 
 ## Checks

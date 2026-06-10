@@ -3,7 +3,7 @@
 # Engineering Standards
 
 > Non-negotiable standards for this project. Agents refuse to ship code that violates blocking rules.
-> Last updated: 2026-06-10
+> Last updated: 2026-06-01
 
 ## 1. Clean Architecture (blocking)
 
@@ -29,7 +29,7 @@ If the project already uses a different architecture, document it here and keep 
 - New code in a PR: **90%** line coverage minimum
 - Coverage drop vs main: **blocks** the PR
 
-Measured with: `vitest coverage-v8`
+Measured with: `jest`
 
 ## 3. Conventional Commits + SemVer (blocking on commit)
 
