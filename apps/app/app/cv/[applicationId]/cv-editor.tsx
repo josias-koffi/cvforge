@@ -275,7 +275,7 @@ export function CvEditor({
             top: "4.5rem",
           }}
         >
-          <h3 style={{ margin: 0 }}>Aperçu live</h3>
+          <h3 style={{ margin: 0 }}>Aperçu PDF</h3>
           <CvDocumentPreview cvContent={draft} />
         </div>
       </div>

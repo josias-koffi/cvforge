@@ -6,7 +6,10 @@ import {
 } from "@nestjs/common";
 import type { ApplicationsStore, StoredApplication } from "../applications/applications.types";
 import { renderCvDocx, renderLetterDocx } from "./cv-docx-templates";
-import { renderCvPdfHtml, renderLetterPdfHtml } from "./cv-html-templates";
+import {
+  renderCvPdfHtml,
+  renderLetterPdfHtml,
+} from "@cvforge/document-renderer";
 
 type PdfExportConfig = {
   puppeteerUrl: string;

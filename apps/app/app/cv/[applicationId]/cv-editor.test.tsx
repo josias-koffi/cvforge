@@ -76,9 +76,10 @@ describe("CvEditor", () => {
 
     expect(markup).toContain("En-tête");
     expect(markup).toContain("Compétences techniques");
-    expect(markup).toContain("Aperçu live");
+    expect(markup).toContain("Aperçu PDF");
     expect(markup).toContain("Alice");
     expect(markup).toContain("TypeScript");
+    expect(markup).toContain('data-document-preview="pdf"');
   });
 
   it("does not render legacy editor desktop/mobile sections", () => {
