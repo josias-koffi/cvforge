@@ -45,7 +45,9 @@ const shellNavigation: ShellNavItem[] = [
 
 describe("documentBlockRegistry", () => {
   it("returns only CV blocks when kind is cv", () => {
-    const names = getBlocksForTemplateKind(TEMPLATE_KIND_CV).map(([name]) => name);
+    const names = getBlocksForTemplateKind(TEMPLATE_KIND_CV).map(
+      ([name]) => name,
+    );
 
     expect(names).toContain("CVHeader");
     expect(names).toContain("SummaryBlock");
@@ -58,7 +60,9 @@ describe("documentBlockRegistry", () => {
   });
 
   it("returns only letter blocks when kind is letter", () => {
-    const names = getBlocksForTemplateKind(TEMPLATE_KIND_LETTER).map(([name]) => name);
+    const names = getBlocksForTemplateKind(TEMPLATE_KIND_LETTER).map(
+      ([name]) => name,
+    );
 
     expect(names).toContain("LMHeader");
     expect(names).toContain("LMBody");
@@ -113,6 +117,9 @@ describe("AppShell", () => {
     expect(markup).toContain("--paper-canvas");
     expect(markup).toContain("@media (min-width: 768px)");
     expect(markup).toContain("@media (min-width: 1024px)");
+    expect(markup).not.toMatch(
+      /<aside class="cvforge-shell__sidebar"[^>]*>.*CVforge.*<\/aside>/s,
+    );
   });
 
   it("shows admin nav item for admin role and hides it for user role", () => {

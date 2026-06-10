@@ -1,19 +1,11 @@
 "use client";
 
 import React from "react";
-import {
-  Badge,
-  Button,
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  Input,
-  Label,
-  Textarea,
-} from "@cvforge/ui";
-import type { LetterDocumentContent, LetterGenerationRequest } from "@cvforge/types";
+import { Badge, Button } from "@cvforge/ui";
+import type {
+  LetterDocumentContent,
+  LetterGenerationRequest,
+} from "@cvforge/types";
 import type { LetterDocumentVersionEntry } from "@cvforge/types";
 import {
   getProfileForApplication,
@@ -21,7 +13,11 @@ import {
   loadProfileRegistryFromStorage,
 } from "../../profile/base-profile";
 import { AI_CANDIDATE_TOKEN } from "../../profile/ai-prompt-profile";
-import { LetterDocumentPreview } from "./letter-document-preview";
+import {
+  LetterEditorWorkspace,
+  LetterRegenerationPanel,
+  LetterVersionHistory,
+} from "./letter-editor-sections";
 
 function resolveDownloadFilename(
   contentDisposition: string | null,
@@ -48,45 +44,6 @@ function resolveDownloadFilename(
   return `letter-${applicationId}.pdf`;
 }
 
-function SectionCard({
-  children,
-  description,
-  title,
-}: {
-  children: React.ReactNode;
-  description: string;
-  title: string;
-}) {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{title}</CardTitle>
-        <CardDescription>{description}</CardDescription>
-      </CardHeader>
-      <CardContent style={{ display: "grid", gap: "1rem" }}>
-        {children}
-      </CardContent>
-    </Card>
-  );
-}
-
-function Field({
-  id,
-  label,
-  children,
-}: {
-  id: string;
-  label: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div style={{ display: "grid", gap: "0.4rem" }}>
-      <Label htmlFor={id}>{label}</Label>
-      {children}
-    </div>
-  );
-}
-
 export function LetterEditor({
   applicationId,
   letterContent,
@@ -103,28 +60,10 @@ export function LetterEditor({
   >("idle");
   const [message, setMessage] = React.useState<string | null>(null);
   const [refinement, setRefinement] = React.useState("");
-  const [regenStatus, setRegenStatus] = React.useState<"idle" | "loading" | "error">("idle");
+  const [regenStatus, setRegenStatus] = React.useState<
+    "idle" | "loading" | "error"
+  >("idle");
   const [regenMessage, setRegenMessage] = React.useState<string | null>(null);
-
-  function updateCandidate(
-    field: keyof LetterDocumentContent["candidate"],
-    value: string,
-  ) {
-    setDraft((current) => ({
-      ...current,
-      candidate: {
-        ...current.candidate,
-        [field]: value,
-      },
-      signature:
-        field === "firstName" || field === "lastName"
-          ? {
-              ...current.signature,
-              [field]: value,
-            }
-          : current.signature,
-    }));
-  }
 
   async function saveLetter() {
     setStatus("saving");
@@ -170,7 +109,11 @@ export function LetterEditor({
       localFields: { email: "", lastName: "", phone: "" },
       promptProfile: {
         headline: "",
-        identity: { candidateToken: AI_CANDIDATE_TOKEN, city: "", firstName: "" },
+        identity: {
+          candidateToken: AI_CANDIDATE_TOKEN,
+          city: "",
+          firstName: "",
+        },
         profileSections: {
           certifications: [],
           education: [],
@@ -185,9 +128,16 @@ export function LetterEditor({
     };
 
     try {
-      const registry = loadProfileRegistryFromStorage(draft.candidate.email, localStorage);
+      const registry = loadProfileRegistryFromStorage(
+        draft.candidate.email,
+        localStorage,
+      );
       const selection = loadApplicationProfileSelection(localStorage);
-      const profile = getProfileForApplication(applicationId, registry, selection);
+      const profile = getProfileForApplication(
+        applicationId,
+        registry,
+        selection,
+      );
       if (profile) {
         requestBody = {
           localFields: {
@@ -257,7 +207,9 @@ export function LetterEditor({
         const payload = (await response.json().catch(() => ({}))) as {
           message?: string;
         };
-        throw new Error(payload.message ?? `L'export ${format.toUpperCase()} a echoue.`);
+        throw new Error(
+          payload.message ?? `L'export ${format.toUpperCase()} a echoue.`,
+        );
       }
 
       const contentType = response.headers.get("content-type") ?? "";
@@ -342,7 +294,9 @@ export function LetterEditor({
             onClick={() => void downloadDocument("pdf")}
             type="button"
           >
-            {status === "downloading" ? "Téléchargement…" : "Telecharger le PDF"}
+            {status === "downloading"
+              ? "Téléchargement…"
+              : "Telecharger le PDF"}
           </Button>
           <Button
             disabled={status === "saving" || status === "downloading"}
@@ -350,7 +304,9 @@ export function LetterEditor({
             type="button"
             variant="secondary"
           >
-            {status === "downloading" ? "Téléchargement…" : "Telecharger le DOCX"}
+            {status === "downloading"
+              ? "Téléchargement…"
+              : "Telecharger le DOCX"}
           </Button>
         </div>
       </div>
@@ -371,241 +327,15 @@ export function LetterEditor({
         </p>
       ) : null}
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Régénérer la LM</CardTitle>
-          <CardDescription>
-            Ajoutez un texte de raffinement pour enrichir la prochaine génération avec votre motivation spécifique.
-          </CardDescription>
-        </CardHeader>
-        <CardContent style={{ display: "grid", gap: "1rem" }}>
-          <div style={{ display: "grid", gap: "0.4rem" }}>
-            <label
-              htmlFor="letter-refinement"
-              style={{ color: "#1A1A18", fontSize: "0.875rem", fontWeight: 500 }}
-            >
-              Raffinement <span style={{ color: "#6B6860", fontWeight: 400 }}>(optionnel)</span>
-            </label>
-            <Textarea
-              id="letter-refinement"
-              maxLength={500}
-              placeholder="Ex. : Je suis particulièrement attiré par leur approche open-source…"
-              rows={3}
-              value={refinement}
-              onChange={(e) => setRefinement(e.target.value)}
-            />
-            <p style={{ color: "#6B6860", fontSize: "0.75rem", margin: 0, textAlign: "right" }}>
-              {refinement.length} / 500
-            </p>
-          </div>
-          <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
-            <Button
-              disabled={regenStatus === "loading"}
-              onClick={() => void regenerateLetter()}
-              type="button"
-              variant="secondary"
-            >
-              {regenStatus === "loading" ? "Régénération en cours…" : "Régénérer la LM"}
-            </Button>
-          </div>
-          {regenMessage ? (
-            <p
-              style={{
-                backgroundColor: regenStatus === "error" ? "#FBEAE7" : "#EEF6ED",
-                border: `1px solid ${regenStatus === "error" ? "#E5B8AF" : "#BFD6BF"}`,
-                borderRadius: "0.75rem",
-                color: regenStatus === "error" ? "#8A2C20" : "#2F5E3C",
-                lineHeight: 1.6,
-                margin: 0,
-                padding: "0.75rem 1rem",
-              }}
-            >
-              {regenMessage}
-            </p>
-          ) : null}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Historique des versions LM</CardTitle>
-          <CardDescription>
-            Chaque génération et chaque sauvegarde créent une version horodatée.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {documentVersions.length === 0 ? (
-            <p style={{ color: "#6B6860", margin: 0 }}>
-              Aucune version historisée.
-            </p>
-          ) : (
-            <ol style={{ display: "grid", gap: "0.5rem", margin: 0 }}>
-              {documentVersions.map((version) => (
-                <li key={version.id}>
-                  Version {version.versionNumber} -{" "}
-                  {version.source === "generation" ? "génération" : "sauvegarde"}{" "}
-                  - {new Date(version.createdAt).toLocaleString("fr-FR")}
-                </li>
-              ))}
-            </ol>
-          )}
-        </CardContent>
-      </Card>
-
-      <div style={{ display: "grid", gap: "1.5rem", gridTemplateColumns: "minmax(0, 1fr)" }}>
-        <div
-          style={{
-            display: "grid",
-            gap: "1.5rem",
-          }}
-        >
-          <div style={{ display: "grid", gap: "1.5rem" }}>
-            <SectionCard
-              description="Coordonnées réinjectées localement et destinataire de la candidature."
-              title="En-tête"
-            >
-              <Field id="candidate-first-name" label="Prénom">
-                <Input
-                  id="candidate-first-name"
-                  value={draft.candidate.firstName}
-                  onChange={(event) => updateCandidate("firstName", event.target.value)}
-                />
-              </Field>
-              <Field id="candidate-last-name" label="Nom">
-                <Input
-                  id="candidate-last-name"
-                  value={draft.candidate.lastName}
-                  onChange={(event) => updateCandidate("lastName", event.target.value)}
-                />
-              </Field>
-              <Field id="candidate-title" label="Titre">
-                <Input
-                  id="candidate-title"
-                  value={draft.candidate.title}
-                  onChange={(event) => updateCandidate("title", event.target.value)}
-                />
-              </Field>
-              <Field id="company-name" label="Entreprise">
-                <Input
-                  id="company-name"
-                  value={draft.company.name}
-                  onChange={(event) =>
-                    setDraft((current) => ({
-                      ...current,
-                      company: { ...current.company, name: event.target.value },
-                    }))
-                  }
-                />
-              </Field>
-              <Field id="company-city" label="Ville entreprise">
-                <Input
-                  id="company-city"
-                  value={draft.company.city}
-                  onChange={(event) =>
-                    setDraft((current) => ({
-                      ...current,
-                      company: { ...current.company, city: event.target.value },
-                    }))
-                  }
-                />
-              </Field>
-              <Field id="letter-date" label="Date">
-                <Input
-                  id="letter-date"
-                  value={draft.date}
-                  onChange={(event) =>
-                    setDraft((current) => ({ ...current, date: event.target.value }))
-                  }
-                />
-              </Field>
-              <Field id="letter-object" label="Objet">
-                <Input
-                  id="letter-object"
-                  value={draft.object}
-                  onChange={(event) =>
-                    setDraft((current) => ({ ...current, object: event.target.value }))
-                  }
-                />
-              </Field>
-            </SectionCard>
-
-            <SectionCard
-              description="Structure narrative attendue pour le template LM ATS."
-              title="Corps"
-            >
-              <Field id="paragraph-1" label="Paragraphe 1">
-                <Textarea
-                  id="paragraph-1"
-                  rows={5}
-                  value={draft.body.paragraph1}
-                  onChange={(event) =>
-                    setDraft((current) => ({
-                      ...current,
-                      body: { ...current.body, paragraph1: event.target.value },
-                    }))
-                  }
-                />
-              </Field>
-              <Field id="paragraph-2" label="Paragraphe 2">
-                <Textarea
-                  id="paragraph-2"
-                  rows={6}
-                  value={draft.body.paragraph2}
-                  onChange={(event) =>
-                    setDraft((current) => ({
-                      ...current,
-                      body: { ...current.body, paragraph2: event.target.value },
-                    }))
-                  }
-                />
-              </Field>
-              <Field id="paragraph-3" label="Paragraphe 3">
-                <Textarea
-                  id="paragraph-3"
-                  rows={5}
-                  value={draft.body.paragraph3}
-                  onChange={(event) =>
-                    setDraft((current) => ({
-                      ...current,
-                      body: { ...current.body, paragraph3: event.target.value },
-                    }))
-                  }
-                />
-              </Field>
-              <Field id="paragraph-4" label="Paragraphe 4 (conclusion + formule de politesse)">
-                <Textarea
-                  id="paragraph-4"
-                  rows={5}
-                  value={draft.body.paragraph4 ?? ""}
-                  onChange={(event) =>
-                    setDraft((current) => ({
-                      ...current,
-                      body: {
-                        ...current.body,
-                        paragraph4: event.target.value || undefined,
-                      },
-                    }))
-                  }
-                />
-              </Field>
-            </SectionCard>
-          </div>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Lecture seule sur mobile</CardTitle>
-              <CardDescription>
-                L'edition detaillee reste prioritairement desktop. Vous pouvez relire la lettre ici avant de revenir sur un ecran plus large.
-              </CardDescription>
-            </CardHeader>
-          </Card>
-        </div>
-
-        <div style={{ display: "grid", gap: "0.75rem" }}>
-          <h3 style={{ margin: 0 }}>Aperçu live</h3>
-          <LetterDocumentPreview letterContent={draft} />
-        </div>
-      </div>
+      <LetterRegenerationPanel
+        message={regenMessage}
+        onRefinementChange={setRefinement}
+        onRegenerate={() => void regenerateLetter()}
+        refinement={refinement}
+        status={regenStatus}
+      />
+      <LetterVersionHistory versions={documentVersions} />
+      <LetterEditorWorkspace draft={draft} onChange={setDraft} />
     </div>
   );
 }

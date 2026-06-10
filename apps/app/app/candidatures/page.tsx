@@ -1,7 +1,11 @@
 import React from "react";
 import { cookies } from "next/headers";
-import { AppShell, Card, CardContent, CardDescription, CardHeader, CardTitle } from "@cvforge/ui";
-import type { ApplicationsKpiSummary, ApplicationStatus, DraftApplication } from "@cvforge/types";
+import { AppShell } from "@cvforge/ui";
+import type {
+  ApplicationsKpiSummary,
+  ApplicationStatus,
+  DraftApplication,
+} from "@cvforge/types";
 import { getServerApiUrl } from "../auth-config";
 import { requireSession } from "../auth/session";
 import { getAppNavigation } from "../content";
@@ -31,7 +35,9 @@ async function fetchApplications() {
     throw new Error("Impossible de recuperer les candidatures.");
   }
 
-  const payload = (await response.json()) as { applications: DraftApplication[] };
+  const payload = (await response.json()) as {
+    applications: DraftApplication[];
+  };
 
   return payload.applications;
 }
@@ -48,7 +54,9 @@ async function fetchApplicationsSummary() {
     throw new Error("Impossible de recuperer le resume des candidatures.");
   }
 
-  const payload = (await response.json()) as { summary: ApplicationsKpiSummary };
+  const payload = (await response.json()) as {
+    summary: ApplicationsKpiSummary;
+  };
 
   return payload.summary;
 }
@@ -88,8 +96,37 @@ async function resolveSearchParams(
   return await searchParams;
 }
 
-function renderStatusCount(summary: ApplicationsKpiSummary, status: ApplicationStatus) {
+function renderStatusCount(
+  summary: ApplicationsKpiSummary,
+  status: ApplicationStatus,
+) {
   return summary.statusCounts[status];
+}
+
+function SummaryItem({
+  label,
+  value,
+  detail,
+}: {
+  detail?: string;
+  label: string;
+  value: React.ReactNode;
+}) {
+  return (
+    <div style={{ display: "grid", gap: "0.2rem", minWidth: 0 }}>
+      <span style={{ color: "#6B6860", fontSize: "0.78rem", fontWeight: 600 }}>
+        {label}
+      </span>
+      <strong
+        style={{ color: "#1A1A18", fontSize: "1.35rem", lineHeight: 1.15 }}
+      >
+        {value}
+      </strong>
+      {detail ? (
+        <span style={{ color: "#6B6860", fontSize: "0.78rem" }}>{detail}</span>
+      ) : null}
+    </div>
+  );
 }
 
 export default async function ApplicationsPage({
@@ -117,52 +154,37 @@ export default async function ApplicationsPage({
       userEmail={session.email}
       userRole={session.role}
     >
-      <div style={{ display: "grid", gap: "1.5rem" }}>
-        <div
+      <div style={{ display: "grid", gap: "1rem" }}>
+        <section
+          aria-label="Synthèse des candidatures"
           style={{
             display: "grid",
-            gap: "1rem",
-            gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+            gap: "0.75rem",
+            gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
+            padding: "0.25rem 0 1rem",
+            borderBottom: "1px solid #D8D2C8",
           }}
         >
-          <Card>
-            <CardHeader>
-              <CardDescription>Total candidatures</CardDescription>
-              <CardTitle>{summary.totalCount}</CardTitle>
-            </CardHeader>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardDescription>Taux de réponse</CardDescription>
-              <CardTitle>{summary.responseRate}%</CardTitle>
-            </CardHeader>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardDescription>Réponses obtenues</CardDescription>
-              <CardTitle>{summary.respondedCount}</CardTitle>
-            </CardHeader>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardDescription>Pipeline par statut</CardDescription>
-              <CardTitle>
-                {renderStatusCount(summary, "draft")} brouillon
-                {renderStatusCount(summary, "draft") > 1 ? "s" : ""}
-              </CardTitle>
-            </CardHeader>
-            <CardContent style={{ color: "#6B6860", display: "grid", gap: "0.4rem" }}>
-              <span>Envoyées: {renderStatusCount(summary, "sent")}</span>
-              <span>
-                Entretiens: {renderStatusCount(summary, "interview_scheduled")}
-              </span>
-              <span>Refus: {renderStatusCount(summary, "rejected")}</span>
-              <span>
-                Offres reçues: {renderStatusCount(summary, "offer_received")}
-              </span>
-            </CardContent>
-          </Card>
-        </div>
+          <SummaryItem label="Total" value={summary.totalCount} />
+          <SummaryItem
+            label="Taux de réponse"
+            value={`${summary.responseRate}%`}
+          />
+          <SummaryItem label="Réponses" value={summary.respondedCount} />
+          <SummaryItem
+            detail={`${renderStatusCount(summary, "sent")} envoyées · ${renderStatusCount(summary, "interview_scheduled")} entretiens`}
+            label="À préparer"
+            value={renderStatusCount(summary, "draft")}
+          />
+          <SummaryItem
+            detail={`${renderStatusCount(summary, "rejected")} refus · ${renderStatusCount(summary, "offer_received")} offres`}
+            label="Décisions"
+            value={
+              renderStatusCount(summary, "rejected") +
+              renderStatusCount(summary, "offer_received")
+            }
+          />
+        </section>
 
         {message ? (
           <p
@@ -212,15 +234,11 @@ export default async function ApplicationsPage({
           </p>
         ) : null}
 
-        <Card>
-          <CardContent style={{ paddingTop: "1.25rem" }}>
-            <CandidaturesTable
-              applications={applications}
-              sessionEmail={session.email}
-              submittedUrl={submittedUrl}
-            />
-          </CardContent>
-        </Card>
+        <CandidaturesTable
+          applications={applications}
+          sessionEmail={session.email}
+          submittedUrl={submittedUrl}
+        />
       </div>
     </AppShell>
   );

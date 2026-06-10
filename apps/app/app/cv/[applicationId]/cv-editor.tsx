@@ -82,7 +82,9 @@ export function CvEditor({
     } catch (error) {
       setStatus("error");
       setMessage(
-        error instanceof Error ? error.message : "La sauvegarde du CV a échoué.",
+        error instanceof Error
+          ? error.message
+          : "La sauvegarde du CV a échoué.",
       );
     }
   }
@@ -145,7 +147,10 @@ export function CvEditor({
   }
 
   return (
-    <section aria-label="Editeur du CV" style={{ display: "grid", gap: "1.5rem" }}>
+    <section
+      aria-label="Editeur du CV"
+      style={{ display: "grid", gap: "1.5rem" }}
+    >
       <div
         style={{
           alignItems: "center",
@@ -162,7 +167,14 @@ export function CvEditor({
             rendu ATS dans l'aperçu.
           </p>
         </div>
-        <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: "0.75rem" }}>
+        <div
+          style={{
+            alignItems: "center",
+            display: "flex",
+            flexWrap: "wrap",
+            gap: "0.75rem",
+          }}
+        >
           {status === "saved" ? <Badge>Sauvegardé</Badge> : null}
           <Button
             disabled={status === "saving" || status === "downloading"}
@@ -185,7 +197,9 @@ export function CvEditor({
             onClick={() => void downloadDocument("pdf")}
             type="button"
           >
-            {status === "downloading" ? "Téléchargement…" : "Télécharger le PDF"}
+            {status === "downloading"
+              ? "Téléchargement…"
+              : "Télécharger le PDF"}
           </Button>
           <Button
             disabled={status === "saving" || status === "downloading"}
@@ -193,7 +207,9 @@ export function CvEditor({
             type="button"
             variant="secondary"
           >
-            {status === "downloading" ? "Téléchargement…" : "Télécharger le DOCX"}
+            {status === "downloading"
+              ? "Téléchargement…"
+              : "Télécharger le DOCX"}
           </Button>
         </div>
       </div>
@@ -215,35 +231,50 @@ export function CvEditor({
         </p>
       ) : null}
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Historique des versions CV</CardTitle>
-          <CardDescription>
-            Chaque génération et chaque sauvegarde créent une version horodatée.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {versions.length === 0 ? (
-            <p style={{ color: "#6B6860", margin: 0 }}>
-              Aucune version historisée.
-            </p>
-          ) : (
-            <ol style={{ display: "grid", gap: "0.5rem", margin: 0 }}>
-              {versions.map((version) => (
-                <li key={version.id}>
-                  Version {version.versionNumber} -{" "}
-                  {version.source === "generation" ? "génération" : "sauvegarde"}{" "}
-                  - {new Date(version.createdAt).toLocaleString("fr-FR")}
-                </li>
-              ))}
-            </ol>
-          )}
-        </CardContent>
-      </Card>
+      <details>
+        <summary style={{ cursor: "pointer", fontWeight: 600 }}>
+          Historique des versions ({versions.length})
+        </summary>
+        <Card style={{ marginTop: "0.75rem" }}>
+          <CardHeader>
+            <CardTitle>Historique des versions CV</CardTitle>
+            <CardDescription>
+              Chaque génération et chaque sauvegarde créent une version
+              horodatée.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {versions.length === 0 ? (
+              <p style={{ color: "#6B6860", margin: 0 }}>
+                Aucune version historisée.
+              </p>
+            ) : (
+              <ol style={{ display: "grid", gap: "0.5rem", margin: 0 }}>
+                {versions.map((version) => (
+                  <li key={version.id}>
+                    Version {version.versionNumber} -{" "}
+                    {version.source === "generation"
+                      ? "génération"
+                      : "sauvegarde"}{" "}
+                    - {new Date(version.createdAt).toLocaleString("fr-FR")}
+                  </li>
+                ))}
+              </ol>
+            )}
+          </CardContent>
+        </Card>
+      </details>
 
-      <div style={{ display: "grid", gap: "1.5rem", gridTemplateColumns: "minmax(0, 1fr)" }}>
+      <div className="cvforge-cv-editor__split">
         <CvEditorFields draft={draft} onChange={setDraft} />
-        <div style={{ display: "grid", gap: "0.75rem" }}>
+        <div
+          style={{
+            display: "grid",
+            gap: "0.75rem",
+            position: "sticky",
+            top: "4.5rem",
+          }}
+        >
           <h3 style={{ margin: 0 }}>Aperçu live</h3>
           <CvDocumentPreview cvContent={draft} />
         </div>

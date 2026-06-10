@@ -42,7 +42,7 @@ function OffreTab({ application }: { application: DraftApplication }) {
         {extracted.summary}
       </p>
 
-      {(extracted.location || extracted.contractType || extracted.salaryRange) ? (
+      {extracted.location || extracted.contractType || extracted.salaryRange ? (
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
           {extracted.location ? (
             <span style={chipStyle}>📍 {extracted.location}</span>
@@ -61,7 +61,9 @@ function OffreTab({ application }: { application: DraftApplication }) {
           <h3 style={sectionHeadingStyle}>Responsabilités</h3>
           <ul style={listStyle}>
             {extracted.responsibilities.map((r, i) => (
-              <li key={i} style={{ marginBottom: "0.3rem" }}>{r}</li>
+              <li key={i} style={{ marginBottom: "0.3rem" }}>
+                {r}
+              </li>
             ))}
           </ul>
         </div>
@@ -72,7 +74,9 @@ function OffreTab({ application }: { application: DraftApplication }) {
           <h3 style={sectionHeadingStyle}>Prérequis</h3>
           <ul style={listStyle}>
             {extracted.requirements.map((r, i) => (
-              <li key={i} style={{ marginBottom: "0.3rem" }}>{r}</li>
+              <li key={i} style={{ marginBottom: "0.3rem" }}>
+                {r}
+              </li>
             ))}
           </ul>
         </div>
@@ -105,11 +109,16 @@ function RefinementField({
 }) {
   return (
     <div style={{ display: "grid", gap: "0.35rem" }}>
-      <label htmlFor="lm-refinement" style={{ color: "#1A1A18", fontSize: "0.875rem", fontWeight: 500 }}>
-        Raffinement <span style={{ color: "#6B6860", fontWeight: 400 }}>(optionnel)</span>
+      <label
+        htmlFor="lm-refinement"
+        style={{ color: "#1A1A18", fontSize: "0.875rem", fontWeight: 500 }}
+      >
+        Raffinement{" "}
+        <span style={{ color: "#6B6860", fontWeight: 400 }}>(optionnel)</span>
       </label>
       <p style={{ color: "#6B6860", fontSize: "0.8rem", margin: 0 }}>
-        Précisez votre motivation spécifique pour ce poste. Ce texte enrichit la génération de la LM.
+        Précisez votre motivation spécifique pour ce poste. Ce texte enrichit la
+        génération de la LM.
       </p>
       <Textarea
         id="lm-refinement"
@@ -119,7 +128,14 @@ function RefinementField({
         value={value}
         onChange={(e) => onChange(e.target.value)}
       />
-      <p style={{ color: "#6B6860", fontSize: "0.75rem", margin: 0, textAlign: "right" }}>
+      <p
+        style={{
+          color: "#6B6860",
+          fontSize: "0.75rem",
+          margin: 0,
+          textAlign: "right",
+        }}
+      >
         {value.length} / {REFINEMENT_MAX}
       </p>
     </div>
@@ -141,16 +157,29 @@ function CvTab({
           <Link href={`/cv/${id}`}>
             <Button type="button">Éditer le CV</Button>
           </Link>
-          <a href={`/cv/${id}/pdf`} rel="noopener noreferrer" style={downloadLinkStyle} target="_blank">
+          <a
+            href={`/cv/${id}/pdf`}
+            rel="noopener noreferrer"
+            style={downloadLinkStyle}
+            target="_blank"
+          >
             Télécharger PDF
           </a>
-          <a href={`/cv/${id}/docx`} rel="noopener noreferrer" style={downloadLinkStyle} target="_blank">
+          <a
+            href={`/cv/${id}/docx`}
+            rel="noopener noreferrer"
+            style={downloadLinkStyle}
+            target="_blank"
+          >
             Télécharger DOCX
           </a>
         </div>
       )}
       <div style={{ display: "grid", gap: "0.75rem" }}>
-        <ApplicationProfileSelector applicationId={id} sessionEmail={sessionEmail} />
+        <ApplicationProfileSelector
+          applicationId={id}
+          sessionEmail={sessionEmail}
+        />
         <GenerateCvButton applicationId={id} sessionEmail={sessionEmail} />
       </div>
     </div>
@@ -173,18 +202,35 @@ function LmTab({
           <Link href={`/letters/${id}`}>
             <Button type="button">Éditer la LM</Button>
           </Link>
-          <a href={`/letters/${id}/pdf`} rel="noopener noreferrer" style={downloadLinkStyle} target="_blank">
+          <a
+            href={`/letters/${id}/pdf`}
+            rel="noopener noreferrer"
+            style={downloadLinkStyle}
+            target="_blank"
+          >
             Télécharger PDF
           </a>
-          <a href={`/letters/${id}/docx`} rel="noopener noreferrer" style={downloadLinkStyle} target="_blank">
+          <a
+            href={`/letters/${id}/docx`}
+            rel="noopener noreferrer"
+            style={downloadLinkStyle}
+            target="_blank"
+          >
             Télécharger DOCX
           </a>
         </div>
       )}
       <div style={{ display: "grid", gap: "0.75rem" }}>
-        <ApplicationProfileSelector applicationId={id} sessionEmail={sessionEmail} />
+        <ApplicationProfileSelector
+          applicationId={id}
+          sessionEmail={sessionEmail}
+        />
         <RefinementField value={refinement} onChange={setRefinement} />
-        <GenerateLetterButton applicationId={id} refinement={refinement} sessionEmail={sessionEmail} />
+        <GenerateLetterButton
+          applicationId={id}
+          refinement={refinement}
+          sessionEmail={sessionEmail}
+        />
       </div>
     </div>
   );
@@ -206,12 +252,26 @@ function InterviewsTab({ application }: { application: DraftApplication }) {
         </p>
       ) : (
         <div style={{ overflowX: "auto" }}>
-          <table style={{ borderCollapse: "collapse", fontSize: "0.9rem", width: "100%" }}>
+          <table
+            style={{
+              borderCollapse: "collapse",
+              fontSize: "0.9rem",
+              width: "100%",
+            }}
+          >
             <thead>
-              <tr style={{ borderBottom: "2px solid #D8D2C8", textAlign: "left" }}>
-                <th scope="col" style={thStyle}>Date</th>
-                <th scope="col" style={thStyle}>Score</th>
-                <th scope="col" style={thStyle}>Résumé</th>
+              <tr
+                style={{ borderBottom: "2px solid #D8D2C8", textAlign: "left" }}
+              >
+                <th scope="col" style={thStyle}>
+                  Date
+                </th>
+                <th scope="col" style={thStyle}>
+                  Score
+                </th>
+                <th scope="col" style={thStyle}>
+                  Résumé
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -221,7 +281,9 @@ function InterviewsTab({ application }: { application: DraftApplication }) {
                   <td style={{ ...tdStyle, fontWeight: 600, color: "#7A5A26" }}>
                     {report.overallScore}/100
                   </td>
-                  <td style={{ ...tdStyle, color: "#6B6860", maxWidth: "320px" }}>
+                  <td
+                    style={{ ...tdStyle, color: "#6B6860", maxWidth: "320px" }}
+                  >
                     {report.summary ?? "—"}
                   </td>
                 </tr>
@@ -302,7 +364,7 @@ export function CandidatureDetailTabs({
   }
 
   return (
-    <div style={{ display: "grid", gap: "1.5rem" }}>
+    <div style={{ display: "grid", gap: "1rem" }}>
       <CandidatureDetailHeader
         application={application}
         statusError={statusError}
@@ -341,13 +403,15 @@ export function CandidatureDetailTabs({
                 style={{
                   backgroundColor: "transparent",
                   border: "none",
-                  borderBottom: isActive ? "2px solid #1A1A18" : "2px solid transparent",
+                  borderBottom: isActive
+                    ? "2px solid #1A1A18"
+                    : "2px solid transparent",
                   color: isActive ? "#1A1A18" : "#6B6860",
                   cursor: "pointer",
                   fontSize: "0.9rem",
                   fontWeight: isActive ? 600 : 400,
                   outline: "none",
-                  padding: "0.85rem 1.25rem",
+                  padding: "0.7rem 1rem",
                   whiteSpace: "nowrap",
                 }}
                 tabIndex={isActive ? 0 : -1}
@@ -367,13 +431,24 @@ export function CandidatureDetailTabs({
             id={`tabpanel-${tab.id}`}
             key={tab.id}
             role="tabpanel"
-            style={{ display: activeTab === tab.id ? "block" : "none", padding: "1.5rem" }}
+            style={{
+              display: activeTab === tab.id ? "block" : "none",
+              padding: "1rem 1.25rem",
+            }}
           >
             {tab.id === "offre" ? <OffreTab application={application} /> : null}
-            {tab.id === "cv" ? <CvTab application={application} sessionEmail={sessionEmail} /> : null}
-            {tab.id === "lm" ? <LmTab application={application} sessionEmail={sessionEmail} /> : null}
-            {tab.id === "interviews" ? <InterviewsTab application={application} /> : null}
-            {tab.id === "historique" ? <CandidatureHistoryTab application={application} /> : null}
+            {tab.id === "cv" ? (
+              <CvTab application={application} sessionEmail={sessionEmail} />
+            ) : null}
+            {tab.id === "lm" ? (
+              <LmTab application={application} sessionEmail={sessionEmail} />
+            ) : null}
+            {tab.id === "interviews" ? (
+              <InterviewsTab application={application} />
+            ) : null}
+            {tab.id === "historique" ? (
+              <CandidatureHistoryTab application={application} />
+            ) : null}
           </div>
         ))}
       </div>

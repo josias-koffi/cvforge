@@ -655,3 +655,10 @@
 - **Why**: La generation existante imposait 3 categories et 6-10 items, donc un resultat rigide et souvent incoherent.
 - **Learned**: Accepter `category` en entree tout en stockant `label` rend la sortie IA tolerante sans migrer le modele interne.
 - **Open**: Corriger les exclusions des gates globales de format et couverture.
+
+## 2026-06-10 — rationalisation frontend desktop (stage 03 · [[workflows/runs/analyze-design-dev-review-20260610150733]])
+- **Context**: ad hoc · [[workflows/runs/analyze-design-dev-review-20260610150733/03-implement]]
+- **Did**: Ajouté les redirections dashboard, densifié le shell/candidatures et converti les éditeurs CV/LM en split view.
+- **Why**: Le flux principal et les documents sont utilisés sur ordinateur; l'ancienne composition mobile-first créait trop de défilement.
+- **Learned**: Le split CSS existant pouvait être réutilisé; l'éditeur LM devait être découpé avant toute évolution.
+- **Open**: Décider du devenir du wizard onboarding sans route principale.

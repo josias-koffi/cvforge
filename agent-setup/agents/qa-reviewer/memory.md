@@ -358,3 +358,10 @@
 - **Why**: La sortie IA devait rester exploitable meme avec une cle `category` ou des doublons.
 - **Learned**: La couverture source CV est conforme, mais le total racine est pollue par `dist` et `.next`.
 - **Open**: Les warnings React `act(...)` interview et les gates globales restent a traiter.
+
+## 2026-06-10 — rationalisation frontend desktop (stage 04 · [[workflows/runs/analyze-design-dev-review-20260610150733]])
+- **Context**: ad hoc · [[workflows/runs/analyze-design-dev-review-20260610150733/04-review]]
+- **Did**: Vérifié redirections, sidebar, densité, candidatures, split views, tests, couverture, lint et builds.
+- **Why**: La refonte touche le parcours d'entrée et plusieurs surfaces utilisateur critiques.
+- **Learned**: Deux tests ciblés sur les sections LM maintiennent la couverture globale au-dessus du seuil.
+- **Open**: Aucun test visuel navigateur automatisé; warnings `act(...)` interview préexistants.
