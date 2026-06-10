@@ -12,13 +12,13 @@
   "specialized_workflows": [],
   "specialized_skills": [],
   "clarifications_pending": [],
-  "last_updated": "2026-06-03T15:08:00.000Z",
+  "last_updated": "2026-06-03T15:26:31+02:00",
   "last_workflow_run": "analyze-design-dev-review",
   "last_workflow_stage": "tech-lead",
   "last_workflow_result": "passed",
   "active_workflow_run": null,
   "last_adhoc_run": "analyze-design-dev-review-20260603145814",
-  "last_task_completed": "retrait Puck Editor",
+  "last_task_completed": "diagnostic deploy-cvforge GHCR pull reset",
   "workflow_runs": [
     {
       "run_id": "20260419-191212-us-006",
