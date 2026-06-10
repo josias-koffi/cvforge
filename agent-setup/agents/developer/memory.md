@@ -647,3 +647,11 @@
 - **Why**: La première tentative pendant l'upgrade avait échoué à cause d'un jeton npm invalide.
 - **Learned**: Le CLI installe désormais le skill partagé sous `.agents/skills/impeccable`; l'ancienne source `anthropics/claude-code#plugins/frontend-design` n'est plus une branche Git valide.
 - **Open**: Mettre à jour le framework `upgrade-project` quand une nouvelle source officielle pour `frontend-design` sera disponible.
+
+## 2026-06-10 — structuration predictive des competences CV (stage 03 · [[workflows/runs/analyze-design-dev-review-20260610104253]])
+
+- **Context**: ad hoc · [[workflows/runs/analyze-design-dev-review-20260610104253/03-implement]]
+- **Did**: Extrait prompt et normaliseurs, adapte le contrat de competences, ajoute limites, alias, deduplication et tests.
+- **Why**: La generation existante imposait 3 categories et 6-10 items, donc un resultat rigide et souvent incoherent.
+- **Learned**: Accepter `category` en entree tout en stockant `label` rend la sortie IA tolerante sans migrer le modele interne.
+- **Open**: Corriger les exclusions des gates globales de format et couverture.

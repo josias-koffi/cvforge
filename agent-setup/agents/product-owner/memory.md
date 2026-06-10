@@ -392,3 +392,11 @@
 - **Why**: Puck était trop lourd pour le besoin actuel et contredisait la direction UX redesign déjà identifiée.
 - **Learned**: Le contrat template peut rester un layout JSON simple sans dépendre du runtime Puck.
 - **Open**: Mettre à jour la vision manuellement si elle doit refléter cette décision durablement.
+
+## 2026-06-10 — structuration predictive des competences CV (stage 01 · [[workflows/runs/analyze-design-dev-review-20260610104253]])
+
+- **Context**: ad hoc · [[workflows/runs/analyze-design-dev-review-20260610104253/01-analyze]]
+- **Did**: Cadre la generation a 3-5 categories metier, 6 items maximum, sans invention ni duplication.
+- **Why**: Le prompt existant imposait une repartition trop rigide et contradictoire avec le rendu attendu.
+- **Learned**: Le contrat interne `label/items` peut rester stable tout en acceptant `category/items` en entree IA.
+- **Open**: Une competence omise par le modele ne peut pas etre restauree sans second passage IA.

@@ -322,6 +322,7 @@
 - **Open**: None.
 
 ## 2026-06-01 — profile CRUD + border-radius (stage 02)
+
 - **Did**: Spécifié l'architecture CRUD en 3 routes (listing table, création rapide, édition complète). Défini les nouvelles valeurs radius (sm→0.25rem, md→0.375rem, lg→0.5rem) avec justification éditorial.
 - **Why**: La page profil monolithique cachait la structure multi-profils. Réduire les radius renforce le caractère éditorial "Papier & Crayon".
 - **Learned**: La réduction de ~60% des border-radius donne un look sensiblement plus professionnel et moins "app mobile" sans casser le système de tokens.
@@ -342,3 +343,11 @@
 - **Why**: Le besoin réel est l'édition ciblée de contenu, pas un canvas WYSIWYG lourd.
 - **Learned**: Le registre de blocs partagé suffit comme source d'options admin et de rendu preview.
 - **Open**: Le fichier LM reste à splitter si une prochaine évolution le touche.
+
+## 2026-06-10 — structuration predictive des competences CV (stage 02 · [[workflows/runs/analyze-design-dev-review-20260610104253]])
+
+- **Context**: ad hoc · [[workflows/runs/analyze-design-dev-review-20260610104253/02-design]]
+- **Did**: Valide un skip UI et defini la compatibilite `category` vers `label` avec fallback plat.
+- **Why**: Le rendu categorise existe deja; le risque porte sur le contrat et la conservation des donnees.
+- **Learned**: La sauvegarde manuelle doit preserver les categories meme si l'editeur expose encore les listes plates.
+- **Open**: None.

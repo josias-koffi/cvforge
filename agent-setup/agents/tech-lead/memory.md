@@ -420,3 +420,11 @@
 - **Why**: Le changement réduit le poids frontend sans introduire de nouveau framework ni migration de stockage.
 - **Learned**: Renommer le contrat en `TemplateLayoutData` clarifie qu'il n'est plus couplé à un éditeur tiers.
 - **Open**: La vision projet contient encore les anciennes mentions Puck et devra être corrigée par décision explicite.
+
+## 2026-06-10 — structuration predictive des competences CV (finalization · [[workflows/runs/analyze-design-dev-review-20260610104253]])
+
+- **Context**: ad hoc · [[workflows/runs/analyze-design-dev-review-20260610104253/final-summary]]
+- **Did**: Signe le decoupage prompt/normalisation et le contrat tolerant `category` vers `label`.
+- **Why**: Le changement reste dans la couche application IA, sans nouvelle dependance ni migration de stockage.
+- **Learned**: Une temperature 0.1 et une normalisation defensive completent le prompt pour une sortie plus previsible.
+- **Open**: Exclure les artefacts generes des gates globales de format et couverture.
