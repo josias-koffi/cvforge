@@ -10,6 +10,7 @@ import {
   loadProfileRegistryFromStorage,
   saveProfileRegistryToStorage,
 } from "../base-profile";
+import { pushRemoteProfileRegistry } from "../profile-sync";
 
 /* v8 ignore start -- client-side form covered by e2e; localStorage interaction covered by base-profile.test.ts */
 function getStorage() {
@@ -42,14 +43,14 @@ export function ProfileCreateForm({ sessionEmail }: { sessionEmail: string }) {
     newProfile.identity.lastName = lastName;
     newProfile.identity.email = email;
 
-    saveProfileRegistryToStorage(
-      {
-        activeProfileId: newProfile.id,
-        profiles: [...registry.profiles, newProfile],
-        version: 2,
-      },
-      storage,
-    );
+    const newRegistry = {
+      activeProfileId: newProfile.id,
+      profiles: [...registry.profiles, newProfile],
+      version: 2 as const,
+    };
+
+    saveProfileRegistryToStorage(newRegistry, storage);
+    void pushRemoteProfileRegistry(newRegistry);
 
     router.push(`/profile/${newProfile.id}/edit`);
   }
