@@ -10,6 +10,7 @@ import {
   loadProfileRegistryFromStorage,
   saveProfileRegistryToStorage,
 } from "./base-profile";
+import { pushRemoteProfileRegistry, syncProfileRegistryOnLoad } from "./profile-sync";
 
 /* v8 ignore start -- localStorage-driven listing covered by page-level render tests */
 function getStorage() {
@@ -27,8 +28,11 @@ export function ProfileList({ sessionEmail }: { sessionEmail: string }) {
   const [hydrated, setHydrated] = React.useState(false);
 
   React.useEffect(() => {
-    setRegistry(loadProfileRegistryFromStorage(sessionEmail, getStorage()));
+    const local = loadProfileRegistryFromStorage(sessionEmail, getStorage());
+    setRegistry(local);
     setHydrated(true);
+
+    void syncProfileRegistryOnLoad(sessionEmail, getStorage(), local, setRegistry);
   }, [sessionEmail]);
 
   React.useEffect(() => {
@@ -37,6 +41,7 @@ export function ProfileList({ sessionEmail }: { sessionEmail: string }) {
     }
 
     saveProfileRegistryToStorage(registry, getStorage());
+    void pushRemoteProfileRegistry(registry);
   }, [hydrated, registry]);
 
   const activateProfile = React.useCallback((profileId: string) => {
