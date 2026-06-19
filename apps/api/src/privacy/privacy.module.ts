@@ -8,6 +8,8 @@ import { resolveCreditsConfig } from "../credits/credits.config";
 import { FileCreditLedgerStore } from "../credits/credits.store";
 import { resolveNotificationsConfig } from "../notifications/notifications.config";
 import { FileNotificationsStore } from "../notifications/notifications.store";
+import { resolveProfilesConfig } from "../profiles/profiles.config";
+import { FileProfilesStore } from "../profiles/profiles.store";
 import { PrivacyController } from "./privacy.controller";
 import { PrivacyService } from "./privacy.service";
 
@@ -27,6 +29,7 @@ import { PrivacyService } from "./privacy.service";
           new FileNotificationsStore(
             resolveNotificationsConfig(process.env).stateFilePath,
           ),
+          new FileProfilesStore(resolveProfilesConfig(process.env).stateFilePath),
         ),
     },
   ],

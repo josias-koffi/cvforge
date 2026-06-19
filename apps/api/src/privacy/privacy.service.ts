@@ -7,6 +7,7 @@ import { FileApplicationsStore } from "../applications/applications.store";
 import { FileAuthAccountStore } from "../auth/auth-account-store";
 import { FileCreditLedgerStore } from "../credits/credits.store";
 import { FileNotificationsStore } from "../notifications/notifications.store";
+import { FileProfilesStore } from "../profiles/profiles.store";
 import { PRIVACY_RETENTION_POLICY } from "./privacy-retention-policy";
 import type {
   PrivacyDeletionSummary,
@@ -24,6 +25,7 @@ export class PrivacyService {
     private readonly applicationsStore: FileApplicationsStore,
     private readonly creditsStore: FileCreditLedgerStore,
     private readonly notificationsStore: FileNotificationsStore,
+    private readonly profilesStore: FileProfilesStore,
   ) {}
 
   getRetentionPolicy() {
@@ -45,6 +47,7 @@ export class PrivacyService {
       notifications: this.notificationsStore.listByUserEmail(normalizedEmail),
       ownedApplications: this.applicationsStore.listByUserEmail(normalizedEmail),
       ownedCredits: this.creditsStore.listEntriesForUser(normalizedEmail),
+      ownedProfiles: this.profilesStore.findByUserEmail(normalizedEmail),
       retentionPolicy: PRIVACY_RETENTION_POLICY,
       userEmail: normalizedEmail,
     };
@@ -70,6 +73,7 @@ export class PrivacyService {
 
     const deletedApplications = this.applicationsStore.deleteByUserEmail(normalizedEmail);
     const deletedNotifications = this.notificationsStore.deleteByUserEmail(normalizedEmail);
+    const deletedProfiles = this.profilesStore.deleteByUserEmail(normalizedEmail);
     const deletedCreditEntries = this.creditsStore.deleteByUserEmail(normalizedEmail);
     const scrubbedAdminReferences =
       this.creditsStore.anonymizeAdminReferences(normalizedEmail);
@@ -82,6 +86,7 @@ export class PrivacyService {
       deletedCreditEntries,
       deletedInvitations: authSummary.invitationsRemoved,
       deletedNotifications,
+      deletedProfiles,
       scrubbedThirdPartyReferences:
         scrubbedAdminReferences + authSummary.invitationsScrubbed,
       userEmail: normalizedEmail,
