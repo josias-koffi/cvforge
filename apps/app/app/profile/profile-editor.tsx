@@ -30,6 +30,7 @@ import {
   ProjectFields,
   SectionCard,
 } from "./profile-entry-fields";
+import { pushRemoteProfileRegistry, syncProfileRegistryOnLoad } from "./profile-sync";
 
 /* v8 ignore start -- static profile editor markup is covered by page-level render tests; profile state lives in base-profile.ts */
 function getStorage() {
@@ -66,8 +67,11 @@ export function ProfileEditor({
   const [hydrated, setHydrated] = React.useState(false);
 
   React.useEffect(() => {
-    setRegistry(loadProfileRegistryFromStorage(sessionEmail, getStorage()));
+    const local = loadProfileRegistryFromStorage(sessionEmail, getStorage());
+    setRegistry(local);
     setHydrated(true);
+
+    void syncProfileRegistryOnLoad(sessionEmail, getStorage(), local, setRegistry);
   }, [sessionEmail]);
 
   React.useEffect(() => {
@@ -76,6 +80,12 @@ export function ProfileEditor({
     }
 
     saveProfileRegistryToStorage(registry, getStorage());
+
+    const timer = setTimeout(() => {
+      void pushRemoteProfileRegistry(registry);
+    }, 1500);
+
+    return () => clearTimeout(timer);
   }, [hydrated, registry]);
 
   const profile = registry.profiles.find((p) => p.id === profileId) ?? registry.profiles[0];
