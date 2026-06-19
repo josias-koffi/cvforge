@@ -1,5 +1,6 @@
 import type { AuthAccountRecord, AuthInvitation } from "../auth/auth.types";
 import type { StoredApplication } from "../applications/applications.types";
+import type { StoredProfileRegistry } from "../profiles/profiles.types";
 import type { CreditLedgerEntry } from "@cvforge/types";
 import type { InAppNotification } from "@cvforge/types";
 
@@ -31,6 +32,7 @@ export type PrivacyExportPayload = {
   };
   ownedApplications: StoredApplication[];
   ownedCredits: CreditLedgerEntry[];
+  ownedProfiles: StoredProfileRegistry | null;
   notifications: InAppNotification[];
   adminGrantReferences: CreditLedgerEntry[];
   retentionPolicy: PrivacyRetentionPolicy;
@@ -42,6 +44,7 @@ export type PrivacyDeletionSummary = {
   deletedAuthAccount: boolean;
   deletedCreditEntries: number;
   deletedNotifications: number;
+  deletedProfiles: number;
   deletedInvitations: number;
   scrubbedThirdPartyReferences: number;
   userEmail: string;

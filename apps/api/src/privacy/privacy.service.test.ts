@@ -4,6 +4,7 @@ import { FileApplicationsStore } from "../applications/applications.store";
 import { FileAuthAccountStore } from "../auth/auth-account-store";
 import { FileCreditLedgerStore } from "../credits/credits.store";
 import { FileNotificationsStore } from "../notifications/notifications.store";
+import { FileProfilesStore } from "../profiles/profiles.store";
 import { PrivacyService } from "./privacy.service";
 
 function createService(testId: string) {
@@ -11,16 +12,19 @@ function createService(testId: string) {
   const applicationsPath = `/tmp/${testId}-applications.json`;
   const creditsPath = `/tmp/${testId}-credits.json`;
   const notificationsPath = `/tmp/${testId}-notifications.json`;
+  const profilesPath = `/tmp/${testId}-profiles.json`;
 
   rmSync(authPath, { force: true });
   rmSync(applicationsPath, { force: true });
   rmSync(creditsPath, { force: true });
   rmSync(notificationsPath, { force: true });
+  rmSync(profilesPath, { force: true });
 
   const authStore = new FileAuthAccountStore(authPath);
   const applicationsStore = new FileApplicationsStore(applicationsPath);
   const creditsStore = new FileCreditLedgerStore(creditsPath);
   const notificationsStore = new FileNotificationsStore(notificationsPath);
+  const profilesStore = new FileProfilesStore(profilesPath);
 
   authStore.assignInvitedRole(
     "user@example.com",
@@ -133,6 +137,7 @@ function createService(testId: string) {
       applicationsStore,
       creditsStore,
       notificationsStore,
+      profilesStore,
     ),
   };
 }
