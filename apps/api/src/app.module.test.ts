@@ -11,6 +11,7 @@ import { CvGenerationModule } from "./cv-generation/cv-generation.module";
 import { CreditsModule } from "./credits/credits.module";
 import { NotificationsModule } from "./notifications/notifications.module";
 import { PrivacyModule } from "./privacy/privacy.module";
+import { ProfilesModule } from "./profiles/profiles.module";
 import { TemplatesModule } from "./templates/templates.module";
 import { InterviewModule } from "./interview/interview.module";
 
@@ -30,6 +31,7 @@ describe("AppModule", () => {
       CreditsModule,
       NotificationsModule,
       PrivacyModule,
+      ProfilesModule,
       TemplatesModule,
       InterviewModule,
     ]);
