@@ -47,3 +47,9 @@
 - **Why**: Sprint 015 required these two V2.0 features to be precisely framed or integrated, with security and RGPD impacts documented.
 - **Learned**: Hybrid approach for PDF (pdfjs-dist local first, Mistral vision fallback) is the only RGPD-safe option given §15 constraints. For social login, Passport.js is coherent with NestJS architecture; Auth.js is a Next.js-only solution and would break the monorepo boundary separation.
 - **Open**: ADR-006 (pdfjs-dist) and ADR-007 (Passport.js OAuth2) must be created before any implementation story can be opened for these features.
+
+## 2026-07-09 — rationalisation UI/UX desktop-first (stage 01 · [[workflows/runs/analyst-designer-20260709205519]])
+- **Did**: Audité l'écart entre la demande utilisateur (refonte desktop-first "écran par écran") et l'état réel : sprint 016 livré, sprints 018/019 rédigés mais jamais exécutés, dashboard/onboarding au-dessus du seuil de taille de fichier (spec §9).
+- **Why**: Éviter de replanifier depuis zéro un travail déjà cadré et de perdre le contexte des décisions produit déjà prises (US-067→073).
+- **Learned**: La perception "rien ne va" vient surtout d'un backlog de refonte jamais exécuté, pas d'une absence de vision produit ; deux écrans (login/register, admin, notifications, onboarding) restent réellement non couverts par 016-019.
+- **Open**: ADR à écrire pour formaliser l'abandon de "mobile-first"/"Papier & Crayon" (vision §2.5/§2.6) au profit de desktop-first — non bloquant pour ce run mais recommandé avant le prochain freeze de vision.

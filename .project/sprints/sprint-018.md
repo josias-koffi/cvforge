@@ -2,6 +2,8 @@
 
 # Sprint 018
 
+> ⚠️ **Superseded** par sprint 020/021 (run `analyst-designer-20260709205519`, 2026-07-09) : contenu absorbé et adapté (pas de route `/documents`, direction Papier & Crayon conservée au lieu de shadcn-minimal). Ne pas exécuter ce sprint tel quel — voir sprint-021 (US-078, US-079, US-082).
+
 ## 🎯 Sprint Goal
 
 Refondre les surfaces documentaires et l'éditeur admin : Documents Hub avec table, formulaire structuré pour les utilisateurs (sans Puck), Puck full-screen admin-only, et dashboard épuré.
