@@ -371,3 +371,10 @@
 - **Why**: L’utilisateur perçoit l’app comme confuse sur desktop ; l’audit analyst a montré que le plan existait déjà (US-067→073, sprint 018/019) mais n’avait jamais été exécuté, et que deux écrans (login/register, notifications, admin, onboarding) n’étaient pas couverts.
 - **Learned**: Rejeter explicitement US-071 (palette shadcn-minimal générique) au profit de la direction Papier & Crayon déjà en production a évité de dupliquer un système de tokens et respecte le garde-fou anti-convergence de cet agent.
 - **Open**: ADR à écrire pour formaliser l’abandon de "mobile-first" (vision §2.5/§2.6) — ajouté à la ADR Watchlist du backlog.
+
+## 2026-07-09 — US-074 design (stage 02 · [[workflows/runs/analyze-design-dev-review-20260709210000]])
+- **Context**: [[sprints/sprint-020#US-074]] · [[workflows/runs/analyze-design-dev-review-20260709210000/02-design]]
+- **Did**: Spécifié une colonne unique centrée 420px sans carte, alimentée par `paperTokens`, partagée par login/check-email/invitation-accept.
+- **Why**: Les trois pages dupliquent le même wrapper `<main>` codé en dur et divergent déjà légèrement des tokens (couleur bordure, police).
+- **Learned**: `/login/success` n'a aucun balisage (redirect serveur seul) — hors périmètre visuel malgré sa présence dans les critères d'acceptation.
+- **Open**: Vérifier `role="alert"` sur les bannières d'erreur pendant l'implémentation.

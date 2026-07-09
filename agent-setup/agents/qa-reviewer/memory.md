@@ -372,3 +372,10 @@
 - **Why**: La parité devait être démontrée pour les deux documents et rester résistante aux évolutions.
 - **Learned**: Une source HTML commune offre une garantie plus forte qu’un snapshot visuel séparé.
 - **Open**: Warnings React `act(...)` interview préexistants.
+
+## 2026-07-09 — US-074 review (stage 04 · [[workflows/runs/analyze-design-dev-review-20260709210000]])
+- **Context**: [[sprints/sprint-020#US-074]] · [[workflows/runs/analyze-design-dev-review-20260709210000/04-review]]
+- **Did**: Vérifié les 5 critères d'acceptation (colonne 420px, gabarit invitation, consentement inline, tokens réutilisés, WCAG AA), 256 tests verts, lint propre, couverture 100% sur les fichiers touchés, build réussi.
+- **Why**: La refonte visuelle des écrans login/register devait rester non régressive sur le consentement RGPD et l'auth magic-link.
+- **Learned**: Calculer le contraste de `danger` sur `surfaceMuted` (≈4.78:1) confirme que le remplacement du fond d'erreur codé en dur par un token reste conforme AA.
+- **Open**: US-075 (dashboard) est la prochaine tâche du sprint 020.
