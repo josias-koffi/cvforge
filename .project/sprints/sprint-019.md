@@ -2,6 +2,8 @@
 
 # Sprint 019
 
+> ⚠️ **Superseded** par sprint 020/021 (run `analyst-designer-20260709205519`, 2026-07-09) : US-071 (shadcn-minimal) rejetée, US-072/073 reprises telles quelles dans sprint 021 (US-080, US-081). Ne pas exécuter ce sprint tel quel.
+
 ## 🎯 Sprint Goal
 
 Finaliser la refonte visuelle : appliquer les tokens shadcn-minimal à toute l'app, refondre la page Crédits avec table ledger, et refondre la page Profil avec accordions et switcher multi-profil.

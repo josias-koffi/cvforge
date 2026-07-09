@@ -170,6 +170,7 @@ Référence de gate: le spec impose des branches courtes et des PRs <= 400 ligne
 
 ## ADR Watchlist
 
+- Direction visuelle "Papier & Crayon raffiné" vs mobile-first (vision `§2.5`/`§2.6`) : décision produit desktop-first actée depuis 2026-04-26 (sprint 016) mais jamais formalisée en ADR — à écrire avant le prochain freeze de vision.
 - ~~Puck Editor comme couche WYSIWYG~~ → **ADR-003 acceptée** (2026-04-20)
 - Provider email pour magic links / notifications
 - Librairie DOCX pour `V1.1`

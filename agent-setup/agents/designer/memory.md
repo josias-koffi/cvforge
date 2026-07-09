@@ -364,3 +364,10 @@
 - **Why**: Le document doit rester la référence visuelle sans interférence du CSS applicatif.
 - **Learned**: Un iframe sandboxé garantit mieux la fidélité qu’une reconstruction React.
 - **Open**: None.
+
+## 2026-07-09 — rationalisation UI/UX desktop-first (stage 02 · [[workflows/runs/analyst-designer-20260709205519]])
+- **Context**: ad hoc · [[workflows/runs/analyst-designer-20260709205519/02-designer]]
+- **Did**: Étendu `frontend-rationalization-20260610.md` (sprint 016, livré) à tout le périmètre demandé (login/register, dashboard, notifications, onboarding, CV, letters, credits, profile, admin) dans `frontend-rationalization-20260709.md`, puis découpé le travail en sprint-020/021 écran par écran.
+- **Why**: L’utilisateur perçoit l’app comme confuse sur desktop ; l’audit analyst a montré que le plan existait déjà (US-067→073, sprint 018/019) mais n’avait jamais été exécuté, et que deux écrans (login/register, notifications, admin, onboarding) n’étaient pas couverts.
+- **Learned**: Rejeter explicitement US-071 (palette shadcn-minimal générique) au profit de la direction Papier & Crayon déjà en production a évité de dupliquer un système de tokens et respecte le garde-fou anti-convergence de cet agent.
+- **Open**: ADR à écrire pour formaliser l’abandon de "mobile-first" (vision §2.5/§2.6) — ajouté à la ADR Watchlist du backlog.
