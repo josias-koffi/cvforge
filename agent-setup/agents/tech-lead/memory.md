@@ -442,3 +442,10 @@
 - **Why**: La source unique réduit la dette et maintient la cohérence entre interface et infrastructure d’export.
 - **Learned**: Un package pur TypeScript suffit; aucune dépendance externe ni ADR n’est nécessaire.
 - **Open**: None.
+
+## 2026-07-09 — US-074 finalization (finalization · [[workflows/runs/analyze-design-dev-review-20260709210000]])
+- **Context**: [[sprints/sprint-020#US-074]] · [[workflows/runs/analyze-design-dev-review-20260709210000/final-summary]]
+- **Did**: Signé la refonte login/register après vérification des critères d'acceptation et des gates lint/tests/couverture/build.
+- **Why**: Le changement reste dans `apps/app`, sans nouvelle dépendance ni modification de persistance — aucune ADR requise.
+- **Learned**: Extraire `auth-column.tsx` (170L, 8 primitives) réduit la duplication des trois pages auth sans sur-abstraction, chaque primitive correspondant à un élément visuel déjà répété.
+- **Open**: US-075 (Dashboard) est la prochaine tâche du sprint 020.

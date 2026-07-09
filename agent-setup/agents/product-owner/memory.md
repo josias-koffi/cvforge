@@ -414,3 +414,10 @@
 - **Why**: Deux rendus divergents empêchaient l’utilisateur de valider son document avant export.
 - **Learned**: La parité doit être structurelle via un renderer commun, pas visuelle par duplication.
 - **Open**: None.
+
+## 2026-07-09 — US-074 analyze (stage 01 · [[workflows/runs/analyze-design-dev-review-20260709210000]])
+- **Context**: [[sprints/sprint-020#US-074]] · [[workflows/runs/analyze-design-dev-review-20260709210000/01-analyze]]
+- **Did**: Confirmed US-074 is a visual-only reflow of the existing passwordless auth screens (login/register) into a narrow desktop column, no new product behavior.
+- **Why**: Sprint 020 opens the login/register slice of the desktop-first rationalization; the workflow needed a tight boundary before the designer/developer stages touched the auth flow.
+- **Learned**: `/login/success` has no markup (redirect-only) so it is out of visual scope despite being named in the acceptance criteria.
+- **Open**: US-075 (dashboard) is next in sprint 020.

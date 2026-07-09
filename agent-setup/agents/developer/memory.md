@@ -668,3 +668,10 @@
 - **Why**: Supprimer définitivement la divergence entre rendu écran et fichier téléchargé.
 - **Learned**: Les marges `@page` doivent avoir un équivalent `@media screen` pour l’aperçu iframe.
 - **Open**: None.
+
+## 2026-07-09 — US-074 implementation (stage 03 · [[workflows/runs/analyze-design-dev-review-20260709210000]])
+- **Context**: [[sprints/sprint-020#US-074]] · [[workflows/runs/analyze-design-dev-review-20260709210000/03-implement]]
+- **Did**: Extracted a shared `auth-column.tsx` primitive set (paperTokens-backed) and rewrote `login/page.tsx`, `login/check-email/page.tsx`, `register/invitation/page.tsx` onto a fixed 420px centered column with no card chrome around forms.
+- **Why**: The three auth pages duplicated the same inline `<main>` wrapper with hardcoded colors/fonts diverging from `paperTokens`, and stretched full-width on desktop.
+- **Learned**: Preserving existing element `id`/`name`/copy exactly let all 6 pre-existing test files pass unmodified — only the visual layer changed. JSX files under this app's build config need an explicit `import React` even with no direct `React.*` usage.
+- **Open**: US-075 (dashboard) is next in sprint 020.

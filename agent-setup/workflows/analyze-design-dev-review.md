@@ -16,6 +16,7 @@ orchestrated
 - ad hoc — 2026-06-10 → [[workflows/runs/analyze-design-dev-review-20260610104253]]
 - ad hoc — 2026-06-10 → [[workflows/runs/analyze-design-dev-review-20260610150733]]
 - ad hoc — 2026-06-10 → [[workflows/runs/analyze-design-dev-review-20260610153104]]
+- [[sprints/sprint-020#US-074]] — 2026-07-09 → [[workflows/runs/analyze-design-dev-review-20260709210000]]
 
 ## Stage 1 - Analyze
 Agent: [[agents/product-owner/agent|product-owner]]

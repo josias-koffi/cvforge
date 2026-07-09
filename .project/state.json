@@ -6,19 +6,19 @@
   "vision_source": ".project/vision.md",
   "vision_mode": "verbatim",
   "engineering_spec": "agent-setup/spec/engineering-standards.md",
-  "current_sprint": 17,
+  "current_sprint": 20,
   "active_agents": [],
   "specialized_agents": [],
   "specialized_workflows": [],
   "specialized_skills": [],
   "clarifications_pending": [],
-  "last_updated": "2026-06-10T15:39:16+02:00",
+  "last_updated": "2026-07-09T21:20:00+02:00",
   "last_workflow_run": "analyze-design-dev-review",
   "last_workflow_stage": "tech-lead",
   "last_workflow_result": "passed",
   "active_workflow_run": null,
-  "last_adhoc_run": "analyze-design-dev-review-20260610153104",
-  "last_task_completed": "fidélité aperçu PDF CV et LM",
+  "last_adhoc_run": "analyze-design-dev-review-20260709210000",
+  "last_task_completed": "US-074",
   "workflow_runs": [
     {
       "run_id": "20260419-191212-us-006",
@@ -539,6 +539,20 @@
       "run_id": "analyze-design-dev-review-20260610153104",
       "sprint": null,
       "task": "fidélité aperçu PDF CV et LM",
+      "workflow": "analyze-design-dev-review",
+      "result": "passed"
+    },
+    {
+      "run_id": "analyst-designer-20260709205519",
+      "sprint": null,
+      "task": "rationalisation UI/UX desktop-first — écran par écran",
+      "workflow": "analyst-designer",
+      "result": "passed"
+    },
+    {
+      "run_id": "analyze-design-dev-review-20260709210000",
+      "sprint": "020",
+      "task": "US-074",
       "workflow": "analyze-design-dev-review",
       "result": "passed"
     }
