@@ -17,6 +17,7 @@ import { getServerApiUrl } from "../auth-config";
 import { getAppNavigation } from "../content";
 import { requireSession } from "../auth/session";
 import { NotificationBell } from "./notification-bell";
+import { groupNotificationsByDay } from "./notification-groups";
 
 function getCookieHeader(cookieStore: Awaited<ReturnType<typeof cookies>>) {
   return cookieStore
@@ -30,6 +31,67 @@ function formatDate(value: string) {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(value));
+}
+
+function NotificationArticle({
+  notification,
+}: {
+  notification: InAppNotification;
+}) {
+  return (
+    <article
+      style={{
+        border: "1px solid #D9D3C7",
+        borderRadius: "1rem",
+        display: "grid",
+        gap: "0.85rem",
+        padding: "1rem",
+      }}
+    >
+      <div
+        style={{
+          alignItems: "center",
+          display: "flex",
+          flexWrap: "wrap",
+          gap: "0.75rem",
+          justifyContent: "space-between",
+        }}
+      >
+        <div style={{ display: "grid", gap: "0.35rem" }}>
+          <strong>{notification.title}</strong>
+          <span style={{ color: "#6B6860", fontSize: "0.95rem" }}>
+            {formatDate(notification.createdAt)}
+          </span>
+        </div>
+        <Badge variant={notification.readAt ? "outline" : "success"}>
+          {notification.readAt ? "Lue" : "Non lue"}
+        </Badge>
+      </div>
+
+      <p style={{ lineHeight: 1.7, margin: 0 }}>{notification.message}</p>
+
+      <div
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          gap: "0.75rem",
+        }}
+      >
+        <Button asChild size="sm" variant="secondary">
+          <a href={notification.linkHref}>Ouvrir l&apos;element lie</a>
+        </Button>
+
+        {!notification.readAt ? (
+          <form action="/notifications/read" method="POST">
+            <input name="notificationId" type="hidden" value={notification.id} />
+            <Button size="sm" type="submit" variant="ghost">
+              Marquer comme lue
+            </Button>
+          </form>
+        ) : null}
+      </div>
+    </article>
+  );
 }
 
 async function fetchNotifications() {
@@ -115,6 +177,7 @@ export default async function NotificationsPage(props: NotificationsPageProps) {
   );
   const unreadCount = notifications.filter((notification) => !notification.readAt)
     .length;
+  const daySections = groupNotificationsByDay(notifications, new Date());
   const emailPreferences = preferencesResponse.preferences.email;
   const providerLabel = preferencesResponse.provider ?? "SMTP";
 
@@ -158,7 +221,9 @@ export default async function NotificationsPage(props: NotificationsPageProps) {
             </CardHeader>
             <CardContent style={{ display: "grid", gap: "0.35rem" }}>
               <span style={{ color: "#6B6860" }}>{session.email}</span>
-              <strong>{unreadCount} notification(s) non lue(s)</strong>
+              <strong aria-live="polite" role="status">
+                {unreadCount} notification(s) non lue(s)
+              </strong>
             </CardContent>
           </Card>
           <Card>
@@ -176,26 +241,65 @@ export default async function NotificationsPage(props: NotificationsPageProps) {
 
         <Card>
           <CardHeader>
+            <CardTitle>Fil d&apos;activite</CardTitle>
+          </CardHeader>
+          <CardContent style={{ display: "grid", gap: "1.25rem" }}>
+            {daySections.length === 0 ? (
+              <p style={{ color: "#6B6860", lineHeight: 1.6, margin: 0 }}>
+                Aucune notification in-app pour le moment.
+              </p>
+            ) : (
+              daySections.map((section) => (
+                <div
+                  key={section.bucket}
+                  style={{ display: "grid", gap: "0.75rem" }}
+                >
+                  <h3
+                    style={{
+                      color: "#6B6860",
+                      fontSize: "0.8rem",
+                      letterSpacing: "0.06em",
+                      margin: 0,
+                      textTransform: "uppercase",
+                    }}
+                  >
+                    {section.label}
+                  </h3>
+                  <div style={{ display: "grid", gap: "0.85rem" }}>
+                    {section.notifications.map((notification) => (
+                      <NotificationArticle
+                        key={notification.id}
+                        notification={notification}
+                      />
+                    ))}
+                  </div>
+                </div>
+              ))
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
             <CardTitle>Preferences email</CardTitle>
           </CardHeader>
-          <CardContent style={{ display: "grid", gap: "1rem" }}>
-            <p style={{ color: "#6B6860", lineHeight: 1.6, margin: 0 }}>
-              Provider configure: <strong>{providerLabel}</strong>. Etat:{" "}
+          <CardContent style={{ display: "grid", gap: "0.75rem" }}>
+            <p style={{ color: "#6B6860", lineHeight: 1.5, margin: 0 }}>
+              Provider configure: <strong>{providerLabel}</strong> — Etat:{" "}
               <strong>
                 {preferencesResponse.emailDeliveryReady ? "pret" : "non configure"}
               </strong>
-              .
             </p>
             <form
               action="/notifications/preferences"
               method="POST"
-              style={{ display: "grid", gap: "1rem" }}
+              style={{ display: "grid", gap: "0.6rem" }}
             >
               <label
                 style={{
-                  alignItems: "flex-start",
+                  alignItems: "center",
                   display: "flex",
-                  gap: "0.75rem",
+                  gap: "0.6rem",
                 }}
               >
                 <input
@@ -203,20 +307,20 @@ export default async function NotificationsPage(props: NotificationsPageProps) {
                   name="applicationFollowUp"
                   type="checkbox"
                 />
-                <span style={{ display: "grid", gap: "0.2rem" }}>
+                <span>
                   <strong>Relance candidature J+7</strong>
-                  <span style={{ color: "#6B6860", fontSize: "0.95rem" }}>
-                    Email envoye quand une candidature reste sans reponse 7 jours
-                    apres l&apos;envoi.
+                  <span style={{ color: "#6B6860", fontSize: "0.85rem" }}>
+                    {" "}
+                    — email a J+7 sans reponse
                   </span>
                 </span>
               </label>
 
               <label
                 style={{
-                  alignItems: "flex-start",
+                  alignItems: "center",
                   display: "flex",
-                  gap: "0.75rem",
+                  gap: "0.6rem",
                 }}
               >
                 <input
@@ -224,10 +328,11 @@ export default async function NotificationsPage(props: NotificationsPageProps) {
                   name="creditPurchaseConfirmed"
                   type="checkbox"
                 />
-                <span style={{ display: "grid", gap: "0.2rem" }}>
+                <span>
                   <strong>Achat de credits confirme</strong>
-                  <span style={{ color: "#6B6860", fontSize: "0.95rem" }}>
-                    Email de confirmation envoye apres validation du webhook Stripe.
+                  <span style={{ color: "#6B6860", fontSize: "0.85rem" }}>
+                    {" "}
+                    — confirmation apres webhook Stripe
                   </span>
                 </span>
               </label>
@@ -238,79 +343,6 @@ export default async function NotificationsPage(props: NotificationsPageProps) {
                 </Button>
               </div>
             </form>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Fil d&apos;activite</CardTitle>
-          </CardHeader>
-          <CardContent style={{ display: "grid", gap: "1rem" }}>
-            {notifications.length === 0 ? (
-              <p style={{ color: "#6B6860", lineHeight: 1.6, margin: 0 }}>
-                Aucune notification in-app pour le moment.
-              </p>
-            ) : (
-              notifications.map((notification) => (
-                <article
-                  key={notification.id}
-                  style={{
-                    border: "1px solid #D9D3C7",
-                    borderRadius: "1rem",
-                    display: "grid",
-                    gap: "0.85rem",
-                    padding: "1rem",
-                  }}
-                >
-                  <div
-                    style={{
-                      alignItems: "center",
-                      display: "flex",
-                      flexWrap: "wrap",
-                      gap: "0.75rem",
-                      justifyContent: "space-between",
-                    }}
-                  >
-                    <div style={{ display: "grid", gap: "0.35rem" }}>
-                      <strong>{notification.title}</strong>
-                      <span style={{ color: "#6B6860", fontSize: "0.95rem" }}>
-                        {formatDate(notification.createdAt)}
-                      </span>
-                    </div>
-                    <Badge variant={notification.readAt ? "outline" : "success"}>
-                      {notification.readAt ? "Lue" : "Non lue"}
-                    </Badge>
-                  </div>
-
-                  <p style={{ lineHeight: 1.7, margin: 0 }}>{notification.message}</p>
-
-                  <div
-                    style={{
-                      display: "flex",
-                      flexWrap: "wrap",
-                      gap: "0.75rem",
-                    }}
-                  >
-                    <Button asChild size="sm" variant="secondary">
-                      <a href={notification.linkHref}>Ouvrir l&apos;element lie</a>
-                    </Button>
-
-                    {!notification.readAt ? (
-                      <form action="/notifications/read" method="POST">
-                        <input
-                          name="notificationId"
-                          type="hidden"
-                          value={notification.id}
-                        />
-                        <Button size="sm" type="submit" variant="ghost">
-                          Marquer comme lue
-                        </Button>
-                      </form>
-                    ) : null}
-                  </div>
-                </article>
-              ))
-            )}
           </CardContent>
         </Card>
       </div>
