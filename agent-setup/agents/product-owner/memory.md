@@ -421,3 +421,10 @@
 - **Why**: Sprint 020 opens the login/register slice of the desktop-first rationalization; the workflow needed a tight boundary before the designer/developer stages touched the auth flow.
 - **Learned**: `/login/success` has no markup (redirect-only) so it is out of visual scope despite being named in the acceptance criteria.
 - **Open**: US-075 (dashboard) is next in sprint 020.
+
+## 2026-07-10 — US-076 analyze (stage 01 · [[workflows/runs/analyze-design-dev-review-20260710123525]])
+- **Context**: [[sprints/sprint-020#US-076]] · [[workflows/runs/analyze-design-dev-review-20260710123525/01-analyze]]
+- **Did**: Confirmé que US-076 est un pur reflow d'un flux existant (tri/groupement + repositionnement d'une carte déjà livrée), entièrement dérivable des champs `readAt`/`createdAt` déjà persistés — aucune nouvelle route, aucun nouveau type de notification.
+- **Why**: Le sprint 020 devait couvrir `/notifications`, non traité par les sprints 016-019, sans rouvrir le contrat de notifications déjà livré en US-035/US-041.
+- **Learned**: Les 5 critères d'acceptation sont directement testables sans question produit supplémentaire.
+- **Open**: US-077 (onboarding) est la dernière tâche du sprint 020.

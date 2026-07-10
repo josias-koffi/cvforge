@@ -697,3 +697,11 @@
 - **Why**: The three auth pages duplicated the same inline `<main>` wrapper with hardcoded colors/fonts diverging from `paperTokens`, and stretched full-width on desktop.
 - **Learned**: Preserving existing element `id`/`name`/copy exactly let all 6 pre-existing test files pass unmodified — only the visual layer changed. JSX files under this app's build config need an explicit `import React` even with no direct `React.*` usage.
 - **Open**: US-075 (dashboard) is next in sprint 020.
+
+## 2026-07-10 — US-076: day-grouped notifications feed (stage 03 · [[workflows/runs/analyze-design-dev-review-20260710123525]])
+- **Context**: [[sprints/sprint-020#US-076]] · [[workflows/runs/analyze-design-dev-review-20260710123525/03-implement]]
+- **Did**: Added `apps/app/app/notifications/notification-groups.ts` — pure `groupNotificationsByDay()` (today/yesterday/older buckets, unread-first sort per bucket, empty buckets omitted) plus 4 unit tests. Extracted `NotificationArticle` from the inline `.map()` in `page.tsx` (now needed at a nested loop level). Moved the "Préférences email" card after "Fil d'activité" and densified its two checkbox rows. Added `aria-live="polite" role="status"` to the unread-count `<strong>`.
+- **Why**: AC required unread-first ordering, day-bucket grouping, and repositioning an already-shipped card — all derivable from existing `readAt`/`createdAt` fields with zero API changes.
+- **Learned**: Extracting a small render component (`NotificationArticle`) is the correct move the moment existing inline JSX starts rendering inside a newly-added nested loop — duplicating the markup per day-section would have violated the no-new-duplication refactoring rule.
+- **Verified**: `pnpm --filter app test` 259/259 (78 files, +2 files/+2 tests vs. pre-task 254/77), `pnpm --filter app lint` 0 warnings, `pnpm --filter app build` succeeds (`/notifications` 1.42 kB).
+- **Open**: US-077 (onboarding wizard split) is the last task of sprint 020.

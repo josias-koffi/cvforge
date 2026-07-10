@@ -385,3 +385,10 @@
 - **Why**: L'AC et le design doc du 2026-07-09 disent explicitement "reprend exactement US-070" — les 4 graphiques, la carte de partage LinkedIn, le formulaire d'achat de crédits inline et le résumé de profil ne font pas partie de la cible.
 - **Learned**: Confirmé avec l'utilisateur (AskUserQuestion) qu'il fallait supprimer ces sections plutôt que les déplacer, cohérent avec la directive initiale du sprint "garder que les pages qu'on utilise vraiment". Aucun champ "date d'entretien planifié" n'existe dans le modèle de données — le KPI "prochaine interview" doit dériver du statut `interview_scheduled`, pas d'une vraie date future.
 - **Open**: `/share/dashboard` perd son seul point d'entrée dans l'app ; décision produit à prendre quand `/share/*` sera replanifié.
+
+## 2026-07-10 — US-076 design (stage 02 · [[workflows/runs/analyze-design-dev-review-20260710123525]])
+- **Context**: [[sprints/sprint-020#US-076]] · [[workflows/runs/analyze-design-dev-review-20260710123525/02-design]]
+- **Did**: Spécifié 3 sous-sections jour (Aujourd'hui/Hier/Plus ancien, omises si vides) dans la carte "Fil d'activité" existante, déplacé la carte "Préférences email" en pied de liste avec des lignes de case à cocher resserrées sur une ligne, et ajouté `aria-live="polite"` sur le compteur non-lu.
+- **Why**: L'écran notifications n'était couvert par aucune des refontes 016-019 ; le besoin était informationnel (pas de hiérarchie temporelle) plutôt qu'esthétique.
+- **Learned**: Aucun nouveau token n'était nécessaire — la réduction de densité vient uniquement de la structure (sous-titres de section, lignes de formulaire à une ligne), pas d'une nouvelle échelle typographique.
+- **Open**: Migration des couleurs hex codées en dur vers les tokens nommés `textMuted`/`border` reste un point de dette non traité par ce sprint (US-074/075/076 partagent ce même écart mineur).
