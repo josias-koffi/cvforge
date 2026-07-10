@@ -25,6 +25,9 @@ WORKDIR /workspace
 RUN corepack enable
 ENV NODE_ENV=production
 
+ARG HOST_UID=1000
+ARG HOST_GID=1000
+
 COPY --from=builder /workspace/package.json ./package.json
 COPY --from=builder /workspace/pnpm-lock.yaml ./pnpm-lock.yaml
 COPY --from=builder /workspace/pnpm-workspace.yaml ./pnpm-workspace.yaml
@@ -38,6 +41,8 @@ RUN pnpm install --frozen-lockfile --prod
 COPY --from=builder /workspace/apps/api/dist ./apps/api/dist
 COPY --from=builder /workspace/packages/document-renderer/dist ./packages/document-renderer/dist
 COPY --from=builder /workspace/packages/types/dist ./packages/types/dist
+
+RUN mkdir -p /workspace/.data && chown -R "${HOST_UID}:${HOST_GID}" /workspace/.data
 
 EXPOSE 3333
 
