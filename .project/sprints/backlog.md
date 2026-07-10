@@ -118,6 +118,8 @@ Référence de gate: le spec impose des branches courtes et des PRs <= 400 ligne
 - 2026-06-10 — Exclure `dist`, `.next` et les artefacts de couverture du rapport Vitest racine pour mesurer uniquement les sources.
 - 2026-06-10 — Décider du devenir de `app/onboarding/wizard.tsx`: `/` redirige désormais vers `/dashboard`; supprimer le wizard legacy ou l'exposer comme parcours volontaire depuis `/profile`.
 - 2026-06-10 — Remplacer les liens internes restants vers `/` par leur destination explicite (`/dashboard` ou landing) pour éviter une redirection intermédiaire.
+- 2026-07-10 — US-075 : `share-card-content.ts` (`buildDashboardSharePageUrl`, `buildLinkedInShareUrl`) n'a plus d'appelant depuis le retrait de la carte LinkedIn du dashboard ; nettoyer quand `/share/*` sera replanifié.
+- 2026-07-10 — US-075 : `/share/dashboard` n'a plus de point d'entrée dans l'app (route/page/OG image conservées mais orphelines) ; décider de restaurer un accès ou de dépréciter la route.
 
 ## Clarifications Pendantes
 

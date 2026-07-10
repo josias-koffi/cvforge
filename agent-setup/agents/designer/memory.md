@@ -378,3 +378,10 @@
 - **Why**: Les trois pages dupliquent le même wrapper `<main>` codé en dur et divergent déjà légèrement des tokens (couleur bordure, police).
 - **Learned**: `/login/success` n'a aucun balisage (redirect serveur seul) — hors périmètre visuel malgré sa présence dans les critères d'acceptation.
 - **Open**: Vérifier `role="alert"` sur les bannières d'erreur pendant l'implémentation.
+
+## 2026-07-10 — US-075 design (stage 02 · [[workflows/runs/analyze-design-dev-review-20260710010750]])
+- **Context**: [[sprints/sprint-020#US-075]] · [[workflows/runs/analyze-design-dev-review-20260710010750/02-design]]
+- **Did**: Spécifié la refonte du dashboard en exactement 3 KPI + 2 tables statiques + quick actions, en réutilisant la grammaire visuelle déjà livrée sur `/candidatures` (US-061/062) plutôt que d'inventer de nouveaux styles de table.
+- **Why**: L'AC et le design doc du 2026-07-09 disent explicitement "reprend exactement US-070" — les 4 graphiques, la carte de partage LinkedIn, le formulaire d'achat de crédits inline et le résumé de profil ne font pas partie de la cible.
+- **Learned**: Confirmé avec l'utilisateur (AskUserQuestion) qu'il fallait supprimer ces sections plutôt que les déplacer, cohérent avec la directive initiale du sprint "garder que les pages qu'on utilise vraiment". Aucun champ "date d'entretien planifié" n'existe dans le modèle de données — le KPI "prochaine interview" doit dériver du statut `interview_scheduled`, pas d'une vraie date future.
+- **Open**: `/share/dashboard` perd son seul point d'entrée dans l'app ; décision produit à prendre quand `/share/*` sera replanifié.

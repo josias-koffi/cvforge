@@ -379,3 +379,10 @@
 - **Why**: La refonte visuelle des écrans login/register devait rester non régressive sur le consentement RGPD et l'auth magic-link.
 - **Learned**: Calculer le contraste de `danger` sur `surfaceMuted` (≈4.78:1) confirme que le remplacement du fond d'erreur codé en dur par un token reste conforme AA.
 - **Open**: US-075 (dashboard) est la prochaine tâche du sprint 020.
+
+## 2026-07-10 — US-075 review (stage 04 · [[workflows/runs/analyze-design-dev-review-20260710010750]])
+- **Context**: [[sprints/sprint-020#US-075]] · [[workflows/runs/analyze-design-dev-review-20260710010750/04-review]]
+- **Did**: Vérifié les 6 critères d'acceptation (split 3 fichiers <300L, 3 KPI, 2 tables, quick actions, responsive auto-fit), 254/254 tests verts (77 fichiers), lint propre, build réussi (`/dashboard` 1.44 kB).
+- **Why**: La refonte devait rester exactement dans le périmètre AC après confirmation utilisateur de retirer graphiques/carte de partage/achat inline/résumé profil.
+- **Learned**: `share-card-content.ts` conserve 2 exports désormais orphelins (utilisé uniquement par `/share/dashboard`, fichier non touché) — avisé plutôt que bloquant, conformément à la règle §9 sur les fichiers non touchés.
+- **Open**: US-076 (`/notifications`) est la prochaine tâche du sprint 020.
