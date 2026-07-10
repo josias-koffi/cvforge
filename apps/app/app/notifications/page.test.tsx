@@ -88,5 +88,59 @@ describe("NotificationsPage", () => {
     expect(markup).toContain("Non lue");
     expect(markup).toContain("Lue");
     expect(markup).toContain("Marquer comme lue");
+    expect(markup).toMatch(/aria-live="polite"/);
+
+    const activityIndex = markup.indexOf("Fil d&#x27;activite");
+    const preferencesIndex = markup.indexOf("Preferences email");
+    expect(activityIndex).toBeGreaterThan(-1);
+    expect(activityIndex).toBeLessThan(preferencesIndex);
+
+    const acmeIndex = markup.indexOf("Relancer Acme");
+    const globexIndex = markup.indexOf("Relancer Globex");
+    expect(acmeIndex).toBeLessThan(globexIndex);
+  });
+
+  it("groups notifications under day-section headings", async () => {
+    requireSessionMock.mockResolvedValue({
+      email: "user@example.com",
+      expiresAt: "2026-04-27T07:45:24.000Z",
+      role: "user",
+    });
+    fetchMock
+      .mockResolvedValueOnce({
+        json: async () => ({
+          notifications: [
+            {
+              createdAt: "2026-01-01T08:00:00.000Z",
+              id: "notif-old",
+              linkHref: "/candidatures?applicationId=app-003",
+              message: "Ancienne relance.",
+              metadata: {},
+              readAt: null,
+              title: "Relancer Initech",
+              type: "application_follow_up",
+              userEmail: "user@example.com",
+            },
+          ],
+        }),
+        ok: true,
+      })
+      .mockResolvedValueOnce({
+        json: async () => ({
+          emailDeliveryReady: true,
+          preferences: {
+            email: { applicationFollowUp: true, creditPurchaseConfirmed: false },
+          },
+          provider: "resend",
+        }),
+        ok: true,
+      });
+
+    const Page = await NotificationsPage();
+    const markup = renderToStaticMarkup(Page);
+
+    expect(markup).toContain("Plus ancien");
+    expect(markup).not.toContain("Aujourd&#x27;hui");
+    expect(markup).not.toContain("Hier");
   });
 });
