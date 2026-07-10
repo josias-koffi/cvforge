@@ -35,6 +35,13 @@
 - **Learned**: No "scheduled interview date" field exists anywhere in the data model — `interview_scheduled` is only an application status. The "prochaine interview" KPI derives from the most recent `interview_scheduled` entry in `statusHistory`, not a real calendar date. `share-card-content.ts` stays untouched (still used by `/share/dashboard/page.tsx` + `og/route.tsx`) even though 2 of its exports are now dead — hybrid refactor rule says don't touch untouched files, logged to backlog instead.
 - **Verified**: `pnpm --filter app lint` (0 warnings), `pnpm --filter app test` (77/77 files, 254/254 tests), `pnpm --filter app build` (succeeds, `/dashboard` bundle now 1.44 kB vs. the old chart-heavy page).
 
+## 2026-07-10 — fix EACCES on /workspace/.data mkdir (ad hoc · push-to-github)
+
+- **Did**: Committed and pushed the fix already sketched on 2026-07-09: `docker/api.Dockerfile` now takes `HOST_UID`/`HOST_GID` build args and runs `chown -R` on `/workspace/.data` at build time; `docker-compose.yml` passes those args through to the api build. Verified with a local `docker build` + `docker run -u 1000:1000 ... mkdir -p /workspace/.data/probe` — succeeds where it previously threw `EACCES`.
+- **Why**: The runner stage built as root leaves `/workspace` root-owned while the container runs as a non-root UID; any runtime `mkdirSync` under `/workspace` (the auth JSON state store) failed in prod.
+- **Learned**: Chowning the specific subdirectory needed at runtime (`.data`), rather than the whole `/workspace` tree, keeps the fix cheap and targeted.
+- **Open**: The longer-term move to a Postgres-backed auth store (flagged 2026-07-09) is still open and separate from this fix.
+
 ## 2026-04-19 — upgrade project scaffolding
 
 - **Did**: Upgraded the generated project entry docs, README workflow block, workflow definitions, and `.project/state.json` to the latest framework-managed format, with a dated backup under `.project/upgrades/20260419-035118/`.
