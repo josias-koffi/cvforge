@@ -386,3 +386,10 @@
 - **Why**: La refonte devait rester exactement dans le périmètre AC après confirmation utilisateur de retirer graphiques/carte de partage/achat inline/résumé profil.
 - **Learned**: `share-card-content.ts` conserve 2 exports désormais orphelins (utilisé uniquement par `/share/dashboard`, fichier non touché) — avisé plutôt que bloquant, conformément à la règle §9 sur les fichiers non touchés.
 - **Open**: US-076 (`/notifications`) est la prochaine tâche du sprint 020.
+
+## 2026-07-10 — US-076 review (stage 04 · [[workflows/runs/analyze-design-dev-review-20260710123525]])
+- **Context**: [[sprints/sprint-020#US-076]] · [[workflows/runs/analyze-design-dev-review-20260710123525/04-review]]
+- **Did**: Vérifié les 5 critères d'acceptation (tri non-lu-en-tête, groupement par jour avec omission des buckets vides, repositionnement dense de la carte préférences, lien candidature conservé, `aria-live` + focus visible), 259/259 tests verts (78 fichiers), lint propre, build réussi.
+- **Why**: La refonte devait rester un pur reflow d'un flux existant sans casser le lien candidature ni le contrat de préférences email déjà livré (US-041).
+- **Learned**: `#6B6860` sur `#FAFAF7` (4.6:1 AA) suffit pour les nouveaux libellés de section jour sans introduire de nouveau token.
+- **Open**: Migration des couleurs hex codées en dur vers les tokens nommés reste un avisé de dette (non bloquant), partagé avec US-074/075.

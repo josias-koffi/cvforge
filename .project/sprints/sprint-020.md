@@ -36,15 +36,15 @@ Rationalisation UI/UX desktop-first (1/2) — écrans d'entrée et de pilotage :
     - [x] Responsive : stacked mobile, 2-col tablet, 3-col desktop
   - Source: absorbe US-070 (sprint 019, non exécutée), vision `§12.1`–`§12.4`
 
-- [ ] **[US-076]** Refondre `/notifications` en liste dense groupée par jour
+- [x] **[US-076]** Refondre `/notifications` en liste dense groupée par jour
   - Agent: `designer` + `developer`
   - Workflow: `analyze-design-dev-review`
   - Acceptance criteria:
-    - [ ] Liste triée par date décroissante, non-lu en tête avec pastille visible
-    - [ ] Groupement visuel par jour (aujourd'hui / hier / plus ancien)
-    - [ ] Carte "Préférences email" (US-041, déjà livrée) repositionnée en pied de liste, format dense
-    - [ ] Lien direct vers la candidature liée conservé
-    - [ ] WCAG 2.1 AA : `aria-live` sur le compteur non-lu, focus visible
+    - [x] Liste triée par date décroissante, non-lu en tête avec pastille visible
+    - [x] Groupement visuel par jour (aujourd'hui / hier / plus ancien)
+    - [x] Carte "Préférences email" (US-041, déjà livrée) repositionnée en pied de liste, format dense
+    - [x] Lien direct vers la candidature liée conservé
+    - [x] WCAG 2.1 AA : `aria-live` sur le compteur non-lu, focus visible
   - Source: `.project/designs/frontend-rationalization-20260709.md` §8, vision `§14`
 
 - [ ] **[US-077]** Scinder et resserrer l'onboarding pour le desktop
@@ -85,3 +85,4 @@ Sprint 021 couvre le reste du périmètre : CV, Letters, Credits, Profile, Admin
 
 - 2026-07-09 — [[workflows/runs/analyze-design-dev-review-20260709210000|analyze-design-dev-review]] (US-074) — passed
 - 2026-07-10 — [[workflows/runs/analyze-design-dev-review-20260710010750|analyze-design-dev-review]] (US-075) — passed
+- 2026-07-10 — [[workflows/runs/analyze-design-dev-review-20260710123525|analyze-design-dev-review]] (US-076) — passed

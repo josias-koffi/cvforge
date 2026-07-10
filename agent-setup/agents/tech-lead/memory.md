@@ -456,3 +456,10 @@
 - **Why**: Retrait de fonctionnalités déjà livrées (pas juste absence dans les AC) — décision produit qui méritait une confirmation explicite avant suppression de code testé.
 - **Learned**: Supprimer des fichiers entièrement orphelins créés par le changement (`analytics.ts`, `charts.tsx`, `share-card.tsx`) fait partie du refactoring actif de la tâche même si ce ne sont pas les fichiers directement édités ; les fichiers non touchés dont un export devient mort (`share-card-content.ts`) restent intouchés et vont au backlog.
 - **Open**: US-076 (`/notifications`) est la prochaine tâche du sprint 020. 2 items backlog ajoutés (dead exports, entrée `/share/dashboard` orpheline).
+
+## 2026-07-10 — US-076 finalization (finalization · [[workflows/runs/analyze-design-dev-review-20260710123525]])
+- **Context**: [[sprints/sprint-020#US-076]] · [[workflows/runs/analyze-design-dev-review-20260710123525/final-summary]]
+- **Did**: Signé la refonte `/notifications` après vérification des 5 critères d'acceptation et des gates lint/tests/build ; confirmé qu'aucune nouvelle dépendance ni ADR n'était nécessaire.
+- **Why**: Le changement reste un reflow présentation-only dans `apps/app`, sans modification de contrat API ni de persistance.
+- **Learned**: L'extraction d'un helper pur (`notification-groups.ts`) pour le regroupement/tri garde cette logique testable indépendamment du rendu, un pattern à réutiliser pour toute future page listant des éléments datés.
+- **Open**: US-077 (onboarding) est la dernière tâche du sprint 020.
