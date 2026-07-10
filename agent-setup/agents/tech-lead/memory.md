@@ -449,3 +449,10 @@
 - **Why**: Le changement reste dans `apps/app`, sans nouvelle dépendance ni modification de persistance — aucune ADR requise.
 - **Learned**: Extraire `auth-column.tsx` (170L, 8 primitives) réduit la duplication des trois pages auth sans sur-abstraction, chaque primitive correspondant à un élément visuel déjà répété.
 - **Open**: US-075 (Dashboard) est la prochaine tâche du sprint 020.
+
+## 2026-07-10 — US-075 finalization (finalization · [[workflows/runs/analyze-design-dev-review-20260710010750]])
+- **Context**: [[sprints/sprint-020#US-075]] · [[workflows/runs/analyze-design-dev-review-20260710010750/final-summary]]
+- **Did**: Signé la refonte du dashboard après vérification des 6 critères d'acceptation et des gates lint/tests/build ; confirmé la suppression (utilisateur consulté) des graphiques, de la carte LinkedIn, du formulaire d'achat inline et du résumé de profil.
+- **Why**: Retrait de fonctionnalités déjà livrées (pas juste absence dans les AC) — décision produit qui méritait une confirmation explicite avant suppression de code testé.
+- **Learned**: Supprimer des fichiers entièrement orphelins créés par le changement (`analytics.ts`, `charts.tsx`, `share-card.tsx`) fait partie du refactoring actif de la tâche même si ce ne sont pas les fichiers directement édités ; les fichiers non touchés dont un export devient mort (`share-card-content.ts`) restent intouchés et vont au backlog.
+- **Open**: US-076 (`/notifications`) est la prochaine tâche du sprint 020. 2 items backlog ajoutés (dead exports, entrée `/share/dashboard` orpheline).

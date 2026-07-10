@@ -18,7 +18,22 @@
 - **Did**: Split the repository bootstrap into multiple Conventional Commits, verified lint/test/build, and prepared the branch for push to GitHub.
 - **Why**: Keep the initial monorepo history reviewable and aligned with the project publish rules.
 - **Learned**: The workspace passes `pnpm lint`, `pnpm test`, and `pnpm build`, but the configured pre-commit gate is not yet backed by a `.pre-commit-config.yaml` file.
+
+## 2026-07-09 — diagnose EACCES on /workspace/.data mkdir (ad hoc · run-agent)
+
+- **Context**: ad hoc · production error report from user, no linked sprint task.
+- **Did**: Traced `FileAuthAccountStore.writeState` → `auth.config.ts` default `stateFilePath` (`process.cwd()/.data/auth-state.json`) → `docker/api.Dockerfile` (`WORKDIR /workspace`, built/owned as root, no `USER` instruction) → `docker-compose.yml` (api container runs as `user: "${HOST_UID:-1000}:${HOST_GID:-1000}"`). `docker-compose.prod.yml` does not set `AUTH_STATE_FILE`, so prod falls back to the root-owned default path.
+- **Why**: User reported `EACCES: permission denied, mkdir '/workspace/.data'` in prod NestJS logs on magic-link consumption.
+- **Learned**: Root cause is an image-build-time vs runtime UID mismatch — the runner stage builds as root so `/workspace` is root-owned, but the container runs as a non-root UID, so any runtime `mkdirSync` under `/workspace` (like the auth JSON state store) fails in prod. Local dev works because the bind-mounted `./apps/api` volume is host-user-owned. Also flagged the JSON-file-based `FileAuthAccountStore` as fragile for multi-instance/ephemeral prod (state loss on redeploy) — a Postgres-backed store would be more robust, but that's a separate, larger change (stack already has Postgres).
+- **Open**: Fix not yet applied — awaiting user decision on: (a) quick fix via `AUTH_STATE_FILE` env + volume perms, (b) `chown` the `.data` dir for the runtime UID in `docker/api.Dockerfile`, or (c) longer-term move to Postgres-backed auth store.
 - **Open**: Decide whether the repository should add a real pre-commit configuration or remove that gate from the documented publish workflow.
+
+## 2026-07-10 — US-075: split dashboard into kpi-row/recent-tables/quick-actions (sprint 020 · analyze-design-dev-review-20260710010750)
+
+- **Did**: Rewrote `apps/app/app/dashboard/page.tsx` (672L→168L) into a thin composition of new `kpi-row.tsx` (86L), `recent-tables.tsx` (187L), `quick-actions.tsx` (56L). Deleted `analytics.ts`, `analytics.test.ts`, `charts.tsx`, `share-card.tsx` (fully orphaned once the 4 charts, LinkedIn share card, inline credit purchase form, and base-profile summary block were removed from the page). Rewrote `page.test.tsx` accordingly.
+- **Why**: AC scoped the dashboard down to exactly 3 KPI + 2 tables + quick actions; user confirmed via AskUserQuestion (2026-07-10) to strip rather than relocate the extra sections, per the sprint's own "keep only what we use, add back later" directive.
+- **Learned**: No "scheduled interview date" field exists anywhere in the data model — `interview_scheduled` is only an application status. The "prochaine interview" KPI derives from the most recent `interview_scheduled` entry in `statusHistory`, not a real calendar date. `share-card-content.ts` stays untouched (still used by `/share/dashboard/page.tsx` + `og/route.tsx`) even though 2 of its exports are now dead — hybrid refactor rule says don't touch untouched files, logged to backlog instead.
+- **Verified**: `pnpm --filter app lint` (0 warnings), `pnpm --filter app test` (77/77 files, 254/254 tests), `pnpm --filter app build` (succeeds, `/dashboard` bundle now 1.44 kB vs. the old chart-heavy page).
 
 ## 2026-04-19 — upgrade project scaffolding
 

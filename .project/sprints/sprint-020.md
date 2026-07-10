@@ -24,16 +24,16 @@ Rationalisation UI/UX desktop-first (1/2) — écrans d'entrée et de pilotage :
     - [x] WCAG 2.1 AA : labels associés, focus visible, contraste ≥4.5:1
   - Source: `.project/designs/frontend-rationalization-20260709.md` §1, vision `§3`
 
-- [ ] **[US-075]** Refondre le Dashboard : 3 KPI + 2 tables + quick actions
+- [x] **[US-075]** Refondre le Dashboard : 3 KPI + 2 tables + quick actions
   - Agent: `designer` + `developer`
   - Workflow: `analyze-design-dev-review`
   - Acceptance criteria:
-    - [ ] `dashboard/page.tsx` (672 lignes) scindé en `kpi-row.tsx`, `recent-tables.tsx`, `quick-actions.tsx` (chacun <300 lignes)
-    - [ ] 3 KPI cards en ligne : candidatures actives, crédits restants, prochaine interview
-    - [ ] Table "Candidatures récentes" (5 dernières : Poste, Statut, Date)
-    - [ ] Table "Sessions entretien récentes" (5 dernières : Candidature, Score, Date)
-    - [ ] Quick actions : "Nouvelle candidature", "Commencer un entretien", "Acheter des crédits"
-    - [ ] Responsive : stacked mobile, 2-col tablet, 3-col desktop
+    - [x] `dashboard/page.tsx` (672 lignes) scindé en `kpi-row.tsx`, `recent-tables.tsx`, `quick-actions.tsx` (chacun <300 lignes)
+    - [x] 3 KPI cards en ligne : candidatures actives, crédits restants, prochaine interview
+    - [x] Table "Candidatures récentes" (5 dernières : Poste, Statut, Date)
+    - [x] Table "Sessions entretien récentes" (5 dernières : Candidature, Score, Date)
+    - [x] Quick actions : "Nouvelle candidature", "Commencer un entretien", "Acheter des crédits"
+    - [x] Responsive : stacked mobile, 2-col tablet, 3-col desktop
   - Source: absorbe US-070 (sprint 019, non exécutée), vision `§12.1`–`§12.4`
 
 - [ ] **[US-076]** Refondre `/notifications` en liste dense groupée par jour
@@ -84,3 +84,4 @@ Sprint 021 couvre le reste du périmètre : CV, Letters, Credits, Profile, Admin
 ## 🔁 Workflow Runs
 
 - 2026-07-09 — [[workflows/runs/analyze-design-dev-review-20260709210000|analyze-design-dev-review]] (US-074) — passed
+- 2026-07-10 — [[workflows/runs/analyze-design-dev-review-20260710010750|analyze-design-dev-review]] (US-075) — passed

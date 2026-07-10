@@ -2,7 +2,7 @@
   "project_name": "cvforge",
   "project_type": "greenfield",
   "stack": "node",
-  "architecture_style": "monorepo (source: vision §2)",
+  "architecture_style": "monorepo (source: vision \u00a72)",
   "vision_source": ".project/vision.md",
   "vision_mode": "verbatim",
   "engineering_spec": "agent-setup/spec/engineering-standards.md",
@@ -12,13 +12,13 @@
   "specialized_workflows": [],
   "specialized_skills": [],
   "clarifications_pending": [],
-  "last_updated": "2026-07-09T21:20:00+02:00",
+  "last_updated": "2026-07-10T01:07:50+02:00",
   "last_workflow_run": "analyze-design-dev-review",
   "last_workflow_stage": "tech-lead",
   "last_workflow_result": "passed",
   "active_workflow_run": null,
-  "last_adhoc_run": "analyze-design-dev-review-20260709210000",
-  "last_task_completed": "US-074",
+  "last_adhoc_run": "analyze-design-dev-review-20260710010750",
+  "last_task_completed": "US-075",
   "workflow_runs": [
     {
       "run_id": "20260419-191212-us-006",
@@ -470,42 +470,42 @@
     {
       "run_id": "analyze-design-dev-review-20260602120000",
       "sprint": null,
-      "task": "champ raffinement génération LM",
+      "task": "champ raffinement g\u00e9n\u00e9ration LM",
       "workflow": "analyze-design-dev-review",
       "result": "passed"
     },
     {
       "run_id": "analyze-design-dev-review-20260602140000",
       "sprint": null,
-      "task": "améliorer formatage et contenu LM",
+      "task": "am\u00e9liorer formatage et contenu LM",
       "workflow": "analyze-design-dev-review",
       "result": "passed"
     },
     {
       "run_id": "analyze-design-dev-review-20260602150000",
       "sprint": null,
-      "task": "améliorer la génération de CV — mise en forme + contenu prompt",
+      "task": "am\u00e9liorer la g\u00e9n\u00e9ration de CV \u2014 mise en forme + contenu prompt",
       "workflow": "analyze-design-dev-review",
       "result": "passed"
     },
     {
       "run_id": "analyze-design-dev-review-20260602160000",
       "sprint": null,
-      "task": "CV ATS une page — typographie, layout, prompt density",
+      "task": "CV ATS une page \u2014 typographie, layout, prompt density",
       "workflow": "analyze-design-dev-review",
       "result": "passed"
     },
     {
       "run_id": "analyze-design-dev-review-20260602170000",
       "sprint": null,
-      "task": "compétences structurées par catégories — format listing",
+      "task": "comp\u00e9tences structur\u00e9es par cat\u00e9gories \u2014 format listing",
       "workflow": "analyze-design-dev-review",
       "result": "passed"
     },
     {
       "run_id": "analyze-design-dev-review-20260602180000",
       "sprint": null,
-      "task": "fix deployment data loss — koklo-infra cvforge volume path mismatch",
+      "task": "fix deployment data loss \u2014 koklo-infra cvforge volume path mismatch",
       "workflow": "analyze-design-dev-review",
       "result": "passed"
     },
@@ -538,14 +538,14 @@
     {
       "run_id": "analyze-design-dev-review-20260610153104",
       "sprint": null,
-      "task": "fidélité aperçu PDF CV et LM",
+      "task": "fid\u00e9lit\u00e9 aper\u00e7u PDF CV et LM",
       "workflow": "analyze-design-dev-review",
       "result": "passed"
     },
     {
       "run_id": "analyst-designer-20260709205519",
       "sprint": null,
-      "task": "rationalisation UI/UX desktop-first — écran par écran",
+      "task": "rationalisation UI/UX desktop-first \u2014 \u00e9cran par \u00e9cran",
       "workflow": "analyst-designer",
       "result": "passed"
     },
@@ -553,6 +553,13 @@
       "run_id": "analyze-design-dev-review-20260709210000",
       "sprint": "020",
       "task": "US-074",
+      "workflow": "analyze-design-dev-review",
+      "result": "passed"
+    },
+    {
+      "run_id": "analyze-design-dev-review-20260710010750",
+      "sprint": "020",
+      "task": "US-075",
       "workflow": "analyze-design-dev-review",
       "result": "passed"
     }
