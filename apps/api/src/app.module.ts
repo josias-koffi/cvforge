@@ -1,4 +1,5 @@
 import { Module } from "@nestjs/common";
+import { AdminModule } from "./admin/admin.module";
 import { AppController } from "./app.controller";
 import { AuthModule } from "./auth/auth.module";
 import { SmtpModule } from "./smtp/smtp.module";
@@ -15,6 +16,7 @@ import { InterviewModule } from "./interview/interview.module";
 
 @Module({
   imports: [
+    AdminModule,
     AuthModule,
     SmtpModule,
     OpenRouterModule,

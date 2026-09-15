@@ -55,6 +55,25 @@ export class FileAuthAccountStore implements AuthAccountStore {
     return state.accounts[email] ?? null;
   }
 
+  updateRole(email: string, role: AuthRole): AuthAccountRecord | null {
+    const state = this.readState();
+    const account = state.accounts[email];
+
+    if (!account) {
+      return null;
+    }
+
+    state.accounts[email] = { ...account, role };
+
+    if (role === "admin") {
+      state.bootstrapConsumed = true;
+    }
+
+    this.writeState(state);
+
+    return { email, ...state.accounts[email] };
+  }
+
   resolveRole(email: string, consent?: AuthConsentRecord | null): AuthRole {
     const state = this.readState();
     const account = state.accounts[email];
