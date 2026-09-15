@@ -738,3 +738,7 @@
 - **Did**: `DraftApplication.profileId?: string | null`; `PUT /applications/:id/profile { profileId }` → `ApplicationsService.setProfile` (400 if empty, 404 if unknown profile, null resets, `updatedAt` untouched). Profile ids come from `PROFILES_STORE` injected through `ApplicationsModule` (imports `ProfilesModule`). Web: select on offer detail persists via `setOfferProfile`; `generateDocument` always uses the stored profile (fallback to default when absent or deleted), so CV/letter pages use it too.
 - **Learned**: `@cvforge/types` resolves to `dist/` for web typecheck (`import` condition wins) → run `pnpm --filter @cvforge/types build` after changing a type.
 - **Verified**: api tsc + lint, applications tests 47/47 (+3); web typecheck, lint, 10 tests; browser: choice persisted across reload, stale id after profile deletion falls back. Full api suite had 4 failures in `cv-pseudonymizer.test.ts`, untracked work from another session.
+
+## 2026-09-15 — Rebrand CVSpark apps/web (ad hoc)
+- **Did**: Tokens CVSpark dans `globals.css`, `TableFrame` partagé, `PendingContent` + prop `spark` sur ActionButton/SubmitButton, `formatCredits`/`creditCostLabel` (coûts lus depuis `AI_CREDIT_COSTS`), `loading.tsx`/`error.tsx`/`not-found.tsx`, wording CVSpark.
+- **Learned**: Next 16 `error.tsx` reçoit `retry` (pas `reset`) ; les utilitaires custom Tailwind v4 se déclarent via `@utility`.
