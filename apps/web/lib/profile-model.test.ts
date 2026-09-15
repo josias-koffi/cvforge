@@ -4,8 +4,11 @@ import { describe, expect, it } from "vitest"
 import {
   applyImportedCv,
   buildGenerationRequest,
+  countCompletedSections,
   createEmptyProfile,
+  duplicateBaseProfile,
   isProfileReady,
+  pickProfile,
 } from "@/lib/profile-model"
 
 function patch(overrides: Partial<ImportedCvProfilePatch["sections"]> = {}): ImportedCvProfilePatch {
@@ -58,5 +61,39 @@ describe("profile model", () => {
     expect(request.localFields).toEqual({ email: "me@example.com", lastName: "Koffi", phone: "0600" })
     expect(JSON.stringify(request.promptProfile)).not.toMatch(/Koffi|0600|me@example/)
     expect(request.promptProfile.identity.candidateToken).toBe("[CANDIDATE]")
+  })
+
+  it("picks the requested profile, else the default one", () => {
+    const main = createEmptyProfile("me@example.com")
+    const backend = createEmptyProfile("me@example.com", "Back-end")
+    const registry = { activeProfileId: backend.id, profiles: [main, backend], version: 2 as const }
+
+    expect(pickProfile(registry, main.id)).toBe(main)
+    expect(pickProfile(registry)).toBe(backend)
+    expect(pickProfile(registry, "unknown")).toBe(backend)
+    expect(pickProfile({ ...registry, activeProfileId: "gone" })).toBe(main)
+  })
+
+  it("duplicates a profile as an independent, unsaved copy", () => {
+    const original = createEmptyProfile("me@example.com", "Back-end")
+    original.sections.experiences = [{ company: "Acme", period: "2024", results: "", role: "Dev" }]
+    original.meta.lastSavedAt = "2026-01-01T00:00:00.000Z"
+
+    const copy = duplicateBaseProfile(original)
+    copy.sections.experiences[0].company = "Other"
+
+    expect(copy.id).not.toBe(original.id)
+    expect(copy.label).toBe("Back-end (copie)")
+    expect(copy.meta.lastSavedAt).toBeNull()
+    expect(original.sections.experiences[0].company).toBe("Acme")
+  })
+
+  it("counts the filled editor sections", () => {
+    const profile = createEmptyProfile("me@example.com")
+    expect(countCompletedSections(profile)).toBe(0)
+
+    profile.sections.technicalSkills = ["TypeScript"]
+    profile.sections.certifications = [{ issuer: "AWS", title: "SAA", year: "2025" }]
+    expect(countCompletedSections(profile)).toBe(2)
   })
 })

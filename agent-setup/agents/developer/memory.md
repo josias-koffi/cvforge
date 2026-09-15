@@ -717,3 +717,9 @@
 - Root cause: `extractPdfTextHeuristically` read the raw PDF as latin1; compressed streams gave binary noise, the AI returned empty JSON, the API still answered 200 and charged 2 credits.
 - Fix: `pdf-text.extractor.ts` uses `pdfjs-dist@4` (ESM loaded via Function-wrapped import because the API compiles to commonjs; falls back to `import()` under vitest). Import now 422s when nothing is extracted, checks balance before the AI call and charges credits only on success.
 - Lesson: pdfjs-dist ≥5 needs Node ≥22.13 — the API Docker image is Node 20.
+
+## 2026-09-15 — Multi-profils dans `apps/web` (ad hoc, user request)
+- **Context**: v2 `/profile` edited only the active profile, whereas vision §5.1/§5.3 and US-081 plan several base profiles.
+- **Did**: front-only on top of `GET|PUT /profiles` (whole-registry rewrite). `lib/profile.ts` → `loadRegistry`/`writeRegistry`; pure `pickProfile`, `duplicateBaseProfile`, `countCompletedSections` in `lib/profile-model.ts` (+3 tests). Server actions `saveProfile` (no longer changes the active profile), `createProfile`, `duplicateProfile`, `deleteProfile` (keeps ≥1, reassigns default), `setDefaultProfile` via one `mutateRegistry` helper. UI: `ProfileWorkspace` = `ProfileList` (240px column, dropdown actions, create dialog, unsaved-changes guard) + `ProfileForm` keyed by profile id; identity/import extracted to `profile-identity-card.tsx`. "Actif" = "par défaut". Offer detail: `OfferDocuments` select passes `profileId` to `generateDocument`.
+- **Verified**: web lint, typecheck, 10 unit tests; browser: create, edit+save (default unchanged), guard dialog, set default, delete default (fallback), offer select rendered. Generation with a secondary profile NOT run (credits).
+- **Open**: API has no per-application `profileId`; the choice is not remembered. US-081 criteria (accordions, Langues, Préférences) not addressed → boxes left unchecked.

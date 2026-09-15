@@ -49,7 +49,7 @@ export type ProfileRegistry = {
   version: 2
 }
 
-export function createEmptyProfile(email: string): BaseProfile {
+export function createEmptyProfile(email: string, label = "Profil principal"): BaseProfile {
   return {
     headline: "",
     id: crypto.randomUUID(),
@@ -64,7 +64,7 @@ export function createEmptyProfile(email: string): BaseProfile {
       phone: "",
       portfolio: "",
     },
-    label: "Profil principal",
+    label,
     meta: { lastSavedAt: null, maxProfiles: null, source: "empty" },
     sections: {
       certifications: [],
@@ -77,6 +77,42 @@ export function createEmptyProfile(email: string): BaseProfile {
       technicalSkills: [],
     },
   }
+}
+
+/** The requested profile, else the default (active) one, else the first. */
+export function pickProfile(registry: ProfileRegistry, id?: string) {
+  return (
+    registry.profiles.find((item) => item.id === id) ??
+    registry.profiles.find((item) => item.id === registry.activeProfileId) ??
+    registry.profiles[0]
+  )
+}
+
+export function duplicateBaseProfile(profile: BaseProfile): BaseProfile {
+  return {
+    ...structuredClone(profile),
+    id: crypto.randomUUID(),
+    label: `${profile.label} (copie)`,
+    meta: { ...profile.meta, lastSavedAt: null },
+  }
+}
+
+export const PROFILE_SECTION_COUNT = 5
+
+/** Filled sections among those shown in the editor tabs (summary, experiences, education, projects, certifications). */
+export function countCompletedSections(profile: BaseProfile) {
+  const { sections } = profile
+  return [
+    sections.summary.trim() || sections.technicalSkills.length > 0,
+    sections.experiences.length > 0,
+    sections.education.length > 0,
+    sections.personalProjects.length > 0,
+    sections.certifications.length > 0,
+  ].filter(Boolean).length
+}
+
+export function candidateName(profile: BaseProfile) {
+  return [profile.identity.firstName, profile.identity.lastName].filter(Boolean).join(" ")
 }
 
 export function isProfileReady(profile: BaseProfile) {

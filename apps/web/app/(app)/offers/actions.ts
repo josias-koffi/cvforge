@@ -6,8 +6,8 @@ import type { DraftApplication } from "@cvforge/types"
 
 import { api, ApiError, runAction, type ActionResult } from "@/lib/api"
 import { splitLines } from "@/lib/format"
-import { loadActiveProfile } from "@/lib/profile"
-import { buildGenerationRequest, isProfileReady } from "@/lib/profile-model"
+import { loadRegistry } from "@/lib/profile"
+import { buildGenerationRequest, isProfileReady, pickProfile } from "@/lib/profile-model"
 import { requireSession } from "@/lib/session"
 
 export type FormState = { message: string } | null
@@ -106,10 +106,11 @@ export async function updateOfferStatus(
 export async function generateDocument(
   offerId: string,
   kind: "cv" | "letter",
-  refinement?: string
+  refinement?: string,
+  profileId?: string
 ): Promise<ActionResult> {
   const session = await requireSession()
-  const { profile } = await loadActiveProfile(session.email)
+  const profile = pickProfile(await loadRegistry(session.email), profileId)
 
   if (!isProfileReady(profile)) {
     return {
