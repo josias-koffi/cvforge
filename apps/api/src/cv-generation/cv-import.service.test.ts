@@ -2,9 +2,11 @@ import { BadRequestException, UnprocessableEntityException } from "@nestjs/commo
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CreditsService } from "../credits/credits.service";
 import { CvImportService, type CvImportFile } from "./cv-import.service";
-import { extractPdfText } from "./pdf-text.extractor";
+import { recognizeImages } from "./ocr.extractor";
+import { extractPdfText, renderPdfPages } from "./pdf-text.extractor";
 
-vi.mock("./pdf-text.extractor", () => ({ extractPdfText: vi.fn() }));
+vi.mock("./pdf-text.extractor", () => ({ extractPdfText: vi.fn(), renderPdfPages: vi.fn() }));
+vi.mock("./ocr.extractor", () => ({ recognizeImages: vi.fn() }));
 
 const RAW_CV_TEXT = `
 Jean Dupont
@@ -68,6 +70,7 @@ describe("CvImportService", () => {
   let service: CvImportService;
 
   beforeEach(() => {
+    vi.clearAllMocks();
     openRouter = {
       chat: vi.fn().mockResolvedValue(JSON.stringify(AI_RESPONSE)),
     };
@@ -76,6 +79,8 @@ describe("CvImportService", () => {
       getSummaryForUser: vi.fn().mockReturnValue({ balance: 10 }),
     } as unknown as CreditsService;
     vi.mocked(extractPdfText).mockImplementation(async (buffer) => buffer.toString("latin1").trim());
+    vi.mocked(renderPdfPages).mockResolvedValue([]);
+    vi.mocked(recognizeImages).mockResolvedValue("");
     service = new CvImportService(openRouter as never, creditsService);
   });
 
@@ -135,6 +140,42 @@ describe("CvImportService", () => {
     await service.extractProfileFromCv("user@example.com", file);
 
     expect(extractPdfText).toHaveBeenCalledWith(file.buffer);
+  });
+
+  it("does not run OCR when the PDF has a text layer", async () => {
+    await service.extractProfileFromCv("user@example.com", makeFile());
+
+    expect(renderPdfPages).not.toHaveBeenCalled();
+    expect(recognizeImages).not.toHaveBeenCalled();
+  });
+
+  it("falls back to local OCR for scanned PDFs, then pseudonymises the OCR text", async () => {
+    const pageImage = Buffer.from("png");
+    vi.mocked(extractPdfText).mockResolvedValue("");
+    vi.mocked(renderPdfPages).mockResolvedValue([pageImage]);
+    vi.mocked(recognizeImages).mockResolvedValue(RAW_CV_TEXT);
+    const file = makeFile();
+
+    const result = await service.extractProfileFromCv("user@example.com", file);
+
+    expect(renderPdfPages).toHaveBeenCalledWith(file.buffer, 4);
+    expect(recognizeImages).toHaveBeenCalledWith([pageImage]);
+    expect(result.extractedProfile.headline).toBe("Senior Product Engineer");
+    const [messages] = openRouter.chat.mock.calls[0] as [Array<{ content: string; role: string }>];
+    expect(messages.find((message) => message.role === "user")!.content).not.toContain(
+      "jean.dupont@example.com",
+    );
+  });
+
+  it("rejects scanned PDFs whose OCR yields too little text", async () => {
+    vi.mocked(extractPdfText).mockResolvedValue("");
+    vi.mocked(renderPdfPages).mockResolvedValue([Buffer.from("png")]);
+    vi.mocked(recognizeImages).mockResolvedValue("illisible");
+
+    await expect(
+      service.extractProfileFromCv("user@example.com", makeFile()),
+    ).rejects.toBeInstanceOf(UnprocessableEntityException);
+    expect(openRouter.chat).not.toHaveBeenCalled();
   });
 
   it("rejects without charging credits when the AI extracts nothing", async () => {

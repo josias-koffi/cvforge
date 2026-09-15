@@ -11,7 +11,8 @@ import {
   InsufficientCreditsException,
   type CreditsService,
 } from "../credits/credits.service";
-import { extractPdfText } from "./pdf-text.extractor";
+import { recognizeImages } from "./ocr.extractor";
+import { extractPdfText, renderPdfPages } from "./pdf-text.extractor";
 
 export type CvImportFile = {
   buffer: Buffer;
@@ -24,6 +25,8 @@ type RawImportedProfile = Partial<ImportedCvProfilePatch>;
 
 const MAX_CV_IMPORT_BYTES = 5 * 1024 * 1024;
 const MIN_EXTRACTED_TEXT_LENGTH = 120;
+// A CV rarely exceeds a few pages; the cap bounds OCR time (a few seconds per page).
+const MAX_OCR_PAGES = 4;
 const CV_IMPORT_OMITTED_FIELDS = [
   "identity.lastName",
   "identity.phone",
@@ -33,7 +36,7 @@ const CV_IMPORT_OMITTED_FIELDS = [
 ] as const;
 
 const QUALITY_LIMITS = [
-  "Les PDF image ou scannes sans couche texte peuvent produire une extraction partielle.",
+  "Les PDF scannes sont lus par OCR local (4 premieres pages) : la qualite depend de la resolution du scan.",
   "Les mises en page multi-colonnes, tableaux, icones et barres de progression peuvent etre interpretes dans le mauvais ordre.",
   "Les dates, niveaux de langue et competences doivent etre relus avant sauvegarde.",
   "Les donnees directement identifiantes detectees sont retirees avant l'appel IA et doivent etre corrigees localement si necessaire.",
@@ -287,7 +290,11 @@ export class CvImportService {
     }
 
     if (file.mimetype === "application/pdf" || filename.endsWith(".pdf")) {
-      return extractPdfText(file.buffer);
+      const text = await extractPdfText(file.buffer);
+
+      return text.length >= MIN_EXTRACTED_TEXT_LENGTH
+        ? text
+        : recognizeImages(await renderPdfPages(file.buffer, MAX_OCR_PAGES));
     }
 
     throw new BadRequestException("Seuls les fichiers PDF et DOCX sont acceptes.");
