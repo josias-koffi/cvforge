@@ -23,6 +23,7 @@ import {
 import { formatDate, formatDateTime, statusLabels } from "@/lib/format"
 import { loadOffer } from "@/lib/offers"
 import { loadRegistry } from "@/lib/profile"
+import { pickProfile } from "@/lib/profile-model"
 import { requireSession } from "@/lib/session"
 
 export async function generateMetadata(props: PageProps<"/offers/[id]">): Promise<Metadata> {
@@ -130,6 +131,7 @@ export default async function OfferPage(props: PageProps<"/offers/[id]">) {
                 cvGeneratedAt={offer.cvGeneratedAt}
                 letterGeneratedAt={offer.letterGeneratedAt}
                 defaultProfileId={registry.activeProfileId}
+                selectedProfileId={pickProfile(registry, offer.profileId ?? undefined).id}
                 profiles={registry.profiles.map(({ id, label }) => ({ id, label }))}
               />
             </CardContent>

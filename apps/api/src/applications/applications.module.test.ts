@@ -3,17 +3,18 @@ import { describe, expect, it } from "vitest";
 import { OpenRouterModule } from "../ai/openrouter.module";
 import { AuthModule } from "../auth/auth.module";
 import { CreditsModule } from "../credits/credits.module";
+import { ProfilesModule } from "../profiles/profiles.module";
 import { ApplicationsController } from "./applications.controller";
 import { ApplicationsModule } from "./applications.module";
 import { ApplicationsService } from "./applications.service";
 
 describe("ApplicationsModule", () => {
-  it("registers the auth and openrouter dependencies", () => {
+  it("registers the auth, credits, openrouter and profiles dependencies", () => {
     const imports = Reflect.getMetadata("imports", ApplicationsModule) as
       | unknown[]
       | undefined;
 
-    expect(imports).toEqual([AuthModule, CreditsModule, OpenRouterModule]);
+    expect(imports).toEqual([AuthModule, CreditsModule, OpenRouterModule, ProfilesModule]);
   });
 
   it("registers the applications controller and service provider", () => {

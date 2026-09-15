@@ -257,6 +257,7 @@ export class ApplicationsService {
     private readonly store: ApplicationsStore,
     private readonly openRouterService: OpenRouterService,
     private readonly creditsService: CreditsService,
+    private readonly listProfileIds: ((userEmail: string) => string[]) | null = null,
   ) {}
 
   listApplications(userEmail: string): DraftApplication[] {
@@ -384,6 +385,32 @@ export class ApplicationsService {
     const extraction = await this.extractOfferFromText(userEmail, rawOfferText);
 
     return this.createDraftFromExtraction(userEmail, extraction);
+  }
+
+  /** Remembers the base profile used for this application (null resets to the default one). */
+  setProfile(
+    userEmail: string,
+    applicationId: string,
+    profileIdValue: unknown,
+  ): DraftApplication {
+    const profileId =
+      profileIdValue === null
+        ? null
+        : typeof profileIdValue === "string" && profileIdValue.trim()
+          ? profileIdValue.trim()
+          : undefined;
+
+    if (profileId === undefined) {
+      throw new BadRequestException("Un identifiant de profil est requis.");
+    }
+
+    const application = this.getOwnedApplication(userEmail, applicationId);
+
+    if (profileId && this.listProfileIds && !this.listProfileIds(userEmail).includes(profileId)) {
+      throw new NotFoundException("Le profil est introuvable.");
+    }
+
+    return stripRawOfferText(this.store.save({ ...application, profileId }));
   }
 
   getOfferForUser(userEmail: string, applicationId: string) {

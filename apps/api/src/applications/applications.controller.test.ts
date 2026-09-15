@@ -340,6 +340,7 @@ describe("ApplicationsController offer editing", () => {
         offerText: "Raw",
       }),
       reExtractOffer: vi.fn().mockResolvedValue(baseApp),
+      setProfile: vi.fn().mockReturnValue(baseApp),
       updateOffer: vi.fn().mockReturnValue(baseApp),
     } as unknown as ApplicationsService;
     const authService = {
@@ -399,6 +400,22 @@ describe("ApplicationsController offer editing", () => {
 
     expect(() =>
       controller.updateOffer("app_123", {}, { headers: {} }),
+    ).toThrow(UnauthorizedException);
+  });
+
+  it("stores the profile picked for an application", () => {
+    const { applicationsService, controller } = createController();
+
+    expect(controller.setProfile("app_123", { profileId: "profile_b" }, authed)).toEqual({
+      application: baseApp,
+    });
+    expect(applicationsService.setProfile).toHaveBeenCalledWith(
+      "user@example.com",
+      "app_123",
+      "profile_b",
+    );
+    expect(() =>
+      controller.setProfile("app_123", { profileId: "profile_b" }, { headers: {} }),
     ).toThrow(UnauthorizedException);
   });
 });

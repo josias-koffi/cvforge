@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  Put,
   UnauthorizedException,
   Req,
 } from "@nestjs/common";
@@ -133,6 +134,23 @@ export class ApplicationsController {
       application: await this.applicationsService.importFromText(
         session.email,
         body.offerText ?? "",
+      ),
+    };
+  }
+
+  @Put(":applicationId/profile")
+  setProfile(
+    @Param("applicationId") applicationId: string,
+    @Body() body: { profileId?: string | null },
+    @Req() request: RequestLike,
+  ) {
+    const session = this.requireSession(request);
+
+    return {
+      application: this.applicationsService.setProfile(
+        session.email,
+        applicationId,
+        body?.profileId,
       ),
     };
   }

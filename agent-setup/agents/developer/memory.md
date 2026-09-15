@@ -728,3 +728,13 @@
 - Owner chose local OCR over vision AI: a CV image carries last name/e-mail/phone, forbidden by vision §15.3.
 - `renderPdfPages` (pdfjs + @napi-rs/canvas, white background) → `ocr.extractor.ts` (tesseract.js 7, fra+eng from `@tesseract.js-data/*` packages) when the text layer is < 120 chars; then the usual pseudonymisation + AI call. Cap: 4 pages; ~4 s for one page incl. worker start.
 - Gotchas: tesseract.js 7 `{ code, data }` langs are broken (worker initialises with the data) → copy trained data into one tmp `langPath`. pdfjs canvases are transparent (black once flattened) → fill white before render. `@napi-rs/canvas` `new Image()` loads async; use `loadImage`. OCR unit test uses a PNG fixture, not canvas text (system fonts vary across CI).
+
+## 2026-09-15 — Last-name detection for scanned CVs
+- `cv-pseudonymizer.ts` (extracted from `cv-import.service.ts`): last name from header ("Prénom NOM" / "NOM Prénom", compound, particles skipped) + e-mail local part + LinkedIn slug; masking is whole-word, accent-insensitive, and in the first 8 lines tolerates 1 edit or truncation ≥60% (OCR read "JÉMIMA EGLA" as ": GLA"). A handle token is unmasked only if it leads its handle and matches the header first name; firstName hint is dropped if it is a masked name.
+- Old code used ASCII `\b` (broke on accented names) and exact last name only.
+- Trade-off: over-masking accepted (e.g. a header line "Martineau Conseil" masks "Conseil"). Fuzzy matching stays out of the body to protect words like "Dupond".
+
+## 2026-09-15 — Profil mémorisé par candidature (API)
+- **Did**: `DraftApplication.profileId?: string | null`; `PUT /applications/:id/profile { profileId }` → `ApplicationsService.setProfile` (400 if empty, 404 if unknown profile, null resets, `updatedAt` untouched). Profile ids come from `PROFILES_STORE` injected through `ApplicationsModule` (imports `ProfilesModule`). Web: select on offer detail persists via `setOfferProfile`; `generateDocument` always uses the stored profile (fallback to default when absent or deleted), so CV/letter pages use it too.
+- **Learned**: `@cvforge/types` resolves to `dist/` for web typecheck (`import` condition wins) → run `pnpm --filter @cvforge/types build` after changing a type.
+- **Verified**: api tsc + lint, applications tests 47/47 (+3); web typecheck, lint, 10 tests; browser: choice persisted across reload, stale id after profile deletion falls back. Full api suite had 4 failures in `cv-pseudonymizer.test.ts`, untracked work from another session.
