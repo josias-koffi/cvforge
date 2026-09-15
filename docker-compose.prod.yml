@@ -19,6 +19,26 @@ services:
       - "traefik.http.services.cvforge-app.loadbalancer.server.port=3000"
     ports: !override []
 
+  web:
+    restart: unless-stopped
+    environment:
+      API_INTERNAL_URL: http://api:3333
+      COOKIE_DOMAIN: ${COOKIE_DOMAIN:-}
+      NODE_ENV: production
+    networks:
+      - default
+      - traefik-public
+    expose:
+      - "3100"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik-public"
+      - "traefik.http.routers.cvforge-web.rule=Host(`${WEB_DOMAIN}`)"
+      - "traefik.http.routers.cvforge-web.entrypoints=websecure"
+      - "traefik.http.routers.cvforge-web.tls.certresolver=cloudflare"
+      - "traefik.http.services.cvforge-web.loadbalancer.server.port=3100"
+    ports: !override []
+
   landing:
     restart: unless-stopped
     environment:
