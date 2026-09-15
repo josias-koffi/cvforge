@@ -11,6 +11,7 @@ import {
   InsufficientCreditsException,
   type CreditsService,
 } from "../credits/credits.service";
+import { pseudonymizeCvText } from "./cv-pseudonymizer";
 import { recognizeImages } from "./ocr.extractor";
 import { extractPdfText, renderPdfPages } from "./pdf-text.extractor";
 
@@ -173,31 +174,6 @@ function hasExtractedContent(profile: ImportedCvProfilePatch) {
       sections.technicalSkills.length ||
       sections.softSkills.length,
   );
-}
-
-function pseudonymizeCvText(rawText: string) {
-  const firstLines = rawText
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .slice(0, 6);
-  const possibleName = firstLines
-    .map((line) => line.match(/^([A-ZÀ-Ý][A-Za-zÀ-ÿ'-]+)\s+([A-ZÀ-Ý][A-Za-zÀ-ÿ'-]+)/))
-    .find(Boolean);
-  const firstName = possibleName?.[1] ?? "";
-  const lastName = possibleName?.[2] ?? "";
-
-  let text = rawText
-    .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, "[EMAIL_OMITTED]")
-    .replace(/(?:\+?\d[\d\s().-]{7,}\d)/g, "[PHONE_OMITTED]")
-    .replace(/\b(?:date de naissance|birth date|born)\s*[:-]?\s*[^\n\r]+/gi, "[BIRTH_DATE_OMITTED]")
-    .replace(/\b(?:adresse|address)\s*[:-]?\s*[^\n\r]+/gi, "[ADDRESS_OMITTED]");
-
-  if (lastName) {
-    text = text.replace(new RegExp(`\\b${lastName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "gi"), "[CANDIDATE]");
-  }
-
-  return { firstName, text };
 }
 
 @Injectable()
