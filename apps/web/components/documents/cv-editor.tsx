@@ -125,7 +125,7 @@ function Section({
   value: string
 }) {
   return (
-    <AccordionItem value={value} className="rounded-lg border px-4 last:border-b">
+    <AccordionItem value={value} className="rounded-xl border bg-card px-4 text-card-foreground shadow-surface last:border-b">
       <AccordionTrigger className="hover:no-underline">
         <span>
           {title}
