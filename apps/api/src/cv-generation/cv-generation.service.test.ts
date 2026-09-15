@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import {
+  BadRequestException,
   NotFoundException,
   UnprocessableEntityException,
 } from "@nestjs/common";
@@ -741,6 +742,210 @@ describe("CvGenerationService", () => {
 
       const result = service.getLetterContent("user@test.example", "app-001");
       expect(result).toEqual(VALID_LETTER_JSON);
+    });
+  });
+
+  describe("translateCv", () => {
+    const storedCv: CVDocumentContent = {
+      ...VALID_CV_JSON,
+      candidate: {
+        ...VALID_CV_JSON.candidate,
+        email: "user@test.example",
+        lastName: "Dupont",
+        linkedin: "linkedin.com/in/jean-dupont",
+        phone: "+33612345678",
+        summary: "Développeur TypeScript expérimenté.",
+        title: "Développeur TypeScript senior",
+      },
+      interests: "Course à pied",
+    };
+
+    beforeEach(() => {
+      (store.findByIdForUserEmail as ReturnType<typeof vi.fn>).mockReturnValue(
+        makeStoredApplication({ cvContent: storedCv, cvVersions: [] }),
+      );
+      openRouter.chat.mockResolvedValue(
+        JSON.stringify({
+          cv: {
+            candidate: {
+              summary: "Experienced TypeScript developer.",
+              title: "Senior TypeScript Developer",
+            },
+            certifications: [],
+            education: VALID_CV_JSON.education,
+            experiences: VALID_CV_JSON.experiences,
+            interests: "Running",
+            languages: [],
+            projects: [],
+            skills: VALID_CV_JSON.skills,
+          },
+        }),
+      );
+    });
+
+    it("never sends the candidate identity to the LLM and consumes credits", async () => {
+      await service.translateCv("user@test.example", "app-001", "en");
+
+      const [messages] = openRouter.chat.mock.calls[0] as [
+        Array<{ role: string; content: string }>,
+      ];
+      const userMessage = messages.find((m) => m.role === "user")!;
+      expect(userMessage.content).not.toContain("Dupont");
+      expect(userMessage.content).not.toContain("+33612345678");
+      expect(userMessage.content).not.toContain("user@test.example");
+      expect(userMessage.content).not.toContain("linkedin.com");
+      expect(JSON.parse(userMessage.content)).toMatchObject({
+        targetLanguage: "en",
+      });
+      expect(creditsService.consumeCredits).toHaveBeenCalledWith({
+        action: "cv_generation",
+        applicationId: "app-001",
+        userEmail: "user@test.example",
+      });
+    });
+
+    it("restores the identity and stores a translation version", async () => {
+      const translated = await service.translateCv(
+        "user@test.example",
+        "app-001",
+        "en",
+      );
+
+      expect(translated.language).toBe("en");
+      expect(translated.candidate.lastName).toBe("Dupont");
+      expect(translated.candidate.phone).toBe("+33612345678");
+      expect(translated.candidate.title).toBe("Senior TypeScript Developer");
+      expect(translated.interests).toBe("Running");
+      const saved = (store.save as ReturnType<typeof vi.fn>).mock
+        .calls[0][0] as StoredApplication;
+      expect(saved.cvContent).toEqual(translated);
+      expect(saved.cvVersions?.at(-1)?.source).toBe("translation");
+    });
+
+    it("keeps original lists when the LLM drops items", async () => {
+      openRouter.chat.mockResolvedValue(
+        JSON.stringify({ cv: { experiences: [], interests: "Running" } }),
+      );
+
+      const translated = await service.translateCv(
+        "user@test.example",
+        "app-001",
+        "en",
+      );
+
+      expect(translated.experiences).toEqual(storedCv.experiences);
+      expect(translated.candidate.summary).toBe(storedCv.candidate.summary);
+    });
+
+    it("rejects an unsupported target language before spending credits", async () => {
+      await expect(
+        service.translateCv("user@test.example", "app-001", "de"),
+      ).rejects.toThrow(BadRequestException);
+      expect(creditsService.consumeCredits).not.toHaveBeenCalled();
+    });
+
+    it("throws NotFoundException when no CV exists", async () => {
+      (store.findByIdForUserEmail as ReturnType<typeof vi.fn>).mockReturnValue(
+        makeStoredApplication(),
+      );
+
+      await expect(
+        service.translateCv("user@test.example", "app-001", "en"),
+      ).rejects.toThrow(NotFoundException);
+      expect(creditsService.consumeCredits).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("translateLetter", () => {
+    const storedLetter: LetterDocumentContent = {
+      ...VALID_LETTER_JSON,
+      body: {
+        paragraph1: "Je candidate à votre poste.",
+        paragraph2: "Mon expérience correspond.",
+        paragraph3: "Au plaisir d'échanger.",
+      },
+      candidate: {
+        ...VALID_LETTER_JSON.candidate,
+        email: "user@test.example",
+        lastName: "Dupont",
+        phone: "+33612345678",
+      },
+      object: "Candidature au poste de développeur",
+      signature: { firstName: "Jean", lastName: "Dupont" },
+    };
+
+    it("translates the body, keeps identity and records the version", async () => {
+      (store.findByIdForUserEmail as ReturnType<typeof vi.fn>).mockReturnValue(
+        makeStoredApplication({ letterContent: storedLetter }),
+      );
+      openRouter.chat.mockResolvedValue(
+        JSON.stringify({
+          letter: {
+            body: {
+              paragraph1: "I am applying for your role.",
+              paragraph2: "My experience matches.",
+              paragraph3: "I look forward to talking.",
+            },
+            object: "Application for the developer position",
+          },
+        }),
+      );
+
+      const translated = await service.translateLetter(
+        "user@test.example",
+        "app-001",
+        "en",
+      );
+
+      const [messages] = openRouter.chat.mock.calls[0] as [
+        Array<{ role: string; content: string }>,
+      ];
+      expect(messages[1].content).not.toContain("Dupont");
+      expect(messages[1].content).not.toContain("user@test.example");
+      expect(translated.body.paragraph1).toBe("I am applying for your role.");
+      expect(translated.object).toBe("Application for the developer position");
+      expect(translated.signature.lastName).toBe("Dupont");
+      expect(translated.company).toEqual(storedLetter.company);
+      expect(translated.language).toBe("en");
+      expect(creditsService.consumeCredits).toHaveBeenCalledWith({
+        action: "letter_generation",
+        applicationId: "app-001",
+        userEmail: "user@test.example",
+      });
+      const saved = (store.save as ReturnType<typeof vi.fn>).mock
+        .calls[0][0] as StoredApplication;
+      expect(saved.letterVersions?.at(-1)?.source).toBe("translation");
+    });
+  });
+
+  describe("document language", () => {
+    it("tags generated documents with the offer language", async () => {
+      const cvContent = await service.generateCv(
+        "user@test.example",
+        "app-001",
+        makeRequest(),
+      );
+      expect(cvContent.language).toBe("en");
+
+      openRouter.chat.mockResolvedValue(
+        JSON.stringify({ ...VALID_LETTER_JSON, object: undefined }),
+      );
+      const letterContent = await service.generateLetter(
+        "user@test.example",
+        "app-001",
+        makeRequest(),
+      );
+      expect(letterContent.language).toBe("en");
+      expect(letterContent.object).toBe(
+        "Application for the position of Senior TypeScript Developer",
+      );
+    });
+
+    it("keeps the language on manual saves", () => {
+      const updated = service.updateCvContent("user@test.example", "app-001", {
+        cvContent: { ...VALID_CV_JSON, language: "en" },
+      });
+      expect(updated.language).toBe("en");
     });
   });
 });

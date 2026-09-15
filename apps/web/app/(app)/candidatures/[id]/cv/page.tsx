@@ -5,6 +5,7 @@ import { CvEditor } from "@/components/documents/cv-editor"
 import { MissingDocument } from "@/components/documents/missing-document"
 import { PageHeader } from "@/components/layout/page-header"
 import { api, ApiError } from "@/lib/api"
+import { latestAiVersionId } from "@/lib/document-versions"
 import { loadOffer } from "@/lib/offers"
 
 export const metadata: Metadata = { title: "CV" }
@@ -33,7 +34,9 @@ export default async function CvPage(props: PageProps<"/candidatures/[id]/cv">) 
         description={`${application.extracted.title}${application.extracted.companyName ? ` · ${application.extracted.companyName}` : ""}`}
       />
       {cv?.cvContent ? (
-        <CvEditor offerId={id} cvContent={cv.cvContent} versions={cv.versions} />
+        <CvEditor
+          key={latestAiVersionId(cv.versions)}
+          offerId={id} cvContent={cv.cvContent} versions={cv.versions} />
       ) : (
         <MissingDocument kind="cv" offerId={id} />
       )}

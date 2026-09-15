@@ -1,7 +1,7 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import type { CVDocumentContent, LetterDocumentContent } from "@cvforge/types"
+import type { CVDocumentContent, LetterDocumentContent, Locale } from "@cvforge/types"
 
 import { api, runAction } from "@/lib/api"
 
@@ -23,5 +23,23 @@ export async function saveLetter(offerId: string, letterContent: LetterDocumentC
   )
 
   revalidatePath(`/candidatures/${offerId}/letter`)
+  return result
+}
+
+export async function translateDocument(
+  offerId: string,
+  kind: "cv" | "letter",
+  targetLanguage: Locale
+) {
+  const result = await runAction(
+    () =>
+      api(`/applications/${offerId}/${kind}/translate`, {
+        body: { targetLanguage },
+        method: "POST",
+      }),
+    `${kind === "cv" ? "CV traduit" : "Lettre traduite"} en ${targetLanguage === "en" ? "anglais" : "français"}.`
+  )
+
+  revalidatePath("/", "layout")
   return result
 }

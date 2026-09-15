@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import type { DocumentVersionSource } from "@cvforge/types"
 import { DownloadIcon, HistoryIcon, SaveIcon } from "lucide-react"
 
 import { DocumentPreview } from "@/components/documents/document-preview"
@@ -15,11 +16,17 @@ import {
 import { Spinner } from "@/components/ui/spinner"
 import { formatDateTime } from "@/lib/format"
 
+const versionSourceLabels: Record<DocumentVersionSource, string> = {
+  generation: "IA",
+  manual_save: "Manuel",
+  translation: "Traduction",
+}
+
 export type VersionEntry<T> = {
   content: T
   createdAt: string
   id: string
-  source: "generation" | "manual_save"
+  source: DocumentVersionSource
   versionNumber: number
 }
 
@@ -77,7 +84,7 @@ export function EditorLayout<T>({
                   <DropdownMenuItem key={version.id} onSelect={() => onRestore(version.content)}>
                     <span className="font-medium">v{version.versionNumber}</span>
                     <span className="text-muted-foreground">
-                      {version.source === "generation" ? "IA" : "Manuel"} ·{" "}
+                      {versionSourceLabels[version.source]} ·{" "}
                       {formatDateTime(version.createdAt)}
                     </span>
                   </DropdownMenuItem>

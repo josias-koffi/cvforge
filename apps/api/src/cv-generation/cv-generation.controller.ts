@@ -18,6 +18,7 @@ import { FileInterceptor } from "@nestjs/platform-express";
 import type {
   CvContentUpdateRequest,
   CvGenerationRequest,
+  DocumentTranslationRequest,
   LetterContentUpdateRequest,
   LetterGenerationRequest,
 } from "@cvforge/types";
@@ -104,6 +105,52 @@ export class CvGenerationController {
       session.email,
       applicationId,
       body,
+    );
+
+    return { letterContent };
+  }
+
+  @Post(":applicationId/cv/translate")
+  async translateCv(
+    @Param("applicationId") applicationId: string,
+    @Body() body: DocumentTranslationRequest,
+    @Req() request: RequestLike,
+  ) {
+    const session = this.authService.readSessionFromCookieHeader(
+      request.headers.cookie,
+    );
+
+    if (!session) {
+      throw new UnauthorizedException("A valid session is required.");
+    }
+
+    const cvContent = await this.cvGenerationService.translateCv(
+      session.email,
+      applicationId,
+      body?.targetLanguage,
+    );
+
+    return { cvContent };
+  }
+
+  @Post(":applicationId/letter/translate")
+  async translateLetter(
+    @Param("applicationId") applicationId: string,
+    @Body() body: DocumentTranslationRequest,
+    @Req() request: RequestLike,
+  ) {
+    const session = this.authService.readSessionFromCookieHeader(
+      request.headers.cookie,
+    );
+
+    if (!session) {
+      throw new UnauthorizedException("A valid session is required.");
+    }
+
+    const letterContent = await this.cvGenerationService.translateLetter(
+      session.email,
+      applicationId,
+      body?.targetLanguage,
     );
 
     return { letterContent };

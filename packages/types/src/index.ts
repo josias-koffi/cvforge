@@ -1,5 +1,9 @@
 export const supportedLocales = ["fr", "en"] as const;
 export type Locale = "fr" | "en";
+
+export function isLocale(value: unknown): value is Locale {
+  return (supportedLocales as readonly unknown[]).includes(value);
+}
 export const TEMPLATE_KIND_CV = "cv" as const;
 export const TEMPLATE_KIND_LETTER = "letter" as const;
 export const DIVIDER_STYLE_SOLID = "solid" as const;
@@ -184,6 +188,8 @@ export interface CVDocumentContent {
   education: EducationItemProps[];
   experiences: ExperienceItemProps[];
   interests: string;
+  /** Language the document is written in; absent on legacy documents (French). */
+  language?: Locale;
   languages: LanguageItemProps[];
   projects: ProjectItemProps[];
   skills: {
@@ -193,7 +199,11 @@ export interface CVDocumentContent {
   };
 }
 
-export type DocumentVersionSource = "generation" | "manual_save";
+export type DocumentVersionSource = "generation" | "manual_save" | "translation";
+
+export interface DocumentTranslationRequest {
+  targetLanguage: Locale;
+}
 
 export interface CVDocumentVersionEntry {
   content: CVDocumentContent;
@@ -216,6 +226,8 @@ export interface LetterDocumentContent {
     name: string;
   };
   date: string;
+  /** Language the document is written in; absent on legacy documents (French). */
+  language?: Locale;
   object: string;
   signature: LMSignatureProps;
 }
