@@ -13,6 +13,7 @@ import type {
 
 import { saveCv } from "@/app/(app)/candidatures/[id]/documents-actions"
 import { EditorLayout } from "@/components/documents/editor-layout"
+import { TranslateDialog } from "@/components/documents/translate-dialog"
 import {
   cleanLines,
   FieldGrid,
@@ -166,6 +167,14 @@ export function CvEditor({
       onRestore={editor.restore}
       versions={versions}
       previewHtml={renderCvPdfHtml(draft)}
+      toolbar={
+        <TranslateDialog
+          kind="cv"
+          offerId={offerId}
+          currentLanguage={cvContent.language}
+          disabled={editor.dirty}
+        />
+      }
     >
       <Accordion type="multiple" defaultValue={["identity"]} className="flex flex-col gap-3">
         <Section value="identity" title="Identité et accroche">

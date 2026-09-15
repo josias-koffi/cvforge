@@ -97,6 +97,10 @@ function makeController(
     getLetterContent: vi.fn().mockReturnValue(MOCK_LETTER),
     updateLetterContent: vi.fn().mockReturnValue(MOCK_LETTER),
     updateCvContent: vi.fn().mockReturnValue(MOCK_CV),
+    translateCv: vi.fn().mockResolvedValue({ ...MOCK_CV, language: "en" }),
+    translateLetter: vi
+      .fn()
+      .mockResolvedValue({ ...MOCK_LETTER, language: "en" }),
     ...serviceOverrides,
   } as unknown as CvGenerationService;
 
@@ -532,6 +536,52 @@ describe("CvGenerationController", () => {
           'attachment; filename="DUPONT_Jean_CDI_Senior_Developer_LM.docx"',
         type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
       });
+    });
+  });
+
+  describe("POST :applicationId/cv/translate and letter/translate", () => {
+    it("translates documents for the authenticated user", async () => {
+      const translateCv = vi.fn().mockResolvedValue({ ...MOCK_CV, language: "en" });
+      const translateLetter = vi
+        .fn()
+        .mockResolvedValue({ ...MOCK_LETTER, language: "en" });
+      const controller = makeController(undefined, {
+        translateCv,
+        translateLetter,
+      });
+      const request = { headers: { cookie: "cvforge_session=abc" } };
+
+      const cv = await controller.translateCv(
+        "app-001",
+        { targetLanguage: "en" },
+        request,
+      );
+      const letter = await controller.translateLetter(
+        "app-001",
+        { targetLanguage: "fr" },
+        request,
+      );
+
+      expect(cv.cvContent.language).toBe("en");
+      expect(letter.letterContent.language).toBe("en");
+      expect(translateCv).toHaveBeenCalledWith("user@test.example", "app-001", "en");
+      expect(translateLetter).toHaveBeenCalledWith(
+        "user@test.example",
+        "app-001",
+        "fr",
+      );
+    });
+
+    it("rejects unauthenticated translation requests", async () => {
+      const controller = makeController(null);
+
+      await expect(
+        controller.translateCv(
+          "app-001",
+          { targetLanguage: "en" },
+          { headers: {} },
+        ),
+      ).rejects.toThrow(UnauthorizedException);
     });
   });
 });

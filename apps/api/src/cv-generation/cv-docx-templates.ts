@@ -1,3 +1,4 @@
+import { documentLabels } from "@cvforge/document-renderer";
 import type { CVDocumentContent, LetterDocumentContent } from "@cvforge/types";
 import {
   AlignmentType,
@@ -33,6 +34,7 @@ function bullet(text: string) {
 
 export function renderCvDocx(content: CVDocumentContent) {
   const candidate = content.candidate;
+  const labels = documentLabels(content.language);
   const children: Paragraph[] = [
     new Paragraph({
       alignment: AlignmentType.CENTER,
@@ -70,11 +72,11 @@ export function renderCvDocx(content: CVDocumentContent) {
   ];
 
   if (candidate.summary) {
-    children.push(sectionHeading("Profil"), paragraph(candidate.summary));
+    children.push(sectionHeading(labels.profile), paragraph(candidate.summary));
   }
 
   if (content.experiences.length > 0) {
-    children.push(sectionHeading("Experiences"));
+    children.push(sectionHeading(labels.experiences));
     content.experiences.forEach((experience) => {
       children.push(
         paragraph(
@@ -88,7 +90,7 @@ export function renderCvDocx(content: CVDocumentContent) {
   }
 
   if (content.education.length > 0) {
-    children.push(sectionHeading("Formation"));
+    children.push(sectionHeading(labels.education));
     content.education.forEach((education) => {
       children.push(
         paragraph(
@@ -106,7 +108,7 @@ export function renderCvDocx(content: CVDocumentContent) {
   }
 
   if (content.skills.hard.length > 0 || content.skills.soft.length > 0) {
-    children.push(sectionHeading("Competences"));
+    children.push(sectionHeading(labels.skills));
     if (content.skills.hard.length > 0) {
       children.push(
         paragraph(`Hard skills: ${content.skills.hard.join(", ")}`),
@@ -121,20 +123,20 @@ export function renderCvDocx(content: CVDocumentContent) {
 
   if (content.interests) {
     children.push(
-      sectionHeading("Centres d'interet"),
+      sectionHeading(labels.interests),
       paragraph(content.interests),
     );
   }
 
   if (content.languages.length > 0) {
-    children.push(sectionHeading("Langues"));
+    children.push(sectionHeading(labels.languages));
     content.languages.forEach((language) => {
       children.push(paragraph(`${language.language} - ${language.level}`));
     });
   }
 
   if (content.certifications.length > 0) {
-    children.push(sectionHeading("Certifications"));
+    children.push(sectionHeading(labels.certifications));
     content.certifications.forEach((certification) => {
       children.push(
         paragraph(
@@ -145,7 +147,7 @@ export function renderCvDocx(content: CVDocumentContent) {
   }
 
   if (content.projects.length > 0) {
-    children.push(sectionHeading("Projets"));
+    children.push(sectionHeading(labels.projects));
     content.projects.forEach((project) => {
       children.push(paragraph(project.title, { bold: true }));
       children.push(paragraph(project.description));
@@ -189,7 +191,7 @@ export function renderLetterDocx(content: LetterDocumentContent) {
     paragraph(content.company.name),
     paragraph(content.company.city),
     paragraph(content.date),
-    paragraph(`Objet : ${content.object}`, { bold: true }),
+    paragraph(`${documentLabels(content.language).letterObject} ${content.object}`, { bold: true }),
     ...bodyParagraphs,
     ...(placeDate ? [paragraph(placeDate)] : []),
     paragraph(

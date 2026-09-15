@@ -5,6 +5,7 @@ import { LetterEditor } from "@/components/documents/letter-editor"
 import { MissingDocument } from "@/components/documents/missing-document"
 import { PageHeader } from "@/components/layout/page-header"
 import { api, ApiError } from "@/lib/api"
+import { latestAiVersionId } from "@/lib/document-versions"
 import { loadOffer } from "@/lib/offers"
 
 export const metadata: Metadata = { title: "Lettre de motivation" }
@@ -33,7 +34,9 @@ export default async function LetterPage(props: PageProps<"/candidatures/[id]/le
         description={`${application.extracted.title}${application.extracted.companyName ? ` · ${application.extracted.companyName}` : ""}`}
       />
       {letter?.letterContent ? (
-        <LetterEditor offerId={id} letterContent={letter.letterContent} versions={letter.versions} />
+        <LetterEditor
+          key={latestAiVersionId(letter.versions)}
+          offerId={id} letterContent={letter.letterContent} versions={letter.versions} />
       ) : (
         <MissingDocument kind="letter" offerId={id} />
       )}

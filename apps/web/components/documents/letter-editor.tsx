@@ -9,6 +9,7 @@ import { saveLetter } from "@/app/(app)/candidatures/[id]/documents-actions"
 import { generateDocument } from "@/app/(app)/candidatures/actions"
 import { ActionButton } from "@/components/feedback/action-button"
 import { EditorLayout } from "@/components/documents/editor-layout"
+import { TranslateDialog } from "@/components/documents/translate-dialog"
 import { FieldGrid, SpecField, type FieldSpec } from "@/components/documents/list-editor"
 import { useDocumentEditor } from "@/components/documents/use-document-editor"
 import { Button } from "@/components/ui/button"
@@ -112,7 +113,17 @@ export function LetterEditor({
       onRestore={editor.restore}
       versions={versions}
       previewHtml={renderLetterPdfHtml(draft)}
-      toolbar={<RegenerateDialog offerId={offerId} />}
+      toolbar={
+        <>
+          <TranslateDialog
+            kind="letter"
+            offerId={offerId}
+            currentLanguage={letterContent.language}
+            disabled={editor.dirty}
+          />
+          <RegenerateDialog offerId={offerId} />
+        </>
+      }
     >
       <Card>
         <CardHeader>

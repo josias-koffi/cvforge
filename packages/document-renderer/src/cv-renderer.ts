@@ -4,6 +4,7 @@ import {
   escapeHtml,
   SHARED_PDF_STYLES,
 } from "./shared";
+import { documentLabels } from "./labels";
 
 function renderList(items: string[]) {
   if (items.length === 0) {
@@ -17,13 +18,14 @@ function renderList(items: string[]) {
 
 export function renderCvPdfHtml(cvContent: CVDocumentContent) {
   const candidate = cvContent.candidate;
+  const labels = documentLabels(cvContent.language);
 
   const skillsSection = (() => {
     const categories = cvContent.skills.categories;
     if (categories && categories.length > 0) {
       return `
         <section class="section skills-section">
-          <h2>Compétences clés</h2>
+          <h2>${labels.keySkills}</h2>
           ${categories
             .map(
               (cat) =>
@@ -36,7 +38,7 @@ export function renderCvPdfHtml(cvContent: CVDocumentContent) {
     if (cvContent.skills.hard.length > 0) {
       return `
         <section class="section skills-section">
-          <h2>Compétences</h2>
+          <h2>${labels.skills}</h2>
           <p class="skills-inline">${cvContent.skills.hard
             .slice(0, 12)
             .map((s) => escapeHtml(s))
@@ -51,7 +53,7 @@ export function renderCvPdfHtml(cvContent: CVDocumentContent) {
     cvContent.candidate.summary
       ? `
         <section class="section">
-          <h2>Profil</h2>
+          <h2>${labels.profile}</h2>
           <p>${escapeHtml(cvContent.candidate.summary)}</p>
         </section>
       `
@@ -60,7 +62,7 @@ export function renderCvPdfHtml(cvContent: CVDocumentContent) {
     cvContent.experiences.length > 0
       ? `
         <section class="section">
-          <h2>Expériences</h2>
+          <h2>${labels.experiences}</h2>
           ${cvContent.experiences
             .map(
               (experience) => `
@@ -86,7 +88,7 @@ export function renderCvPdfHtml(cvContent: CVDocumentContent) {
     cvContent.education.length > 0
       ? `
         <section class="section">
-          <h2>Formation</h2>
+          <h2>${labels.education}</h2>
           ${cvContent.education
             .map(
               (education) => `
@@ -113,7 +115,7 @@ export function renderCvPdfHtml(cvContent: CVDocumentContent) {
     cvContent.interests
       ? `
         <section class="section">
-          <h2>Centres d'intérêt</h2>
+          <h2>${labels.interests}</h2>
           <p>${escapeHtml(cvContent.interests)}</p>
         </section>
       `
@@ -121,7 +123,7 @@ export function renderCvPdfHtml(cvContent: CVDocumentContent) {
     cvContent.languages.length > 0
       ? `
         <section class="section">
-          <h2>Langues</h2>
+          <h2>${labels.languages}</h2>
           <p>${cvContent.languages
             .map((language) =>
               escapeHtml(`${language.language} ${language.level}`),
@@ -133,7 +135,7 @@ export function renderCvPdfHtml(cvContent: CVDocumentContent) {
     cvContent.certifications.length > 0
       ? `
         <section class="section">
-          <h2>Certifications</h2>
+          <h2>${labels.certifications}</h2>
           <p>${cvContent.certifications
             .map((c) => escapeHtml(`${c.title} (${c.year}) · ${c.issuer}`))
             .join(" · ")}</p>
@@ -143,7 +145,7 @@ export function renderCvPdfHtml(cvContent: CVDocumentContent) {
     cvContent.projects.length > 0
       ? `
         <section class="section">
-          <h2>Projets</h2>
+          <h2>${labels.projects}</h2>
           ${cvContent.projects
             .map(
               (project) => `
@@ -167,7 +169,7 @@ export function renderCvPdfHtml(cvContent: CVDocumentContent) {
     .join("");
 
   return `<!doctype html>
-<html lang="fr">
+<html lang="${cvContent.language ?? "fr"}">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />

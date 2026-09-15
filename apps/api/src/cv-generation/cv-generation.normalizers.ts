@@ -12,6 +12,7 @@ import type {
   ProjectItemProps,
   SkillCategory,
 } from "@cvforge/types";
+import { isLocale } from "@cvforge/types";
 import { UnprocessableEntityException } from "@nestjs/common";
 
 const MAX_SKILL_CATEGORIES = 5;
@@ -58,6 +59,10 @@ function uniqueStrings(values: string[], seen = new Set<string>()): string[] {
     seen.add(value);
     return true;
   });
+}
+
+function languageField(value: unknown) {
+  return isLocale(value) ? { language: value } : {};
 }
 
 function isForbiddenSkillLabel(label: string): boolean {
@@ -224,6 +229,7 @@ export function normalizeUpdatedCvContent(
     education: normalizeEducation(value.education ?? []),
     experiences: normalizeExperiences(value.experiences ?? []),
     interests: toStr(value.interests),
+    ...languageField(value.language),
     languages: normalizeLanguages(value.languages ?? []),
     projects: normalizeProjects(value.projects ?? []),
     skills: {
@@ -300,6 +306,7 @@ export function normalizeUpdatedLetterContent(
       name: toStr(value.company.name),
     },
     date: toStr(value.date),
+    ...languageField(value.language),
     object: toStr(value.object),
     signature: {
       firstName: toStr(value.signature.firstName),

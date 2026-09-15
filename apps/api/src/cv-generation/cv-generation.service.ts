@@ -7,10 +7,12 @@ import {
   type LetterDocumentContent,
   type LetterDocumentVersionEntry,
   type LetterGenerationRequest,
+  type Locale,
   AI_CREDIT_ACTION_CV_GENERATION,
   AI_CREDIT_ACTION_LETTER_GENERATION,
   TEMPLATE_KIND_CV,
   TEMPLATE_KIND_LETTER,
+  isLocale,
 } from "@cvforge/types";
 import {
   BadRequestException,
@@ -34,8 +36,16 @@ import {
 } from "./cv-generation.normalizers";
 import {
   CV_SYSTEM_PROMPT,
+  CV_TRANSLATION_SYSTEM_PROMPT,
   LETTER_SYSTEM_PROMPT,
+  LETTER_TRANSLATION_SYSTEM_PROMPT,
 } from "./cv-generation.prompts";
+import {
+  buildCvTranslationPayload,
+  buildLetterTranslationPayload,
+  mergeTranslatedCv,
+  mergeTranslatedLetter,
+} from "./cv-generation.translation";
 
 function assertLocalFieldsProvided(
   localFields: CvGenerationRequest["localFields"],
@@ -45,6 +55,27 @@ function assertLocalFieldsProvided(
       "Les champs locaux (lastName, phone, email) doivent être fournis.",
     );
   }
+}
+
+function asRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object"
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
+function assertTargetLanguage(value: unknown): Locale {
+  if (!isLocale(value)) {
+    throw new BadRequestException(
+      'La langue cible doit être "fr" ou "en".',
+    );
+  }
+  return value;
+}
+
+function fallbackLetterObject(language: Locale, title: string) {
+  return language === "en"
+    ? `Application for the position of ${title}`
+    : `Candidature au poste de ${title}`;
 }
 
 function nextVersionNumber(
@@ -142,11 +173,10 @@ export class CvGenerationService {
     );
 
     const rawJson = extractJsonFromContent<RawCvJson>(rawResponse);
-    const cvContent = normalizeCvJson(
-      rawJson,
-      request.localFields,
-      request.promptProfile,
-    );
+    const cvContent: CVDocumentContent = {
+      ...normalizeCvJson(rawJson, request.localFields, request.promptProfile),
+      language: offerContext.language,
+    };
     const cvTemplateId = this.resolveDefaultTemplateId(TEMPLATE_KIND_CV);
 
     const timestamp = new Date().toISOString();
@@ -200,13 +230,19 @@ export class CvGenerationService {
     );
 
     const rawJson = extractJsonFromContent<RawLetterJson>(rawResponse);
-    const letterContent = normalizeLetterJson(
-      rawJson,
-      request.localFields,
-      application.extracted.companyName,
-      application.extracted.location,
-      `Candidature au poste de ${application.extracted.title}`,
-    );
+    const letterContent: LetterDocumentContent = {
+      ...normalizeLetterJson(
+        rawJson,
+        request.localFields,
+        application.extracted.companyName,
+        application.extracted.location,
+        fallbackLetterObject(
+          offerContext.language,
+          application.extracted.title,
+        ),
+      ),
+      language: offerContext.language,
+    };
     const letterTemplateId =
       this.resolveDefaultTemplateId(TEMPLATE_KIND_LETTER);
 
@@ -229,6 +265,102 @@ export class CvGenerationService {
     });
 
     return letterContent;
+  }
+
+  async translateCv(
+    userEmail: string,
+    applicationId: string,
+    targetLanguage: unknown,
+  ): Promise<CVDocumentContent> {
+    const language = assertTargetLanguage(targetLanguage);
+    const application = this.getApplicationForUser(userEmail, applicationId);
+    if (!application.cvContent) {
+      throw new NotFoundException("Aucun CV généré pour cette candidature.");
+    }
+    this.creditsService.consumeCredits({
+      action: AI_CREDIT_ACTION_CV_GENERATION,
+      applicationId,
+      userEmail,
+    });
+
+    const rawJson = await this.requestTranslation(
+      CV_TRANSLATION_SYSTEM_PROMPT,
+      {
+        targetLanguage: language,
+        cv: buildCvTranslationPayload(application.cvContent),
+      },
+    );
+    const translated = mergeTranslatedCv(
+      application.cvContent,
+      asRecord(rawJson).cv ?? rawJson,
+      language,
+    );
+
+    const timestamp = new Date().toISOString();
+    const cvTemplateId = application.cvTemplateId ?? null;
+    this.store.save({
+      ...application,
+      cvContent: translated,
+      cvVersions: appendCvVersion(
+        application,
+        translated,
+        timestamp,
+        "translation",
+        cvTemplateId,
+      ),
+      updatedAt: timestamp,
+    });
+
+    return translated;
+  }
+
+  async translateLetter(
+    userEmail: string,
+    applicationId: string,
+    targetLanguage: unknown,
+  ): Promise<LetterDocumentContent> {
+    const language = assertTargetLanguage(targetLanguage);
+    const application = this.getApplicationForUser(userEmail, applicationId);
+    if (!application.letterContent) {
+      throw new NotFoundException(
+        "Aucune lettre générée pour cette candidature.",
+      );
+    }
+    this.creditsService.consumeCredits({
+      action: AI_CREDIT_ACTION_LETTER_GENERATION,
+      applicationId,
+      userEmail,
+    });
+
+    const rawJson = await this.requestTranslation(
+      LETTER_TRANSLATION_SYSTEM_PROMPT,
+      {
+        targetLanguage: language,
+        letter: buildLetterTranslationPayload(application.letterContent),
+      },
+    );
+    const translated = mergeTranslatedLetter(
+      application.letterContent,
+      asRecord(rawJson).letter ?? rawJson,
+      language,
+    );
+
+    const timestamp = new Date().toISOString();
+    const letterTemplateId = application.letterTemplateId ?? null;
+    this.store.save({
+      ...application,
+      letterContent: translated,
+      letterVersions: appendLetterVersion(
+        application,
+        translated,
+        timestamp,
+        "translation",
+        letterTemplateId,
+      ),
+      updatedAt: timestamp,
+    });
+
+    return translated;
   }
 
   updateCvContent(
@@ -333,6 +465,17 @@ export class CvGenerationService {
     return [...(application.letterVersions ?? [])].sort(
       (left, right) => right.versionNumber - left.versionNumber,
     );
+  }
+
+  private async requestTranslation(systemPrompt: string, payload: object) {
+    const rawResponse = await this.openRouterService.chat(
+      [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: JSON.stringify(payload) },
+      ],
+      { temperature: 0.1 },
+    );
+    return extractJsonFromContent<unknown>(rawResponse);
   }
 
   private getApplicationForUser(userEmail: string, applicationId: string) {

@@ -1,5 +1,6 @@
 import type { LetterDocumentContent } from "@cvforge/types";
 import { escapeHtml, SHARED_PDF_STYLES } from "./shared";
+import { documentLabels } from "./labels";
 
 export function renderLetterPdfHtml(letterContent: LetterDocumentContent) {
   const candidate = letterContent.candidate;
@@ -19,7 +20,7 @@ export function renderLetterPdfHtml(letterContent: LetterDocumentContent) {
     .join(", le ");
 
   return `<!doctype html>
-<html lang="fr">
+<html lang="${letterContent.language ?? "fr"}">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -108,7 +109,7 @@ export function renderLetterPdfHtml(letterContent: LetterDocumentContent) {
             <p class="company-secondary">${escapeHtml(letterContent.company.city)}</p>
           </div>
           <p class="letter-date">${escapeHtml(letterContent.date)}</p>
-          <p><strong>Objet :</strong> ${escapeHtml(letterContent.object)}</p>
+          <p><strong>${documentLabels(letterContent.language).letterObject}</strong> ${escapeHtml(letterContent.object)}</p>
         </div>
         <div class="body">
           <p>${escapeHtml(letterContent.body.paragraph1)}</p>

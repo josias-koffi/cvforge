@@ -150,4 +150,18 @@ describe("document renderer", () => {
     expect(html).toContain("&lt;Lead&gt; &amp; plateforme");
     expect(html).not.toContain('class="contact-program"');
   });
+
+  it("renders English section headings for English documents", () => {
+    const html = renderCvPdfHtml({ ...cvContent, language: "en" });
+
+    expect(html).toContain('<html lang="en">');
+    expect(html).toContain("<h2>Profile</h2>");
+    expect(html).toContain("<h2>Key skills</h2>");
+    expect(html).toContain("<h2>Experience</h2>");
+    expect(html).toContain("<h2>Education</h2>");
+    expect(html).not.toContain("Formation");
+
+    const letter = renderLetterPdfHtml({ ...letterContent, language: "en" });
+    expect(letter).toContain("<strong>Subject:</strong>");
+  });
 });
