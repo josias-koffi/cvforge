@@ -1,7 +1,7 @@
 import { deflateSync } from "node:zlib";
 import { UnprocessableEntityException } from "@nestjs/common";
 import { describe, expect, it } from "vitest";
-import { extractPdfText } from "./pdf-text.extractor";
+import { extractPdfText, renderPdfPages } from "./pdf-text.extractor";
 
 /** Minimal single-page PDF whose content stream is Flate-compressed, like real-world exports. */
 function buildCompressedPdf(text: string) {
@@ -53,5 +53,12 @@ describe("extractPdfText", () => {
     await expect(extractPdfText(Buffer.from("not a pdf"))).rejects.toBeInstanceOf(
       UnprocessableEntityException,
     );
+  });
+
+  it("rasterises pages to PNG for OCR, up to the page cap", async () => {
+    const images = await renderPdfPages(buildCompressedPdf("Scanned page"), 4);
+
+    expect(images).toHaveLength(1);
+    expect(images[0].subarray(1, 4).toString("latin1")).toBe("PNG");
   });
 });

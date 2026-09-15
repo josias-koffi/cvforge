@@ -97,7 +97,7 @@ export async function setDefaultProfile(id: string): Promise<ActionResult> {
 const importErrors: Record<number, string> = {
   400: "Fichier invalide. Importez un PDF ou un DOCX de moins de 5 Mo.",
   402: "Crédits insuffisants pour importer ce CV.",
-  422: "Aucune information exploitable n'a été trouvée dans ce CV (PDF scanné ou illisible ?). Aucun crédit n'a été débité.",
+  422: "Aucune information exploitable n'a été trouvée dans ce CV (scan flou ou fichier illisible ?). Aucun crédit n'a été débité.",
 }
 
 export async function importCvFile(

@@ -13,14 +13,18 @@
   "dependencies": {
     "@cvforge/document-renderer": "workspace:*",
     "@cvforge/types": "workspace:*",
+    "@napi-rs/canvas": "0.1.100",
     "@nestjs/common": "^11.0.0",
     "@nestjs/core": "^11.0.0",
     "@nestjs/platform-express": "^11.0.0",
+    "@tesseract.js-data/eng": "1.0.0",
+    "@tesseract.js-data/fra": "1.0.0",
     "docx": "^9.6.1",
     "mammoth": "^1.12.0",
     "nodemailer": "^7.0.3",
     "pdfjs-dist": "^4.10.38",
     "reflect-metadata": "^0.2.2",
-    "rxjs": "^7.8.1"
+    "rxjs": "^7.8.1",
+    "tesseract.js": "^7.0.0"
   }
 }
