@@ -1,0 +1,9 @@
+[pipeline]
+artifacts_dir = "docs/planning_artifacts"
+
+[workflow]
+preset = "light"
+
+# Provider overrides are optional — global $KOKLO_HOME/config.toml is used by default.
+# [providers.openrouter]
+# model = "anthropic/claude-opus-4-6"
