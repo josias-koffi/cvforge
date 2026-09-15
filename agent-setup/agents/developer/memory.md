@@ -712,3 +712,8 @@
 - **Learned**: shadcn CLI now scaffolds **Next 16** (`proxy.ts`, `PageProps` needs `next typegen` before `tsc`). TanStack Table v9 needs features registered via `tableFeatures()`; `row.getVisibleCells()` only exists with `columnVisibilityFeature` (use `getAllCells()`). `eslint-plugin-react-hooks` flags setState in effects — use render-time state adjustment or `useSyncExternalStore`. Admin credit grants require a non-empty note.
 - **Verified**: api 42 files / 270 tests green + lint + tsc; web lint, typecheck, 7 unit tests, `next build`; browser run against a copy of `.data` (dashboard, offer edit with source link, CV editor preview, admin credit grant); `docker/web.Dockerfile` image built and smoke-tested.
 - **Open**: magic link redirects follow the API `NEXT_PUBLIC_APP_URL` (still v1 in prod compose). PDF export needs the puppeteer service (not exercised locally).
+
+## 2026-09-15 — Fix CV import (PDF) returning an empty profile
+- Root cause: `extractPdfTextHeuristically` read the raw PDF as latin1; compressed streams gave binary noise, the AI returned empty JSON, the API still answered 200 and charged 2 credits.
+- Fix: `pdf-text.extractor.ts` uses `pdfjs-dist@4` (ESM loaded via Function-wrapped import because the API compiles to commonjs; falls back to `import()` under vitest). Import now 422s when nothing is extracted, checks balance before the AI call and charges credits only on success.
+- Lesson: pdfjs-dist ≥5 needs Node ≥22.13 — the API Docker image is Node 20.
