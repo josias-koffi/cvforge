@@ -2,6 +2,9 @@ import { BadRequestException, UnprocessableEntityException } from "@nestjs/commo
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CreditsService } from "../credits/credits.service";
 import { CvImportService, type CvImportFile } from "./cv-import.service";
+import { extractPdfText } from "./pdf-text.extractor";
+
+vi.mock("./pdf-text.extractor", () => ({ extractPdfText: vi.fn() }));
 
 const RAW_CV_TEXT = `
 Jean Dupont
@@ -70,7 +73,9 @@ describe("CvImportService", () => {
     };
     creditsService = {
       consumeCredits: vi.fn(),
+      getSummaryForUser: vi.fn().mockReturnValue({ balance: 10 }),
     } as unknown as CreditsService;
+    vi.mocked(extractPdfText).mockImplementation(async (buffer) => buffer.toString("latin1").trim());
     service = new CvImportService(openRouter as never, creditsService);
   });
 
@@ -124,5 +129,31 @@ describe("CvImportService", () => {
         makeFile({ buffer: Buffer.from("short"), size: 5 }),
       ),
     ).rejects.toBeInstanceOf(UnprocessableEntityException);
+  });
+  it("reads the PDF through the text-layer extractor", async () => {
+    const file = makeFile();
+    await service.extractProfileFromCv("user@example.com", file);
+
+    expect(extractPdfText).toHaveBeenCalledWith(file.buffer);
+  });
+
+  it("rejects without charging credits when the AI extracts nothing", async () => {
+    openRouter.chat.mockResolvedValue(
+      JSON.stringify({ headline: "", identity: {}, sections: { technicalSkills: [] } }),
+    );
+
+    await expect(
+      service.extractProfileFromCv("user@example.com", makeFile()),
+    ).rejects.toBeInstanceOf(UnprocessableEntityException);
+    expect(creditsService.consumeCredits).not.toHaveBeenCalled();
+  });
+
+  it("refuses before calling the AI when the balance is too low", async () => {
+    vi.mocked(creditsService.getSummaryForUser).mockReturnValue({ balance: 0 } as never);
+
+    await expect(
+      service.extractProfileFromCv("user@example.com", makeFile()),
+    ).rejects.toMatchObject({ status: 402 });
+    expect(openRouter.chat).not.toHaveBeenCalled();
   });
 });

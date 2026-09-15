@@ -1,12 +1,17 @@
 import {
   AI_CREDIT_ACTION_CV_IMPORT,
+  AI_CREDIT_COSTS,
   type ImportedCvExtractionResult,
   type ImportedCvProfilePatch,
 } from "@cvforge/types";
 import { BadRequestException, Injectable, UnprocessableEntityException } from "@nestjs/common";
 import mammoth from "mammoth";
 import type { OpenRouterService } from "../ai/openrouter.service";
-import type { CreditsService } from "../credits/credits.service";
+import {
+  InsufficientCreditsException,
+  type CreditsService,
+} from "../credits/credits.service";
+import { extractPdfText } from "./pdf-text.extractor";
 
 export type CvImportFile = {
   buffer: Buffer;
@@ -153,16 +158,18 @@ function normalizeImportedProfile(raw: RawImportedProfile): ImportedCvProfilePat
   };
 }
 
-function extractPdfTextHeuristically(buffer: Buffer) {
-  const latinText = buffer
-    .toString("latin1")
-    .replace(/\0/g, " ")
-    .replace(/\\r|\\n/g, " ")
-    .replace(/[^\x20-\x7EÀ-ÿ]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
+function hasExtractedContent(profile: ImportedCvProfilePatch) {
+  const { identity, sections } = profile;
 
-  return latinText;
+  return Boolean(
+    profile.headline ||
+      identity.firstName ||
+      sections.summary ||
+      sections.experiences.length ||
+      sections.education.length ||
+      sections.technicalSkills.length ||
+      sections.softSkills.length,
+  );
 }
 
 function pseudonymizeCvText(rawText: string) {
@@ -217,11 +224,12 @@ export class CvImportService {
       );
     }
 
+    const { balance } = this.creditsService.getSummaryForUser(userEmail);
+    if (balance < AI_CREDIT_COSTS[AI_CREDIT_ACTION_CV_IMPORT]) {
+      throw new InsufficientCreditsException(AI_CREDIT_ACTION_CV_IMPORT);
+    }
+
     const pseudonymized = pseudonymizeCvText(text);
-    this.creditsService.consumeCredits({
-      action: AI_CREDIT_ACTION_CV_IMPORT,
-      userEmail,
-    });
 
     const rawResponse = await this.openRouterService.chat(
       [
@@ -240,8 +248,22 @@ export class CvImportService {
       { temperature: 0.2 },
     );
 
+    const extractedProfile = normalizeImportedProfile(extractFirstJsonObject(rawResponse));
+
+    if (!hasExtractedContent(extractedProfile)) {
+      throw new UnprocessableEntityException(
+        "Aucune information exploitable n'a ete trouvee dans ce CV.",
+      );
+    }
+
+    // Charged only once the extraction produced usable data.
+    this.creditsService.consumeCredits({
+      action: AI_CREDIT_ACTION_CV_IMPORT,
+      userEmail,
+    });
+
     return {
-      extractedProfile: normalizeImportedProfile(extractFirstJsonObject(rawResponse)),
+      extractedProfile,
       omittedFields: [...CV_IMPORT_OMITTED_FIELDS],
       qualityLimits: [...QUALITY_LIMITS],
       source: {
@@ -265,7 +287,7 @@ export class CvImportService {
     }
 
     if (file.mimetype === "application/pdf" || filename.endsWith(".pdf")) {
-      return extractPdfTextHeuristically(file.buffer);
+      return extractPdfText(file.buffer);
     }
 
     throw new BadRequestException("Seuls les fichiers PDF et DOCX sont acceptes.");

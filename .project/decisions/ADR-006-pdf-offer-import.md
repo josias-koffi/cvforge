@@ -63,3 +63,10 @@ Add `pdfjs-dist` to `@cvforge/api`. No frontend dependency.
   any candidate context.
 - **Textract / AWS**: rejected as it introduces a cloud vendor dependency
   inconsistent with the self-hosted EU data residency principle.
+
+## Addendum (2026-09-15) — CV import
+
+`pdfjs-dist` is now installed in `@cvforge/api` and also reads the text layer of
+uploaded CVs (`cv-generation/pdf-text.extractor.ts`), replacing a raw `latin1`
+read of the file that could not decode Flate-compressed streams. Pinned to `4.x`
+because `5.x`/`6.x` require Node ≥ 22.13 and `docker/api.Dockerfile` runs Node 20.
