@@ -11,25 +11,12 @@ import {
   UnauthorizedException,
 } from "@nestjs/common";
 import { AuthService } from "../auth/auth.service";
+import { buildAdminUserDirectory } from "./admin-user-directory";
 import { CreditsService } from "./credits.service";
 
 type RequestLike = {
   headers: { cookie?: string };
 };
-
-function parsePositiveInteger(value: string | undefined, fallback: number) {
-  const parsed = Number.parseInt(value ?? "", 10);
-
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
-}
-
-function normalizeRoleFilter(value: string | undefined) {
-  if (value === "admin" || value === "user") {
-    return value;
-  }
-
-  return null;
-}
 
 @Controller("credits")
 export class CreditsController {
@@ -70,72 +57,16 @@ export class CreditsController {
     @Req() request: RequestLike,
   ) {
     const session = this.readAdminSession(request);
-    const query = (queryValue ?? "").trim().toLowerCase();
-    const role = normalizeRoleFilter(roleValue);
-    const pageSize = Math.min(parsePositiveInteger(pageSizeValue, 6), 20);
-    const matchingAccounts = this.authService
-      .listAccounts()
-      .filter((account) => {
-        if (role && account.role !== role) {
-          return false;
-        }
-
-        if (!query) {
-          return true;
-        }
-
-        return account.email.toLowerCase().includes(query);
-      })
-      .map((account) => {
-        const credits = this.creditsService.getSummaryForUser(account.email);
-        const lastManualGrant =
-          credits.history.find((entry) => entry.type === "admin_grant") ?? null;
-
-        return {
-          balance: credits.balance,
-          consent: account.consent,
-          email: account.email,
-          lastActivityAt:
-            credits.history[0]?.createdAt ?? account.consent?.acceptedAt ?? null,
-          lastManualGrant: lastManualGrant
-            ? {
-                adminEmail: lastManualGrant.metadata.adminEmail ?? null,
-                amount: lastManualGrant.amount,
-                createdAt: lastManualGrant.createdAt,
-                note: lastManualGrant.note,
-              }
-            : null,
-          ledgerEntryCount: credits.history.length,
-          role: account.role,
-        };
-      })
-      .sort((left, right) => {
-        const leftActivity = left.lastActivityAt ?? "";
-        const rightActivity = right.lastActivityAt ?? "";
-
-        return (
-          rightActivity.localeCompare(leftActivity) ||
-          left.email.localeCompare(right.email)
-        );
-      });
-    const totalItems = matchingAccounts.length;
-    const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
-    const page = Math.min(parsePositiveInteger(pageValue, 1), totalPages);
-    const startIndex = (page - 1) * pageSize;
 
     return {
-      filters: {
-        query: queryValue?.trim() ?? "",
-        role: role ?? "all",
-      },
-      pagination: {
-        page,
-        pageSize,
-        totalItems,
-        totalPages,
-      },
+      ...buildAdminUserDirectory(this.authService.listAccounts(), this.creditsService, {
+        maxPageSize: 20,
+        page: pageValue,
+        pageSize: pageSizeValue,
+        query: queryValue,
+        role: roleValue,
+      }),
       requestedBy: session.email,
-      users: matchingAccounts.slice(startIndex, startIndex + pageSize),
     };
   }
 

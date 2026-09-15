@@ -34,6 +34,17 @@ function createInMemoryAccountStore(): AuthAccountStore {
         }))
         .sort((left, right) => left.email.localeCompare(right.email));
     },
+    updateRole(email, role) {
+      const account = accounts.get(email);
+
+      if (!account) {
+        return null;
+      }
+
+      accounts.set(email, { ...account, role });
+
+      return { email, ...account, role };
+    },
     readAccount(email) {
       return accounts.get(email) ?? null;
     },
@@ -332,5 +343,30 @@ describe("AuthService", () => {
       new URL(invitation.invitationUrl).searchParams.get("token") ?? "";
 
     expect(() => service.consumeInvitation(invitationToken, false)).toThrow(/consent/i);
+  });
+
+  it("should update account roles while keeping at least one admin", () => {
+    const store = createInMemoryAccountStore();
+    const service = new AuthService(config, store);
+
+    store.resolveRole("admin@example.com");
+    store.resolveRole("user@example.com");
+
+    expect(service.updateAccountRole("USER@example.com", "admin")).toMatchObject({
+      email: "user@example.com",
+      role: "admin",
+    });
+    expect(service.updateAccountRole("admin@example.com", "user")).toMatchObject({
+      role: "user",
+    });
+    expect(() => service.updateAccountRole("user@example.com", "user")).toThrow(
+      /dernier administrateur/,
+    );
+    expect(() => service.updateAccountRole("user@example.com", "owner")).toThrow(
+      /role/,
+    );
+    expect(() => service.updateAccountRole("ghost@example.com", "user")).toThrow(
+      /introuvable/,
+    );
   });
 });

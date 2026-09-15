@@ -37,6 +37,17 @@ function createInMemoryAccountStore(): AuthAccountStore {
         }))
         .sort((left, right) => left.email.localeCompare(right.email));
     },
+    updateRole(email, role) {
+      const account = accounts.get(email);
+
+      if (!account) {
+        return null;
+      }
+
+      accounts.set(email, { ...account, role });
+
+      return { email, ...account, role };
+    },
     readAccount(email) {
       return accounts.get(email) ?? null;
     },

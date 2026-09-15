@@ -4,12 +4,14 @@ import {
   Get,
   Inject,
   Param,
+  Patch,
   Post,
   UnauthorizedException,
   Req,
 } from "@nestjs/common";
 import { AuthService } from "../auth/auth.service";
 import { ApplicationsService } from "./applications.service";
+import type { OfferUpdateInput } from "./applications.types";
 
 type RequestLike = {
   headers: {
@@ -27,13 +29,7 @@ export class ApplicationsController {
 
   @Get()
   listApplications(@Req() request: RequestLike) {
-    const session = this.authService.readSessionFromCookieHeader(
-      request.headers.cookie,
-    );
-
-    if (!session) {
-      throw new UnauthorizedException("A valid session is required.");
-    }
+    const session = this.requireSession(request);
 
     return {
       applications: this.applicationsService.listApplications(session.email),
@@ -42,13 +38,7 @@ export class ApplicationsController {
 
   @Get("summary")
   listSummary(@Req() request: RequestLike) {
-    const session = this.authService.readSessionFromCookieHeader(
-      request.headers.cookie,
-    );
-
-    if (!session) {
-      throw new UnauthorizedException("A valid session is required.");
-    }
+    const session = this.requireSession(request);
 
     return {
       summary: this.applicationsService.listApplicationSummary(session.email),
@@ -60,13 +50,7 @@ export class ApplicationsController {
     @Param("applicationId") applicationId: string,
     @Req() request: RequestLike,
   ) {
-    const session = this.authService.readSessionFromCookieHeader(
-      request.headers.cookie,
-    );
-
-    if (!session) {
-      throw new UnauthorizedException("A valid session is required.");
-    }
+    const session = this.requireSession(request);
 
     return {
       application: this.applicationsService.getApplicationForUser(
@@ -76,18 +60,59 @@ export class ApplicationsController {
     };
   }
 
+  @Get(":applicationId/offer")
+  getOffer(
+    @Param("applicationId") applicationId: string,
+    @Req() request: RequestLike,
+  ) {
+    const session = this.requireSession(request);
+
+    return this.applicationsService.getOfferForUser(
+      session.email,
+      applicationId,
+    );
+  }
+
+  @Patch(":applicationId")
+  updateOffer(
+    @Param("applicationId") applicationId: string,
+    @Body() body: OfferUpdateInput,
+    @Req() request: RequestLike,
+  ) {
+    const session = this.requireSession(request);
+
+    return {
+      application: this.applicationsService.updateOffer(
+        session.email,
+        applicationId,
+        body ?? {},
+      ),
+    };
+  }
+
+  @Post(":applicationId/re-extract")
+  async reExtractOffer(
+    @Param("applicationId") applicationId: string,
+    @Body() body: { source?: string },
+    @Req() request: RequestLike,
+  ) {
+    const session = this.requireSession(request);
+
+    return {
+      application: await this.applicationsService.reExtractOffer(
+        session.email,
+        applicationId,
+        body.source ?? "",
+      ),
+    };
+  }
+
   @Post("import-from-url")
   async importFromUrl(
     @Body() body: { url?: string },
     @Req() request: RequestLike,
   ) {
-    const session = this.authService.readSessionFromCookieHeader(
-      request.headers.cookie,
-    );
-
-    if (!session) {
-      throw new UnauthorizedException("A valid session is required.");
-    }
+    const session = this.requireSession(request);
 
     return {
       application: await this.applicationsService.importFromUrl(
@@ -102,13 +127,7 @@ export class ApplicationsController {
     @Body() body: { offerText?: string },
     @Req() request: RequestLike,
   ) {
-    const session = this.authService.readSessionFromCookieHeader(
-      request.headers.cookie,
-    );
-
-    if (!session) {
-      throw new UnauthorizedException("A valid session is required.");
-    }
+    const session = this.requireSession(request);
 
     return {
       application: await this.applicationsService.importFromText(
@@ -124,13 +143,7 @@ export class ApplicationsController {
     @Body() body: { status?: string },
     @Req() request: RequestLike,
   ) {
-    const session = this.authService.readSessionFromCookieHeader(
-      request.headers.cookie,
-    );
-
-    if (!session) {
-      throw new UnauthorizedException("A valid session is required.");
-    }
+    const session = this.requireSession(request);
 
     return {
       application: this.applicationsService.updateStatus(
@@ -139,5 +152,17 @@ export class ApplicationsController {
         body.status ?? "",
       ),
     };
+  }
+
+  private requireSession(request: RequestLike) {
+    const session = this.authService.readSessionFromCookieHeader(
+      request.headers.cookie,
+    );
+
+    if (!session) {
+      throw new UnauthorizedException("A valid session is required.");
+    }
+
+    return session;
   }
 }

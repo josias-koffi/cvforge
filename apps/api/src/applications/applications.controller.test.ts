@@ -331,3 +331,74 @@ describe("ApplicationsController", () => {
     });
   });
 });
+
+describe("ApplicationsController offer editing", () => {
+  function createController() {
+    const applicationsService = {
+      getOfferForUser: vi.fn().mockReturnValue({
+        application: baseApp,
+        offerText: "Raw",
+      }),
+      reExtractOffer: vi.fn().mockResolvedValue(baseApp),
+      updateOffer: vi.fn().mockReturnValue(baseApp),
+    } as unknown as ApplicationsService;
+    const authService = {
+      readSessionFromCookieHeader: vi
+        .fn()
+        .mockImplementation((cookie?: string) =>
+          cookie ? { email: "user@example.com", role: "user" } : null,
+        ),
+    } as unknown as AuthService;
+
+    return {
+      applicationsService,
+      controller: new ApplicationsController(applicationsService, authService),
+    };
+  }
+
+  const authed = { headers: { cookie: "cvforge_session=abc" } };
+
+  it("returns the offer with its raw description", () => {
+    const { controller } = createController();
+
+    expect(controller.getOffer("app_123", authed)).toEqual({
+      application: baseApp,
+      offerText: "Raw",
+    });
+  });
+
+  it("patches an offer for the authenticated user", () => {
+    const { applicationsService, controller } = createController();
+    const patch = { offerText: "Nouveau", offerUrl: null };
+
+    expect(controller.updateOffer("app_123", patch, authed)).toEqual({
+      application: baseApp,
+    });
+    expect(applicationsService.updateOffer).toHaveBeenCalledWith(
+      "user@example.com",
+      "app_123",
+      patch,
+    );
+  });
+
+  it("re-extracts an offer from the requested source", async () => {
+    const { applicationsService, controller } = createController();
+
+    await expect(
+      controller.reExtractOffer("app_123", { source: "url" }, authed),
+    ).resolves.toEqual({ application: baseApp });
+    expect(applicationsService.reExtractOffer).toHaveBeenCalledWith(
+      "user@example.com",
+      "app_123",
+      "url",
+    );
+  });
+
+  it("requires a session to edit an offer", () => {
+    const { controller } = createController();
+
+    expect(() =>
+      controller.updateOffer("app_123", {}, { headers: {} }),
+    ).toThrow(UnauthorizedException);
+  });
+});

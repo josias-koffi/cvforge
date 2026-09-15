@@ -28,6 +28,7 @@ import type { CreditsService } from "../credits/credits.service";
 import type {
   ApplicationsStore,
   OfferExtractionResult,
+  OfferUpdateInput,
   StoredApplication,
 } from "./applications.types";
 import {
@@ -37,11 +38,20 @@ import {
   inferLocaleFromText,
 } from "./offer-extraction";
 
+type NullableOfferField =
+  | "companyName"
+  | "contractType"
+  | "location"
+  | "salaryRange";
+
 type ExtractedOfferPayload = Omit<ExtractedOfferFields, "language"> & {
   language?: string | null;
 };
 
 const MIN_OFFER_TEXT_LENGTH = 160;
+const MAX_OFFER_TEXT_LENGTH = 50_000;
+const MAX_EXTRACTED_LIST_ITEMS = 8;
+const MAX_EDITED_LIST_ITEMS = 30;
 const MANUAL_TEXT_SOURCE_LABEL = "Texte colle manuellement";
 const RESPONSE_STATUSES = new Set<ApplicationStatus>([
   APPLICATION_STATUS_INTERVIEW_SCHEDULED,
@@ -85,6 +95,67 @@ function normalizeOfferText(rawText: string) {
   }
 
   return value;
+}
+
+function normalizeEditedOfferText(rawText: string) {
+  const value = rawText.trim();
+
+  if (!value) {
+    throw new BadRequestException("Le descriptif de l'offre est requis.");
+  }
+
+  if (value.length > MAX_OFFER_TEXT_LENGTH) {
+    throw new BadRequestException("Le descriptif de l'offre est trop long.");
+  }
+
+  return value;
+}
+
+function describeSource(offerUrl: string | null) {
+  return offerUrl
+    ? { offerUrl, sourceLabel: offerUrl, sourceType: APPLICATION_SOURCE_URL }
+    : {
+        offerUrl: null,
+        sourceLabel: MANUAL_TEXT_SOURCE_LABEL,
+        sourceType: APPLICATION_SOURCE_TEXT,
+      };
+}
+
+function mergeExtractedFields(
+  current: ExtractedOfferFields,
+  patch: Partial<ExtractedOfferFields>,
+): ExtractedOfferFields {
+  const title =
+    patch.title === undefined ? current.title : toStringOrNull(patch.title);
+
+  if (!title) {
+    throw new BadRequestException("L'intitule du poste est requis.");
+  }
+
+  const pickNullable = (key: NullableOfferField) =>
+    patch[key] === undefined ? current[key] : toStringOrNull(patch[key]);
+  const pickList = (key: "requirements" | "responsibilities") =>
+    patch[key] === undefined
+      ? current[key]
+      : toStringArray(patch[key], MAX_EDITED_LIST_ITEMS);
+
+  return {
+    companyName: pickNullable("companyName"),
+    contractType: pickNullable("contractType"),
+    language:
+      patch.language === "en" || patch.language === "fr"
+        ? patch.language
+        : current.language,
+    location: pickNullable("location"),
+    requirements: pickList("requirements"),
+    responsibilities: pickList("responsibilities"),
+    salaryRange: pickNullable("salaryRange"),
+    summary:
+      patch.summary === undefined
+        ? current.summary
+        : (toStringOrNull(patch.summary) ?? ""),
+    title,
+  };
 }
 
 function isApplicationStatus(value: string): value is ApplicationStatus {
@@ -132,7 +203,7 @@ function toStringOrNull(value: unknown) {
   return normalized.length > 0 ? normalized : null;
 }
 
-function toStringArray(value: unknown) {
+function toStringArray(value: unknown, limit = MAX_EXTRACTED_LIST_ITEMS) {
   if (!Array.isArray(value)) {
     return [];
   }
@@ -140,7 +211,7 @@ function toStringArray(value: unknown) {
   return value
     .map((entry) => (typeof entry === "string" ? entry.trim() : ""))
     .filter((entry) => entry.length > 0)
-    .slice(0, 8);
+    .slice(0, limit);
 }
 
 function normalizeExtractedFields(
@@ -302,32 +373,8 @@ export class ApplicationsService {
     rawUrl: string,
   ): Promise<DraftApplication> {
     const extraction = await this.extractOffer(userEmail, rawUrl);
-    const timestamp = new Date().toISOString();
-    const storedApplication: StoredApplication = {
-      createdAt: timestamp,
-      cvContent: null,
-      cvGeneratedAt: null,
-      id: randomUUID(),
-      letterContent: null,
-      letterGeneratedAt: null,
-      offerTextPreview: extraction.offerTextPreview,
-      offerUrl: extraction.offerUrl,
-      rawOfferText: extraction.offerText,
-      sourceLabel: extraction.sourceLabel,
-      sourceType: extraction.sourceType,
-      status: APPLICATION_STATUS_DRAFT,
-      statusHistory: [
-        {
-          changedAt: timestamp,
-          status: APPLICATION_STATUS_DRAFT,
-        },
-      ],
-      updatedAt: timestamp,
-      userEmail,
-      extracted: extraction.extracted,
-    };
 
-    return stripRawOfferText(this.store.createDraft(storedApplication));
+    return this.createDraftFromExtraction(userEmail, extraction);
   }
 
   async importFromText(
@@ -335,6 +382,95 @@ export class ApplicationsService {
     rawOfferText: string,
   ): Promise<DraftApplication> {
     const extraction = await this.extractOfferFromText(userEmail, rawOfferText);
+
+    return this.createDraftFromExtraction(userEmail, extraction);
+  }
+
+  getOfferForUser(userEmail: string, applicationId: string) {
+    const application = this.getOwnedApplication(userEmail, applicationId);
+
+    return {
+      application: stripRawOfferText(application),
+      offerText: application.rawOfferText,
+    };
+  }
+
+  updateOffer(
+    userEmail: string,
+    applicationId: string,
+    patch: OfferUpdateInput,
+  ): DraftApplication {
+    const application = this.getOwnedApplication(userEmail, applicationId);
+    const offerUrl =
+      patch.offerUrl === undefined
+        ? application.offerUrl
+        : patch.offerUrl === null || !patch.offerUrl.trim()
+          ? null
+          : normalizeOfferUrl(patch.offerUrl);
+    const offerText =
+      patch.offerText === undefined
+        ? application.rawOfferText
+        : normalizeEditedOfferText(patch.offerText);
+    const extracted = patch.extracted
+      ? mergeExtractedFields(application.extracted, patch.extracted)
+      : application.extracted;
+
+    return stripRawOfferText(
+      this.store.save({
+        ...application,
+        ...describeSource(offerUrl),
+        extracted,
+        offerTextPreview: buildOfferPreview(offerText),
+        rawOfferText: offerText,
+        updatedAt: new Date().toISOString(),
+      }),
+    );
+  }
+
+  async reExtractOffer(
+    userEmail: string,
+    applicationId: string,
+    source: string,
+  ): Promise<DraftApplication> {
+    const application = this.getOwnedApplication(userEmail, applicationId);
+    let extraction: OfferExtractionResult;
+
+    if (source === APPLICATION_SOURCE_URL) {
+      if (!application.offerUrl) {
+        throw new BadRequestException(
+          "Cette offre n'a pas de lien source a analyser.",
+        );
+      }
+
+      extraction = await this.extractOffer(userEmail, application.offerUrl);
+    } else if (source === APPLICATION_SOURCE_TEXT) {
+      extraction = {
+        ...(await this.extractOfferFromText(userEmail, application.rawOfferText)),
+        ...describeSource(application.offerUrl),
+        offerUrl: application.offerUrl,
+      };
+    } else {
+      throw new BadRequestException("La source d'extraction est invalide.");
+    }
+
+    return stripRawOfferText(
+      this.store.save({
+        ...application,
+        extracted: extraction.extracted,
+        offerTextPreview: extraction.offerTextPreview,
+        offerUrl: extraction.offerUrl,
+        rawOfferText: extraction.offerText,
+        sourceLabel: extraction.sourceLabel,
+        sourceType: extraction.sourceType,
+        updatedAt: new Date().toISOString(),
+      }),
+    );
+  }
+
+  private createDraftFromExtraction(
+    userEmail: string,
+    extraction: OfferExtractionResult,
+  ): DraftApplication {
     const timestamp = new Date().toISOString();
     const storedApplication: StoredApplication = {
       createdAt: timestamp,

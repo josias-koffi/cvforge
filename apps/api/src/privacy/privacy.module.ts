@@ -33,5 +33,6 @@ import { PrivacyService } from "./privacy.service";
         ),
     },
   ],
+  exports: [PrivacyService],
 })
 export class PrivacyModule {}

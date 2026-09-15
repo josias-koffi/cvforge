@@ -71,6 +71,11 @@ export class PrivacyService {
       throw new UnauthorizedException("A valid session is required.");
     }
 
+    return this.purgeAccount(normalizedEmail);
+  }
+
+  purgeAccount(userEmail: string): PrivacyDeletionSummary {
+    const normalizedEmail = normalizeEmail(userEmail);
     const deletedApplications = this.applicationsStore.deleteByUserEmail(normalizedEmail);
     const deletedNotifications = this.notificationsStore.deleteByUserEmail(normalizedEmail);
     const deletedProfiles = this.profilesStore.deleteByUserEmail(normalizedEmail);

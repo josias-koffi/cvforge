@@ -1,3 +1,4 @@
+import { AdminModule } from "./admin/admin.module";
 import "reflect-metadata";
 import { describe, expect, it } from "vitest";
 import { AppController } from "./app.controller";
@@ -22,6 +23,7 @@ describe("AppModule", () => {
       | undefined;
 
     expect(imports).toEqual([
+      AdminModule,
       AuthModule,
       SmtpModule,
       OpenRouterModule,

@@ -50,3 +50,9 @@ export type ApplicationStatusUpdate = {
 };
 
 export type ApplicationSummary = ApplicationsKpiSummary;
+
+export type OfferUpdateInput = {
+  extracted?: Partial<ExtractedOfferFields>;
+  offerText?: string;
+  offerUrl?: string | null;
+};

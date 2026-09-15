@@ -60,6 +60,7 @@ export type InvitationResponse = {
 export type AuthAccountStore = {
   listAccounts: () => AuthAccountRecord[];
   readAccount: (email: string) => AuthAccount | null;
+  updateRole: (email: string, role: AuthRole) => AuthAccountRecord | null;
   resolveRole: (email: string, consent?: AuthConsentRecord | null) => AuthRole;
   assignInvitedRole: (
     email: string,

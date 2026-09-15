@@ -1,6 +1,8 @@
 import {
   BadRequestException,
+  ConflictException,
   ForbiddenException,
+  NotFoundException,
   Injectable,
   UnauthorizedException,
 } from "@nestjs/common";
@@ -221,6 +223,30 @@ export class AuthService {
 
   listAccounts(): AuthAccountRecord[] {
     return this.accountStore.listAccounts();
+  }
+
+  updateAccountRole(rawEmail: string, rawRole: string | undefined) {
+    if (rawRole !== "admin" && rawRole !== "user") {
+      throw new BadRequestException("Le role doit etre admin ou user.");
+    }
+
+    const email = this.normalizeEmail(rawEmail);
+    const accounts = this.accountStore.listAccounts();
+    const target = accounts.find((account) => account.email === email);
+
+    if (!target) {
+      throw new NotFoundException("Utilisateur introuvable.");
+    }
+
+    const remainingAdmins = accounts.filter(
+      (account) => account.role === "admin" && account.email !== email,
+    );
+
+    if (target.role === "admin" && rawRole === "user" && remainingAdmins.length === 0) {
+      throw new ConflictException("Impossible de retirer le dernier administrateur.");
+    }
+
+    return this.accountStore.updateRole(email, rawRole) as AuthAccountRecord;
   }
 
   private buildMagicLink(token: string) {
