@@ -6,7 +6,7 @@ const documents = new Set(["cv", "letter"])
 const formats = new Set(["pdf", "docx"])
 
 /** Streams a PDF/DOCX export from the API with the user's session cookie. */
-export async function GET(request: NextRequest, context: RouteContext<"/offers/[id]/export">) {
+export async function GET(request: NextRequest, context: RouteContext<"/candidatures/[id]/export">) {
   const { id } = await context.params
   const documentKind = request.nextUrl.searchParams.get("document") ?? ""
   const format = request.nextUrl.searchParams.get("format") ?? ""
@@ -21,7 +21,7 @@ export async function GET(request: NextRequest, context: RouteContext<"/offers/[
 
   if (!response.ok || !response.body) {
     return NextResponse.redirect(
-      new URL(`/offers/${id}/${documentKind}?notice=export-failed`, request.url)
+      new URL(`/candidatures/${id}/${documentKind}?notice=export-failed`, request.url)
     )
   }
 

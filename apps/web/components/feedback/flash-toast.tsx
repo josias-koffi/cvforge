@@ -13,11 +13,11 @@ const errors: Record<string, string> = {
 const sparks: Record<string, string> = {
   "cv-generated": "Votre CV est prêt. Relisez-le, ajustez, exportez.",
   "letter-generated": "Votre lettre est prête. À vous de la peaufiner.",
-  "offer-created": "Offre analysée : l'essentiel est extrait.",
+  "offer-created": "Candidature créée : l'offre est analysée.",
 }
 
 const messages: Record<string, string> = {
-  "offer-updated": "Offre mise à jour.",
+  "offer-updated": "Candidature mise à jour.",
   "profile-saved": "Profil enregistré.",
 }
 

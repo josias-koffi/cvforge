@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { FileTextIcon, ZapIcon } from "lucide-react"
 
-import { generateDocument } from "@/app/(app)/offers/actions"
+import { generateDocument } from "@/app/(app)/candidatures/actions"
 import { ActionButton } from "@/components/feedback/action-button"
 import { Button } from "@/components/ui/button"
 import {
@@ -44,7 +44,7 @@ export function MissingDocument({
           {kind === "cv" ? "Générer mon CV" : "Générer ma lettre"}
         </ActionButton>
         <Button asChild variant="outline">
-          <Link href={`/offers/${offerId}`}>Retour à l&apos;offre</Link>
+          <Link href={`/candidatures/${offerId}`}>Retour à la candidature</Link>
         </Button>
       </EmptyContent>
     </Empty>

@@ -9,7 +9,7 @@ import {
 import { ChevronDownIcon } from "lucide-react"
 import { toast } from "sonner"
 
-import { updateOfferStatus } from "@/app/(app)/offers/actions"
+import { updateOfferStatus } from "@/app/(app)/candidatures/actions"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,

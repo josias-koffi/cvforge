@@ -34,9 +34,9 @@ export default async function DashboardPage() {
         description="Vos candidatures en un coup d'œil. Une nouvelle offre ? Une étincelle suffit."
         actions={
           <Button asChild>
-            <Link href="/offers/new">
+            <Link href="/candidatures/new">
               <PlusIcon />
-              Nouvelle offre
+              Nouvelle candidature
             </Link>
           </Button>
         }
@@ -47,10 +47,10 @@ export default async function DashboardPage() {
       </div>
       <section className="flex flex-col gap-3 px-4 lg:px-6">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Offres récentes</h2>
+          <h2 className="text-lg font-semibold">Candidatures récentes</h2>
           <Button asChild variant="ghost" size="sm">
-            <Link href="/offers">
-              Toutes les offres
+            <Link href="/candidatures">
+              Toutes les candidatures
               <ArrowRightIcon />
             </Link>
           </Button>

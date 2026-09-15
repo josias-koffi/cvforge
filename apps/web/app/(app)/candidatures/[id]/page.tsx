@@ -27,7 +27,7 @@ import { loadRegistry } from "@/lib/profile"
 import { pickProfile } from "@/lib/profile-model"
 import { requireSession } from "@/lib/session"
 
-export async function generateMetadata(props: PageProps<"/offers/[id]">): Promise<Metadata> {
+export async function generateMetadata(props: PageProps<"/candidatures/[id]">): Promise<Metadata> {
   const { application } = await loadOffer((await props.params).id)
   return { title: application.extracted.title }
 }
@@ -46,7 +46,7 @@ function BulletList({ items }: { items: string[] }) {
   )
 }
 
-export default async function OfferPage(props: PageProps<"/offers/[id]">) {
+export default async function OfferPage(props: PageProps<"/candidatures/[id]">) {
   const { id } = await props.params
   const session = await requireSession()
   const [{ application: offer, offerText }, registry] = await Promise.all([
@@ -78,7 +78,7 @@ export default async function OfferPage(props: PageProps<"/offers/[id]">) {
           <>
             <StatusMenu offerId={offer.id} status={offer.status} />
             <Button asChild>
-              <Link href={`/offers/${offer.id}/edit`}>
+              <Link href={`/candidatures/${offer.id}/edit`}>
                 <PencilIcon />
                 Modifier
               </Link>

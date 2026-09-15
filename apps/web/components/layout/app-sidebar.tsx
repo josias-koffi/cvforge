@@ -30,7 +30,7 @@ import {
 
 const mainItems = [
   { href: "/dashboard", icon: LayoutDashboardIcon, title: "Tableau de bord" },
-  { href: "/offers", icon: BriefcaseBusinessIcon, title: "Offres" },
+  { href: "/candidatures", icon: BriefcaseBusinessIcon, title: "Candidatures" },
   { href: "/profile", icon: UserRoundIcon, title: "Mes profils" },
   { href: "/credits", icon: CoinsIcon, title: "Crédits" },
   { href: "/notifications", icon: BellIcon, title: "Notifications" },
@@ -70,12 +70,12 @@ export function AppSidebar({
               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
-                  tooltip="Nouvelle offre"
+                  tooltip="Nouvelle candidature"
                   className="bg-primary text-primary-foreground shadow-surface hover:bg-primary/90 hover:text-primary-foreground hover:shadow-raised active:bg-primary/90 active:text-primary-foreground"
                 >
-                  <Link href="/offers/new">
+                  <Link href="/candidatures/new">
                     <PlusIcon />
-                    <span>Nouvelle offre</span>
+                    <span>Nouvelle candidature</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>

@@ -22,7 +22,7 @@ async function loadCv(offerId: string) {
   }
 }
 
-export default async function CvPage(props: PageProps<"/offers/[id]/cv">) {
+export default async function CvPage(props: PageProps<"/candidatures/[id]/cv">) {
   const { id } = await props.params
   const [{ application }, cv] = await Promise.all([loadOffer(id), loadCv(id)])
 

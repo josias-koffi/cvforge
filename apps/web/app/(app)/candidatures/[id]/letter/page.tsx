@@ -22,7 +22,7 @@ async function loadLetter(offerId: string) {
   }
 }
 
-export default async function LetterPage(props: PageProps<"/offers/[id]/letter">) {
+export default async function LetterPage(props: PageProps<"/candidatures/[id]/letter">) {
   const { id } = await props.params
   const [{ application }, letter] = await Promise.all([loadOffer(id), loadLetter(id)])
 

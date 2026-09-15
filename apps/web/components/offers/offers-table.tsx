@@ -59,9 +59,9 @@ function buildColumns(onToggleSort: () => void) {
   return columnHelper.columns([
     columnHelper.display({
       id: "offer",
-      header: "Offre",
+      header: "Candidature",
       cell: ({ row }) => (
-        <Link href={`/offers/${row.original.id}`} className="group block min-w-48">
+        <Link href={`/candidatures/${row.original.id}`} className="group block min-w-48">
           <span className="font-medium group-hover:underline">
             {row.original.extracted.title}
           </span>
@@ -125,23 +125,23 @@ function OfferRowActions({ offer }: { offer: DraftApplication }) {
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-44">
           <DropdownMenuItem asChild>
-            <Link href={`/offers/${offer.id}`}>Voir le détail</Link>
+            <Link href={`/candidatures/${offer.id}`}>Voir le détail</Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
-            <Link href={`/offers/${offer.id}/edit`}>
+            <Link href={`/candidatures/${offer.id}/edit`}>
               <PencilIcon />
-              Modifier l&apos;offre
+              Modifier la candidature
             </Link>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem asChild>
-            <Link href={`/offers/${offer.id}/cv`}>
+            <Link href={`/candidatures/${offer.id}/cv`}>
               <FileTextIcon />
               CV
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
-            <Link href={`/offers/${offer.id}/letter`}>
+            <Link href={`/candidatures/${offer.id}/letter`}>
               <MailIcon />
               Lettre
             </Link>
@@ -194,7 +194,7 @@ export function OffersTable({
       <div className="relative w-full sm:max-w-xs">
         <SearchIcon className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
         <Input
-          aria-label="Rechercher une offre"
+          aria-label="Rechercher une candidature"
           placeholder="Poste, entreprise, lieu…"
           className="pl-8"
           value={query}
@@ -230,17 +230,17 @@ export function OffersTable({
             <span className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary motion-safe:animate-float">
               <ZapIcon className="size-5" strokeWidth={1.75} />
             </span>
-            <span className="font-medium text-foreground">Pas encore d&apos;offre</span>
+            <span className="font-medium text-foreground">Pas encore de candidature</span>
             <span>Importez-en une pour lancer votre première étincelle.</span>
             <Button asChild size="sm">
-              <Link href="/offers/new">
+              <Link href="/candidatures/new">
                 <PlusIcon />
-                Importer ma première offre
+                Créer ma première candidature
               </Link>
             </Button>
           </div>
         ) : (
-          "Aucune offre ne correspond à ces filtres."
+          "Aucune candidature ne correspond à ces filtres."
         )
       }
     />

@@ -8,7 +8,7 @@ import { OffersTable } from "@/components/offers/offers-table"
 import { Button } from "@/components/ui/button"
 import { api } from "@/lib/api"
 
-export const metadata: Metadata = { title: "Offres" }
+export const metadata: Metadata = { title: "Candidatures" }
 
 export default async function OffersPage() {
   const { applications } = await api<{ applications: DraftApplication[] }>(
@@ -18,13 +18,13 @@ export default async function OffersPage() {
   return (
     <>
       <PageHeader
-        title="Offres"
-        description="Chaque offre suivie, avec son statut et ses documents prêts à partir."
+        title="Candidatures"
+        description="Chaque candidature suivie, avec son statut et ses documents prêts à partir."
         actions={
           <Button asChild>
-            <Link href="/offers/new">
+            <Link href="/candidatures/new">
               <PlusIcon />
-              Nouvelle offre
+              Nouvelle candidature
             </Link>
           </Button>
         }

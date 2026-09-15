@@ -11,7 +11,7 @@ export async function saveCv(offerId: string, cvContent: CVDocumentContent) {
     "CV enregistré."
   )
 
-  revalidatePath(`/offers/${offerId}/cv`)
+  revalidatePath(`/candidatures/${offerId}/cv`)
   return result
 }
 
@@ -22,6 +22,6 @@ export async function saveLetter(offerId: string, letterContent: LetterDocumentC
     "Lettre enregistrée."
   )
 
-  revalidatePath(`/offers/${offerId}/letter`)
+  revalidatePath(`/candidatures/${offerId}/letter`)
   return result
 }
