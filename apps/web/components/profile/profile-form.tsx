@@ -1,10 +1,9 @@
 "use client"
 
-import { useRef, useState, useTransition } from "react"
-import { FileUpIcon, SaveIcon } from "lucide-react"
+import { useEffect, useState, useTransition } from "react"
 import { toast } from "sonner"
 
-import { importCvFile, saveProfile } from "@/app/(app)/profile/actions"
+import { saveProfile } from "@/app/(app)/profile/actions"
 import {
   cleanLines,
   FieldGrid,
@@ -12,40 +11,16 @@ import {
   SpecField,
   type FieldSpec,
 } from "@/components/documents/list-editor"
-import { Button } from "@/components/ui/button"
-import {
-  Card,
-  CardAction,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Spinner } from "@/components/ui/spinner"
+import { ProfileIdentityCard } from "@/components/profile/profile-identity-card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { formatDateTime } from "@/lib/format"
-import {
-  applyImportedCv,
-  type BaseProfile,
-  type CertificationEntry,
-  type EducationEntry,
-  type ExperienceEntry,
-  type ProjectEntry,
+import type {
+  BaseProfile,
+  CertificationEntry,
+  EducationEntry,
+  ExperienceEntry,
+  ProjectEntry,
 } from "@/lib/profile-model"
-
-type Identity = BaseProfile["identity"]
-
-const identityFields: FieldSpec<Identity>[] = [
-  { key: "firstName", label: "Prénom" },
-  { key: "lastName", label: "Nom" },
-  { key: "email", label: "E-mail" },
-  { key: "phone", label: "Téléphone" },
-  { key: "city", label: "Ville" },
-  { key: "linkedIn", label: "LinkedIn" },
-  { key: "github", label: "GitHub" },
-  { key: "portfolio", label: "Portfolio" },
-]
 
 const experienceFields: FieldSpec<ExperienceEntry>[] = [
   { key: "role", label: "Poste" },
@@ -85,62 +60,23 @@ function normalizeProfile(profile: BaseProfile): BaseProfile {
   }
 }
 
-function CvImportCard({ onImported }: { onImported: (profile: (p: BaseProfile) => BaseProfile) => void }) {
-  const [pending, startTransition] = useTransition()
-  const inputRef = useRef<HTMLInputElement>(null)
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Importer un CV existant</CardTitle>
-        <CardDescription>
-          L&apos;IA lit votre CV (PDF ou DOCX, 5 Mo max.) et pré-remplit le profil.
-          Vérifiez puis enregistrez. Coût : 2 crédits.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form
-          className="flex flex-col gap-2 sm:flex-row"
-          action={(formData) =>
-            startTransition(async () => {
-              const response = await importCvFile(formData)
-
-              if (!response.ok) {
-                toast.error(response.message)
-                return
-              }
-
-              onImported((profile) => applyImportedCv(profile, response.result.extractedProfile))
-              toast.success("CV analysé : vérifiez les champs puis enregistrez.")
-              if (inputRef.current) inputRef.current.value = ""
-            })
-          }
-        >
-          <Input
-            ref={inputRef}
-            name="cvFile"
-            type="file"
-            accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-            aria-label="Fichier CV"
-            required
-          />
-          <Button type="submit" variant="outline" disabled={pending}>
-            {pending ? <Spinner /> : <FileUpIcon />}
-            {pending ? "Analyse…" : "Analyser"}
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
-  )
-}
-
-export function ProfileForm({ initialProfile }: { initialProfile: BaseProfile }) {
+export function ProfileForm({
+  initialProfile,
+  onDirtyChange,
+}: {
+  initialProfile: BaseProfile
+  onDirtyChange: (dirty: boolean) => void
+}) {
   const [profile, setProfile] = useState(initialProfile)
+  const [savedProfile, setSavedProfile] = useState(initialProfile)
   const [saving, startSaving] = useTransition()
+  const dirty = JSON.stringify(profile) !== JSON.stringify(savedProfile)
   const setSections = <K extends keyof BaseProfile["sections"]>(
     key: K,
     value: BaseProfile["sections"][K]
   ) => setProfile({ ...profile, sections: { ...profile.sections, [key]: value } })
+
+  useEffect(() => onDirtyChange(dirty), [dirty, onDirtyChange])
 
   const save = () =>
     startSaving(async () => {
@@ -148,10 +84,12 @@ export function ProfileForm({ initialProfile }: { initialProfile: BaseProfile })
       const result = await saveProfile(normalized)
 
       if (result.ok) {
-        setProfile({
+        const saved = {
           ...normalized,
           meta: { ...normalized.meta, lastSavedAt: new Date().toISOString() },
-        })
+        }
+        setProfile(saved)
+        setSavedProfile(saved)
         toast.success(result.message)
       } else {
         toast.error(result.message)
@@ -159,56 +97,8 @@ export function ProfileForm({ initialProfile }: { initialProfile: BaseProfile })
     })
 
   return (
-    <div className="@container/editor flex flex-col gap-4 px-4 lg:px-6">
-      <div className="grid gap-4 @5xl/main:grid-cols-[1fr_380px]">
-        <Card>
-          <CardHeader>
-            <CardTitle>Identité</CardTitle>
-            <CardDescription>
-              Nom, e-mail et téléphone ne sont jamais envoyés à l&apos;IA : ils sont
-              réinjectés après la génération.
-            </CardDescription>
-            <CardAction>
-              <Button onClick={save} disabled={saving}>
-                {saving ? <Spinner /> : <SaveIcon />}
-                Enregistrer
-              </Button>
-            </CardAction>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-4">
-            <SpecField
-              id="profile"
-              spec={{ key: "headline", label: "Titre professionnel", wide: true }}
-              value={profile.headline}
-              onChange={(value) => setProfile({ ...profile, headline: value as string })}
-            />
-            <FieldGrid>
-              {identityFields.map((spec) => (
-                <SpecField
-                  key={spec.key}
-                  id="identity"
-                  spec={spec}
-                  value={profile.identity[spec.key]}
-                  onChange={(value) =>
-                    setProfile({ ...profile, identity: { ...profile.identity, [spec.key]: value } })
-                  }
-                />
-              ))}
-            </FieldGrid>
-          </CardContent>
-        </Card>
-        <div className="flex flex-col gap-4">
-          <CvImportCard onImported={setProfile} />
-          <Card>
-            <CardHeader>
-              <CardDescription>Dernier enregistrement</CardDescription>
-              <CardTitle className="text-base">
-                {formatDateTime(profile.meta.lastSavedAt)}
-              </CardTitle>
-            </CardHeader>
-          </Card>
-        </div>
-      </div>
+    <div className="@container/editor flex min-w-0 flex-col gap-4">
+      <ProfileIdentityCard profile={profile} saving={saving} onChange={setProfile} onSave={save} />
       <Card>
         <CardContent>
           <Tabs defaultValue="summary" className="gap-4">

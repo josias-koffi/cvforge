@@ -71,7 +71,7 @@ export function NavUser({ email, isAdmin }: { email: string; isAdmin: boolean })
             <DropdownMenuItem asChild>
               <Link href="/profile">
                 <UserRoundIcon />
-                Mon profil
+                Mes profils
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem

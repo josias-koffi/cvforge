@@ -31,7 +31,7 @@ import {
 const mainItems = [
   { href: "/dashboard", icon: LayoutDashboardIcon, title: "Tableau de bord" },
   { href: "/offers", icon: BriefcaseBusinessIcon, title: "Offres" },
-  { href: "/profile", icon: UserRoundIcon, title: "Mon profil" },
+  { href: "/profile", icon: UserRoundIcon, title: "Mes profils" },
   { href: "/credits", icon: CoinsIcon, title: "Crédits" },
   { href: "/notifications", icon: BellIcon, title: "Notifications" },
 ]

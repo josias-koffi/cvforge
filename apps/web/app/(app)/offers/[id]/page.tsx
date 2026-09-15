@@ -3,7 +3,7 @@ import Link from "next/link"
 import { ExternalLinkIcon, PencilIcon } from "lucide-react"
 
 import { PageHeader } from "@/components/layout/page-header"
-import { DocumentRow } from "@/components/offers/document-card"
+import { OfferDocuments } from "@/components/offers/document-card"
 import { StatusBadge } from "@/components/offers/status-badge"
 import { StatusMenu } from "@/components/offers/status-menu"
 import {
@@ -22,6 +22,8 @@ import {
 } from "@/components/ui/card"
 import { formatDate, formatDateTime, statusLabels } from "@/lib/format"
 import { loadOffer } from "@/lib/offers"
+import { loadRegistry } from "@/lib/profile"
+import { requireSession } from "@/lib/session"
 
 export async function generateMetadata(props: PageProps<"/offers/[id]">): Promise<Metadata> {
   const { application } = await loadOffer((await props.params).id)
@@ -44,7 +46,11 @@ function BulletList({ items }: { items: string[] }) {
 
 export default async function OfferPage(props: PageProps<"/offers/[id]">) {
   const { id } = await props.params
-  const { application: offer, offerText } = await loadOffer(id)
+  const session = await requireSession()
+  const [{ application: offer, offerText }, registry] = await Promise.all([
+    loadOffer(id),
+    loadRegistry(session.email),
+  ])
   const { extracted } = offer
   const facts = [
     ["Entreprise", extracted.companyName],
@@ -115,23 +121,16 @@ export default async function OfferPage(props: PageProps<"/offers/[id]">) {
             <CardHeader>
               <CardTitle>Documents</CardTitle>
               <CardDescription>
-                Générés à partir de votre profil et de cette offre (3 crédits chacun).
+                Générés à partir du profil choisi et de cette offre (3 crédits chacun).
               </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col gap-3">
-              <DocumentRow
-                kind="cv"
+              <OfferDocuments
                 offerId={offer.id}
-                title="CV"
-                description="CV ciblé sur les attentes de l'offre."
-                generatedAt={offer.cvGeneratedAt}
-              />
-              <DocumentRow
-                kind="letter"
-                offerId={offer.id}
-                title="Lettre de motivation"
-                description="Lettre personnalisée pour l'entreprise."
-                generatedAt={offer.letterGeneratedAt}
+                cvGeneratedAt={offer.cvGeneratedAt}
+                letterGeneratedAt={offer.letterGeneratedAt}
+                defaultProfileId={registry.activeProfileId}
+                profiles={registry.profiles.map(({ id, label }) => ({ id, label }))}
               />
             </CardContent>
           </Card>
