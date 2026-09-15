@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import Link from "next/link"
+import { AI_CREDIT_COSTS } from "@cvforge/types"
 import { ExternalLinkIcon, PencilIcon } from "lucide-react"
 
 import { PageHeader } from "@/components/layout/page-header"
@@ -20,7 +21,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { formatDate, formatDateTime, statusLabels } from "@/lib/format"
+import { formatCredits, formatDate, formatDateTime, statusLabels } from "@/lib/format"
 import { loadOffer } from "@/lib/offers"
 import { loadRegistry } from "@/lib/profile"
 import { pickProfile } from "@/lib/profile-model"
@@ -89,7 +90,7 @@ export default async function OfferPage(props: PageProps<"/offers/[id]">) {
         <Card>
           <CardHeader>
             <CardTitle>Descriptif</CardTitle>
-            <CardDescription>Synthèse extraite par l&apos;IA</CardDescription>
+            <CardDescription>L&apos;essentiel de l&apos;annonce, extrait pour vous</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <p className="text-sm leading-relaxed whitespace-pre-line">
@@ -122,7 +123,7 @@ export default async function OfferPage(props: PageProps<"/offers/[id]">) {
             <CardHeader>
               <CardTitle>Documents</CardTitle>
               <CardDescription>
-                Générés à partir du profil choisi et de cette offre (3 crédits chacun).
+                Votre profil + cette offre : des documents prêts en quelques secondes ({formatCredits(AI_CREDIT_COSTS.cv_generation)} chacun).
               </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col gap-3">

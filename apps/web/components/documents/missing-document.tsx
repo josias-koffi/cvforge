@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { FileTextIcon, SparklesIcon } from "lucide-react"
+import { FileTextIcon, ZapIcon } from "lucide-react"
 
 import { generateDocument } from "@/app/(app)/offers/actions"
 import { ActionButton } from "@/components/feedback/action-button"
@@ -23,21 +23,25 @@ export function MissingDocument({
   const label = kind === "cv" ? "CV" : "lettre de motivation"
 
   return (
-    <Empty className="mx-4 border lg:mx-6">
+    <Empty className="mx-4 rise-in border bg-card shadow-surface lg:mx-6">
       <EmptyHeader>
-        <EmptyMedia variant="icon">
+        <EmptyMedia variant="icon" className="bg-primary/10 text-primary motion-safe:animate-float">
           <FileTextIcon />
         </EmptyMedia>
         <EmptyTitle>Pas encore de {label}</EmptyTitle>
         <EmptyDescription>
-          L&apos;IA rédige un premier jet à partir de votre profil et de l&apos;offre,
-          que vous pourrez ensuite ajuster ici.
+          Un premier jet ciblé sur l&apos;offre, à partir de votre profil, en quelques
+          secondes. Vous l&apos;ajustez ensuite ici.
         </EmptyDescription>
       </EmptyHeader>
       <EmptyContent className="flex-row justify-center">
-        <ActionButton pendingLabel="L'IA rédige…" action={generateDocument.bind(null, offerId, kind, undefined)}>
-          <SparklesIcon />
-          Générer avec l&apos;IA
+        <ActionButton
+          spark
+          pendingLabel="Génération en cours…"
+          action={generateDocument.bind(null, offerId, kind, undefined)}
+        >
+          <ZapIcon />
+          {kind === "cv" ? "Générer mon CV" : "Générer ma lettre"}
         </ActionButton>
         <Button asChild variant="outline">
           <Link href={`/offers/${offerId}`}>Retour à l&apos;offre</Link>

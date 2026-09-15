@@ -18,7 +18,7 @@ export default async function ProfilePage(props: PageProps<"/profile">) {
     <>
       <PageHeader
         title="Mes profils"
-        description="La matière première de l'IA : un profil par type de poste visé. Le profil par défaut est proposé à la génération."
+        description="Votre matière première : un profil par type de poste visé. Le profil par défaut sert à chaque génération."
       />
       <ProfileWorkspace
         activeProfileId={registry.activeProfileId}

@@ -12,6 +12,7 @@ import {
   PencilIcon,
   PlusIcon,
   SearchIcon,
+  ZapIcon,
 } from "lucide-react"
 
 import {
@@ -225,8 +226,12 @@ export function OffersTable({
       toolbar={toolbar}
       emptyMessage={
         offers.length === 0 ? (
-          <div className="flex flex-col items-center gap-3 py-6">
-            <span>Aucune offre pour le moment.</span>
+          <div className="flex flex-col items-center gap-3 py-8">
+            <span className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary motion-safe:animate-float">
+              <ZapIcon className="size-5" strokeWidth={1.75} />
+            </span>
+            <span className="font-medium text-foreground">Pas encore d&apos;offre</span>
+            <span>Importez-en une pour lancer votre première étincelle.</span>
             <Button asChild size="sm">
               <Link href="/offers/new">
                 <PlusIcon />

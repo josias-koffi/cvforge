@@ -3,15 +3,20 @@
 import { useEffect } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
+import { ZapIcon } from "lucide-react"
 
 const errors: Record<string, string> = {
   "export-failed": "L'export a échoué. Réessayez dans un instant.",
 }
 
+/** AI results: celebrated with the amber spark. */
+const sparks: Record<string, string> = {
+  "cv-generated": "Votre CV est prêt. Relisez-le, ajustez, exportez.",
+  "letter-generated": "Votre lettre est prête. À vous de la peaufiner.",
+  "offer-created": "Offre analysée : l'essentiel est extrait.",
+}
+
 const messages: Record<string, string> = {
-  "cv-generated": "CV généré par l'IA.",
-  "letter-generated": "Lettre de motivation générée par l'IA.",
-  "offer-created": "Offre importée et analysée par l'IA.",
   "offer-updated": "Offre mise à jour.",
   "profile-saved": "Profil enregistré.",
 }
@@ -26,8 +31,13 @@ export function FlashToast() {
   useEffect(() => {
     if (!notice) return
 
-    const message = messages[notice]
-    if (message) toast.success(message)
+    if (sparks[notice]) {
+      toast.success(sparks[notice], {
+        className: "spark",
+        icon: <ZapIcon className="size-4 text-spark" />,
+      })
+    }
+    if (messages[notice]) toast.success(messages[notice])
     if (errors[notice]) toast.error(errors[notice])
 
     const params = new URLSearchParams(searchParams)

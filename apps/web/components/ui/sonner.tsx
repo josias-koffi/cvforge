@@ -38,7 +38,9 @@ const Toaster = ({ ...props }: ToasterProps) => {
       }
       toastOptions={{
         classNames: {
-          toast: "cn-toast",
+          toast:
+            "cn-toast group/toast shadow-overlay! border-l-4! data-[type=success]:border-l-success! data-[type=error]:border-l-destructive! data-[type=warning]:border-l-warning! data-[type=info]:border-l-info! motion-safe:data-[type=success]:[&.spark]:animate-spark-flash",
+          icon: "group-data-[type=success]/toast:text-success group-data-[type=error]/toast:text-destructive group-data-[type=warning]/toast:text-warning group-data-[type=info]/toast:text-info",
         },
       }}
       {...props}

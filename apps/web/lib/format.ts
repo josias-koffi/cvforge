@@ -1,4 +1,4 @@
-import type { ApplicationStatus } from "@cvforge/types"
+import { AI_CREDIT_COSTS, type AiCreditAction, type ApplicationStatus } from "@cvforge/types"
 
 export const statusLabels: Record<ApplicationStatus, string> = {
   draft: "Brouillon",
@@ -10,13 +10,13 @@ export const statusLabels: Record<ApplicationStatus, string> = {
 
 export const statusVariants: Record<
   ApplicationStatus,
-  "default" | "secondary" | "outline" | "destructive"
+  "outline" | "info" | "warning" | "success" | "destructive"
 > = {
   draft: "outline",
-  interview_scheduled: "default",
-  offer_received: "default",
+  interview_scheduled: "warning",
+  offer_received: "success",
   rejected: "destructive",
-  sent: "secondary",
+  sent: "info",
 }
 
 const dateFormatter = new Intl.DateTimeFormat("fr-FR", {
@@ -43,6 +43,15 @@ export function formatPrice(cents: number) {
     currency: "EUR",
     style: "currency",
   }).format(cents / 100)
+}
+
+export function formatCredits(amount: number) {
+  return `${amount} crédit${Math.abs(amount) > 1 ? "s" : ""}`
+}
+
+/** Cost label of an AI action, e.g. "Coût : 3 crédits". */
+export function creditCostLabel(action: AiCreditAction) {
+  return `Coût : ${formatCredits(AI_CREDIT_COSTS[action])}`
 }
 
 export function splitLines(value: string) {

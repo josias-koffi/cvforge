@@ -8,6 +8,7 @@ import {
 import { CoinsIcon } from "lucide-react"
 
 import { startCheckout } from "@/app/(app)/credits/actions"
+import { TableFrame } from "@/components/data-table/table-frame"
 import { ActionButton } from "@/components/feedback/action-button"
 import { PageHeader } from "@/components/layout/page-header"
 import { Badge } from "@/components/ui/badge"
@@ -20,7 +21,6 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import {
-  Table,
   TableBody,
   TableCell,
   TableHead,
@@ -28,7 +28,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { api } from "@/lib/api"
-import { formatDateTime, formatPrice } from "@/lib/format"
+import { formatCredits, formatDateTime, formatPrice } from "@/lib/format"
 
 export const metadata: Metadata = { title: "Crédits" }
 
@@ -48,24 +48,26 @@ export default async function CreditsPage() {
     <>
       <PageHeader
         title="Crédits"
-        description="Chaque action de l'IA consomme des crédits."
+        description="Chaque génération consomme des crédits. Rechargez quand vous voulez, sans abonnement."
       />
       <div className="grid gap-4 px-4 lg:px-6 @3xl/main:grid-cols-3">
         <Card>
           <CardHeader>
             <CardDescription>Solde actuel</CardDescription>
             <CardTitle className="flex items-center gap-2 text-3xl tabular-nums">
-              <CoinsIcon className="size-6 text-muted-foreground" />
+              <span className="flex size-9 items-center justify-center rounded-lg bg-spark/20 text-spark-foreground dark:text-spark">
+                <CoinsIcon className="size-5" strokeWidth={1.75} />
+              </span>
               {credits.balance}
-              {credits.isLowBalance ? <Badge variant="destructive">Solde faible</Badge> : null}
+              {credits.isLowBalance ? <Badge variant="warning">Solde faible</Badge> : null}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <ul className="space-y-1 text-sm text-muted-foreground">
-              <li>Analyse d&apos;offre : {AI_CREDIT_COSTS.offer_enrichment} crédit</li>
-              <li>Import de CV : {AI_CREDIT_COSTS.cv_import} crédits</li>
-              <li>CV généré : {AI_CREDIT_COSTS.cv_generation} crédits</li>
-              <li>Lettre générée : {AI_CREDIT_COSTS.letter_generation} crédits</li>
+              <li>Analyse d&apos;offre : {formatCredits(AI_CREDIT_COSTS.offer_enrichment)}</li>
+              <li>Import de CV : {formatCredits(AI_CREDIT_COSTS.cv_import)}</li>
+              <li>CV généré : {formatCredits(AI_CREDIT_COSTS.cv_generation)}</li>
+              <li>Lettre générée : {formatCredits(AI_CREDIT_COSTS.letter_generation)}</li>
             </ul>
           </CardContent>
         </Card>
@@ -92,46 +94,44 @@ export default async function CreditsPage() {
       </div>
       <section className="flex flex-col gap-3 px-4 lg:px-6">
         <h2 className="text-lg font-semibold">Historique</h2>
-        <div className="overflow-hidden rounded-lg border">
-          <Table>
-            <TableHeader className="bg-muted">
+        <TableFrame>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Date</TableHead>
+              <TableHead>Opération</TableHead>
+              <TableHead>Note</TableHead>
+              <TableHead className="text-right">Montant</TableHead>
+              <TableHead className="text-right">Solde</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {credits.history.length === 0 ? (
               <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead>Opération</TableHead>
-                <TableHead>Note</TableHead>
-                <TableHead className="text-right">Montant</TableHead>
-                <TableHead className="text-right">Solde</TableHead>
+                <TableCell colSpan={5} className="h-20 text-center text-muted-foreground">
+                  Aucune opération.
+                </TableCell>
               </TableRow>
-            </TableHeader>
-            <TableBody>
-              {credits.history.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={5} className="h-20 text-center text-muted-foreground">
-                    Aucune opération.
+            ) : (
+              credits.history.map((entry) => (
+                <TableRow key={entry.id}>
+                  <TableCell className="text-muted-foreground tabular-nums">
+                    {formatDateTime(entry.createdAt)}
                   </TableCell>
+                  <TableCell>{actionLabels[entry.action] ?? entry.action}</TableCell>
+                  <TableCell className="max-w-64 truncate text-muted-foreground">
+                    {entry.note ?? "—"}
+                  </TableCell>
+                  <TableCell
+                    className={`text-right tabular-nums ${entry.amount > 0 ? "text-success" : ""}`}
+                  >
+                    {entry.amount > 0 ? `+${entry.amount}` : entry.amount}
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums">{entry.balanceAfter}</TableCell>
                 </TableRow>
-              ) : (
-                credits.history.map((entry) => (
-                  <TableRow key={entry.id}>
-                    <TableCell className="text-muted-foreground tabular-nums">
-                      {formatDateTime(entry.createdAt)}
-                    </TableCell>
-                    <TableCell>{actionLabels[entry.action] ?? entry.action}</TableCell>
-                    <TableCell className="max-w-64 truncate text-muted-foreground">
-                      {entry.note ?? "—"}
-                    </TableCell>
-                    <TableCell
-                      className={`text-right tabular-nums ${entry.amount > 0 ? "text-emerald-600 dark:text-emerald-400" : ""}`}
-                    >
-                      {entry.amount > 0 ? `+${entry.amount}` : entry.amount}
-                    </TableCell>
-                    <TableCell className="text-right tabular-nums">{entry.balanceAfter}</TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </div>
+              ))
+            )}
+          </TableBody>
+        </TableFrame>
       </section>
     </>
   )

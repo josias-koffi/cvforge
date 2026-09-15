@@ -21,6 +21,7 @@ import {
   FieldLabel,
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
+import { Spinner } from "@/components/ui/spinner"
 
 export function LoginForm({ notice }: { notice?: string }) {
   const [state, formAction, pending] = useActionState(requestMagicLink, null)
@@ -29,9 +30,9 @@ export function LoginForm({ notice }: { notice?: string }) {
   return (
     <Card>
       <CardHeader className="text-center">
-        <CardTitle className="text-xl">Connexion</CardTitle>
+        <CardTitle className="text-xl">Bienvenue sur CVSpark</CardTitle>
         <CardDescription>
-          Recevez un lien de connexion par e-mail, sans mot de passe.
+          Recevez votre lien de connexion par e-mail. Pas de mot de passe à retenir.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -58,11 +59,11 @@ export function LoginForm({ notice }: { notice?: string }) {
             {error ? <FieldError>{error}</FieldError> : null}
             <Field>
               <Button type="submit" disabled={pending}>
-                <MailIcon />
+                {pending ? <Spinner /> : <MailIcon />}
                 {pending ? "Envoi en cours…" : "Recevoir mon lien"}
               </Button>
               <FieldDescription className="text-center">
-                Nouveau ? Le compte est créé à la première connexion.
+                Première visite ? Votre compte se crée à la connexion.
               </FieldDescription>
             </Field>
           </FieldGroup>

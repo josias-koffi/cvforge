@@ -31,7 +31,7 @@ export default async function DashboardPage() {
     <>
       <PageHeader
         title="Tableau de bord"
-        description="Vue d'ensemble de vos candidatures et de l'activité de l'IA."
+        description="Vos candidatures en un coup d'œil. Une nouvelle offre ? Une étincelle suffit."
         actions={
           <Button asChild>
             <Link href="/offers/new">

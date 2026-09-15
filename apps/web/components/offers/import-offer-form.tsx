@@ -1,7 +1,7 @@
 "use client"
 
 import { useActionState } from "react"
-import { AlertCircleIcon, ClipboardPasteIcon, LinkIcon, SparklesIcon } from "lucide-react"
+import { AlertCircleIcon, ClipboardPasteIcon, LinkIcon, ZapIcon } from "lucide-react"
 
 import { importOffer } from "@/app/(app)/offers/actions"
 import { SubmitButton } from "@/components/feedback/submit-button"
@@ -18,6 +18,7 @@ import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
+import { creditCostLabel } from "@/lib/format"
 
 function SourceForm({
   children,
@@ -37,8 +38,9 @@ function SourceForm({
             {source === "url" ? "Depuis le lien de l'annonce" : "Depuis le texte de l'annonce"}
           </CardTitle>
           <CardDescription>
-            L&apos;IA extrait le poste, l&apos;entreprise, les missions et le profil
-            recherché. Tout reste modifiable ensuite. Coût : 1 crédit.
+            On en extrait le poste, l&apos;entreprise, les missions et le profil
+            recherché en quelques secondes. Tout reste modifiable ensuite.{" "}
+            {creditCostLabel("offer_enrichment")}.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -53,9 +55,9 @@ function SourceForm({
           </FieldGroup>
         </CardContent>
         <CardFooter className="justify-end">
-          <SubmitButton pendingLabel="Analyse en cours…">
-            <SparklesIcon />
-            Importer et analyser
+          <SubmitButton spark pendingLabel="Analyse en cours…">
+            <ZapIcon />
+            Analyser l&apos;offre
           </SubmitButton>
         </CardFooter>
       </Card>
