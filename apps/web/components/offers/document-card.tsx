@@ -5,7 +5,7 @@ import Link from "next/link"
 import { toast } from "sonner"
 import { ArrowRightIcon, RefreshCwIcon, ZapIcon } from "lucide-react"
 
-import { generateDocument, setOfferProfile } from "@/app/(app)/offers/actions"
+import { generateDocument, setOfferProfile } from "@/app/(app)/candidatures/actions"
 import { ActionButton } from "@/components/feedback/action-button"
 import { Button } from "@/components/ui/button"
 import { Field, FieldLabel } from "@/components/ui/field"
@@ -47,7 +47,7 @@ export function DocumentRow({
         {generatedAt ? (
           <>
             <Button asChild size="sm">
-              <Link href={`/offers/${offerId}/${kind}`}>
+              <Link href={`/candidatures/${offerId}/${kind}`}>
                 Ouvrir l&apos;éditeur
                 <ArrowRightIcon />
               </Link>

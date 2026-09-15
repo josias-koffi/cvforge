@@ -3,7 +3,7 @@
 import { useActionState } from "react"
 import { AlertCircleIcon, ClipboardPasteIcon, LinkIcon, ZapIcon } from "lucide-react"
 
-import { importOffer } from "@/app/(app)/offers/actions"
+import { importOffer } from "@/app/(app)/candidatures/actions"
 import { SubmitButton } from "@/components/feedback/submit-button"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import {

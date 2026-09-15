@@ -15,14 +15,14 @@ import {
 
 const segmentLabels: Record<string, string> = {
   admin: "Administration",
+  candidatures: "Candidatures",
   credits: "Crédits",
   cv: "CV",
   dashboard: "Tableau de bord",
   edit: "Modifier",
   letter: "Lettre de motivation",
-  new: "Nouvelle offre",
+  new: "Nouvelle candidature",
   notifications: "Notifications",
-  offers: "Offres",
   profile: "Mes profils",
   users: "Utilisateurs",
 }

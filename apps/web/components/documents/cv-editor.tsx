@@ -11,7 +11,7 @@ import type {
   ProjectItemProps,
 } from "@cvforge/types"
 
-import { saveCv } from "@/app/(app)/offers/[id]/documents-actions"
+import { saveCv } from "@/app/(app)/candidatures/[id]/documents-actions"
 import { EditorLayout } from "@/components/documents/editor-layout"
 import {
   cleanLines,

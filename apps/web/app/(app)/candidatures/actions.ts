@@ -40,7 +40,7 @@ export async function importOffer(
   }
 
   revalidatePath("/", "layout")
-  redirect(`/offers/${application.id}?notice=offer-created`)
+  redirect(`/candidatures/${application.id}?notice=offer-created`)
 }
 
 export async function updateOffer(
@@ -73,7 +73,7 @@ export async function updateOffer(
   }
 
   revalidatePath("/", "layout")
-  redirect(`/offers/${offerId}?notice=offer-updated`)
+  redirect(`/candidatures/${offerId}?notice=offer-updated`)
 }
 
 export async function reExtractOffer(
@@ -83,7 +83,7 @@ export async function reExtractOffer(
   const result = await runAction(
     () =>
       api(`/applications/${offerId}/re-extract`, { body: { source }, method: "POST" }),
-    "Offre ré-analysée : les champs sont à jour."
+    "Candidature ré-analysée : les champs sont à jour."
   )
 
   revalidatePath("/", "layout")
@@ -112,7 +112,7 @@ export async function setOfferProfile(offerId: string, profileId: string): Promi
     })
   )
 
-  revalidatePath(`/offers/${offerId}`)
+  revalidatePath(`/candidatures/${offerId}`)
   return result
 }
 
@@ -145,5 +145,5 @@ export async function generateDocument(
   if (!result.ok) return result
 
   revalidatePath("/", "layout")
-  redirect(`/offers/${offerId}/${kind}?notice=${kind}-generated`)
+  redirect(`/candidatures/${offerId}/${kind}?notice=${kind}-generated`)
 }

@@ -5,7 +5,7 @@ import Link from "next/link"
 import { AI_CREDIT_COSTS, type DraftApplication } from "@cvforge/types"
 import { AlertCircleIcon, ZapIcon } from "lucide-react"
 
-import { reExtractOffer, updateOffer } from "@/app/(app)/offers/actions"
+import { reExtractOffer, updateOffer } from "@/app/(app)/candidatures/actions"
 import { ActionButton } from "@/components/feedback/action-button"
 import { SubmitButton } from "@/components/feedback/submit-button"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -186,7 +186,7 @@ export function EditOfferForm({ offer, offerText }: EditOfferFormProps) {
       </div>
       <div className="flex justify-end gap-2">
         <Button asChild variant="outline">
-          <Link href={`/offers/${offer.id}`}>Annuler</Link>
+          <Link href={`/candidatures/${offer.id}`}>Annuler</Link>
         </Button>
         <SubmitButton pendingLabel="Enregistrement…">Enregistrer</SubmitButton>
       </div>

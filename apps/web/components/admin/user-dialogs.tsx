@@ -280,7 +280,7 @@ export function DeleteUserDialog({ onOpenChange, open, user }: UserDialogProps) 
         <AlertDialogHeader>
           <AlertDialogTitle>Supprimer {user.email} ?</AlertDialogTitle>
           <AlertDialogDescription>
-            Le compte, les offres, les documents, le profil, les crédits et les
+            Le compte, les candidatures, les documents, le profil, les crédits et les
             notifications de cet utilisateur seront définitivement supprimés.
           </AlertDialogDescription>
         </AlertDialogHeader>

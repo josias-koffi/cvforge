@@ -49,7 +49,7 @@ export function EditorLayout<T>({
   versions,
 }: EditorLayoutProps<T>) {
   const exportHref = (format: "pdf" | "docx") =>
-    `/offers/${offerId}/export?document=${documentKind}&format=${format}`
+    `/candidatures/${offerId}/export?document=${documentKind}&format=${format}`
 
   return (
     <div className="flex flex-col gap-4 px-4 lg:px-6">
@@ -98,7 +98,7 @@ export function EditorLayout<T>({
             </a>
           </Button>
           <Button asChild variant="ghost">
-            <Link href={`/offers/${offerId}`}>Retour à l&apos;offre</Link>
+            <Link href={`/candidatures/${offerId}`}>Retour à la candidature</Link>
           </Button>
         </div>
       </div>

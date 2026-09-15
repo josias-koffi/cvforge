@@ -25,9 +25,9 @@ export function SectionCards({ balance, summary }: SectionCardsProps) {
   const counts = summary.statusCounts
   const cards = [
     {
-      description: "Offres suivies",
+      description: "Candidatures suivies",
       footer: `${counts.draft} en brouillon`,
-      hint: "Toutes les offres importées",
+      hint: "Toutes vos candidatures",
       icon: BriefcaseBusinessIcon,
       tone: "bg-primary/10 text-primary",
       value: summary.totalCount,

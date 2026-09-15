@@ -22,7 +22,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 export type ActivityPoint = { date: string; imported: number; documents: number }
 
 const chartConfig = {
-  imported: { label: "Offres importées", color: "var(--primary)" },
+  imported: { label: "Candidatures créées", color: "var(--primary)" },
   documents: { label: "Documents générés", color: "var(--chart-3)" },
 } satisfies ChartConfig
 
@@ -41,7 +41,7 @@ export function ActivityChart({ points }: { points: ActivityPoint[] }) {
       <CardHeader>
         <CardTitle>Activité</CardTitle>
         <CardDescription>
-          Offres importées et documents générés, jour après jour
+          Candidatures créées et documents générés, jour après jour
         </CardDescription>
         <CardAction>
           <ToggleGroup
