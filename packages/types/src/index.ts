@@ -516,6 +516,8 @@ export interface DraftApplication {
   letterTemplateId?: string | null;
   offerUrl: string | null;
   offerTextPreview: string;
+  /** Base profile picked for this application; null or absent means the default profile. */
+  profileId?: string | null;
   sourceLabel: string;
   sourceType: typeof APPLICATION_SOURCE_URL | typeof APPLICATION_SOURCE_TEXT;
   status: ApplicationStatus;

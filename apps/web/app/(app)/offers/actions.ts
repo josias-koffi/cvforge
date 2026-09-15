@@ -103,14 +103,30 @@ export async function updateOfferStatus(
   return result
 }
 
+/** Remembers which base profile generates this offer's documents. */
+export async function setOfferProfile(offerId: string, profileId: string): Promise<ActionResult> {
+  const result = await runAction(() =>
+    api(`/applications/${encodeURIComponent(offerId)}/profile`, {
+      body: { profileId },
+      method: "PUT",
+    })
+  )
+
+  revalidatePath(`/offers/${offerId}`)
+  return result
+}
+
 export async function generateDocument(
   offerId: string,
   kind: "cv" | "letter",
-  refinement?: string,
-  profileId?: string
+  refinement?: string
 ): Promise<ActionResult> {
   const session = await requireSession()
-  const profile = pickProfile(await loadRegistry(session.email), profileId)
+  const [registry, { application }] = await Promise.all([
+    loadRegistry(session.email),
+    api<{ application: DraftApplication }>(`/applications/${encodeURIComponent(offerId)}`),
+  ])
+  const profile = pickProfile(registry, application.profileId ?? undefined)
 
   if (!isProfileReady(profile)) {
     return {

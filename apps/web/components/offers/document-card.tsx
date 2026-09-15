@@ -1,10 +1,11 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useTransition } from "react"
 import Link from "next/link"
+import { toast } from "sonner"
 import { ArrowRightIcon, RefreshCwIcon, SparklesIcon } from "lucide-react"
 
-import { generateDocument } from "@/app/(app)/offers/actions"
+import { generateDocument, setOfferProfile } from "@/app/(app)/offers/actions"
 import { ActionButton } from "@/components/feedback/action-button"
 import { Button } from "@/components/ui/button"
 import { Field, FieldLabel } from "@/components/ui/field"
@@ -21,8 +22,8 @@ type DocumentRowProps = {
   description: string
   generatedAt: string | null | undefined
   kind: "cv" | "letter"
+  disabled?: boolean
   offerId: string
-  profileId?: string
   title: string
 }
 
@@ -30,8 +31,8 @@ export function DocumentRow({
   description,
   generatedAt,
   kind,
+  disabled,
   offerId,
-  profileId,
   title,
 }: DocumentRowProps) {
   return (
@@ -55,7 +56,8 @@ export function DocumentRow({
               size="sm"
               variant="outline"
               pendingLabel="Génération…"
-              action={() => generateDocument(offerId, kind, undefined, profileId)}
+              action={() => generateDocument(offerId, kind)}
+              disabled={disabled}
             >
               <RefreshCwIcon />
               Régénérer
@@ -65,7 +67,8 @@ export function DocumentRow({
           <ActionButton
             size="sm"
             pendingLabel="L'IA rédige…"
-            action={() => generateDocument(offerId, kind, undefined, profileId)}
+            action={() => generateDocument(offerId, kind)}
+              disabled={disabled}
           >
             <SparklesIcon />
             Générer avec l&apos;IA
@@ -84,24 +87,40 @@ type OfferDocumentsProps = {
   letterGeneratedAt: string | null | undefined
   offerId: string
   profiles: ProfileOption[]
+  selectedProfileId: string
 }
 
-/** CV and letter rows, generated from the profile picked here (the default one otherwise). */
+/** CV and letter rows, generated from the profile remembered for this offer (the default one otherwise). */
 export function OfferDocuments({
   cvGeneratedAt,
   defaultProfileId,
   letterGeneratedAt,
   offerId,
   profiles,
+  selectedProfileId,
 }: OfferDocumentsProps) {
-  const [profileId, setProfileId] = useState(defaultProfileId)
+  const [profileId, setProfileId] = useState(selectedProfileId)
+  const [saving, startSaving] = useTransition()
+
+  const chooseProfile = (nextId: string) => {
+    const previousId = profileId
+    setProfileId(nextId)
+    startSaving(async () => {
+      const result = await setOfferProfile(offerId, nextId)
+
+      if (!result.ok) {
+        setProfileId(previousId)
+        toast.error(result.message)
+      }
+    })
+  }
 
   return (
     <>
       {profiles.length > 1 ? (
         <Field>
           <FieldLabel htmlFor="generation-profile">Profil utilisé</FieldLabel>
-          <Select value={profileId} onValueChange={setProfileId}>
+          <Select value={profileId} onValueChange={chooseProfile} disabled={saving}>
             <SelectTrigger id="generation-profile" className="w-full">
               <SelectValue />
             </SelectTrigger>
@@ -119,7 +138,7 @@ export function OfferDocuments({
       <DocumentRow
         kind="cv"
         offerId={offerId}
-        profileId={profileId}
+        disabled={saving}
         title="CV"
         description="CV ciblé sur les attentes de l'offre."
         generatedAt={cvGeneratedAt}
@@ -127,7 +146,7 @@ export function OfferDocuments({
       <DocumentRow
         kind="letter"
         offerId={offerId}
-        profileId={profileId}
+        disabled={saving}
         title="Lettre de motivation"
         description="Lettre personnalisée pour l'entreprise."
         generatedAt={letterGeneratedAt}

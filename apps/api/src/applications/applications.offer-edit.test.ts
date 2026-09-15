@@ -175,4 +175,38 @@ describe("ApplicationsService offer editing", () => {
       service.reExtractOffer("user@example.com", "app_1", "pdf"),
     ).rejects.toThrow(BadRequestException);
   });
+
+  it("remembers the profile picked for an application", () => {
+    const withProfiles = new ApplicationsService(
+      store,
+      openRouterService as never,
+      creditsService,
+      () => ["profile_a", "profile_b"],
+    );
+
+    const application = withProfiles.setProfile("user@example.com", "app_1", " profile_b ");
+
+    expect(application.profileId).toBe("profile_b");
+    expect(application.updatedAt).toBe("2026-04-20T12:00:00.000Z");
+    expect(withProfiles.setProfile("user@example.com", "app_1", null).profileId).toBeNull();
+  });
+
+  it("rejects an unknown or missing profile", () => {
+    const withProfiles = new ApplicationsService(
+      store,
+      openRouterService as never,
+      creditsService,
+      () => ["profile_a"],
+    );
+
+    expect(() => withProfiles.setProfile("user@example.com", "app_1", "ghost")).toThrow(
+      NotFoundException,
+    );
+    expect(() => withProfiles.setProfile("user@example.com", "app_1", "")).toThrow(
+      BadRequestException,
+    );
+    expect(() => withProfiles.setProfile("other@example.com", "app_1", "profile_a")).toThrow(
+      NotFoundException,
+    );
+  });
 });
