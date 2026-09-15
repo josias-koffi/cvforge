@@ -127,7 +127,7 @@
     --accent-foreground: oklch(0.21 0.032 264.7);
     --destructive: oklch(0.577 0.215 27.3); /* #DC2626 */
     --border: oklch(0.921 0.008 260.7); /* #E2E5EA */
-    --input: oklch(0.921 0.008 260.7);
+    --input: oklch(0.87 0.012 260.7); /* #CDD3DC, visible field edges on white */
     --ring: oklch(0.558 0.243 265.4);
     --spark: oklch(0.813 0.165 75); /* #FFB020 */
     --spark-foreground: oklch(0.21 0.032 264.7);
