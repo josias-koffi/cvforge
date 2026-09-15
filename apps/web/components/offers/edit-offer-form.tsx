@@ -2,8 +2,8 @@
 
 import { useActionState } from "react"
 import Link from "next/link"
-import type { DraftApplication } from "@cvforge/types"
-import { AlertCircleIcon, SparklesIcon } from "lucide-react"
+import { AI_CREDIT_COSTS, type DraftApplication } from "@cvforge/types"
+import { AlertCircleIcon, ZapIcon } from "lucide-react"
 
 import { reExtractOffer, updateOffer } from "@/app/(app)/offers/actions"
 import { ActionButton } from "@/components/feedback/action-button"
@@ -33,6 +33,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
+import { formatCredits } from "@/lib/format"
 
 type EditOfferFormProps = {
   offer: DraftApplication
@@ -70,28 +71,28 @@ export function EditOfferForm({ offer, offerText }: EditOfferFormProps) {
           <CardHeader>
             <CardTitle>Source de l&apos;offre</CardTitle>
             <CardDescription>
-              Le lien et le descriptif d&apos;origine servent de base à l&apos;IA.
+              Le lien et le descriptif d&apos;origine servent de base à l&apos;analyse.
             </CardDescription>
             <CardAction className="flex gap-2">
               <ActionButton
                 type="button"
                 size="sm"
                 variant="outline"
-                pendingLabel="Analyse…"
+                pendingLabel="Analyse en cours…"
                 disabled={!offer.offerUrl}
                 action={() => reExtractOffer(offer.id, "url")}
               >
-                <SparklesIcon />
+                <ZapIcon />
                 Depuis le lien
               </ActionButton>
               <ActionButton
                 type="button"
                 size="sm"
                 variant="outline"
-                pendingLabel="Analyse…"
+                pendingLabel="Analyse en cours…"
                 action={() => reExtractOffer(offer.id, "text")}
               >
-                <SparklesIcon />
+                <ZapIcon />
                 Depuis le texte
               </ActionButton>
             </CardAction>
@@ -122,7 +123,8 @@ export function EditOfferForm({ offer, offerText }: EditOfferFormProps) {
                 />
                 <FieldDescription>
                   Enregistrez d&apos;abord vos modifications, puis relancez
-                  l&apos;analyse IA pour mettre à jour les champs (1 crédit).
+                  l&apos;analyse pour mettre à jour les champs (
+                  {formatCredits(AI_CREDIT_COSTS.offer_enrichment)}).
                 </FieldDescription>
               </Field>
             </FieldGroup>
@@ -131,7 +133,7 @@ export function EditOfferForm({ offer, offerText }: EditOfferFormProps) {
         <Card>
           <CardHeader>
             <CardTitle>Informations extraites</CardTitle>
-            <CardDescription>Corrigez ce que l&apos;IA a compris de l&apos;offre.</CardDescription>
+            <CardDescription>Corrigez ou complétez ce qui a été extrait de l&apos;annonce.</CardDescription>
           </CardHeader>
           <CardContent>
             <FieldGroup>

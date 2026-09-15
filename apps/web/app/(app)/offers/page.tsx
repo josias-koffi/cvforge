@@ -19,7 +19,7 @@ export default async function OffersPage() {
     <>
       <PageHeader
         title="Offres"
-        description="Toutes les offres importées, avec leur statut et leurs documents."
+        description="Chaque offre suivie, avec son statut et ses documents prêts à partir."
         actions={
           <Button asChild>
             <Link href="/offers/new">

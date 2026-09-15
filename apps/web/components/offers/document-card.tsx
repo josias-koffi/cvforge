@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react"
 import Link from "next/link"
 import { toast } from "sonner"
-import { ArrowRightIcon, RefreshCwIcon, SparklesIcon } from "lucide-react"
+import { ArrowRightIcon, RefreshCwIcon, ZapIcon } from "lucide-react"
 
 import { generateDocument, setOfferProfile } from "@/app/(app)/offers/actions"
 import { ActionButton } from "@/components/feedback/action-button"
@@ -36,7 +36,7 @@ export function DocumentRow({
   title,
 }: DocumentRowProps) {
   return (
-    <div className="flex flex-col gap-3 rounded-lg border p-4">
+    <div className="flex flex-col gap-3 rounded-lg border bg-card p-4 shadow-surface transition-[box-shadow,transform] duration-200 ease-spark hover:-translate-y-0.5 hover:shadow-raised">
       <div>
         <div className="font-medium">{title}</div>
         <p className="text-sm text-muted-foreground">
@@ -55,7 +55,7 @@ export function DocumentRow({
             <ActionButton
               size="sm"
               variant="outline"
-              pendingLabel="Génération…"
+              pendingLabel="Génération en cours…"
               action={() => generateDocument(offerId, kind)}
               disabled={disabled}
             >
@@ -65,13 +65,14 @@ export function DocumentRow({
           </>
         ) : (
           <ActionButton
+            spark
             size="sm"
-            pendingLabel="L'IA rédige…"
+            pendingLabel="Génération en cours…"
             action={() => generateDocument(offerId, kind)}
-              disabled={disabled}
+            disabled={disabled}
           >
-            <SparklesIcon />
-            Générer avec l&apos;IA
+            <ZapIcon />
+            {kind === "cv" ? "Générer mon CV" : "Générer ma lettre"}
           </ActionButton>
         )}
       </div>
@@ -140,7 +141,7 @@ export function OfferDocuments({
         offerId={offerId}
         disabled={saving}
         title="CV"
-        description="CV ciblé sur les attentes de l'offre."
+        description="Un CV taillé pour cette offre et lisible par les ATS."
         generatedAt={cvGeneratedAt}
       />
       <DocumentRow
@@ -148,7 +149,7 @@ export function OfferDocuments({
         offerId={offerId}
         disabled={saving}
         title="Lettre de motivation"
-        description="Lettre personnalisée pour l'entreprise."
+        description="Une lettre qui parle à cette entreprise, pas à toutes."
         generatedAt={letterGeneratedAt}
       />
     </>

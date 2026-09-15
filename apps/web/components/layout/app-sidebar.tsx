@@ -71,7 +71,7 @@ export function AppSidebar({
                 <SidebarMenuButton
                   asChild
                   tooltip="Nouvelle offre"
-                  className="bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground"
+                  className="bg-primary text-primary-foreground shadow-surface hover:bg-primary/90 hover:text-primary-foreground hover:shadow-raised active:bg-primary/90 active:text-primary-foreground"
                 >
                   <Link href="/offers/new">
                     <PlusIcon />

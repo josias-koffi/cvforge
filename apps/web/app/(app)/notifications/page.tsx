@@ -42,11 +42,11 @@ export default async function NotificationsPage() {
             {notifications.length === 0 ? (
               <Empty>
                 <EmptyHeader>
-                  <EmptyMedia variant="icon">
+                  <EmptyMedia variant="icon" className="bg-primary/10 text-primary motion-safe:animate-float">
                     <BellIcon />
                   </EmptyMedia>
                   <EmptyTitle>Rien de nouveau</EmptyTitle>
-                  <EmptyDescription>Vos notifications apparaîtront ici.</EmptyDescription>
+                  <EmptyDescription>Relances et confirmations arriveront ici dès qu&apos;il y a du nouveau.</EmptyDescription>
                 </EmptyHeader>
               </Empty>
             ) : (

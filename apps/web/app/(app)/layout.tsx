@@ -49,7 +49,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
         <Suspense>
           <FlashToast />
         </Suspense>
-        <div className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6">
+        <div className="@container/main flex flex-1 flex-col gap-6 py-4 motion-safe:animate-in motion-safe:fade-in motion-safe:duration-300 md:py-6">
           {children}
         </div>
       </SidebarInset>

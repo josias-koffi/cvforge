@@ -392,3 +392,9 @@
 - **Why**: L'écran notifications n'était couvert par aucune des refontes 016-019 ; le besoin était informationnel (pas de hiérarchie temporelle) plutôt qu'esthétique.
 - **Learned**: Aucun nouveau token n'était nécessaire — la réduction de densité vient uniquement de la structure (sous-titres de section, lignes de formulaire à une ligne), pas d'une nouvelle échelle typographique.
 - **Open**: Migration des couleurs hex codées en dur vers les tokens nommés `textMuted`/`border` reste un point de dette non traité par ce sprint (US-074/075/076 partagent ce même écart mineur).
+
+## 2026-09-15 — Rebrand CVSpark apps/web (ad hoc)
+- **Did**: Appliqué la palette « Étincelle électrique » aux tokens shadcn (light + dark), ajouté `--spark/--success/--warning/--info`, 4 niveaux d'élévation (page/surface/raised/overlay), badges de statut sémantiques, motion (`rise-in`, shimmer, `spark-flash`), Inter, wordmark CV+Spark avec éclair.
+- **Why**: Nouvelle identité CVSpark (`.project/marketing/`) ; l'ancien thème gris neutre produisait du ton sur ton.
+- **Learned**: `--accent` shadcn sert au hover des menus : l'amber de marque doit vivre dans un token séparé (`--spark`), sinon tous les menus deviennent orange. En dark, `primary-foreground` doit être foncé (blanc sur #5B82FF = 3,45:1).
+- **Open**: Pages connectées non vérifiées visuellement (API arrêtée pendant la session) ; messages d'erreur API NestJS non réécrits.

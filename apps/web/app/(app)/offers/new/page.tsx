@@ -10,7 +10,7 @@ export default function NewOfferPage() {
     <>
       <PageHeader
         title="Nouvelle offre"
-        description="Importez une annonce : l'IA la structure pour préparer votre CV et votre lettre."
+        description="Collez un lien ou le texte d'une annonce : on en extrait l'essentiel pour préparer votre CV et votre lettre."
       />
       <div className="max-w-3xl px-4 lg:px-6">
         <ImportOfferForm />

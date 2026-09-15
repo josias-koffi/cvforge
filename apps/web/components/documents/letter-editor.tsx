@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { renderLetterPdfHtml } from "@cvforge/document-renderer"
 import type { LetterDocumentContent, LetterDocumentVersionEntry } from "@cvforge/types"
-import { SparklesIcon } from "lucide-react"
+import { ZapIcon } from "lucide-react"
 
 import { saveLetter } from "@/app/(app)/offers/[id]/documents-actions"
 import { generateDocument } from "@/app/(app)/offers/actions"
@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/dialog"
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field"
 import { Textarea } from "@/components/ui/textarea"
+import { creditCostLabel } from "@/lib/format"
 
 type Candidate = LetterDocumentContent["candidate"]
 type Body = LetterDocumentContent["body"]
@@ -51,7 +52,7 @@ function RegenerateDialog({ offerId }: { offerId: string }) {
     <Dialog>
       <DialogTrigger asChild>
         <Button variant="outline">
-          <SparklesIcon />
+          <ZapIcon />
           Régénérer
         </Button>
       </DialogTrigger>
@@ -59,8 +60,8 @@ function RegenerateDialog({ offerId }: { offerId: string }) {
         <DialogHeader>
           <DialogTitle>Régénérer la lettre</DialogTitle>
           <DialogDescription>
-            Donnez une consigne à l&apos;IA. La lettre actuelle est conservée dans
-            l&apos;historique des versions. Coût : 3 crédits.
+            Orientez la nouvelle version en une phrase. La lettre actuelle reste
+            dans l&apos;historique des versions. {creditCostLabel("letter_generation")}.
           </DialogDescription>
         </DialogHeader>
         <Field>
@@ -76,10 +77,11 @@ function RegenerateDialog({ offerId }: { offerId: string }) {
         </Field>
         <DialogFooter>
           <ActionButton
-            pendingLabel="L'IA rédige…"
+            spark
+            pendingLabel="Génération en cours…"
             action={() => generateDocument(offerId, "letter", refinement.trim() || undefined)}
           >
-            <SparklesIcon />
+            <ZapIcon />
             Lancer la génération
           </ActionButton>
         </DialogFooter>

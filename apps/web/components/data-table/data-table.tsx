@@ -18,9 +18,9 @@ import {
   ChevronsRightIcon,
 } from "lucide-react"
 
+import { TableFrame } from "@/components/data-table/table-frame"
 import { Button } from "@/components/ui/button"
 import {
-  Table,
   TableBody,
   TableCell,
   TableHead,
@@ -79,43 +79,41 @@ export function DataTable<TData extends RowData>({
   return (
     <div className="flex flex-col gap-4">
       {toolbar}
-      <div className="overflow-hidden rounded-lg border">
-        <Table>
-          <TableHeader className="bg-muted">
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id} colSpan={header.colSpan}>
-                    {header.isPlaceholder ? null : <FlexRender header={header} />}
-                  </TableHead>
+      <TableFrame>
+        <TableHeader>
+          {table.getHeaderGroups().map((headerGroup) => (
+            <TableRow key={headerGroup.id}>
+              {headerGroup.headers.map((header) => (
+                <TableHead key={header.id} colSpan={header.colSpan}>
+                  {header.isPlaceholder ? null : <FlexRender header={header} />}
+                </TableHead>
+              ))}
+            </TableRow>
+          ))}
+        </TableHeader>
+        <TableBody>
+          {table.getRowModel().rows.length ? (
+            table.getRowModel().rows.map((row) => (
+              <TableRow key={row.id}>
+                {row.getAllCells().map((cell) => (
+                  <TableCell key={cell.id}>
+                    <FlexRender cell={cell} />
+                  </TableCell>
                 ))}
               </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {table.getRowModel().rows.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id}>
-                  {row.getAllCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      <FlexRender cell={cell} />
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-24 text-center text-muted-foreground"
-                >
-                  {emptyMessage}
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
+            ))
+          ) : (
+            <TableRow>
+              <TableCell
+                colSpan={columns.length}
+                className="h-24 text-center text-muted-foreground"
+              >
+                {emptyMessage}
+              </TableCell>
+            </TableRow>
+          )}
+        </TableBody>
+      </TableFrame>
       {data.length > pagination.pageSize ? (
         <div className="flex items-center justify-between gap-2 text-sm">
           <span className="text-muted-foreground">

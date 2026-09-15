@@ -17,6 +17,7 @@ import {
   EditRoleDialog,
   GrantCreditsDialog,
 } from "@/components/admin/user-dialogs"
+import { TableFrame } from "@/components/data-table/table-frame"
 import { PagerButton } from "@/components/data-table/data-table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -36,7 +37,6 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import {
-  Table,
   TableBody,
   TableCell,
   TableHead,
@@ -153,59 +153,57 @@ export function UsersTable({
           {totalItems} utilisateur{totalItems > 1 ? "s" : ""}
         </span>
       </div>
-      <div className="overflow-hidden rounded-lg border">
-        <Table>
-          <TableHeader className="bg-muted">
+      <TableFrame>
+        <TableHeader>
+          <TableRow>
+            <TableHead>E-mail</TableHead>
+            <TableHead>Rôle</TableHead>
+            <TableHead className="text-right">Crédits</TableHead>
+            <TableHead className="text-right">Opérations</TableHead>
+            <TableHead>Dernière activité</TableHead>
+            <TableHead>
+              <span className="sr-only">Actions</span>
+            </TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {data.users.length === 0 ? (
             <TableRow>
-              <TableHead>E-mail</TableHead>
-              <TableHead>Rôle</TableHead>
-              <TableHead className="text-right">Crédits</TableHead>
-              <TableHead className="text-right">Opérations</TableHead>
-              <TableHead>Dernière activité</TableHead>
-              <TableHead>
-                <span className="sr-only">Actions</span>
-              </TableHead>
+              <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                Aucun utilisateur ne correspond.
+              </TableCell>
             </TableRow>
-          </TableHeader>
-          <TableBody>
-            {data.users.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
-                  Aucun utilisateur ne correspond.
+          ) : (
+            data.users.map((user) => (
+              <TableRow key={user.email}>
+                <TableCell className="font-medium">
+                  {user.email}
+                  {user.email === currentEmail ? (
+                    <span className="ml-2 text-xs text-muted-foreground">(vous)</span>
+                  ) : null}
+                </TableCell>
+                <TableCell>
+                  <Badge variant={user.role === "admin" ? "default" : "outline"}>
+                    {user.role === "admin" ? "Administrateur" : "Utilisateur"}
+                  </Badge>
+                </TableCell>
+                <TableCell className="text-right tabular-nums">{user.balance}</TableCell>
+                <TableCell className="text-right tabular-nums">{user.ledgerEntryCount}</TableCell>
+                <TableCell className="text-muted-foreground tabular-nums">
+                  {formatDateTime(user.lastActivityAt)}
+                </TableCell>
+                <TableCell className="text-right">
+                  <UserActions
+                    user={user}
+                    currentEmail={currentEmail}
+                    onOpen={(kind, target) => setDialog({ kind, user: target })}
+                  />
                 </TableCell>
               </TableRow>
-            ) : (
-              data.users.map((user) => (
-                <TableRow key={user.email}>
-                  <TableCell className="font-medium">
-                    {user.email}
-                    {user.email === currentEmail ? (
-                      <span className="ml-2 text-xs text-muted-foreground">(vous)</span>
-                    ) : null}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={user.role === "admin" ? "default" : "outline"}>
-                      {user.role === "admin" ? "Administrateur" : "Utilisateur"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right tabular-nums">{user.balance}</TableCell>
-                  <TableCell className="text-right tabular-nums">{user.ledgerEntryCount}</TableCell>
-                  <TableCell className="text-muted-foreground tabular-nums">
-                    {formatDateTime(user.lastActivityAt)}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <UserActions
-                      user={user}
-                      currentEmail={currentEmail}
-                      onOpen={(kind, target) => setDialog({ kind, user: target })}
-                    />
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
+            ))
+          )}
+        </TableBody>
+      </TableFrame>
       {totalPages > 1 ? (
         <div className="flex items-center justify-end gap-2 text-sm">
           <span className="mr-2 font-medium">

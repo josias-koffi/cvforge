@@ -48,8 +48,13 @@ Palette retenue : **Étincelle électrique** (bleu tech comme couleur de marque,
 --secondary-foreground: #111827;
 --muted: #EEF1F6;
 --muted-foreground: #6B7280;
---accent: #FFB020;
+--accent: #EEF2FF;            /* hover neutre bleuté des menus shadcn */
 --accent-foreground: #111827;
+--spark: #FFB020;             /* accent de marque (déclic IA) */
+--spark-foreground: #111827;
+--success: #15803D;           /* texte AA sur blanc ; #16A34A pour les aplats */
+--warning: #B45309;
+--info: #2563EB;
 --destructive: #DC2626;
 --destructive-foreground: #FFFFFF;
 --border: #E2E5EA;
@@ -57,7 +62,7 @@ Palette retenue : **Étincelle électrique** (bleu tech comme couleur de marque,
 --ring: #2D5FFF;
 ```
 
-Règle d'usage : `--accent` (amber) est déclenché ponctuellement (bouton "Générer le CV", badge "Nouveau", état de succès de génération) — jamais comme couleur de navigation ou de fond dominant. Le bleu (`--primary`) porte l'identité au quotidien.
+Règle d'usage : `--spark` (amber — `--accent` restant réservé au hover des menus shadcn) est déclenché ponctuellement (bouton "Générer le CV", badge "Nouveau", état de succès de génération) — jamais comme couleur de navigation ou de fond dominant. Le bleu (`--primary`) porte l'identité au quotidien.
 
 ---
 
@@ -158,12 +163,36 @@ Règle : ne jamais garder une couleur "light" telle quelle en dark mode sans vé
 
 ---
 
+## 7. Élévation (implémenté dans `apps/web/app/globals.css`)
+
+| Niveau | Rendu | Usage |
+|---|---|---|
+| Page | `bg-background` (#F7F8FA / #0B1220) | Fond du panneau principal |
+| Surface | `bg-card` + `border` + `shadow-surface` | Cartes, tables (`TableFrame`), empty states |
+| Raised | `shadow-raised` + `-translate-y-0.5` | Hover des cartes cliquables, carte d'auth |
+| Overlay | `shadow-overlay` | Dialogs, menus, select, toasts |
+
+En dark, l'élévation passe d'abord par la luminosité de la surface (#0B1220 → #141B2E → popover), l'ombre ne fait qu'ajouter de la profondeur. La sidebar est blanche (light) pour contraster avec le panneau gris-bleu.
+
+## 8. Badges de statut
+
+Brouillon `outline` · Envoyée `info` · Entretien `warning` · Offre reçue `success` · Refusée `destructive` (fond 12 % + texte teinté).
+
+## 9. Motion
+
+- Easing `--ease-spark: cubic-bezier(.2,.8,.2,1)` ; 150 ms (hover), 200–400 ms (entrées).
+- `rise-in` : fade + translateY 6px à l'arrivée d'une page/carte, échelonné via `--stagger` (50 ms).
+- **Moments étincelle** (amber) : bouton `variant="spark"` / prop `spark` sur `ActionButton`/`SubmitButton` → shimmer + éclair pulsé pendant la génération ; toast de résultat IA avec éclair amber et halo `spark-flash`.
+- `animate-float` léger sur les icônes d'empty state ; skeletons avec shimmer.
+- `prefers-reduced-motion: reduce` neutralise toutes les animations.
+
+---
+
 ## Ce qui manque encore (à trancher ensemble)
 
 - **Composants clés** : boutons (variants primary/secondary/ghost/destructive), badges de statut de candidature (Brouillon/Envoyée/Entretien/Refus/Offre), états de formulaire (erreur, focus, disabled) — utile avant de designer les écrans /offers, /cv, /credits.
 - **Grille & breakpoints** : le produit est desktop-first (ADR-008) — faut-il documenter des breakpoints (ex. 1024px, 1280px, 1536px) et une largeur de contenu max pour la landing et le dashboard ?
 - **Imagerie / illustration de la landing** : captures d'écran réelles du produit, illustration abstraite liée à l'étincelle, ou rien (texte + UI seule) ?
-- **Motion** : durée/easing des transitions (utile pour l'animation de "génération" qui doit incarner l'étincelle — ex. un flash bref sur le bouton au moment où le CV est prêt).
 - **Data viz** : le dashboard a des graphiques (recharts, déjà dans le stack v2) — faut-il une palette dédiée aux graphiques, distincte de l'UI ?
 
 Dis-moi lesquels tu veux traiter maintenant et je les ajoute au fichier.

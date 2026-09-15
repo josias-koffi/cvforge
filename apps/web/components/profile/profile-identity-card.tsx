@@ -6,6 +6,7 @@ import { toast } from "sonner"
 
 import { importCvFile } from "@/app/(app)/profile/actions"
 import { FieldGrid, SpecField, type FieldSpec } from "@/components/documents/list-editor"
+import { PendingContent, sparkClassName } from "@/components/feedback/pending-content"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -17,7 +18,7 @@ import {
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Spinner } from "@/components/ui/spinner"
-import { formatDateTime } from "@/lib/format"
+import { creditCostLabel, formatDateTime } from "@/lib/format"
 import { applyImportedCv, type BaseProfile } from "@/lib/profile-model"
 
 type Identity = BaseProfile["identity"]
@@ -43,8 +44,8 @@ function CvImportCard({ onImported }: { onImported: ProfileUpdater }) {
       <CardHeader>
         <CardTitle>Importer un CV existant</CardTitle>
         <CardDescription>
-          L&apos;IA lit votre CV (PDF ou DOCX, 5 Mo max.) et pré-remplit ce profil.
-          Vérifiez puis enregistrez. Coût : 2 crédits.
+          Déposez votre CV (PDF ou DOCX, 5 Mo max.) : ce profil se remplit tout seul.
+          Vérifiez puis enregistrez. {creditCostLabel("cv_import")}.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -60,7 +61,7 @@ function CvImportCard({ onImported }: { onImported: ProfileUpdater }) {
               }
 
               onImported((profile) => applyImportedCv(profile, response.result.extractedProfile))
-              toast.success("CV analysé : vérifiez les champs puis enregistrez.")
+              toast.success("CV lu : vérifiez les champs puis enregistrez.", { className: "spark" })
               if (inputRef.current) inputRef.current.value = ""
             })
           }
@@ -73,9 +74,16 @@ function CvImportCard({ onImported }: { onImported: ProfileUpdater }) {
             aria-label="Fichier CV"
             required
           />
-          <Button type="submit" variant="outline" disabled={pending}>
-            {pending ? <Spinner /> : <FileUpIcon />}
-            {pending ? "Analyse…" : "Analyser"}
+          <Button
+            type="submit"
+            variant="spark"
+            className={sparkClassName(pending)}
+            disabled={pending}
+          >
+            <PendingContent pending={pending} pendingLabel="Analyse en cours…" spark>
+              <FileUpIcon />
+              Analyser mon CV
+            </PendingContent>
           </Button>
         </form>
       </CardContent>

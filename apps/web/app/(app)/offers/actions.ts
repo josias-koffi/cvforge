@@ -83,7 +83,7 @@ export async function reExtractOffer(
   const result = await runAction(
     () =>
       api(`/applications/${offerId}/re-extract`, { body: { source }, method: "POST" }),
-    "L'IA a ré-analysé l'offre."
+    "Offre ré-analysée : les champs sont à jour."
   )
 
   revalidatePath("/", "layout")

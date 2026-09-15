@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest"
 
-import { formatDate, formatPrice, splitLines } from "@/lib/format"
+import {
+  creditCostLabel,
+  formatCredits,
+  formatDate,
+  formatPrice,
+  splitLines,
+  statusVariants,
+} from "@/lib/format"
 
 describe("format helpers", () => {
   it("splits multiline input into trimmed non-empty entries", () => {
@@ -10,5 +17,16 @@ describe("format helpers", () => {
   it("formats missing dates and euro prices", () => {
     expect(formatDate(null)).toBe("—")
     expect(formatPrice(999).replace(/\s/g, " ")).toBe("9,99 €")
+  })
+
+  it("pluralizes credit amounts and reads costs from the shared table", () => {
+    expect(formatCredits(1)).toBe("1 crédit")
+    expect(formatCredits(3)).toBe("3 crédits")
+    expect(creditCostLabel("offer_enrichment")).toBe("Coût : 1 crédit")
+    expect(creditCostLabel("cv_generation")).toBe("Coût : 3 crédits")
+  })
+
+  it("gives each application status a distinct semantic badge", () => {
+    expect(new Set(Object.values(statusVariants)).size).toBe(5)
   })
 })
