@@ -17,6 +17,9 @@ COPY apps/web apps/web
 COPY packages/document-renderer packages/document-renderer
 COPY packages/types packages/types
 COPY packages/config packages/config
+# @cvforge/types resolves to dist/index.js and its dist/ is not committed, so it
+# has to be built before anything that imports it.
+RUN pnpm --filter @cvforge/types build
 RUN pnpm --filter @cvforge/document-renderer build
 RUN pnpm --filter @cvforge/web build
 
