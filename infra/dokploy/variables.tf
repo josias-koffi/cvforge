@@ -140,16 +140,21 @@ variable "openrouter_api_key" {
   sensitive   = true
 }
 
+# Stripe is not configured on any environment yet — both values were CHANGE_ME
+# placeholders in the pre-Dokploy stack. They default to empty so the stack
+# deploys without them; the payment features stay inert until they are set.
 variable "stripe_secret_key" {
   type        = string
-  description = "Stripe secret key"
+  description = "Stripe secret key. Empty disables the payment features."
   sensitive   = true
+  default     = ""
 }
 
 variable "stripe_webhook_secret" {
   type        = string
-  description = "Stripe webhook signing secret"
+  description = "Stripe webhook signing secret. Empty disables webhook verification."
   sensitive   = true
+  default     = ""
 }
 
 variable "auth_session_secret" {
