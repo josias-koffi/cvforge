@@ -6,6 +6,7 @@ import type {
   AuthAccountStore,
   AuthConfig,
   AuthInvitation,
+  AuthMagicLink,
   AuthRole,
 } from "./auth.types";
 import { AuthController } from "./auth.controller";
@@ -26,6 +27,7 @@ const config: AuthConfig = {
 function createInMemoryAccountStore(): AuthAccountStore {
   const accounts = new Map<string, AuthAccount>();
   const invitations = new Map<string, AuthInvitation>();
+  const magicLinks = new Map<string, AuthMagicLink>();
   let bootstrapConsumed = false;
 
   return {
@@ -109,6 +111,37 @@ function createInMemoryAccountStore(): AuthAccountStore {
       invitations.set(tokenHash, updatedInvitation);
 
       return updatedInvitation;
+    },
+    saveMagicLink(tokenHash, magicLink) {
+      magicLinks.set(tokenHash, magicLink);
+    },
+    consumeMagicLink(tokenHash, consumedAt, now) {
+      const magicLink = magicLinks.get(tokenHash);
+
+      if (!magicLink) {
+        return null;
+      }
+
+      if (
+        magicLink.consumedAt !== null ||
+        new Date(magicLink.expiresAt).getTime() <= now
+      ) {
+        return null;
+      }
+
+      magicLinks.delete(tokenHash);
+
+      return { ...magicLink, consumedAt };
+    },
+    pruneMagicLinks(now) {
+      for (const [tokenHash, magicLink] of magicLinks.entries()) {
+        if (
+          magicLink.consumedAt !== null ||
+          new Date(magicLink.expiresAt).getTime() <= now
+        ) {
+          magicLinks.delete(tokenHash);
+        }
+      }
     },
   };
 }

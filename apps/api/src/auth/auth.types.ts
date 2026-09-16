@@ -36,6 +36,18 @@ export type AuthInvitation = {
   consumedAt: string | null;
 };
 
+/**
+ * A pending magic link. Persisted, not held in memory: the process restarts on
+ * every deploy, and an in-memory map silently invalidated every link that had
+ * already been emailed.
+ */
+export type AuthMagicLink = {
+  consent: AuthConsentRecord | null;
+  email: string;
+  expiresAt: string;
+  consumedAt: string | null;
+};
+
 export type AuthSession = {
   email: string;
   role: AuthRole;
@@ -74,4 +86,12 @@ export type AuthAccountStore = {
     consumedAt: string,
     now: number,
   ) => AuthInvitation | null;
+  saveMagicLink: (tokenHash: string, magicLink: AuthMagicLink) => void;
+  /** Marks the link consumed and returns it, or null if unknown, already used or expired. */
+  consumeMagicLink: (
+    tokenHash: string,
+    consumedAt: string,
+    now: number,
+  ) => AuthMagicLink | null;
+  pruneMagicLinks: (now: number) => void;
 };

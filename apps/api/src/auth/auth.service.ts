@@ -19,13 +19,6 @@ import type {
   MagicLinkResponse,
 } from "./auth.types";
 
-type MagicLinkRecord = {
-  consent: AuthConsentRecord | null;
-  email: string;
-  expiresAt: number;
-  consumedAt: number | null;
-};
-
 type SerializedSessionCookie = {
   name: string;
   value: string;
@@ -45,15 +38,13 @@ const CONSENT_VERSION = "2026-04-mvp";
 
 @Injectable()
 export class AuthService {
-  private readonly magicLinks = new Map<string, MagicLinkRecord>();
-
   constructor(
     private readonly config: AuthConfig,
     private readonly accountStore: AuthAccountStore,
   ) {}
 
   requestMagicLink(rawEmail: string, consentAccepted = false): MagicLinkResponse {
-    this.pruneExpiredMagicLinks();
+    this.accountStore.pruneMagicLinks(Date.now());
 
     const email = rawEmail.trim().toLowerCase();
     const existingAccount = this.accountStore.readAccount(email);
@@ -69,10 +60,10 @@ export class AuthService {
     const token = randomBytes(24).toString("base64url");
     const expiresAt = Date.now() + this.config.magicLinkTtlMinutes * 60_000;
 
-    this.magicLinks.set(this.hashToken(token), {
+    this.accountStore.saveMagicLink(this.hashToken(token), {
       consent: existingAccount?.consent ?? this.createConsentRecord("passwordless"),
       email,
-      expiresAt,
+      expiresAt: new Date(expiresAt).toISOString(),
       consumedAt: null,
     });
 
@@ -168,21 +159,24 @@ export class AuthService {
   }
 
   consumeMagicLink(rawToken: string, redirectTo?: string) {
-    this.pruneExpiredMagicLinks();
-
     const token = rawToken.trim();
 
     if (!token) {
       throw new BadRequestException("A magic-link token is required.");
     }
 
-    const record = this.magicLinks.get(this.hashToken(token));
+    const now = Date.now();
+    // The store settles existence, reuse and expiry in one write, so two
+    // simultaneous clicks on the same link cannot both open a session.
+    const record = this.accountStore.consumeMagicLink(
+      this.hashToken(token),
+      new Date(now).toISOString(),
+      now,
+    );
 
-    if (!record || record.consumedAt !== null || record.expiresAt <= Date.now()) {
+    if (!record) {
       throw new UnauthorizedException("This magic link is invalid or expired.");
     }
-
-    record.consumedAt = Date.now();
 
     const session = this.createSession(
       record.email,
@@ -197,13 +191,21 @@ export class AuthService {
   }
 
   readSessionFromCookieHeader(cookieHeader?: string) {
-    const cookieValue = this.extractCookie(cookieHeader, this.config.cookieName);
+    // Every candidate is tried, not just the first. A browser sends one Cookie
+    // header entry per stored cookie, so a leftover cookie of the same name on
+    // a different domain or path travels alongside the current one, and RFC
+    // 6265 puts the older of the two first. Stopping at the first match made
+    // that stale value shadow the valid one on every single request, which no
+    // amount of signing in could clear.
+    for (const value of this.extractCookies(cookieHeader, this.config.cookieName)) {
+      const session = this.verifySessionCookie(value);
 
-    if (!cookieValue) {
-      return null;
+      if (session) {
+        return session;
+      }
     }
 
-    return this.verifySessionCookie(cookieValue);
+    return null;
   }
 
   clearSessionCookie(): SerializedSessionCookie {
@@ -353,22 +355,23 @@ export class AuthService {
     }
   }
 
-  private extractCookie(cookieHeader: string | undefined, cookieName: string) {
+  /** Every value carried under `cookieName`, in the order the client sent them. */
+  private extractCookies(cookieHeader: string | undefined, cookieName: string) {
     if (!cookieHeader) {
-      return null;
+      return [];
     }
 
-    const cookies = cookieHeader.split(";");
+    const values: string[] = [];
 
-    for (const cookie of cookies) {
+    for (const cookie of cookieHeader.split(";")) {
       const [name, ...rest] = cookie.trim().split("=");
 
       if (name === cookieName) {
-        return rest.join("=");
+        values.push(rest.join("="));
       }
     }
 
-    return null;
+    return values;
   }
 
   private hashToken(token: string) {
@@ -426,16 +429,8 @@ export class AuthService {
     return expected.length === actual.length && timingSafeEqual(expected, actual);
   }
 
-  private pruneExpiredMagicLinks() {
-    const now = Date.now();
-
-    for (const [tokenHash, record] of this.magicLinks.entries()) {
-      if (record.expiresAt <= now || record.consumedAt !== null) {
-        this.magicLinks.delete(tokenHash);
-      }
-    }
-  }
 }
+
 type CookieOptions = {
   httpOnly?: boolean;
   maxAge?: number;
