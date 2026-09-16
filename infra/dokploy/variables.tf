@@ -102,15 +102,20 @@ variable "smtp_port" {
   default     = 587
 }
 
-# cvspark.koklo.dev must be a verified sender in Resend before this applies.
-# Verification needs the DKIM and SPF records Resend hands out, so it cannot
-# happen until the zone exists — the domain is NXDOMAIN until infra/terraform
-# runs. An unverified sender fails every send, magic links included, which locks
-# everyone out of the app. See the cutover runbook in docs/deploy.md.
+# Only koklo.dev is a verified sender in Resend: it carries the DKIM record at
+# resend._domainkey.koklo.dev and the send.koklo.dev MX and SPF. Neither
+# cvspark.koklo.dev nor cvforge.koklo.dev does, and Resend verifies each
+# subdomain independently — a From on an unverified one is rejected with a 403
+# domain mismatch, so no magic link goes out and nobody can sign in.
+#
+# To move to no-reply@cvspark.koklo.dev, add that subdomain in Resend, publish
+# the records it issues into the koklo.dev zone, wait for "verified", and only
+# then change this default. Resend recommends a subdomain over the apex, to keep
+# the sending reputation of each product separate.
 variable "email_from" {
   type        = string
-  description = "From header of every outgoing email. The domain must be verified in Resend first."
-  default     = "CVSpark <no-reply@cvspark.koklo.dev>"
+  description = "From header of every outgoing email. The domain must be verified in Resend, on its own."
+  default     = "CVSpark <no-reply@koklo.dev>"
 }
 
 # Secrets ---------------------------------------------------------------------
