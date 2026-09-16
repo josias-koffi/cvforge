@@ -178,8 +178,10 @@ jobs:
           tofu plan -input=false -lock-timeout=5m -detailed-exitcode -out=tfplan
           code=$?
           set -e
-          if [ "${code}" -gt 1 ]; then
-            exit "${code}"
+          # -detailed-exitcode: 0 = no changes, 1 = error, 2 = changes pending.
+          # Only 1 is a failure; 2 is the nominal case that gates the apply.
+          if [ "${code}" -eq 1 ]; then
+            exit 1
           fi
           echo "changes=${code}" >> "${GITHUB_OUTPUT}"
 
@@ -253,8 +255,10 @@ jobs:
           tofu plan -input=false -lock-timeout=5m -detailed-exitcode -out=tfplan
           code=$?
           set -e
-          if [ "${code}" -gt 1 ]; then
-            exit "${code}"
+          # -detailed-exitcode: 0 = no changes, 1 = error, 2 = changes pending.
+          # Only 1 is a failure; 2 is the nominal case that gates the apply.
+          if [ "${code}" -eq 1 ]; then
+            exit 1
           fi
           echo "changes=${code}" >> "${GITHUB_OUTPUT}"
 
