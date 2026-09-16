@@ -1,0 +1,187 @@
+# Deployed stack for CVSpark (VPS20). Standalone: no build, images only.
+# Copied to /opt/apps/${STACK_NAME}/ by .github/workflows/deploy.yml alongside a
+# generated .env. Dev compose lives at the repository root instead.
+name: ${STACK_NAME}
+
+services:
+  web:
+    image: ghcr.io/josias-koffi/cvspark-web:${IMAGE_TAG}
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      API_INTERNAL_URL: http://${STACK_NAME}-api-1:3333
+      NEXT_PUBLIC_API_URL: https://${API_DOMAIN}
+      AUTH_COOKIE_NAME: ${AUTH_COOKIE_NAME}
+      COOKIE_DOMAIN: ${COOKIE_DOMAIN}
+      NEXT_SERVER_ACTIONS_ENCRYPTION_KEY: ${NEXT_SERVER_ACTIONS_ENCRYPTION_KEY}
+    networks:
+      - default
+      - traefik-public
+    expose:
+      - "3100"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3100/login"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik-public"
+      - "traefik.http.routers.${STACK_NAME}-web.rule=Host(`${WEB_DOMAIN}`)"
+      - "traefik.http.routers.${STACK_NAME}-web.entrypoints=websecure"
+      - "traefik.http.routers.${STACK_NAME}-web.tls.certresolver=cloudflare"
+      - "traefik.http.services.${STACK_NAME}-web.loadbalancer.server.port=3100"
+
+  landing:
+    image: ghcr.io/josias-koffi/cvspark-landing:${IMAGE_TAG}
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      # The landing only links to the app; /login redirects to this origin.
+      APP_URL: https://${WEB_DOMAIN}
+    networks:
+      - default
+      - traefik-public
+    expose:
+      - "3001"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3001/"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik-public"
+      - "traefik.http.routers.${STACK_NAME}-landing.rule=Host(`${LANDING_DOMAIN}`)"
+      - "traefik.http.routers.${STACK_NAME}-landing.entrypoints=websecure"
+      - "traefik.http.routers.${STACK_NAME}-landing.tls.certresolver=cloudflare"
+      - "traefik.http.services.${STACK_NAME}-landing.loadbalancer.server.port=3001"
+
+  api:
+    image: ghcr.io/josias-koffi/cvspark-api:${IMAGE_TAG}
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_API_URL: https://${API_DOMAIN}
+      NEXT_PUBLIC_APP_URL: https://${WEB_DOMAIN}
+      COOKIE_DOMAIN: ${COOKIE_DOMAIN}
+      DATABASE_URL: ${DATABASE_URL}
+      REDIS_URL: ${REDIS_URL}
+      MINIO_ENDPOINT: ${MINIO_ENDPOINT}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
+      PUPPETEER_URL: ${PUPPETEER_URL:-http://puppeteer:3000}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
+      OPENROUTER_MODEL: ${OPENROUTER_MODEL:-}
+      INTERVIEW_STT_MODEL: ${INTERVIEW_STT_MODEL:-}
+      INTERVIEW_AI_MODEL: ${INTERVIEW_AI_MODEL:-}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
+      AUTH_SESSION_SECRET: ${AUTH_SESSION_SECRET}
+      AUTH_MAGIC_LINK_TTL_MINUTES: ${AUTH_MAGIC_LINK_TTL_MINUTES:-15}
+      AUTH_SESSION_TTL_DAYS: ${AUTH_SESSION_TTL_DAYS:-7}
+      AUTH_COOKIE_NAME: ${AUTH_COOKIE_NAME}
+      SMTP_PROVIDER: ${SMTP_PROVIDER}
+      SMTP_SERVER: ${SMTP_SERVER}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASSWORD: ${SMTP_PASSWORD}
+      EMAIL_FROM: ${EMAIL_FROM}
+    volumes:
+      # Real datastore of the API (JSON state files) — never drop this volume.
+      - api_data:/workspace/.data
+    networks:
+      - default
+      - traefik-public
+    expose:
+      - "3333"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3333/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik-public"
+      - "traefik.http.routers.${STACK_NAME}-api.rule=Host(`${API_DOMAIN}`)"
+      - "traefik.http.routers.${STACK_NAME}-api.entrypoints=websecure"
+      - "traefik.http.routers.${STACK_NAME}-api.tls.certresolver=cloudflare"
+      - "traefik.http.services.${STACK_NAME}-api.loadbalancer.server.port=3333"
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-cvforge}
+      POSTGRES_USER: ${POSTGRES_USER:-cvforge}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-cvforge}"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+
+  minio:
+    image: minio/minio
+    command: server /data --console-address ":9001"
+    restart: unless-stopped
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY}
+    volumes:
+      - minio_data:/data
+
+  puppeteer:
+    image: ghcr.io/josias-koffi/cvspark-puppeteer:${IMAGE_TAG}
+    restart: unless-stopped
+
+  # Nightly pg_dump → compressed file in the db_backups volume.
+  # Keeps 7 daily + 4 weekly + 6 monthly snapshots.
+  # WARNING: on-VPS backup only — it does NOT survive VPS destruction.
+  db_backup:
+    image: prodrigestivill/postgres-backup-local:16
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_DB: ${POSTGRES_DB:-cvforge}
+      POSTGRES_USER: ${POSTGRES_USER:-cvforge}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_EXTRA_OPTS: "--schema=public --blobs"
+      SCHEDULE: "@daily"
+      BACKUP_KEEP_DAYS: "7"
+      BACKUP_KEEP_WEEKS: "4"
+      BACKUP_KEEP_MONTHS: "6"
+      HEALTHCHECK_PORT: "8080"
+    volumes:
+      - db_backups:/backups
+
+# Volume names are pinned to VOLUME_PREFIX instead of the compose project name,
+# so production keeps using the volumes created under the old `cvforge` project.
+volumes:
+  api_data:
+    name: ${VOLUME_PREFIX}_api_data
+  postgres_data:
+    name: ${VOLUME_PREFIX}_postgres_data
+  redis_data:
+    name: ${VOLUME_PREFIX}_redis_data
+  minio_data:
+    name: ${VOLUME_PREFIX}_minio_data
+  db_backups:
+    name: ${VOLUME_PREFIX}_db_backups
+
+networks:
+  traefik-public:
+    external: true
