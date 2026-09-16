@@ -33,8 +33,6 @@ jobs:
     outputs:
       environment: ${{ steps.target.outputs.environment }}
       image_tag: ${{ steps.target.outputs.image_tag }}
-      stack_name: ${{ steps.target.outputs.stack_name }}
-      volume_prefix: ${{ steps.target.outputs.volume_prefix }}
       web_domain: ${{ steps.target.outputs.web_domain }}
       api_domain: ${{ steps.target.outputs.api_domain }}
       landing_domain: ${{ steps.target.outputs.landing_domain }}
@@ -62,17 +60,13 @@ jobs:
             exit 1
           fi
 
+          # Only the smoke test reads these. The stack name, the volume prefix
+          # and the domains Traefik serves are owned by infra/dokploy.
           if [ "${ENVIRONMENT}" = "production" ]; then
-            STACK_NAME="cvspark"
-            # Reuse the volumes created under the legacy `cvforge` project name,
-            # so production data survives the move to this pipeline.
-            VOLUME_PREFIX="cvforge"
             LANDING_DOMAIN="cvspark.koklo.dev"
             WEB_DOMAIN="cvspark-app.koklo.dev"
             API_DOMAIN="cvspark-api.koklo.dev"
           else
-            STACK_NAME="cvspark-staging"
-            VOLUME_PREFIX="cvspark-staging"
             LANDING_DOMAIN="cvspark-staging.koklo.dev"
             WEB_DOMAIN="cvspark-app-staging.koklo.dev"
             API_DOMAIN="cvspark-api-staging.koklo.dev"
@@ -81,8 +75,6 @@ jobs:
           {
             echo "environment=${ENVIRONMENT}"
             echo "image_tag=${IMAGE_TAG}"
-            echo "stack_name=${STACK_NAME}"
-            echo "volume_prefix=${VOLUME_PREFIX}"
             echo "landing_domain=${LANDING_DOMAIN}"
             echo "web_domain=${WEB_DOMAIN}"
             echo "api_domain=${API_DOMAIN}"
@@ -213,135 +205,73 @@ jobs:
     concurrency:
       group: cvspark-deploy-${{ needs.resolve.outputs.environment }}
       cancel-in-progress: false
+    defaults:
+      run:
+        working-directory: infra/dokploy
+    env:
+      TF_IN_AUTOMATION: "true"
+      # One Dokploy instance, one key, hence a repository-level secret.
+      DOKPLOY_API_KEY: ${{ secrets.DOKPLOY_API_KEY }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      AWS_ENDPOINT_URL_S3: ${{ secrets.R2_ENDPOINT }}
+      TF_VAR_environment: ${{ needs.resolve.outputs.environment }}
+      TF_VAR_image_tag: ${{ needs.resolve.outputs.image_tag }}
+      # Secrets of THIS environment only: the job carries `environment:` above,
+      # so it sees the staging or the production set, never both. Every
+      # non-secret setting is a default in infra/dokploy/variables.tf.
+      TF_VAR_postgres_password: ${{ secrets.POSTGRES_PASSWORD }}
+      TF_VAR_minio_access_key: ${{ secrets.MINIO_ACCESS_KEY }}
+      TF_VAR_minio_secret_key: ${{ secrets.MINIO_SECRET_KEY }}
+      TF_VAR_openrouter_api_key: ${{ secrets.OPENROUTER_API_KEY }}
+      TF_VAR_stripe_secret_key: ${{ secrets.STRIPE_SECRET_KEY }}
+      TF_VAR_stripe_webhook_secret: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+      TF_VAR_auth_session_secret: ${{ secrets.AUTH_SESSION_SECRET }}
+      TF_VAR_smtp_user: ${{ secrets.SMTP_USER }}
+      TF_VAR_smtp_password: ${{ secrets.SMTP_PASSWORD }}
+      TF_VAR_next_server_actions_encryption_key: ${{ secrets.NEXT_SERVER_ACTIONS_ENCRYPTION_KEY }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Render stack files
-        id: bundle
-        env:
-          IMAGE_TAG: ${{ needs.resolve.outputs.image_tag }}
-          STACK_NAME: ${{ needs.resolve.outputs.stack_name }}
-          VOLUME_PREFIX: ${{ needs.resolve.outputs.volume_prefix }}
-          LANDING_DOMAIN: ${{ needs.resolve.outputs.landing_domain }}
-          WEB_DOMAIN: ${{ needs.resolve.outputs.web_domain }}
-          API_DOMAIN: ${{ needs.resolve.outputs.api_domain }}
-          COOKIE_DOMAIN: ${{ vars.COOKIE_DOMAIN || '.koklo.dev' }}
-          AUTH_COOKIE_NAME: ${{ vars.AUTH_COOKIE_NAME || 'cvspark_session' }}
-          AUTH_MAGIC_LINK_TTL_MINUTES: ${{ vars.AUTH_MAGIC_LINK_TTL_MINUTES || '15' }}
-          AUTH_SESSION_TTL_DAYS: ${{ vars.AUTH_SESSION_TTL_DAYS || '7' }}
-          POSTGRES_DB: ${{ vars.POSTGRES_DB || 'cvforge' }}
-          POSTGRES_USER: ${{ vars.POSTGRES_USER || 'cvforge' }}
-          OPENROUTER_MODEL: ${{ vars.OPENROUTER_MODEL }}
-          INTERVIEW_STT_MODEL: ${{ vars.INTERVIEW_STT_MODEL }}
-          INTERVIEW_AI_MODEL: ${{ vars.INTERVIEW_AI_MODEL }}
-          SMTP_PROVIDER: ${{ vars.SMTP_PROVIDER }}
-          SMTP_SERVER: ${{ vars.SMTP_SERVER }}
-          SMTP_PORT: ${{ vars.SMTP_PORT }}
-          EMAIL_FROM: ${{ vars.EMAIL_FROM }}
-          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-          MINIO_ACCESS_KEY: ${{ secrets.MINIO_ACCESS_KEY }}
-          MINIO_SECRET_KEY: ${{ secrets.MINIO_SECRET_KEY }}
-          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
-          STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
-          AUTH_SESSION_SECRET: ${{ secrets.AUTH_SESSION_SECRET }}
-          SMTP_USER: ${{ secrets.SMTP_USER }}
-          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
-          NEXT_SERVER_ACTIONS_ENCRYPTION_KEY: ${{ secrets.NEXT_SERVER_ACTIONS_ENCRYPTION_KEY }}
-        run: |
-          set -euo pipefail
-          umask 077
-
-          cat > stack.env <<EOF
-          IMAGE_TAG=${IMAGE_TAG}
-          STACK_NAME=${STACK_NAME}
-          VOLUME_PREFIX=${VOLUME_PREFIX}
-          LANDING_DOMAIN=${LANDING_DOMAIN}
-          WEB_DOMAIN=${WEB_DOMAIN}
-          API_DOMAIN=${API_DOMAIN}
-          COOKIE_DOMAIN=${COOKIE_DOMAIN}
-          AUTH_COOKIE_NAME=${AUTH_COOKIE_NAME}
-          AUTH_MAGIC_LINK_TTL_MINUTES=${AUTH_MAGIC_LINK_TTL_MINUTES}
-          AUTH_SESSION_TTL_DAYS=${AUTH_SESSION_TTL_DAYS}
-          AUTH_SESSION_SECRET=${AUTH_SESSION_SECRET}
-          POSTGRES_DB=${POSTGRES_DB}
-          POSTGRES_USER=${POSTGRES_USER}
-          POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-          DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
-          REDIS_URL=redis://redis:6379
-          MINIO_ENDPOINT=http://minio:9000
-          MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY}
-          MINIO_SECRET_KEY=${MINIO_SECRET_KEY}
-          PUPPETEER_URL=http://puppeteer:3000
-          OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
-          OPENROUTER_MODEL=${OPENROUTER_MODEL}
-          INTERVIEW_STT_MODEL=${INTERVIEW_STT_MODEL}
-          INTERVIEW_AI_MODEL=${INTERVIEW_AI_MODEL}
-          STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
-          STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
-          SMTP_PROVIDER=${SMTP_PROVIDER}
-          SMTP_SERVER=${SMTP_SERVER}
-          SMTP_PORT=${SMTP_PORT}
-          SMTP_USER=${SMTP_USER}
-          SMTP_PASSWORD=${SMTP_PASSWORD}
-          EMAIL_FROM=${EMAIL_FROM}
-          NEXT_SERVER_ACTIONS_ENCRYPTION_KEY=${NEXT_SERVER_ACTIONS_ENCRYPTION_KEY}
-          EOF
-
-          {
-            echo "compose_b64=$(base64 -w0 infra/compose/docker-compose.yml)"
-            echo "env_b64=$(base64 -w0 stack.env)"
-          } >> "${GITHUB_OUTPUT}"
-
-      - name: Deploy on VPS20
-        uses: appleboy/ssh-action@v1.2.0
-        env:
-          COMPOSE_B64: ${{ steps.bundle.outputs.compose_b64 }}
-          ENV_B64: ${{ steps.bundle.outputs.env_b64 }}
-          STACK_NAME: ${{ needs.resolve.outputs.stack_name }}
-          POSTGRES_USER: ${{ vars.POSTGRES_USER || 'cvforge' }}
-          POSTGRES_DB: ${{ vars.POSTGRES_DB || 'cvforge' }}
+      - name: Set up OpenTofu
+        uses: opentofu/setup-opentofu@v1
         with:
-          host: ${{ secrets.VPS20_IP }}
-          username: ${{ vars.SSH_USER || 'devops' }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          envs: COMPOSE_B64,ENV_B64,STACK_NAME,POSTGRES_USER,POSTGRES_DB
-          command_timeout: 20m
-          script: |
-            set -euo pipefail
-            STACK_DIR="/opt/apps/${STACK_NAME}"
-            mkdir -p "${STACK_DIR}/backups"
-            cd "${STACK_DIR}"
+          tofu_wrapper: false
 
-            printf '%s' "${COMPOSE_B64}" | base64 -d > docker-compose.yml
-            umask 077
-            printf '%s' "${ENV_B64}" | base64 -d > .env
-            chmod 600 .env
+      - name: Init
+        env:
+          ENVIRONMENT: ${{ needs.resolve.outputs.environment }}
+        run: |
+          tofu init -input=false \
+            -backend-config="key=cvspark/dokploy-${ENVIRONMENT}.tfstate"
 
-            # Pre-deploy snapshot, only when the stack already runs.
-            if docker compose ps --status running --services 2>/dev/null | grep -qx postgres; then
-              STAMP=$(date +%Y%m%dT%H%M%S)
-              docker compose exec -T postgres pg_dump -U "${POSTGRES_USER}" "${POSTGRES_DB}" \
-                | gzip > "backups/pre-deploy-${STAMP}.sql.gz"
-              echo "pre-deploy backup written to backups/pre-deploy-${STAMP}.sql.gz"
-              ls -1t backups/pre-deploy-*.sql.gz | tail -n +11 | xargs -r rm --
-            fi
+      - name: Plan
+        id: plan
+        run: |
+          set +e
+          tofu plan -input=false -lock-timeout=5m -detailed-exitcode -out=tfplan
+          code=$?
+          set -e
+          if [ "${code}" -gt 1 ]; then
+            exit "${code}"
+          fi
+          echo "changes=${code}" >> "${GITHUB_OUTPUT}"
 
-            # GHCR pulls have failed on transient network drops before.
-            for attempt in 1 2 3; do
-              if docker compose pull; then
-                break
-              fi
-              if [ "${attempt}" = "3" ]; then
-                echo "docker compose pull failed after 3 attempts" >&2
-                exit 1
-              fi
-              sleep 10
-            done
+      - name: Publish plan
+        run: |
+          {
+            echo '## Dokploy plan'
+            echo '```'
+            tofu show -no-color tfplan
+            echo '```'
+          } >> "${GITHUB_STEP_SUMMARY}"
 
-            docker compose up -d --remove-orphans --wait --wait-timeout 300
-            docker image prune -f
+      # Dokploy redeploys the stack and the apply blocks until the deploy
+      # reaches a terminal status (deployment_timeout, 15m by default).
+      - name: Apply
+        if: steps.plan.outputs.changes == '2'
+        run: tofu apply -input=false -lock-timeout=5m tfplan
 
       - name: Smoke test
         env:
