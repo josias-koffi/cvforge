@@ -96,6 +96,17 @@ certificate yet gives Cloudflare a 526 until issuance completes. Set
 issue at step 5, then flip it back to `true`. Note `dokploy.ops.koklo.dev` is
 itself unproxied, which is why its certificate issued cleanly.
 
+**4b. Verify cvspark.koklo.dev in Resend — blocking.** Outgoing mail moves to
+`no-reply@cvspark.koklo.dev` with the rename. Resend refuses to send from an
+unverified domain, and magic links are how people sign in, so an unverified
+sender locks everyone out of the app. Verification needs the DKIM and SPF
+records Resend issues, which cannot exist before step 4 creates the zone
+entries. So: add the domain in Resend, add its records to the `koklo.dev` zone,
+wait for Resend to report *verified*, and only then continue. Until it is
+verified, override the sender back to the domain that works by setting the
+`TF_VAR_email_from` environment variable of the deploy job to
+`CVforge <no-reply@cvforge.koklo.dev>`.
+
 **5. Staging.** The same merge deploys staging through Dokploy. Check
 `cvspark-staging.koklo.dev`, `cvspark-app-staging.koklo.dev` and
 `cvspark-api-staging.koklo.dev/health`. Staging uses its own volumes
