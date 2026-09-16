@@ -96,16 +96,22 @@ certificate yet gives Cloudflare a 526 until issuance completes. Set
 issue at step 5, then flip it back to `true`. Note `dokploy.ops.koklo.dev` is
 itself unproxied, which is why its certificate issued cleanly.
 
-**4b. Verify cvspark.koklo.dev in Resend — blocking.** Outgoing mail moves to
-`no-reply@cvspark.koklo.dev` with the rename. Resend refuses to send from an
-unverified domain, and magic links are how people sign in, so an unverified
-sender locks everyone out of the app. Verification needs the DKIM and SPF
-records Resend issues, which cannot exist before step 4 creates the zone
-entries. So: add the domain in Resend, add its records to the `koklo.dev` zone,
-wait for Resend to report *verified*, and only then continue. Until it is
-verified, override the sender back to the domain that works by setting the
-`TF_VAR_email_from` environment variable of the deploy job to
-`CVforge <no-reply@cvforge.koklo.dev>`.
+**4b. Mail sends from `@koklo.dev`, and only from there.** Resend verifies each
+subdomain independently. Only the apex carries the records — DKIM at
+`resend._domainkey.koklo.dev`, plus the `send.koklo.dev` MX and SPF. Neither
+`cvspark.koklo.dev` nor `cvforge.koklo.dev` is verified, so a From on either is
+rejected with a 403 domain mismatch. That is why `EMAIL_FROM` is
+`CVSpark <no-reply@koklo.dev>`.
+
+Note this means production mail was already failing before the cutover: the
+pre-Dokploy stack sent from `no-reply@cvforge.koklo.dev`, which Resend never
+accepted. Magic links are how people sign in, so this is worth checking after
+the first deploy.
+
+To move to `no-reply@cvspark.koklo.dev` later — Resend recommends a subdomain
+over the apex, to keep each product's sending reputation separate — add that
+subdomain in Resend, publish the records it issues into the `koklo.dev` zone,
+wait for *verified*, then change `email_from` in `infra/dokploy/variables.tf`.
 
 **4c. Expect the first apply of a fresh environment to serve 404.** The three
 `dokploy_domain` resources take `compose_id`, so Terraform creates them *after*

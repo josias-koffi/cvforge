@@ -57,7 +57,7 @@ locals {
   # Staging shares the Resend account with production, so it sends from the same
   # verified domain. Only the display name differs, which is enough to tell a
   # staging magic link from a real one in an inbox.
-  email_from = local.is_production ? var.email_from : "CVSpark staging <no-reply@cvspark.koklo.dev>"
+  email_from = local.is_production ? var.email_from : "CVSpark staging <no-reply@koklo.dev>"
 
   domains = local.is_production ? {
     landing = "cvspark.koklo.dev"
