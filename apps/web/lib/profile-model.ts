@@ -115,8 +115,17 @@ export function candidateName(profile: BaseProfile) {
   return [profile.identity.firstName, profile.identity.lastName].filter(Boolean).join(" ")
 }
 
+/**
+ * A first name alone is not enough to generate from: without a single
+ * experience or skill the model has nothing but the job offer to work from,
+ * and invents the whole document.
+ */
 export function isProfileReady(profile: BaseProfile) {
-  return Boolean(profile.identity.firstName.trim())
+  const { experiences, technicalSkills, softSkills } = profile.sections
+  return Boolean(
+    profile.identity.firstName.trim() &&
+      (experiences.length > 0 || technicalSkills.length > 0 || softSkills.length > 0)
+  )
 }
 
 /** Personal identifiers stay local; only pseudonymised data reaches the prompt. */
@@ -124,7 +133,9 @@ export function buildGenerationRequest(profile: BaseProfile): CvGenerationReques
   return {
     localFields: {
       email: profile.identity.email.trim(),
+      github: profile.identity.github.trim(),
       lastName: profile.identity.lastName.trim(),
+      linkedin: profile.identity.linkedIn.trim(),
       phone: profile.identity.phone.trim(),
     },
     promptProfile: {

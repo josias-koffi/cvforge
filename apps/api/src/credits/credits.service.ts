@@ -67,13 +67,23 @@ export class CreditsService {
     };
   }
 
+  /**
+   * Checks the balance without spending it, so a costly AI call is never made
+   * for a user who could not pay for it anyway.
+   */
+  assertSufficientCredits(
+    action: ConsumeCreditsInput["action"],
+    userEmail: string,
+  ): void {
+    if (this.getSummaryForUser(userEmail).balance < AI_CREDIT_COSTS[action]) {
+      throw new InsufficientCreditsException(action);
+    }
+  }
+
   consumeCredits(input: ConsumeCreditsInput): CreditLedgerEntry {
+    this.assertSufficientCredits(input.action, input.userEmail);
     const current = this.getSummaryForUser(input.userEmail);
     const cost = AI_CREDIT_COSTS[input.action];
-
-    if (current.balance < cost) {
-      throw new InsufficientCreditsException(input.action);
-    }
 
     return this.store.addEntry({
       action: input.action,

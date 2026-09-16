@@ -13,6 +13,7 @@ import type {
 
 import { saveCv } from "@/app/(app)/candidatures/[id]/documents-actions"
 import { EditorLayout } from "@/components/documents/editor-layout"
+import { GroundingNotice } from "@/components/documents/grounding-notice"
 import { TranslateDialog } from "@/components/documents/translate-dialog"
 import {
   cleanLines,
@@ -176,6 +177,7 @@ export function CvEditor({
         />
       }
     >
+      <GroundingNotice report={draft.grounding} />
       <Accordion type="multiple" defaultValue={["identity"]} className="flex flex-col gap-3">
         <Section value="identity" title="Identité et accroche">
           <FieldGrid>

@@ -27,13 +27,14 @@ const VALID_BODY = {
       personalProjects: [],
       softSkills: [],
       summary: "",
-      technicalSkills: [],
+      technicalSkills: ["TypeScript"],
     },
   },
 };
 
 describe("POST /candidatures/generate-cv route", () => {
   beforeEach(() => {
+    mockFetch.mockReset();
     mockFetch.mockResolvedValue({
       ok: true,
       status: 200,
@@ -130,7 +131,7 @@ describe("POST /candidatures/generate-cv route", () => {
     expect(response.status).toBe(400);
   });
 
-  it("uses fallback promptProfile when not provided in body", async () => {
+  it("refuses to generate without a profile instead of substituting an empty one", async () => {
     const bodyWithoutProfile = {
       applicationId: "app-001",
       localFields: VALID_BODY.localFields,
@@ -141,12 +142,31 @@ describe("POST /candidatures/generate-cv route", () => {
       method: "POST",
     });
 
+    // An empty profile used to reach the model, which then invented an entire
+    // career from the job offer alone — and the user was charged for it.
     const response = await POST(request);
-    expect(response.status).toBe(200);
+    expect(response.status).toBe(422);
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
 
-    const [, options] = mockFetch.mock.lastCall as [string, { body: string }];
-    const sent = JSON.parse(options.body) as { promptProfile: { identity: { firstName: string } } };
-    expect(sent.promptProfile.identity.firstName).toBe("");
+  it("refuses a profile holding no experience and no skill", async () => {
+    const request = new Request("http://app.test/candidatures/generate-cv", {
+      body: JSON.stringify({
+        ...VALID_BODY,
+        promptProfile: {
+          ...VALID_BODY.promptProfile,
+          profileSections: {
+            ...VALID_BODY.promptProfile.profileSections,
+            technicalSkills: [],
+          },
+        },
+      }),
+      headers: { "Content-Type": "application/json" },
+      method: "POST",
+    });
+
+    expect((await POST(request)).status).toBe(422);
+    expect(mockFetch).not.toHaveBeenCalled();
   });
 
   it("returns 500 when API error response has no parseable JSON body", async () => {

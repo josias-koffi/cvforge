@@ -27,7 +27,7 @@ const VALID_BODY = {
       personalProjects: [],
       softSkills: [],
       summary: "",
-      technicalSkills: [],
+      technicalSkills: ["TypeScript"],
     },
   },
 };

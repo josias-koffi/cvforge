@@ -14,7 +14,21 @@ describe("CV generation prompt", () => {
     expect(CV_SYSTEM_PROMPT).toContain("une seule catégorie");
     expect(CV_SYSTEM_PROMPT).toContain('champ "label"');
     expect(CV_SYSTEM_PROMPT).toContain('champ "category"');
-    expect(CV_SYSTEM_PROMPT).toContain("N'invente rien");
+    expect(CV_SYSTEM_PROMPT).toContain("supprimée automatiquement");
+  });
+
+  it("makes the profile the only source of facts", () => {
+    expect(CV_SYSTEM_PROMPT).toContain("SOURCE DE VÉRITÉ");
+    expect(CV_SYSTEM_PROMPT).toContain("Aucun chiffre");
+    expect(LETTER_SYSTEM_PROMPT).toContain("SOURCE DE VÉRITÉ");
+  });
+
+  it("no longer pushes the model to fabricate measurable impact", () => {
+    expect(CV_SYSTEM_PROMPT).not.toContain("impact mesurable");
+  });
+
+  it("stops asking for languages, which no profile field backs", () => {
+    expect(CV_SYSTEM_PROMPT).not.toContain('"languages"');
   });
 
   it("forces a single output language", () => {

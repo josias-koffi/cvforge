@@ -4,11 +4,12 @@ import {
   NotFoundException,
   UnprocessableEntityException,
 } from "@nestjs/common";
-import type {
-  CVDocumentContent,
-  CvGenerationRequest,
-  LetterDocumentContent,
-} from "@cvforge/types";
+import {
+  VALID_CV_JSON,
+  VALID_LETTER_JSON,
+  makeRequest,
+  makeStoredApplication,
+} from "./cv-generation.fixtures";
 import { CvGenerationService } from "./cv-generation.service";
 import type {
   ApplicationsStore,
@@ -16,152 +17,6 @@ import type {
 } from "../applications/applications.types";
 import type { CreditsService } from "../credits/credits.service";
 import type { TemplatesStore } from "../templates/templates.types";
-
-function makeStoredApplication(
-  overrides: Partial<StoredApplication> = {},
-): StoredApplication {
-  return {
-    createdAt: "2026-01-01T00:00:00.000Z",
-    cvContent: null,
-    cvGeneratedAt: null,
-    id: "app-001",
-    letterContent: null,
-    letterGeneratedAt: null,
-    offerTextPreview: "A great job at Acme Corp.",
-    offerUrl: "https://acme.example/jobs/1",
-    rawOfferText:
-      "We are hiring a senior TypeScript developer with 5 years of experience. Skills: TypeScript, Node.js, React. Responsibilities: Build APIs and UIs.",
-    sourceLabel: "https://acme.example/jobs/1",
-    sourceType: "url",
-    status: "draft",
-    statusHistory: [{ changedAt: "2026-01-01T00:00:00.000Z", status: "draft" }],
-    updatedAt: "2026-01-01T00:00:00.000Z",
-    userEmail: "user@test.example",
-    extracted: {
-      companyName: "Acme Corp",
-      contractType: "CDI",
-      language: "en",
-      location: "Paris",
-      requirements: ["TypeScript", "Node.js"],
-      responsibilities: ["Build APIs"],
-      salaryRange: null,
-      summary: "Senior TypeScript developer",
-      title: "Senior TypeScript Developer",
-    },
-    ...overrides,
-  };
-}
-
-function makeRequest(
-  overrides: Partial<CvGenerationRequest> = {},
-): CvGenerationRequest {
-  return {
-    localFields: {
-      email: "user@test.example",
-      lastName: "Dupont",
-      phone: "+33612345678",
-    },
-    promptProfile: {
-      headline: "Senior Developer",
-      identity: {
-        candidateToken: "[CANDIDATE]",
-        city: "Paris",
-        firstName: "Jean",
-      },
-      profileSections: {
-        certifications: [],
-        education: [
-          {
-            degree: "Master Informatique",
-            honors: "",
-            institution: "Sorbonne",
-            year: "2018",
-          },
-        ],
-        experiences: [
-          {
-            company: "Tech Corp",
-            period: "2020-2023",
-            results: "Delivered key APIs",
-            role: "Backend Developer",
-          },
-        ],
-        interests: "",
-        personalProjects: [],
-        softSkills: ["Communication"],
-        summary: "Experienced backend developer",
-        technicalSkills: ["TypeScript", "Node.js"],
-      },
-    },
-    ...overrides,
-  };
-}
-
-const VALID_CV_JSON: CVDocumentContent = {
-  candidate: {
-    city: "Paris",
-    email: "",
-    firstName: "Jean",
-    github: "",
-    lastName: "[CANDIDATE]",
-    linkedin: "",
-    phone: "",
-    summary: "Expert TypeScript developer with 5+ years.",
-    title: "Senior TypeScript Developer",
-  },
-  certifications: [],
-  education: [
-    {
-      description: "Specialized in distributed systems.",
-      degree: "Master Informatique",
-      institution: "Sorbonne",
-      mention: "",
-      year: "2018",
-    },
-  ],
-  experiences: [
-    {
-      achievements: ["Delivered key APIs"],
-      company: "Tech Corp",
-      description: "Built backend systems",
-      endDate: "2023",
-      position: "Backend Developer",
-      startDate: "2020",
-    },
-  ],
-  languages: [],
-  projects: [],
-  interests: "Running, photography",
-  skills: { hard: ["TypeScript", "Node.js"], soft: ["Communication"] },
-};
-
-const VALID_LETTER_JSON: LetterDocumentContent = {
-  body: {
-    paragraph1: "I am applying for your senior TypeScript role.",
-    paragraph2: "My backend and product experience align with your needs.",
-    paragraph3: "I would welcome the opportunity to discuss this role.",
-  },
-  candidate: {
-    city: "Paris",
-    email: "",
-    firstName: "Jean",
-    github: "",
-    lastName: "[CANDIDATE]",
-    linkedin: "",
-    phone: "",
-    title: "Senior TypeScript Developer",
-  },
-  company: {
-    city: "Paris",
-    name: "Acme Corp",
-  },
-  date: "2026-04-20",
-  object: "Application for Senior TypeScript Developer",
-  signature: {
-    firstName: "Jean",
-    lastName: "[CANDIDATE]",
-  },
-};
 
 describe("CvGenerationService", () => {
   let store: ApplicationsStore;
@@ -186,6 +41,7 @@ describe("CvGenerationService", () => {
       chat: vi.fn().mockResolvedValue(JSON.stringify(VALID_CV_JSON)),
     };
     creditsService = {
+      assertSufficientCredits: vi.fn(),
       consumeCredits: vi.fn(),
     } as unknown as CreditsService;
     templatesStore = {
@@ -231,19 +87,19 @@ describe("CvGenerationService", () => {
       const [messages] = (openRouter.chat as ReturnType<typeof vi.fn>).mock
         .calls[0] as [Array<{ role: string; content: string }>];
       const userMessage = messages.find((m) => m.role === "user")!;
-      const payload = JSON.parse(userMessage.content) as {
-        pseudonymisedProfile: { identity: Record<string, unknown> };
-      };
 
       // Pseudonymised profile must not include lastName, phone, or email
-      expect(payload.pseudonymisedProfile.identity).not.toHaveProperty(
-        "lastName",
-      );
-      expect(payload.pseudonymisedProfile.identity).not.toHaveProperty("phone");
-      expect(payload.pseudonymisedProfile.identity).not.toHaveProperty("email");
-      expect(payload.pseudonymisedProfile.identity).toHaveProperty(
-        "candidateToken",
-        "[CANDIDATE]",
+      expect(userMessage.content).not.toContain("Dupont");
+      expect(userMessage.content).not.toContain("+33612345678");
+      expect(userMessage.content).not.toContain("user@test.example");
+      expect(userMessage.content).toContain("[CANDIDATE]");
+      // The offer is fenced off from the profile so the model cannot treat it
+      // as a source of facts about the candidate.
+      expect(userMessage.content).toContain("=== OFFRE D'EMPLOI");
+      expect(userMessage.content).toContain("=== PROFIL CANDIDAT");
+      expect(userMessage.content).toContain("INVENTAIRE AUTORISÉ");
+      expect(userMessage.content.indexOf("=== OFFRE D'EMPLOI")).toBeLessThan(
+        userMessage.content.indexOf("=== PROFIL CANDIDAT"),
       );
       expect(creditsService.consumeCredits).toHaveBeenCalledWith({
         action: "cv_generation",
@@ -393,7 +249,7 @@ describe("CvGenerationService", () => {
       expect(cvContent.candidate.firstName).toBe("Jean");
     });
 
-    it("preserves empty arrays when AI omits optional sections", async () => {
+    it("restores profile facts when the AI omits whole sections", async () => {
       const minimal = { candidate: VALID_CV_JSON.candidate };
       openRouter.chat.mockResolvedValue(JSON.stringify(minimal));
 
@@ -402,9 +258,17 @@ describe("CvGenerationService", () => {
         "app-001",
         makeRequest(),
       );
-      expect(cvContent.experiences).toEqual([]);
-      expect(cvContent.education).toEqual([]);
-      expect(cvContent.skills).toEqual({ hard: [], soft: [] });
+
+      // Losing a real job would be as damaging as inventing one: the source
+      // profile is rebuilt rather than trusted to the model's output.
+      expect(cvContent.experiences).toHaveLength(1);
+      expect(cvContent.experiences[0].company).toBe("Tech Corp");
+      expect(cvContent.experiences[0].position).toBe("Backend Developer");
+      expect(cvContent.education).toHaveLength(1);
+      expect(cvContent.education[0].degree).toBe("Master Informatique");
+      expect(cvContent.skills.hard).toEqual(["TypeScript", "Node.js"]);
+      expect(cvContent.certifications).toEqual([]);
+      expect(cvContent.projects).toEqual([]);
     });
 
     it("system prompt mentions [CANDIDATE] token and forbids phone/email", async () => {
@@ -455,7 +319,13 @@ describe("CvGenerationService", () => {
 
       expect(cvContent.candidate.firstName).toBe("");
       expect(cvContent.candidate.lastName).toBe("Dupont");
-      expect(cvContent.skills.hard).toEqual(["Go"]);
+      // "Go" is nowhere in the profile: it is dropped and reported rather than
+      // handed to a recruiter as a skill the candidate does not have.
+      expect(cvContent.skills.hard).not.toContain("Go");
+      expect(cvContent.grounding?.removals).toContainEqual({
+        kind: "skill",
+        label: "Go",
+      });
     });
 
     it("normalises AI JSON with no candidate field at all", async () => {
@@ -497,7 +367,13 @@ describe("CvGenerationService", () => {
         "app-001",
         makeRequest(),
       );
-      expect(cvContent.experiences[0]?.achievements).toEqual([]);
+      // The company the model invented is replaced by the real one, and the
+      // unusable achievements fall back to what the profile actually states.
+      expect(cvContent.experiences[0]?.company).toBe("Tech Corp");
+      expect(cvContent.experiences[0]?.position).toBe("Backend Developer");
+      expect(cvContent.experiences[0]?.achievements).toEqual([
+        "Delivered key APIs",
+      ]);
     });
   });
 
@@ -612,17 +488,12 @@ describe("CvGenerationService", () => {
         Array<{ role: string; content: string }>,
       ];
       const userMessage = messages.find((m) => m.role === "user")!;
-      const payload = JSON.parse(userMessage.content) as {
-        offerContext: { title: string };
-        pseudonymisedProfile: { identity: Record<string, unknown> };
-      };
 
-      expect(payload.offerContext.title).toBe("Senior TypeScript Developer");
-      expect(payload.pseudonymisedProfile.identity).not.toHaveProperty(
-        "lastName",
-      );
-      expect(payload.pseudonymisedProfile.identity).not.toHaveProperty("phone");
-      expect(payload.pseudonymisedProfile.identity).not.toHaveProperty("email");
+      expect(userMessage.content).toContain("Senior TypeScript Developer");
+      expect(userMessage.content).toContain("=== PROFIL CANDIDAT");
+      expect(userMessage.content).not.toContain("Dupont");
+      expect(userMessage.content).not.toContain("+33612345678");
+      expect(userMessage.content).not.toContain("user@test.example");
     });
 
     it("injects local fields into the returned letter content", async () => {

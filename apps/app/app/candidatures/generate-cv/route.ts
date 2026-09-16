@@ -2,6 +2,10 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import type { CvGenerationRequest } from "@cvforge/types";
 import { getServerApiUrl } from "../../auth-config";
+import {
+  PROFILE_REQUIRED_MESSAGE,
+  readGroundablePromptProfile,
+} from "../prompt-profile-guard";
 
 type GenerateCvBody = CvGenerationRequest & { applicationId: string };
 
@@ -33,25 +37,21 @@ export async function POST(request: Request) {
     );
   }
 
+  const promptProfile = readGroundablePromptProfile(body.promptProfile);
+
+  if (!promptProfile) {
+    return NextResponse.json(
+      { message: PROFILE_REQUIRED_MESSAGE },
+      { status: 422 },
+    );
+  }
+
   const cookieStore = await cookies();
   const cookieHeader = getCookieHeader(cookieStore);
 
   const apiPayload: CvGenerationRequest = {
     localFields: body.localFields ?? { email: "", lastName: "", phone: "" },
-    promptProfile: body.promptProfile ?? {
-      headline: "",
-      identity: { candidateToken: "[CANDIDATE]", city: "", firstName: "" },
-      profileSections: {
-        certifications: [],
-        education: [],
-        experiences: [],
-        interests: "",
-        personalProjects: [],
-        softSkills: [],
-        summary: "",
-        technicalSkills: [],
-      },
-    },
+    promptProfile,
   };
 
   const apiResponse = await fetch(

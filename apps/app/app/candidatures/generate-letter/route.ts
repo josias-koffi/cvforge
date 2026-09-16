@@ -2,6 +2,10 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import type { LetterGenerationRequest } from "@cvforge/types";
 import { getServerApiUrl } from "../../auth-config";
+import {
+  PROFILE_REQUIRED_MESSAGE,
+  readGroundablePromptProfile,
+} from "../prompt-profile-guard";
 
 type GenerateLetterBody = LetterGenerationRequest & { applicationId: string };
 
@@ -42,22 +46,18 @@ export async function POST(request: Request) {
       ? body.refinement.trim()
       : undefined;
 
+  const promptProfile = readGroundablePromptProfile(body.promptProfile);
+
+  if (!promptProfile) {
+    return NextResponse.json(
+      { message: PROFILE_REQUIRED_MESSAGE },
+      { status: 422 },
+    );
+  }
+
   const apiPayload: LetterGenerationRequest = {
     localFields: body.localFields ?? { email: "", lastName: "", phone: "" },
-    promptProfile: body.promptProfile ?? {
-      headline: "",
-      identity: { candidateToken: "[CANDIDATE]", city: "", firstName: "" },
-      profileSections: {
-        certifications: [],
-        education: [],
-        experiences: [],
-        interests: "",
-        personalProjects: [],
-        softSkills: [],
-        summary: "",
-        technicalSkills: [],
-      },
-    },
+    promptProfile,
     ...(refinement ? { refinement } : {}),
   };
 
