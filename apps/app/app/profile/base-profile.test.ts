@@ -92,6 +92,7 @@ describe("base profile helpers", () => {
     onboardingDraft.personal.city = "Paris";
     onboardingDraft.links.linkedIn = "https://linkedin.com/in/jane";
     onboardingDraft.importCv.notes = "Resume depuis l'ancien CV.";
+    onboardingDraft.additional.languages = "Francais C2, Anglais B2";
 
     const storage = {
       getItem: (key: string) =>
@@ -104,6 +105,11 @@ describe("base profile helpers", () => {
     expect(profile.identity.firstName).toBe("Jane");
     expect(profile.identity.linkedIn).toContain("linkedin.com");
     expect(profile.sections.summary).toContain("ancien CV");
+    // The free-text onboarding answer lands in the structured profile field.
+    expect(profile.sections.languages).toEqual([
+      { language: "Francais", level: "C2" },
+      { language: "Anglais", level: "B2" },
+    ]);
     expect(profile.meta.source).toBe("onboarding");
   });
 
