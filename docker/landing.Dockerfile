@@ -18,6 +18,9 @@ ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
 COPY apps/landing apps/landing
 COPY packages/types packages/types
 COPY packages/config packages/config
+# @cvforge/types resolves to dist/index.js and its dist/ is not committed, so it
+# has to be built before anything that imports it.
+RUN pnpm --filter @cvforge/types build
 RUN pnpm --filter @cvforge/landing build
 
 # Stage 3: Minimal runtime
