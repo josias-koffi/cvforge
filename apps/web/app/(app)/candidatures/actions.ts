@@ -131,7 +131,9 @@ export async function generateDocument(
   if (!isProfileReady(profile)) {
     return {
       ok: false,
-      message: "Complétez votre profil (au moins le prénom) avant de lancer la génération.",
+      message:
+        "Complétez votre profil (prénom, et au moins une expérience ou une compétence) " +
+        "avant de lancer la génération.",
     }
   }
 

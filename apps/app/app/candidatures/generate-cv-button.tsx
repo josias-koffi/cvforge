@@ -8,7 +8,10 @@ import {
   loadProfileRegistryFromStorage,
   type BaseProfile,
 } from "../profile/base-profile";
-import { AI_CANDIDATE_TOKEN } from "../profile/ai-prompt-profile";
+import {
+  buildLocalFields,
+  buildPromptProfile,
+} from "../profile/ai-prompt-profile";
 import type { CvGenerationRequest } from "@cvforge/types";
 
 type GenerateCvButtonProps = {
@@ -16,22 +19,10 @@ type GenerateCvButtonProps = {
   sessionEmail: string;
 };
 
-function buildRequest(profile: BaseProfile): Omit<CvGenerationRequest, never> {
+function buildRequest(profile: BaseProfile): CvGenerationRequest {
   return {
-    localFields: {
-      email: profile.identity.email.trim(),
-      lastName: profile.identity.lastName.trim(),
-      phone: profile.identity.phone.trim(),
-    },
-    promptProfile: {
-      headline: profile.headline.trim(),
-      identity: {
-        candidateToken: AI_CANDIDATE_TOKEN,
-        city: profile.identity.city.trim(),
-        firstName: profile.identity.firstName.trim(),
-      },
-      profileSections: profile.sections,
-    },
+    localFields: buildLocalFields(profile),
+    promptProfile: buildPromptProfile(profile),
   };
 }
 

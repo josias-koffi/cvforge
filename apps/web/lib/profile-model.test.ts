@@ -44,11 +44,16 @@ describe("profile model", () => {
     expect(merged.sections.education[0].description).toBe("")
   })
 
-  it("requires a first name before generation", () => {
+  it("requires a first name and some substance before generation", () => {
     const profile = createEmptyProfile("me@example.com")
 
     expect(isProfileReady(profile)).toBe(false)
+
+    // A name alone leaves the model nothing but the job offer to work from.
     profile.identity.firstName = " Yahse "
+    expect(isProfileReady(profile)).toBe(false)
+
+    profile.sections.technicalSkills = ["TypeScript"]
     expect(isProfileReady(profile)).toBe(true)
   })
 
@@ -58,7 +63,14 @@ describe("profile model", () => {
 
     const request = buildGenerationRequest(profile)
 
-    expect(request.localFields).toEqual({ email: "me@example.com", lastName: "Koffi", phone: "0600" })
+    // Links travel with the identifiers so the model never guesses a profile URL.
+    expect(request.localFields).toEqual({
+      email: "me@example.com",
+      github: "",
+      lastName: "Koffi",
+      linkedin: "",
+      phone: "0600",
+    })
     expect(JSON.stringify(request.promptProfile)).not.toMatch(/Koffi|0600|me@example/)
     expect(request.promptProfile.identity.candidateToken).toBe("[CANDIDATE]")
   })

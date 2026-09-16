@@ -12,18 +12,24 @@ import {
   AI_CREDIT_ACTION_LETTER_GENERATION,
   TEMPLATE_KIND_CV,
   TEMPLATE_KIND_LETTER,
-  isLocale,
 } from "@cvforge/types";
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from "@nestjs/common";
+import { Injectable, NotFoundException } from "@nestjs/common";
 import type { OpenRouterService } from "../ai/openrouter.service";
 import type { ApplicationsStore } from "../applications/applications.types";
-import type { StoredApplication } from "../applications/applications.types";
 import type { CreditsService } from "../credits/credits.service";
 import type { TemplatesStore } from "../templates/templates.types";
+
+import { groundCvContent } from "./grounding";
+import { buildGroundedUserMessage } from "./cv-generation.payload";
+import {
+  assertLocalFieldsProvided,
+  assertProfileIsGroundable,
+  assertTargetLanguage,
+} from "./cv-generation.guards";
+import {
+  appendCvVersion,
+  appendLetterVersion,
+} from "./cv-generation.versions";
 
 import {
   extractJsonFromContent,
@@ -36,103 +42,17 @@ import {
 } from "./cv-generation.normalizers";
 import {
   CV_SYSTEM_PROMPT,
-  CV_TRANSLATION_SYSTEM_PROMPT,
   LETTER_SYSTEM_PROMPT,
-  LETTER_TRANSLATION_SYSTEM_PROMPT,
 } from "./cv-generation.prompts";
 import {
-  buildCvTranslationPayload,
-  buildLetterTranslationPayload,
-  mergeTranslatedCv,
-  mergeTranslatedLetter,
-} from "./cv-generation.translation";
-
-function assertLocalFieldsProvided(
-  localFields: CvGenerationRequest["localFields"],
-): void {
-  if (!localFields?.lastName && !localFields?.phone && !localFields?.email) {
-    throw new BadRequestException(
-      "Les champs locaux (lastName, phone, email) doivent être fournis.",
-    );
-  }
-}
-
-function asRecord(value: unknown): Record<string, unknown> {
-  return value && typeof value === "object"
-    ? (value as Record<string, unknown>)
-    : {};
-}
-
-function assertTargetLanguage(value: unknown): Locale {
-  if (!isLocale(value)) {
-    throw new BadRequestException(
-      'La langue cible doit être "fr" ou "en".',
-    );
-  }
-  return value;
-}
+  translateStoredCv,
+  translateStoredLetter,
+} from "./cv-generation.translate";
 
 function fallbackLetterObject(language: Locale, title: string) {
   return language === "en"
     ? `Application for the position of ${title}`
     : `Candidature au poste de ${title}`;
-}
-
-function nextVersionNumber(
-  versions: Array<{ versionNumber: number }> | undefined,
-) {
-  return (
-    (versions?.reduce(
-      (highest, version) => Math.max(highest, version.versionNumber),
-      0,
-    ) ?? 0) + 1
-  );
-}
-
-function appendCvVersion(
-  application: StoredApplication,
-  content: CVDocumentContent,
-  timestamp: string,
-  source: CVDocumentVersionEntry["source"],
-  templateId: string | null,
-) {
-  const versions = application.cvVersions ?? [];
-  const versionNumber = nextVersionNumber(versions);
-
-  return [
-    ...versions,
-    {
-      content,
-      createdAt: timestamp,
-      id: `${application.id}-cv-v${versionNumber}`,
-      source,
-      templateId,
-      versionNumber,
-    },
-  ];
-}
-
-function appendLetterVersion(
-  application: StoredApplication,
-  content: LetterDocumentContent,
-  timestamp: string,
-  source: LetterDocumentVersionEntry["source"],
-  templateId: string | null,
-) {
-  const versions = application.letterVersions ?? [];
-  const versionNumber = nextVersionNumber(versions);
-
-  return [
-    ...versions,
-    {
-      content,
-      createdAt: timestamp,
-      id: `${application.id}-letter-v${versionNumber}`,
-      source,
-      templateId,
-      versionNumber,
-    },
-  ];
 }
 
 @Injectable()
@@ -149,24 +69,24 @@ export class CvGenerationService {
     applicationId: string,
     request: CvGenerationRequest,
   ): Promise<CVDocumentContent> {
+    assertProfileIsGroundable(request.promptProfile);
     assertLocalFieldsProvided(request.localFields);
     const application = this.getApplicationForUser(userEmail, applicationId);
     const offerContext = this.buildOfferContext(application);
-    this.creditsService.consumeCredits({
-      action: AI_CREDIT_ACTION_CV_GENERATION,
-      applicationId,
+    this.creditsService.assertSufficientCredits(
+      AI_CREDIT_ACTION_CV_GENERATION,
       userEmail,
-    });
+    );
 
     const rawResponse = await this.openRouterService.chat(
       [
         { role: "system", content: CV_SYSTEM_PROMPT },
         {
           role: "user",
-          content: JSON.stringify({
-            pseudonymisedProfile: request.promptProfile,
+          content: buildGroundedUserMessage(
+            request.promptProfile,
             offerContext,
-          }),
+          ),
         },
       ],
       { temperature: 0.1 },
@@ -174,10 +94,20 @@ export class CvGenerationService {
 
     const rawJson = extractJsonFromContent<RawCvJson>(rawResponse);
     const cvContent: CVDocumentContent = {
-      ...normalizeCvJson(rawJson, request.localFields, request.promptProfile),
+      ...groundCvContent(
+        normalizeCvJson(rawJson, request.localFields, request.promptProfile),
+        request.promptProfile,
+      ),
       language: offerContext.language,
     };
     const cvTemplateId = this.resolveDefaultTemplateId(TEMPLATE_KIND_CV);
+
+    // Charged only once the output has been parsed, normalised and grounded.
+    this.creditsService.consumeCredits({
+      action: AI_CREDIT_ACTION_CV_GENERATION,
+      applicationId,
+      userEmail,
+    });
 
     const timestamp = new Date().toISOString();
     const resolvedTemplateId = cvTemplateId ?? application.cvTemplateId ?? null;
@@ -204,29 +134,28 @@ export class CvGenerationService {
     applicationId: string,
     request: LetterGenerationRequest,
   ): Promise<LetterDocumentContent> {
+    assertProfileIsGroundable(request.promptProfile);
     assertLocalFieldsProvided(request.localFields);
     const application = this.getApplicationForUser(userEmail, applicationId);
     const offerContext = this.buildOfferContext(application);
-    this.creditsService.consumeCredits({
-      action: AI_CREDIT_ACTION_LETTER_GENERATION,
-      applicationId,
+    this.creditsService.assertSufficientCredits(
+      AI_CREDIT_ACTION_LETTER_GENERATION,
       userEmail,
-    });
-
-    const userPayload: Record<string, unknown> = {
-      pseudonymisedProfile: request.promptProfile,
-      offerContext,
-    };
-    if (request.refinement?.trim()) {
-      userPayload.refinement = request.refinement.trim();
-    }
+    );
 
     const rawResponse = await this.openRouterService.chat(
       [
         { role: "system", content: LETTER_SYSTEM_PROMPT },
-        { role: "user", content: JSON.stringify(userPayload) },
+        {
+          role: "user",
+          content: buildGroundedUserMessage(
+            request.promptProfile,
+            offerContext,
+            { refinement: request.refinement },
+          ),
+        },
       ],
-      { temperature: 0.4 },
+      { temperature: 0.25 },
     );
 
     const rawJson = extractJsonFromContent<RawLetterJson>(rawResponse);
@@ -245,6 +174,13 @@ export class CvGenerationService {
     };
     const letterTemplateId =
       this.resolveDefaultTemplateId(TEMPLATE_KIND_LETTER);
+
+    // Charged only once the output has been parsed and normalised.
+    this.creditsService.consumeCredits({
+      action: AI_CREDIT_ACTION_LETTER_GENERATION,
+      applicationId,
+      userEmail,
+    });
 
     const timestamp = new Date().toISOString();
     const resolvedTemplateId =
@@ -274,44 +210,8 @@ export class CvGenerationService {
   ): Promise<CVDocumentContent> {
     const language = assertTargetLanguage(targetLanguage);
     const application = this.getApplicationForUser(userEmail, applicationId);
-    if (!application.cvContent) {
-      throw new NotFoundException("Aucun CV généré pour cette candidature.");
-    }
-    this.creditsService.consumeCredits({
-      action: AI_CREDIT_ACTION_CV_GENERATION,
-      applicationId,
-      userEmail,
-    });
 
-    const rawJson = await this.requestTranslation(
-      CV_TRANSLATION_SYSTEM_PROMPT,
-      {
-        targetLanguage: language,
-        cv: buildCvTranslationPayload(application.cvContent),
-      },
-    );
-    const translated = mergeTranslatedCv(
-      application.cvContent,
-      asRecord(rawJson).cv ?? rawJson,
-      language,
-    );
-
-    const timestamp = new Date().toISOString();
-    const cvTemplateId = application.cvTemplateId ?? null;
-    this.store.save({
-      ...application,
-      cvContent: translated,
-      cvVersions: appendCvVersion(
-        application,
-        translated,
-        timestamp,
-        "translation",
-        cvTemplateId,
-      ),
-      updatedAt: timestamp,
-    });
-
-    return translated;
+    return translateStoredCv(this.translationDeps(), application, userEmail, language);
   }
 
   async translateLetter(
@@ -321,46 +221,21 @@ export class CvGenerationService {
   ): Promise<LetterDocumentContent> {
     const language = assertTargetLanguage(targetLanguage);
     const application = this.getApplicationForUser(userEmail, applicationId);
-    if (!application.letterContent) {
-      throw new NotFoundException(
-        "Aucune lettre générée pour cette candidature.",
-      );
-    }
-    this.creditsService.consumeCredits({
-      action: AI_CREDIT_ACTION_LETTER_GENERATION,
-      applicationId,
-      userEmail,
-    });
 
-    const rawJson = await this.requestTranslation(
-      LETTER_TRANSLATION_SYSTEM_PROMPT,
-      {
-        targetLanguage: language,
-        letter: buildLetterTranslationPayload(application.letterContent),
-      },
-    );
-    const translated = mergeTranslatedLetter(
-      application.letterContent,
-      asRecord(rawJson).letter ?? rawJson,
+    return translateStoredLetter(
+      this.translationDeps(),
+      application,
+      userEmail,
       language,
     );
+  }
 
-    const timestamp = new Date().toISOString();
-    const letterTemplateId = application.letterTemplateId ?? null;
-    this.store.save({
-      ...application,
-      letterContent: translated,
-      letterVersions: appendLetterVersion(
-        application,
-        translated,
-        timestamp,
-        "translation",
-        letterTemplateId,
-      ),
-      updatedAt: timestamp,
-    });
-
-    return translated;
+  private translationDeps() {
+    return {
+      creditsService: this.creditsService,
+      openRouterService: this.openRouterService,
+      store: this.store,
+    };
   }
 
   updateCvContent(
@@ -465,17 +340,6 @@ export class CvGenerationService {
     return [...(application.letterVersions ?? [])].sort(
       (left, right) => right.versionNumber - left.versionNumber,
     );
-  }
-
-  private async requestTranslation(systemPrompt: string, payload: object) {
-    const rawResponse = await this.openRouterService.chat(
-      [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: JSON.stringify(payload) },
-      ],
-      { temperature: 0.1 },
-    );
-    return extractJsonFromContent<unknown>(rawResponse);
   }
 
   private getApplicationForUser(userEmail: string, applicationId: string) {

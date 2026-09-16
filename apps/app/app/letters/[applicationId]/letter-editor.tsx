@@ -11,8 +11,16 @@ import {
   getProfileForApplication,
   loadApplicationProfileSelection,
   loadProfileRegistryFromStorage,
+  type BaseProfile,
 } from "../../profile/base-profile";
-import { AI_CANDIDATE_TOKEN } from "../../profile/ai-prompt-profile";
+import {
+  buildLocalFields,
+  buildPromptProfile,
+} from "../../profile/ai-prompt-profile";
+import {
+  PROFILE_REQUIRED_MESSAGE,
+  readGroundablePromptProfile,
+} from "../../candidatures/prompt-profile-guard";
 import {
   LetterEditorWorkspace,
   LetterRegenerationPanel,
@@ -105,27 +113,7 @@ export function LetterEditor({
     setRegenStatus("loading");
     setRegenMessage(null);
 
-    let requestBody: LetterGenerationRequest & { refinement?: string } = {
-      localFields: { email: "", lastName: "", phone: "" },
-      promptProfile: {
-        headline: "",
-        identity: {
-          candidateToken: AI_CANDIDATE_TOKEN,
-          city: "",
-          firstName: "",
-        },
-        profileSections: {
-          certifications: [],
-          education: [],
-          experiences: [],
-          interests: "",
-          personalProjects: [],
-          softSkills: [],
-          summary: "",
-          technicalSkills: [],
-        },
-      },
-    };
+    let profile: BaseProfile | null = null;
 
     try {
       const registry = loadProfileRegistryFromStorage(
@@ -133,32 +121,23 @@ export function LetterEditor({
         localStorage,
       );
       const selection = loadApplicationProfileSelection(localStorage);
-      const profile = getProfileForApplication(
-        applicationId,
-        registry,
-        selection,
-      );
-      if (profile) {
-        requestBody = {
-          localFields: {
-            email: profile.identity.email.trim(),
-            lastName: profile.identity.lastName.trim(),
-            phone: profile.identity.phone.trim(),
-          },
-          promptProfile: {
-            headline: profile.headline.trim(),
-            identity: {
-              candidateToken: AI_CANDIDATE_TOKEN,
-              city: profile.identity.city.trim(),
-              firstName: profile.identity.firstName.trim(),
-            },
-            profileSections: profile.sections,
-          },
-        };
-      }
+      profile = getProfileForApplication(applicationId, registry, selection);
     } catch {
-      // use default empty payload if profile unavailable
+      // ignore parse errors; the missing profile is reported just below
     }
+
+    // Generating from an empty profile would leave the model nothing but the
+    // job offer to work from, so it would invent the whole letter.
+    if (!profile || !readGroundablePromptProfile(buildPromptProfile(profile))) {
+      setRegenStatus("error");
+      setRegenMessage(PROFILE_REQUIRED_MESSAGE);
+      return;
+    }
+
+    const requestBody: LetterGenerationRequest & { refinement?: string } = {
+      localFields: buildLocalFields(profile),
+      promptProfile: buildPromptProfile(profile),
+    };
 
     const trimmedRefinement = refinement.trim();
     if (trimmedRefinement) {
