@@ -12,6 +12,11 @@
 
 set -uo pipefail
 
+# --auto sets only the values that resolve from the files below and skips every
+# prompt, so it can run without a terminal. The rest is reported as missing.
+AUTO=0
+[ "${1:-}" = "--auto" ] && AUTO=1
+
 REPO="josias-koffi/cvforge"
 
 # Production application secrets. Verified identical to
@@ -21,13 +26,14 @@ ENV_PROD_FILE="$(git rev-parse --show-toplevel 2>/dev/null)/.env.prod"
 # Infrastructure secrets shared with the rest of the estate.
 KOKLO_ENV_FILE="${KOKLO_ENV_FILE:-$HOME/perso/projets/koklo/koklo-infra/.env}"
 
+# Stripe is deliberately absent: it is not configured on any environment, and
+# infra/dokploy defaults both variables to empty. Add STRIPE_SECRET_KEY and
+# STRIPE_WEBHOOK_SECRET here the day the payment features go live.
 APP_SECRETS=(
   POSTGRES_PASSWORD
   MINIO_ACCESS_KEY
   MINIO_SECRET_KEY
   OPENROUTER_API_KEY
-  STRIPE_SECRET_KEY
-  STRIPE_WEBHOOK_SECRET
   AUTH_SESSION_SECRET
   SMTP_USER
   SMTP_PASSWORD
@@ -67,6 +73,7 @@ set_secret() {            # name, value, [env]
 
 read_hidden() {           # prompt -> echoes value on stdout
   local prompt="$1" value=""
+  [ "$AUTO" = "1" ] && return 0      # --auto: no terminal, leave it unset
   read -rsp "  $prompt: " value </dev/tty
   printf '\n' >&2
   printf '%s' "$value"
@@ -164,7 +171,23 @@ echo "3/3  Secrets de l'environnement staging"
 echo "     Doivent différer de production. STRIPE_SECRET_KEY : clé de test."
 echo
 for name in "${APP_SECRETS[@]}"; do
-  set_secret "$name" "$(read_hidden "$name")" staging
+  value=""
+  case "$name" in
+    # Nothing constrains these: the cvspark-staging_* volumes do not exist yet,
+    # so the values are created along with them. Generate rather than ask.
+    POSTGRES_PASSWORD|MINIO_SECRET_KEY|AUTH_SESSION_SECRET|NEXT_SERVER_ACTIONS_ENCRYPTION_KEY)
+      value="$(openssl rand -base64 24 | tr -d '/+=' | cut -c1-32)"
+      printf '     %s → généré\n' "$name"
+      ;;
+    MINIO_ACCESS_KEY)
+      value="cvspark-staging"
+      printf '     %s → cvspark-staging\n' "$name"
+      ;;
+    *)
+      value="$(read_hidden "$name")"
+      ;;
+  esac
+  set_secret "$name" "$value" staging
 done
 
 echo
