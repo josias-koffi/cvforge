@@ -1,11 +1,20 @@
-import nextPlugin from "@next/eslint-plugin-next";
-import rootConfig from "../../eslint.config.mjs";
+import { defineConfig, globalIgnores } from "eslint/config"
+import nextVitals from "eslint-config-next/core-web-vitals"
+import nextTs from "eslint-config-next/typescript"
 
-export default [
-  {
-    plugins: {
-      "@next/next": nextPlugin,
-    },
-  },
-  ...rootConfig,
-];
+const eslintConfig = defineConfig([
+  ...nextVitals,
+  ...nextTs,
+  // Override default ignores of eslint-config-next.
+  globalIgnores([
+    // Default ignores of eslint-config-next:
+    ".next*/**",
+    "out/**",
+    "build/**",
+    "next-env.d.ts",
+    // Dev build output of the docker-compose landing service (NEXT_DIST_DIR).
+    "tmp/**",
+  ]),
+])
+
+export default eslintConfig

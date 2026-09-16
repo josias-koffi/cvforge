@@ -1,40 +1,37 @@
 {
-  "extends": "../../packages/config/tsconfig/base.json",
   "compilerOptions": {
-    "jsx": "preserve",
-    "baseUrl": ".",
-    "moduleResolution": "bundler",
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext"
-    ],
+    "target": "ES2017",
+    "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
     "noEmit": true,
-    "incremental": true,
+    "esModuleInterop": true,
     "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
     "isolatedModules": true,
+    "jsx": "react-jsx",
+    "incremental": true,
     "plugins": [
       {
         "name": "next"
       }
     ],
     "paths": {
-      "@cvforge/types": [
-        "../../packages/types/src/index.ts"
-      ],
-      "@cvforge/ui": [
-        "../../packages/ui/src/index.tsx"
-      ]
+      "@/*": ["./*"]
     }
   },
   "include": [
+    "next-env.d.ts",
+    "next.config.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    "**/*.mts",
     ".next/types/**/*.ts",
-    "app/**/*.ts",
-    "app/**/*.tsx",
-    "tmp/cvforge-landing-next/types/**/*.ts"
+    ".next/dev/types/**/*.ts",
+    ".next-verify/types/**/*.ts",
+    ".next-verify/dev/types/**/*.ts"
   ],
-  "exclude": [
-    "node_modules"
-  ]
+  "exclude": ["node_modules", "tmp"]
 }

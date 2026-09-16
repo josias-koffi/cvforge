@@ -1,28 +1,23 @@
-import { describe, expect, it, vi } from "vitest";
-import nextConfig from "../next.config";
+import { describe, expect, it } from "vitest"
+
+import nextConfig, { resolveNextDistDir } from "../next.config"
 
 describe("landing next config", () => {
-  it("only overrides the build output directory when NEXT_DIST_DIR is set", () => {
-    expect(nextConfig).toEqual({});
-  });
+  it("builds a standalone server without overriding distDir by default", () => {
+    expect(nextConfig.output).toBe("standalone")
+    expect(nextConfig.distDir).toBeUndefined()
+  })
 
-  it("uses NEXT_DIST_DIR when provided", async () => {
-    process.env.NEXT_DIST_DIR = "tmp/cvforge-landing-next";
-    vi.resetModules();
-    const { default: configured } = await import("../next.config");
-    delete process.env.NEXT_DIST_DIR;
-    vi.resetModules();
+  it("accepts a relative NEXT_DIST_DIR", () => {
+    expect(resolveNextDistDir(" tmp/cvforge-landing-next ")).toBe(
+      "tmp/cvforge-landing-next"
+    )
+  })
 
-    expect(configured).toEqual({ distDir: "tmp/cvforge-landing-next" });
-  });
-
-  it("ignores absolute NEXT_DIST_DIR values", async () => {
-    process.env.NEXT_DIST_DIR = "/tmp/cvforge-landing-next";
-    vi.resetModules();
-    const { default: configured } = await import("../next.config");
-    delete process.env.NEXT_DIST_DIR;
-    vi.resetModules();
-
-    expect(configured).toEqual({});
-  });
-});
+  it("ignores absolute or escaping NEXT_DIST_DIR values", () => {
+    expect(resolveNextDistDir("/tmp/cvforge-landing-next")).toBeUndefined()
+    expect(resolveNextDistDir("../outside")).toBeUndefined()
+    expect(resolveNextDistDir("a/../../b")).toBeUndefined()
+    expect(resolveNextDistDir("")).toBeUndefined()
+  })
+})

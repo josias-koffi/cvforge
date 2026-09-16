@@ -1,47 +1,39 @@
+# CVSpark landing site (Next.js standalone output)
+
 # Stage 1: Install dependencies
 FROM node:20-alpine AS deps
 WORKDIR /workspace
 RUN corepack enable
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
 COPY apps/landing/package.json apps/landing/package.json
-COPY packages/ui/package.json packages/ui/package.json
 COPY packages/types/package.json packages/types/package.json
 COPY packages/config/package.json packages/config/package.json
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile --filter @cvforge/landing...
 
 # Stage 2: Build
 FROM deps AS builder
-ARG NEXT_PUBLIC_APP_URL=http://localhost:3000
-ARG NEXT_PUBLIC_API_URL=http://localhost:3333
-ENV NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL
-ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+# Canonical URLs, sitemap and OG images are baked in at build time.
+ARG NEXT_PUBLIC_SITE_URL=http://localhost:3001
+ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
 COPY apps/landing apps/landing
-COPY packages/ui packages/ui
 COPY packages/types packages/types
 COPY packages/config packages/config
 RUN pnpm --filter @cvforge/landing build
 
-# Stage 3: Production runner
+# Stage 3: Minimal runtime
 FROM node:20-alpine AS runner
 WORKDIR /workspace
-RUN corepack enable
-ENV NODE_ENV=production
+# APP_URL is read per request by /login, so it stays a runtime variable.
+ENV NODE_ENV=production \
+    HOSTNAME=0.0.0.0 \
+    PORT=3001
+RUN addgroup -S nodejs && adduser -S nextjs -G nodejs
 
-COPY --from=builder /workspace/package.json ./package.json
-COPY --from=builder /workspace/pnpm-lock.yaml ./pnpm-lock.yaml
-COPY --from=builder /workspace/pnpm-workspace.yaml ./pnpm-workspace.yaml
-COPY --from=builder /workspace/turbo.json ./turbo.json
-COPY --from=builder /workspace/apps/landing/package.json ./apps/landing/package.json
-COPY --from=builder /workspace/packages/ui/package.json ./packages/ui/package.json
-COPY --from=builder /workspace/packages/types/package.json ./packages/types/package.json
-COPY --from=builder /workspace/packages/config/package.json ./packages/config/package.json
-RUN pnpm install --frozen-lockfile --prod
+COPY --from=builder --chown=nextjs:nodejs /workspace/apps/landing/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /workspace/apps/landing/.next/static ./apps/landing/.next/static
+COPY --from=builder --chown=nextjs:nodejs /workspace/apps/landing/public ./apps/landing/public
 
-COPY --from=builder /workspace/apps/landing/.next ./apps/landing/.next
-COPY --from=builder /workspace/packages/ui ./packages/ui
-COPY --from=builder /workspace/packages/types ./packages/types
-COPY --from=builder /workspace/packages/config ./packages/config
-
+USER nextjs
 EXPOSE 3001
 
-CMD ["pnpm", "--filter", "@cvforge/landing", "start"]
+CMD ["node", "apps/landing/server.js"]

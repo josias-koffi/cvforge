@@ -31,9 +31,10 @@ jobs:
           - service: cvforge-landing
             dockerfile: docker/landing.Dockerfile
             port: 3001
+            # Canonical URLs, sitemap and OG images are baked in here; the app
+            # link is resolved at runtime from APP_URL (see docker-compose.prod.yml).
             build_args: |
-              NEXT_PUBLIC_APP_URL=https://cvforge-app.koklo.dev
-              NEXT_PUBLIC_API_URL=https://cvforge-api.koklo.dev
+              NEXT_PUBLIC_SITE_URL=https://cvforge-landing.koklo.dev
           - service: cvforge-api
             dockerfile: docker/api.Dockerfile
             port: 3333

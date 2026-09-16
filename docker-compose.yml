@@ -44,11 +44,11 @@ services:
       - "3001:3001"
     environment:
       NEXT_DIST_DIR: tmp/cvforge-landing-next
+      APP_URL: http://localhost:3100
       CHOKIDAR_USEPOLLING: "true"
       WATCHPACK_POLLING: "true"
     volumes:
       - ./apps/landing:/workspace/apps/landing
-      - ./packages/ui:/workspace/packages/ui
       - ./packages/types:/workspace/packages/types
       - ./packages/config:/workspace/packages/config
 
