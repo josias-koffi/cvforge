@@ -50,14 +50,6 @@ locals {
   # survives the move to Dokploy. Changing it points the stack at empty volumes.
   volume_prefix = local.is_production ? "cvforge" : "cvspark-staging"
 
-  # Prefix of every compose service name, and therefore of every internal DNS
-  # alias. Dokploy puts all stacks on the shared `dokploy-network` and registers
-  # the compose service name as an alias there, so two environments naming a
-  # service `api` publish the same alias twice and Docker resolves it to either
-  # container at random. Production's web app hit staging's API that way and
-  # emailed a staging magic link. Prefixing keeps every alias unique.
-  service_prefix = local.is_production ? "cvspark" : "cvspark-staging"
-
   # Both environments live under .koklo.dev, so an identical cookie name would
   # make the two sessions collide.
   auth_cookie_name = local.is_production ? "cvspark_session" : "cvspark_staging_session"

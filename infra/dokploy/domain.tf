@@ -13,11 +13,8 @@ locals {
 resource "dokploy_domain" "cvspark" {
   for_each = local.routes
 
-  compose_id = dokploy_compose.cvspark.id
-
-  # Must match the prefixed service key in dokploy-stack.yml, or Traefik gets no
-  # router and the host answers 404.
-  service_name     = "${local.service_prefix}-${each.key}"
+  compose_id       = dokploy_compose.cvspark.id
+  service_name     = each.key
   host             = each.value.host
   port             = each.value.port
   https            = true
