@@ -122,6 +122,41 @@ fails on an otherwise healthy deploy. One redeploy fixes it, from the Dokploy UI
 or by pushing again. Every later push redeploys anyway, since `IMAGE_TAG`
 changes, so this is a one-time gap per environment.
 
+**4d. Internal service names are ambiguous across environments — do not dial
+them.** Dokploy attaches every service of every stack to the shared
+`dokploy-network` and registers the compose service name as a network alias on
+it. Production and staging both define a service named `api`, so that one
+network carries the alias twice and Docker resolves it to either container.
+Measured from production's web container:
+
+```
+$ getent hosts api
+10.0.1.29   api      # staging's API, not production's
+```
+
+Production's web app therefore asked *staging's* API for a magic link. The link
+was built from staging's own URLs, so the session cookie was set for
+`cvspark-app-staging.koklo.dev` and production answered "session expirée" to
+everyone.
+
+`API_INTERNAL_URL` is consequently `https://${API_DOMAIN}`, the public host,
+which is unambiguous by construction. The traffic stays on the box — out to the
+VPS address and back in through Traefik — at the cost of a TLS hop.
+
+`postgres`, `redis`, `minio` and `puppeteer` collide in exactly the same way.
+Only `PUPPETEER_URL` is ever read by the code (`cv-pdf-export.service.ts`), and
+PDF rendering is stateless, so the residual exposure is cosmetic;
+`DATABASE_URL`, `REDIS_URL` and `MINIO_ENDPOINT` are dead configuration, read
+nowhere. **Anything added later that genuinely uses a datastore must not rely on
+the bare service name.**
+
+The clean fix — prefixing every service name so each alias is unique — is
+blocked by Dokploy today: a compose whose services no longer match the
+`service_name` of an existing domain is rejected ("Domain ... is attached to
+service "web" which does not exist in the compose"), and the compose is deployed
+*before* Terraform reconciles the domains. Getting there needs the domains
+destroyed, the compose applied, then the domains recreated.
+
 **5. Staging.** The same merge deploys staging through Dokploy. Check
 `cvspark-staging.koklo.dev`, `cvspark-app-staging.koklo.dev` and
 `cvspark-api-staging.koklo.dev/health`. Staging uses its own volumes

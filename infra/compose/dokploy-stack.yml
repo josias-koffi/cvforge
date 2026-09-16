@@ -10,8 +10,8 @@
 #   - no `name:` — Dokploy assigns the compose project name
 #   - no Traefik labels and no external `traefik-public` network — Dokploy's own
 #     Traefik routes from the `dokploy_domain` resources instead
-#   - API_INTERNAL_URL targets the `api` service name rather than a container
-#     name derived from the project name
+#   - API_INTERNAL_URL goes through the public API host instead of an internal
+#     service name — see the comment on the web service below
 
 services:
   web:
@@ -19,7 +19,23 @@ services:
     restart: unless-stopped
     environment:
       NODE_ENV: production
-      API_INTERNAL_URL: http://api:3333
+      # NOT `http://api:3333`. Dokploy puts every stack on the shared
+      # `dokploy-network` and registers each compose service name as an alias
+      # there, so production and staging both publish the alias `api` on one
+      # network. Docker then answers with whichever container it likes: from
+      # production's web container, `getent hosts api` returned staging's API.
+      # The magic link it built carried staging's URLs, so the session cookie
+      # landed on the staging domain and nobody could sign in to production.
+      #
+      # Going through the public host is unambiguous by construction. The
+      # request stays on the box — out to the VPS address, back in through
+      # Dokploy's Traefik — at the cost of one TLS hop.
+      #
+      # The alternative, prefixing the service names so each alias is unique,
+      # is blocked by Dokploy: it refuses a compose whose services no longer
+      # match the `service_name` of an existing domain, and it deploys the
+      # compose before Terraform updates the domains. See docs/deploy.md.
+      API_INTERNAL_URL: https://${API_DOMAIN}
       NEXT_PUBLIC_API_URL: https://${API_DOMAIN}
       AUTH_COOKIE_NAME: ${AUTH_COOKIE_NAME}
       COOKIE_DOMAIN: ${COOKIE_DOMAIN}
