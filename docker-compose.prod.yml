@@ -42,8 +42,8 @@ services:
   landing:
     restart: unless-stopped
     environment:
-      NEXT_PUBLIC_APP_URL: https://${APP_DOMAIN}
-      NEXT_PUBLIC_API_URL: https://${API_DOMAIN}
+      # The landing only links to the app; /login redirects to this origin.
+      APP_URL: https://${WEB_DOMAIN}
       NODE_ENV: production
     networks:
       - default

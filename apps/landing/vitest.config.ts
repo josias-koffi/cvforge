@@ -1,13 +1,14 @@
-import { defineConfig } from "vitest/config";
+import { fileURLToPath } from "node:url"
+import { defineConfig } from "vitest/config"
 
 export default defineConfig({
+  resolve: {
+    alias: { "@": fileURLToPath(new URL("./", import.meta.url)) },
+  },
+  esbuild: { jsx: "automatic" },
   test: {
     environment: "node",
-    include: ["app/**/*.test.ts", "app/**/*.test.tsx"],
-    coverage: {
-      include: ["app/**/*.ts", "app/**/*.tsx", "next.config.ts"],
-      provider: "v8",
-      reporter: ["text"],
-    },
+    include: ["**/*.test.ts", "**/*.test.tsx"],
+    exclude: ["node_modules/**", "tmp/**", ".next/**"],
   },
-});
+})
