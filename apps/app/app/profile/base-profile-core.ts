@@ -1,4 +1,5 @@
 import { loadDraftFromStorage } from "../onboarding/draft";
+import { parseOnboardingLanguages } from "../onboarding/languages";
 import {
   normalizeEmail,
   normalizeLongText,
@@ -233,7 +234,7 @@ export function createProfileFromOnboarding(
       education: [],
       experiences: [],
       interests: "",
-      languages: [],
+      languages: parseOnboardingLanguages(draft.additional.languages),
       personalProjects: [],
       softSkills: [],
       summary: draft.importCv.notes.trim(),
@@ -317,7 +318,10 @@ export function hasMeaningfulProfileContent(profile: BaseProfile) {
       profile.identity.portfolio.trim() ||
       profile.identity.otherLink.trim() ||
       profile.headline.trim() ||
-      profile.sections.summary.trim(),
+      profile.sections.summary.trim() ||
+      // Languages alone are worth seeding a profile with: they are the one
+      // section the onboarding captures outside identity and notes.
+      profile.sections.languages.length > 0,
   );
 }
 
