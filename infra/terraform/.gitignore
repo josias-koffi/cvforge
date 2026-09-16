@@ -1,0 +1,14 @@
+# Real variable files hold production secrets. Only the example is committed.
+*.tfvars
+*.tfvars.json
+!*.tfvars.example
+
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+tfplan
+*.tfplan
+
+# .terraform.lock.hcl is NOT ignored: the provider version lock is committed.
