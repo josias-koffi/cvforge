@@ -18,5 +18,5 @@ resource "cloudflare_record" "cvspark" {
   name    = each.value
   type    = "A"
   content = var.vps20_ip
-  proxied = true
+  proxied = var.cloudflare_proxied
 }

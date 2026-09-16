@@ -107,6 +107,15 @@ verified, override the sender back to the domain that works by setting the
 `TF_VAR_email_from` environment variable of the deploy job to
 `CVforge <no-reply@cvforge.koklo.dev>`.
 
+**4c. Expect the first apply of a fresh environment to serve 404.** The three
+`dokploy_domain` resources take `compose_id`, so Terraform creates them *after*
+the compose has deployed. Dokploy injects the Traefik labels into the stack at
+deploy time, so the containers already running predate the domains and carry no
+labels — Traefik has no router for the host and answers 404, and the smoke test
+fails on an otherwise healthy deploy. One redeploy fixes it, from the Dokploy UI
+or by pushing again. Every later push redeploys anyway, since `IMAGE_TAG`
+changes, so this is a one-time gap per environment.
+
 **5. Staging.** The same merge deploys staging through Dokploy. Check
 `cvspark-staging.koklo.dev`, `cvspark-app-staging.koklo.dev` and
 `cvspark-api-staging.koklo.dev/health`. Staging uses its own volumes
