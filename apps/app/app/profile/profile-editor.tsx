@@ -4,7 +4,9 @@ import React from "react";
 import { Button } from "@cvforge/ui";
 import {
   countCompletedProfileSections,
+  PROFILE_SECTION_COUNT,
   createEmptyCertification,
+  createEmptyLanguage,
   createEmptyEducation,
   createEmptyExperience,
   createEmptyProfileRegistry,
@@ -17,12 +19,14 @@ import {
   type BaseProfile,
   type BaseProfileRegistry,
   type CertificationEntry,
+  type LanguageEntry,
   type EducationEntry,
   type ExperienceEntry,
   type ProjectEntry,
 } from "./base-profile";
 import {
   CertificationFields,
+  LanguageFields,
   EducationFields,
   ExperienceFields,
   LabeledInput,
@@ -145,7 +149,7 @@ export function ProfileEditor({
 
   const updateEntry = React.useCallback(
     <TEntry,>(
-      key: "experiences" | "education" | "certifications" | "personalProjects",
+      key: "experiences" | "education" | "certifications" | "languages" | "personalProjects",
       index: number,
       value: TEntry,
     ) => {
@@ -161,7 +165,7 @@ export function ProfileEditor({
   );
 
   const addEntry = React.useCallback(
-    (key: "experiences" | "education" | "certifications" | "personalProjects") => {
+    (key: "experiences" | "education" | "certifications" | "languages" | "personalProjects") => {
       updateProfile((current) => ({
         ...current,
         sections: {
@@ -174,7 +178,9 @@ export function ProfileEditor({
                 ? createEmptyEducation()
                 : key === "certifications"
                   ? createEmptyCertification()
-                  : createEmptyProject(),
+                  : key === "languages"
+                    ? createEmptyLanguage()
+                    : createEmptyProject(),
           ],
         },
       }));
@@ -183,7 +189,7 @@ export function ProfileEditor({
   );
 
   const removeEntry = React.useCallback(
-    (key: "experiences" | "education" | "certifications" | "personalProjects", index: number) => {
+    (key: "experiences" | "education" | "certifications" | "languages" | "personalProjects", index: number) => {
       updateProfile((current) => ({
         ...current,
         sections: {
@@ -198,7 +204,7 @@ export function ProfileEditor({
   return (
     <section aria-label="Edition du profil" style={{ display: "grid", gap: "1rem" }}>
       <p style={{ color: "#6B6860", fontSize: "0.9rem", margin: 0 }}>
-        {completedSections} / 9 sections renseignees
+        {completedSections} / {PROFILE_SECTION_COUNT} sections renseignees
       </p>
 
       <SectionCard
@@ -265,6 +271,19 @@ export function ProfileEditor({
 
       <SectionCard title="Competences humaines" description="Liste libre des soft skills, separees par des virgules.">
         <LabeledTextarea id="profile-soft-skills" label="Competences humaines" onChange={(value) => updateListSection("softSkills", value)} rows={4} value={joinListInput(profile.sections.softSkills)} />
+      </SectionCard>
+
+      <SectionCard title="Langues" description="Langue et niveau, repris tels quels dans le CV.">
+        {profile.sections.languages.map((language, index) => (
+          <LanguageFields
+            key={`language-${index}`}
+            index={index}
+            language={language}
+            onChange={(value) => updateEntry<LanguageEntry>("languages", index, value)}
+            onRemove={() => removeEntry("languages", index)}
+          />
+        ))}
+        <Button onClick={() => addEntry("languages")} type="button">Ajouter une langue</Button>
       </SectionCard>
 
       <SectionCard title="Certifications" description="Titre, organisme et annee.">

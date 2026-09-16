@@ -5,6 +5,7 @@ import { Button, Card, CardContent, CardHeader, CardTitle } from "@cvforge/ui";
 import Link from "next/link";
 import {
   countCompletedProfileSections,
+  PROFILE_SECTION_COUNT,
   createEmptyProfileRegistry,
   formatProfileSavedAt,
   loadProfileRegistryFromStorage,
@@ -114,7 +115,7 @@ export function ProfileList({ sessionEmail }: { sessionEmail: string }) {
                       {fullName || profile.identity.email || "Profil incomplet"}
                     </td>
                     <td style={{ padding: "0.75rem", color: "#6B6860" }}>
-                      {sections} / 9
+                      {sections} / {PROFILE_SECTION_COUNT}
                     </td>
                     <td style={{ padding: "0.75rem", color: "#6B6860" }}>
                       {formatProfileSavedAt(profile.meta.lastSavedAt)}

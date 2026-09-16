@@ -14,6 +14,8 @@ export interface SourceIndex {
   companies: Map<string, string>;
   institutions: Map<string, string>;
   certifications: Map<string, string>;
+  /** Normalised language name -> the level exactly as the profile states it. */
+  languages: Map<string, string>;
   projects: Map<string, string>;
 }
 
@@ -57,6 +59,11 @@ export function buildSourceIndex(profile: PromptSafeProfile): SourceIndex {
     companies: indexBy(sections.experiences.map((item) => item.company)),
     freeTextTokens: tokenize(freeText),
     institutions: indexBy(sections.education.map((item) => item.institution)),
+    languages: new Map(
+      sections.languages
+        .filter((item) => normalizeText(item.language))
+        .map((item) => [normalizeText(item.language), item.level]),
+    ),
     projects: indexBy(sections.personalProjects.map((item) => item.title)),
     skills,
   };

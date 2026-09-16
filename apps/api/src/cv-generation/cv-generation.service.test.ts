@@ -4,6 +4,10 @@ import {
   NotFoundException,
   UnprocessableEntityException,
 } from "@nestjs/common";
+import type {
+  CVDocumentContent,
+  LetterDocumentContent,
+} from "@cvforge/types";
 import {
   VALID_CV_JSON,
   VALID_LETTER_JSON,

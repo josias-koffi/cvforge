@@ -16,6 +16,7 @@ function makeIndex(sections: Partial<PromptSafeProfile["profileSections"]>) {
       education: [],
       experiences: [],
       interests: "",
+      languages: [],
       personalProjects: [],
       softSkills: [],
       summary: "",

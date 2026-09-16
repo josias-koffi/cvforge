@@ -12,6 +12,7 @@ const KIND_LABELS: Record<GroundingRemoval["kind"], string> = {
   certification: "certification",
   education: "formation",
   experience: "expérience",
+  language: "langue",
   project: "projet",
   skill: "compétence",
 }

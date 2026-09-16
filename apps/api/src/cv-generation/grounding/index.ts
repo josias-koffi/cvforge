@@ -5,7 +5,7 @@ import {
   lockEducation,
 } from "./document-lock";
 import { lockExperiences } from "./experience-lock";
-import { groundSkills } from "./skill-grounding";
+import { groundLanguages, groundSkills } from "./skill-grounding";
 import { buildSourceIndex } from "./source-index";
 
 export * from "./source-index";
@@ -29,6 +29,7 @@ export function groundCvContent(
     index,
     profile,
   );
+  const languages = groundLanguages(content.languages, index);
   const experiences = lockExperiences(content.experiences, sections.experiences);
   const education = lockEducation(content.education, sections.education);
   const certifications = groundCertifications(content.certifications, index);
@@ -36,6 +37,7 @@ export function groundCvContent(
 
   const removals = [
     ...skills.removals,
+    ...languages.removals,
     ...experiences.removals,
     ...education.removals,
     ...certifications.removals,
@@ -46,7 +48,6 @@ export function groundCvContent(
     ...content,
     candidate: {
       ...content.candidate,
-      // The model has no language data at all, so any level it produces is invented.
       city: content.candidate.city || profile.identity.city,
     },
     certifications: certifications.certifications,
@@ -57,7 +58,7 @@ export function groundCvContent(
       lockedExperiences: experiences.lockedExperiences,
       removals,
     },
-    languages: [],
+    languages: languages.languages,
     projects: projects.projects,
     skills: {
       hard: skills.hard,

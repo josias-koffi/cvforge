@@ -19,6 +19,11 @@ export type ProfileCertificationEntry = {
   year: string;
 };
 
+export type ProfileLanguageEntry = {
+  language: string;
+  level: string;
+};
+
 export type ProfileProjectEntry = {
   description: string;
   link: string;
@@ -50,6 +55,7 @@ export type StoredProfile = {
     education: ProfileEducationEntry[];
     experiences: ProfileExperienceEntry[];
     interests: string;
+    languages: ProfileLanguageEntry[];
     personalProjects: ProfileProjectEntry[];
     softSkills: string[];
     summary: string;

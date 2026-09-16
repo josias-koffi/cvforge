@@ -18,6 +18,11 @@ export type EducationEntry = {
   year: string;
 };
 
+export type LanguageEntry = {
+  language: string;
+  level: string;
+};
+
 export type CertificationEntry = {
   issuer: string;
   title: string;
@@ -55,6 +60,7 @@ export type BaseProfile = {
     education: EducationEntry[];
     experiences: ExperienceEntry[];
     interests: string;
+    languages: LanguageEntry[];
     personalProjects: ProjectEntry[];
     softSkills: string[];
     summary: string;

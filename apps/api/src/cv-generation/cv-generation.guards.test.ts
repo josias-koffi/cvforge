@@ -17,6 +17,7 @@ function makeProfile(
       education: [],
       experiences: [],
       interests: "",
+      languages: [],
       personalProjects: [],
       softSkills: [],
       summary: "",

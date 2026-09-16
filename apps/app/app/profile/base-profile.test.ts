@@ -69,6 +69,7 @@ describe("base profile helpers", () => {
           },
         ],
         interests: "",
+        languages: [],
         personalProjects: [],
         softSkills: ["Communication"],
         summary: "Experienced backend developer",
@@ -293,6 +294,7 @@ describe("base profile helpers", () => {
         ],
         experiences: [{ company: "CVforge", period: "2026", results: "120% pipeline", role: "Engineer" }],
         interests: "Course a pied",
+        languages: [{ language: "Anglais", level: "C1 / Courant" }],
         personalProjects: [],
         softSkills: ["Ecoute"],
         summary: "Je construis des produits candidats.",
@@ -301,7 +303,7 @@ describe("base profile helpers", () => {
     });
 
     expect(profile.meta.lastSavedAt).toBe("2026-04-20T09:30:00.000Z");
-    expect(countCompletedProfileSections(profile)).toBe(7);
+    expect(countCompletedProfileSections(profile)).toBe(8);
     expect(formatProfileSavedAt(profile.meta.lastSavedAt)).toContain("Profil enregistre le");
 
     vi.useRealTimers();

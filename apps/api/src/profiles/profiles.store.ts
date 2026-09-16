@@ -72,6 +72,9 @@ function normalizeProfile(value: unknown): StoredProfile | null {
         ? (sections.experiences as StoredProfile["sections"]["experiences"])
         : [],
       interests: typeof sections.interests === "string" ? sections.interests : "",
+      languages: Array.isArray(sections.languages)
+        ? (sections.languages as StoredProfile["sections"]["languages"])
+        : [],
       personalProjects: Array.isArray(sections.personalProjects)
         ? (sections.personalProjects as StoredProfile["sections"]["personalProjects"])
         : [],

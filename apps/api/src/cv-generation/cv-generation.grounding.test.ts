@@ -59,6 +59,7 @@ describe("CvGenerationService grounding and billing", () => {
           education: [],
           experiences: [],
           interests: "",
+          languages: [],
           personalProjects: [],
           softSkills: [],
           summary: "",
@@ -122,11 +123,11 @@ describe("CvGenerationService grounding and billing", () => {
     expect(saved.cvVersions?.[0].content.grounding).toBeDefined();
   });
 
-  it("never emits a language level, which no profile field backs", async () => {
+  it("drops a language the profile does not list", async () => {
     openRouter.chat.mockResolvedValue(
       JSON.stringify({
         ...VALID_CV_JSON,
-        languages: [{ language: "Anglais", level: "C1 / Courant" }],
+        languages: [{ language: "Mandarin", level: "C1 / Courant" }],
       }),
     );
 
@@ -137,6 +138,35 @@ describe("CvGenerationService grounding and billing", () => {
     );
 
     expect(cvContent.languages).toEqual([]);
+    expect(cvContent.grounding?.removals).toContainEqual({
+      kind: "language",
+      label: "Mandarin",
+    });
+  });
+
+  it("restores the level from the profile rather than the model's guess", async () => {
+    openRouter.chat.mockResolvedValue(
+      JSON.stringify({
+        ...VALID_CV_JSON,
+        languages: [{ language: "Anglais", level: "C2 / Bilingue" }],
+      }),
+    );
+
+    const request = makeRequest();
+    request.promptProfile.profileSections.languages = [
+      { language: "Anglais", level: "B2 / Intermédiaire" },
+    ];
+
+    const cvContent = await service.generateCv(
+      "user@test.example",
+      "app-001",
+      request,
+    );
+
+    // Upgrading B2 to C2 is the kind of claim a recruiter tests on the spot.
+    expect(cvContent.languages).toEqual([
+      { language: "Anglais", level: "B2 / Intermédiaire" },
+    ]);
   });
 
   it("re-injects the candidate links instead of letting the model guess them", async () => {

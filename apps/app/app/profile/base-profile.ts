@@ -11,6 +11,7 @@ import {
   asCertificationList,
   asEducationList,
   asExperienceList,
+  asLanguageList,
   asProjectList,
   createEmptyBaseProfile,
   createEmptyProfileRegistry,
@@ -245,6 +246,10 @@ export function applyImportedCvProfilePatch(
       interests:
         normalizeLongText(patch.sections.interests, 400) ||
         profile.sections.interests,
+      languages:
+        asLanguageList(patch.sections.languages).length > 0
+          ? asLanguageList(patch.sections.languages)
+          : profile.sections.languages,
       personalProjects:
         asProjectList(patch.sections.personalProjects).length > 0
           ? asProjectList(patch.sections.personalProjects)
@@ -286,22 +291,6 @@ export function splitListInput(value: string) {
 
 export function joinListInput(values: string[]) {
   return values.join(", ");
-}
-
-export function countCompletedProfileSections(profile: BaseProfile) {
-  const sections = [
-    profile.headline.trim(),
-    profile.sections.summary.trim(),
-    profile.sections.interests.trim(),
-    profile.sections.experiences.length > 0 ? "experiences" : "",
-    profile.sections.education.length > 0 ? "education" : "",
-    profile.sections.technicalSkills.length > 0 ? "technical" : "",
-    profile.sections.softSkills.length > 0 ? "soft" : "",
-    profile.sections.certifications.length > 0 ? "certifications" : "",
-    profile.sections.personalProjects.length > 0 ? "projects" : "",
-  ];
-
-  return sections.filter(Boolean).length;
 }
 
 export function loadApplicationProfileSelection(

@@ -9,6 +9,7 @@ export type EducationEntry = {
   year: string
 }
 export type CertificationEntry = { issuer: string; title: string; year: string }
+export type LanguageEntry = { language: string; level: string }
 export type ProjectEntry = { description: string; link: string; title: string }
 
 export type BaseProfile = {
@@ -36,6 +37,7 @@ export type BaseProfile = {
     education: EducationEntry[]
     experiences: ExperienceEntry[]
     interests: string
+    languages: LanguageEntry[]
     personalProjects: ProjectEntry[]
     softSkills: string[]
     summary: string
@@ -71,6 +73,7 @@ export function createEmptyProfile(email: string, label = "Profil principal"): B
       education: [],
       experiences: [],
       interests: "",
+      languages: [],
       personalProjects: [],
       softSkills: [],
       summary: "",
@@ -97,9 +100,9 @@ export function duplicateBaseProfile(profile: BaseProfile): BaseProfile {
   }
 }
 
-export const PROFILE_SECTION_COUNT = 5
+export const PROFILE_SECTION_COUNT = 6
 
-/** Filled sections among those shown in the editor tabs (summary, experiences, education, projects, certifications). */
+/** Filled sections among those shown in the editor tabs (summary, experiences, education, projects, languages, certifications). */
 export function countCompletedSections(profile: BaseProfile) {
   const { sections } = profile
   return [
@@ -107,6 +110,7 @@ export function countCompletedSections(profile: BaseProfile) {
     sections.experiences.length > 0,
     sections.education.length > 0,
     sections.personalProjects.length > 0,
+    sections.languages.length > 0,
     sections.certifications.length > 0,
   ].filter(Boolean).length
 }
@@ -180,6 +184,7 @@ export function applyImportedCv(
       ),
       experiences: pickList(sections.experiences, profile.sections.experiences),
       interests: sections.interests.trim() || profile.sections.interests,
+      languages: pickList(sections.languages, profile.sections.languages),
       personalProjects: pickList(sections.personalProjects, profile.sections.personalProjects),
       softSkills: pickList(sections.softSkills, profile.sections.softSkills),
       summary: sections.summary.trim() || profile.sections.summary,

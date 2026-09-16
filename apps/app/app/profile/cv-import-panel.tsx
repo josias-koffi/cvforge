@@ -30,6 +30,7 @@ function countImportedSections(result: ImportedCvExtractionResult) {
     sections.softSkills.length,
     sections.certifications.length,
     sections.personalProjects.length,
+    sections.languages.length,
   ].filter(Boolean).length;
 }
 
