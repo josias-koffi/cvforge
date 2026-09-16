@@ -54,6 +54,17 @@ describe("AI prompt pseudonymization", () => {
     expect(buildLocalFields(profile).lastName).toBe("");
   });
 
+  it("carries what the candidate is looking for, for the letter", () => {
+    const profile = createEmptyBaseProfile("candidate@example.com");
+    profile.preferences = {
+      availabilityDate: "2026-11-02",
+      availabilityMode: "date",
+      contractTypes: "CDI",
+    };
+
+    expect(buildPromptProfile(profile).preferences).toEqual(profile.preferences);
+  });
+
   it("carries the languages captured during onboarding", () => {
     const profile = createEmptyBaseProfile("candidate@example.com");
     profile.sections.languages = [

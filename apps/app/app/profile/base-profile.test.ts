@@ -93,6 +93,9 @@ describe("base profile helpers", () => {
     onboardingDraft.links.linkedIn = "https://linkedin.com/in/jane";
     onboardingDraft.importCv.notes = "Resume depuis l'ancien CV.";
     onboardingDraft.additional.languages = "Francais C2, Anglais B2";
+    onboardingDraft.additional.availabilityMode = "date";
+    onboardingDraft.additional.availabilityDate = "2026-11-02";
+    onboardingDraft.additional.contractTypes = "CDI";
 
     const storage = {
       getItem: (key: string) =>
@@ -110,6 +113,11 @@ describe("base profile helpers", () => {
       { language: "Francais", level: "C2" },
       { language: "Anglais", level: "B2" },
     ]);
+    expect(profile.preferences).toEqual({
+      availabilityDate: "2026-11-02",
+      availabilityMode: "date",
+      contractTypes: "CDI",
+    });
     expect(profile.meta.source).toBe("onboarding");
   });
 

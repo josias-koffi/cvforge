@@ -10,6 +10,11 @@ export type EducationEntry = {
 }
 export type CertificationEntry = { issuer: string; title: string; year: string }
 export type LanguageEntry = { language: string; level: string }
+export type ProfilePreferences = {
+  availabilityDate: string
+  availabilityMode: "immediate" | "date" | ""
+  contractTypes: string
+}
 export type ProjectEntry = { description: string; link: string; title: string }
 
 export type BaseProfile = {
@@ -32,6 +37,7 @@ export type BaseProfile = {
     maxProfiles: number | null
     source: "empty" | "onboarding" | "storage"
   }
+  preferences: ProfilePreferences
   sections: {
     certifications: CertificationEntry[]
     education: EducationEntry[]
@@ -68,6 +74,7 @@ export function createEmptyProfile(email: string, label = "Profil principal"): B
     },
     label,
     meta: { lastSavedAt: null, maxProfiles: null, source: "empty" },
+    preferences: { availabilityDate: "", availabilityMode: "", contractTypes: "" },
     sections: {
       certifications: [],
       education: [],
@@ -149,6 +156,7 @@ export function buildGenerationRequest(profile: BaseProfile): CvGenerationReques
         city: profile.identity.city.trim(),
         firstName: profile.identity.firstName.trim(),
       },
+      preferences: profile.preferences,
       profileSections: profile.sections,
     },
   }

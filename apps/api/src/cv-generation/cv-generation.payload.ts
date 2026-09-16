@@ -17,6 +17,32 @@ export interface OfferContext {
  */
 export const MAX_RAW_OFFER_CHARS = 2000;
 
+/**
+ * The preferences the candidate actually filled in.
+ *
+ * Empty fields are dropped rather than sent as "", so the model cannot read a
+ * blank availability as "available immediately".
+ */
+function statedPreferences(profile: PromptSafeProfile) {
+  const preferences = profile.preferences;
+  if (!preferences) return null;
+
+  const availability =
+    preferences.availabilityMode === "immediate"
+      ? "immédiate"
+      : preferences.availabilityMode === "date"
+        ? preferences.availabilityDate.trim()
+        : "";
+  const contractTypes = preferences.contractTypes.trim();
+
+  if (!availability && !contractTypes) return null;
+
+  return {
+    ...(availability ? { disponibilite: availability } : {}),
+    ...(contractTypes ? { contratsRecherches: contractTypes } : {}),
+  };
+}
+
 function inventory(profile: PromptSafeProfile) {
   const sections = profile.profileSections;
   return {
@@ -36,10 +62,15 @@ function inventory(profile: PromptSafeProfile) {
 export function buildGroundedUserMessage(
   profile: PromptSafeProfile,
   offer: OfferContext,
-  extra: { refinement?: string } = {},
+  extra: { includePreferences?: boolean; refinement?: string } = {},
 ): string {
   const { rawOfferText, ...offerFields } = offer;
   const refinement = extra.refinement?.trim();
+  // Only the letter has a use for them; the CV is not the place to announce a
+  // notice period, so they are kept out of that prompt entirely.
+  const preferences = extra.includePreferences
+    ? statedPreferences(profile)
+    : null;
 
   return [
     "=== OFFRE D'EMPLOI — CONTEXTE DE CIBLAGE ===",
@@ -61,6 +92,12 @@ export function buildGroundedUserMessage(
     }),
     "--- INVENTAIRE AUTORISÉ (rien en dehors de ces listes) ---",
     JSON.stringify(inventory(profile)),
+    ...(preferences
+      ? [
+          "--- RECHERCHE DU CANDIDAT (déclarée par lui) ---",
+          JSON.stringify(preferences),
+        ]
+      : []),
     "=== FIN PROFIL CANDIDAT ===",
     ...(refinement
       ? ["", "=== DEMANDE DE L'UTILISATEUR ===", refinement, "=== FIN DEMANDE ==="]

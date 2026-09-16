@@ -36,9 +36,26 @@ export interface PromptSafeProfileSections {
   technicalSkills: string[];
 }
 
+export type AvailabilityMode = "immediate" | "date" | "";
+
+/**
+ * What the candidate is looking for, as opposed to what they have done.
+ *
+ * Only reaches the cover letter: a CV states facts, a letter is where telling a
+ * recruiter when you can start and on what contract belongs. Salary is
+ * deliberately absent — French practice keeps it out of the letter.
+ */
+export interface ProfilePreferences {
+  availabilityDate: string;
+  availabilityMode: AvailabilityMode;
+  contractTypes: string;
+}
+
 export interface PromptSafeProfile {
   headline: string;
   identity: PromptSafeIdentity;
+  /** Absent on CV generation, which has no use for them. */
+  preferences?: ProfilePreferences;
   profileSections: PromptSafeProfileSections;
 }
 

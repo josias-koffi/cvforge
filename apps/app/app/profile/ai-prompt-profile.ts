@@ -24,6 +24,7 @@ export function buildPromptProfile(profile: BaseProfile): PromptSafeProfile {
       city: profile.identity.city.trim(),
       firstName: profile.identity.firstName.trim(),
     },
+    preferences: profile.preferences,
     profileSections: profile.sections,
   };
 }

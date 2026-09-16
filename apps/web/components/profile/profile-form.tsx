@@ -81,6 +81,10 @@ export function ProfileForm({
     key: K,
     value: BaseProfile["sections"][K]
   ) => setProfile({ ...profile, sections: { ...profile.sections, [key]: value } })
+  const setPreferences = <K extends keyof BaseProfile["preferences"]>(
+    key: K,
+    value: BaseProfile["preferences"][K]
+  ) => setProfile({ ...profile, preferences: { ...profile.preferences, [key]: value } })
 
   useEffect(() => onDirtyChange(dirty), [dirty, onDirtyChange])
 
@@ -119,6 +123,7 @@ export function ProfileForm({
               <TabsTrigger value="projects">
                 Projets ({profile.sections.personalProjects.length})
               </TabsTrigger>
+              <TabsTrigger value="search">Recherche</TabsTrigger>
               <TabsTrigger value="languages">
                 Langues ({profile.sections.languages.length})
               </TabsTrigger>
@@ -188,6 +193,54 @@ export function ProfileForm({
                 addLabel="Ajouter un projet"
                 createItem={() => ({ description: "", link: "", title: "" })}
               />
+            </TabsContent>
+            <TabsContent value="search" className="flex flex-col gap-4">
+              <p className="text-muted-foreground text-sm">
+                Utilisé uniquement dans la lettre de motivation. Laissez vide pour
+                ne pas aborder le sujet.
+              </p>
+              <FieldGrid>
+                <SpecField
+                  id="preferences"
+                  spec={{ key: "availabilityDate", label: "Disponible à partir du" }}
+                  value={profile.preferences.availabilityDate}
+                  onChange={(value) =>
+                    setProfile({
+                      ...profile,
+                      preferences: {
+                        ...profile.preferences,
+                        availabilityDate: value as string,
+                        availabilityMode: (value as string).trim() ? "date" : "",
+                      },
+                    })
+                  }
+                />
+                <SpecField
+                  id="preferences"
+                  spec={{ key: "contractTypes", label: "Contrats recherchés (ex. CDI, freelance)" }}
+                  value={profile.preferences.contractTypes}
+                  onChange={(value) => setPreferences("contractTypes", value as string)}
+                />
+              </FieldGrid>
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  checked={profile.preferences.availabilityMode === "immediate"}
+                  onChange={(event) =>
+                    setProfile({
+                      ...profile,
+                      preferences: {
+                        ...profile.preferences,
+                        availabilityDate: event.target.checked
+                          ? ""
+                          : profile.preferences.availabilityDate,
+                        availabilityMode: event.target.checked ? "immediate" : "",
+                      },
+                    })
+                  }
+                  type="checkbox"
+                />
+                Disponible immédiatement
+              </label>
             </TabsContent>
             <TabsContent value="languages">
               <ListEditor
