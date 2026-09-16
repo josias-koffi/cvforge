@@ -2,7 +2,6 @@ import {
   normalizeEmail,
   normalizeFutureDateInput,
   normalizeLongText,
-  normalizePastDateInput,
   normalizePhone,
   normalizeShortText,
   normalizeUrlField,
@@ -24,17 +23,12 @@ export type OnboardingDraft = {
     portfolio: string;
     other: string;
   };
+  /** Only what a generated document actually uses; see the profile for the rest. */
   additional: {
-    birthDate: string;
-    nationality: string;
-    hasDrivingLicense: boolean;
     languages: string;
-    educationLevel: string;
-    targetSectors: string;
     contractTypes: string;
     availabilityMode: "immediate" | "date" | "";
     availabilityDate: string;
-    salaryRange: string;
   };
   importCv: {
     fileName: string;
@@ -52,14 +46,8 @@ export function createEmptyDraft(sessionEmail: string): OnboardingDraft {
     additional: {
       availabilityDate: "",
       availabilityMode: "",
-      birthDate: "",
       contractTypes: "",
-      educationLevel: "",
-      hasDrivingLicense: false,
       languages: "",
-      nationality: "",
-      salaryRange: "",
-      targetSectors: "",
     },
     importCv: {
       fileName: "",
@@ -117,14 +105,8 @@ export function sanitizeDraft(
         candidate.additional?.availabilityMode === "date"
           ? candidate.additional.availabilityMode
           : "",
-      birthDate: normalizePastDateInput(candidate.additional?.birthDate),
       contractTypes: normalizeLongText(candidate.additional?.contractTypes, 300),
-      educationLevel: normalizeShortText(candidate.additional?.educationLevel, 120),
-      hasDrivingLicense: asBoolean(candidate.additional?.hasDrivingLicense),
       languages: normalizeLongText(candidate.additional?.languages, 300),
-      nationality: normalizeShortText(candidate.additional?.nationality, 80),
-      salaryRange: normalizeShortText(candidate.additional?.salaryRange, 80),
-      targetSectors: normalizeLongText(candidate.additional?.targetSectors, 300),
     },
     importCv: {
       fileName: normalizeShortText(candidate.importCv?.fileName, 160),

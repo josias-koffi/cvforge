@@ -15,6 +15,36 @@ describe("onboarding draft helpers", () => {
     expect(draft.importCv.fileName).toBe("");
   });
 
+  it("drops the fields the onboarding no longer collects", () => {
+    const legacy = {
+      additional: {
+        birthDate: "1992-08-14",
+        contractTypes: "CDI",
+        educationLevel: "Bac+5",
+        hasDrivingLicense: true,
+        languages: "Francais C2",
+        nationality: "Française",
+        salaryRange: "45k - 55k EUR",
+        targetSectors: "SaaS",
+      },
+    };
+    const storage = {
+      getItem: (key: string) =>
+        key === ONBOARDING_DRAFT_STORAGE_KEY ? JSON.stringify(legacy) : null,
+      setItem: () => undefined,
+    };
+
+    const draft = loadDraftFromStorage("user@example.com", storage);
+
+    // Data the product never used must not survive in a saved draft.
+    expect(draft.additional).toEqual({
+      availabilityDate: "",
+      availabilityMode: "",
+      contractTypes: "CDI",
+      languages: "Francais C2",
+    });
+  });
+
   it("loads a sanitized draft from storage", () => {
     const storage = {
       getItem: (key: string) =>
