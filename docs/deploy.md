@@ -63,34 +63,62 @@ prefixes, cookie names, model names and SMTP settings are now defaults in
 `infra/dokploy/variables.tf` and `main.tf`. `SSH_PRIVATE_KEY` and `SSH_USER` are
 no longer used by this workflow.
 
-## One-time bootstrap
+## Going to production
 
-1. **R2 state bucket** — create the `koklo-tofu-state` bucket and an R2 token
-   with read/write on it.
-2. **Terraform** — locally, with the same env vars:
-   ```bash
-   cd infra/terraform
-   export AWS_ACCESS_KEY_ID=… AWS_SECRET_ACCESS_KEY=… \
-          AWS_ENDPOINT_URL_S3=https://<account_id>.r2.cloudflarestorage.com
-   export TF_VAR_cf_api_token=… TF_VAR_cf_zone_id=… TF_VAR_vps20_ip=…
-   tofu init
-   tofu plan   # 6 records to create
-   ```
-   The legacy `cvforge*.koklo.dev` records stay in `koklo-infra` until the
-   rename is complete, then they are deleted there.
-3. **Traefik** — Dokploy runs its own Traefik on ports 80/443, and the
-   pre-Dokploy stack routed through the `traefik-public` Traefik of
-   `koklo-infra`. Only one of them can hold those ports. Settle this on VPS20
-   before the first production apply.
-4. **Production cutover** — the pre-Dokploy stack runs from `/opt/apps/cvspark`
-   on the *same* volumes the Dokploy stack attaches (`VOLUME_PREFIX=cvforge`).
-   Stop it **before** the first production deploy, otherwise two Postgres
-   containers write to the same volume:
-   ```bash
-   ssh devops@<VPS20_IP> 'cd /opt/apps/cvspark && docker compose down'
-   ```
-   Back up `cvforge_api_data` first — that volume, not Postgres, holds the real
-   data. Deploy staging and check it, then production.
+CVSpark is the evolution of CVForge, so the live production is still the CVForge
+stack: `cvforge.koklo.dev`, `cvforge-app.koklo.dev` and `cvforge-api.koklo.dev`,
+proxied by Cloudflare and deployed from `koklo-infra/stacks/cvforge`. The
+`cvspark*.koklo.dev` records do not exist yet. Dokploy runs on VPS20 at
+`dokploy.ops.koklo.dev` with a valid Let's Encrypt certificate.
+
+The cutover is therefore a rename *and* a change of deployment mechanism. Do it
+in this order — each step is reversible until step 6.
+
+**1. GitHub secrets.** `bash scripts/set-secrets.sh` fills the 27 entries. It
+reads production values from `.env.prod` (verified identical to
+`koklo-infra/stacks/cvforge/.env`) and the shared ones from `koklo-infra/.env`.
+You still supply by hand: `DOKPLOY_API_KEY`, the three `R2_*`, both Stripe keys
+and `NEXT_SERVER_ACTIONS_ENCRYPTION_KEY`, plus all ten staging values.
+
+**2. R2 state bucket.** Create `koklo-tofu-state` and an R2 token with read and
+write on it. Nothing in `koklo-infra` references R2, so assume it does not exist.
+Both `infra/terraform` and `infra/dokploy` fail at `init` without it.
+
+**3. Back up the real data.** The API keeps its state as JSON files in
+`cvforge_api_data`, not in Postgres. Snapshot that volume, and dump Postgres too.
+Everything downstream depends on this being done.
+
+**4. DNS.** Merging into `develop` runs the `tofu` job, which creates the six
+`cvspark*` records. **Create them unproxied first.** Dokploy resolves
+Let's Encrypt over HTTP-01, and an orange-cloud record with no origin
+certificate yet gives Cloudflare a 526 until issuance completes. Set
+`proxied = false` in `infra/terraform/dns.tf`, apply, let the certificates
+issue at step 5, then flip it back to `true`. Note `dokploy.ops.koklo.dev` is
+itself unproxied, which is why its certificate issued cleanly.
+
+**5. Staging.** The same merge deploys staging through Dokploy. Check
+`cvspark-staging.koklo.dev`, `cvspark-app-staging.koklo.dev` and
+`cvspark-api-staging.koklo.dev/health`. Staging uses its own volumes
+(`cvspark-staging_*`) and touches nothing in production. Do not continue until
+this is green.
+
+**6. Production cutover — the irreversible step.** The CVForge stack and the
+Dokploy stack share the same volumes (`VOLUME_PREFIX=cvforge`). Two Postgres
+containers on one volume corrupt it, so stop the old stack *before* promoting:
+
+```bash
+ssh devops@<VPS20_IP> 'cd /opt/apps/cvspark && docker compose down'
+# and, if the pre-self-deploy stack is still up:
+ssh root@<VPS20_IP> 'cd /opt/koklo/stacks/cvforge && docker compose down'
+```
+
+Then merge `develop` into `main`. That triggers the production environment,
+which is restricted to the `main` branch.
+
+**7. Retire the old names.** Once `cvspark*` serves correctly, delete the
+`cvforge*` records from `koklo-infra`, remove `stacks/cvforge` from its Ansible
+playbook, and delete `infra/compose/docker-compose.yml` here — it is the SSH
+pipeline's file and nothing references it any more.
 
 ## Operations
 
