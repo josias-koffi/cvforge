@@ -3,7 +3,6 @@ import {
   normalizeDateInput,
   normalizeEmail,
   normalizeFutureDateInput,
-  normalizePastDateInput,
   normalizePhone,
   normalizeStringList,
   normalizeUrlField,
@@ -36,12 +35,10 @@ describe("input guards", () => {
     expect(normalizeDateInput("2026-02-30")).toBe("");
   });
 
-  it("rejects future birth dates and past availability dates", () => {
+  it("rejects an availability date already in the past", () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-04-20T10:00:00.000Z"));
 
-    expect(normalizePastDateInput("2026-04-19")).toBe("2026-04-19");
-    expect(normalizePastDateInput("2026-04-21")).toBe("");
     expect(normalizeFutureDateInput("2026-04-21")).toBe("2026-04-21");
     expect(normalizeFutureDateInput("2026-04-19")).toBe("");
 

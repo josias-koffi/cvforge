@@ -294,45 +294,6 @@ export function OnboardingWizard({ sessionEmail }: { sessionEmail: string }) {
           </CardHeader>
           <CardContent style={{ display: "grid", gap: "1rem" }}>
             <div style={{ display: "grid", gap: "0.5rem" }}>
-              <Label htmlFor="birth-date">Date de naissance</Label>
-              <Input
-                id="birth-date"
-                onChange={(event) =>
-                  updateSection("additional", "birthDate", event.target.value)
-                }
-                type="date"
-                value={draft.additional.birthDate}
-              />
-            </div>
-            <div style={{ display: "grid", gap: "0.5rem" }}>
-              <Label htmlFor="nationality">Nationalite</Label>
-              <Input
-                id="nationality"
-                onChange={(event) =>
-                  updateSection("additional", "nationality", event.target.value)
-                }
-                value={draft.additional.nationality}
-              />
-            </div>
-            <label
-              htmlFor="driving-license"
-              style={{ alignItems: "center", display: "flex", gap: "0.75rem" }}
-            >
-              <input
-                checked={draft.additional.hasDrivingLicense}
-                id="driving-license"
-                onChange={(event) =>
-                  updateSection(
-                    "additional",
-                    "hasDrivingLicense",
-                    event.target.checked,
-                  )
-                }
-                type="checkbox"
-              />
-              <span>Permis de conduire</span>
-            </label>
-            <div style={{ display: "grid", gap: "0.5rem" }}>
               <Label htmlFor="languages">Langues parlees + niveau</Label>
               <Textarea
                 id="languages"
@@ -341,28 +302,6 @@ export function OnboardingWizard({ sessionEmail }: { sessionEmail: string }) {
                 }
                 placeholder="Francais C2, Anglais B2"
                 value={draft.additional.languages}
-              />
-            </div>
-            <div style={{ display: "grid", gap: "0.5rem" }}>
-              <Label htmlFor="education-level">Niveau d&apos;etudes</Label>
-              <Input
-                id="education-level"
-                onChange={(event) =>
-                  updateSection("additional", "educationLevel", event.target.value)
-                }
-                placeholder="Bac+5, Master, BTS..."
-                value={draft.additional.educationLevel}
-              />
-            </div>
-            <div style={{ display: "grid", gap: "0.5rem" }}>
-              <Label htmlFor="target-sectors">Secteur(s) cible(s)</Label>
-              <Textarea
-                id="target-sectors"
-                onChange={(event) =>
-                  updateSection("additional", "targetSectors", event.target.value)
-                }
-                placeholder="Produit, SaaS, sante..."
-                value={draft.additional.targetSectors}
               />
             </div>
             <div style={{ display: "grid", gap: "0.5rem" }}>
@@ -429,17 +368,6 @@ export function OnboardingWizard({ sessionEmail }: { sessionEmail: string }) {
                 />
               </div>
             </fieldset>
-            <div style={{ display: "grid", gap: "0.5rem" }}>
-              <Label htmlFor="salary-range">Pretentions salariales</Label>
-              <Input
-                id="salary-range"
-                onChange={(event) =>
-                  updateSection("additional", "salaryRange", event.target.value)
-                }
-                placeholder="45k - 55k EUR"
-                value={draft.additional.salaryRange}
-              />
-            </div>
           </CardContent>
         </Card>
       ) : null}
@@ -570,21 +498,7 @@ export function OnboardingWizard({ sessionEmail }: { sessionEmail: string }) {
                 </Button>
               </div>
               <dl style={{ display: "grid", gap: "0.75rem", margin: 0 }}>
-                <SummaryRow label="Date de naissance" value={draft.additional.birthDate} />
-                <SummaryRow label="Nationalite" value={draft.additional.nationality} />
-                <SummaryRow
-                  label="Permis de conduire"
-                  value={draft.additional.hasDrivingLicense ? "Oui" : "Non"}
-                />
                 <SummaryRow label="Langues" value={draft.additional.languages} />
-                <SummaryRow
-                  label="Niveau d'etudes"
-                  value={draft.additional.educationLevel}
-                />
-                <SummaryRow
-                  label="Secteurs cibles"
-                  value={draft.additional.targetSectors}
-                />
                 <SummaryRow
                   label="Contrats recherches"
                   value={draft.additional.contractTypes}
@@ -596,10 +510,6 @@ export function OnboardingWizard({ sessionEmail }: { sessionEmail: string }) {
                       ? "Immediate"
                       : draft.additional.availabilityDate
                   }
-                />
-                <SummaryRow
-                  label="Pretentions salariales"
-                  value={draft.additional.salaryRange}
                 />
               </dl>
             </section>

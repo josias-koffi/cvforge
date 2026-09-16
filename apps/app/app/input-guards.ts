@@ -79,18 +79,6 @@ export function normalizeDateInput(rawValue: unknown) {
   return value;
 }
 
-export function normalizePastDateInput(rawValue: unknown) {
-  const value = normalizeDateInput(rawValue);
-
-  if (!value) {
-    return "";
-  }
-
-  const today = new Date().toISOString().slice(0, 10);
-
-  return value > today ? "" : value;
-}
-
 export function normalizeFutureDateInput(rawValue: unknown) {
   const value = normalizeDateInput(rawValue);
 

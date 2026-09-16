@@ -12,7 +12,6 @@ export const AI_OMITTED_PROFILE_FIELDS = [
   "identity.phone",
   "identity.email",
   "identity.exactAddress",
-  "additional.birthDate",
 ] as const;
 
 /** The pseudonymised half of the payload: everything the model is allowed to see. */
