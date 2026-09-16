@@ -75,6 +75,7 @@ export function makeRequest(
           },
         ],
         interests: "",
+        languages: [],
         personalProjects: [],
         softSkills: ["Communication"],
         summary: "Experienced backend developer",

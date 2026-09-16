@@ -24,6 +24,7 @@ const VALID_BODY = {
       education: [],
       experiences: [],
       interests: "",
+      languages: [],
       personalProjects: [],
       softSkills: [],
       summary: "",

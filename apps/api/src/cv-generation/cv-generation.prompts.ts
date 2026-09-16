@@ -46,6 +46,11 @@ COMPÉTENCES CLÉS (skills.categories) :
 10. Utilise le champ "label" pour le nom de catégorie. N'utilise jamais le champ "category".
 11. skills.hard contient tous les items dans le même ordre que les catégories. skills.soft reste vide ([]).
 
+LANGUES (languages[]) :
+- Reprends uniquement les langues de profileSections.languages, sans en ajouter aucune.
+- Conserve le niveau exactement tel qu'il est écrit dans le profil. N'invente jamais un niveau CECRL ni un descriptif absent de la source.
+- Si la liste source est vide, retourne languages: []. Toute langue non sourcée est supprimée automatiquement côté serveur.
+
 FORMATION (education[]) :
 - Les 3 formations les plus récentes uniquement.
 - degree = intitulé, year = date, institution = établissement, description = résumé court si fourni, mention = champ "honors" de la source.
@@ -108,6 +113,7 @@ Retourne UNIQUEMENT un JSON valide avec cette structure exacte :
     ]
   },
   "certifications": [{ "title": "", "issuer": "", "year": "" }],
+  "languages": [{ "language": "", "level": "" }],
   "projects": [{ "title": "", "description": "", "url": "" }]
 }`;
 

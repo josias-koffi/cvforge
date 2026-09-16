@@ -12,6 +12,7 @@ export type {
   CertificationEntry,
   EducationEntry,
   ExperienceEntry,
+  LanguageEntry,
   ProjectEntry,
 } from "./base-profile-types";
 import type {
@@ -20,6 +21,7 @@ import type {
   CertificationEntry,
   EducationEntry,
   ExperienceEntry,
+  LanguageEntry,
   ProjectEntry,
 } from "./base-profile-types";
 
@@ -62,6 +64,13 @@ export function createEmptyCertification(): CertificationEntry {
   };
 }
 
+export function createEmptyLanguage(): LanguageEntry {
+  return {
+    language: "",
+    level: "",
+  };
+}
+
 export function createEmptyProject(): ProjectEntry {
   return {
     description: "",
@@ -99,6 +108,7 @@ export function createEmptyBaseProfile(
       education: [],
       experiences: [],
       interests: "",
+      languages: [],
       personalProjects: [],
       softSkills: [],
       summary: "",
@@ -168,6 +178,17 @@ export function asCertificationList(value: unknown) {
   }));
 }
 
+export function asLanguageList(value: unknown) {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.map((item) => ({
+    language: normalizeShortText((item as LanguageEntry | undefined)?.language, 60),
+    level: normalizeShortText((item as LanguageEntry | undefined)?.level, 60),
+  }));
+}
+
 export function asProjectList(value: unknown) {
   if (!Array.isArray(value)) {
     return [];
@@ -212,6 +233,7 @@ export function createProfileFromOnboarding(
       education: [],
       experiences: [],
       interests: "",
+      languages: [],
       personalProjects: [],
       softSkills: [],
       summary: draft.importCv.notes.trim(),
@@ -265,6 +287,7 @@ export function sanitizeBaseProfile(
       education: asEducationList(candidate.sections?.education),
       experiences: asExperienceList(candidate.sections?.experiences),
       interests: normalizeLongText(candidate.sections?.interests, 400),
+      languages: asLanguageList(candidate.sections?.languages),
       personalProjects: asProjectList(candidate.sections?.personalProjects),
       softSkills: normalizeStringList(candidate.sections?.softSkills),
       summary: normalizeLongText(candidate.sections?.summary),
@@ -333,6 +356,9 @@ export function joinListInput(values: string[]) {
   return values.join(", ");
 }
 
+/** Sections weighed by countCompletedProfileSections; keep both in step. */
+export const PROFILE_SECTION_COUNT = 10;
+
 export function countCompletedProfileSections(profile: BaseProfile) {
   const sections = [
     profile.headline.trim(),
@@ -344,6 +370,7 @@ export function countCompletedProfileSections(profile: BaseProfile) {
     profile.sections.softSkills.length > 0 ? "soft" : "",
     profile.sections.certifications.length > 0 ? "certifications" : "",
     profile.sections.personalProjects.length > 0 ? "projects" : "",
+    profile.sections.languages.length > 0 ? "languages" : "",
   ];
 
   return sections.filter(Boolean).length;

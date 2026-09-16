@@ -20,6 +20,7 @@ function patch(overrides: Partial<ImportedCvProfilePatch["sections"]> = {}): Imp
       education: [{ degree: "BTS", honors: "", institution: "Lycée", year: "2025" }],
       experiences: [],
       interests: "",
+      languages: [],
       personalProjects: [],
       softSkills: [],
       summary: "",

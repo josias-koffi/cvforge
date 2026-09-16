@@ -1,6 +1,6 @@
 import type { PromptSafeProfile, SkillCategory } from "@cvforge/types";
 import { describe, expect, it } from "vitest";
-import { groundSkills } from "./skill-grounding";
+import { groundLanguages, groundSkills } from "./skill-grounding";
 import { buildSourceIndex } from "./source-index";
 
 function makeProfile(
@@ -14,6 +14,7 @@ function makeProfile(
       education: [],
       experiences: [],
       interests: "",
+      languages: [],
       personalProjects: [],
       softSkills: [],
       summary: "",
@@ -30,6 +31,57 @@ function ground(
 ) {
   return groundSkills(categories, hard, buildSourceIndex(profile), profile);
 }
+
+describe("groundLanguages", () => {
+  const profile = makeProfile({
+    languages: [
+      { language: "Français", level: "Langue maternelle" },
+      { language: "Anglais", level: "B2 / Intermédiaire" },
+    ],
+  });
+
+  it("keeps a listed language and restores the profile's own level", () => {
+    const result = groundLanguages(
+      [{ language: "Anglais", level: "C2 / Bilingue" }],
+      buildSourceIndex(profile),
+    );
+
+    expect(result.languages).toEqual([
+      { language: "Anglais", level: "B2 / Intermédiaire" },
+    ]);
+    expect(result.removals).toEqual([]);
+  });
+
+  it("matches the profile regardless of accents and case", () => {
+    const result = groundLanguages(
+      [{ language: "francais", level: "" }],
+      buildSourceIndex(profile),
+    );
+
+    expect(result.languages[0].level).toBe("Langue maternelle");
+  });
+
+  it("drops a language the candidate never claimed", () => {
+    const result = groundLanguages(
+      [{ language: "Mandarin", level: "C1 / Courant" }],
+      buildSourceIndex(profile),
+    );
+
+    expect(result.languages).toEqual([]);
+    expect(result.removals).toEqual([
+      { kind: "language", label: "Mandarin" },
+    ]);
+  });
+
+  it("returns nothing when the profile lists no language", () => {
+    const result = groundLanguages(
+      [{ language: "Anglais", level: "C1" }],
+      buildSourceIndex(makeProfile()),
+    );
+
+    expect(result.languages).toEqual([]);
+  });
+});
 
 describe("groundSkills", () => {
   it("drops tools the model borrowed from the job offer", () => {

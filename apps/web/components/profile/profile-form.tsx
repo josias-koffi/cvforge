@@ -19,6 +19,7 @@ import type {
   CertificationEntry,
   EducationEntry,
   ExperienceEntry,
+  LanguageEntry,
   ProjectEntry,
 } from "@/lib/profile-model"
 
@@ -41,6 +42,11 @@ const projectFields: FieldSpec<ProjectEntry>[] = [
   { key: "title", label: "Projet" },
   { key: "link", label: "Lien" },
   { key: "description", label: "Description", type: "multiline" },
+]
+
+const languageFields: FieldSpec<LanguageEntry>[] = [
+  { key: "language", label: "Langue" },
+  { key: "level", label: "Niveau (ex. C1 / Courant)" },
 ]
 
 const certificationFields: FieldSpec<CertificationEntry>[] = [
@@ -113,6 +119,9 @@ export function ProfileForm({
               <TabsTrigger value="projects">
                 Projets ({profile.sections.personalProjects.length})
               </TabsTrigger>
+              <TabsTrigger value="languages">
+                Langues ({profile.sections.languages.length})
+              </TabsTrigger>
               <TabsTrigger value="certifications">
                 Certifications ({profile.sections.certifications.length})
               </TabsTrigger>
@@ -178,6 +187,17 @@ export function ProfileForm({
                 itemTitle={(item, index) => item.title || `Projet ${index + 1}`}
                 addLabel="Ajouter un projet"
                 createItem={() => ({ description: "", link: "", title: "" })}
+              />
+            </TabsContent>
+            <TabsContent value="languages">
+              <ListEditor
+                id="language"
+                items={profile.sections.languages}
+                fields={languageFields}
+                onChange={(items) => setSections("languages", items)}
+                itemTitle={(item, index) => item.language || `Langue ${index + 1}`}
+                addLabel="Ajouter une langue"
+                createItem={() => ({ language: "", level: "" })}
               />
             </TabsContent>
             <TabsContent value="certifications">

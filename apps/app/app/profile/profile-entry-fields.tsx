@@ -6,6 +6,7 @@ import type {
   CertificationEntry,
   EducationEntry,
   ExperienceEntry,
+  LanguageEntry,
   ProjectEntry,
 } from "./base-profile";
 
@@ -170,6 +171,35 @@ export function CertificationFields({
         </div>
         <Button onClick={onRemove} type="button" variant="ghost">
           Retirer cette certification
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
+export function LanguageFields({
+  language,
+  index,
+  onChange,
+  onRemove,
+}: {
+  language: LanguageEntry;
+  index: number;
+  onChange: (value: LanguageEntry) => void;
+  onRemove: () => void;
+}) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Langue {index + 1}</CardTitle>
+      </CardHeader>
+      <CardContent style={{ display: "grid", gap: "1rem" }}>
+        <div style={{ display: "grid", gap: "1rem", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
+          <LabeledInput id={`language-name-${index}`} label="Langue" onChange={(value) => onChange({ ...language, language: value })} value={language.language} />
+          <LabeledInput id={`language-level-${index}`} label="Niveau (ex. C1 / Courant)" onChange={(value) => onChange({ ...language, level: value })} value={language.level} />
+        </div>
+        <Button onClick={onRemove} type="button" variant="ghost">
+          Retirer cette langue
         </Button>
       </CardContent>
     </Card>

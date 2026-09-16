@@ -24,6 +24,7 @@ function inventory(profile: PromptSafeProfile) {
     allowedCompanies: sections.experiences.map((item) => item.company),
     allowedInstitutions: sections.education.map((item) => item.institution),
     allowedCertifications: sections.certifications.map((item) => item.title),
+    allowedLanguages: sections.languages.map((item) => item.language),
     allowedProjects: sections.personalProjects.map((item) => item.title),
   };
 }

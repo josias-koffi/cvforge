@@ -1,5 +1,6 @@
 export type GroundingRemovalKind =
   | "skill"
+  | "language"
   | "experience"
   | "education"
   | "certification"

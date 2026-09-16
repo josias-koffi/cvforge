@@ -65,6 +65,7 @@ Règles impératives :
     "education": [{ "degree": "", "honors": "", "institution": "", "year": "" }],
     "experiences": [{ "company": "", "period": "", "results": "", "role": "" }],
     "interests": "",
+    "languages": [{ "language": "", "level": "" }],
     "personalProjects": [{ "description": "", "link": "", "title": "" }],
     "softSkills": [],
     "summary": "",
@@ -148,6 +149,12 @@ function normalizeImportedProfile(raw: RawImportedProfile): ImportedCvProfilePat
           }))
         : [],
       interests: normalizeText(sections.interests, 400),
+      languages: Array.isArray(sections.languages)
+        ? sections.languages.map((entry) => ({
+            language: normalizeText(entry.language, 60),
+            level: normalizeText(entry.level, 60),
+          }))
+        : [],
       personalProjects: Array.isArray(sections.personalProjects)
         ? sections.personalProjects.map((entry) => ({
             description: normalizeText(entry.description, 600),

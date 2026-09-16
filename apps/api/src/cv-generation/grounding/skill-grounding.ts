@@ -1,12 +1,41 @@
 import type {
   GroundingRemoval,
+  LanguageItemProps,
   PromptSafeProfile,
   SkillCategory,
 } from "@cvforge/types";
 import { resolveSkill, type SourceIndex } from "./source-index";
+import { normalizeText } from "./text-normalize";
 
 const FALLBACK_CATEGORY_LABEL = "Compétences";
 const MAX_FALLBACK_ITEMS = 6;
+
+/**
+ * Keeps only languages the profile lists, and restores the level verbatim.
+ *
+ * A fabricated "Anglais — C1 / Courant" is the kind of claim a recruiter tests
+ * in the first minute of the interview, so the level is never the model's.
+ */
+export function groundLanguages(
+  generated: LanguageItemProps[],
+  index: SourceIndex,
+): { languages: LanguageItemProps[]; removals: GroundingRemoval[] } {
+  const removals: GroundingRemoval[] = [];
+  const languages: LanguageItemProps[] = [];
+
+  for (const item of generated) {
+    const key = normalizeText(item.language);
+    if (!index.languages.has(key)) {
+      if (item.language) {
+        removals.push({ kind: "language", label: item.language });
+      }
+      continue;
+    }
+    languages.push({ language: item.language, level: index.languages.get(key)! });
+  }
+
+  return { languages, removals };
+}
 
 /** A CV with no skills at all is worse than a conservative one. */
 function fallbackSkills(profile: PromptSafeProfile) {

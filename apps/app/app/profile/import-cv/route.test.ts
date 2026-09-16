@@ -22,6 +22,7 @@ describe("POST /profile/import-cv", () => {
           education: [],
           experiences: [],
           interests: "",
+          languages: [],
           personalProjects: [],
           softSkills: [],
           summary: "Experienced developer",

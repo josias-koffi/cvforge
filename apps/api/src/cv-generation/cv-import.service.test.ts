@@ -47,6 +47,7 @@ const AI_RESPONSE = {
       },
     ],
     interests: "",
+    languages: [],
     personalProjects: [],
     softSkills: ["Communication", "Leadership"],
     summary: "Product engineer with TypeScript and API experience.",

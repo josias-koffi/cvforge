@@ -27,8 +27,9 @@ describe("CV generation prompt", () => {
     expect(CV_SYSTEM_PROMPT).not.toContain("impact mesurable");
   });
 
-  it("stops asking for languages, which no profile field backs", () => {
-    expect(CV_SYSTEM_PROMPT).not.toContain('"languages"');
+  it("ties languages to the profile instead of letting the model guess a level", () => {
+    expect(CV_SYSTEM_PROMPT).toContain("profileSections.languages");
+    expect(CV_SYSTEM_PROMPT).toContain("N'invente jamais un niveau CECRL");
   });
 
   it("forces a single output language", () => {
