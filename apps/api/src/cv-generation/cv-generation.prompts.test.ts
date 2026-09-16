@@ -23,6 +23,19 @@ describe("CV generation prompt", () => {
     expect(LETTER_SYSTEM_PROMPT).toContain("SOURCE DE VÉRITÉ");
   });
 
+  it("lets the letter state availability without inventing one", () => {
+    expect(LETTER_SYSTEM_PROMPT).toContain("RECHERCHE DU CANDIDAT");
+    expect(LETTER_SYSTEM_PROMPT).toContain("uniquement s'ils sont présents");
+    expect(LETTER_SYSTEM_PROMPT).toContain("n'invente ni date de disponibilité");
+    expect(LETTER_SYSTEM_PROMPT).toContain('est "disponible" sans précision');
+  });
+
+  it("keeps salary expectations out of the letter", () => {
+    expect(LETTER_SYSTEM_PROMPT).toContain(
+      "Ne mentionne jamais de prétentions salariales",
+    );
+  });
+
   it("no longer pushes the model to fabricate measurable impact", () => {
     expect(CV_SYSTEM_PROMPT).not.toContain("impact mesurable");
   });

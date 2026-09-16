@@ -1,4 +1,13 @@
 import { loadDraftFromStorage } from "../onboarding/draft";
+import {
+  asCertificationList,
+  asEducationList,
+  asExperienceList,
+  asLanguageList,
+  asPreferences,
+  asProjectList,
+  createEmptyPreferences,
+} from "./base-profile-entries";
 import { parseOnboardingLanguages } from "../onboarding/languages";
 import {
   normalizeEmail,
@@ -7,6 +16,8 @@ import {
   normalizeShortText,
   normalizeUrlField,
 } from "../input-guards";
+export * from "./base-profile-entries";
+
 export type {
   BaseProfile,
   BaseProfileRegistry,
@@ -14,6 +25,7 @@ export type {
   EducationEntry,
   ExperienceEntry,
   LanguageEntry,
+  ProfilePreferences,
   ProjectEntry,
 } from "./base-profile-types";
 import type {
@@ -104,6 +116,7 @@ export function createEmptyBaseProfile(
       maxProfiles: null,
       source: "empty",
     },
+    preferences: createEmptyPreferences(),
     sections: {
       certifications: [],
       education: [],
@@ -137,70 +150,6 @@ export function createAdditionalBaseProfile(
   });
 }
 
-export function asExperienceList(value: unknown) {
-  if (!Array.isArray(value)) {
-    return [];
-  }
-
-  return value.map((item) => ({
-    company: normalizeShortText((item as ExperienceEntry | undefined)?.company, 120),
-    period: normalizeShortText((item as ExperienceEntry | undefined)?.period, 80),
-    results: normalizeLongText((item as ExperienceEntry | undefined)?.results, 600),
-    role: normalizeShortText((item as ExperienceEntry | undefined)?.role, 120),
-  }));
-}
-
-export function asEducationList(value: unknown) {
-  if (!Array.isArray(value)) {
-    return [];
-  }
-
-  return value.map((item) => ({
-    description: normalizeLongText(
-      (item as EducationEntry | undefined)?.description,
-      600,
-    ),
-    degree: normalizeShortText((item as EducationEntry | undefined)?.degree, 120),
-    honors: normalizeShortText((item as EducationEntry | undefined)?.honors, 120),
-    institution: normalizeShortText((item as EducationEntry | undefined)?.institution, 120),
-    year: normalizeShortText((item as EducationEntry | undefined)?.year, 16),
-  }));
-}
-
-export function asCertificationList(value: unknown) {
-  if (!Array.isArray(value)) {
-    return [];
-  }
-
-  return value.map((item) => ({
-    issuer: normalizeShortText((item as CertificationEntry | undefined)?.issuer, 120),
-    title: normalizeShortText((item as CertificationEntry | undefined)?.title, 120),
-    year: normalizeShortText((item as CertificationEntry | undefined)?.year, 16),
-  }));
-}
-
-export function asLanguageList(value: unknown) {
-  if (!Array.isArray(value)) {
-    return [];
-  }
-
-  return value.map((item) => ({
-    language: normalizeShortText((item as LanguageEntry | undefined)?.language, 60),
-    level: normalizeShortText((item as LanguageEntry | undefined)?.level, 60),
-  }));
-}
-
-export function asProjectList(value: unknown) {
-  if (!Array.isArray(value)) {
-    return [];
-  }
-
-  return value.map((item) => ({
-    description: normalizeLongText((item as ProjectEntry | undefined)?.description, 600),
-    link: normalizeUrlField((item as ProjectEntry | undefined)?.link),
-    title: normalizeShortText((item as ProjectEntry | undefined)?.title, 120),
-  }));
-}
 
 export function createProfileFromOnboarding(
   sessionEmail: string,
@@ -228,6 +177,11 @@ export function createProfileFromOnboarding(
       lastSavedAt: null,
       maxProfiles: null,
       source: "onboarding",
+    },
+    preferences: {
+      availabilityDate: draft.additional.availabilityDate,
+      availabilityMode: draft.additional.availabilityMode,
+      contractTypes: draft.additional.contractTypes,
     },
     sections: {
       certifications: [],
@@ -283,6 +237,7 @@ export function sanitizeBaseProfile(
           ? candidate.meta.source
           : "empty",
     },
+    preferences: asPreferences(candidate.preferences),
     sections: {
       certifications: asCertificationList(candidate.sections?.certifications),
       education: asEducationList(candidate.sections?.education),

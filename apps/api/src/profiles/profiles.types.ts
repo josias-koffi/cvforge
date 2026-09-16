@@ -19,6 +19,12 @@ export type ProfileCertificationEntry = {
   year: string;
 };
 
+export type ProfilePreferences = {
+  availabilityDate: string;
+  availabilityMode: "immediate" | "date" | "";
+  contractTypes: string;
+};
+
 export type ProfileLanguageEntry = {
   language: string;
   level: string;
@@ -50,6 +56,7 @@ export type StoredProfile = {
     maxProfiles: number | null;
     source: "empty" | "onboarding" | "storage";
   };
+  preferences: ProfilePreferences;
   sections: {
     certifications: ProfileCertificationEntry[];
     education: ProfileEducationEntry[];

@@ -10,6 +10,23 @@ function createEmptyState(): PersistedProfilesState {
   return { registries: {} };
 }
 
+const AVAILABILITY_MODES = ["immediate", "date", ""];
+
+function normalizePreferences(value: unknown): StoredProfile["preferences"] {
+  const raw = value && typeof value === "object" ? (value as Record<string, unknown>) : {};
+
+  return {
+    availabilityDate:
+      typeof raw.availabilityDate === "string" ? raw.availabilityDate : "",
+    availabilityMode:
+      typeof raw.availabilityMode === "string" &&
+      AVAILABILITY_MODES.includes(raw.availabilityMode)
+        ? (raw.availabilityMode as StoredProfile["preferences"]["availabilityMode"])
+        : "",
+    contractTypes: typeof raw.contractTypes === "string" ? raw.contractTypes : "",
+  };
+}
+
 function normalizeProfile(value: unknown): StoredProfile | null {
   if (!value || typeof value !== "object") {
     return null;
@@ -61,6 +78,7 @@ function normalizeProfile(value: unknown): StoredProfile | null {
           ? meta.source
           : "storage",
     },
+    preferences: normalizePreferences(raw.preferences),
     sections: {
       certifications: Array.isArray(sections.certifications)
         ? (sections.certifications as StoredProfile["sections"]["certifications"])

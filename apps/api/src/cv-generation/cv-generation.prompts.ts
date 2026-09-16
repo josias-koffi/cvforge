@@ -136,6 +136,9 @@ Règles impératives :
 6. Utilise l'entreprise et le poste pour l'objet et l'argumentaire.
 7. Intègre naturellement le champ "refinement" s'il est fourni.
 8. Maintiens un ton professionnel mais dynamique.
+9. Le bloc "RECHERCHE DU CANDIDAT" contient sa disponibilité et les contrats qu'il vise. Mentionne-les dans le dernier paragraphe, en une phrase naturelle, uniquement s'ils sont présents.
+10. Si ce bloc est absent ou si un champ manque, n'aborde pas le sujet : n'invente ni date de disponibilité, ni préavis, ni durée, ni type de contrat, et n'écris pas non plus que le candidat est "disponible" sans précision. Conclus alors sur la motivation et la proposition d'échange.
+11. Ne mentionne jamais de prétentions salariales, même si l'offre en parle : cela se discute en entretien.
 
 Retourne UNIQUEMENT un JSON valide avec cette structure exacte :
 {

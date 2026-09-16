@@ -151,7 +151,7 @@ export class CvGenerationService {
           content: buildGroundedUserMessage(
             request.promptProfile,
             offerContext,
-            { refinement: request.refinement },
+            { includePreferences: true, refinement: request.refinement },
           ),
         },
       ],

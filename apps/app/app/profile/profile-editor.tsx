@@ -137,6 +137,16 @@ export function ProfileEditor({
     [updateProfile],
   );
 
+  const updatePreference = React.useCallback(
+    (field: keyof BaseProfile["preferences"], value: string) => {
+      updateProfile((current) => ({
+        ...current,
+        preferences: { ...current.preferences, [field]: value },
+      }));
+    },
+    [updateProfile],
+  );
+
   const updateListSection = React.useCallback(
     (field: "technicalSkills" | "softSkills", value: string) => {
       updateProfile((current) => ({
@@ -271,6 +281,37 @@ export function ProfileEditor({
 
       <SectionCard title="Competences humaines" description="Liste libre des soft skills, separees par des virgules.">
         <LabeledTextarea id="profile-soft-skills" label="Competences humaines" onChange={(value) => updateListSection("softSkills", value)} rows={4} value={joinListInput(profile.sections.softSkills)} />
+      </SectionCard>
+
+      <SectionCard title="Recherche" description="Utilise uniquement dans la lettre de motivation. Laissez vide pour ne pas aborder le sujet.">
+        <div style={{ display: "grid", gap: "1rem", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
+          <LabeledInput
+            id="availability-date"
+            label="Disponible a partir du"
+            onChange={(value) => {
+              updatePreference("availabilityDate", value);
+              updatePreference("availabilityMode", value.trim() ? "date" : "");
+            }}
+            value={profile.preferences.availabilityDate}
+          />
+          <LabeledInput
+            id="contract-types"
+            label="Contrats recherches (ex. CDI, freelance)"
+            onChange={(value) => updatePreference("contractTypes", value)}
+            value={profile.preferences.contractTypes}
+          />
+        </div>
+        <label style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+          <input
+            checked={profile.preferences.availabilityMode === "immediate"}
+            onChange={(event) => {
+              updatePreference("availabilityMode", event.target.checked ? "immediate" : "");
+              if (event.target.checked) updatePreference("availabilityDate", "");
+            }}
+            type="checkbox"
+          />
+          <span>Disponible immediatement</span>
+        </label>
       </SectionCard>
 
       <SectionCard title="Langues" description="Langue et niveau, repris tels quels dans le CV.">
