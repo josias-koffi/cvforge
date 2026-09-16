@@ -53,7 +53,7 @@ resource "dokploy_compose" "cvspark" {
     "SMTP_PORT=${var.smtp_port}",
     "SMTP_USER=${var.smtp_user}",
     "SMTP_PASSWORD=${var.smtp_password}",
-    "EMAIL_FROM=${var.email_from}",
+    "EMAIL_FROM=${local.email_from}",
     "NEXT_SERVER_ACTIONS_ENCRYPTION_KEY=${var.next_server_actions_encryption_key}",
   ])
 }
