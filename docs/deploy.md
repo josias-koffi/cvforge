@@ -122,6 +122,22 @@ fails on an otherwise healthy deploy. One redeploy fixes it, from the Dokploy UI
 or by pushing again. Every later push redeploys anyway, since `IMAGE_TAG`
 changes, so this is a one-time gap per environment.
 
+**4d. Service names are prefixed per environment, and must stay that way.**
+Dokploy attaches every service of every stack to the shared `dokploy-network`
+and registers the compose service name as a network alias on it. Two stacks that
+both name a service `api` publish the same alias twice, and Docker's DNS answers
+with either container at random. Production's web app resolved `api` to the
+*staging* API, which emailed a magic link pointing at the staging host, so the
+session cookie landed on the wrong domain and nobody could sign in.
+
+`infra/compose/dokploy-stack.yml` therefore names its services `svcprefix-web`,
+`svcprefix-api` and so on; `compose.tf` substitutes `cvspark` or
+`cvspark-staging` before shipping the file. Every internal URL
+(`API_INTERNAL_URL`, `DATABASE_URL`, `REDIS_URL`, `MINIO_ENDPOINT`,
+`PUPPETEER_URL`) and every `dokploy_domain.service_name` uses the same prefix.
+Volumes are unaffected: they carry explicit `${VOLUME_PREFIX}_*` names, so the
+rename recreates containers and finds the same data.
+
 **5. Staging.** The same merge deploys staging through Dokploy. Check
 `cvspark-staging.koklo.dev`, `cvspark-app-staging.koklo.dev` and
 `cvspark-api-staging.koklo.dev/health`. Staging uses its own volumes
