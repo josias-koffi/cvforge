@@ -102,9 +102,14 @@ variable "smtp_port" {
   default     = 587
 }
 
+# cvspark.koklo.dev must be a verified sender in Resend before this applies.
+# Verification needs the DKIM and SPF records Resend hands out, so it cannot
+# happen until the zone exists — the domain is NXDOMAIN until infra/terraform
+# runs. An unverified sender fails every send, magic links included, which locks
+# everyone out of the app. See the cutover runbook in docs/deploy.md.
 variable "email_from" {
   type        = string
-  description = "From header of every outgoing email"
+  description = "From header of every outgoing email. The domain must be verified in Resend first."
   default     = "CVSpark <no-reply@cvspark.koklo.dev>"
 }
 
