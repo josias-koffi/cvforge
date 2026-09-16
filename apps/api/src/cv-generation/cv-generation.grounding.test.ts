@@ -164,6 +164,30 @@ describe("CvGenerationService grounding and billing", () => {
     expect(cvContent.candidate.github).toBe("");
   });
 
+  it("dates the letter even when the model echoes back an empty field", async () => {
+    openRouter.chat.mockResolvedValue(
+      JSON.stringify({
+        body: { paragraph1: "a", paragraph2: "b", paragraph3: "c" },
+        candidate: {},
+        company: { city: "", name: "" },
+        date: "",
+        object: "",
+        signature: {},
+      }),
+    );
+
+    const letter = await service.generateLetter(
+      "user@test.example",
+      "app-001",
+      makeRequest(),
+    );
+
+    expect(letter.date).not.toBe("");
+    expect(letter.company.name).toBe("Acme Corp");
+    expect(letter.company.city).toBe("Paris");
+    expect(letter.object).toContain("Senior TypeScript Developer");
+  });
+
   it("drops the grounding notice once the candidate saves by hand", () => {
     const updated = service.updateCvContent("user@test.example", "app-001", {
       cvContent: {

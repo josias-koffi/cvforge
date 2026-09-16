@@ -48,6 +48,17 @@ function toStr(value: unknown, fallback = ""): string {
   return typeof value === "string" ? value.trim() : fallback;
 }
 
+/**
+ * Like `toStr`, but an empty string also falls back.
+ *
+ * The prompt hands the model a JSON skeleton where these fields are `""`, and
+ * it often echoes that back — which used to slip past `toStr` and ship a letter
+ * with no date and no company city.
+ */
+function toStrOr(value: unknown, fallback: string): string {
+  return toStr(value) || fallback;
+}
+
 function toStrArray(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
   return value.map((item) => toStr(item)).filter((item) => item.length > 0);
@@ -270,13 +281,13 @@ export function normalizeLetterJson(
       title: toStr(candidate.title),
     },
     company: {
-      city: toStr(raw.company?.city, fallbackCompanyCity ?? ""),
-      name: toStr(raw.company?.name, fallbackCompanyName ?? ""),
+      city: toStrOr(raw.company?.city, fallbackCompanyCity ?? ""),
+      name: toStrOr(raw.company?.name, fallbackCompanyName ?? ""),
     },
-    date: toStr(raw.date, new Date().toISOString().slice(0, 10)),
-    object: toStr(raw.object, fallbackObject),
+    date: toStrOr(raw.date, new Date().toISOString().slice(0, 10)),
+    object: toStrOr(raw.object, fallbackObject),
     signature: {
-      firstName: toStr(signature.firstName, toStr(candidate.firstName)),
+      firstName: toStrOr(signature.firstName, toStr(candidate.firstName)),
       lastName: localFields.lastName,
     },
   };
