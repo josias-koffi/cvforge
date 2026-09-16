@@ -6,6 +6,7 @@ import type {
   AuthAccountStore,
   AuthConsentRecord,
   AuthInvitation,
+  AuthMagicLink,
   AuthRole,
 } from "./auth.types";
 
@@ -13,6 +14,7 @@ type PersistedAuthState = {
   accounts: Record<string, AuthAccount>;
   bootstrapConsumed: boolean;
   invitations: Record<string, AuthInvitation>;
+  magicLinks: Record<string, AuthMagicLink>;
 };
 
 export type AuthExportSnapshot = {
@@ -32,6 +34,7 @@ function createEmptyState(): PersistedAuthState {
     accounts: {},
     bootstrapConsumed: false,
     invitations: {},
+    magicLinks: {},
   };
 }
 
@@ -157,6 +160,57 @@ export class FileAuthAccountStore implements AuthAccountStore {
     return state.invitations[tokenHash];
   }
 
+  saveMagicLink(tokenHash: string, magicLink: AuthMagicLink) {
+    const state = this.readState();
+
+    state.magicLinks[tokenHash] = magicLink;
+
+    this.writeState(state);
+  }
+
+  consumeMagicLink(tokenHash: string, consumedAt: string, now: number) {
+    const state = this.readState();
+    const magicLink = state.magicLinks[tokenHash];
+
+    if (!magicLink) {
+      return null;
+    }
+
+    if (
+      magicLink.consumedAt !== null ||
+      new Date(magicLink.expiresAt).getTime() <= now
+    ) {
+      return null;
+    }
+
+    // Consumed links are dropped rather than kept: nothing reads them again,
+    // and they carry an email address that has no reason to linger on disk.
+    delete state.magicLinks[tokenHash];
+
+    this.writeState(state);
+
+    return { ...magicLink, consumedAt };
+  }
+
+  pruneMagicLinks(now: number) {
+    const state = this.readState();
+    let removed = 0;
+
+    for (const [tokenHash, magicLink] of Object.entries(state.magicLinks)) {
+      if (
+        magicLink.consumedAt !== null ||
+        new Date(magicLink.expiresAt).getTime() <= now
+      ) {
+        delete state.magicLinks[tokenHash];
+        removed += 1;
+      }
+    }
+
+    if (removed > 0) {
+      this.writeState(state);
+    }
+  }
+
   exportUserData(email: string): AuthExportSnapshot {
     const state = this.readState();
     const account = state.accounts[email]
@@ -191,6 +245,14 @@ export class FileAuthAccountStore implements AuthAccountStore {
     let invitationsScrubbed = 0;
 
     delete state.accounts[email];
+
+    // Pending magic links hold the address too, so deleting the account has to
+    // take them with it.
+    for (const [tokenHash, magicLink] of Object.entries(state.magicLinks)) {
+      if (magicLink.email === email) {
+        delete state.magicLinks[tokenHash];
+      }
+    }
 
     for (const [tokenHash, invitation] of Object.entries(state.invitations)) {
       if (invitation.email === email) {
@@ -239,6 +301,9 @@ export class FileAuthAccountStore implements AuthAccountStore {
         accounts: parsed.accounts ?? {},
         bootstrapConsumed: parsed.bootstrapConsumed ?? false,
         invitations: parsed.invitations ?? {},
+        // Absent from every state file written before magic links were
+        // persisted, so it has to default rather than be trusted.
+        magicLinks: parsed.magicLinks ?? {},
       };
     } catch {
       return createEmptyState();

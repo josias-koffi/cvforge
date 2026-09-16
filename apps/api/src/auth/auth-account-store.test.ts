@@ -21,6 +21,72 @@ afterEach(() => {
 });
 
 describe("FileAuthAccountStore", () => {
+  it("should carry a magic link across a restart, then consume it exactly once", () => {
+    const stateFilePath = createStateFilePath();
+    const store = new FileAuthAccountStore(stateFilePath);
+    const expiresAt = new Date(Date.now() + 15 * 60_000).toISOString();
+
+    store.saveMagicLink("token-hash", {
+      consent: null,
+      email: "user@example.com",
+      expiresAt,
+      consumedAt: null,
+    });
+
+    // A redeploy: same file, brand new process.
+    const afterRestart = new FileAuthAccountStore(stateFilePath);
+    const consumed = afterRestart.consumeMagicLink(
+      "token-hash",
+      "2026-04-20T07:00:00.000Z",
+      Date.now(),
+    );
+
+    expect(consumed).toMatchObject({ email: "user@example.com" });
+
+    // Single use, and the address does not linger on disk afterwards.
+    expect(
+      afterRestart.consumeMagicLink("token-hash", "2026-04-20T07:00:01.000Z", Date.now()),
+    ).toBeNull();
+    expect(JSON.parse(readFileSync(stateFilePath, "utf8")).magicLinks).toEqual({});
+  });
+
+  it("should refuse an expired magic link and prune it", () => {
+    const stateFilePath = createStateFilePath();
+    const store = new FileAuthAccountStore(stateFilePath);
+
+    store.saveMagicLink("stale-hash", {
+      consent: null,
+      email: "user@example.com",
+      expiresAt: new Date(Date.now() - 1_000).toISOString(),
+      consumedAt: null,
+    });
+
+    expect(
+      store.consumeMagicLink("stale-hash", "2026-04-20T07:00:00.000Z", Date.now()),
+    ).toBeNull();
+
+    store.pruneMagicLinks(Date.now());
+
+    expect(JSON.parse(readFileSync(stateFilePath, "utf8")).magicLinks).toEqual({});
+  });
+
+  it("should take pending magic links with the account when it is purged", () => {
+    const stateFilePath = createStateFilePath();
+    const store = new FileAuthAccountStore(stateFilePath);
+
+    store.resolveRole("user@example.com");
+    store.saveMagicLink("token-hash", {
+      consent: null,
+      email: "user@example.com",
+      expiresAt: new Date(Date.now() + 15 * 60_000).toISOString(),
+      consumedAt: null,
+    });
+
+    store.purgeUserData("user@example.com");
+
+    expect(JSON.parse(readFileSync(stateFilePath, "utf8")).magicLinks).toEqual({});
+  });
+
   it("should promote only the first stored account to admin and persist the bootstrap lock", () => {
     const stateFilePath = createStateFilePath();
     const store = new FileAuthAccountStore(stateFilePath);
@@ -36,6 +102,7 @@ describe("FileAuthAccountStore", () => {
       },
       bootstrapConsumed: true,
       invitations: {},
+      magicLinks: {},
     });
   });
 
@@ -93,6 +160,7 @@ describe("FileAuthAccountStore", () => {
           role: "admin",
         },
       },
+      magicLinks: {},
     });
   });
 

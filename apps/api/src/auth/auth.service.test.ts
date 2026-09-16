@@ -5,6 +5,7 @@ import type {
   AuthAccountStore,
   AuthConfig,
   AuthInvitation,
+  AuthMagicLink,
   AuthRole,
 } from "./auth.types";
 
@@ -23,6 +24,7 @@ const config: AuthConfig = {
 function createInMemoryAccountStore(): AuthAccountStore {
   const accounts = new Map<string, AuthAccount>();
   const invitations = new Map<string, AuthInvitation>();
+  const magicLinks = new Map<string, AuthMagicLink>();
   let bootstrapConsumed = false;
 
   return {
@@ -106,6 +108,37 @@ function createInMemoryAccountStore(): AuthAccountStore {
       invitations.set(tokenHash, updatedInvitation);
 
       return updatedInvitation;
+    },
+    saveMagicLink(tokenHash, magicLink) {
+      magicLinks.set(tokenHash, magicLink);
+    },
+    consumeMagicLink(tokenHash, consumedAt, now) {
+      const magicLink = magicLinks.get(tokenHash);
+
+      if (!magicLink) {
+        return null;
+      }
+
+      if (
+        magicLink.consumedAt !== null ||
+        new Date(magicLink.expiresAt).getTime() <= now
+      ) {
+        return null;
+      }
+
+      magicLinks.delete(tokenHash);
+
+      return { ...magicLink, consumedAt };
+    },
+    pruneMagicLinks(now) {
+      for (const [tokenHash, magicLink] of magicLinks.entries()) {
+        if (
+          magicLink.consumedAt !== null ||
+          new Date(magicLink.expiresAt).getTime() <= now
+        ) {
+          magicLinks.delete(tokenHash);
+        }
+      }
     },
   };
 }
@@ -215,6 +248,44 @@ describe("AuthService", () => {
         `${consumed.cookie.name}=${consumed.cookie.value}`,
       ),
     ).toBeNull();
+  });
+
+  it("should read the valid session even when a stale cookie of the same name comes first", () => {
+    const service = new AuthService(config, createInMemoryAccountStore());
+    const request = service.requestMagicLink("user@example.com", true);
+    const token = new URL(request.magicLink).searchParams.get("token") ?? "";
+    const consumed = service.consumeMagicLink(token);
+    const { name, value } = consumed.cookie;
+
+    // A leftover cookie of the same name on another domain or path travels in
+    // the same header, and RFC 6265 puts the older one first.
+    expect(
+      service.readSessionFromCookieHeader(`${name}=stale.garbage; ${name}=${value}`),
+    ).toMatchObject({ email: "user@example.com" });
+
+    expect(
+      service.readSessionFromCookieHeader(`${name}=${value}; ${name}=stale.garbage`),
+    ).toMatchObject({ email: "user@example.com" });
+
+    expect(
+      service.readSessionFromCookieHeader(`${name}=stale.garbage; ${name}=other.junk`),
+    ).toBeNull();
+  });
+
+  it("should still accept a magic link issued before the process restarted", () => {
+    const store = createInMemoryAccountStore();
+    const request = new AuthService(config, store).requestMagicLink(
+      "user@example.com",
+      true,
+    );
+    const token = new URL(request.magicLink).searchParams.get("token") ?? "";
+
+    // A redeploy replaces the process; the link was already in someone's inbox.
+    const afterRestart = new AuthService(config, store);
+
+    expect(afterRestart.consumeMagicLink(token).session.email).toBe(
+      "user@example.com",
+    );
   });
 
   it("should only allow redirects back to the configured app origin", () => {
