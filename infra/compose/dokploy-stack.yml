@@ -6,20 +6,36 @@
 # block of that resource, and injects the Traefik labels from the
 # `dokploy_domain` resources. Never edit the deployed copy in the Dokploy UI.
 #
+# ---------------------------------------------------------------------------
+# `svcprefix` IS A PLACEHOLDER, NOT A SERVICE NAME.
+#
+# compose.tf replaces every occurrence with the environment's service prefix
+# (`cvspark` in production, `cvspark-staging` in staging) before shipping the
+# file. That is why this YAML is not directly runnable with `docker compose`.
+#
+# It exists because Dokploy attaches every service of every stack to the shared
+# `dokploy-network`, registering the compose service name as a network alias.
+# Two stacks that both name a service `api` therefore publish the same alias on
+# one network, and Docker's DNS answers with either container, at random. That
+# is not theoretical: production's web resolved `api` to the staging API and
+# emailed a staging magic link, which logged nobody in. Prefixing the service
+# names makes every alias unique per environment, so internal DNS can only ever
+# reach this stack.
+# ---------------------------------------------------------------------------
+#
 # Differences from the SSH-pipeline file next door (docker-compose.yml):
 #   - no `name:` — Dokploy assigns the compose project name
 #   - no Traefik labels and no external `traefik-public` network — Dokploy's own
 #     Traefik routes from the `dokploy_domain` resources instead
-#   - API_INTERNAL_URL targets the `api` service name rather than a container
-#     name derived from the project name
+#   - service names are prefixed, and internal URLs target those prefixed names
 
 services:
-  web:
+  svcprefix-web:
     image: ghcr.io/josias-koffi/cvspark-web:${IMAGE_TAG}
     restart: unless-stopped
     environment:
       NODE_ENV: production
-      API_INTERNAL_URL: http://api:3333
+      API_INTERNAL_URL: http://svcprefix-api:3333
       NEXT_PUBLIC_API_URL: https://${API_DOMAIN}
       AUTH_COOKIE_NAME: ${AUTH_COOKIE_NAME}
       COOKIE_DOMAIN: ${COOKIE_DOMAIN}
@@ -33,7 +49,7 @@ services:
       retries: 10
       start_period: 30s
 
-  landing:
+  svcprefix-landing:
     image: ghcr.io/josias-koffi/cvspark-landing:${IMAGE_TAG}
     restart: unless-stopped
     environment:
@@ -49,7 +65,7 @@ services:
       retries: 10
       start_period: 30s
 
-  api:
+  svcprefix-api:
     image: ghcr.io/josias-koffi/cvspark-api:${IMAGE_TAG}
     restart: unless-stopped
     environment:
@@ -62,7 +78,7 @@ services:
       MINIO_ENDPOINT: ${MINIO_ENDPOINT}
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
-      PUPPETEER_URL: ${PUPPETEER_URL:-http://puppeteer:3000}
+      PUPPETEER_URL: ${PUPPETEER_URL:-http://svcprefix-puppeteer:3000}
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
       OPENROUTER_MODEL: ${OPENROUTER_MODEL:-}
       INTERVIEW_STT_MODEL: ${INTERVIEW_STT_MODEL:-}
@@ -91,7 +107,7 @@ services:
       retries: 10
       start_period: 30s
 
-  postgres:
+  svcprefix-postgres:
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
@@ -106,13 +122,13 @@ services:
       timeout: 5s
       retries: 10
 
-  redis:
+  svcprefix-redis:
     image: redis:7-alpine
     restart: unless-stopped
     volumes:
       - redis_data:/data
 
-  minio:
+  svcprefix-minio:
     image: minio/minio
     command: server /data --console-address ":9001"
     restart: unless-stopped
@@ -122,20 +138,20 @@ services:
     volumes:
       - minio_data:/data
 
-  puppeteer:
+  svcprefix-puppeteer:
     image: ghcr.io/josias-koffi/cvspark-puppeteer:${IMAGE_TAG}
     restart: unless-stopped
 
   # Nightly pg_dump → compressed file in the db_backups volume.
   # Keeps 7 daily + 4 weekly + 6 monthly snapshots.
   # WARNING: on-VPS backup only — it does NOT survive VPS destruction.
-  db_backup:
+  svcprefix-db-backup:
     image: prodrigestivill/postgres-backup-local:16
     restart: unless-stopped
     depends_on:
-      - postgres
+      - svcprefix-postgres
     environment:
-      POSTGRES_HOST: postgres
+      POSTGRES_HOST: svcprefix-postgres
       POSTGRES_DB: ${POSTGRES_DB:-cvforge}
       POSTGRES_USER: ${POSTGRES_USER:-cvforge}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -150,6 +166,8 @@ services:
 
 # Volume names are pinned to VOLUME_PREFIX instead of the compose project name,
 # so production keeps using the volumes created under the old `cvforge` project.
+# Renaming the services above therefore costs no data: the containers are
+# recreated, the volumes are found again by these explicit names.
 volumes:
   api_data:
     name: ${VOLUME_PREFIX}_api_data
