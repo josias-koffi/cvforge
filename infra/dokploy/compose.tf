@@ -16,18 +16,8 @@ resource "dokploy_compose" "cvspark" {
 
   # Shipped inline: Dokploy clones nothing, so no GitHub App has to be
   # registered by hand before the first apply.
-  #
-  # The `svcprefix` placeholder becomes this environment's service prefix. See
-  # the header of dokploy-stack.yml for why the service names must be unique
-  # across environments. `replace` rather than `templatefile` on purpose: the
-  # file is full of `${...}` compose variables that Terraform would try to
-  # interpolate, and escaping all thirty of them is a good way to break prod.
   raw = {
-    compose_file = replace(
-      file("${path.module}/../compose/dokploy-stack.yml"),
-      "svcprefix",
-      local.service_prefix,
-    )
+    compose_file = file("${path.module}/../compose/dokploy-stack.yml")
   }
 
   # Dokploy writes these to the .env of the compose project, which is what the
@@ -46,14 +36,12 @@ resource "dokploy_compose" "cvspark" {
     "POSTGRES_DB=${var.postgres_db}",
     "POSTGRES_USER=${var.postgres_user}",
     "POSTGRES_PASSWORD=${var.postgres_password}",
-    # Internal hostnames carry the service prefix, so they can only ever resolve
-    # to this environment's containers on the shared dokploy-network.
-    "DATABASE_URL=postgres://${var.postgres_user}:${var.postgres_password}@${local.service_prefix}-postgres:5432/${var.postgres_db}",
-    "REDIS_URL=redis://${local.service_prefix}-redis:6379",
-    "MINIO_ENDPOINT=http://${local.service_prefix}-minio:9000",
+    "DATABASE_URL=postgres://${var.postgres_user}:${var.postgres_password}@postgres:5432/${var.postgres_db}",
+    "REDIS_URL=redis://redis:6379",
+    "MINIO_ENDPOINT=http://minio:9000",
     "MINIO_ACCESS_KEY=${var.minio_access_key}",
     "MINIO_SECRET_KEY=${var.minio_secret_key}",
-    "PUPPETEER_URL=http://${local.service_prefix}-puppeteer:3000",
+    "PUPPETEER_URL=http://puppeteer:3000",
     "OPENROUTER_API_KEY=${var.openrouter_api_key}",
     "OPENROUTER_MODEL=${var.openrouter_model}",
     "INTERVIEW_STT_MODEL=${var.interview_stt_model}",
