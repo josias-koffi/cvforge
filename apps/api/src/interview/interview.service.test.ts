@@ -11,29 +11,34 @@ async function* asyncChunks(chunks: string[]): AsyncGenerator<string> {
 }
 
 function createStore(): InterviewStore {
-  const sessions = new Map<string, ReturnType<InterviewService["startSession"]>["session"] & { userEmail: string }>();
+  const sessions = new Map<
+    string,
+    Awaited<ReturnType<InterviewService["startSession"]>>["session"] & {
+      userEmail: string;
+    }
+  >();
 
   return {
-    findById: (sessionId) => sessions.get(sessionId) ?? null,
-    findByIdForUserEmail: (userEmail, sessionId) => {
+    findById: async (sessionId) => sessions.get(sessionId) ?? null,
+    findByIdForUserEmail: async (userEmail, sessionId) => {
       const session = sessions.get(sessionId);
       if (!session || session.userEmail !== userEmail) {
         return null;
       }
       return session;
     },
-    save: (session) => {
+    save: async (session) => {
       sessions.set(session.id, session);
       return session;
     },
-    purgeCompletedBefore: () => 0,
+    purgeCompletedBefore: async () => 0,
   };
 }
 
 function createApplicationsService(): ApplicationsService {
   return {
     appendInterviewReport: vi.fn(),
-    getOwnedApplication: vi.fn().mockReturnValue({
+    getOwnedApplication: vi.fn().mockResolvedValue({
       extracted: {
         companyName: "Acme",
         requirements: ["TypeScript", "ATS"],
@@ -50,7 +55,7 @@ function createApplicationsService(): ApplicationsService {
 }
 
 describe("InterviewService", () => {
-  it("starts an empty interview session", () => {
+  it("starts an empty interview session", async () => {
     const applicationsService = createApplicationsService();
     const service = new InterviewService(
       createStore(),
@@ -58,7 +63,7 @@ describe("InterviewService", () => {
       applicationsService,
     );
 
-    const result = service.startSession("user@example.com");
+    const result = await service.startSession("user@example.com");
 
     expect(result.sessionId).toContain("interview_");
     expect(result.session.status).toBe("idle");
@@ -81,7 +86,7 @@ describe("InterviewService", () => {
       openRouter,
       applicationsService,
     );
-    const { sessionId } = service.startSession("user@example.com");
+    const { sessionId } = await service.startSession("user@example.com");
 
     const first = await service.transcribeChunk("user@example.com", sessionId, {
       chunkBase64: "AAA",
@@ -120,7 +125,7 @@ describe("InterviewService", () => {
       openRouter,
       applicationsService,
     );
-    const { sessionId } = service.startSession("user@example.com");
+    const { sessionId } = await service.startSession("user@example.com");
 
     await service.transcribeChunk("user@example.com", sessionId, {
       chunkBase64: "AAA",
@@ -147,7 +152,7 @@ describe("InterviewService", () => {
     expect(openRouter.transcribeAudio).toHaveBeenCalledTimes(1);
   });
 
-  it("starts session with idle AI status", () => {
+  it("starts session with idle AI status", async () => {
     const applicationsService = createApplicationsService();
     const service = new InterviewService(
       createStore(),
@@ -155,14 +160,14 @@ describe("InterviewService", () => {
       applicationsService,
     );
 
-    const result = service.startSession("user@example.com");
+    const result = await service.startSession("user@example.com");
 
     expect(result.session.aiStatus).toBe("idle");
     expect(result.session.aiResponse).toBeNull();
     expect(result.session.aiResponseGeneratedAt).toBeNull();
   });
 
-  it("stores the requested interview language on session start", () => {
+  it("stores the requested interview language on session start", async () => {
     const applicationsService = createApplicationsService();
     const service = new InterviewService(
       createStore(),
@@ -170,12 +175,12 @@ describe("InterviewService", () => {
       applicationsService,
     );
 
-    const result = service.startSession("user@example.com", "en");
+    const result = await service.startSession("user@example.com", "en");
 
     expect(result.session.language).toBe("en");
   });
 
-  it("stores the requested recruiter profile on session start", () => {
+  it("stores the requested recruiter profile on session start", async () => {
     const applicationsService = createApplicationsService();
     const service = new InterviewService(
       createStore(),
@@ -183,7 +188,7 @@ describe("InterviewService", () => {
       applicationsService,
     );
 
-    const result = service.startSession(
+    const result = await service.startSession(
       "user@example.com",
       "fr",
       "technical",
@@ -203,9 +208,9 @@ describe("InterviewService", () => {
       openRouter,
       applicationsService,
     );
-    const { sessionId } = service.startSession("user@example.com");
+    const { sessionId } = await service.startSession("user@example.com");
 
-    const session = service.getSession("user@example.com", sessionId);
+    const session = await service.getSession("user@example.com", sessionId);
     const store = createStore();
     store.save({
       ...session,
@@ -272,7 +277,7 @@ describe("InterviewService", () => {
       } as unknown as OpenRouterService,
       applicationsService,
     );
-    const { sessionId } = service.startSession(
+    const { sessionId } = await service.startSession(
       "user@example.com",
       "fr",
       "passive",
@@ -305,7 +310,7 @@ describe("InterviewService", () => {
       { streamChat: vi.fn() } as unknown as OpenRouterService,
       applicationsService,
     );
-    const { sessionId } = service.startSession("user@example.com");
+    const { sessionId } = await service.startSession("user@example.com");
 
     const events = [];
     for await (const event of service.streamAIResponse("user@example.com", sessionId)) {
@@ -325,7 +330,7 @@ describe("InterviewService", () => {
       } as unknown as OpenRouterService,
       applicationsService,
     );
-    const { sessionId } = service.startSession("user@example.com");
+    const { sessionId } = await service.startSession("user@example.com");
 
     const result = await service.transcribeChunk("user@example.com", sessionId, {
       chunkBase64: "AAA",
@@ -344,7 +349,7 @@ describe("InterviewService", () => {
     expect(result.chunks[0]?.status).toBe("failed");
   });
 
-  it("stores the linked application on session start", () => {
+  it("stores the linked application on session start", async () => {
     const applicationsService = createApplicationsService();
     const service = new InterviewService(
       createStore(),
@@ -352,7 +357,7 @@ describe("InterviewService", () => {
       applicationsService,
     );
 
-    const result = service.startSession(
+    const result = await service.startSession(
       "user@example.com",
       "fr",
       "standard",
@@ -362,14 +367,14 @@ describe("InterviewService", () => {
     expect(result.session.applicationId).toBe("app-001");
   });
 
-  it("initialises session with an empty messages array", () => {
+  it("initialises session with an empty messages array", async () => {
     const service = new InterviewService(
       createStore(),
       { transcribeAudio: vi.fn() } as unknown as OpenRouterService,
       createApplicationsService(),
     );
 
-    const { session } = service.startSession("user@example.com");
+    const { session } = await service.startSession("user@example.com");
 
     expect(session.messages).toEqual([]);
   });
@@ -382,7 +387,7 @@ describe("InterviewService", () => {
         .mockResolvedValueOnce("je suis prêt"),
     } as unknown as OpenRouterService;
     const service = new InterviewService(createStore(), openRouter, createApplicationsService());
-    const { sessionId } = service.startSession("user@example.com");
+    const { sessionId } = await service.startSession("user@example.com");
 
     await service.transcribeChunk("user@example.com", sessionId, {
       chunkBase64: "AAA",
@@ -424,7 +429,7 @@ describe("InterviewService", () => {
 
     const openRouter = { transcribeAudio: transcribeAudioMock, streamChat: streamChatMock } as unknown as OpenRouterService;
     const service = new InterviewService(createStore(), openRouter, createApplicationsService());
-    const { sessionId } = service.startSession("user@example.com");
+    const { sessionId } = await service.startSession("user@example.com");
 
     const chunkBase = { format: "webm", mimeType: "audio/webm", isFinal: true };
 
@@ -460,7 +465,7 @@ describe("InterviewService", () => {
       streamChat: vi.fn().mockReturnValue(asyncChunks(["Super réponse."])),
     } as unknown as OpenRouterService;
     const service = new InterviewService(createStore(), openRouter, createApplicationsService());
-    const { sessionId } = service.startSession("user@example.com");
+    const { sessionId } = await service.startSession("user@example.com");
 
     await service.transcribeChunk("user@example.com", sessionId, {
       chunkBase64: "AAA",
@@ -477,7 +482,7 @@ describe("InterviewService", () => {
       // drain
     }
 
-    const session = service.getSession("user@example.com", sessionId);
+    const session = await service.getSession("user@example.com", sessionId);
     expect(session.messages).toHaveLength(2);
     expect(session.messages[1]).toMatchObject({ role: "assistant", content: "Super réponse." });
   });

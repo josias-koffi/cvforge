@@ -12,18 +12,16 @@ export type StoredInterviewSession = InterviewSessionSummary & {
 /** DI token for the interview store. */
 export const INTERVIEW_STORE = Symbol("INTERVIEW_STORE");
 
-export type InterviewConfig = {
-  stateFilePath: string;
-};
-
 export type InterviewStore = {
-  findById: (sessionId: string) => StoredInterviewSession | null;
+  findById: (sessionId: string) => Promise<StoredInterviewSession | null>;
   findByIdForUserEmail: (
     userEmail: string,
     sessionId: string,
-  ) => StoredInterviewSession | null;
-  save: (session: StoredInterviewSession) => StoredInterviewSession;
-  purgeCompletedBefore: (cutoffIso: string) => number;
+  ) => Promise<StoredInterviewSession | null>;
+  save: (
+    session: StoredInterviewSession,
+  ) => Promise<StoredInterviewSession>;
+  purgeCompletedBefore: (cutoffIso: string) => Promise<number>;
 };
 
 export function summarizeInterviewSession(

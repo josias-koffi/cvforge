@@ -7,11 +7,11 @@ import type { OpenRouterService } from "../ai/openrouter.service";
 import { ApplicationsModule } from "../applications/applications.module";
 import { ApplicationsService } from "../applications/applications.service";
 import { AuthModule } from "../auth/auth.module";
+import { DATABASE, type Database } from "../database/database.types";
 import { InterviewPurgeService } from "./interview-purge.service";
 import { InterviewController } from "./interview.controller";
 import { InterviewService } from "./interview.service";
-import { FileInterviewStore } from "./interview.store";
-import { resolveInterviewConfig } from "./interview.config";
+import { PgInterviewStore } from "./interview.pg-store";
 import { INTERVIEW_STORE, type InterviewStore } from "./interview.types";
 
 @Module({
@@ -20,10 +20,8 @@ import { INTERVIEW_STORE, type InterviewStore } from "./interview.types";
   providers: [
     {
       provide: INTERVIEW_STORE,
-      useFactory: () =>
-        new FileInterviewStore(
-          resolveInterviewConfig(process.env).stateFilePath,
-        ),
+      inject: [DATABASE],
+      useFactory: (db: Database) => new PgInterviewStore(db),
     },
     {
       provide: InterviewService,

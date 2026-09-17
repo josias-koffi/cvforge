@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 import { resolveLegacyApplicationsStateFile } from "../applications/applications.config";
 import { resolveLegacyAuthStateFile } from "../auth/auth.config";
 import { resolveLegacyCreditsStateFile } from "../credits/credits.config";
+import { resolveLegacyInterviewStateFile } from "../interview/interview.config";
 import { resolveLegacyNotificationsStateFile } from "../notifications/notifications.config";
 import { resolveLegacyProfilesStateFile } from "../profiles/profiles.config";
 import { resolveLegacyTemplatesStateFile } from "../templates/templates.config";
@@ -11,6 +12,7 @@ import { resolveDatabaseConfig } from "./database.config";
 import { importLegacyApplications } from "./import-legacy-applications";
 import { importLegacyAuth } from "./import-legacy-auth";
 import { importLegacyCredits } from "./import-legacy-credits";
+import { importLegacyInterviews } from "./import-legacy-interviews";
 import { importLegacyNotifications } from "./import-legacy-notifications";
 import { importLegacyProfiles } from "./import-legacy-profiles";
 import { importLegacyTemplates } from "./import-legacy-templates";
@@ -73,6 +75,12 @@ async function main() {
       resolveLegacyProfilesStateFile(process.env),
     );
     console.log(`[migrate] legacy profiles: ${JSON.stringify(profiles)}`);
+
+    const interviews = await importLegacyInterviews(
+      client.db,
+      resolveLegacyInterviewStateFile(process.env),
+    );
+    console.log(`[migrate] legacy interviews: ${JSON.stringify(interviews)}`);
   } finally {
     await client.close();
   }
