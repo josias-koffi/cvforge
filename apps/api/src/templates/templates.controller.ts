@@ -32,11 +32,11 @@ export class TemplatesController {
   ) {}
 
   @Get()
-  listTemplates(@Req() request: RequestLike) {
+  async listTemplates(@Req() request: RequestLike) {
     this.requireAdminSession(request.headers.cookie);
 
     return {
-      templates: this.templatesService.listTemplates(),
+      templates: await this.templatesService.listTemplates(),
     };
   }
 
@@ -48,10 +48,10 @@ export class TemplatesController {
   }
 
   @Get("export.csv")
-  exportCsv(@Req() request: RequestLike) {
+  async exportCsv(@Req() request: RequestLike) {
     this.requireAdminSession(request.headers.cookie);
 
-    const analytics = this.templatesService.getAnalytics();
+    const analytics = await this.templatesService.getAnalytics();
 
     return new StreamableFile(Buffer.from(analytics.csv, "utf8"), {
       disposition: 'attachment; filename="admin-templates-export.csv"',
@@ -60,16 +60,19 @@ export class TemplatesController {
   }
 
   @Post()
-  createTemplate(@Body() body: Record<string, unknown>, @Req() request: RequestLike) {
+  async createTemplate(
+    @Body() body: Record<string, unknown>,
+    @Req() request: RequestLike,
+  ) {
     this.requireAdminSession(request.headers.cookie);
 
     return {
-      template: this.templatesService.createTemplate(body as TemplateInput),
+      template: await this.templatesService.createTemplate(body as TemplateInput),
     };
   }
 
   @Put(":templateId")
-  updateTemplate(
+  async updateTemplate(
     @Param("templateId") templateId: string,
     @Body() body: Record<string, unknown>,
     @Req() request: RequestLike,
@@ -77,7 +80,7 @@ export class TemplatesController {
     this.requireAdminSession(request.headers.cookie);
 
     return {
-      template: this.templatesService.updateTemplate(
+      template: await this.templatesService.updateTemplate(
         templateId,
         body as TemplateInput,
       ),
@@ -85,25 +88,25 @@ export class TemplatesController {
   }
 
   @Post(":templateId/duplicate")
-  duplicateTemplate(
+  async duplicateTemplate(
     @Param("templateId") templateId: string,
     @Req() request: RequestLike,
   ) {
     this.requireAdminSession(request.headers.cookie);
 
     return {
-      template: this.templatesService.duplicateTemplate(templateId),
+      template: await this.templatesService.duplicateTemplate(templateId),
     };
   }
 
   @Delete(":templateId")
   @HttpCode(204)
-  deleteTemplate(
+  async deleteTemplate(
     @Param("templateId") templateId: string,
     @Req() request: RequestLike,
   ) {
     this.requireAdminSession(request.headers.cookie);
-    this.templatesService.deleteTemplate(templateId);
+    await this.templatesService.deleteTemplate(templateId);
   }
 
   private requireAdminSession(cookieHeader?: string) {

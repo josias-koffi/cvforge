@@ -1,45 +1,59 @@
 import { Module } from "@nestjs/common";
 import { OpenRouterModule, OPENROUTER_SERVICE } from "../ai/openrouter.module";
 import { AuthModule } from "../auth/auth.module";
-import { resolveApplicationsConfig } from "../applications/applications.config";
-import { FileApplicationsStore } from "../applications/applications.store";
+import { ApplicationsModule } from "../applications/applications.module";
+import {
+  APPLICATIONS_STORE,
+  type ApplicationsStore,
+} from "../applications/applications.types";
 import { CreditsModule } from "../credits/credits.module";
 import { CreditsService } from "../credits/credits.service";
-import { resolveTemplatesConfig } from "../templates/templates.config";
-import { FileTemplatesStore } from "../templates/templates.store";
+import { TemplatesModule } from "../templates/templates.module";
+import {
+  TEMPLATES_STORE,
+  type TemplatesStore,
+} from "../templates/templates.types";
 import { CvGenerationController } from "./cv-generation.controller";
 import { CvGenerationService } from "./cv-generation.service";
 import { CvImportService } from "./cv-import.service";
 import { CvPdfExportService } from "./cv-pdf-export.service";
 
 @Module({
-  imports: [AuthModule, CreditsModule, OpenRouterModule],
+  imports: [
+    ApplicationsModule,
+    AuthModule,
+    CreditsModule,
+    OpenRouterModule,
+    TemplatesModule,
+  ],
   controllers: [CvGenerationController],
   providers: [
     {
       provide: CvGenerationService,
-      inject: [OPENROUTER_SERVICE, CreditsService],
+      inject: [
+        APPLICATIONS_STORE,
+        OPENROUTER_SERVICE,
+        CreditsService,
+        TEMPLATES_STORE,
+      ],
       useFactory: (
+        applicationsStore: ApplicationsStore,
         openRouterService: ConstructorParameters<typeof CvGenerationService>[1],
         creditsService: ConstructorParameters<typeof CvGenerationService>[2],
+        templatesStore: TemplatesStore,
       ) =>
         new CvGenerationService(
-          new FileApplicationsStore(
-            resolveApplicationsConfig(process.env).stateFilePath,
-          ),
+          applicationsStore,
           openRouterService,
           creditsService,
-          new FileTemplatesStore(resolveTemplatesConfig(process.env).stateFilePath),
+          templatesStore,
         ),
     },
     {
       provide: CvPdfExportService,
-      useFactory: () =>
-        new CvPdfExportService(
-          new FileApplicationsStore(
-            resolveApplicationsConfig(process.env).stateFilePath,
-          ),
-        ),
+      inject: [APPLICATIONS_STORE],
+      useFactory: (applicationsStore: ApplicationsStore) =>
+        new CvPdfExportService(applicationsStore),
     },
     {
       provide: CvImportService,

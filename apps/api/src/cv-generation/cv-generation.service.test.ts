@@ -143,7 +143,7 @@ describe("CvGenerationService", () => {
       });
     });
 
-    it("appends a manual CV version when content is saved", () => {
+    it("appends a manual CV version when content is saved", async () => {
       (store.findByIdForUserEmail as ReturnType<typeof vi.fn>).mockReturnValue(
         makeStoredApplication({
           cvContent: VALID_CV_JSON,
@@ -162,7 +162,7 @@ describe("CvGenerationService", () => {
         }),
       );
 
-      service.updateCvContent("user@test.example", "app-001", {
+      await service.updateCvContent("user@test.example", "app-001", {
         cvContent: VALID_CV_JSON,
       });
 
@@ -383,8 +383,8 @@ describe("CvGenerationService", () => {
   });
 
   describe("updateCvContent", () => {
-    it("persists sanitized cvContent updates", () => {
-      const updated = service.updateCvContent("user@test.example", "app-001", {
+    it("persists sanitized cvContent updates", async () => {
+      const updated = await service.updateCvContent("user@test.example", "app-001", {
         cvContent: {
           candidate: {
             city: " Lyon ",
@@ -444,7 +444,7 @@ describe("CvGenerationService", () => {
       expect(saved.cvContent?.candidate.title).toBe("Senior Developer");
     });
 
-    it("updates an existing cvContent without clearing generatedAt", () => {
+    it("updates an existing cvContent without clearing generatedAt", async () => {
       const app = makeStoredApplication({
         cvContent: VALID_CV_JSON,
         cvGeneratedAt: "2026-04-20T12:00:00.000Z",
@@ -453,7 +453,7 @@ describe("CvGenerationService", () => {
         app,
       );
 
-      const updated = service.updateCvContent("user@test.example", "app-001", {
+      const updated = await service.updateCvContent("user@test.example", "app-001", {
         cvContent: {
           ...VALID_CV_JSON,
           candidate: { ...VALID_CV_JSON.candidate, summary: "Updated" },
@@ -466,16 +466,16 @@ describe("CvGenerationService", () => {
       expect(saved.cvGeneratedAt).toBe("2026-04-20T12:00:00.000Z");
     });
 
-    it("throws NotFoundException when the application is missing", () => {
+    it("throws NotFoundException when the application is missing", async () => {
       (store.findByIdForUserEmail as ReturnType<typeof vi.fn>).mockReturnValue(
         null,
       );
 
-      expect(() =>
+      await expect(
         service.updateCvContent("user@test.example", "missing", {
           cvContent: VALID_CV_JSON,
         }),
-      ).toThrow(NotFoundException);
+      ).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -533,8 +533,8 @@ describe("CvGenerationService", () => {
   });
 
   describe("updateLetterContent", () => {
-    it("persists sanitized letter updates", () => {
-      const updated = service.updateLetterContent(
+    it("persists sanitized letter updates", async () => {
+      const updated = await service.updateLetterContent(
         "user@test.example",
         "app-001",
         {
@@ -817,8 +817,8 @@ describe("CvGenerationService", () => {
       );
     });
 
-    it("keeps the language on manual saves", () => {
-      const updated = service.updateCvContent("user@test.example", "app-001", {
+    it("keeps the language on manual saves", async () => {
+      const updated = await service.updateCvContent("user@test.example", "app-001", {
         cvContent: { ...VALID_CV_JSON, language: "en" },
       });
       expect(updated.language).toBe("en");

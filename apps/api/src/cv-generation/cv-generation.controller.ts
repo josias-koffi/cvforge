@@ -157,7 +157,7 @@ export class CvGenerationController {
   }
 
   @Put(":applicationId/cv")
-  updateCvContent(
+  async updateCvContent(
     @Param("applicationId") applicationId: string,
     @Body() body: CvContentUpdateRequest,
     @Req() request: RequestLike,
@@ -170,7 +170,7 @@ export class CvGenerationController {
       throw new UnauthorizedException("A valid session is required.");
     }
 
-    const cvContent = this.cvGenerationService.updateCvContent(
+    const cvContent = await this.cvGenerationService.updateCvContent(
       session.email,
       applicationId,
       body,
@@ -226,7 +226,7 @@ export class CvGenerationController {
   }
 
   @Put(":applicationId/letter")
-  updateLetterContent(
+  async updateLetterContent(
     @Param("applicationId") applicationId: string,
     @Body() body: LetterContentUpdateRequest,
     @Req() request: RequestLike,
@@ -239,7 +239,7 @@ export class CvGenerationController {
       throw new UnauthorizedException("A valid session is required.");
     }
 
-    const letterContent = this.cvGenerationService.updateLetterContent(
+    const letterContent = await this.cvGenerationService.updateLetterContent(
       session.email,
       applicationId,
       body,

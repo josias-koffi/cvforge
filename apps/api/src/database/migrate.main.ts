@@ -1,9 +1,11 @@
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 import { resolveLegacyCreditsStateFile } from "../credits/credits.config";
+import { resolveLegacyTemplatesStateFile } from "../templates/templates.config";
 import { createDatabaseClient, runMigrations } from "./database.client";
 import { resolveDatabaseConfig } from "./database.config";
 import { importLegacyCredits } from "./import-legacy-credits";
+import { importLegacyTemplates } from "./import-legacy-templates";
 
 /**
  * Container entrypoint step run before the API starts (see
@@ -26,11 +28,17 @@ async function main() {
   const client = createDatabaseClient(config);
 
   try {
-    const result = await importLegacyCredits(
+    const credits = await importLegacyCredits(
       client.db,
       resolveLegacyCreditsStateFile(process.env),
     );
-    console.log(`[migrate] legacy credits: ${JSON.stringify(result)}`);
+    console.log(`[migrate] legacy credits: ${JSON.stringify(credits)}`);
+
+    const templates = await importLegacyTemplates(
+      client.db,
+      resolveLegacyTemplatesStateFile(process.env),
+    );
+    console.log(`[migrate] legacy templates: ${JSON.stringify(templates)}`);
   } finally {
     await client.close();
   }

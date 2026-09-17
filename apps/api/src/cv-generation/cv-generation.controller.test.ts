@@ -96,8 +96,8 @@ function makeController(
     generateLetter: vi.fn().mockResolvedValue(MOCK_LETTER),
     getCvContent: vi.fn().mockReturnValue(MOCK_CV),
     getLetterContent: vi.fn().mockReturnValue(MOCK_LETTER),
-    updateLetterContent: vi.fn().mockReturnValue(MOCK_LETTER),
-    updateCvContent: vi.fn().mockReturnValue(MOCK_CV),
+    updateLetterContent: vi.fn().mockResolvedValue(MOCK_LETTER),
+    updateCvContent: vi.fn().mockResolvedValue(MOCK_CV),
     translateCv: vi.fn().mockResolvedValue({ ...MOCK_CV, language: "en" }),
     translateLetter: vi
       .fn()
@@ -320,9 +320,9 @@ describe("CvGenerationController", () => {
   });
 
   describe("PUT :applicationId/cv", () => {
-    it("returns cvContent for authenticated user", () => {
+    it("returns cvContent for authenticated user", async () => {
       const controller = makeController();
-      const result = controller.updateCvContent(
+      const result = await controller.updateCvContent(
         "app-001",
         { cvContent: MOCK_CV },
         { headers: { cookie: "cvforge_session=abc" } },
@@ -331,23 +331,23 @@ describe("CvGenerationController", () => {
       expect(result).toEqual({ cvContent: MOCK_CV });
     });
 
-    it("throws UnauthorizedException when no session", () => {
+    it("throws UnauthorizedException when no session", async () => {
       const controller = makeController(null);
 
-      expect(() =>
+      await expect(
         controller.updateCvContent(
           "app-001",
           { cvContent: MOCK_CV },
           { headers: {} },
         ),
-      ).toThrow(UnauthorizedException);
+      ).rejects.toThrow(UnauthorizedException);
     });
 
-    it("delegates to CvGenerationService.updateCvContent with session email", () => {
+    it("delegates to CvGenerationService.updateCvContent with session email", async () => {
       const cvService = {
         generateCv: vi.fn(),
         getCvContent: vi.fn(),
-        updateCvContent: vi.fn().mockReturnValue(MOCK_CV),
+        updateCvContent: vi.fn().mockResolvedValue(MOCK_CV),
       } as unknown as CvGenerationService;
       const pdfService = {
         exportPdf: vi.fn(),
@@ -379,9 +379,9 @@ describe("CvGenerationController", () => {
   });
 
   describe("PUT :applicationId/letter", () => {
-    it("returns letterContent for authenticated user", () => {
+    it("returns letterContent for authenticated user", async () => {
       const controller = makeController();
-      const result = controller.updateLetterContent(
+      const result = await controller.updateLetterContent(
         "app-001",
         { letterContent: MOCK_LETTER },
         { headers: { cookie: "cvforge_session=abc" } },
@@ -390,16 +390,16 @@ describe("CvGenerationController", () => {
       expect(result).toEqual({ letterContent: MOCK_LETTER });
     });
 
-    it("throws UnauthorizedException when no session", () => {
+    it("throws UnauthorizedException when no session", async () => {
       const controller = makeController(null);
 
-      expect(() =>
+      await expect(
         controller.updateLetterContent(
           "app-001",
           { letterContent: MOCK_LETTER },
           { headers: {} },
         ),
-      ).toThrow(UnauthorizedException);
+      ).rejects.toThrow(UnauthorizedException);
     });
   });
 

@@ -1,5 +1,4 @@
 import { resolve } from "node:path";
-import type { TemplatesConfig } from "./templates.types";
 
 const DEFAULT_STATE_FILE = resolve(
   process.cwd(),
@@ -7,10 +6,7 @@ const DEFAULT_STATE_FILE = resolve(
   "templates-state.json",
 );
 
-export function resolveTemplatesConfig(
-  env: NodeJS.ProcessEnv,
-): TemplatesConfig {
-  return {
-    stateFilePath: env.TEMPLATES_STATE_FILE?.trim() || DEFAULT_STATE_FILE,
-  };
+/** The pre-Postgres JSON store, imported once by `import-legacy-templates.ts`. */
+export function resolveLegacyTemplatesStateFile(env: NodeJS.ProcessEnv) {
+  return env.TEMPLATES_STATE_FILE?.trim() || DEFAULT_STATE_FILE;
 }

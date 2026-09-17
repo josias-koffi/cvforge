@@ -16,11 +16,11 @@ export type StoredTemplate = TemplateRecord;
 export const TEMPLATES_STORE = Symbol("TEMPLATES_STORE");
 
 export type TemplatesStore = {
-  create: (template: StoredTemplate) => StoredTemplate;
-  findById: (templateId: string) => StoredTemplate | null;
-  list: () => StoredTemplate[];
-  remove: (templateId: string) => void;
-  save: (template: StoredTemplate) => StoredTemplate;
+  create: (template: StoredTemplate) => Promise<StoredTemplate>;
+  findById: (templateId: string) => Promise<StoredTemplate | null>;
+  list: () => Promise<StoredTemplate[]>;
+  remove: (templateId: string) => Promise<void>;
+  save: (template: StoredTemplate) => Promise<StoredTemplate>;
 };
 
 export type TemplatesAnalyticsStore = {

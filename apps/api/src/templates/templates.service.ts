@@ -94,8 +94,8 @@ export class TemplatesService {
     return this.store.list();
   }
 
-  getDefaultTemplateId(kind: StoredTemplate["kind"]) {
-    const templates = this.store.list();
+  async getDefaultTemplateId(kind: StoredTemplate["kind"]) {
+    const templates = await this.store.list();
 
     return (
       templates.find((template) => template.kind === kind && template.isDefault)?.id ??
@@ -104,7 +104,7 @@ export class TemplatesService {
     );
   }
 
-  createTemplate(input: TemplateInput) {
+  async createTemplate(input: TemplateInput) {
     const timestamp = new Date().toISOString();
     const kind = normalizeTemplateKind(input.kind);
     const template: StoredTemplate = {
@@ -123,8 +123,8 @@ export class TemplatesService {
     return this.persistWithDefaultConstraints(template);
   }
 
-  updateTemplate(templateId: string, input: TemplateInput) {
-    const existing = this.store.findById(templateId);
+  async updateTemplate(templateId: string, input: TemplateInput) {
+    const existing = await this.store.findById(templateId);
 
     if (!existing) {
       throw new NotFoundException("Le template est introuvable.");
@@ -151,36 +151,39 @@ export class TemplatesService {
     return this.persistWithDefaultConstraints(candidate, existing.id);
   }
 
-  deleteTemplate(templateId: string) {
-    const existing = this.store.findById(templateId);
+  async deleteTemplate(templateId: string) {
+    const existing = await this.store.findById(templateId);
 
     if (!existing) {
       throw new NotFoundException("Le template est introuvable.");
     }
 
-    const sameKindTemplates = this.store
-      .list()
-      .filter((candidate) => candidate.kind === existing.kind && candidate.id !== templateId);
+    const all = await this.store.list();
+    const sameKindTemplates = all.filter(
+      (candidate) => candidate.kind === existing.kind && candidate.id !== templateId,
+    );
 
-    if (existing.isDefault && sameKindTemplates.length > 0) {
-      const next = sameKindTemplates[0];
-
-      this.store.save({
-        ...next,
-        isDefault: true,
-        updatedAt: new Date().toISOString(),
-      });
-    } else if (existing.isDefault && sameKindTemplates.length === 0) {
+    if (existing.isDefault && sameKindTemplates.length === 0) {
       throw new ConflictException(
         "Impossible de supprimer le seul template de ce type.",
       );
     }
 
-    this.store.remove(templateId);
+    // Drop first, promote second: `templates_single_default_per_kind_idx`
+    // refuses two defaults of one kind, even for the instant in between.
+    await this.store.remove(templateId);
+
+    if (existing.isDefault) {
+      await this.store.save({
+        ...sameKindTemplates[0],
+        isDefault: true,
+        updatedAt: new Date().toISOString(),
+      });
+    }
   }
 
-  duplicateTemplate(templateId: string) {
-    const existing = this.store.findById(templateId);
+  async duplicateTemplate(templateId: string) {
+    const existing = await this.store.findById(templateId);
 
     if (!existing) {
       throw new NotFoundException("Le template est introuvable.");
@@ -199,8 +202,8 @@ export class TemplatesService {
     });
   }
 
-  getAnalytics(): TemplatesAnalyticsPayload {
-    const templates = this.store.list();
+  async getAnalytics(): Promise<TemplatesAnalyticsPayload> {
+    const templates = await this.store.list();
     const applications = this.applicationsStore?.listAll() ?? [];
     const usage = new Map<
       string,
@@ -315,11 +318,11 @@ export class TemplatesService {
     };
   }
 
-  private persistWithDefaultConstraints(
+  private async persistWithDefaultConstraints(
     template: StoredTemplate,
     currentId?: string,
   ) {
-    const allTemplates = this.store.list();
+    const allTemplates = await this.store.list();
     const hasAnotherDefault = allTemplates.some(
       (candidate) =>
         candidate.kind === template.kind &&
@@ -328,18 +331,17 @@ export class TemplatesService {
     );
 
     if (template.isDefault) {
-      allTemplates
-        .filter(
-          (candidate) =>
-            candidate.kind === template.kind && candidate.id !== currentId,
-        )
-        .forEach((candidate) => {
-          this.store.save({
-            ...candidate,
-            isDefault: false,
-            updatedAt: template.updatedAt,
-          });
+      // Clear the old default before writing the new one, or the partial
+      // unique index rejects the pair.
+      for (const candidate of allTemplates.filter(
+        (entry) => entry.kind === template.kind && entry.id !== currentId,
+      )) {
+        await this.store.save({
+          ...candidate,
+          isDefault: false,
+          updatedAt: template.updatedAt,
         });
+      }
     } else if (!hasAnotherDefault) {
       template = {
         ...template,
