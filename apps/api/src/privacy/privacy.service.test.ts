@@ -7,7 +7,7 @@ import {
   createTestDatabase,
   type TestDatabase,
 } from "../database/testing/test-database";
-import { FileNotificationsStore } from "../notifications/notifications.store";
+import { PgNotificationsStore } from "../notifications/notifications.pg-store";
 import { FileProfilesStore } from "../profiles/profiles.store";
 import { PrivacyService } from "./privacy.service";
 
@@ -24,19 +24,17 @@ afterAll(async () => {
 async function createService(testId: string) {
   const authPath = `/tmp/${testId}-auth.json`;
   const applicationsPath = `/tmp/${testId}-applications.json`;
-  const notificationsPath = `/tmp/${testId}-notifications.json`;
   const profilesPath = `/tmp/${testId}-profiles.json`;
 
   rmSync(authPath, { force: true });
   rmSync(applicationsPath, { force: true });
   await testDatabase.reset();
-  rmSync(notificationsPath, { force: true });
   rmSync(profilesPath, { force: true });
 
   const authStore = new FileAuthAccountStore(authPath);
   const applicationsStore = new FileApplicationsStore(applicationsPath);
   const creditsStore = new PgCreditLedgerStore(testDatabase.db);
-  const notificationsStore = new FileNotificationsStore(notificationsPath);
+  const notificationsStore = new PgNotificationsStore(testDatabase.db);
   const profilesStore = new FileProfilesStore(profilesPath);
 
   authStore.assignInvitedRole(
@@ -120,7 +118,7 @@ async function createService(testId: string) {
     type: "admin_grant",
     userEmail: "other@example.com",
   });
-  notificationsStore.add({
+  await notificationsStore.add({
     createdAt: "2026-04-23T08:30:00.000Z",
     id: "notif-1",
     linkHref: "/candidatures?applicationId=app-1",
@@ -179,7 +177,9 @@ describe("PrivacyService", () => {
     expect(result.scrubbedThirdPartyReferences).toBe(3);
     expect(authStore.exportUserData("admin@example.com").account).toBeNull();
     expect(applicationsStore.listByUserEmail("admin@example.com")).toEqual([]);
-    expect(notificationsStore.listByUserEmail("admin@example.com")).toEqual([]);
+    await expect(
+      notificationsStore.listByUserEmail("admin@example.com"),
+    ).resolves.toEqual([]);
     await expect(creditsStore.listEntriesByAdminEmail("admin@example.com")).resolves.toHaveLength(0);
     const [otherEntry] = await creditsStore.listEntriesForUser("other@example.com");
     expect(otherEntry?.metadata.adminEmail).toBe("[deleted-account]");

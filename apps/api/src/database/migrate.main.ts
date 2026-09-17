@@ -1,10 +1,12 @@
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 import { resolveLegacyCreditsStateFile } from "../credits/credits.config";
+import { resolveLegacyNotificationsStateFile } from "../notifications/notifications.config";
 import { resolveLegacyTemplatesStateFile } from "../templates/templates.config";
 import { createDatabaseClient, runMigrations } from "./database.client";
 import { resolveDatabaseConfig } from "./database.config";
 import { importLegacyCredits } from "./import-legacy-credits";
+import { importLegacyNotifications } from "./import-legacy-notifications";
 import { importLegacyTemplates } from "./import-legacy-templates";
 
 /**
@@ -39,6 +41,14 @@ async function main() {
       resolveLegacyTemplatesStateFile(process.env),
     );
     console.log(`[migrate] legacy templates: ${JSON.stringify(templates)}`);
+
+    const notifications = await importLegacyNotifications(
+      client.db,
+      resolveLegacyNotificationsStateFile(process.env),
+    );
+    console.log(
+      `[migrate] legacy notifications: ${JSON.stringify(notifications)}`,
+    );
   } finally {
     await client.close();
   }

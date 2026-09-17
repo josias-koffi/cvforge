@@ -26,6 +26,13 @@ export function resolveNotificationsConfig(
       env.NOTIFICATIONS_FOLLOW_UP_DELAY_DAYS,
       DEFAULT_FOLLOW_UP_DELAY_DAYS,
     ),
-    stateFilePath: env.NOTIFICATIONS_STATE_FILE?.trim() || DEFAULT_STATE_FILE,
   };
+}
+
+/**
+ * The pre-Postgres JSON store, imported once by
+ * `import-legacy-notifications.ts`.
+ */
+export function resolveLegacyNotificationsStateFile(env: NodeJS.ProcessEnv) {
+  return env.NOTIFICATIONS_STATE_FILE?.trim() || DEFAULT_STATE_FILE;
 }
