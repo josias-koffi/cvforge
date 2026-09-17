@@ -66,6 +66,28 @@ variable "postgres_user" {
   default     = "cvforge"
 }
 
+# Balance supervision only (US-083/084/085). Must be a MANAGEMENT key — an
+# inference key gets a 403 on /credits. Empty leaves the supervision inert:
+# no balance on /admin/metrics, no low-balance alert, and no purchase guard.
+variable "openrouter_management_api_key" {
+  type        = string
+  description = "OpenRouter management API key, for reading the account balance. Empty disables supervision."
+  sensitive   = true
+  default     = ""
+}
+
+variable "openrouter_balance_alert_threshold" {
+  type        = string
+  description = "Remaining OpenRouter credits (USD) below which admins are alerted."
+  default     = "5"
+}
+
+variable "openrouter_balance_critical_threshold" {
+  type        = string
+  description = "Remaining OpenRouter credits (USD) at or below which selling credits is refused. 0 blocks only once the account is empty."
+  default     = "0"
+}
+
 variable "openrouter_model" {
   type        = string
   description = "OpenRouter model used for CV and cover-letter generation"

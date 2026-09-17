@@ -226,6 +226,9 @@ jobs:
       TF_VAR_minio_access_key: ${{ secrets.MINIO_ACCESS_KEY }}
       TF_VAR_minio_secret_key: ${{ secrets.MINIO_SECRET_KEY }}
       TF_VAR_openrouter_api_key: ${{ secrets.OPENROUTER_API_KEY }}
+      # Optional: absent secret means an empty string, which simply leaves
+      # balance supervision off rather than failing the deploy.
+      TF_VAR_openrouter_management_api_key: ${{ secrets.OPENROUTER_MANAGEMENT_API_KEY }}
       TF_VAR_stripe_secret_key: ${{ secrets.STRIPE_SECRET_KEY }}
       TF_VAR_stripe_webhook_secret: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
       TF_VAR_auth_session_secret: ${{ secrets.AUTH_SESSION_SECRET }}
