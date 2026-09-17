@@ -52,11 +52,14 @@ export class AuthService {
     private readonly accountStore: AuthAccountStore,
   ) {}
 
-  requestMagicLink(rawEmail: string, consentAccepted = false): MagicLinkResponse {
+  async requestMagicLink(
+    rawEmail: string,
+    consentAccepted = false,
+  ): Promise<MagicLinkResponse> {
     this.pruneExpiredMagicLinks();
 
     const email = rawEmail.trim().toLowerCase();
-    const existingAccount = this.accountStore.readAccount(email);
+    const existingAccount = await this.accountStore.readAccount(email);
 
     if (!EMAIL_PATTERN.test(email)) {
       throw new BadRequestException("A valid email address is required.");
@@ -84,11 +87,11 @@ export class AuthService {
     };
   }
 
-  createInvitation(
+  async createInvitation(
     cookieHeader: string | undefined,
     rawEmail: string,
     rawRole: string | undefined,
-  ): InvitationResponse {
+  ): Promise<InvitationResponse> {
     const session = this.readSessionFromCookieHeader(cookieHeader);
 
     if (!session) {
@@ -105,7 +108,7 @@ export class AuthService {
     const expiresAt = new Date(createdAt.getTime() + INVITATION_TTL_MS).toISOString();
     const token = randomBytes(24).toString("base64url");
 
-    this.accountStore.saveInvitation(this.hashToken(token), {
+    await this.accountStore.saveInvitation(this.hashToken(token), {
       consumedAt: null,
       createdAt: createdAt.toISOString(),
       createdBy: session.email,
@@ -122,8 +125,8 @@ export class AuthService {
     };
   }
 
-  previewInvitation(rawToken: string) {
-    const invitation = this.requireInvitation(rawToken);
+  async previewInvitation(rawToken: string) {
+    const invitation = await this.requireInvitation(rawToken);
 
     return {
       email: invitation.email,
@@ -132,7 +135,7 @@ export class AuthService {
     };
   }
 
-  consumeInvitation(rawToken: string, consentAccepted = false) {
+  async consumeInvitation(rawToken: string, consentAccepted = false) {
     const token = rawToken.trim();
 
     if (!token) {
@@ -144,7 +147,7 @@ export class AuthService {
     }
 
     const consumedAt = new Date().toISOString();
-    const invitation = this.accountStore.consumeInvitation(
+    const invitation = await this.accountStore.consumeInvitation(
       this.hashToken(token),
       consumedAt,
       Date.now(),
@@ -154,7 +157,7 @@ export class AuthService {
       throw new UnauthorizedException("This invitation is invalid or expired.");
     }
 
-    const role = this.accountStore.assignInvitedRole(
+    const role = await this.accountStore.assignInvitedRole(
       invitation.email,
       invitation.role,
       this.createConsentRecord("invitation"),
@@ -167,7 +170,7 @@ export class AuthService {
     };
   }
 
-  consumeMagicLink(rawToken: string, redirectTo?: string) {
+  async consumeMagicLink(rawToken: string, redirectTo?: string) {
     this.pruneExpiredMagicLinks();
 
     const token = rawToken.trim();
@@ -186,7 +189,7 @@ export class AuthService {
 
     const session = this.createSession(
       record.email,
-      this.accountStore.resolveRole(record.email, record.consent),
+      await this.accountStore.resolveRole(record.email, record.consent),
     );
 
     return {
@@ -221,17 +224,17 @@ export class AuthService {
     };
   }
 
-  listAccounts(): AuthAccountRecord[] {
+  listAccounts(): Promise<AuthAccountRecord[]> {
     return this.accountStore.listAccounts();
   }
 
-  updateAccountRole(rawEmail: string, rawRole: string | undefined) {
+  async updateAccountRole(rawEmail: string, rawRole: string | undefined) {
     if (rawRole !== "admin" && rawRole !== "user") {
       throw new BadRequestException("Le role doit etre admin ou user.");
     }
 
     const email = this.normalizeEmail(rawEmail);
-    const accounts = this.accountStore.listAccounts();
+    const accounts = await this.accountStore.listAccounts();
     const target = accounts.find((account) => account.email === email);
 
     if (!target) {
@@ -246,7 +249,10 @@ export class AuthService {
       throw new ConflictException("Impossible de retirer le dernier administrateur.");
     }
 
-    return this.accountStore.updateRole(email, rawRole) as AuthAccountRecord;
+    return (await this.accountStore.updateRole(
+      email,
+      rawRole,
+    )) as AuthAccountRecord;
   }
 
   private buildMagicLink(token: string) {
@@ -393,14 +399,16 @@ export class AuthService {
     throw new BadRequestException("Invitation role must be admin or user.");
   }
 
-  private requireInvitation(rawToken: string): AuthInvitation {
+  private async requireInvitation(rawToken: string): Promise<AuthInvitation> {
     const token = rawToken.trim();
 
     if (!token) {
       throw new BadRequestException("An invitation token is required.");
     }
 
-    const invitation = this.accountStore.readInvitation(this.hashToken(token));
+    const invitation = await this.accountStore.readInvitation(
+      this.hashToken(token),
+    );
 
     if (
       !invitation ||

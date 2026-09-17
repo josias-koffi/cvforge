@@ -34,7 +34,7 @@ export class PrivacyService {
 
   async exportUserData(userEmail: string): Promise<PrivacyExportPayload> {
     const normalizedEmail = normalizeEmail(userEmail);
-    const auth = this.authStore.exportUserData(normalizedEmail);
+    const auth = await this.authStore.exportUserData(normalizedEmail);
 
     if (!auth.account) {
       throw new UnauthorizedException("A valid session is required.");
@@ -67,7 +67,7 @@ export class PrivacyService {
       );
     }
 
-    const exportSnapshot = this.authStore.exportUserData(normalizedEmail);
+    const exportSnapshot = await this.authStore.exportUserData(normalizedEmail);
 
     if (!exportSnapshot.account) {
       throw new UnauthorizedException("A valid session is required.");
@@ -87,7 +87,7 @@ export class PrivacyService {
       await this.creditsStore.deleteByUserEmail(normalizedEmail);
     const scrubbedAdminReferences =
       await this.creditsStore.anonymizeAdminReferences(normalizedEmail);
-    const authSummary = this.authStore.purgeUserData(normalizedEmail);
+    const authSummary = await this.authStore.purgeUserData(normalizedEmail);
 
     return {
       deletedApplications,

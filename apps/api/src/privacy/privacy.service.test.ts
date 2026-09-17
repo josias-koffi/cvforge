@@ -1,7 +1,7 @@
 import { rmSync } from "node:fs";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { FileApplicationsStore } from "../applications/applications.store";
-import { FileAuthAccountStore } from "../auth/auth-account-store";
+import { PgAuthAccountStore } from "../auth/auth.pg-store";
 import { PgCreditLedgerStore } from "../credits/credits.pg-store";
 import {
   createTestDatabase,
@@ -22,20 +22,18 @@ afterAll(async () => {
 });
 
 async function createService(testId: string) {
-  const authPath = `/tmp/${testId}-auth.json`;
   const applicationsPath = `/tmp/${testId}-applications.json`;
 
-  rmSync(authPath, { force: true });
   rmSync(applicationsPath, { force: true });
   await testDatabase.reset();
 
-  const authStore = new FileAuthAccountStore(authPath);
+  const authStore = new PgAuthAccountStore(testDatabase.db);
   const applicationsStore = new FileApplicationsStore(applicationsPath);
   const creditsStore = new PgCreditLedgerStore(testDatabase.db);
   const notificationsStore = new PgNotificationsStore(testDatabase.db);
   const profilesStore = new PgProfilesStore(testDatabase.db);
 
-  authStore.assignInvitedRole(
+  await authStore.assignInvitedRole(
     "user@example.com",
     "user",
     {
@@ -44,7 +42,7 @@ async function createService(testId: string) {
       version: "2026-04-mvp",
     },
   );
-  authStore.assignInvitedRole(
+  await authStore.assignInvitedRole(
     "admin@example.com",
     "admin",
     {
@@ -53,7 +51,7 @@ async function createService(testId: string) {
       version: "2026-04-mvp",
     },
   );
-  authStore.saveInvitation("invite-1", {
+  await authStore.saveInvitation("invite-1", {
     consumedAt: null,
     createdAt: "2026-04-23T08:00:00.000Z",
     createdBy: "admin@example.com",
@@ -173,7 +171,9 @@ describe("PrivacyService", () => {
 
     expect(result.deletedAuthAccount).toBe(true);
     expect(result.scrubbedThirdPartyReferences).toBe(3);
-    expect(authStore.exportUserData("admin@example.com").account).toBeNull();
+    await expect(
+      authStore.exportUserData("admin@example.com"),
+    ).resolves.toMatchObject({ account: null });
     expect(applicationsStore.listByUserEmail("admin@example.com")).toEqual([]);
     await expect(
       notificationsStore.listByUserEmail("admin@example.com"),
@@ -181,10 +181,11 @@ describe("PrivacyService", () => {
     await expect(creditsStore.listEntriesByAdminEmail("admin@example.com")).resolves.toHaveLength(0);
     const [otherEntry] = await creditsStore.listEntriesForUser("other@example.com");
     expect(otherEntry?.metadata.adminEmail).toBe("[deleted-account]");
-    expect(authStore.exportUserData("user@example.com").receivedInvitations).toHaveLength(1);
-    expect(
-      authStore.exportUserData("user@example.com").receivedInvitations[0]?.createdBy,
-    ).toBe("[deleted-account]");
+    const userExport = await authStore.exportUserData("user@example.com");
+    expect(userExport.receivedInvitations).toHaveLength(1);
+    expect(userExport.receivedInvitations[0]?.createdBy).toBe(
+      "[deleted-account]",
+    );
   });
 
   it("rejects mismatched confirmation emails", async () => {

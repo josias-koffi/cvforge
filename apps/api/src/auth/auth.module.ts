@@ -1,8 +1,9 @@
 import { Module } from "@nestjs/common";
 import nodemailer from "nodemailer";
 import { SMTP_CONFIG, type SmtpConfig } from "../smtp/smtp.config";
-import { FileAuthAccountStore } from "./auth-account-store";
+import { PgAuthAccountStore } from "./auth.pg-store";
 import { SmtpModule } from "../smtp/smtp.module";
+import { DATABASE, type Database } from "../database/database.types";
 import {
   AUTH_EMAIL_FROM,
   AUTH_MAIL_TRANSPORT,
@@ -25,8 +26,8 @@ function readEmailFrom(env: NodeJS.ProcessEnv) {
   providers: [
     {
       provide: AUTH_ACCOUNT_STORE,
-      useFactory: () =>
-        new FileAuthAccountStore(resolveAuthConfig(process.env).stateFilePath),
+      inject: [DATABASE],
+      useFactory: (db: Database) => new PgAuthAccountStore(db),
     },
     {
       provide: AuthService,

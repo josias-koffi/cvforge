@@ -1,11 +1,13 @@
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";
+import { resolveLegacyAuthStateFile } from "../auth/auth.config";
 import { resolveLegacyCreditsStateFile } from "../credits/credits.config";
 import { resolveLegacyNotificationsStateFile } from "../notifications/notifications.config";
 import { resolveLegacyProfilesStateFile } from "../profiles/profiles.config";
 import { resolveLegacyTemplatesStateFile } from "../templates/templates.config";
 import { createDatabaseClient, runMigrations } from "./database.client";
 import { resolveDatabaseConfig } from "./database.config";
+import { importLegacyAuth } from "./import-legacy-auth";
 import { importLegacyCredits } from "./import-legacy-credits";
 import { importLegacyNotifications } from "./import-legacy-notifications";
 import { importLegacyProfiles } from "./import-legacy-profiles";
@@ -32,6 +34,12 @@ async function main() {
   const client = createDatabaseClient(config);
 
   try {
+    const auth = await importLegacyAuth(
+      client.db,
+      resolveLegacyAuthStateFile(process.env),
+    );
+    console.log(`[migrate] legacy auth: ${JSON.stringify(auth)}`);
+
     const credits = await importLegacyCredits(
       client.db,
       resolveLegacyCreditsStateFile(process.env),

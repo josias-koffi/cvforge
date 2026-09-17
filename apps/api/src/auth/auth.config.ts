@@ -59,6 +59,10 @@ export function resolveAuthConfig(
     cookieName: env.AUTH_COOKIE_NAME?.trim() || DEFAULT_COOKIE_NAME,
     sessionSecret,
     secureCookies: appUrl.startsWith("https://"),
-    stateFilePath: env.AUTH_STATE_FILE?.trim() || DEFAULT_STATE_FILE,
   };
+}
+
+/** The pre-Postgres JSON store, imported once by `import-legacy-auth.ts`. */
+export function resolveLegacyAuthStateFile(env: NodeJS.ProcessEnv) {
+  return env.AUTH_STATE_FILE?.trim() || DEFAULT_STATE_FILE;
 }
