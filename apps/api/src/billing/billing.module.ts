@@ -1,6 +1,11 @@
 import { Module } from "@nestjs/common";
 import { AuthModule } from "../auth/auth.module";
 import { CreditsModule } from "../credits/credits.module";
+import {
+  OPENROUTER_BALANCE_SERVICE,
+  OpenRouterModule,
+} from "../ai/openrouter.module";
+import type { OpenRouterBalanceService } from "../ai/openrouter-balance.service";
 import { CreditsService } from "../credits/credits.service";
 import { DATABASE, type Database } from "../database/database.types";
 import { NotificationsModule } from "../notifications/notifications.module";
@@ -16,7 +21,14 @@ import { StripeModule } from "./stripe.module";
 import { StripeWebhookService } from "./stripe-webhook.service";
 
 @Module({
-  imports: [AuthModule, CreditOffersModule, CreditsModule, NotificationsModule, StripeModule],
+  imports: [
+    AuthModule,
+    CreditOffersModule,
+    CreditsModule,
+    NotificationsModule,
+    OpenRouterModule,
+    StripeModule,
+  ],
   controllers: [BillingController],
   providers: [
     {
@@ -26,12 +38,25 @@ import { StripeWebhookService } from "./stripe-webhook.service";
     },
     {
       provide: CheckoutService,
-      inject: [STRIPE_CLIENT, CreditOffersService, PgCreditOrdersStore],
+      inject: [
+        STRIPE_CLIENT,
+        CreditOffersService,
+        PgCreditOrdersStore,
+        OPENROUTER_BALANCE_SERVICE,
+      ],
       useFactory: (
         stripe: StripeClient,
         offers: CreditOffersService,
         orders: PgCreditOrdersStore,
-      ) => new CheckoutService(resolveBillingConfig(process.env), stripe, offers, orders),
+        creditSupply: OpenRouterBalanceService,
+      ) =>
+        new CheckoutService(
+          resolveBillingConfig(process.env),
+          stripe,
+          offers,
+          orders,
+          creditSupply,
+        ),
     },
     {
       provide: StripeWebhookService,
