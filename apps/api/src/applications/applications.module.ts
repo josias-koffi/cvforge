@@ -1,12 +1,12 @@
 import { Module } from "@nestjs/common";
 import { OpenRouterModule, OPENROUTER_SERVICE } from "../ai/openrouter.module";
 import { AuthModule } from "../auth/auth.module";
+import { DATABASE, type Database } from "../database/database.types";
 import { CreditsModule } from "../credits/credits.module";
 import { CreditsService } from "../credits/credits.service";
-import { resolveApplicationsConfig } from "./applications.config";
 import { ApplicationsController } from "./applications.controller";
 import { ApplicationsService } from "./applications.service";
-import { FileApplicationsStore } from "./applications.store";
+import { PgApplicationsStore } from "./applications.pg-store";
 import { APPLICATIONS_STORE, type ApplicationsStore } from "./applications.types";
 import { ProfilesModule } from "../profiles/profiles.module";
 import { PROFILES_STORE, type ProfilesStore } from "../profiles/profiles.types";
@@ -17,10 +17,8 @@ import { PROFILES_STORE, type ProfilesStore } from "../profiles/profiles.types";
   providers: [
     {
       provide: APPLICATIONS_STORE,
-      useFactory: () =>
-        new FileApplicationsStore(
-          resolveApplicationsConfig(process.env).stateFilePath,
-        ),
+      inject: [DATABASE],
+      useFactory: (db: Database) => new PgApplicationsStore(db),
     },
     {
       provide: ApplicationsService,

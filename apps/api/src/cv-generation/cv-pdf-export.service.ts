@@ -171,7 +171,10 @@ export class CvPdfExportService {
     userEmail: string,
     applicationId: string,
   ): Promise<PdfExportResult> {
-    const application = this.store.findByIdForUserEmail(userEmail, applicationId);
+    const application = await this.store.findByIdForUserEmail(
+      userEmail,
+      applicationId,
+    );
 
     if (!application) {
       throw new NotFoundException("La candidature est introuvable.");
@@ -191,7 +194,10 @@ export class CvPdfExportService {
     userEmail: string,
     applicationId: string,
   ): Promise<PdfExportResult> {
-    const application = this.store.findByIdForUserEmail(userEmail, applicationId);
+    const application = await this.store.findByIdForUserEmail(
+      userEmail,
+      applicationId,
+    );
 
     if (!application) {
       throw new NotFoundException("La candidature est introuvable.");
@@ -211,7 +217,10 @@ export class CvPdfExportService {
     userEmail: string,
     applicationId: string,
   ): Promise<DocxExportResult> {
-    const application = this.store.findByIdForUserEmail(userEmail, applicationId);
+    const application = await this.store.findByIdForUserEmail(
+      userEmail,
+      applicationId,
+    );
 
     if (!application) {
       throw new NotFoundException("La candidature est introuvable.");
@@ -231,7 +240,10 @@ export class CvPdfExportService {
     userEmail: string,
     applicationId: string,
   ): Promise<DocxExportResult> {
-    const application = this.store.findByIdForUserEmail(userEmail, applicationId);
+    const application = await this.store.findByIdForUserEmail(
+      userEmail,
+      applicationId,
+    );
 
     if (!application) {
       throw new NotFoundException("La candidature est introuvable.");

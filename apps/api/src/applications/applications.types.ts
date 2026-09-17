@@ -10,10 +10,6 @@ import type {
   LetterDocumentVersionEntry,
 } from "@cvforge/types";
 
-export type ApplicationsConfig = {
-  stateFilePath: string;
-};
-
 export type StoredApplication = DraftApplication & {
   cvContent: CVDocumentContent | null;
   cvVersions?: CVDocumentVersionEntry[];
@@ -27,16 +23,16 @@ export type StoredApplication = DraftApplication & {
 export const APPLICATIONS_STORE = Symbol("APPLICATIONS_STORE");
 
 export type ApplicationsStore = {
-  createDraft: (application: StoredApplication) => StoredApplication;
+  createDraft: (application: StoredApplication) => Promise<StoredApplication>;
   findByIdForUserEmail: (
     userEmail: string,
     applicationId: string,
-  ) => StoredApplication | null;
-  listAll: () => StoredApplication[];
-  listByUserEmail: (userEmail: string) => StoredApplication[];
-  save: (application: StoredApplication) => StoredApplication;
-  findById: (applicationId: string) => StoredApplication | null;
-  deleteByUserEmail: (userEmail: string) => number;
+  ) => Promise<StoredApplication | null>;
+  listAll: () => Promise<StoredApplication[]>;
+  listByUserEmail: (userEmail: string) => Promise<StoredApplication[]>;
+  save: (application: StoredApplication) => Promise<StoredApplication>;
+  findById: (applicationId: string) => Promise<StoredApplication | null>;
+  deleteByUserEmail: (userEmail: string) => Promise<number>;
 };
 
 export type OfferExtractionResult = {

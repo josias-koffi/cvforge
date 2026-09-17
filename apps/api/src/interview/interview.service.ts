@@ -340,7 +340,10 @@ export class InterviewService {
     }
 
     const linkedApplication = session.applicationId
-      ? this.applicationsService.getOwnedApplication(userEmail, session.applicationId)
+      ? await this.applicationsService.getOwnedApplication(
+          userEmail,
+          session.applicationId,
+        )
       : null;
     const report = await this.generateInterviewReport(session, linkedApplication);
     const completedAt = report.createdAt;
@@ -354,7 +357,7 @@ export class InterviewService {
     this.store.save(session);
 
     if (linkedApplication) {
-      this.applicationsService.appendInterviewReport(
+      await this.applicationsService.appendInterviewReport(
         userEmail,
         linkedApplication.id,
         report,

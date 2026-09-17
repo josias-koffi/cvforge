@@ -71,7 +71,10 @@ export class CvGenerationService {
   ): Promise<CVDocumentContent> {
     assertProfileIsGroundable(request.promptProfile);
     assertLocalFieldsProvided(request.localFields);
-    const application = this.getApplicationForUser(userEmail, applicationId);
+    const application = await this.getApplicationForUser(
+      userEmail,
+      applicationId,
+    );
     const offerContext = this.buildOfferContext(application);
     await this.creditsService.assertSufficientCredits(
       AI_CREDIT_ACTION_CV_GENERATION,
@@ -111,7 +114,7 @@ export class CvGenerationService {
 
     const timestamp = new Date().toISOString();
     const resolvedTemplateId = cvTemplateId ?? application.cvTemplateId ?? null;
-    this.store.save({
+    await this.store.save({
       ...application,
       cvContent,
       cvGeneratedAt: timestamp,
@@ -136,7 +139,10 @@ export class CvGenerationService {
   ): Promise<LetterDocumentContent> {
     assertProfileIsGroundable(request.promptProfile);
     assertLocalFieldsProvided(request.localFields);
-    const application = this.getApplicationForUser(userEmail, applicationId);
+    const application = await this.getApplicationForUser(
+      userEmail,
+      applicationId,
+    );
     const offerContext = this.buildOfferContext(application);
     await this.creditsService.assertSufficientCredits(
       AI_CREDIT_ACTION_LETTER_GENERATION,
@@ -185,7 +191,7 @@ export class CvGenerationService {
     const timestamp = new Date().toISOString();
     const resolvedTemplateId =
       letterTemplateId ?? application.letterTemplateId ?? null;
-    this.store.save({
+    await this.store.save({
       ...application,
       letterContent,
       letterGeneratedAt: timestamp,
@@ -209,7 +215,10 @@ export class CvGenerationService {
     targetLanguage: unknown,
   ): Promise<CVDocumentContent> {
     const language = assertTargetLanguage(targetLanguage);
-    const application = this.getApplicationForUser(userEmail, applicationId);
+    const application = await this.getApplicationForUser(
+      userEmail,
+      applicationId,
+    );
 
     return translateStoredCv(this.translationDeps(), application, userEmail, language);
   }
@@ -220,7 +229,10 @@ export class CvGenerationService {
     targetLanguage: unknown,
   ): Promise<LetterDocumentContent> {
     const language = assertTargetLanguage(targetLanguage);
-    const application = this.getApplicationForUser(userEmail, applicationId);
+    const application = await this.getApplicationForUser(
+      userEmail,
+      applicationId,
+    );
 
     return translateStoredLetter(
       this.translationDeps(),
@@ -243,7 +255,7 @@ export class CvGenerationService {
     applicationId: string,
     request: CvContentUpdateRequest,
   ): Promise<CVDocumentContent> {
-    const application = this.store.findByIdForUserEmail(
+    const application = await this.store.findByIdForUserEmail(
       userEmail,
       applicationId,
     );
@@ -258,7 +270,7 @@ export class CvGenerationService {
       application.cvTemplateId ??
       (await this.resolveDefaultTemplateId(TEMPLATE_KIND_CV));
 
-    this.store.save({
+    await this.store.save({
       ...application,
       cvContent,
       cvGeneratedAt: application.cvGeneratedAt ?? timestamp,
@@ -276,19 +288,25 @@ export class CvGenerationService {
     return cvContent;
   }
 
-  getCvContent(
+  async getCvContent(
     userEmail: string,
     applicationId: string,
-  ): CVDocumentContent | null {
-    const application = this.getApplicationForUser(userEmail, applicationId);
+  ): Promise<CVDocumentContent | null> {
+    const application = await this.getApplicationForUser(
+      userEmail,
+      applicationId,
+    );
     return application.cvContent ?? null;
   }
 
-  listCvVersions(
+  async listCvVersions(
     userEmail: string,
     applicationId: string,
-  ): CVDocumentVersionEntry[] {
-    const application = this.getApplicationForUser(userEmail, applicationId);
+  ): Promise<CVDocumentVersionEntry[]> {
+    const application = await this.getApplicationForUser(
+      userEmail,
+      applicationId,
+    );
     return [...(application.cvVersions ?? [])].sort(
       (left, right) => right.versionNumber - left.versionNumber,
     );
@@ -299,14 +317,17 @@ export class CvGenerationService {
     applicationId: string,
     request: LetterContentUpdateRequest,
   ): Promise<LetterDocumentContent> {
-    const application = this.getApplicationForUser(userEmail, applicationId);
+    const application = await this.getApplicationForUser(
+      userEmail,
+      applicationId,
+    );
     const letterContent = normalizeUpdatedLetterContent(request.letterContent);
     const timestamp = new Date().toISOString();
     const letterTemplateId =
       application.letterTemplateId ??
       (await this.resolveDefaultTemplateId(TEMPLATE_KIND_LETTER));
 
-    this.store.save({
+    await this.store.save({
       ...application,
       letterContent,
       letterGeneratedAt: application.letterGeneratedAt ?? timestamp,
@@ -324,26 +345,32 @@ export class CvGenerationService {
     return letterContent;
   }
 
-  getLetterContent(
+  async getLetterContent(
     userEmail: string,
     applicationId: string,
-  ): LetterDocumentContent | null {
-    const application = this.getApplicationForUser(userEmail, applicationId);
+  ): Promise<LetterDocumentContent | null> {
+    const application = await this.getApplicationForUser(
+      userEmail,
+      applicationId,
+    );
     return application.letterContent ?? null;
   }
 
-  listLetterVersions(
+  async listLetterVersions(
     userEmail: string,
     applicationId: string,
-  ): LetterDocumentVersionEntry[] {
-    const application = this.getApplicationForUser(userEmail, applicationId);
+  ): Promise<LetterDocumentVersionEntry[]> {
+    const application = await this.getApplicationForUser(
+      userEmail,
+      applicationId,
+    );
     return [...(application.letterVersions ?? [])].sort(
       (left, right) => right.versionNumber - left.versionNumber,
     );
   }
 
-  private getApplicationForUser(userEmail: string, applicationId: string) {
-    const application = this.store.findByIdForUserEmail(
+  private async getApplicationForUser(userEmail: string, applicationId: string) {
+    const application = await this.store.findByIdForUserEmail(
       userEmail,
       applicationId,
     );
@@ -357,7 +384,7 @@ export class CvGenerationService {
 
   private buildOfferContext(
     application: NonNullable<
-      ReturnType<ApplicationsStore["findByIdForUserEmail"]>
+      Awaited<ReturnType<ApplicationsStore["findByIdForUserEmail"]>>
     >,
   ) {
     return {

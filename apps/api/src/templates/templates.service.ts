@@ -204,7 +204,7 @@ export class TemplatesService {
 
   async getAnalytics(): Promise<TemplatesAnalyticsPayload> {
     const templates = await this.store.list();
-    const applications = this.applicationsStore?.listAll() ?? [];
+    const applications = (await this.applicationsStore?.listAll()) ?? [];
     const usage = new Map<
       string,
       { cvCount: number; letterCount: number; lastUsedAt: string | null }

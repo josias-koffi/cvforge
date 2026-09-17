@@ -7,23 +7,17 @@ import {
   type InterviewReport,
   type LetterDocumentVersionEntry,
 } from "@cvforge/types";
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { dirname } from "node:path";
-import type {
-  ApplicationsStore,
-  StoredApplication,
-} from "./applications.types";
+import type { StoredApplication } from "./applications.types";
 
-type PersistedApplicationsState = {
-  applications: Record<string, StoredApplication>;
-};
-
-function createEmptyState(): PersistedApplicationsState {
-  return {
-    applications: {},
-  };
-}
-
+/**
+ * The repairs the JSON store used to apply on every read. Legacy records on
+ * disk are only valid because of them, and the Postgres columns are
+ * `not null`, so `import-legacy-applications` runs them before inserting.
+ *
+ * `normalizeCvVersions` and `normalizeLetterVersions` matter most: a v1
+ * snapshot was synthesised on read from `cvContent`/`letterContent` and never
+ * written down, so the import has to materialise it or the history disappears.
+ */
 function normalizeStatus(status: unknown): ApplicationStatus {
   return applicationStatuses.includes(status as ApplicationStatus)
     ? (status as ApplicationStatus)
@@ -60,7 +54,7 @@ function normalizeStatusHistory(
   return [{ changedAt: fallbackChangedAt, status: fallbackStatus }];
 }
 
-function normalizeStoredApplication(
+export function normalizeStoredApplication(
   application: StoredApplication,
 ): StoredApplication {
   const status = normalizeStatus(application.status);
@@ -178,7 +172,7 @@ function normalizeInterviewReports(value: unknown): InterviewReport[] {
     .filter((report): report is InterviewReport => report !== null);
 }
 
-function normalizeCvVersions(
+export function normalizeCvVersions(
   application: StoredApplication,
 ): CVDocumentVersionEntry[] {
   if (Array.isArray(application.cvVersions) && application.cvVersions.length > 0) {
@@ -204,7 +198,7 @@ function normalizeCvVersions(
   ];
 }
 
-function normalizeLetterVersions(
+export function normalizeLetterVersions(
   application: StoredApplication,
 ): LetterDocumentVersionEntry[] {
   if (
@@ -231,104 +225,4 @@ function normalizeLetterVersions(
       versionNumber: 1,
     },
   ];
-}
-
-export class FileApplicationsStore implements ApplicationsStore {
-  constructor(private readonly stateFilePath: string) {}
-
-  createDraft(application: StoredApplication) {
-    const state = this.readState();
-
-    state.applications[application.id] = normalizeStoredApplication(application);
-    this.writeState(state);
-
-    return application;
-  }
-
-  findById(applicationId: string) {
-    const state = this.readState();
-    return state.applications[applicationId] ?? null;
-  }
-
-  findByIdForUserEmail(userEmail: string, applicationId: string) {
-    const state = this.readState();
-    const application = state.applications[applicationId];
-
-    if (!application || application.userEmail !== userEmail) {
-      return null;
-    }
-
-    return application;
-  }
-
-  listAll() {
-    const state = this.readState();
-
-    return Object.values(state.applications)
-      .map(normalizeStoredApplication)
-      .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt));
-  }
-
-  listByUserEmail(userEmail: string) {
-    const state = this.readState();
-
-    return Object.values(state.applications)
-      .filter((application) => application.userEmail === userEmail)
-      .sort((left, right) => right.createdAt.localeCompare(left.createdAt));
-  }
-
-  save(application: StoredApplication) {
-    const state = this.readState();
-
-    state.applications[application.id] = normalizeStoredApplication(application);
-    this.writeState(state);
-
-    return application;
-  }
-
-  deleteByUserEmail(userEmail: string) {
-    const state = this.readState();
-    let removedCount = 0;
-
-    for (const [applicationId, application] of Object.entries(state.applications)) {
-      if (application.userEmail !== userEmail) {
-        continue;
-      }
-
-      delete state.applications[applicationId];
-      removedCount += 1;
-    }
-
-    this.writeState(state);
-
-    return removedCount;
-  }
-
-  private readState(): PersistedApplicationsState {
-    if (!existsSync(this.stateFilePath)) {
-      return createEmptyState();
-    }
-
-    try {
-      const parsed = JSON.parse(
-        readFileSync(this.stateFilePath, "utf8"),
-      ) as Partial<PersistedApplicationsState>;
-
-      return {
-        applications: Object.fromEntries(
-          Object.entries(parsed.applications ?? {}).map(([id, application]) => [
-            id,
-            normalizeStoredApplication(application as StoredApplication),
-          ]),
-        ),
-      };
-    } catch {
-      return createEmptyState();
-    }
-  }
-
-  private writeState(state: PersistedApplicationsState) {
-    mkdirSync(dirname(this.stateFilePath), { recursive: true });
-    writeFileSync(this.stateFilePath, JSON.stringify(state, null, 2));
-  }
 }

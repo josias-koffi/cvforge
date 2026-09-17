@@ -24,7 +24,7 @@ export type TemplatesStore = {
 };
 
 export type TemplatesAnalyticsStore = {
-  listAll: () => StoredApplication[];
+  listAll: () => Promise<StoredApplication[]>;
 };
 
 export type TemplateInput = {

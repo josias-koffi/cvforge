@@ -1,5 +1,4 @@
 import { resolve } from "node:path";
-import type { ApplicationsConfig } from "./applications.types";
 
 const DEFAULT_STATE_FILE = resolve(
   process.cwd(),
@@ -7,11 +6,10 @@ const DEFAULT_STATE_FILE = resolve(
   "applications-state.json",
 );
 
-export function resolveApplicationsConfig(
-  env: NodeJS.ProcessEnv,
-): ApplicationsConfig {
-  return {
-    stateFilePath:
-      env.APPLICATIONS_STATE_FILE?.trim() || DEFAULT_STATE_FILE,
-  };
+/**
+ * The pre-Postgres JSON store, imported once by
+ * `import-legacy-applications.ts`.
+ */
+export function resolveLegacyApplicationsStateFile(env: NodeJS.ProcessEnv) {
+  return env.APPLICATIONS_STATE_FILE?.trim() || DEFAULT_STATE_FILE;
 }

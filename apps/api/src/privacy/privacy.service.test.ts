@@ -1,6 +1,5 @@
-import { rmSync } from "node:fs";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { FileApplicationsStore } from "../applications/applications.store";
+import { PgApplicationsStore } from "../applications/applications.pg-store";
 import { PgAuthAccountStore } from "../auth/auth.pg-store";
 import { PgCreditLedgerStore } from "../credits/credits.pg-store";
 import {
@@ -21,14 +20,12 @@ afterAll(async () => {
   await testDatabase.close();
 });
 
-async function createService(testId: string) {
-  const applicationsPath = `/tmp/${testId}-applications.json`;
+async function createService() {
 
-  rmSync(applicationsPath, { force: true });
   await testDatabase.reset();
 
   const authStore = new PgAuthAccountStore(testDatabase.db);
-  const applicationsStore = new FileApplicationsStore(applicationsPath);
+  const applicationsStore = new PgApplicationsStore(testDatabase.db);
   const creditsStore = new PgCreditLedgerStore(testDatabase.db);
   const notificationsStore = new PgNotificationsStore(testDatabase.db);
   const profilesStore = new PgProfilesStore(testDatabase.db);
@@ -59,7 +56,7 @@ async function createService(testId: string) {
     expiresAt: "2026-04-25T08:00:00.000Z",
     role: "user",
   });
-  applicationsStore.createDraft({
+  await applicationsStore.createDraft({
     createdAt: "2026-04-23T08:00:00.000Z",
     cvContent: null,
     cvGeneratedAt: null,
@@ -145,7 +142,7 @@ async function createService(testId: string) {
 
 describe("PrivacyService", () => {
   it("exports the owned data plus admin references and retention policy", async () => {
-    const { service } = await createService("privacy-export");
+    const { service } = await createService();
 
     const result = await service.exportUserData("admin@example.com");
 
@@ -162,7 +159,7 @@ describe("PrivacyService", () => {
       creditsStore,
       notificationsStore,
       service,
-    } = await createService("privacy-delete");
+    } = await createService();
 
     const result = await service.deleteUserData(
       "admin@example.com",
@@ -174,7 +171,9 @@ describe("PrivacyService", () => {
     await expect(
       authStore.exportUserData("admin@example.com"),
     ).resolves.toMatchObject({ account: null });
-    expect(applicationsStore.listByUserEmail("admin@example.com")).toEqual([]);
+    await expect(
+      applicationsStore.listByUserEmail("admin@example.com"),
+    ).resolves.toEqual([]);
     await expect(
       notificationsStore.listByUserEmail("admin@example.com"),
     ).resolves.toEqual([]);
@@ -189,7 +188,7 @@ describe("PrivacyService", () => {
   });
 
   it("rejects mismatched confirmation emails", async () => {
-    const { service } = await createService("privacy-confirmation");
+    const { service } = await createService();
 
     await expect(
       service.deleteUserData("user@example.com", "other@example.com"),
