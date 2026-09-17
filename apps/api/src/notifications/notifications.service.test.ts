@@ -81,25 +81,25 @@ function createApplicationsStore(
   applications: StoredApplication[],
 ): ApplicationsStore {
   return {
-    createDraft(application) {
+    async createDraft(application) {
       return application;
     },
-    deleteByUserEmail() {
+    async deleteByUserEmail() {
       return 0;
     },
-    findById() {
+    async findById() {
       return null;
     },
-    findByIdForUserEmail() {
+    async findByIdForUserEmail() {
       return null;
     },
-    listAll() {
+    async listAll() {
       return applications;
     },
-    listByUserEmail(userEmail) {
+    async listByUserEmail(userEmail) {
       return applications.filter((application) => application.userEmail === userEmail);
     },
-    save(application) {
+    async save(application) {
       return application;
     },
   };

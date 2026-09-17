@@ -48,7 +48,7 @@ function createStore(initial: StoredApplication[]): ApplicationsStore {
   const applications = new Map(initial.map((item) => [item.id, item]));
 
   return {
-    deleteByUserEmail: (userEmail) => {
+    deleteByUserEmail: async (userEmail) => {
       const owned = [...applications.values()].filter(
         (application) => application.userEmail === userEmail,
       );
@@ -57,19 +57,19 @@ function createStore(initial: StoredApplication[]): ApplicationsStore {
 
       return owned.length;
     },
-    createDraft: (application) => {
+    createDraft: async (application) => {
       applications.set(application.id, application);
       return application;
     },
-    findById: (id) => applications.get(id) ?? null,
-    findByIdForUserEmail: (userEmail, id) => {
+    findById: async (id) => applications.get(id) ?? null,
+    findByIdForUserEmail: async (userEmail, id) => {
       const application = applications.get(id);
       return application?.userEmail === userEmail ? application : null;
     },
-    listAll: () => [...applications.values()],
-    listByUserEmail: (userEmail) =>
+    listAll: async () => [...applications.values()],
+    listByUserEmail: async (userEmail) =>
       [...applications.values()].filter((item) => item.userEmail === userEmail),
-    save: (application) => {
+    save: async (application) => {
       applications.set(application.id, application);
       return application;
     },
@@ -96,15 +96,15 @@ describe("ApplicationsService offer editing", () => {
     );
   });
 
-  it("returns the raw offer text alongside the application", () => {
-    const result = service.getOfferForUser("user@example.com", "app_1");
+  it("returns the raw offer text alongside the application", async () => {
+    const result = await service.getOfferForUser("user@example.com", "app_1");
 
     expect(result.offerText).toBe(OFFER_TEXT);
     expect(result.application).not.toHaveProperty("rawOfferText");
   });
 
-  it("updates the description, source link and extracted fields", () => {
-    const application = service.updateOffer("user@example.com", "app_1", {
+  it("updates the description, source link and extracted fields", async () => {
+    const application = await service.updateOffer("user@example.com", "app_1", {
       extracted: {
         companyName: "  ",
         requirements: ["TypeScript", " ", "NestJS"],
@@ -123,13 +123,13 @@ describe("ApplicationsService offer editing", () => {
     expect(application.offerUrl).toBe("https://jobs.example.org/42");
     expect(application.sourceLabel).toBe("https://jobs.example.org/42");
     expect(application.offerTextPreview).toBe("Nouveau descriptif complet");
-    expect(store.findById("app_1")?.rawOfferText).toBe(
+    expect((await store.findById("app_1"))?.rawOfferText).toBe(
       "Nouveau descriptif complet",
     );
   });
 
-  it("switches the source to manual text when the link is cleared", () => {
-    const application = service.updateOffer("user@example.com", "app_1", {
+  it("switches the source to manual text when the link is cleared", async () => {
+    const application = await service.updateOffer("user@example.com", "app_1", {
       offerUrl: "",
     });
 
@@ -137,24 +137,24 @@ describe("ApplicationsService offer editing", () => {
     expect(application.sourceType).toBe("text");
   });
 
-  it("rejects an invalid link, an empty title or an empty description", () => {
-    expect(() =>
+  it("rejects an invalid link, an empty title or an empty description", async () => {
+    await expect(
       service.updateOffer("user@example.com", "app_1", { offerUrl: "ftp://x" }),
-    ).toThrow(BadRequestException);
-    expect(() =>
+    ).rejects.toThrow(BadRequestException);
+    await expect(
       service.updateOffer("user@example.com", "app_1", {
         extracted: { title: " " },
       }),
-    ).toThrow(BadRequestException);
-    expect(() =>
+    ).rejects.toThrow(BadRequestException);
+    await expect(
       service.updateOffer("user@example.com", "app_1", { offerText: "" }),
-    ).toThrow(BadRequestException);
+    ).rejects.toThrow(BadRequestException);
   });
 
-  it("refuses to edit an offer owned by someone else", () => {
-    expect(() =>
+  it("refuses to edit an offer owned by someone else", async () => {
+    await expect(
       service.updateOffer("other@example.com", "app_1", { offerText: "x" }),
-    ).toThrow(NotFoundException);
+    ).rejects.toThrow(NotFoundException);
   });
 
   it("re-extracts structured fields from the stored description", async () => {
@@ -175,7 +175,7 @@ describe("ApplicationsService offer editing", () => {
   });
 
   it("rejects url re-extraction without a link and unknown sources", async () => {
-    store.save(createStoredApplication({ offerUrl: null, sourceType: "text" }));
+    await store.save(createStoredApplication({ offerUrl: null, sourceType: "text" }));
 
     await expect(
       service.reExtractOffer("user@example.com", "app_1", "url"),

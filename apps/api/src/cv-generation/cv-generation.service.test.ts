@@ -577,12 +577,12 @@ describe("CvGenerationService", () => {
   });
 
   describe("getCvContent", () => {
-    it("returns null when no CV has been generated", () => {
-      const result = service.getCvContent("user@test.example", "app-001");
+    it("returns null when no CV has been generated", async () => {
+      const result = await service.getCvContent("user@test.example", "app-001");
       expect(result).toBeNull();
     });
 
-    it("returns the stored cvContent", () => {
+    it("returns the stored cvContent", async () => {
       const app = makeStoredApplication({
         cvContent: VALID_CV_JSON,
         cvGeneratedAt: "2026-04-20T12:00:00.000Z",
@@ -591,23 +591,23 @@ describe("CvGenerationService", () => {
         app,
       );
 
-      const result = service.getCvContent("user@test.example", "app-001");
+      const result = await service.getCvContent("user@test.example", "app-001");
       expect(result).toEqual(VALID_CV_JSON);
     });
 
-    it("throws NotFoundException when application not found", () => {
+    it("throws NotFoundException when application not found", async () => {
       (store.findByIdForUserEmail as ReturnType<typeof vi.fn>).mockReturnValue(
         null,
       );
 
-      expect(() =>
+      await expect(
         service.getCvContent("user@test.example", "missing"),
-      ).toThrow(NotFoundException);
+      ).rejects.toThrow(NotFoundException);
     });
   });
 
   describe("getLetterContent", () => {
-    it("returns the stored letterContent", () => {
+    it("returns the stored letterContent", async () => {
       const app = makeStoredApplication({
         letterContent: VALID_LETTER_JSON,
         letterGeneratedAt: "2026-04-20T12:00:00.000Z",
@@ -616,7 +616,10 @@ describe("CvGenerationService", () => {
         app,
       );
 
-      const result = service.getLetterContent("user@test.example", "app-001");
+      const result = await service.getLetterContent(
+        "user@test.example",
+        "app-001",
+      );
       expect(result).toEqual(VALID_LETTER_JSON);
     });
   });

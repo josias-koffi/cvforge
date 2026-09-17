@@ -1,5 +1,6 @@
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";
+import { resolveLegacyApplicationsStateFile } from "../applications/applications.config";
 import { resolveLegacyAuthStateFile } from "../auth/auth.config";
 import { resolveLegacyCreditsStateFile } from "../credits/credits.config";
 import { resolveLegacyNotificationsStateFile } from "../notifications/notifications.config";
@@ -7,6 +8,7 @@ import { resolveLegacyProfilesStateFile } from "../profiles/profiles.config";
 import { resolveLegacyTemplatesStateFile } from "../templates/templates.config";
 import { createDatabaseClient, runMigrations } from "./database.client";
 import { resolveDatabaseConfig } from "./database.config";
+import { importLegacyApplications } from "./import-legacy-applications";
 import { importLegacyAuth } from "./import-legacy-auth";
 import { importLegacyCredits } from "./import-legacy-credits";
 import { importLegacyNotifications } from "./import-legacy-notifications";
@@ -51,6 +53,12 @@ async function main() {
       resolveLegacyTemplatesStateFile(process.env),
     );
     console.log(`[migrate] legacy templates: ${JSON.stringify(templates)}`);
+
+    const applications = await importLegacyApplications(
+      client.db,
+      resolveLegacyApplicationsStateFile(process.env),
+    );
+    console.log(`[migrate] legacy applications: ${JSON.stringify(applications)}`);
 
     const notifications = await importLegacyNotifications(
       client.db,

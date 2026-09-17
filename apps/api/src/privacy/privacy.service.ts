@@ -47,7 +47,8 @@ export class PrivacyService {
       exportedAt: new Date().toISOString(),
       notifications:
         await this.notificationsStore.listByUserEmail(normalizedEmail),
-      ownedApplications: this.applicationsStore.listByUserEmail(normalizedEmail),
+      ownedApplications:
+        await this.applicationsStore.listByUserEmail(normalizedEmail),
       ownedCredits: await this.creditsStore.listEntriesForUser(normalizedEmail),
       ownedProfiles: await this.profilesStore.findByUserEmail(normalizedEmail),
       retentionPolicy: PRIVACY_RETENTION_POLICY,
@@ -78,7 +79,8 @@ export class PrivacyService {
 
   async purgeAccount(userEmail: string): Promise<PrivacyDeletionSummary> {
     const normalizedEmail = normalizeEmail(userEmail);
-    const deletedApplications = this.applicationsStore.deleteByUserEmail(normalizedEmail);
+    const deletedApplications =
+      await this.applicationsStore.deleteByUserEmail(normalizedEmail);
     const deletedNotifications =
       await this.notificationsStore.deleteByUserEmail(normalizedEmail);
     const deletedProfiles =

@@ -262,12 +262,16 @@ export class ApplicationsService {
       | null = null,
   ) {}
 
-  listApplications(userEmail: string): DraftApplication[] {
-    return this.store.listByUserEmail(userEmail).map(stripRawOfferText);
+  async listApplications(userEmail: string): Promise<DraftApplication[]> {
+    const applications = await this.store.listByUserEmail(userEmail);
+
+    return applications.map(stripRawOfferText);
   }
 
-  listApplicationSummary(userEmail: string): ApplicationsKpiSummary {
-    const applications = this.store.listByUserEmail(userEmail);
+  async listApplicationSummary(
+    userEmail: string,
+  ): Promise<ApplicationsKpiSummary> {
+    const applications = await this.store.listByUserEmail(userEmail);
     const statusCounts = createEmptyStatusCounts();
 
     applications.forEach((application) => {
@@ -293,8 +297,14 @@ export class ApplicationsService {
     };
   }
 
-  getApplicationForUser(userEmail: string, applicationId: string): DraftApplication {
-    const application = this.store.findByIdForUserEmail(userEmail, applicationId);
+  async getApplicationForUser(
+    userEmail: string,
+    applicationId: string,
+  ): Promise<DraftApplication> {
+    const application = await this.store.findByIdForUserEmail(
+      userEmail,
+      applicationId,
+    );
 
     if (!application) {
       throw new NotFoundException("La candidature est introuvable.");
@@ -303,8 +313,14 @@ export class ApplicationsService {
     return stripRawOfferText(application);
   }
 
-  getOwnedApplication(userEmail: string, applicationId: string): StoredApplication {
-    const application = this.store.findByIdForUserEmail(userEmail, applicationId);
+  async getOwnedApplication(
+    userEmail: string,
+    applicationId: string,
+  ): Promise<StoredApplication> {
+    const application = await this.store.findByIdForUserEmail(
+      userEmail,
+      applicationId,
+    );
 
     if (!application) {
       throw new NotFoundException("La candidature est introuvable.");
@@ -313,12 +329,12 @@ export class ApplicationsService {
     return application;
   }
 
-  appendInterviewReport(
+  async appendInterviewReport(
     userEmail: string,
     applicationId: string,
     report: InterviewReport,
-  ): DraftApplication {
-    const application = this.getOwnedApplication(userEmail, applicationId);
+  ): Promise<DraftApplication> {
+    const application = await this.getOwnedApplication(userEmail, applicationId);
     const timestamp = report.createdAt;
     const updatedApplication: StoredApplication = {
       ...application,
@@ -326,19 +342,19 @@ export class ApplicationsService {
       updatedAt: timestamp,
     };
 
-    return stripRawOfferText(this.store.save(updatedApplication));
+    return stripRawOfferText(await this.store.save(updatedApplication));
   }
 
-  updateStatus(
+  async updateStatus(
     userEmail: string,
     applicationId: string,
     nextStatusValue: string,
-  ): DraftApplication {
+  ): Promise<DraftApplication> {
     if (!isApplicationStatus(nextStatusValue)) {
       throw new BadRequestException("Le statut cible est invalide.");
     }
 
-    const application = this.getOwnedApplication(userEmail, applicationId);
+    const application = await this.getOwnedApplication(userEmail, applicationId);
 
     if (application.status === nextStatusValue) {
       throw new BadRequestException("La candidature possede deja ce statut.");
@@ -368,7 +384,7 @@ export class ApplicationsService {
       updatedAt: timestamp,
     };
 
-    return stripRawOfferText(this.store.save(updatedApplication));
+    return stripRawOfferText(await this.store.save(updatedApplication));
   }
 
   async importFromUrl(
@@ -406,7 +422,7 @@ export class ApplicationsService {
       throw new BadRequestException("Un identifiant de profil est requis.");
     }
 
-    const application = this.getOwnedApplication(userEmail, applicationId);
+    const application = await this.getOwnedApplication(userEmail, applicationId);
 
     if (
       profileId &&
@@ -416,11 +432,11 @@ export class ApplicationsService {
       throw new NotFoundException("Le profil est introuvable.");
     }
 
-    return stripRawOfferText(this.store.save({ ...application, profileId }));
+    return stripRawOfferText(await this.store.save({ ...application, profileId }));
   }
 
-  getOfferForUser(userEmail: string, applicationId: string) {
-    const application = this.getOwnedApplication(userEmail, applicationId);
+  async getOfferForUser(userEmail: string, applicationId: string) {
+    const application = await this.getOwnedApplication(userEmail, applicationId);
 
     return {
       application: stripRawOfferText(application),
@@ -428,12 +444,12 @@ export class ApplicationsService {
     };
   }
 
-  updateOffer(
+  async updateOffer(
     userEmail: string,
     applicationId: string,
     patch: OfferUpdateInput,
-  ): DraftApplication {
-    const application = this.getOwnedApplication(userEmail, applicationId);
+  ): Promise<DraftApplication> {
+    const application = await this.getOwnedApplication(userEmail, applicationId);
     const offerUrl =
       patch.offerUrl === undefined
         ? application.offerUrl
@@ -449,7 +465,7 @@ export class ApplicationsService {
       : application.extracted;
 
     return stripRawOfferText(
-      this.store.save({
+      await this.store.save({
         ...application,
         ...describeSource(offerUrl),
         extracted,
@@ -465,7 +481,7 @@ export class ApplicationsService {
     applicationId: string,
     source: string,
   ): Promise<DraftApplication> {
-    const application = this.getOwnedApplication(userEmail, applicationId);
+    const application = await this.getOwnedApplication(userEmail, applicationId);
     let extraction: OfferExtractionResult;
 
     if (source === APPLICATION_SOURCE_URL) {
@@ -487,7 +503,7 @@ export class ApplicationsService {
     }
 
     return stripRawOfferText(
-      this.store.save({
+      await this.store.save({
         ...application,
         extracted: extraction.extracted,
         offerTextPreview: extraction.offerTextPreview,
@@ -500,10 +516,10 @@ export class ApplicationsService {
     );
   }
 
-  private createDraftFromExtraction(
+  private async createDraftFromExtraction(
     userEmail: string,
     extraction: OfferExtractionResult,
-  ): DraftApplication {
+  ): Promise<DraftApplication> {
     const timestamp = new Date().toISOString();
     const storedApplication: StoredApplication = {
       createdAt: timestamp,
@@ -529,7 +545,7 @@ export class ApplicationsService {
       extracted: extraction.extracted,
     };
 
-    return stripRawOfferText(this.store.createDraft(storedApplication));
+    return stripRawOfferText(await this.store.createDraft(storedApplication));
   }
 
   private async extractOffer(

@@ -18,7 +18,7 @@ function createStore(): ApplicationsStore {
   const applications = new Map<string, StoredApplication>();
 
   return {
-    deleteByUserEmail(userEmail) {
+    async deleteByUserEmail(userEmail) {
       const owned = [...applications.values()].filter(
         (application) => application.userEmail === userEmail,
       );
@@ -27,14 +27,14 @@ function createStore(): ApplicationsStore {
 
       return owned.length;
     },
-    createDraft(application) {
+    async createDraft(application) {
       applications.set(application.id, application);
       return application;
     },
-    findById(applicationId) {
+    async findById(applicationId) {
       return applications.get(applicationId) ?? null;
     },
-    findByIdForUserEmail(userEmail, applicationId) {
+    async findByIdForUserEmail(userEmail, applicationId) {
       const application = applications.get(applicationId);
 
       if (!application || application.userEmail !== userEmail) {
@@ -43,15 +43,15 @@ function createStore(): ApplicationsStore {
 
       return application;
     },
-    listByUserEmail(userEmail) {
+    async listByUserEmail(userEmail) {
       return [...applications.values()].filter(
         (application) => application.userEmail === userEmail,
       );
     },
-    listAll() {
+    async listAll() {
       return [...applications.values()];
     },
-    save(application) {
+    async save(application) {
       applications.set(application.id, application);
       return application;
     },
@@ -202,7 +202,7 @@ describe("ApplicationsService", () => {
     );
 
     await service.importFromUrl("user@example.com", "https://example.com/jobs/123");
-    const applications = service.listApplications("user@example.com") as Array<
+    const applications = await service.listApplications("user@example.com") as Array<
       DraftApplication & { rawOfferText?: string }
     >;
 
@@ -286,7 +286,7 @@ describe("ApplicationsService", () => {
       "user@example.com",
       "https://example.com/jobs/123",
     );
-    const updatedApplication = service.updateStatus(
+    const updatedApplication = await service.updateStatus(
       "user@example.com",
       application.id,
       "sent",
@@ -322,21 +322,21 @@ describe("ApplicationsService", () => {
       "https://example.com/jobs/123",
     );
 
-    await expect(() =>
+    await expect(
       service.updateStatus("user@example.com", application.id, "offer_received"),
-    ).toThrow(ConflictException);
+    ).rejects.toThrow(ConflictException);
   });
 
-  it("rejects unknown applications during a status change", () => {
+  it("rejects unknown applications during a status change", async () => {
     const service = new ApplicationsService(
       createStore(),
       openRouterService as never,
       creditsService,
     );
 
-    expect(() =>
+    await expect(
       service.updateStatus("user@example.com", "missing", "sent"),
-    ).toThrow(NotFoundException);
+    ).rejects.toThrow(NotFoundException);
   });
 
   it("builds a KPI summary from application statuses", async () => {
@@ -374,12 +374,12 @@ describe("ApplicationsService", () => {
       "https://example.com/jobs/3",
     );
 
-    service.updateStatus("user@example.com", first.id, "sent");
-    service.updateStatus("user@example.com", first.id, "interview_scheduled");
-    service.updateStatus("user@example.com", second.id, "sent");
-    service.updateStatus("user@example.com", second.id, "rejected");
+    await service.updateStatus("user@example.com", first.id, "sent");
+    await service.updateStatus("user@example.com", first.id, "interview_scheduled");
+    await service.updateStatus("user@example.com", second.id, "sent");
+    await service.updateStatus("user@example.com", second.id, "rejected");
 
-    const summary = service.listApplicationSummary("user@example.com");
+    const summary = await service.listApplicationSummary("user@example.com");
 
     expect(summary).toEqual({
       respondedCount: 2,
@@ -412,22 +412,22 @@ describe("ApplicationsService", () => {
       + "Requirements include Node.js, TypeScript, PostgreSQL, and cloud infrastructure experience.";
 
     const created = await service.importFromText("user@example.com", offerText);
-    const found = service.getApplicationForUser("user@example.com", created.id);
+    const found = await service.getApplicationForUser("user@example.com", created.id);
 
     expect(found.id).toBe(created.id);
     expect(found).not.toHaveProperty("rawOfferText");
     expect(found).not.toHaveProperty("cvContent");
   });
 
-  it("getApplicationForUser throws NotFoundException for unknown id", () => {
+  it("getApplicationForUser throws NotFoundException for unknown id", async () => {
     const service = new ApplicationsService(
       createStore(),
       openRouterService as never,
       creditsService,
     );
 
-    expect(() =>
+    await expect(
       service.getApplicationForUser("user@example.com", "not-found"),
-    ).toThrow(NotFoundException);
+    ).rejects.toThrow(NotFoundException);
   });
 });

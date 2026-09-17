@@ -197,7 +197,9 @@ export class NotificationsService {
     );
     const now = new Date();
 
-    for (const application of this.applicationsStore.listByUserEmail(userEmail)) {
+    const owned = await this.applicationsStore.listByUserEmail(userEmail);
+
+    for (const application of owned) {
       if (
         application.status !== APPLICATION_STATUS_SENT ||
         existingApplicationReminderIds.has(application.id)

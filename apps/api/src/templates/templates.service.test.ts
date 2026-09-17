@@ -202,7 +202,7 @@ describe("TemplatesService", () => {
       },
     ]);
     const applicationsStore: TemplatesAnalyticsStore = {
-      listAll: () =>
+      listAll: async () =>
         [
           makeApplication({
             cvGeneratedAt: "2026-04-21T10:00:00.000Z",
