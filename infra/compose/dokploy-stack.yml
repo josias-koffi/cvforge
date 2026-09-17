@@ -56,6 +56,9 @@ services:
       NODE_ENV: production
       # The landing only links to the app; /login redirects to this origin.
       APP_URL: https://${WEB_DOMAIN}
+      # Credit offers for the pricing section. Public host, never `http://api`:
+      # see the web service above.
+      API_INTERNAL_URL: https://${API_DOMAIN}
     expose:
       - "3001"
     healthcheck:

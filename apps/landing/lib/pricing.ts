@@ -4,10 +4,8 @@ import {
   AI_CREDIT_ACTION_LETTER_GENERATION,
   AI_CREDIT_ACTION_OFFER_ENRICHMENT,
   AI_CREDIT_COSTS,
-  creditPackIds,
-  creditPacks,
   type AiCreditAction,
-  type CreditPackId,
+  type PublicCreditOffer,
 } from "@cvforge/types"
 
 import type { Locale } from "@/lib/i18n"
@@ -26,11 +24,14 @@ export const pricedActions: AiCreditAction[] = [
 ]
 
 export interface PackSummary {
-  id: CreditPackId
+  id: string
   label: string
+  description: string
+  features: string[]
   credits: number
   applications: number
   price: string
+  featured: boolean
 }
 
 export function formatPrice(priceCents: number, locale: Locale) {
@@ -46,17 +47,23 @@ export function formatNumber(value: number, locale: Locale) {
   )
 }
 
-export function getPackSummaries(locale: Locale): PackSummary[] {
-  return creditPackIds.map((id) => {
-    const pack = creditPacks[id]
-    return {
-      id,
-      label: pack.label,
-      credits: pack.credits,
-      applications: Math.floor(pack.credits / CREDITS_PER_APPLICATION),
-      price: formatPrice(pack.priceCents, locale),
-    }
-  })
+/** Offers come from the API already sorted in the admin's display order. */
+export function toPackSummaries(
+  offers: PublicCreditOffer[],
+  locale: Locale
+): PackSummary[] {
+  return offers.map((offer) => ({
+    id: offer.id,
+    label: offer.name[locale] || offer.name.fr,
+    description: offer.description[locale] || offer.description.fr,
+    features: offer.features[locale].length
+      ? offer.features[locale]
+      : offer.features.fr,
+    credits: offer.credits,
+    applications: Math.floor(offer.credits / CREDITS_PER_APPLICATION),
+    price: formatPrice(offer.priceCents, locale),
+    featured: offer.isFeatured,
+  }))
 }
 
 export function creditCost(action: AiCreditAction) {

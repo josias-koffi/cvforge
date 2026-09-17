@@ -71,7 +71,9 @@ export interface LandingDictionary {
     creditsLabel: string
     applicationsLabel: string
     buy: string
-    perks: string[]
+    /** Shown instead of the packs when the API cannot serve the offers. */
+    unavailable: string
+    unavailableCta: string
     costsTitle: string
     costsNote: string
     creditUnit: string

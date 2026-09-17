@@ -156,12 +156,9 @@ export const fr: LandingDictionary = {
     creditsLabel: "{credits} crédits",
     applicationsLabel: "≈ {count} candidatures complètes",
     buy: "Choisir {pack}",
-    perks: [
-      "Crédits sans date d'expiration",
-      "Paiement unique et sécurisé via Stripe",
-      "Toutes les fonctionnalités incluses",
-      "TVA incluse",
-    ],
+    unavailable:
+      "Les offres ne peuvent pas être affichées pour le moment. Retrouvez-les dans l'application.",
+    unavailableCta: "Voir les offres",
     costsTitle: "Ce que coûte chaque action",
     costsNote:
       "Une candidature complète (analyse de l'offre, CV et lettre) consomme {credits} crédits.",

@@ -155,12 +155,9 @@ export const en: LandingDictionary = {
     creditsLabel: "{credits} credits",
     applicationsLabel: "≈ {count} complete applications",
     buy: "Choose {pack}",
-    perks: [
-      "Credits never expire",
-      "One-time secure payment via Stripe",
-      "Every feature included",
-      "VAT included",
-    ],
+    unavailable:
+      "Our packs cannot be displayed right now. You can find them in the app.",
+    unavailableCta: "See the packs",
     costsTitle: "What each action costs",
     costsNote:
       "A complete application (offer analysis, resume and letter) uses {credits} credits.",
