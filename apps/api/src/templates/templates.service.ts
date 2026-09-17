@@ -20,6 +20,7 @@ import type {
   TemplatesStore,
   TemplateInput,
 } from "./templates.types";
+import { toCsv } from "../shared/csv";
 
 function normalizeTemplateKind(value: unknown) {
   return value === TEMPLATE_KIND_LETTER ? TEMPLATE_KIND_LETTER : TEMPLATE_KIND_CV;
@@ -313,7 +314,7 @@ export class TemplatesService {
     });
 
     return {
-      csv: toCsv(rows),
+      csv: toCsv(TEMPLATE_EXPORT_HEADERS, rows),
       summary,
     };
   }
@@ -357,35 +358,16 @@ export class TemplatesService {
   }
 }
 
-function escapeCsvCell(value: string) {
-  if (/[",\n]/.test(value)) {
-    return `"${value.replaceAll('"', '""')}"`;
-  }
-
-  return value;
-}
-
-function toCsv(rows: TemplateExportRow[]) {
-  const headers: Array<keyof TemplateExportRow> = [
-    "templateId",
-    "name",
-    "kind",
-    "locale",
-    "active",
-    "isDefault",
-    "categories",
-    "generatedCvCount",
-    "generatedLetterCount",
-    "lastUsedAt",
-    "updatedAt",
-  ];
-
-  const lines = [
-    headers.join(","),
-    ...rows.map((row) =>
-      headers.map((header) => escapeCsvCell(row[header])).join(","),
-    ),
-  ];
-
-  return `${lines.join("\n")}\n`;
-}
+const TEMPLATE_EXPORT_HEADERS: Array<keyof TemplateExportRow> = [
+  "templateId",
+  "name",
+  "kind",
+  "locale",
+  "active",
+  "isDefault",
+  "categories",
+  "generatedCvCount",
+  "generatedLetterCount",
+  "lastUsedAt",
+  "updatedAt",
+];

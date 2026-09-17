@@ -7,6 +7,7 @@ import {
   BriefcaseBusinessIcon,
   CoinsIcon,
   LayoutDashboardIcon,
+  ChartColumnIcon,
   PackageIcon,
   PlusIcon,
   UserRoundIcon,
@@ -32,6 +33,7 @@ import {
 const adminItems = [
   { href: "/admin/users", icon: UsersIcon, title: "Utilisateurs" },
   { href: "/admin/offers", icon: PackageIcon, title: "Offres de crédits" },
+  { href: "/admin/metrics", icon: ChartColumnIcon, title: "Métriques" },
 ]
 
 const mainItems = [
