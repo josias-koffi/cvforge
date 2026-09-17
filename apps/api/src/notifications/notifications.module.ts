@@ -4,6 +4,7 @@ import { AuthModule } from "../auth/auth.module";
 import { SMTP_CONFIG, type SmtpConfig } from "../smtp/smtp.config";
 import { SmtpModule } from "../smtp/smtp.module";
 import { ApplicationsModule } from "../applications/applications.module";
+import { DATABASE, type Database } from "../database/database.types";
 import {
   APPLICATIONS_STORE,
   type ApplicationsStore,
@@ -16,7 +17,7 @@ import {
   NotificationsMailerService,
 } from "./notifications-mailer.service";
 import { NotificationsService } from "./notifications.service";
-import { FileNotificationsStore } from "./notifications.store";
+import { PgNotificationsStore } from "./notifications.pg-store";
 import {
   NOTIFICATIONS_STORE,
   type NotificationsStore,
@@ -58,10 +59,8 @@ function readEmailFrom(env: NodeJS.ProcessEnv) {
     NotificationsMailerService,
     {
       provide: NOTIFICATIONS_STORE,
-      useFactory: () =>
-        new FileNotificationsStore(
-          resolveNotificationsConfig(process.env).stateFilePath,
-        ),
+      inject: [DATABASE],
+      useFactory: (db: Database) => new PgNotificationsStore(db),
     },
     {
       provide: NotificationsService,

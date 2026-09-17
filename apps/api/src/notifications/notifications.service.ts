@@ -89,7 +89,9 @@ export class NotificationsService {
 
   async listNotifications(userEmail: string) {
     await this.ensureDueNotifications(userEmail);
-    return sortNotifications(this.notificationsStore.listByUserEmail(userEmail));
+    return sortNotifications(
+      await this.notificationsStore.listByUserEmail(userEmail),
+    );
   }
 
   async getSummary(userEmail: string): Promise<NotificationSummary> {
@@ -103,7 +105,7 @@ export class NotificationsService {
 
   async markAsRead(userEmail: string, notificationId: string) {
     await this.ensureDueNotifications(userEmail);
-    const notification = this.notificationsStore.findByIdForUserEmail(
+    const notification = await this.notificationsStore.findByIdForUserEmail(
       userEmail,
       notificationId,
     );
@@ -124,28 +126,32 @@ export class NotificationsService {
     return this.notificationsStore.save(updatedNotification);
   }
 
-  getPreferences(userEmail: string): NotificationPreferencesResponse {
+  async getPreferences(
+    userEmail: string,
+  ): Promise<NotificationPreferencesResponse> {
     const { provider, ready } = this.notificationsMailer.getDeliveryStatus();
 
     return {
       emailDeliveryReady: ready,
-      preferences: this.readPreferences(userEmail),
+      preferences: await this.readPreferences(userEmail),
       provider,
     };
   }
 
-  updatePreferences(
+  async updatePreferences(
     userEmail: string,
     partial: Partial<NotificationPreferences["email"]>,
-  ): NotificationPreferencesResponse {
+  ): Promise<NotificationPreferencesResponse> {
+    const current = await this.readPreferences(userEmail);
     const nextPreferences: NotificationPreferences = {
       email: {
-        ...this.readPreferences(userEmail).email,
+        ...current.email,
         ...partial,
       },
     };
 
-    this.notificationsStore.savePreferences(userEmail, nextPreferences);
+    await this.notificationsStore.savePreferences(userEmail, nextPreferences);
+
     return this.getPreferences(userEmail);
   }
 
@@ -155,7 +161,7 @@ export class NotificationsService {
     offerName: string;
     userEmail: string;
   }) {
-    const preferences = this.readPreferences(input.userEmail);
+    const preferences = await this.readPreferences(input.userEmail);
 
     if (!preferences.email.creditPurchaseConfirmed) {
       return;
@@ -169,13 +175,17 @@ export class NotificationsService {
     });
   }
 
-  private readPreferences(userEmail: string) {
-    return this.notificationsStore.readPreferences(userEmail) ?? createDefaultPreferences();
+  private async readPreferences(userEmail: string) {
+    return (
+      (await this.notificationsStore.readPreferences(userEmail)) ??
+      createDefaultPreferences()
+    );
   }
 
   private async ensureDueNotifications(userEmail: string) {
-    const notifications = this.notificationsStore.listByUserEmail(userEmail);
-    const preferences = this.readPreferences(userEmail);
+    const notifications =
+      await this.notificationsStore.listByUserEmail(userEmail);
+    const preferences = await this.readPreferences(userEmail);
     const existingApplicationReminderIds = new Set(
       notifications
         .filter(
@@ -210,7 +220,7 @@ export class NotificationsService {
         continue;
       }
 
-      const notification = this.notificationsStore.add(
+      const notification = await this.notificationsStore.add(
         buildReminderNotification(application, reminderAt.toISOString()),
       );
       existingApplicationReminderIds.add(application.id);

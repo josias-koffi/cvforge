@@ -7,26 +7,27 @@ import type {
 
 export type NotificationsConfig = {
   followUpDelayDays: number;
-  stateFilePath: string;
 };
 
 /** DI token for the notifications store. */
 export const NOTIFICATIONS_STORE = Symbol("NOTIFICATIONS_STORE");
 
 export type NotificationsStore = {
-  add: (notification: InAppNotification) => InAppNotification;
+  add: (notification: InAppNotification) => Promise<InAppNotification>;
   findByIdForUserEmail: (
     userEmail: string,
     notificationId: string,
-  ) => InAppNotification | null;
-  listByUserEmail: (userEmail: string) => InAppNotification[];
-  readPreferences: (userEmail: string) => NotificationPreferences | null;
-  save: (notification: InAppNotification) => InAppNotification;
+  ) => Promise<InAppNotification | null>;
+  listByUserEmail: (userEmail: string) => Promise<InAppNotification[]>;
+  readPreferences: (
+    userEmail: string,
+  ) => Promise<NotificationPreferences | null>;
+  save: (notification: InAppNotification) => Promise<InAppNotification>;
   savePreferences: (
     userEmail: string,
     preferences: NotificationPreferences,
-  ) => NotificationPreferences;
-  deleteByUserEmail: (userEmail: string) => number;
+  ) => Promise<NotificationPreferences>;
+  deleteByUserEmail: (userEmail: string) => Promise<number>;
 };
 
 export type NotificationsListResponse = {

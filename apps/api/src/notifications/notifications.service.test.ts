@@ -1,17 +1,26 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
 import {
   APPLICATION_STATUS_SENT,
   APPLICATION_SOURCE_URL,
   NOTIFICATION_TYPE_APPLICATION_FOLLOW_UP,
-  type NotificationPreferences,
   type InAppNotification,
 } from "@cvforge/types";
 import type { NotificationsMailerService } from "./notifications-mailer.service";
+import {
+  createTestDatabase,
+  type TestDatabase,
+} from "../database/testing/test-database";
+import { PgNotificationsStore } from "./notifications.pg-store";
 import { NotificationsService } from "./notifications.service";
-import type {
-  NotificationsConfig,
-  NotificationsStore,
-} from "./notifications.types";
+import type { NotificationsConfig } from "./notifications.types";
 import type {
   ApplicationsStore,
   StoredApplication,
@@ -56,57 +65,16 @@ function createApplication(overrides: Partial<StoredApplication> = {}): StoredAp
   };
 }
 
-function createNotificationsStore(initial: InAppNotification[] = []): NotificationsStore {
-  const notifications = [...initial];
-  const preferencesByUser = new Map<string, NotificationPreferences>();
+let testDatabase: TestDatabase;
+let notificationsStore: PgNotificationsStore;
 
-  return {
-    add(notification) {
-      notifications.push(notification);
-      return notification;
-    },
-    deleteByUserEmail(userEmail) {
-      const owned = notifications.filter(
-        (notification) => notification.userEmail === userEmail,
-      );
+/** Seeds the real Postgres-backed store, empty between tests. */
+async function createNotificationsStore(initial: InAppNotification[] = []) {
+  for (const notification of initial) {
+    await notificationsStore.add(notification);
+  }
 
-      owned.forEach((notification) => {
-        notifications.splice(notifications.indexOf(notification), 1);
-      });
-      preferencesByUser.delete(userEmail);
-
-      return owned.length;
-    },
-    findByIdForUserEmail(userEmail, notificationId) {
-      return (
-        notifications.find(
-          (notification) =>
-            notification.userEmail === userEmail && notification.id === notificationId,
-        ) ?? null
-      );
-    },
-    listByUserEmail(userEmail) {
-      return notifications.filter((notification) => notification.userEmail === userEmail);
-    },
-    readPreferences(userEmail) {
-      return preferencesByUser.get(userEmail) ?? null;
-    },
-    save(notification) {
-      const index = notifications.findIndex((entry) => entry.id === notification.id);
-
-      if (index === -1) {
-        notifications.push(notification);
-      } else {
-        notifications[index] = notification;
-      }
-
-      return notification;
-    },
-    savePreferences(userEmail, preferences) {
-      preferencesByUser.set(userEmail, preferences);
-      return preferences;
-    },
-  };
+  return notificationsStore;
 }
 
 function createApplicationsStore(
@@ -140,7 +108,6 @@ function createApplicationsStore(
 describe("NotificationsService", () => {
   const config: NotificationsConfig = {
     followUpDelayDays: 7,
-    stateFilePath: "/tmp/notifications-state.json",
   };
   const notificationsMailer = {
     getDeliveryStatus: vi.fn(() => ({
@@ -151,7 +118,17 @@ describe("NotificationsService", () => {
     sendCreditPurchaseConfirmationEmail: vi.fn(),
   } as unknown as NotificationsMailerService;
 
-  beforeEach(() => {
+  beforeAll(async () => {
+    testDatabase = await createTestDatabase();
+    notificationsStore = new PgNotificationsStore(testDatabase.db);
+  });
+
+  afterAll(async () => {
+    await testDatabase.close();
+  });
+
+  beforeEach(async () => {
+    await testDatabase.reset();
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-04-22T08:00:00.000Z"));
     vi.mocked(notificationsMailer.sendApplicationFollowUpEmail).mockReset();
@@ -160,7 +137,7 @@ describe("NotificationsService", () => {
 
   it("creates a single J+7 follow-up reminder for sent applications without response", async () => {
     const service = new NotificationsService(
-      createNotificationsStore(),
+      await createNotificationsStore(),
       createApplicationsStore([createApplication()]),
       config,
       notificationsMailer,
@@ -176,7 +153,7 @@ describe("NotificationsService", () => {
   });
 
   it("does not duplicate reminders when listing multiple times", async () => {
-    const store = createNotificationsStore();
+    const store = await createNotificationsStore();
     const service = new NotificationsService(
       store,
       createApplicationsStore([createApplication()]),
@@ -192,7 +169,7 @@ describe("NotificationsService", () => {
   });
 
   it("marks notifications as read and updates the unread summary", async () => {
-    const store = createNotificationsStore();
+    const store = await createNotificationsStore();
     const service = new NotificationsService(
       store,
       createApplicationsStore([createApplication()]),
@@ -214,26 +191,28 @@ describe("NotificationsService", () => {
     });
   });
 
-  it("persists notification preferences per user", () => {
+  it("persists notification preferences per user", async () => {
     const service = new NotificationsService(
-      createNotificationsStore(),
+      await createNotificationsStore(),
       createApplicationsStore([createApplication()]),
       config,
       notificationsMailer,
     );
 
-    const updated = service.updatePreferences("user@example.com", {
+    const updated = await service.updatePreferences("user@example.com", {
       applicationFollowUp: false,
     });
 
     expect(updated.preferences.email.applicationFollowUp).toBe(false);
     expect(updated.preferences.email.creditPurchaseConfirmed).toBe(true);
-    expect(service.getPreferences("user@example.com").provider).toBe("resend");
+    await expect(service.getPreferences("user@example.com")).resolves.toMatchObject(
+      { provider: "resend" },
+    );
   });
 
   it("skips follow-up email delivery when the user disabled that preference", async () => {
-    const store = createNotificationsStore();
-    store.savePreferences("user@example.com", {
+    const store = await createNotificationsStore();
+    await store.savePreferences("user@example.com", {
       email: {
         applicationFollowUp: false,
         creditPurchaseConfirmed: true,
