@@ -40,9 +40,10 @@ import { PROFILES_STORE, type ProfilesStore } from "../profiles/profiles.types";
           store,
           openRouterService,
           creditsService,
-          (userEmail) =>
-            profilesStore.findByUserEmail(userEmail)?.profiles.map(({ id }) => id) ??
-            [],
+          async (userEmail) =>
+            (await profilesStore.findByUserEmail(userEmail))?.profiles.map(
+              ({ id }) => id,
+            ) ?? [],
         ),
     },
   ],

@@ -8,7 +8,7 @@ import {
   type TestDatabase,
 } from "../database/testing/test-database";
 import { PgNotificationsStore } from "../notifications/notifications.pg-store";
-import { FileProfilesStore } from "../profiles/profiles.store";
+import { PgProfilesStore } from "../profiles/profiles.pg-store";
 import { PrivacyService } from "./privacy.service";
 
 let testDatabase: TestDatabase;
@@ -24,18 +24,16 @@ afterAll(async () => {
 async function createService(testId: string) {
   const authPath = `/tmp/${testId}-auth.json`;
   const applicationsPath = `/tmp/${testId}-applications.json`;
-  const profilesPath = `/tmp/${testId}-profiles.json`;
 
   rmSync(authPath, { force: true });
   rmSync(applicationsPath, { force: true });
   await testDatabase.reset();
-  rmSync(profilesPath, { force: true });
 
   const authStore = new FileAuthAccountStore(authPath);
   const applicationsStore = new FileApplicationsStore(applicationsPath);
   const creditsStore = new PgCreditLedgerStore(testDatabase.db);
   const notificationsStore = new PgNotificationsStore(testDatabase.db);
-  const profilesStore = new FileProfilesStore(profilesPath);
+  const profilesStore = new PgProfilesStore(testDatabase.db);
 
   authStore.assignInvitedRole(
     "user@example.com",

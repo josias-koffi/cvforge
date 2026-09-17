@@ -1,9 +1,9 @@
 import { Module } from "@nestjs/common";
 import { AuthModule } from "../auth/auth.module";
-import { resolveProfilesConfig } from "./profiles.config";
+import { DATABASE, type Database } from "../database/database.types";
 import { ProfilesController } from "./profiles.controller";
 import { ProfilesService } from "./profiles.service";
-import { FileProfilesStore } from "./profiles.store";
+import { PgProfilesStore } from "./profiles.pg-store";
 import { PROFILES_STORE, type ProfilesStore } from "./profiles.types";
 
 @Module({
@@ -12,8 +12,8 @@ import { PROFILES_STORE, type ProfilesStore } from "./profiles.types";
   providers: [
     {
       provide: PROFILES_STORE,
-      useFactory: () =>
-        new FileProfilesStore(resolveProfilesConfig(process.env).stateFilePath),
+      inject: [DATABASE],
+      useFactory: (db: Database) => new PgProfilesStore(db),
     },
     {
       provide: ProfilesService,

@@ -81,11 +81,12 @@ export type StoredProfileRegistry = {
 export const PROFILES_STORE = Symbol("PROFILES_STORE");
 
 export type ProfilesStore = {
-  save(userEmail: string, registry: StoredProfileRegistry): StoredProfileRegistry;
-  findByUserEmail(userEmail: string): StoredProfileRegistry | null;
-  deleteByUserEmail(userEmail: string): number;
+  save(
+    userEmail: string,
+    registry: StoredProfileRegistry,
+  ): Promise<StoredProfileRegistry>;
+  findByUserEmail(userEmail: string): Promise<StoredProfileRegistry | null>;
+  deleteByUserEmail(userEmail: string): Promise<number>;
 };
 
-export type ProfilesConfig = {
-  stateFilePath: string;
-};
+

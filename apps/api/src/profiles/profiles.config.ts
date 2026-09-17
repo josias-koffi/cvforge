@@ -1,10 +1,8 @@
 import { resolve } from "node:path";
-import type { ProfilesConfig } from "./profiles.types";
 
 const DEFAULT_STATE_FILE = resolve(process.cwd(), ".data", "profiles-state.json");
 
-export function resolveProfilesConfig(env: NodeJS.ProcessEnv): ProfilesConfig {
-  return {
-    stateFilePath: env.PROFILES_STATE_FILE?.trim() || DEFAULT_STATE_FILE,
-  };
+/** The pre-Postgres JSON store, imported once by `import-legacy-profiles.ts`. */
+export function resolveLegacyProfilesStateFile(env: NodeJS.ProcessEnv) {
+  return env.PROFILES_STATE_FILE?.trim() || DEFAULT_STATE_FILE;
 }

@@ -1,15 +1,10 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { dirname } from "node:path";
-import type { ProfilesStore, StoredProfile, StoredProfileRegistry } from "./profiles.types";
+import type { StoredProfile, StoredProfileRegistry } from "./profiles.types";
 
-type PersistedProfilesState = {
-  registries: Record<string, StoredProfileRegistry>;
-};
-
-function createEmptyState(): PersistedProfilesState {
-  return { registries: {} };
-}
-
+/**
+ * The repairs the JSON store used to apply on every read. Legacy records on
+ * disk are only valid because of them, and the Postgres columns are
+ * `not null`, so `import-legacy-profiles` runs them before inserting.
+ */
 const AVAILABILITY_MODES = ["immediate", "date", ""];
 
 function normalizePreferences(value: unknown): StoredProfile["preferences"] {
@@ -27,7 +22,7 @@ function normalizePreferences(value: unknown): StoredProfile["preferences"] {
   };
 }
 
-function normalizeProfile(value: unknown): StoredProfile | null {
+export function normalizeProfile(value: unknown): StoredProfile | null {
   if (!value || typeof value !== "object") {
     return null;
   }
@@ -107,7 +102,7 @@ function normalizeProfile(value: unknown): StoredProfile | null {
   };
 }
 
-function normalizeRegistry(
+export function normalizeRegistry(
   value: unknown,
   userEmail: string,
 ): StoredProfileRegistry | null {
@@ -136,60 +131,4 @@ function normalizeRegistry(
     userEmail,
     version: 2,
   };
-}
-
-export class FileProfilesStore implements ProfilesStore {
-  constructor(private readonly stateFilePath: string) {}
-
-  save(userEmail: string, registry: StoredProfileRegistry): StoredProfileRegistry {
-    const state = this.readState();
-    const entry: StoredProfileRegistry = { ...registry, userEmail, version: 2 };
-    state.registries[userEmail] = entry;
-    this.writeState(state);
-    return entry;
-  }
-
-  findByUserEmail(userEmail: string): StoredProfileRegistry | null {
-    const state = this.readState();
-    const raw = state.registries[userEmail];
-    return raw ? normalizeRegistry(raw, userEmail) : null;
-  }
-
-  deleteByUserEmail(userEmail: string): number {
-    const state = this.readState();
-    const existed = userEmail in state.registries;
-    delete state.registries[userEmail];
-
-    if (existed) {
-      this.writeState(state);
-    }
-
-    return existed ? 1 : 0;
-  }
-
-  private readState(): PersistedProfilesState {
-    if (!existsSync(this.stateFilePath)) {
-      return createEmptyState();
-    }
-
-    try {
-      const parsed = JSON.parse(
-        readFileSync(this.stateFilePath, "utf8"),
-      ) as Partial<PersistedProfilesState>;
-
-      return {
-        registries:
-          parsed.registries && typeof parsed.registries === "object"
-            ? parsed.registries
-            : {},
-      };
-    } catch {
-      return createEmptyState();
-    }
-  }
-
-  private writeState(state: PersistedProfilesState) {
-    mkdirSync(dirname(this.stateFilePath), { recursive: true });
-    writeFileSync(this.stateFilePath, JSON.stringify(state, null, 2));
-  }
 }
