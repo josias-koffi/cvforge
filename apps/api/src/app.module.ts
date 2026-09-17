@@ -8,6 +8,7 @@ import { ApplicationsModule } from "./applications/applications.module";
 import { BillingModule } from "./billing/billing.module";
 import { CvGenerationModule } from "./cv-generation/cv-generation.module";
 import { CreditsModule } from "./credits/credits.module";
+import { DatabaseModule } from "./database/database.module";
 import { NotificationsModule } from "./notifications/notifications.module";
 import { PrivacyModule } from "./privacy/privacy.module";
 import { ProfilesModule } from "./profiles/profiles.module";
@@ -24,6 +25,7 @@ import { InterviewModule } from "./interview/interview.module";
     BillingModule,
     CvGenerationModule,
     CreditsModule,
+    DatabaseModule,
     NotificationsModule,
     PrivacyModule,
     ProfilesModule,

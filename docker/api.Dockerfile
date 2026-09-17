@@ -39,6 +39,7 @@ COPY --from=builder /workspace/packages/config/package.json ./packages/config/pa
 RUN pnpm install --frozen-lockfile --prod
 
 COPY --from=builder /workspace/apps/api/dist ./apps/api/dist
+COPY --from=builder /workspace/apps/api/drizzle ./apps/api/drizzle
 COPY --from=builder /workspace/packages/document-renderer/dist ./packages/document-renderer/dist
 COPY --from=builder /workspace/packages/types/dist ./packages/types/dist
 
@@ -46,4 +47,6 @@ RUN mkdir -p /workspace/.data && chown -R "${HOST_UID}:${HOST_GID}" /workspace/.
 
 EXPOSE 3333
 
-CMD ["node", "apps/api/dist/apps/api/src/main.js"]
+# Pending SQL migrations run first; a failed migration keeps the new version
+# from starting against a half-migrated schema.
+CMD ["sh", "-c", "node apps/api/dist/apps/api/src/database/migrate.main.js && exec node apps/api/dist/apps/api/src/main.js"]
