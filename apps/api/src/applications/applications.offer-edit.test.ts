@@ -48,6 +48,15 @@ function createStore(initial: StoredApplication[]): ApplicationsStore {
   const applications = new Map(initial.map((item) => [item.id, item]));
 
   return {
+    deleteByUserEmail: (userEmail) => {
+      const owned = [...applications.values()].filter(
+        (application) => application.userEmail === userEmail,
+      );
+
+      owned.forEach(({ id }) => applications.delete(id));
+
+      return owned.length;
+    },
     createDraft: (application) => {
       applications.set(application.id, application);
       return application;

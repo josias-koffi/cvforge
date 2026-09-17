@@ -1,29 +1,34 @@
 import { Module } from "@nestjs/common";
 import { AuthModule } from "../auth/auth.module";
-import { resolveApplicationsConfig } from "../applications/applications.config";
-import { FileApplicationsStore } from "../applications/applications.store";
+import { ApplicationsModule } from "../applications/applications.module";
+import {
+  APPLICATIONS_STORE,
+  type ApplicationsStore,
+} from "../applications/applications.types";
 import { TemplatesController } from "./templates.controller";
 import { resolveTemplatesConfig } from "./templates.config";
 import { FileTemplatesStore } from "./templates.store";
 import { TemplatesService } from "./templates.service";
+import { TEMPLATES_STORE, type TemplatesStore } from "./templates.types";
 
 @Module({
-  imports: [AuthModule],
+  imports: [AuthModule, ApplicationsModule],
   controllers: [TemplatesController],
   providers: [
     {
-      provide: TemplatesService,
+      provide: TEMPLATES_STORE,
       useFactory: () =>
-        new TemplatesService(
-          new FileTemplatesStore(
-            resolveTemplatesConfig(process.env).stateFilePath,
-          ),
-          new FileApplicationsStore(
-            resolveApplicationsConfig(process.env).stateFilePath,
-          ),
+        new FileTemplatesStore(
+          resolveTemplatesConfig(process.env).stateFilePath,
         ),
     },
+    {
+      provide: TemplatesService,
+      inject: [TEMPLATES_STORE, APPLICATIONS_STORE],
+      useFactory: (store: TemplatesStore, applicationsStore: ApplicationsStore) =>
+        new TemplatesService(store, applicationsStore),
+    },
   ],
-  exports: [TemplatesService],
+  exports: [TEMPLATES_STORE, TemplatesService],
 })
 export class TemplatesModule {}

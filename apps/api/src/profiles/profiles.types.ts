@@ -77,6 +77,9 @@ export type StoredProfileRegistry = {
   version: 2;
 };
 
+/** DI token for the profiles store. */
+export const PROFILES_STORE = Symbol("PROFILES_STORE");
+
 export type ProfilesStore = {
   save(userEmail: string, registry: StoredProfileRegistry): StoredProfileRegistry;
   findByUserEmail(userEmail: string): StoredProfileRegistry | null;

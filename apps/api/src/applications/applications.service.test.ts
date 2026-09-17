@@ -18,6 +18,15 @@ function createStore(): ApplicationsStore {
   const applications = new Map<string, StoredApplication>();
 
   return {
+    deleteByUserEmail(userEmail) {
+      const owned = [...applications.values()].filter(
+        (application) => application.userEmail === userEmail,
+      );
+
+      owned.forEach(({ id }) => applications.delete(id));
+
+      return owned.length;
+    },
     createDraft(application) {
       applications.set(application.id, application);
       return application;

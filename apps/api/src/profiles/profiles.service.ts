@@ -1,10 +1,9 @@
 import { Injectable } from "@nestjs/common";
-import type { FileProfilesStore } from "./profiles.store";
-import type { StoredProfileRegistry } from "./profiles.types";
+import type { ProfilesStore, StoredProfileRegistry } from "./profiles.types";
 
 @Injectable()
 export class ProfilesService {
-  constructor(private readonly store: FileProfilesStore) {}
+  constructor(private readonly store: ProfilesStore) {}
 
   getRegistry(userEmail: string): StoredProfileRegistry | null {
     return this.store.findByUserEmail(userEmail);

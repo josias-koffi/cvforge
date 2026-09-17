@@ -1,5 +1,4 @@
 import { Module } from "@nestjs/common";
-import { resolve } from "node:path";
 import {
   OPENROUTER_SERVICE,
   OpenRouterModule,
@@ -12,8 +11,8 @@ import { InterviewPurgeService } from "./interview-purge.service";
 import { InterviewController } from "./interview.controller";
 import { InterviewService } from "./interview.service";
 import { FileInterviewStore } from "./interview.store";
-
-const INTERVIEW_STORE = Symbol("INTERVIEW_STORE");
+import { resolveInterviewConfig } from "./interview.config";
+import { INTERVIEW_STORE, type InterviewStore } from "./interview.types";
 
 @Module({
   imports: [AuthModule, OpenRouterModule, ApplicationsModule],
@@ -23,7 +22,7 @@ const INTERVIEW_STORE = Symbol("INTERVIEW_STORE");
       provide: INTERVIEW_STORE,
       useFactory: () =>
         new FileInterviewStore(
-          resolve(process.cwd(), ".data", "interviews-state.json"),
+          resolveInterviewConfig(process.env).stateFilePath,
         ),
     },
     {
@@ -31,16 +30,16 @@ const INTERVIEW_STORE = Symbol("INTERVIEW_STORE");
       useFactory: (
         openRouter: OpenRouterService,
         applicationsService: ApplicationsService,
-        store: FileInterviewStore,
+        store: InterviewStore,
       ) => new InterviewService(store, openRouter, applicationsService),
       inject: [OPENROUTER_SERVICE, ApplicationsService, INTERVIEW_STORE],
     },
     {
       provide: InterviewPurgeService,
-      useFactory: (store: FileInterviewStore) => new InterviewPurgeService(store),
+      useFactory: (store: InterviewStore) => new InterviewPurgeService(store),
       inject: [INTERVIEW_STORE],
     },
   ],
-  exports: [InterviewService],
+  exports: [INTERVIEW_STORE, InterviewService],
 })
 export class InterviewModule {}

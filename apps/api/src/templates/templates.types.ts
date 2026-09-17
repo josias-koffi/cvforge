@@ -12,6 +12,9 @@ export type TemplatesConfig = {
 
 export type StoredTemplate = TemplateRecord;
 
+/** DI token for the templates store. */
+export const TEMPLATES_STORE = Symbol("TEMPLATES_STORE");
+
 export type TemplatesStore = {
   create: (template: StoredTemplate) => StoredTemplate;
   findById: (templateId: string) => StoredTemplate | null;

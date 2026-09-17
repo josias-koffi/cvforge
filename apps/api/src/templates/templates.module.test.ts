@@ -1,9 +1,11 @@
 import "reflect-metadata";
 import { describe, expect, it } from "vitest";
+import { ApplicationsModule } from "../applications/applications.module";
 import { AuthModule } from "../auth/auth.module";
 import { TemplatesController } from "./templates.controller";
 import { TemplatesModule } from "./templates.module";
 import { TemplatesService } from "./templates.service";
+import { TEMPLATES_STORE } from "./templates.types";
 
 describe("TemplatesModule", () => {
   it("registers the auth dependency and templates providers", () => {
@@ -19,8 +21,9 @@ describe("TemplatesModule", () => {
       TemplatesModule,
     ) as Array<{ provide?: unknown }> | undefined;
 
-    expect(imports).toEqual([AuthModule]);
+    expect(imports).toEqual([AuthModule, ApplicationsModule]);
     expect(controllers).toEqual([TemplatesController]);
-    expect(providers?.[0]?.provide).toBe(TemplatesService);
+    expect(providers?.[0]?.provide).toBe(TEMPLATES_STORE);
+    expect(providers?.[1]?.provide).toBe(TemplatesService);
   });
 });

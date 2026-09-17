@@ -11,6 +11,7 @@ import {
 import { AuthController } from "./auth.controller";
 import { AuthService } from "./auth.service";
 import { resolveAuthConfig } from "./auth.config";
+import { AUTH_ACCOUNT_STORE, type AuthAccountStore } from "./auth.types";
 
 function readEmailFrom(env: NodeJS.ProcessEnv) {
   const value = env.EMAIL_FROM?.trim();
@@ -23,15 +24,15 @@ function readEmailFrom(env: NodeJS.ProcessEnv) {
   controllers: [AuthController],
   providers: [
     {
+      provide: AUTH_ACCOUNT_STORE,
+      useFactory: () =>
+        new FileAuthAccountStore(resolveAuthConfig(process.env).stateFilePath),
+    },
+    {
       provide: AuthService,
-      useFactory: () => {
-        const config = resolveAuthConfig(process.env);
-
-        return new AuthService(
-          config,
-          new FileAuthAccountStore(config.stateFilePath),
-        );
-      },
+      inject: [AUTH_ACCOUNT_STORE],
+      useFactory: (store: AuthAccountStore) =>
+        new AuthService(resolveAuthConfig(process.env), store),
     },
     {
       provide: AUTH_EMAIL_FROM,
@@ -58,6 +59,6 @@ function readEmailFrom(env: NodeJS.ProcessEnv) {
     },
     AuthMailerService,
   ],
-  exports: [AuthService, AuthMailerService],
+  exports: [AUTH_ACCOUNT_STORE, AuthService, AuthMailerService],
 })
 export class AuthModule {}

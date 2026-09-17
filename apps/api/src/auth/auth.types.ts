@@ -57,6 +57,22 @@ export type InvitationResponse = {
   expiresAt: string;
 };
 
+/** Everything the GDPR export hands back about one account. */
+export type AuthExportSnapshot = {
+  account: AuthAccountRecord | null;
+  issuedInvitations: Array<AuthInvitation & { tokenHash: string }>;
+  receivedInvitations: Array<AuthInvitation & { tokenHash: string }>;
+};
+
+export type PurgedAuthAccountSummary = {
+  accountDeleted: boolean;
+  invitationsRemoved: number;
+  invitationsScrubbed: number;
+};
+
+/** DI token for the account store, so services depend on this type, not a class. */
+export const AUTH_ACCOUNT_STORE = Symbol("AUTH_ACCOUNT_STORE");
+
 export type AuthAccountStore = {
   listAccounts: () => AuthAccountRecord[];
   readAccount: (email: string) => AuthAccount | null;
@@ -74,4 +90,6 @@ export type AuthAccountStore = {
     consumedAt: string,
     now: number,
   ) => AuthInvitation | null;
+  exportUserData: (email: string) => AuthExportSnapshot;
+  purgeUserData: (email: string) => PurgedAuthAccountSummary;
 };

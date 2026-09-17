@@ -1,13 +1,8 @@
 import { ForbiddenException, UnauthorizedException } from "@nestjs/common";
 import { describe, expect, it, vi } from "vitest";
 import { AuthMailerService } from "./auth-mailer.service";
-import type {
-  AuthAccount,
-  AuthAccountStore,
-  AuthConfig,
-  AuthInvitation,
-  AuthRole,
-} from "./auth.types";
+import type { AuthConfig } from "./auth.types";
+import { createInMemoryAccountStore } from "./testing/in-memory-account-store";
 import { AuthController } from "./auth.controller";
 import { AuthService } from "./auth.service";
 
@@ -22,96 +17,6 @@ const config: AuthConfig = {
   secureCookies: false,
   stateFilePath: "/tmp/cvforge-auth-state-controller-test.json",
 };
-
-function createInMemoryAccountStore(): AuthAccountStore {
-  const accounts = new Map<string, AuthAccount>();
-  const invitations = new Map<string, AuthInvitation>();
-  let bootstrapConsumed = false;
-
-  return {
-    listAccounts() {
-      return [...accounts.entries()]
-        .map(([email, account]) => ({
-          email,
-          ...account,
-        }))
-        .sort((left, right) => left.email.localeCompare(right.email));
-    },
-    updateRole(email, role) {
-      const account = accounts.get(email);
-
-      if (!account) {
-        return null;
-      }
-
-      accounts.set(email, { ...account, role });
-
-      return { email, ...account, role };
-    },
-    readAccount(email) {
-      return accounts.get(email) ?? null;
-    },
-    resolveRole(email, consent) {
-      const existingRole = accounts.get(email)?.role;
-
-      if (existingRole) {
-        return existingRole;
-      }
-
-      const role: AuthRole = bootstrapConsumed ? "user" : "admin";
-
-      accounts.set(email, { consent: consent ?? null, role });
-
-      if (role === "admin") {
-        bootstrapConsumed = true;
-      }
-
-      return role;
-    },
-    assignInvitedRole(email, role, consent) {
-      const existingRole = accounts.get(email)?.role;
-      const resolvedRole =
-        existingRole === "admin" || role === "admin" ? "admin" : "user";
-
-      accounts.set(email, { consent, role: resolvedRole });
-
-      if (resolvedRole === "admin") {
-        bootstrapConsumed = true;
-      }
-
-      return resolvedRole;
-    },
-    readInvitation(tokenHash) {
-      return invitations.get(tokenHash) ?? null;
-    },
-    saveInvitation(tokenHash, invitation) {
-      invitations.set(tokenHash, invitation);
-    },
-    consumeInvitation(tokenHash, consumedAt, now) {
-      const invitation = invitations.get(tokenHash);
-
-      if (!invitation) {
-        return null;
-      }
-
-      if (
-        invitation.consumedAt !== null ||
-        new Date(invitation.expiresAt).getTime() <= now
-      ) {
-        return null;
-      }
-
-      const updatedInvitation = {
-        ...invitation,
-        consumedAt,
-      };
-
-      invitations.set(tokenHash, updatedInvitation);
-
-      return updatedInvitation;
-    },
-  };
-}
 
 describe("AuthController", () => {
   it("should issue an email-backed magic link, set a session cookie, and read the session", async () => {

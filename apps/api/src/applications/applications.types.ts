@@ -23,6 +23,9 @@ export type StoredApplication = DraftApplication & {
   rawOfferText: string;
 };
 
+/** DI token for the applications store, shared by every module that reads them. */
+export const APPLICATIONS_STORE = Symbol("APPLICATIONS_STORE");
+
 export type ApplicationsStore = {
   createDraft: (application: StoredApplication) => StoredApplication;
   findByIdForUserEmail: (
@@ -33,6 +36,7 @@ export type ApplicationsStore = {
   listByUserEmail: (userEmail: string) => StoredApplication[];
   save: (application: StoredApplication) => StoredApplication;
   findById: (applicationId: string) => StoredApplication | null;
+  deleteByUserEmail: (userEmail: string) => number;
 };
 
 export type OfferExtractionResult = {

@@ -4,8 +4,7 @@ import { resolveProfilesConfig } from "./profiles.config";
 import { ProfilesController } from "./profiles.controller";
 import { ProfilesService } from "./profiles.service";
 import { FileProfilesStore } from "./profiles.store";
-
-export const PROFILES_STORE = Symbol("PROFILES_STORE");
+import { PROFILES_STORE, type ProfilesStore } from "./profiles.types";
 
 @Module({
   imports: [AuthModule],
@@ -19,7 +18,7 @@ export const PROFILES_STORE = Symbol("PROFILES_STORE");
     {
       provide: ProfilesService,
       inject: [PROFILES_STORE],
-      useFactory: (store: FileProfilesStore) => new ProfilesService(store),
+      useFactory: (store: ProfilesStore) => new ProfilesService(store),
     },
   ],
   exports: [PROFILES_STORE],

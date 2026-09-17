@@ -3,11 +3,11 @@ import {
   Injectable,
   UnauthorizedException,
 } from "@nestjs/common";
-import { FileApplicationsStore } from "../applications/applications.store";
-import { FileAuthAccountStore } from "../auth/auth-account-store";
+import type { ApplicationsStore } from "../applications/applications.types";
+import type { AuthAccountStore } from "../auth/auth.types";
 import type { CreditLedgerStore } from "../credits/credits.types";
-import { FileNotificationsStore } from "../notifications/notifications.store";
-import { FileProfilesStore } from "../profiles/profiles.store";
+import type { NotificationsStore } from "../notifications/notifications.types";
+import type { ProfilesStore } from "../profiles/profiles.types";
 import { PRIVACY_RETENTION_POLICY } from "./privacy-retention-policy";
 import type {
   PrivacyDeletionSummary,
@@ -21,11 +21,11 @@ function normalizeEmail(value: string) {
 @Injectable()
 export class PrivacyService {
   constructor(
-    private readonly authStore: FileAuthAccountStore,
-    private readonly applicationsStore: FileApplicationsStore,
+    private readonly authStore: AuthAccountStore,
+    private readonly applicationsStore: ApplicationsStore,
     private readonly creditsStore: CreditLedgerStore,
-    private readonly notificationsStore: FileNotificationsStore,
-    private readonly profilesStore: FileProfilesStore,
+    private readonly notificationsStore: NotificationsStore,
+    private readonly profilesStore: ProfilesStore,
   ) {}
 
   getRetentionPolicy() {
