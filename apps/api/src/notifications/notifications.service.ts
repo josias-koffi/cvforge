@@ -155,6 +155,55 @@ export class NotificationsService {
     return this.getPreferences(userEmail);
   }
 
+  /**
+   * Writes an in-app notification unless the same user already received one of
+   * that type on the same UTC day.
+   *
+   * The only write path into notifications that is not derived from
+   * applications: everything else is materialised lazily on read by
+   * `ensureDueNotifications`. Returns `null` when the daily one was already
+   * sent, so callers can tell "sent" from "suppressed".
+   *
+   * Deduplication is a read-then-filter, like `ensureDueNotifications`, not a
+   * unique index — two instances alerting in the same second could both write.
+   * Acceptable for an admin alert; revisit if it ever gates something.
+   */
+  async createOncePerDay(draft: {
+    linkHref: string;
+    message: string;
+    metadata?: InAppNotification["metadata"];
+    title: string;
+    type: InAppNotification["type"];
+    userEmail: string;
+  }): Promise<InAppNotification | null> {
+    const now = new Date();
+    const today = now.toISOString().slice(0, 10);
+    const existing = await this.notificationsStore.listByUserEmail(
+      draft.userEmail,
+    );
+    const alreadySentToday = existing.some(
+      (notification) =>
+        notification.type === draft.type &&
+        notification.createdAt.slice(0, 10) === today,
+    );
+
+    if (alreadySentToday) {
+      return null;
+    }
+
+    return this.notificationsStore.add({
+      createdAt: now.toISOString(),
+      id: randomUUID(),
+      linkHref: draft.linkHref,
+      message: draft.message,
+      metadata: draft.metadata ?? {},
+      readAt: null,
+      title: draft.title,
+      type: draft.type,
+      userEmail: draft.userEmail,
+    });
+  }
+
   async sendCreditPurchaseConfirmationEmail(input: {
     amountCents: number;
     credits: number;

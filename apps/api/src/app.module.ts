@@ -15,6 +15,7 @@ import { PrivacyModule } from "./privacy/privacy.module";
 import { ProfilesModule } from "./profiles/profiles.module";
 import { TemplatesModule } from "./templates/templates.module";
 import { InterviewModule } from "./interview/interview.module";
+import { MetricsModule } from "./metrics/metrics.module";
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { InterviewModule } from "./interview/interview.module";
     ProfilesModule,
     TemplatesModule,
     InterviewModule,
+    MetricsModule,
   ],
   controllers: [AppController],
 })

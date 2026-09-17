@@ -34,6 +34,9 @@ export const NOTIFICATION_TYPE_APPLICATION_FOLLOW_UP =
   "application_follow_up" as const;
 export const NOTIFICATION_TYPE_CREDIT_PURCHASE_CONFIRMED =
   "credit_purchase_confirmed" as const;
+/** Admin-only: the OpenRouter account balance fell under the alert threshold. */
+export const NOTIFICATION_TYPE_OPENROUTER_LOW_BALANCE =
+  "openrouter_low_balance" as const;
 
 export const applicationStatuses = [
   APPLICATION_STATUS_DRAFT,
@@ -62,6 +65,7 @@ export type CreditPackId = (typeof creditPackIds)[number];
 export const notificationTypes = [
   NOTIFICATION_TYPE_APPLICATION_FOLLOW_UP,
   NOTIFICATION_TYPE_CREDIT_PURCHASE_CONFIRMED,
+  NOTIFICATION_TYPE_OPENROUTER_LOW_BALANCE,
 ] as const;
 export type NotificationType = (typeof notificationTypes)[number];
 export type TemplateKind =

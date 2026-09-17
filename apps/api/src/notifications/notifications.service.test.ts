@@ -11,6 +11,8 @@ import {
   APPLICATION_STATUS_SENT,
   APPLICATION_SOURCE_URL,
   NOTIFICATION_TYPE_APPLICATION_FOLLOW_UP,
+  NOTIFICATION_TYPE_CREDIT_PURCHASE_CONFIRMED,
+  NOTIFICATION_TYPE_OPENROUTER_LOW_BALANCE,
   type InAppNotification,
 } from "@cvforge/types";
 import type { NotificationsMailerService } from "./notifications-mailer.service";
@@ -228,5 +230,66 @@ describe("NotificationsService", () => {
     await service.listNotifications("user@example.com");
 
     expect(notificationsMailer.sendApplicationFollowUpEmail).not.toHaveBeenCalled();
+  });
+  it("writes an alert once per UTC day and lets the next day through", async () => {
+    const store = await createNotificationsStore();
+    const service = new NotificationsService(
+      store,
+      createApplicationsStore([]),
+      config,
+      notificationsMailer,
+    );
+    const draft = {
+      linkHref: "/admin/metrics",
+      message: "Le solde OpenRouter est bas.",
+      title: "Solde OpenRouter bas",
+      type: NOTIFICATION_TYPE_OPENROUTER_LOW_BALANCE,
+      userEmail: "admin@example.com",
+    };
+
+    await expect(service.createOncePerDay(draft)).resolves.toMatchObject({
+      readAt: null,
+      title: "Solde OpenRouter bas",
+      type: NOTIFICATION_TYPE_OPENROUTER_LOW_BALANCE,
+    });
+
+    // Same day, even hours later: suppressed.
+    vi.setSystemTime(new Date("2026-04-22T23:59:59.000Z"));
+    await expect(service.createOncePerDay(draft)).resolves.toBeNull();
+
+    vi.setSystemTime(new Date("2026-04-23T00:00:01.000Z"));
+    await expect(service.createOncePerDay(draft)).resolves.not.toBeNull();
+
+    const stored = await store.listByUserEmail("admin@example.com");
+    expect(stored).toHaveLength(2);
+    expect(stored.every(({ metadata }) => metadata !== null)).toBe(true);
+  });
+
+  it("deduplicates per type, so a different alert still gets through the same day", async () => {
+    const store = await createNotificationsStore();
+    const service = new NotificationsService(
+      store,
+      createApplicationsStore([]),
+      config,
+      notificationsMailer,
+    );
+    const base = {
+      linkHref: "/admin/metrics",
+      message: "message",
+      title: "title",
+      userEmail: "admin@example.com",
+    };
+
+    await service.createOncePerDay({
+      ...base,
+      type: NOTIFICATION_TYPE_OPENROUTER_LOW_BALANCE,
+    });
+
+    await expect(
+      service.createOncePerDay({
+        ...base,
+        type: NOTIFICATION_TYPE_CREDIT_PURCHASE_CONFIRMED,
+      }),
+    ).resolves.not.toBeNull();
   });
 });
