@@ -10,6 +10,7 @@ import { CvGenerationModule } from "./cv-generation/cv-generation.module";
 import { CreditsModule } from "./credits/credits.module";
 import { DatabaseModule } from "./database/database.module";
 import { NotificationsModule } from "./notifications/notifications.module";
+import { CreditOffersModule } from "./offers/offers.module";
 import { PrivacyModule } from "./privacy/privacy.module";
 import { ProfilesModule } from "./profiles/profiles.module";
 import { TemplatesModule } from "./templates/templates.module";
@@ -27,6 +28,7 @@ import { InterviewModule } from "./interview/interview.module";
     CreditsModule,
     DatabaseModule,
     NotificationsModule,
+    CreditOffersModule,
     PrivacyModule,
     ProfilesModule,
     TemplatesModule,

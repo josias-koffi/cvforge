@@ -122,7 +122,9 @@ describe("CreditsService", () => {
     const purchase = {
       amountCents: 999,
       credits: 550,
-      packId: "starter",
+      offerId: "offer-1",
+      offerLabel: "Starter",
+      orderId: "order-1",
       stripeCheckoutSessionId: "cs_test_123",
       stripePaymentIntentId: "pi_123",
       userEmail: USER,
@@ -142,7 +144,9 @@ describe("CreditsService", () => {
       service.recordStripePurchase({
         amountCents: 999,
         credits: 0,
-        packId: "starter",
+        offerId: "offer-1",
+        offerLabel: "Starter",
+        orderId: "order-0",
         stripeCheckoutSessionId: "cs_test_0",
         userEmail: USER,
       }),
