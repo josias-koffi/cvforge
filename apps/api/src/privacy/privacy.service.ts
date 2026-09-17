@@ -5,7 +5,7 @@ import {
 } from "@nestjs/common";
 import { FileApplicationsStore } from "../applications/applications.store";
 import { FileAuthAccountStore } from "../auth/auth-account-store";
-import { FileCreditLedgerStore } from "../credits/credits.store";
+import type { CreditLedgerStore } from "../credits/credits.types";
 import { FileNotificationsStore } from "../notifications/notifications.store";
 import { FileProfilesStore } from "../profiles/profiles.store";
 import { PRIVACY_RETENTION_POLICY } from "./privacy-retention-policy";
@@ -23,7 +23,7 @@ export class PrivacyService {
   constructor(
     private readonly authStore: FileAuthAccountStore,
     private readonly applicationsStore: FileApplicationsStore,
-    private readonly creditsStore: FileCreditLedgerStore,
+    private readonly creditsStore: CreditLedgerStore,
     private readonly notificationsStore: FileNotificationsStore,
     private readonly profilesStore: FileProfilesStore,
   ) {}
@@ -32,7 +32,7 @@ export class PrivacyService {
     return PRIVACY_RETENTION_POLICY;
   }
 
-  exportUserData(userEmail: string): PrivacyExportPayload {
+  async exportUserData(userEmail: string): Promise<PrivacyExportPayload> {
     const normalizedEmail = normalizeEmail(userEmail);
     const auth = this.authStore.exportUserData(normalizedEmail);
 
@@ -41,22 +41,23 @@ export class PrivacyService {
     }
 
     return {
-      adminGrantReferences: this.creditsStore.listEntriesByAdminEmail(normalizedEmail),
+      adminGrantReferences:
+        await this.creditsStore.listEntriesByAdminEmail(normalizedEmail),
       auth,
       exportedAt: new Date().toISOString(),
       notifications: this.notificationsStore.listByUserEmail(normalizedEmail),
       ownedApplications: this.applicationsStore.listByUserEmail(normalizedEmail),
-      ownedCredits: this.creditsStore.listEntriesForUser(normalizedEmail),
+      ownedCredits: await this.creditsStore.listEntriesForUser(normalizedEmail),
       ownedProfiles: this.profilesStore.findByUserEmail(normalizedEmail),
       retentionPolicy: PRIVACY_RETENTION_POLICY,
       userEmail: normalizedEmail,
     };
   }
 
-  deleteUserData(
+  async deleteUserData(
     userEmail: string,
     confirmationEmail: string,
-  ): PrivacyDeletionSummary {
+  ): Promise<PrivacyDeletionSummary> {
     const normalizedEmail = normalizeEmail(userEmail);
 
     if (normalizeEmail(confirmationEmail) !== normalizedEmail) {
@@ -74,14 +75,15 @@ export class PrivacyService {
     return this.purgeAccount(normalizedEmail);
   }
 
-  purgeAccount(userEmail: string): PrivacyDeletionSummary {
+  async purgeAccount(userEmail: string): Promise<PrivacyDeletionSummary> {
     const normalizedEmail = normalizeEmail(userEmail);
     const deletedApplications = this.applicationsStore.deleteByUserEmail(normalizedEmail);
     const deletedNotifications = this.notificationsStore.deleteByUserEmail(normalizedEmail);
     const deletedProfiles = this.profilesStore.deleteByUserEmail(normalizedEmail);
-    const deletedCreditEntries = this.creditsStore.deleteByUserEmail(normalizedEmail);
+    const deletedCreditEntries =
+      await this.creditsStore.deleteByUserEmail(normalizedEmail);
     const scrubbedAdminReferences =
-      this.creditsStore.anonymizeAdminReferences(normalizedEmail);
+      await this.creditsStore.anonymizeAdminReferences(normalizedEmail);
     const authSummary = this.authStore.purgeUserData(normalizedEmail);
 
     return {

@@ -68,7 +68,7 @@ export async function translateStoredCv(
   if (!application.cvContent) {
     throw new NotFoundException("Aucun CV généré pour cette candidature.");
   }
-  deps.creditsService.consumeCredits({
+  await deps.creditsService.consumeCredits({
     action: AI_CREDIT_ACTION_CV_GENERATION,
     applicationId: application.id,
     userEmail,
@@ -110,7 +110,7 @@ export async function translateStoredLetter(
   if (!application.letterContent) {
     throw new NotFoundException("Aucune lettre générée pour cette candidature.");
   }
-  deps.creditsService.consumeCredits({
+  await deps.creditsService.consumeCredits({
     action: AI_CREDIT_ACTION_LETTER_GENERATION,
     applicationId: application.id,
     userEmail,

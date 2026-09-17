@@ -27,16 +27,16 @@ export class CreditsController {
   ) {}
 
   @Get("me")
-  getMyCredits(@Req() request: RequestLike) {
+  async getMyCredits(@Req() request: RequestLike) {
     const session = this.readSession(request);
 
     return {
-      credits: this.creditsService.getSummaryForUser(session.email),
+      credits: await this.creditsService.getSummaryForUser(session.email),
     };
   }
 
   @Get("users/:userEmail")
-  getUserCredits(
+  async getUserCredits(
     @Param("userEmail") userEmail: string,
     @Req() request: RequestLike,
   ) {
@@ -44,12 +44,14 @@ export class CreditsController {
 
     return {
       requestedBy: session.email,
-      credits: this.creditsService.getSummaryForUser(userEmail.trim().toLowerCase()),
+      credits: await this.creditsService.getSummaryForUser(
+        userEmail.trim().toLowerCase(),
+      ),
     };
   }
 
   @Get("admin/users")
-  listAdminUsers(
+  async listAdminUsers(
     @Query("page") pageValue: string | undefined,
     @Query("pageSize") pageSizeValue: string | undefined,
     @Query("query") queryValue: string | undefined,
@@ -59,26 +61,26 @@ export class CreditsController {
     const session = this.readAdminSession(request);
 
     return {
-      ...buildAdminUserDirectory(this.authService.listAccounts(), this.creditsService, {
+      ...(await buildAdminUserDirectory(this.authService.listAccounts(), this.creditsService, {
         maxPageSize: 20,
         page: pageValue,
         pageSize: pageSizeValue,
         query: queryValue,
         role: roleValue,
-      }),
+      })),
       requestedBy: session.email,
     };
   }
 
   @Post("admin/grants")
-  grantCredits(
+  async grantCredits(
     @Body() body: { credits?: number; note?: string; userEmail?: string },
     @Req() request: RequestLike,
   ) {
     const session = this.readAdminSession(request);
 
     return {
-      entry: this.creditsService.grantCredits({
+      entry: await this.creditsService.grantCredits({
         adminEmail: session.email,
         credits: body.credits ?? 0,
         note: body.note ?? "",

@@ -1,131 +1,151 @@
+import { UnprocessableEntityException } from "@nestjs/common";
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import {
-  UnprocessableEntityException,
-} from "@nestjs/common";
-import { describe, expect, it } from "vitest";
+  createTestDatabase,
+  type TestDatabase,
+} from "../database/testing/test-database";
+import { PgCreditLedgerStore } from "./credits.pg-store";
 import {
   CreditsService,
   InsufficientCreditsException,
 } from "./credits.service";
-import type { CreditLedgerStore } from "./credits.types";
 
-function createStore(): CreditLedgerStore {
-  const entries: Array<ReturnType<CreditLedgerStore["addEntry"]>> = [];
-
-  return {
-    addEntry(entry) {
-      entries.push(entry);
-      return entry;
-    },
-    listEntriesForUser(userEmail) {
-      return entries
-        .filter((entry) => entry.userEmail === userEmail)
-        .sort((left, right) => right.createdAt.localeCompare(left.createdAt));
-    },
-  };
-}
+const USER = "user@example.com";
 
 describe("CreditsService", () => {
-  it("tracks admin grants and resulting balance", () => {
-    const service = new CreditsService(createStore(), {
-      lowBalanceThreshold: 20,
-      stateFilePath: "/tmp/unused.json",
-    });
+  let testDatabase: TestDatabase;
+  let service: CreditsService;
 
-    const entry = service.grantCredits({
-      adminEmail: "admin@example.com",
-      credits: 50,
-      note: "Bootstrap credits for QA",
-      userEmail: "user@example.com",
+  beforeAll(async () => {
+    testDatabase = await createTestDatabase();
+  });
+
+  afterAll(async () => {
+    await testDatabase.close();
+  });
+
+  beforeEach(async () => {
+    await testDatabase.reset();
+    service = new CreditsService(new PgCreditLedgerStore(testDatabase.db), {
+      lowBalanceThreshold: 20,
     });
+  });
+
+  function grant(credits: number, userEmail = USER) {
+    return service.grantCredits({
+      adminEmail: "admin@example.com",
+      credits,
+      note: "Initial allocation",
+      userEmail,
+    });
+  }
+
+  it("tracks admin grants and resulting balance", async () => {
+    const entry = await grant(50);
 
     expect(entry.balanceAfter).toBe(50);
-    expect(service.getSummaryForUser("user@example.com")).toMatchObject({
+    await expect(service.getSummaryForUser(USER)).resolves.toMatchObject({
       balance: 50,
       isLowBalance: false,
     });
   });
 
-  it("debits the expected amount for CV generation", () => {
-    const service = new CreditsService(createStore(), {
+  it("flags a balance under the threshold as low", async () => {
+    await grant(5);
+
+    await expect(service.getSummaryForUser(USER)).resolves.toMatchObject({
+      balance: 5,
+      isLowBalance: true,
       lowBalanceThreshold: 20,
-      stateFilePath: "/tmp/unused.json",
     });
+  });
 
-    service.grantCredits({
-      adminEmail: "admin@example.com",
-      credits: 10,
-      note: "Initial allocation",
-      userEmail: "user@example.com",
-    });
+  it("debits the expected amount for CV generation", async () => {
+    await grant(10);
 
-    const entry = service.consumeCredits({
+    const entry = await service.consumeCredits({
       action: "cv_generation",
       applicationId: "app-001",
-      userEmail: "user@example.com",
+      userEmail: USER,
     });
+    const summary = await service.getSummaryForUser(USER);
 
     expect(entry.amount).toBe(-3);
     expect(entry.balanceAfter).toBe(7);
-    expect(service.getSummaryForUser("user@example.com").history).toHaveLength(2);
+    expect(summary.history.map((item) => item.amount)).toEqual([-3, 10]);
   });
 
-  it("rejects AI consumption when credits are insufficient", () => {
-    const service = new CreditsService(createStore(), {
-      lowBalanceThreshold: 20,
-      stateFilePath: "/tmp/unused.json",
-    });
-
-    expect(() =>
+  it("rejects AI consumption when credits are insufficient", async () => {
+    await expect(
       service.consumeCredits({
         action: "letter_generation",
         applicationId: "app-001",
-        userEmail: "user@example.com",
+        userEmail: USER,
       }),
-    ).toThrow(InsufficientCreditsException);
+    ).rejects.toBeInstanceOf(InsufficientCreditsException);
+    await expect(
+      service.assertSufficientCredits("letter_generation", USER),
+    ).rejects.toBeInstanceOf(InsufficientCreditsException);
   });
 
-  it("requires a note for manual grants", () => {
-    const service = new CreditsService(createStore(), {
-      lowBalanceThreshold: 20,
-      stateFilePath: "/tmp/unused.json",
-    });
+  it("never overdraws under concurrent consumption", async () => {
+    await grant(9);
 
-    expect(() =>
+    const results = await Promise.allSettled(
+      Array.from({ length: 5 }, () =>
+        service.consumeCredits({ action: "cv_generation", userEmail: USER }),
+      ),
+    );
+
+    expect(results.filter((result) => result.status === "fulfilled")).toHaveLength(3);
+    await expect(service.getSummaryForUser(USER)).resolves.toMatchObject({
+      balance: 0,
+    });
+  });
+
+  it.each([
+    [10, "   "],
+    [0, "Note"],
+    [1.5, "Note"],
+  ])("rejects an invalid manual grant (%s credits, note %j)", async (credits, note) => {
+    await expect(
       service.grantCredits({
         adminEmail: "admin@example.com",
-        credits: 10,
-        note: "   ",
-        userEmail: "user@example.com",
+        credits,
+        note,
+        userEmail: USER,
       }),
-    ).toThrow(UnprocessableEntityException);
+    ).rejects.toBeInstanceOf(UnprocessableEntityException);
   });
 
-  it("deduplicates repeated Stripe purchase events", () => {
-    const service = new CreditsService(createStore(), {
-      lowBalanceThreshold: 20,
-      stateFilePath: "/tmp/unused.json",
-    });
-
-    const first = service.recordStripePurchase({
+  it("deduplicates repeated Stripe purchase events", async () => {
+    const purchase = {
       amountCents: 999,
       credits: 550,
       packId: "starter",
       stripeCheckoutSessionId: "cs_test_123",
       stripePaymentIntentId: "pi_123",
-      userEmail: "user@example.com",
-    });
+      userEmail: USER,
+    };
 
-    const second = service.recordStripePurchase({
-      amountCents: 999,
-      credits: 550,
-      packId: "starter",
-      stripeCheckoutSessionId: "cs_test_123",
-      stripePaymentIntentId: "pi_123",
-      userEmail: "user@example.com",
-    });
+    const first = await service.recordStripePurchase(purchase);
+    const second = await service.recordStripePurchase(purchase);
+    const summary = await service.getSummaryForUser(USER);
 
     expect(second.id).toBe(first.id);
-    expect(service.getSummaryForUser("user@example.com").history).toHaveLength(1);
-    expect(service.getSummaryForUser("user@example.com").balance).toBe(550);
+    expect(summary.history).toHaveLength(1);
+    expect(summary.balance).toBe(550);
+  });
+
+  it("rejects a Stripe purchase without credits", async () => {
+    await expect(
+      service.recordStripePurchase({
+        amountCents: 999,
+        credits: 0,
+        packId: "starter",
+        stripeCheckoutSessionId: "cs_test_0",
+        userEmail: USER,
+      }),
+    ).rejects.toBeInstanceOf(UnprocessableEntityException);
   });
 });

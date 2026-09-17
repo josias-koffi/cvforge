@@ -16,9 +16,9 @@ import {
   HttpStatus,
   UnprocessableEntityException,
 } from "@nestjs/common";
-import { randomUUID } from "node:crypto";
 import type {
   ConsumeCreditsInput,
+  CreditLedgerEntryDraft,
   CreditLedgerStore,
   CreditsConfig,
   GrantCreditsInput,
@@ -54,9 +54,11 @@ export class CreditsService {
     private readonly config: CreditsConfig,
   ) {}
 
-  getSummaryForUser(userEmail: string): CreditLedgerSummary {
-    const history = this.store.listEntriesForUser(userEmail);
-    const balance = history[0]?.balanceAfter ?? 0;
+  async getSummaryForUser(userEmail: string): Promise<CreditLedgerSummary> {
+    const [balance, history] = await Promise.all([
+      this.store.getBalance(userEmail),
+      this.store.listEntriesForUser(userEmail),
+    ]);
 
     return {
       balance,
@@ -69,28 +71,22 @@ export class CreditsService {
 
   /**
    * Checks the balance without spending it, so a costly AI call is never made
-   * for a user who could not pay for it anyway.
+   * for a user who could not pay for it anyway. `consumeCredits` re-checks
+   * inside its transaction, which is what actually guarantees the balance.
    */
-  assertSufficientCredits(
+  async assertSufficientCredits(
     action: ConsumeCreditsInput["action"],
     userEmail: string,
-  ): void {
-    if (this.getSummaryForUser(userEmail).balance < AI_CREDIT_COSTS[action]) {
+  ): Promise<void> {
+    if ((await this.store.getBalance(userEmail)) < AI_CREDIT_COSTS[action]) {
       throw new InsufficientCreditsException(action);
     }
   }
 
-  consumeCredits(input: ConsumeCreditsInput): CreditLedgerEntry {
-    this.assertSufficientCredits(input.action, input.userEmail);
-    const current = this.getSummaryForUser(input.userEmail);
-    const cost = AI_CREDIT_COSTS[input.action];
-
-    return this.store.addEntry({
+  async consumeCredits(input: ConsumeCreditsInput): Promise<CreditLedgerEntry> {
+    const result = await this.store.applyEntry({
       action: input.action,
-      amount: -cost,
-      balanceAfter: current.balance - cost,
-      createdAt: new Date().toISOString(),
-      id: randomUUID(),
+      amount: -AI_CREDIT_COSTS[input.action],
       metadata: {
         applicationId: input.applicationId,
       },
@@ -98,9 +94,15 @@ export class CreditsService {
       type: CREDIT_EVENT_AI_USAGE,
       userEmail: input.userEmail,
     });
+
+    if (result.status === "insufficient_balance") {
+      throw new InsufficientCreditsException(input.action);
+    }
+
+    return result.entry;
   }
 
-  grantCredits(input: GrantCreditsInput): CreditLedgerEntry {
+  async grantCredits(input: GrantCreditsInput): Promise<CreditLedgerEntry> {
     if (!Number.isInteger(input.credits) || input.credits <= 0) {
       throw new UnprocessableEntityException(
         "Le nombre de credits attribues doit etre un entier positif.",
@@ -115,14 +117,9 @@ export class CreditsService {
       );
     }
 
-    const current = this.getSummaryForUser(input.userEmail);
-
-    return this.store.addEntry({
+    return this.applyCredit({
       action: "admin_grant",
       amount: input.credits,
-      balanceAfter: current.balance + input.credits,
-      createdAt: new Date().toISOString(),
-      id: randomUUID(),
       metadata: {
         adminEmail: input.adminEmail,
       },
@@ -132,41 +129,43 @@ export class CreditsService {
     });
   }
 
-  recordStripePurchase(input: StripePurchaseInput): CreditLedgerEntry {
+  async recordStripePurchase(
+    input: StripePurchaseInput,
+  ): Promise<CreditLedgerEntry> {
     if (!Number.isInteger(input.credits) || input.credits <= 0) {
       throw new UnprocessableEntityException(
         "Le nombre de credits achetes doit etre un entier positif.",
       );
     }
 
-    const existingEntry = this.getSummaryForUser(input.userEmail).history.find(
-      (entry) =>
-        entry.type === CREDIT_EVENT_STRIPE_PURCHASE &&
-        (entry.metadata.stripeCheckoutSessionId === input.stripeCheckoutSessionId ||
-          (input.stripePaymentIntentId != null &&
-            entry.metadata.stripePaymentIntentId === input.stripePaymentIntentId)),
+    return this.applyCredit(
+      {
+        action: "stripe_purchase",
+        amount: input.credits,
+        metadata: {
+          packId: input.packId,
+          stripeCheckoutSessionId: input.stripeCheckoutSessionId,
+          stripePaymentIntentId: input.stripePaymentIntentId ?? undefined,
+        },
+        note: `Achat Stripe ${input.packId} (${input.amountCents} cents)`,
+        type: CREDIT_EVENT_STRIPE_PURCHASE,
+        userEmail: input.userEmail,
+      },
+      `stripe:checkout:${input.stripeCheckoutSessionId}`,
     );
+  }
 
-    if (existingEntry) {
-      return existingEntry;
+  /** Positive movements cannot be refused for balance reasons. */
+  private async applyCredit(
+    draft: CreditLedgerEntryDraft,
+    idempotencyKey?: string,
+  ): Promise<CreditLedgerEntry> {
+    const result = await this.store.applyEntry(draft, idempotencyKey);
+
+    if (result.status === "insufficient_balance") {
+      throw new Error("A credit movement cannot overdraw a balance.");
     }
 
-    const current = this.getSummaryForUser(input.userEmail);
-
-    return this.store.addEntry({
-      action: "stripe_purchase",
-      amount: input.credits,
-      balanceAfter: current.balance + input.credits,
-      createdAt: new Date().toISOString(),
-      id: randomUUID(),
-      metadata: {
-        packId: input.packId,
-        stripeCheckoutSessionId: input.stripeCheckoutSessionId,
-        stripePaymentIntentId: input.stripePaymentIntentId ?? undefined,
-      },
-      note: `Achat Stripe ${input.packId} (${input.amountCents} cents)`,
-      type: CREDIT_EVENT_STRIPE_PURCHASE,
-      userEmail: input.userEmail,
-    });
+    return result.entry;
   }
 }

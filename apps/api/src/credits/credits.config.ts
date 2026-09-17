@@ -20,6 +20,10 @@ export function resolveCreditsConfig(env: NodeJS.ProcessEnv): CreditsConfig {
       env.CREDITS_LOW_BALANCE_THRESHOLD,
       DEFAULT_LOW_BALANCE_THRESHOLD,
     ),
-    stateFilePath: env.CREDITS_STATE_FILE?.trim() || DEFAULT_STATE_FILE,
   };
+}
+
+/** The pre-Postgres JSON ledger, imported once by `import-legacy-credits.ts`. */
+export function resolveLegacyCreditsStateFile(env: NodeJS.ProcessEnv) {
+  return env.CREDITS_STATE_FILE?.trim() || DEFAULT_STATE_FILE;
 }
