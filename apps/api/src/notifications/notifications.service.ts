@@ -1,10 +1,7 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import {
   APPLICATION_STATUS_SENT,
-  CREDIT_PACK_PRO,
-  CREDIT_PACK_STARTER,
   NOTIFICATION_TYPE_APPLICATION_FOLLOW_UP,
-  type CreditPackId,
   type ApplicationStatusHistoryEntry,
   type InAppNotification,
   type NotificationPreferences,
@@ -155,7 +152,7 @@ export class NotificationsService {
   async sendCreditPurchaseConfirmationEmail(input: {
     amountCents: number;
     credits: number;
-    packId: CreditPackId;
+    offerName: string;
     userEmail: string;
   }) {
     const preferences = this.readPreferences(input.userEmail);
@@ -167,8 +164,7 @@ export class NotificationsService {
     await this.notificationsMailer.sendCreditPurchaseConfirmationEmail({
       amountCents: input.amountCents,
       credits: input.credits,
-      packId:
-        input.packId === CREDIT_PACK_PRO ? CREDIT_PACK_PRO : CREDIT_PACK_STARTER,
+      offerName: input.offerName,
       to: input.userEmail,
     });
   }

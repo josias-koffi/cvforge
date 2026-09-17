@@ -3,7 +3,6 @@ import {
   Body,
   Controller,
   Delete,
-  ForbiddenException,
   Get,
   HttpCode,
   Inject,
@@ -12,9 +11,9 @@ import {
   Patch,
   Query,
   Req,
-  UnauthorizedException,
 } from "@nestjs/common";
 import { AuthService } from "../auth/auth.service";
+import { requireAdminSession } from "../auth/request-session";
 import { buildAdminUserDirectory } from "../credits/admin-user-directory";
 import { CreditsService } from "../credits/credits.service";
 import { PrivacyService } from "../privacy/privacy.service";
@@ -45,7 +44,7 @@ export class AdminUsersController {
     @Query("role") role: string | undefined,
     @Req() request: RequestLike,
   ) {
-    this.requireAdmin(request);
+    requireAdminSession(this.authService, request);
 
     return buildAdminUserDirectory(
       this.authService.listAccounts(),
@@ -60,7 +59,7 @@ export class AdminUsersController {
     @Body() body: { role?: string },
     @Req() request: RequestLike,
   ) {
-    const session = this.requireAdmin(request);
+    const session = requireAdminSession(this.authService, request);
     const targetEmail = normalizeEmail(email);
 
     if (targetEmail === session.email && body.role !== "admin") {
@@ -75,7 +74,7 @@ export class AdminUsersController {
   @Delete(":email")
   @HttpCode(200)
   async deleteUser(@Param("email") email: string, @Req() request: RequestLike) {
-    const session = this.requireAdmin(request);
+    const session = requireAdminSession(this.authService, request);
     const targetEmail = normalizeEmail(email);
 
     if (targetEmail === session.email) {
@@ -93,21 +92,5 @@ export class AdminUsersController {
     }
 
     return { deletion: await this.privacyService.purgeAccount(targetEmail) };
-  }
-
-  private requireAdmin(request: RequestLike) {
-    const session = this.authService.readSessionFromCookieHeader(
-      request.headers.cookie,
-    );
-
-    if (!session) {
-      throw new UnauthorizedException("A valid session is required.");
-    }
-
-    if (session.role !== "admin") {
-      throw new ForbiddenException("Admin access is required.");
-    }
-
-    return session;
   }
 }

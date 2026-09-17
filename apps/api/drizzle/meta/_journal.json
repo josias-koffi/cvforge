@@ -15,6 +15,20 @@
       "when": 1789649313842,
       "tag": "0001_credit_ledger",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789649704333,
+      "tag": "0002_credit_offers_and_orders",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1789649718698,
+      "tag": "0003_seed_default_credit_offers",
+      "breakpoints": true
     }
   ]
 }

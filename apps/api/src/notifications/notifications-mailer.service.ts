@@ -3,7 +3,6 @@ import {
   Injectable,
   InternalServerErrorException,
 } from "@nestjs/common";
-import { creditPacks } from "@cvforge/types";
 import { SMTP_CONFIG, type SmtpConfig } from "../smtp/smtp.config";
 
 export const NOTIFICATIONS_EMAIL_FROM = Symbol("NOTIFICATIONS_EMAIL_FROM");
@@ -31,7 +30,7 @@ type ApplicationFollowUpEmailInput = {
 type CreditPurchaseConfirmationEmailInput = {
   amountCents: number;
   credits: number;
-  packId: keyof typeof creditPacks;
+  offerName: string;
   to: string;
 };
 
@@ -77,21 +76,20 @@ export class NotificationsMailerService {
   async sendCreditPurchaseConfirmationEmail(
     input: CreditPurchaseConfirmationEmailInput,
   ) {
-    const pack = creditPacks[input.packId];
     const amount = (input.amountCents / 100).toFixed(2);
 
     await this.sendMail({
       html: [
         "<p>Bonjour,</p>",
-        `<p>Votre achat du pack <strong>${pack.label}</strong> a bien ete confirme.</p>`,
+        `<p>Votre achat du pack <strong>${input.offerName}</strong> a bien ete confirme.</p>`,
         `<p>${input.credits} credits ont ete ajoutes a votre solde pour un montant de ${amount} EUR.</p>`,
         "<p>Vous pouvez des maintenant reprendre vos generations CVforge.</p>",
       ].join(""),
-      subject: `Achat de credits confirme (${pack.label})`,
+      subject: `Achat de credits confirme (${input.offerName})`,
       text: [
         "Bonjour,",
         "",
-        `Votre achat du pack ${pack.label} a bien ete confirme.`,
+        `Votre achat du pack ${input.offerName} a bien ete confirme.`,
         `${input.credits} credits ont ete ajoutes a votre solde pour ${amount} EUR.`,
         "",
         "Vous pouvez reprendre vos generations CVforge.",
