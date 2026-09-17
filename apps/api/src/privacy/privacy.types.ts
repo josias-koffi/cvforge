@@ -1,4 +1,4 @@
-import type { AuthAccountRecord, AuthInvitation } from "../auth/auth.types";
+import type { AuthExportSnapshot } from "../auth/auth.types";
 import type { StoredApplication } from "../applications/applications.types";
 import type { StoredProfileRegistry } from "../profiles/profiles.types";
 import type { CreditLedgerEntry } from "@cvforge/types";
@@ -25,11 +25,7 @@ export type PrivacyRetentionPolicy = {
 export type PrivacyExportPayload = {
   exportedAt: string;
   userEmail: string;
-  auth: {
-    account: AuthAccountRecord | null;
-    issuedInvitations: Array<AuthInvitation & { tokenHash: string }>;
-    receivedInvitations: Array<AuthInvitation & { tokenHash: string }>;
-  };
+  auth: AuthExportSnapshot;
   ownedApplications: StoredApplication[];
   ownedCredits: CreditLedgerEntry[];
   ownedProfiles: StoredProfileRegistry | null;

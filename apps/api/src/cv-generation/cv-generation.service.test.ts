@@ -34,6 +34,7 @@ describe("CvGenerationService", () => {
 
     store = {
       createDraft: vi.fn(),
+      deleteByUserEmail: vi.fn().mockReturnValue(0),
       findById: vi.fn().mockReturnValue(app),
       findByIdForUserEmail: vi.fn().mockReturnValue(app),
       listAll: vi.fn().mockReturnValue([app]),

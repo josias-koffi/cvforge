@@ -10,6 +10,9 @@ export type NotificationsConfig = {
   stateFilePath: string;
 };
 
+/** DI token for the notifications store. */
+export const NOTIFICATIONS_STORE = Symbol("NOTIFICATIONS_STORE");
+
 export type NotificationsStore = {
   add: (notification: InAppNotification) => InAppNotification;
   findByIdForUserEmail: (
@@ -23,6 +26,7 @@ export type NotificationsStore = {
     userEmail: string,
     preferences: NotificationPreferences,
   ) => NotificationPreferences;
+  deleteByUserEmail: (userEmail: string) => number;
 };
 
 export type NotificationsListResponse = {

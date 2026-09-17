@@ -7,32 +7,45 @@ import { resolveApplicationsConfig } from "./applications.config";
 import { ApplicationsController } from "./applications.controller";
 import { ApplicationsService } from "./applications.service";
 import { FileApplicationsStore } from "./applications.store";
-import { PROFILES_STORE, ProfilesModule } from "../profiles/profiles.module";
-import type { FileProfilesStore } from "../profiles/profiles.store";
+import { APPLICATIONS_STORE, type ApplicationsStore } from "./applications.types";
+import { ProfilesModule } from "../profiles/profiles.module";
+import { PROFILES_STORE, type ProfilesStore } from "../profiles/profiles.types";
 
 @Module({
   imports: [AuthModule, CreditsModule, OpenRouterModule, ProfilesModule],
   controllers: [ApplicationsController],
   providers: [
     {
+      provide: APPLICATIONS_STORE,
+      useFactory: () =>
+        new FileApplicationsStore(
+          resolveApplicationsConfig(process.env).stateFilePath,
+        ),
+    },
+    {
       provide: ApplicationsService,
-      inject: [OPENROUTER_SERVICE, CreditsService, PROFILES_STORE],
+      inject: [
+        APPLICATIONS_STORE,
+        OPENROUTER_SERVICE,
+        CreditsService,
+        PROFILES_STORE,
+      ],
       useFactory: (
+        store: ApplicationsStore,
         openRouterService: ConstructorParameters<typeof ApplicationsService>[1],
         creditsService: ConstructorParameters<typeof ApplicationsService>[2],
-        profilesStore: FileProfilesStore,
+        profilesStore: ProfilesStore,
       ) =>
         new ApplicationsService(
-          new FileApplicationsStore(
-            resolveApplicationsConfig(process.env).stateFilePath,
-          ),
+          store,
           openRouterService,
           creditsService,
           (userEmail) =>
-            profilesStore.findByUserEmail(userEmail)?.profiles.map(({ id }) => id) ?? [],
+            profilesStore.findByUserEmail(userEmail)?.profiles.map(({ id }) => id) ??
+            [],
         ),
     },
   ],
-  exports: [ApplicationsService],
+  exports: [APPLICATIONS_STORE, ApplicationsService],
 })
 export class ApplicationsModule {}

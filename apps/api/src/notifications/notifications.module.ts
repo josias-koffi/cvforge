@@ -3,8 +3,11 @@ import nodemailer from "nodemailer";
 import { AuthModule } from "../auth/auth.module";
 import { SMTP_CONFIG, type SmtpConfig } from "../smtp/smtp.config";
 import { SmtpModule } from "../smtp/smtp.module";
-import { resolveApplicationsConfig } from "../applications/applications.config";
-import { FileApplicationsStore } from "../applications/applications.store";
+import { ApplicationsModule } from "../applications/applications.module";
+import {
+  APPLICATIONS_STORE,
+  type ApplicationsStore,
+} from "../applications/applications.types";
 import { resolveNotificationsConfig } from "./notifications.config";
 import { NotificationsController } from "./notifications.controller";
 import {
@@ -14,6 +17,10 @@ import {
 } from "./notifications-mailer.service";
 import { NotificationsService } from "./notifications.service";
 import { FileNotificationsStore } from "./notifications.store";
+import {
+  NOTIFICATIONS_STORE,
+  type NotificationsStore,
+} from "./notifications.types";
 
 function readEmailFrom(env: NodeJS.ProcessEnv) {
   const value = env.EMAIL_FROM?.trim();
@@ -22,7 +29,7 @@ function readEmailFrom(env: NodeJS.ProcessEnv) {
 }
 
 @Module({
-  imports: [AuthModule, SmtpModule],
+  imports: [AuthModule, ApplicationsModule, SmtpModule],
   controllers: [NotificationsController],
   providers: [
     {
@@ -50,22 +57,28 @@ function readEmailFrom(env: NodeJS.ProcessEnv) {
     },
     NotificationsMailerService,
     {
+      provide: NOTIFICATIONS_STORE,
+      useFactory: () =>
+        new FileNotificationsStore(
+          resolveNotificationsConfig(process.env).stateFilePath,
+        ),
+    },
+    {
       provide: NotificationsService,
-      inject: [NotificationsMailerService],
-      useFactory: (notificationsMailer: NotificationsMailerService) => {
-        const config = resolveNotificationsConfig(process.env);
-
-        return new NotificationsService(
-          new FileNotificationsStore(config.stateFilePath),
-          new FileApplicationsStore(
-            resolveApplicationsConfig(process.env).stateFilePath,
-          ),
-          config,
+      inject: [NOTIFICATIONS_STORE, APPLICATIONS_STORE, NotificationsMailerService],
+      useFactory: (
+        store: NotificationsStore,
+        applicationsStore: ApplicationsStore,
+        notificationsMailer: NotificationsMailerService,
+      ) =>
+        new NotificationsService(
+          store,
+          applicationsStore,
+          resolveNotificationsConfig(process.env),
           notificationsMailer,
-        );
-      },
+        ),
     },
   ],
-  exports: [NotificationsService],
+  exports: [NOTIFICATIONS_STORE, NotificationsService],
 })
 export class NotificationsModule {}

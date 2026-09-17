@@ -5,26 +5,16 @@ import type {
   AuthAccountRecord,
   AuthAccountStore,
   AuthConsentRecord,
+  AuthExportSnapshot,
   AuthInvitation,
   AuthRole,
+  PurgedAuthAccountSummary,
 } from "./auth.types";
 
 type PersistedAuthState = {
   accounts: Record<string, AuthAccount>;
   bootstrapConsumed: boolean;
   invitations: Record<string, AuthInvitation>;
-};
-
-export type AuthExportSnapshot = {
-  account: AuthAccountRecord | null;
-  issuedInvitations: Array<AuthInvitation & { tokenHash: string }>;
-  receivedInvitations: Array<AuthInvitation & { tokenHash: string }>;
-};
-
-export type PurgedAuthAccountSummary = {
-  accountDeleted: boolean;
-  invitationsRemoved: number;
-  invitationsScrubbed: number;
 };
 
 function createEmptyState(): PersistedAuthState {

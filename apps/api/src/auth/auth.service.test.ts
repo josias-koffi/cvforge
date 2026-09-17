@@ -1,12 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { createInMemoryAccountStore } from "./testing/in-memory-account-store";
 import { AuthService } from "./auth.service";
-import type {
-  AuthAccount,
-  AuthAccountStore,
-  AuthConfig,
-  AuthInvitation,
-  AuthRole,
-} from "./auth.types";
+import type { AuthConfig } from "./auth.types";
 
 const config: AuthConfig = {
   apiUrl: "http://localhost:3333",
@@ -19,96 +14,6 @@ const config: AuthConfig = {
   secureCookies: false,
   stateFilePath: "/tmp/cvforge-auth-state-test.json",
 };
-
-function createInMemoryAccountStore(): AuthAccountStore {
-  const accounts = new Map<string, AuthAccount>();
-  const invitations = new Map<string, AuthInvitation>();
-  let bootstrapConsumed = false;
-
-  return {
-    listAccounts() {
-      return [...accounts.entries()]
-        .map(([email, account]) => ({
-          email,
-          ...account,
-        }))
-        .sort((left, right) => left.email.localeCompare(right.email));
-    },
-    updateRole(email, role) {
-      const account = accounts.get(email);
-
-      if (!account) {
-        return null;
-      }
-
-      accounts.set(email, { ...account, role });
-
-      return { email, ...account, role };
-    },
-    readAccount(email) {
-      return accounts.get(email) ?? null;
-    },
-    resolveRole(email, consent) {
-      const existingRole = accounts.get(email)?.role;
-
-      if (existingRole) {
-        return existingRole;
-      }
-
-      const role: AuthRole = bootstrapConsumed ? "user" : "admin";
-
-      accounts.set(email, { consent: consent ?? null, role });
-
-      if (role === "admin") {
-        bootstrapConsumed = true;
-      }
-
-      return role;
-    },
-    assignInvitedRole(email, role, consent) {
-      const existingRole = accounts.get(email)?.role;
-      const resolvedRole =
-        existingRole === "admin" || role === "admin" ? "admin" : "user";
-
-      accounts.set(email, { consent, role: resolvedRole });
-
-      if (resolvedRole === "admin") {
-        bootstrapConsumed = true;
-      }
-
-      return resolvedRole;
-    },
-    readInvitation(tokenHash) {
-      return invitations.get(tokenHash) ?? null;
-    },
-    saveInvitation(tokenHash, invitation) {
-      invitations.set(tokenHash, invitation);
-    },
-    consumeInvitation(tokenHash, consumedAt, now) {
-      const invitation = invitations.get(tokenHash);
-
-      if (!invitation) {
-        return null;
-      }
-
-      if (
-        invitation.consumedAt !== null ||
-        new Date(invitation.expiresAt).getTime() <= now
-      ) {
-        return null;
-      }
-
-      const updatedInvitation = {
-        ...invitation,
-        consumedAt,
-      };
-
-      invitations.set(tokenHash, updatedInvitation);
-
-      return updatedInvitation;
-    },
-  };
-}
 
 describe("AuthService", () => {
   beforeEach(() => {

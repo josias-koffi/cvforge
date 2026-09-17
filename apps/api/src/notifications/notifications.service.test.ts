@@ -65,6 +65,18 @@ function createNotificationsStore(initial: InAppNotification[] = []): Notificati
       notifications.push(notification);
       return notification;
     },
+    deleteByUserEmail(userEmail) {
+      const owned = notifications.filter(
+        (notification) => notification.userEmail === userEmail,
+      );
+
+      owned.forEach((notification) => {
+        notifications.splice(notifications.indexOf(notification), 1);
+      });
+      preferencesByUser.delete(userEmail);
+
+      return owned.length;
+    },
     findByIdForUserEmail(userEmail, notificationId) {
       return (
         notifications.find(
@@ -103,6 +115,9 @@ function createApplicationsStore(
   return {
     createDraft(application) {
       return application;
+    },
+    deleteByUserEmail() {
+      return 0;
     },
     findById() {
       return null;

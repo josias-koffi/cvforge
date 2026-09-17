@@ -9,6 +9,13 @@ export type StoredInterviewSession = InterviewSessionSummary & {
   userEmail: string;
 };
 
+/** DI token for the interview store. */
+export const INTERVIEW_STORE = Symbol("INTERVIEW_STORE");
+
+export type InterviewConfig = {
+  stateFilePath: string;
+};
+
 export type InterviewStore = {
   findById: (sessionId: string) => StoredInterviewSession | null;
   findByIdForUserEmail: (
