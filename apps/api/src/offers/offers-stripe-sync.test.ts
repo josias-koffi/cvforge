@@ -1,6 +1,6 @@
 import type { AdminCreditOffer } from "@cvforge/types";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { OfferStripeSync } from "./offers-stripe-sync";
+import { CREDIT_OFFER_TAX_CODE, OfferStripeSync } from "./offers-stripe-sync";
 import { offerInput } from "./testing/offer-fixtures";
 
 function offer(overrides: Partial<AdminCreditOffer> = {}): AdminCreditOffer {
@@ -38,7 +38,12 @@ describe("OfferStripeSync", () => {
       stripeProductId: "prod_new",
     });
     expect(stripe.products.create).toHaveBeenCalledWith(
-      expect.objectContaining({ active: true, metadata: { offerId: "offer-1", slug: "discovery" } }),
+      expect.objectContaining({
+        active: true,
+        metadata: { offerId: "offer-1", slug: "discovery" },
+        // Required by Managed Payments, which is on by default.
+        tax_code: CREDIT_OFFER_TAX_CODE,
+      }),
       { idempotencyKey: "credit-offer-product-offer-1" },
     );
     expect(stripe.prices.create).toHaveBeenCalledWith(
@@ -98,7 +103,7 @@ describe("OfferStripeSync", () => {
 
     expect(stripe.products.update).toHaveBeenCalledWith(
       "prod_1",
-      expect.objectContaining({ active: false }),
+      expect.objectContaining({ active: false, tax_code: CREDIT_OFFER_TAX_CODE }),
     );
   });
 });
