@@ -36,7 +36,10 @@ resource "dokploy_compose" "cvspark" {
     "POSTGRES_DB=${var.postgres_db}",
     "POSTGRES_USER=${var.postgres_user}",
     "POSTGRES_PASSWORD=${var.postgres_password}",
-    "DATABASE_URL=postgres://${var.postgres_user}:${var.postgres_password}@postgres:5432/${var.postgres_db}",
+    # Unique per environment: the bare `postgres` alias is shared by staging and
+    # production on `dokploy-network` (see the web service in dokploy-stack.yml).
+    "POSTGRES_HOST=${local.project_name}-postgres",
+    "DATABASE_URL=postgres://${var.postgres_user}:${var.postgres_password}@${local.project_name}-postgres:5432/${var.postgres_db}",
     "REDIS_URL=redis://redis:6379",
     "MINIO_ENDPOINT=http://minio:9000",
     "MINIO_ACCESS_KEY=${var.minio_access_key}",
