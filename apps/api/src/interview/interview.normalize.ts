@@ -1,5 +1,3 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { dirname } from "node:path";
 import {
   INTERVIEW_AI_STATUS_IDLE,
   INTERVIEW_PROFILE_STANDARD,
@@ -9,19 +7,18 @@ import {
   type InterviewRecruiterProfile,
   type InterviewTranscriptChunk,
 } from "@cvforge/types";
-import type { InterviewStore, StoredInterviewSession } from "./interview.types";
-import { normalizeInterviewReport, normalizeMessages, sortChunks } from "./interview.types";
+import type { StoredInterviewSession } from "./interview.types";
+import {
+  normalizeInterviewReport,
+  normalizeMessages,
+  sortChunks,
+} from "./interview.types";
 
-type PersistedInterviewState = {
-  sessions: Record<string, StoredInterviewSession>;
-};
-
-function createEmptyState(): PersistedInterviewState {
-  return {
-    sessions: {},
-  };
-}
-
+/**
+ * The repairs the JSON store used to apply on every read. Legacy records on
+ * disk are only valid because of them, and the Postgres columns are
+ * `not null`, so `import-legacy-interviews` runs them before inserting.
+ */
 function normalizeChunks(value: unknown): InterviewTranscriptChunk[] {
   if (!Array.isArray(value)) {
     return [];
@@ -56,7 +53,7 @@ function normalizeChunks(value: unknown): InterviewTranscriptChunk[] {
   );
 }
 
-function normalizeSession(session: StoredInterviewSession): StoredInterviewSession {
+export function normalizeSession(session: StoredInterviewSession): StoredInterviewSession {
   const language = session.language === "en" ? "en" : "fr";
   const profile = normalizeProfile(session.profile);
   return {
@@ -109,81 +106,5 @@ function normalizeStatus(value: unknown) {
       return value;
     default:
       return INTERVIEW_SESSION_STATUS_IDLE;
-  }
-}
-
-export class FileInterviewStore implements InterviewStore {
-  constructor(private readonly stateFilePath: string) {}
-
-  findById(sessionId: string) {
-    const state = this.readState();
-    return state.sessions[sessionId] ?? null;
-  }
-
-  findByIdForUserEmail(userEmail: string, sessionId: string) {
-    const session = this.findById(sessionId);
-
-    if (!session || session.userEmail !== userEmail) {
-      return null;
-    }
-
-    return session;
-  }
-
-  save(session: StoredInterviewSession) {
-    const state = this.readState();
-    state.sessions[session.id] = normalizeSession(session);
-    this.writeState(state);
-    return session;
-  }
-
-  purgeCompletedBefore(cutoffIso: string): number {
-    const state = this.readState();
-    const cutoffMs = new Date(cutoffIso).getTime();
-    let removed = 0;
-
-    for (const [id, session] of Object.entries(state.sessions)) {
-      if (
-        session.completedAt &&
-        new Date(session.completedAt).getTime() < cutoffMs
-      ) {
-        delete state.sessions[id];
-        removed += 1;
-      }
-    }
-
-    if (removed > 0) {
-      this.writeState(state);
-    }
-
-    return removed;
-  }
-
-  private readState(): PersistedInterviewState {
-    if (!existsSync(this.stateFilePath)) {
-      return createEmptyState();
-    }
-
-    try {
-      const parsed = JSON.parse(
-        readFileSync(this.stateFilePath, "utf8"),
-      ) as Partial<PersistedInterviewState>;
-
-      return {
-        sessions: Object.fromEntries(
-          Object.entries(parsed.sessions ?? {}).map(([id, session]) => [
-            id,
-            normalizeSession(session as StoredInterviewSession),
-          ]),
-        ),
-      };
-    } catch {
-      return createEmptyState();
-    }
-  }
-
-  private writeState(state: PersistedInterviewState) {
-    mkdirSync(dirname(this.stateFilePath), { recursive: true });
-    writeFileSync(this.stateFilePath, JSON.stringify(state, null, 2));
   }
 }

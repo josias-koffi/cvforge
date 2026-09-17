@@ -11,8 +11,19 @@ export class InterviewPurgeService implements OnModuleInit, OnModuleDestroy {
   constructor(private readonly store: InterviewStore) {}
 
   onModuleInit() {
-    this.purge();
-    this.intervalId = setInterval(() => this.purge(), MS_PER_DAY);
+    this.schedulePurge();
+    this.intervalId = setInterval(() => this.schedulePurge(), MS_PER_DAY);
+  }
+
+  /**
+   * Nothing awaits the retention purge, so a database error would surface as
+   * an unhandled rejection and take the API down. It is logged and the next
+   * run tries again.
+   */
+  private schedulePurge() {
+    this.purge().catch((error: unknown) => {
+      console.error("[interview] retention purge failed", error);
+    });
   }
 
   onModuleDestroy() {
@@ -22,7 +33,7 @@ export class InterviewPurgeService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  purge(): number {
+  purge(): Promise<number> {
     const cutoff = new Date(
       Date.now() - AUDIO_RETENTION_DAYS * MS_PER_DAY,
     ).toISOString();

@@ -1,5 +1,4 @@
 import { resolve } from "node:path";
-import type { InterviewConfig } from "./interview.types";
 
 const DEFAULT_STATE_FILE = resolve(
   process.cwd(),
@@ -7,10 +6,7 @@ const DEFAULT_STATE_FILE = resolve(
   "interviews-state.json",
 );
 
-export function resolveInterviewConfig(
-  env: NodeJS.ProcessEnv,
-): InterviewConfig {
-  return {
-    stateFilePath: env.INTERVIEW_STATE_FILE?.trim() || DEFAULT_STATE_FILE,
-  };
+/** The pre-Postgres JSON store, imported once by `import-legacy-interviews.ts`. */
+export function resolveLegacyInterviewStateFile(env: NodeJS.ProcessEnv) {
+  return env.INTERVIEW_STATE_FILE?.trim() || DEFAULT_STATE_FILE;
 }

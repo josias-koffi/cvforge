@@ -27,7 +27,7 @@ function makeSession(overrides: Partial<StoredInterviewSession> = {}): StoredInt
   };
 }
 
-function makeStore(purgeSpy = vi.fn(() => 0)): InterviewStore {
+function makeStore(purgeSpy = vi.fn(async () => 0)): InterviewStore {
   return {
     findById: vi.fn(),
     findByIdForUserEmail: vi.fn(),
@@ -38,7 +38,7 @@ function makeStore(purgeSpy = vi.fn(() => 0)): InterviewStore {
 
 describe("InterviewPurgeService", () => {
   it("calls purgeCompletedBefore on init with the correct 30-day cutoff", () => {
-    const purgeSpy = vi.fn(() => 0);
+    const purgeSpy = vi.fn(async () => 0);
     const store = makeStore(purgeSpy);
     const service = new InterviewPurgeService(store);
 
@@ -57,11 +57,11 @@ describe("InterviewPurgeService", () => {
     service.onModuleDestroy();
   });
 
-  it("purge returns number of removed sessions", () => {
-    const purgeSpy = vi.fn(() => 3);
+  it("purge returns number of removed sessions", async () => {
+    const purgeSpy = vi.fn(async () => 3);
     const store = makeStore(purgeSpy);
     const service = new InterviewPurgeService(store);
-    expect(service.purge()).toBe(3);
+    expect(await service.purge()).toBe(3);
   });
 
   it("clears the interval on destroy", () => {

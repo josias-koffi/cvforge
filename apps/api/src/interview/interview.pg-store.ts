@@ -1,0 +1,160 @@
+import type { InterviewTranscriptChunk } from "@cvforge/types";
+import { and, asc, eq, lt } from "drizzle-orm";
+import type { Database } from "../database/database.types";
+import { interviewChunks, interviewSessions } from "../database/schema";
+import type { InterviewStore, StoredInterviewSession } from "./interview.types";
+
+type SessionRow = typeof interviewSessions.$inferSelect;
+type ChunkRow = typeof interviewChunks.$inferSelect;
+
+function toChunk(row: ChunkRow): InterviewTranscriptChunk {
+  return {
+    chunkId: row.chunkId,
+    createdAt: row.createdAt.toISOString(),
+    endedAt: row.endedAt.toISOString(),
+    errorMessage: row.errorMessage,
+    isFinal: row.isFinal,
+    mimeType: row.mimeType,
+    sequence: row.sequence,
+    startedAt: row.startedAt.toISOString(),
+    status: row.status,
+    transcript: row.transcript,
+  };
+}
+
+function toSession(
+  row: SessionRow,
+  chunks: InterviewTranscriptChunk[],
+): StoredInterviewSession {
+  return {
+    aiResponse: row.aiResponse,
+    aiResponseGeneratedAt: row.aiResponseGeneratedAt?.toISOString() ?? null,
+    aiStatus: row.aiStatus,
+    applicationId: row.applicationId,
+    chunks,
+    completedAt: row.completedAt?.toISOString() ?? null,
+    createdAt: row.createdAt.toISOString(),
+    id: row.id,
+    language: row.language,
+    lastError: row.lastError,
+    messages: row.messages,
+    prefetchedQuestion: row.prefetchedQuestion,
+    profile: row.profile,
+    recoverable: row.recoverable,
+    report: row.report ?? null,
+    status: row.status,
+    transcript: row.transcript,
+    updatedAt: row.updatedAt.toISOString(),
+    userEmail: row.userEmail,
+  };
+}
+
+function toRow(session: StoredInterviewSession) {
+  return {
+    aiResponse: session.aiResponse,
+    aiResponseGeneratedAt: session.aiResponseGeneratedAt
+      ? new Date(session.aiResponseGeneratedAt)
+      : null,
+    aiStatus: session.aiStatus,
+    applicationId: session.applicationId,
+    completedAt: session.completedAt ? new Date(session.completedAt) : null,
+    createdAt: new Date(session.createdAt),
+    id: session.id,
+    language: session.language,
+    lastError: session.lastError,
+    messages: session.messages ?? [],
+    prefetchedQuestion: session.prefetchedQuestion ?? null,
+    profile: session.profile,
+    recoverable: session.recoverable,
+    report: session.report ?? null,
+    status: session.status,
+    transcript: session.transcript ?? "",
+    updatedAt: new Date(session.updatedAt),
+    userEmail: session.userEmail,
+  };
+}
+
+export class PgInterviewStore implements InterviewStore {
+  constructor(private readonly db: Database) {}
+
+  async findById(sessionId: string) {
+    const [row] = await this.db
+      .select()
+      .from(interviewSessions)
+      .where(eq(interviewSessions.id, sessionId));
+
+    return row ? toSession(row, await this.readChunks(sessionId)) : null;
+  }
+
+  async findByIdForUserEmail(userEmail: string, sessionId: string) {
+    const [row] = await this.db
+      .select()
+      .from(interviewSessions)
+      .where(
+        and(
+          eq(interviewSessions.id, sessionId),
+          eq(interviewSessions.userEmail, userEmail),
+        ),
+      );
+
+    return row ? toSession(row, await this.readChunks(sessionId)) : null;
+  }
+
+  /**
+   * Writes the session and replaces its chunks. The caller hands over the full
+   * run every time, as it did when this was one JSON blob, so the rows are
+   * deleted and re-inserted inside one transaction.
+   */
+  save(session: StoredInterviewSession) {
+    const row = toRow(session);
+
+    return this.db.transaction(async (tx) => {
+      await tx
+        .insert(interviewSessions)
+        .values(row)
+        .onConflictDoUpdate({ target: interviewSessions.id, set: row });
+
+      await tx
+        .delete(interviewChunks)
+        .where(eq(interviewChunks.sessionId, session.id));
+
+      for (const chunk of session.chunks ?? []) {
+        await tx.insert(interviewChunks).values({
+          chunkId: chunk.chunkId,
+          createdAt: new Date(chunk.createdAt),
+          endedAt: new Date(chunk.endedAt),
+          errorMessage: chunk.errorMessage,
+          isFinal: chunk.isFinal,
+          mimeType: chunk.mimeType,
+          sequence: chunk.sequence,
+          sessionId: session.id,
+          startedAt: new Date(chunk.startedAt),
+          status: chunk.status,
+          transcript: chunk.transcript,
+        });
+      }
+
+      return session;
+    });
+  }
+
+  /** Retention purge; the chunks cascade with their session. */
+  async purgeCompletedBefore(cutoffIso: string) {
+    const purged = await this.db
+      .delete(interviewSessions)
+      .where(lt(interviewSessions.completedAt, new Date(cutoffIso)))
+      .returning({ id: interviewSessions.id });
+
+    return purged.length;
+  }
+
+  private async readChunks(sessionId: string) {
+    const rows = await this.db
+      .select()
+      .from(interviewChunks)
+      .where(eq(interviewChunks.sessionId, sessionId))
+      .orderBy(asc(interviewChunks.sequence));
+
+    return rows.map(toChunk);
+  }
+}

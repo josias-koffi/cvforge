@@ -255,7 +255,7 @@ export class InterviewService {
     private readonly applicationsService: ApplicationsService,
   ) {}
 
-  startSession(
+  async startSession(
     userEmail: string,
     language: Locale = "fr",
     profile: InterviewRecruiterProfile = INTERVIEW_PROFILE_STANDARD,
@@ -290,7 +290,7 @@ export class InterviewService {
       userEmail,
     };
 
-    this.store.save(session);
+    await this.store.save(session);
 
     return {
       session: summarizeInterviewSession(session),
@@ -298,8 +298,10 @@ export class InterviewService {
     };
   }
 
-  getSession(userEmail: string, sessionId: string) {
-    return summarizeInterviewSession(this.getOwnedSession(userEmail, sessionId));
+  async getSession(userEmail: string, sessionId: string) {
+    return summarizeInterviewSession(
+      await this.getOwnedSession(userEmail, sessionId),
+    );
   }
 
   finishSession(userEmail: string, sessionId: string) {
@@ -307,7 +309,7 @@ export class InterviewService {
   }
 
   async prefetchNextQuestion(userEmail: string, sessionId: string) {
-    const session = this.getOwnedSession(userEmail, sessionId);
+    const session = await this.getOwnedSession(userEmail, sessionId);
 
     if (!session.transcript || session.status === INTERVIEW_SESSION_STATUS_COMPLETED) {
       return summarizeInterviewSession(session);
@@ -322,7 +324,7 @@ export class InterviewService {
 
       session.prefetchedQuestion = question.trim();
       session.updatedAt = nowIso();
-      this.store.save(session);
+      await this.store.save(session);
     } catch {
       // prefetch is best-effort; never fail the session on prefetch error
     }
@@ -331,7 +333,7 @@ export class InterviewService {
   }
 
   private async finishSessionInternal(userEmail: string, sessionId: string) {
-    const session = this.getOwnedSession(userEmail, sessionId);
+    const session = await this.getOwnedSession(userEmail, sessionId);
 
     if (!session.transcript.trim()) {
       throw new BadRequestException(
@@ -354,7 +356,7 @@ export class InterviewService {
     session.recoverable = false;
     session.status = INTERVIEW_SESSION_STATUS_COMPLETED;
     session.updatedAt = completedAt;
-    this.store.save(session);
+    await this.store.save(session);
 
     if (linkedApplication) {
       await this.applicationsService.appendInterviewReport(
@@ -372,7 +374,7 @@ export class InterviewService {
     sessionId: string,
     request: InterviewTranscriptionChunkRequest,
   ) {
-    const session = this.getOwnedSession(userEmail, sessionId);
+    const session = await this.getOwnedSession(userEmail, sessionId);
     const existingChunk = session.chunks.find(
       (chunk) => chunk.chunkId === request.chunkId,
     );
@@ -426,7 +428,7 @@ export class InterviewService {
         });
       }
       session.updatedAt = nowIso();
-      this.store.save(session);
+      await this.store.save(session);
     } catch (error) {
       const errorMessage =
         error instanceof Error
@@ -452,7 +454,7 @@ export class InterviewService {
       session.recoverable = true;
       session.status = INTERVIEW_SESSION_STATUS_ERROR;
       session.updatedAt = nowIso();
-      this.store.save(session);
+      await this.store.save(session);
     }
 
     return summarizeInterviewSession(session);
@@ -462,7 +464,7 @@ export class InterviewService {
     userEmail: string,
     sessionId: string,
   ): AsyncGenerator<InterviewAIResponseEvent, void, undefined> {
-    const session = this.getOwnedSession(userEmail, sessionId);
+    const session = await this.getOwnedSession(userEmail, sessionId);
 
     if (!session.transcript) {
       yield { type: "error", message: "Aucune transcription disponible pour generer une reponse.", timestamp: nowIso() };
@@ -483,7 +485,7 @@ export class InterviewService {
       session.aiResponseGeneratedAt = prefetchTimestamp;
       session.aiStatus = INTERVIEW_AI_STATUS_DONE;
       session.updatedAt = prefetchTimestamp;
-      this.store.save(session);
+      await this.store.save(session);
       yield { index: 0, text: fullText, timestamp: prefetchTimestamp, type: "chunk" };
       yield { fullText, timestamp: nowIso(), type: "done" };
       return;
@@ -493,7 +495,7 @@ export class InterviewService {
     session.aiResponse = null;
     session.aiResponseGeneratedAt = null;
     session.updatedAt = nowIso();
-    this.store.save(session);
+    await this.store.save(session);
 
     let fullText = "";
     let chunkIndex = 0;
@@ -530,7 +532,7 @@ export class InterviewService {
       session.aiResponseGeneratedAt = aiTimestamp;
       session.aiStatus = INTERVIEW_AI_STATUS_DONE;
       session.updatedAt = aiTimestamp;
-      this.store.save(session);
+      await this.store.save(session);
 
       yield { fullText, timestamp: nowIso(), type: "done" };
     } catch (error) {
@@ -540,14 +542,17 @@ export class InterviewService {
       session.aiStatus = INTERVIEW_AI_STATUS_ERROR;
       session.lastError = message;
       session.updatedAt = nowIso();
-      this.store.save(session);
+      await this.store.save(session);
 
       yield { message, timestamp: nowIso(), type: "error" };
     }
   }
 
-  private getOwnedSession(userEmail: string, sessionId: string) {
-    const session = this.store.findByIdForUserEmail(userEmail, sessionId);
+  private async getOwnedSession(userEmail: string, sessionId: string) {
+    const session = await this.store.findByIdForUserEmail(
+      userEmail,
+      sessionId,
+    );
 
     if (!session) {
       throw new NotFoundException("Session d'interview introuvable.");
