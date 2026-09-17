@@ -3,10 +3,12 @@ import { describe, expect, it, vi } from "vitest";
 import { TemplatesController } from "./templates.controller";
 
 describe("TemplatesController", () => {
-  it("lists templates for an authenticated admin", () => {
+  it("lists templates for an authenticated admin", async () => {
     const templatesService = {
-      getAnalytics: vi.fn().mockReturnValue({ csv: "id\n", summary: { totalTemplates: 1 } }),
-      listTemplates: vi.fn().mockReturnValue([{ id: "template-cv" }]),
+      getAnalytics: vi
+        .fn()
+        .mockResolvedValue({ csv: "id\n", summary: { totalTemplates: 1 } }),
+      listTemplates: vi.fn().mockResolvedValue([{ id: "template-cv" }]),
     };
     const authService = {
       readSessionFromCookieHeader: vi.fn().mockReturnValue({
@@ -19,12 +21,12 @@ describe("TemplatesController", () => {
       authService as never,
     );
 
-    expect(controller.listTemplates({ headers: {} })).toEqual({
+    await expect(controller.listTemplates({ headers: {} })).resolves.toEqual({
       templates: [{ id: "template-cv" }],
     });
   });
 
-  it("rejects unauthenticated access", () => {
+  it("rejects unauthenticated access", async () => {
     const controller = new TemplatesController(
       { listTemplates: vi.fn() } as never,
       {
@@ -32,12 +34,12 @@ describe("TemplatesController", () => {
       } as never,
     );
 
-    expect(() => controller.listTemplates({ headers: {} })).toThrow(
+    await expect(controller.listTemplates({ headers: {} })).rejects.toThrow(
       UnauthorizedException,
     );
   });
 
-  it("rejects non-admin sessions", () => {
+  it("rejects non-admin sessions", async () => {
     const controller = new TemplatesController(
       { listTemplates: vi.fn() } as never,
       {
@@ -48,12 +50,12 @@ describe("TemplatesController", () => {
       } as never,
     );
 
-    expect(() => controller.listTemplates({ headers: {} })).toThrow(
+    await expect(controller.listTemplates({ headers: {} })).rejects.toThrow(
       ForbiddenException,
     );
   });
 
-  it("deletes a template for an authenticated admin", () => {
+  it("deletes a template for an authenticated admin", async () => {
     const deleteTemplate = vi.fn();
     const controller = new TemplatesController(
       { deleteTemplate } as never,
@@ -65,13 +67,13 @@ describe("TemplatesController", () => {
       } as never,
     );
 
-    controller.deleteTemplate("template-cv-ats", { headers: {} });
+    await controller.deleteTemplate("template-cv-ats", { headers: {} });
 
     expect(deleteTemplate).toHaveBeenCalledWith("template-cv-ats");
   });
 
-  it("returns analytics for an authenticated admin", () => {
-    const getAnalytics = vi.fn().mockReturnValue({
+  it("returns analytics for an authenticated admin", async () => {
+    const getAnalytics = vi.fn().mockResolvedValue({
       csv: "templateId\n",
       summary: { totalTemplates: 2 },
     });
@@ -85,7 +87,7 @@ describe("TemplatesController", () => {
       } as never,
     );
 
-    expect(controller.getAnalytics({ headers: {} })).toEqual({
+    await expect(controller.getAnalytics({ headers: {} })).resolves.toEqual({
       csv: "templateId\n",
       summary: { totalTemplates: 2 },
     });

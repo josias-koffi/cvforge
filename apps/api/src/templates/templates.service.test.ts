@@ -1,9 +1,14 @@
-import { describe, expect, it } from "vitest";
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import {
   TEMPLATE_KIND_CV,
   TEMPLATE_KIND_LETTER,
   type DraftApplication,
 } from "@cvforge/types";
+import {
+  createTestDatabase,
+  type TestDatabase,
+} from "../database/testing/test-database";
+import { PgTemplatesStore } from "./templates.pg-store";
 import { TemplatesService } from "./templates.service";
 import type {
   StoredTemplate,
@@ -11,28 +16,20 @@ import type {
   TemplatesStore,
 } from "./templates.types";
 
-function makeStore(seedTemplates: StoredTemplate[] = []): TemplatesStore {
-  const templates = new Map(seedTemplates.map((template) => [template.id, template]));
+let testDatabase: TestDatabase;
+let store: TemplatesStore;
 
-  return {
-    create(template) {
-      templates.set(template.id, template);
-      return template;
-    },
-    findById(templateId) {
-      return templates.get(templateId) ?? null;
-    },
-    list() {
-      return [...templates.values()];
-    },
-    remove(templateId) {
-      templates.delete(templateId);
-    },
-    save(template) {
-      templates.set(template.id, template);
-      return template;
-    },
-  };
+/**
+ * Seeds the real Postgres-backed store. The single-default-per-kind rule is a
+ * partial unique index now, so the suite runs against the engine that enforces
+ * it rather than a Map that cannot.
+ */
+async function makeStore(seedTemplates: StoredTemplate[] = []) {
+  for (const template of seedTemplates) {
+    await store.create(template);
+  }
+
+  return store;
 }
 
 function makeSeedTemplate(id: string, kind: StoredTemplate["kind"]): StoredTemplate {
@@ -84,14 +81,27 @@ function makeApplication(
 }
 
 describe("TemplatesService", () => {
-  it("creates templates and keeps one default per kind", () => {
-    const store = makeStore([
+  beforeAll(async () => {
+    testDatabase = await createTestDatabase();
+    store = new PgTemplatesStore(testDatabase.db);
+  });
+
+  afterAll(async () => {
+    await testDatabase.close();
+  });
+
+  beforeEach(async () => {
+    await testDatabase.reset();
+  });
+
+  it("creates templates and keeps one default per kind", async () => {
+    const store = await makeStore([
       makeSeedTemplate("cv-default", TEMPLATE_KIND_CV),
       makeSeedTemplate("letter-default", TEMPLATE_KIND_LETTER),
     ]);
     const service = new TemplatesService(store);
 
-    const created = service.createTemplate({
+    const created = await service.createTemplate({
       categories: ["Moderne"],
       isDefault: true,
       kind: TEMPLATE_KIND_CV,
@@ -103,19 +113,21 @@ describe("TemplatesService", () => {
     expect(created.kind).toBe(TEMPLATE_KIND_CV);
     expect(created.locale).toBe("en");
     expect(created.isDefault).toBe(true);
-    expect(store.findById("cv-default")?.isDefault).toBe(false);
+    await expect(store.findById("cv-default")).resolves.toMatchObject({
+      isDefault: false,
+    });
   });
 
-  it("updates templates and duplicates them without making the copy default", () => {
-    const store = makeStore([makeSeedTemplate("cv-default", TEMPLATE_KIND_CV)]);
+  it("updates templates and duplicates them without making the copy default", async () => {
+    const store = await makeStore([makeSeedTemplate("cv-default", TEMPLATE_KIND_CV)]);
     const service = new TemplatesService(store);
-    const templateId = store.list()[0]?.id ?? "cv-default";
+    const templateId = (await store.list())[0]?.id ?? "cv-default";
 
-    const updated = service.updateTemplate(templateId, {
+    const updated = await service.updateTemplate(templateId, {
       categories: ["ATS", "Minimaliste"],
       name: "CV ATS revise",
     });
-    const duplicated = service.duplicateTemplate(templateId);
+    const duplicated = await service.duplicateTemplate(templateId);
 
     expect(updated.name).toBe("CV ATS revise");
     expect(updated.categories).toEqual(["ATS", "Minimaliste"]);
@@ -124,57 +136,63 @@ describe("TemplatesService", () => {
     expect(duplicated.active).toBe(false);
   });
 
-  it("rejects updates for unknown templates", () => {
-    const service = new TemplatesService(makeStore());
+  it("rejects updates for unknown templates", async () => {
+    const service = new TemplatesService(await makeStore());
 
-    expect(() =>
-      service.updateTemplate("missing", {
-        name: "Missing",
-      }),
-    ).toThrow(/introuvable/);
+    await expect(
+      service.updateTemplate("missing", { name: "Missing" }),
+    ).rejects.toThrow(/introuvable/);
   });
 
-  it("deletes a non-default template and leaves the default intact", () => {
-    const store = makeStore([
+  it("deletes a non-default template and leaves the default intact", async () => {
+    const store = await makeStore([
       makeSeedTemplate("cv-default", TEMPLATE_KIND_CV),
       { ...makeSeedTemplate("cv-other", TEMPLATE_KIND_CV), isDefault: false },
     ]);
     const service = new TemplatesService(store);
 
-    service.deleteTemplate("cv-other");
+    await service.deleteTemplate("cv-other");
 
-    expect(store.findById("cv-other")).toBeNull();
-    expect(store.findById("cv-default")?.isDefault).toBe(true);
+    await expect(store.findById("cv-other")).resolves.toBeNull();
+    await expect(store.findById("cv-default")).resolves.toMatchObject({
+      isDefault: true,
+    });
   });
 
-  it("transfers the default flag when deleting the current default", () => {
-    const store = makeStore([
+  it("transfers the default flag when deleting the current default", async () => {
+    const store = await makeStore([
       makeSeedTemplate("cv-default", TEMPLATE_KIND_CV),
       { ...makeSeedTemplate("cv-other", TEMPLATE_KIND_CV), isDefault: false },
     ]);
     const service = new TemplatesService(store);
 
-    service.deleteTemplate("cv-default");
+    await service.deleteTemplate("cv-default");
 
-    expect(store.findById("cv-default")).toBeNull();
-    expect(store.findById("cv-other")?.isDefault).toBe(true);
+    await expect(store.findById("cv-default")).resolves.toBeNull();
+    await expect(store.findById("cv-other")).resolves.toMatchObject({
+      isDefault: true,
+    });
   });
 
-  it("refuses to delete the last template of a kind", () => {
-    const store = makeStore([makeSeedTemplate("cv-only", TEMPLATE_KIND_CV)]);
+  it("refuses to delete the last template of a kind", async () => {
+    const store = await makeStore([makeSeedTemplate("cv-only", TEMPLATE_KIND_CV)]);
     const service = new TemplatesService(store);
 
-    expect(() => service.deleteTemplate("cv-only")).toThrow(/seul template/);
+    await expect(service.deleteTemplate("cv-only")).rejects.toThrow(
+      /seul template/,
+    );
   });
 
-  it("rejects deletion of unknown templates", () => {
-    const service = new TemplatesService(makeStore());
+  it("rejects deletion of unknown templates", async () => {
+    const service = new TemplatesService(await makeStore());
 
-    expect(() => service.deleteTemplate("missing")).toThrow(/introuvable/);
+    await expect(service.deleteTemplate("missing")).rejects.toThrow(
+      /introuvable/,
+    );
   });
 
-  it("builds analytics and CSV export from template usage", () => {
-    const templatesStore = makeStore([
+  it("builds analytics and CSV export from template usage", async () => {
+    const templatesStore = await makeStore([
       makeSeedTemplate("cv-default", TEMPLATE_KIND_CV),
       makeSeedTemplate("letter-default", TEMPLATE_KIND_LETTER),
       {
@@ -205,7 +223,7 @@ describe("TemplatesService", () => {
     };
     const service = new TemplatesService(templatesStore, applicationsStore);
 
-    const analytics = service.getAnalytics();
+    const analytics = await service.getAnalytics();
 
     expect(analytics.summary.totalTemplates).toBe(3);
     expect(analytics.summary.generatedCvCount).toBe(2);

@@ -100,7 +100,7 @@ export class CvGenerationService {
       ),
       language: offerContext.language,
     };
-    const cvTemplateId = this.resolveDefaultTemplateId(TEMPLATE_KIND_CV);
+    const cvTemplateId = await this.resolveDefaultTemplateId(TEMPLATE_KIND_CV);
 
     // Charged only once the output has been parsed, normalised and grounded.
     await this.creditsService.consumeCredits({
@@ -173,7 +173,7 @@ export class CvGenerationService {
       language: offerContext.language,
     };
     const letterTemplateId =
-      this.resolveDefaultTemplateId(TEMPLATE_KIND_LETTER);
+      await this.resolveDefaultTemplateId(TEMPLATE_KIND_LETTER);
 
     // Charged only once the output has been parsed and normalised.
     await this.creditsService.consumeCredits({
@@ -238,11 +238,11 @@ export class CvGenerationService {
     };
   }
 
-  updateCvContent(
+  async updateCvContent(
     userEmail: string,
     applicationId: string,
     request: CvContentUpdateRequest,
-  ): CVDocumentContent {
+  ): Promise<CVDocumentContent> {
     const application = this.store.findByIdForUserEmail(
       userEmail,
       applicationId,
@@ -256,7 +256,7 @@ export class CvGenerationService {
     const timestamp = new Date().toISOString();
     const cvTemplateId =
       application.cvTemplateId ??
-      this.resolveDefaultTemplateId(TEMPLATE_KIND_CV);
+      (await this.resolveDefaultTemplateId(TEMPLATE_KIND_CV));
 
     this.store.save({
       ...application,
@@ -294,17 +294,17 @@ export class CvGenerationService {
     );
   }
 
-  updateLetterContent(
+  async updateLetterContent(
     userEmail: string,
     applicationId: string,
     request: LetterContentUpdateRequest,
-  ): LetterDocumentContent {
+  ): Promise<LetterDocumentContent> {
     const application = this.getApplicationForUser(userEmail, applicationId);
     const letterContent = normalizeUpdatedLetterContent(request.letterContent);
     const timestamp = new Date().toISOString();
     const letterTemplateId =
       application.letterTemplateId ??
-      this.resolveDefaultTemplateId(TEMPLATE_KIND_LETTER);
+      (await this.resolveDefaultTemplateId(TEMPLATE_KIND_LETTER));
 
     this.store.save({
       ...application,
@@ -371,10 +371,10 @@ export class CvGenerationService {
     };
   }
 
-  private resolveDefaultTemplateId(
+  private async resolveDefaultTemplateId(
     kind: typeof TEMPLATE_KIND_CV | typeof TEMPLATE_KIND_LETTER,
   ) {
-    const templates = this.templatesStore?.list() ?? [];
+    const templates = (await this.templatesStore?.list()) ?? [];
     const defaultTemplate =
       templates.find(
         (template) => template.kind === kind && template.isDefault,

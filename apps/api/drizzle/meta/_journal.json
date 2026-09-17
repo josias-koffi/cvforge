@@ -29,6 +29,20 @@
       "when": 1789649718698,
       "tag": "0003_seed_default_credit_offers",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1789652901647,
+      "tag": "0004_templates",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1789652902647,
+      "tag": "0005_seed_default_templates",
+      "breakpoints": true
     }
   ]
 }

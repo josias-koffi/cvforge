@@ -219,8 +219,8 @@ describe("CvGenerationService grounding and billing", () => {
     expect(letter.object).toContain("Senior TypeScript Developer");
   });
 
-  it("drops the grounding notice once the candidate saves by hand", () => {
-    const updated = service.updateCvContent("user@test.example", "app-001", {
+  it("drops the grounding notice once the candidate saves by hand", async () => {
+    const updated = await service.updateCvContent("user@test.example", "app-001", {
       cvContent: {
         ...VALID_CV_JSON,
         grounding: {
