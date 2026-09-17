@@ -180,7 +180,7 @@ export class CvGenerationController {
   }
 
   @Get(":applicationId/cv")
-  getCvContent(
+  async getCvContent(
     @Param("applicationId") applicationId: string,
     @Req() request: RequestLike,
   ) {
@@ -192,7 +192,7 @@ export class CvGenerationController {
       throw new UnauthorizedException("A valid session is required.");
     }
 
-    const cvContent = this.cvGenerationService.getCvContent(
+    const cvContent = await this.cvGenerationService.getCvContent(
       session.email,
       applicationId,
     );
@@ -205,7 +205,7 @@ export class CvGenerationController {
   }
 
   @Get(":applicationId/cv/versions")
-  listCvVersions(
+  async listCvVersions(
     @Param("applicationId") applicationId: string,
     @Req() request: RequestLike,
   ) {
@@ -218,7 +218,7 @@ export class CvGenerationController {
     }
 
     return {
-      versions: this.cvGenerationService.listCvVersions(
+      versions: await this.cvGenerationService.listCvVersions(
         session.email,
         applicationId,
       ),
@@ -249,7 +249,7 @@ export class CvGenerationController {
   }
 
   @Get(":applicationId/letter/versions")
-  listLetterVersions(
+  async listLetterVersions(
     @Param("applicationId") applicationId: string,
     @Req() request: RequestLike,
   ) {
@@ -262,7 +262,7 @@ export class CvGenerationController {
     }
 
     return {
-      versions: this.cvGenerationService.listLetterVersions(
+      versions: await this.cvGenerationService.listLetterVersions(
         session.email,
         applicationId,
       ),
@@ -270,7 +270,7 @@ export class CvGenerationController {
   }
 
   @Get(":applicationId/letter")
-  getLetterContent(
+  async getLetterContent(
     @Param("applicationId") applicationId: string,
     @Req() request: RequestLike,
   ) {
@@ -282,7 +282,7 @@ export class CvGenerationController {
       throw new UnauthorizedException("A valid session is required.");
     }
 
-    const letterContent = this.cvGenerationService.getLetterContent(
+    const letterContent = await this.cvGenerationService.getLetterContent(
       session.email,
       applicationId,
     );

@@ -77,12 +77,12 @@ describe("AdminUsersController", () => {
     expect(result.pagination.pageSize).toBe(100);
   });
 
-  it("updates the role of another user", () => {
+  it("updates the role of another user", async () => {
     const { authService, controller } = createController();
 
-    expect(
+    await expect(
       controller.updateUser("alice%40example.com", { role: "admin" }, request),
-    ).toEqual({ user: { email: "alice@example.com", role: "admin" } });
+    ).resolves.toEqual({ user: { email: "alice@example.com", role: "admin" } });
     expect(authService.updateAccountRole).toHaveBeenCalledWith(
       "alice@example.com",
       "admin",
@@ -92,9 +92,9 @@ describe("AdminUsersController", () => {
   it("prevents an admin from demoting or deleting themselves", async () => {
     const { controller } = createController();
 
-    expect(() =>
+    await expect(
       controller.updateUser("admin@example.com", { role: "user" }, request),
-    ).toThrow(BadRequestException);
+    ).rejects.toThrow(BadRequestException);
     await expect(controller.deleteUser("admin@example.com", request)).rejects.toThrow(
       BadRequestException,
     );

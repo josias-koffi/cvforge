@@ -29,32 +29,32 @@ export class ApplicationsController {
   ) {}
 
   @Get()
-  listApplications(@Req() request: RequestLike) {
+  async listApplications(@Req() request: RequestLike) {
     const session = this.requireSession(request);
 
     return {
-      applications: this.applicationsService.listApplications(session.email),
+      applications: await this.applicationsService.listApplications(session.email),
     };
   }
 
   @Get("summary")
-  listSummary(@Req() request: RequestLike) {
+  async listSummary(@Req() request: RequestLike) {
     const session = this.requireSession(request);
 
     return {
-      summary: this.applicationsService.listApplicationSummary(session.email),
+      summary: await this.applicationsService.listApplicationSummary(session.email),
     };
   }
 
   @Get(":applicationId")
-  getApplication(
+  async getApplication(
     @Param("applicationId") applicationId: string,
     @Req() request: RequestLike,
   ) {
     const session = this.requireSession(request);
 
     return {
-      application: this.applicationsService.getApplicationForUser(
+      application: await this.applicationsService.getApplicationForUser(
         session.email,
         applicationId,
       ),
@@ -62,20 +62,20 @@ export class ApplicationsController {
   }
 
   @Get(":applicationId/offer")
-  getOffer(
+  async getOffer(
     @Param("applicationId") applicationId: string,
     @Req() request: RequestLike,
   ) {
     const session = this.requireSession(request);
 
-    return this.applicationsService.getOfferForUser(
+    return await this.applicationsService.getOfferForUser(
       session.email,
       applicationId,
     );
   }
 
   @Patch(":applicationId")
-  updateOffer(
+  async updateOffer(
     @Param("applicationId") applicationId: string,
     @Body() body: OfferUpdateInput,
     @Req() request: RequestLike,
@@ -83,7 +83,7 @@ export class ApplicationsController {
     const session = this.requireSession(request);
 
     return {
-      application: this.applicationsService.updateOffer(
+      application: await this.applicationsService.updateOffer(
         session.email,
         applicationId,
         body ?? {},
@@ -139,7 +139,7 @@ export class ApplicationsController {
   }
 
   @Put(":applicationId/profile")
-  setProfile(
+  async setProfile(
     @Param("applicationId") applicationId: string,
     @Body() body: { profileId?: string | null },
     @Req() request: RequestLike,
@@ -147,7 +147,7 @@ export class ApplicationsController {
     const session = this.requireSession(request);
 
     return {
-      application: this.applicationsService.setProfile(
+      application: await this.applicationsService.setProfile(
         session.email,
         applicationId,
         body?.profileId,
@@ -156,7 +156,7 @@ export class ApplicationsController {
   }
 
   @Post(":applicationId/status")
-  updateStatus(
+  async updateStatus(
     @Param("applicationId") applicationId: string,
     @Body() body: { status?: string },
     @Req() request: RequestLike,
@@ -164,7 +164,7 @@ export class ApplicationsController {
     const session = this.requireSession(request);
 
     return {
-      application: this.applicationsService.updateStatus(
+      application: await this.applicationsService.updateStatus(
         session.email,
         applicationId,
         body.status ?? "",

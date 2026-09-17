@@ -31,7 +31,7 @@ const baseApp = {
 };
 
 describe("ApplicationsController", () => {
-  it("returns a single application by id for the authenticated user", () => {
+  it("returns a single application by id for the authenticated user", async () => {
     const applicationsService = {
       getApplicationForUser: vi.fn().mockReturnValue(baseApp),
       importFromText: vi.fn(),
@@ -48,7 +48,7 @@ describe("ApplicationsController", () => {
     } as unknown as AuthService;
     const controller = new ApplicationsController(applicationsService, authService);
 
-    const result = controller.getApplication("app_123", {
+    const result = await controller.getApplication("app_123", {
       headers: { cookie: "cvforge_session=abc" },
     });
 
@@ -59,7 +59,7 @@ describe("ApplicationsController", () => {
     );
   });
 
-  it("rejects unauthenticated getApplication", () => {
+  it("rejects unauthenticated getApplication", async () => {
     const applicationsService = {
       getApplicationForUser: vi.fn(),
       importFromText: vi.fn(),
@@ -73,9 +73,9 @@ describe("ApplicationsController", () => {
     } as unknown as AuthService;
     const controller = new ApplicationsController(applicationsService, authService);
 
-    expect(() =>
+    await expect(
       controller.getApplication("app_123", { headers: {} }),
-    ).toThrow(UnauthorizedException);
+    ).rejects.toThrow(UnauthorizedException);
   });
 
   it("imports an application for the authenticated user", async () => {
@@ -136,7 +136,7 @@ describe("ApplicationsController", () => {
     });
   });
 
-  it("lists applications for the authenticated user", () => {
+  it("lists applications for the authenticated user", async () => {
     const applicationsService = {
       importFromText: vi.fn(),
       importFromUrl: vi.fn(),
@@ -155,9 +155,9 @@ describe("ApplicationsController", () => {
       authService,
     );
 
-    expect(
+    await expect(
       controller.listApplications({ headers: { cookie: "cvforge_session=abc" } }),
-    ).toEqual({
+    ).resolves.toEqual({
       applications: [{ id: "app_123" }],
     });
   });
@@ -247,7 +247,7 @@ describe("ApplicationsController", () => {
     });
   });
 
-  it("lists KPI summary data for the authenticated user", () => {
+  it("lists KPI summary data for the authenticated user", async () => {
     const applicationsService = {
       importFromText: vi.fn(),
       importFromUrl: vi.fn(),
@@ -277,9 +277,9 @@ describe("ApplicationsController", () => {
       authService,
     );
 
-    expect(
+    await expect(
       controller.listSummary({ headers: { cookie: "cvforge_session=abc" } }),
-    ).toEqual({
+    ).resolves.toEqual({
       summary: {
         respondedCount: 1,
         responseRate: 50,
@@ -295,7 +295,7 @@ describe("ApplicationsController", () => {
     });
   });
 
-  it("updates an application status for the authenticated user", () => {
+  it("updates an application status for the authenticated user", async () => {
     const applicationsService = {
       importFromText: vi.fn(),
       importFromUrl: vi.fn(),
@@ -317,13 +317,13 @@ describe("ApplicationsController", () => {
       authService,
     );
 
-    expect(
+    await expect(
       controller.updateStatus(
         "app_123",
         { status: "sent" },
         { headers: { cookie: "cvforge_session=abc" } },
       ),
-    ).toEqual({
+    ).resolves.toEqual({
       application: {
         id: "app_123",
         status: "sent",
@@ -359,20 +359,20 @@ describe("ApplicationsController offer editing", () => {
 
   const authed = { headers: { cookie: "cvforge_session=abc" } };
 
-  it("returns the offer with its raw description", () => {
+  it("returns the offer with its raw description", async () => {
     const { controller } = createController();
 
-    expect(controller.getOffer("app_123", authed)).toEqual({
+    await expect(controller.getOffer("app_123", authed)).resolves.toEqual({
       application: baseApp,
       offerText: "Raw",
     });
   });
 
-  it("patches an offer for the authenticated user", () => {
+  it("patches an offer for the authenticated user", async () => {
     const { applicationsService, controller } = createController();
     const patch = { offerText: "Nouveau", offerUrl: null };
 
-    expect(controller.updateOffer("app_123", patch, authed)).toEqual({
+    await expect(controller.updateOffer("app_123", patch, authed)).resolves.toEqual({
       application: baseApp,
     });
     expect(applicationsService.updateOffer).toHaveBeenCalledWith(
@@ -395,18 +395,18 @@ describe("ApplicationsController offer editing", () => {
     );
   });
 
-  it("requires a session to edit an offer", () => {
+  it("requires a session to edit an offer", async () => {
     const { controller } = createController();
 
-    expect(() =>
+    await expect(
       controller.updateOffer("app_123", {}, { headers: {} }),
-    ).toThrow(UnauthorizedException);
+    ).rejects.toThrow(UnauthorizedException);
   });
 
-  it("stores the profile picked for an application", () => {
+  it("stores the profile picked for an application", async () => {
     const { applicationsService, controller } = createController();
 
-    expect(controller.setProfile("app_123", { profileId: "profile_b" }, authed)).toEqual({
+    await expect(controller.setProfile("app_123", { profileId: "profile_b" }, authed)).resolves.toEqual({
       application: baseApp,
     });
     expect(applicationsService.setProfile).toHaveBeenCalledWith(
@@ -414,8 +414,8 @@ describe("ApplicationsController offer editing", () => {
       "app_123",
       "profile_b",
     );
-    expect(() =>
+    await expect(
       controller.setProfile("app_123", { profileId: "profile_b" }, { headers: {} }),
-    ).toThrow(UnauthorizedException);
+    ).rejects.toThrow(UnauthorizedException);
   });
 });

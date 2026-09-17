@@ -268,54 +268,54 @@ describe("CvGenerationController", () => {
   });
 
   describe("GET :applicationId/cv", () => {
-    it("returns cvContent for authenticated user", () => {
+    it("returns cvContent for authenticated user", async () => {
       const controller = makeController();
-      const result = controller.getCvContent("app-001", {
+      const result = await controller.getCvContent("app-001", {
         headers: { cookie: "cvforge_session=abc" },
       });
 
       expect(result).toEqual({ cvContent: MOCK_CV });
     });
 
-    it("throws NotFoundException when no CV generated yet", () => {
+    it("throws NotFoundException when no CV generated yet", async () => {
       const controller = makeController(
         { email: "user@test.example", role: "user" },
         { getCvContent: vi.fn().mockReturnValue(null) },
       );
 
-      expect(() =>
+      await expect(
         controller.getCvContent("app-001", { headers: { cookie: "s=x" } }),
-      ).toThrow(NotFoundException);
+      ).rejects.toThrow(NotFoundException);
     });
 
-    it("throws UnauthorizedException when no session", () => {
+    it("throws UnauthorizedException when no session", async () => {
       const controller = makeController(null);
 
-      expect(() => controller.getCvContent("app-001", { headers: {} })).toThrow(
+      await expect(controller.getCvContent("app-001", { headers: {} })).rejects.toThrow(
         UnauthorizedException,
       );
     });
   });
 
   describe("GET :applicationId/letter", () => {
-    it("returns letterContent for authenticated user", () => {
+    it("returns letterContent for authenticated user", async () => {
       const controller = makeController();
-      const result = controller.getLetterContent("app-001", {
+      const result = await controller.getLetterContent("app-001", {
         headers: { cookie: "cvforge_session=abc" },
       });
 
       expect(result).toEqual({ letterContent: MOCK_LETTER });
     });
 
-    it("throws NotFoundException when no letter generated yet", () => {
+    it("throws NotFoundException when no letter generated yet", async () => {
       const controller = makeController(
         { email: "user@test.example", role: "user" },
         { getLetterContent: vi.fn().mockReturnValue(null) },
       );
 
-      expect(() =>
+      await expect(
         controller.getLetterContent("app-001", { headers: { cookie: "s=x" } }),
-      ).toThrow(NotFoundException);
+      ).rejects.toThrow(NotFoundException);
     });
   });
 
