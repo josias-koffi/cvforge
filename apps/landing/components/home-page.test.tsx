@@ -8,6 +8,34 @@ import { SiteHeader } from "@/components/site-header"
 import { StoryPage } from "@/components/story-page"
 import { en } from "@/content/en"
 import { fr } from "@/content/fr"
+import type { PublicCreditOffer } from "@cvforge/types"
+
+const offers: PublicCreditOffer[] = [
+  {
+    credits: 550,
+    currency: "eur",
+    description: { en: "Get going", fr: "Pour démarrer" },
+    features: { en: ["VAT included"], fr: ["TVA incluse"] },
+    id: "o-starter",
+    isFeatured: false,
+    name: { en: "Starter", fr: "Starter" },
+    priceCents: 999,
+    slug: "starter",
+    sortOrder: 10,
+  },
+  {
+    credits: 1400,
+    currency: "eur",
+    description: { en: "", fr: "" },
+    features: { en: ["Every feature included"], fr: ["Tout inclus"] },
+    id: "o-pro",
+    isFeatured: true,
+    name: { en: "Pro", fr: "Pro" },
+    priceCents: 1999,
+    slug: "pro",
+    sortOrder: 20,
+  },
+]
 
 const escapeHtml = (text: string) =>
   text.replaceAll("'", "&#x27;").replaceAll('"', "&quot;")
@@ -18,22 +46,34 @@ describe("HomePage", () => {
     ["en", en],
   ] as const)("renders the %s hero, pricing and FAQ", (locale, dict) => {
     const html = renderToStaticMarkup(
-      <HomePage locale={locale} withTestimonials={false} />
+      <HomePage locale={locale} offers={offers} withTestimonials={false} />
     )
 
     expect(html).toContain(dict.hero.titleAccent)
     expect(html).toContain('id="pricing"')
     expect(html).toContain("Starter")
+    expect(html).toContain(dict.pricing.popular)
+    expect(html).toContain(locale === "fr" ? "TVA incluse" : "VAT included")
     expect(html).toContain(escapeHtml(dict.faq.items[0].question))
     expect(html).toContain('href="/login"')
   })
 
+  it("shows no price when the offers cannot be loaded", () => {
+    const html = renderToStaticMarkup(
+      <HomePage locale="fr" offers={null} withTestimonials={false} />
+    )
+
+    expect(html).toContain(escapeHtml(fr.pricing.unavailable))
+    expect(html).not.toContain(fr.pricing.popular)
+    expect(html).not.toContain("€")
+  })
+
   it("hides placeholder testimonials unless enabled", () => {
     const hidden = renderToStaticMarkup(
-      <HomePage locale="fr" withTestimonials={false} />
+      <HomePage locale="fr" offers={offers} withTestimonials={false} />
     )
     const shown = renderToStaticMarkup(
-      <HomePage locale="fr" withTestimonials />
+      <HomePage locale="fr" offers={offers} withTestimonials />
     )
 
     expect(hidden).not.toContain(fr.testimonials.items[0].name)
@@ -42,7 +82,7 @@ describe("HomePage", () => {
 
   it("gives every screenshot localized alt text", () => {
     const html = renderToStaticMarkup(
-      <HomePage locale="en" withTestimonials={false} />
+      <HomePage locale="en" offers={offers} withTestimonials={false} />
     )
 
     expect(html).toContain(`alt="${en.showcase.tabs[0].alt}"`)

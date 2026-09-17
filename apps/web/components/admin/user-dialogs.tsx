@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useTransition } from "react"
-import { useRouter } from "next/navigation"
 import { CopyIcon, UserPlusIcon } from "lucide-react"
 import { toast } from "sonner"
 
@@ -41,29 +40,10 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Spinner } from "@/components/ui/spinner"
-import type { ActionResult } from "@/lib/api"
+import { useActionMutation } from "@/hooks/use-action-mutation"
 import type { AdminUserRow } from "@/lib/admin"
 
 type Role = AdminUserRow["role"]
-
-function useMutation(onDone: () => void) {
-  const [pending, startTransition] = useTransition()
-  const router = useRouter()
-
-  const run = (task: () => Promise<ActionResult>) =>
-    startTransition(async () => {
-      const result = await task()
-      if (result.ok) {
-        toast.success(result.message)
-        onDone()
-        router.refresh()
-      } else {
-        toast.error(result.message)
-      }
-    })
-
-  return { pending, run }
-}
 
 function RoleSelect({ id, onChange, value }: { id: string; onChange: (role: Role) => void; value: Role }) {
   return (
@@ -185,7 +165,7 @@ type UserDialogProps = {
 
 export function EditRoleDialog({ onOpenChange, open, user }: UserDialogProps) {
   const [role, setRole] = useState<Role>(user.role)
-  const { pending, run } = useMutation(() => onOpenChange(false))
+  const { pending, run } = useActionMutation(() => onOpenChange(false))
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -221,7 +201,7 @@ export function EditRoleDialog({ onOpenChange, open, user }: UserDialogProps) {
 export function GrantCreditsDialog({ onOpenChange, open, user }: UserDialogProps) {
   const [credits, setCredits] = useState("50")
   const [note, setNote] = useState("")
-  const { pending, run } = useMutation(() => onOpenChange(false))
+  const { pending, run } = useActionMutation(() => onOpenChange(false))
   const amount = Number.parseInt(credits, 10)
 
   return (
@@ -272,7 +252,7 @@ export function GrantCreditsDialog({ onOpenChange, open, user }: UserDialogProps
 }
 
 export function DeleteUserDialog({ onOpenChange, open, user }: UserDialogProps) {
-  const { pending, run } = useMutation(() => onOpenChange(false))
+  const { pending, run } = useActionMutation(() => onOpenChange(false))
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>

@@ -45,6 +45,7 @@ services:
     environment:
       NEXT_DIST_DIR: tmp/cvforge-landing-next
       APP_URL: http://localhost:3100
+      API_INTERNAL_URL: http://api:3333
       CHOKIDAR_USEPOLLING: "true"
       WATCHPACK_POLLING: "true"
     volumes:
@@ -82,6 +83,7 @@ services:
       AUTH_STATE_FILE: ${AUTH_STATE_FILE:-}
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
       CHOKIDAR_USEPOLLING: "true"
     depends_on:
       - postgres

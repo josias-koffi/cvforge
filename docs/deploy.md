@@ -84,8 +84,11 @@ and `NEXT_SERVER_ACTIONS_ENCRYPTION_KEY`, plus all ten staging values.
 write on it. Nothing in `koklo-infra` references R2, so assume it does not exist.
 Both `infra/terraform` and `infra/dokploy` fail at `init` without it.
 
-**3. Back up the real data.** The API keeps its state as JSON files in
-`cvforge_api_data`, not in Postgres. Snapshot that volume, and dump Postgres too.
+**3. Back up the real data.** The API keeps most of its state as JSON files in
+`cvforge_api_data`; credits, offers and orders live in Postgres (ADR-011).
+Snapshot that volume, and dump Postgres too. On its first start the API imports
+`credits-state.json` into Postgres once (`data_imports` table); the file stays
+in place as a record.
 Everything downstream depends on this being done.
 
 **4. DNS.** Merging into `develop` runs the `tofu` job, which creates the six
@@ -192,5 +195,47 @@ pipeline's file and nothing references it any more.
   an off-site copy means adding `dokploy_backup` + `dokploy_destination` to
   `infra/dokploy/`. **What remains lives on the VPS only** — copy it off-site for
   real durability.
-- The API stores its state as JSON files in the `api_data` volume
-  (`/workspace/.data`), not in Postgres. Never recreate that volume.
+- The API stores credits, offers and orders in Postgres and everything else as
+  JSON files in the `api_data` volume (`/workspace/.data`). Never recreate either
+  volume. Migrations run automatically before the API starts; `GET /ready`
+  checks the database.
+
+## Stripe payments
+
+Each environment has its own Stripe account and its own catalogue: staging uses
+the **CvSpark sandbox**, production the live account. Products and prices are
+never configured by hand — they are created from the back-office
+(`/admin/offers`), and their ids are stored in that environment's database.
+
+**Staging (sandbox)**
+
+1. In the sandbox, create a **restricted key** (`rk_test_…`) with write access
+   to Products, Prices and Checkout Sessions. Store it as `STRIPE_SECRET_KEY` in
+   the `staging` GitHub Environment.
+2. Add a webhook endpoint `https://cvspark-api-staging.koklo.dev/billing/stripe/webhook`
+   for `checkout.session.completed`, `checkout.session.async_payment_succeeded`,
+   `checkout.session.async_payment_failed` and `checkout.session.expired`. Store
+   its signing secret (`whsec_…`) as `STRIPE_WEBHOOK_SECRET` in `staging`.
+3. Deploy (push to `develop`), then in `/admin/offers` click **Synchroniser
+   Stripe**: the seeded Starter and Pro offers get their Stripe product and
+   price. Every badge must read « Synchronisée ».
+4. Test from `/credits` with a regular account: card `4242 4242 4242 4242`
+   (paid, credits arrive within seconds), `4000 0000 0000 0002` (declined),
+   `4000 0027 6000 3184` (3-D Secure), and an abandoned checkout (the order
+   turns « Abandonné » when the session expires). Resend an event from the
+   Stripe Dashboard: the balance must not change.
+
+**Production (live)** — only after staging passes.
+
+1. Activate the live account (business details, bank account, tax settings).
+2. Repeat steps 1–2 with a live restricted key and the endpoint
+   `https://cvspark-api.koklo.dev/billing/stripe/webhook`, in the `production`
+   Environment.
+3. Merge `develop` into `main`, then **Synchroniser Stripe** in production's
+   back-office.
+4. Buy the cheapest offer with a real card, check the credits, then refund it
+   from the Stripe Dashboard.
+
+Without `STRIPE_SECRET_KEY` the offers are still editable but marked « À
+synchroniser », and checkout answers 503. Without `STRIPE_WEBHOOK_SECRET` the
+webhook answers 503 and Stripe retries for three days.

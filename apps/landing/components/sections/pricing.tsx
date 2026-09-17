@@ -1,5 +1,5 @@
 import { CheckIcon } from "lucide-react"
-import { CREDIT_PACK_PRO } from "@cvforge/types"
+import type { PublicCreditOffer } from "@cvforge/types"
 
 import { Reveal } from "@/components/reveal"
 import { Section, SectionHeading } from "@/components/section"
@@ -12,20 +12,22 @@ import {
   CREDITS_PER_APPLICATION,
   creditCost,
   formatNumber,
-  getPackSummaries,
   pricedActions,
+  toPackSummaries,
   type PackSummary,
 } from "@/lib/pricing"
 import { cn } from "@/lib/utils"
 
 export function Pricing({
   locale,
+  offers,
   pricing,
 }: {
   locale: Locale
+  offers: PublicCreditOffer[] | null
   pricing: LandingDictionary["pricing"]
 }) {
-  const packs = getPackSummaries(locale)
+  const packs = offers ? toPackSummaries(offers, locale) : []
 
   return (
     <Section id="pricing" className="border-y bg-card">
@@ -34,18 +36,27 @@ export function Pricing({
         title={pricing.title}
         subtitle={pricing.subtitle}
       />
-      <div className="mx-auto grid max-w-4xl gap-6 md:grid-cols-2">
-        {packs.map((pack, index) => (
-          <Reveal key={pack.id} delay={index * 0.08}>
-            <PackCard
-              pack={pack}
-              locale={locale}
-              pricing={pricing}
-              featured={pack.id === CREDIT_PACK_PRO}
-            />
-          </Reveal>
-        ))}
-      </div>
+      {packs.length > 0 ? (
+        <div
+          className={cn(
+            "mx-auto grid max-w-5xl gap-6 md:grid-cols-2",
+            packs.length >= 3 && "lg:grid-cols-3"
+          )}
+        >
+          {packs.map((pack, index) => (
+            <Reveal key={pack.id} delay={index * 0.08}>
+              <PackCard pack={pack} locale={locale} pricing={pricing} />
+            </Reveal>
+          ))}
+        </div>
+      ) : (
+        <Reveal className="mx-auto flex max-w-xl flex-col items-center gap-4 rounded-2xl border bg-background p-8 text-center">
+          <p className="text-muted-foreground">{pricing.unavailable}</p>
+          <Button size="lg" asChild>
+            <a href={LOGIN_PATH}>{pricing.unavailableCta}</a>
+          </Button>
+        </Reveal>
+      )}
 
       <Reveal className="mx-auto mt-12 max-w-2xl">
         <h3 className="text-center text-lg font-medium">
@@ -78,13 +89,13 @@ function PackCard({
   pack,
   locale,
   pricing,
-  featured,
 }: {
   pack: PackSummary
   locale: Locale
   pricing: LandingDictionary["pricing"]
-  featured: boolean
 }) {
+  const { featured } = pack
+
   return (
     <article
       className={cn(
@@ -107,15 +118,18 @@ function PackCard({
       <p className="text-sm text-muted-foreground">
         {format(pricing.applicationsLabel, { count: pack.applications })}
       </p>
+      {pack.description ? (
+        <p className="mt-4 text-sm text-muted-foreground">{pack.description}</p>
+      ) : null}
       <ul className="my-8 flex flex-col gap-2.5 text-sm">
-        {pricing.perks.map((perk) => (
-          <li key={perk} className="flex items-center gap-2">
+        {pack.features.map((feature) => (
+          <li key={feature} className="flex items-center gap-2">
             <CheckIcon
               className="size-4 shrink-0 text-primary"
               strokeWidth={1.75}
               aria-hidden
             />
-            {perk}
+            {feature}
           </li>
         ))}
       </ul>
