@@ -1,22 +1,23 @@
 import type { Metadata } from "next"
 import {
   AI_CREDIT_COSTS,
-  creditPacks,
   type CreditLedgerEntry,
   type CreditLedgerSummary,
+  type CreditOrder,
+  type PublicCreditOffer,
 } from "@cvforge/types"
 import { CoinsIcon } from "lucide-react"
 
-import { startCheckout } from "@/app/(app)/credits/actions"
+import { BillingReturn } from "@/components/credits/billing-return"
+import { CreditOfferCard } from "@/components/credits/credit-offer-card"
+import { PurchasesTable } from "@/components/credits/purchases-table"
 import { TableFrame } from "@/components/data-table/table-frame"
-import { ActionButton } from "@/components/feedback/action-button"
 import { PageHeader } from "@/components/layout/page-header"
 import { Badge } from "@/components/ui/badge"
 import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
@@ -28,7 +29,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { api } from "@/lib/api"
-import { formatCredits, formatDateTime, formatPrice } from "@/lib/format"
+import { formatCredits, formatDateTime } from "@/lib/format"
 
 export const metadata: Metadata = { title: "Crédits" }
 
@@ -42,10 +43,15 @@ const actionLabels: Record<CreditLedgerEntry["action"], string> = {
 }
 
 export default async function CreditsPage() {
-  const { credits } = await api<{ credits: CreditLedgerSummary }>("/credits/me")
+  const [{ credits }, { offers }, { orders }] = await Promise.all([
+    api<{ credits: CreditLedgerSummary }>("/credits/me"),
+    api<{ offers: PublicCreditOffer[] }>("/public/credit-offers"),
+    api<{ orders: CreditOrder[] }>("/billing/orders/me"),
+  ])
 
   return (
     <>
+      <BillingReturn />
       <PageHeader
         title="Crédits"
         description="Chaque génération consomme des crédits. Rechargez quand vous voulez, sans abonnement."
@@ -71,29 +77,16 @@ export default async function CreditsPage() {
             </ul>
           </CardContent>
         </Card>
-        {Object.values(creditPacks).map((pack) => (
-          <Card key={pack.id}>
-            <CardHeader>
-              <CardDescription>Pack {pack.label}</CardDescription>
-              <CardTitle className="text-3xl tabular-nums">{pack.credits} crédits</CardTitle>
-            </CardHeader>
-            <CardContent className="text-sm text-muted-foreground">
-              Paiement unique et sécurisé via Stripe.
-            </CardContent>
-            <CardFooter>
-              <ActionButton
-                className="w-full"
-                pendingLabel="Redirection…"
-                action={startCheckout.bind(null, pack.id)}
-              >
-                Acheter · {formatPrice(pack.priceCents)}
-              </ActionButton>
-            </CardFooter>
-          </Card>
+        {offers.map((offer) => (
+          <CreditOfferCard key={offer.id} offer={offer} />
         ))}
       </div>
       <section className="flex flex-col gap-3 px-4 lg:px-6">
-        <h2 className="text-lg font-semibold">Historique</h2>
+        <h2 className="text-lg font-semibold">Achats</h2>
+        <PurchasesTable orders={orders} />
+      </section>
+      <section className="flex flex-col gap-3 px-4 lg:px-6">
+        <h2 className="text-lg font-semibold">Historique des crédits</h2>
         <TableFrame>
           <TableHeader>
             <TableRow>

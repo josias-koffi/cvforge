@@ -8,13 +8,17 @@ import { Problem } from "@/components/sections/problem"
 import { ProductShowcase } from "@/components/sections/product-showcase"
 import { Testimonials } from "@/components/sections/testimonials"
 import { getDictionary } from "@/lib/dictionaries"
+import type { PublicCreditOffer } from "@cvforge/types"
+
 import type { Locale } from "@/lib/i18n"
 
 export function HomePage({
   locale,
+  offers,
   withTestimonials,
 }: {
   locale: Locale
+  offers: PublicCreditOffer[] | null
   withTestimonials: boolean
 }) {
   const dict = getDictionary(locale)
@@ -29,7 +33,7 @@ export function HomePage({
       {withTestimonials ? (
         <Testimonials testimonials={dict.testimonials} />
       ) : null}
-      <Pricing locale={locale} pricing={dict.pricing} />
+      <Pricing locale={locale} offers={offers} pricing={dict.pricing} />
       <Faq faq={dict.faq} />
       <Cta cta={dict.cta} />
     </>

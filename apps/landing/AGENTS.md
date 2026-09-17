@@ -16,7 +16,7 @@ Public showcase site. Same stack as `apps/web` (Next 16, Tailwind v4, shadcn `ra
 
 - **All copy lives in `content/fr.ts` and `content/en.ts`**, typed by `content/types.ts`. Never hard-code user-facing text in a component. Both dictionaries must keep the same keys (a test enforces it).
 - **Wording and identity come from `.project/marketing/`**: CVSpark is never written CVSPARK, no gradient on the wordmark, no font weight 700, sentence case, amber (`--spark`) only for the primary "generate" call to action.
-- **Prices are never hard-coded**: `lib/pricing.ts` derives them from `creditPacks` and `AI_CREDIT_COSTS` in `@cvforge/types`.
+- **Prices are never hard-coded**: packs come from the API (`GET /public/credit-offers`, managed in the back-office) through `lib/offers-api.ts`; action costs come from `AI_CREDIT_COSTS` in `@cvforge/types`. When the API is unreachable the section shows no price at all.
 - **Links to the product** go through `/login` (a route handler reading `APP_URL` at request time), never a build-time `NEXT_PUBLIC_APP_URL`.
 - **Theme tokens** in `app/globals.css` mirror `apps/web/app/globals.css`; copy changes across when they should be shared.
 - Testimonials are placeholders behind `NEXT_PUBLIC_SHOW_TESTIMONIALS`; do not enable it until real reviews replace them.
@@ -41,6 +41,7 @@ pnpm --filter @cvforge/landing build
 | Variable                        | When                                         | Default                 |
 | ------------------------------- | -------------------------------------------- | ----------------------- |
 | `APP_URL`                       | runtime, target of `/login`                  | `http://localhost:3100` |
+| `API_INTERNAL_URL`              | runtime, API serving the credit offers       | `NEXT_PUBLIC_API_URL`, then `http://localhost:3333` |
 | `NEXT_PUBLIC_SITE_URL`          | build, canonical URLs / sitemap / OG images  | `http://localhost:3101` |
 | `NEXT_PUBLIC_SHOW_TESTIMONIALS` | build, `true` shows the testimonials section | off                     |
 | `NEXT_DIST_DIR`                 | dev in docker-compose                        | `.next`                 |

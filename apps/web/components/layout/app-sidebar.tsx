@@ -7,6 +7,7 @@ import {
   BriefcaseBusinessIcon,
   CoinsIcon,
   LayoutDashboardIcon,
+  PackageIcon,
   PlusIcon,
   UserRoundIcon,
   UsersIcon,
@@ -27,6 +28,11 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
+
+const adminItems = [
+  { href: "/admin/users", icon: UsersIcon, title: "Utilisateurs" },
+  { href: "/admin/offers", icon: PackageIcon, title: "Offres de crédits" },
+]
 
 const mainItems = [
   { href: "/dashboard", icon: LayoutDashboardIcon, title: "Tableau de bord" },
@@ -109,18 +115,20 @@ export function AppSidebar({
             <SidebarGroupLabel>Administration</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={isActive("/admin/users")}
-                    tooltip="Utilisateurs"
-                  >
-                    <Link href="/admin/users">
-                      <UsersIcon />
-                      <span>Utilisateurs</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+                {adminItems.map((item) => (
+                  <SidebarMenuItem key={item.href}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={isActive(item.href)}
+                      tooltip={item.title}
+                    >
+                      <Link href={item.href}>
+                        <item.icon />
+                        <span>{item.title}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
