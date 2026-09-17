@@ -144,11 +144,14 @@ which is unambiguous by construction. The traffic stays on the box — out to th
 VPS address and back in through Traefik — at the cost of a TLS hop.
 
 `postgres`, `redis`, `minio` and `puppeteer` collide in exactly the same way.
-Only `PUPPETEER_URL` is ever read by the code (`cv-pdf-export.service.ts`), and
-PDF rendering is stateless, so the residual exposure is cosmetic;
-`DATABASE_URL`, `REDIS_URL` and `MINIO_ENDPOINT` are dead configuration, read
-nowhere. **Anything added later that genuinely uses a datastore must not rely on
-the bare service name.**
+Postgres is now read by the API (ADR-011), so it gets a per-environment network
+alias, `${POSTGRES_HOST}` = `<project>-postgres` (`cvspark-postgres` or
+`cvspark-staging-postgres`), declared on the stack's `default` network and used
+by `DATABASE_URL` and the `db_backup` service. Check it after a deploy from the
+API container: `getent hosts cvspark-staging-postgres` must return a single
+address. `REDIS_URL` and `MINIO_ENDPOINT` are still dead configuration and
+`PUPPETEER_URL` is stateless. **Anything else that starts using a datastore must
+get the same treatment, never the bare service name.**
 
 The clean fix — prefixing every service name so each alias is unique — is
 blocked by Dokploy today: a compose whose services no longer match the

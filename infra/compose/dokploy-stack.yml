@@ -110,6 +110,14 @@ services:
   postgres:
     image: postgres:16-alpine
     restart: unless-stopped
+    # Same trap as `api` (see the web service): Dokploy publishes the alias
+    # `postgres` for both environments on `dokploy-network`, so the API could
+    # reach the other environment's database. Clients use this per-environment
+    # alias instead; the service name itself stays, Dokploy rejects renames.
+    networks:
+      default:
+        aliases:
+          - ${POSTGRES_HOST}
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-cvforge}
       POSTGRES_USER: ${POSTGRES_USER:-cvforge}
@@ -151,7 +159,7 @@ services:
     depends_on:
       - postgres
     environment:
-      POSTGRES_HOST: postgres
+      POSTGRES_HOST: ${POSTGRES_HOST}
       POSTGRES_DB: ${POSTGRES_DB:-cvforge}
       POSTGRES_USER: ${POSTGRES_USER:-cvforge}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
