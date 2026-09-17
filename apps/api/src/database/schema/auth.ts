@@ -1,3 +1,4 @@
+import type { AccountStatus } from "@cvforge/types";
 import type { AuthConsentRecord, AuthRole } from "../../auth/auth.types";
 import { sql } from "drizzle-orm";
 import {
@@ -16,12 +17,28 @@ export const authAccounts = pgTable(
     email: text("email").primaryKey(),
     role: text("role").$type<AuthRole>().notNull(),
     consent: jsonb("consent").$type<AuthConsentRecord | null>(),
+    status: text("status")
+      .$type<AccountStatus>()
+      .notNull()
+      .default("active"),
+    /**
+     * Sessions issued before this instant are refused. Session cookies are
+     * stateless HMACs with no server-side record, so this timestamp is what
+     * makes revocation possible at all: suspending or force-logging-out an
+     * account moves it to now, and every cookie already in the wild becomes
+     * invalid without a session table or a write per sign-in.
+     */
+    sessionsValidFrom: timestamp("sessions_valid_from", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
   },
   (table) => [
     check("auth_accounts_role_valid", sql`${table.role} in ('admin', 'user')`),
+    check(
+      "auth_accounts_status_valid",
+      sql`${table.status} in ('active', 'suspended')`,
+    ),
   ],
 );
 

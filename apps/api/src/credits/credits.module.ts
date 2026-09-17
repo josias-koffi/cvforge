@@ -1,4 +1,5 @@
 import { Module } from "@nestjs/common";
+import { AdminAuditModule } from "../admin/admin-audit.module";
 import { AuthModule } from "../auth/auth.module";
 import { DATABASE, type Database } from "../database/database.types";
 import { resolveCreditsConfig } from "./credits.config";
@@ -7,7 +8,7 @@ import { PgCreditLedgerStore } from "./credits.pg-store";
 import { CreditsService } from "./credits.service";
 
 @Module({
-  imports: [AuthModule],
+  imports: [AdminAuditModule, AuthModule],
   controllers: [CreditsController],
   providers: [
     {

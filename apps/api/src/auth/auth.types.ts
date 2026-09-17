@@ -1,3 +1,4 @@
+import type { AccountStatus } from "@cvforge/types";
 export type AuthConsentRecord = {
   acceptedAt: string;
   source: "invitation" | "passwordless";
@@ -7,6 +8,15 @@ export type AuthConsentRecord = {
 export type AuthAccount = {
   consent: AuthConsentRecord | null;
   role: AuthRole;
+  status: AccountStatus;
+  /** Sessions issued before this instant are refused. Null means none revoked. */
+  sessionsValidFrom: string | null;
+};
+
+/** The two fields the per-request session check needs, and nothing else. */
+export type AuthAccountState = {
+  sessionsValidFrom: string | null;
+  status: AccountStatus;
 };
 
 export type AuthAccountRecord = AuthAccount & {
@@ -82,6 +92,17 @@ export type AuthAccountStore = {
    * `resolveRole` are the only ways in.
    */
   demoteToUser: (email: string) => Promise<AuthAccountRecord | null>;
+  readAccountState: (email: string) => Promise<AuthAccountState | null>;
+  /** Suspends or reactivates; suspending also revokes live sessions. */
+  setAccountStatus: (
+    email: string,
+    status: AccountStatus,
+    sessionsValidFrom: string | null,
+  ) => Promise<AuthAccountRecord | null>;
+  revokeSessions: (
+    email: string,
+    sessionsValidFrom: string,
+  ) => Promise<AuthAccountRecord | null>;
   resolveRole: (
     email: string,
     consent?: AuthConsentRecord | null,

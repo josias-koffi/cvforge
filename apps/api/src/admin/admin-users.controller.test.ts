@@ -9,7 +9,9 @@ import { AuthService } from "../auth/auth.service";
 import { createInMemoryAccountStore } from "../auth/testing/in-memory-account-store";
 import type { CreditsService } from "../credits/credits.service";
 import type { PrivacyService } from "../privacy/privacy.service";
+import type { AdminAuditService } from "./admin-audit.service";
 import { AdminUsersController } from "./admin-users.controller";
+import type { AdminUsersService } from "./admin-users.service";
 
 const accounts = [
   { consent: null, email: "admin@example.com", role: "admin" as const },
@@ -37,6 +39,16 @@ function createController(sessionRole: "admin" | "user" | null = "admin") {
 
         return { email, role };
       }),
+    reactivateAccount: vi
+      .fn()
+      .mockImplementation((email: string) => ({ email, status: "active" })),
+    revokeSessions: vi.fn().mockImplementation((email: string) => ({
+      email,
+      sessionsValidFrom: "2026-09-17T12:00:00.000Z",
+    })),
+    suspendAccount: vi
+      .fn()
+      .mockImplementation((email: string) => ({ email, status: "suspended" })),
   } as unknown as AuthService;
   const creditsService = {
     getSummaryForUser: vi.fn().mockResolvedValue({ balance: 10, history: [] }),
@@ -45,13 +57,32 @@ function createController(sessionRole: "admin" | "user" | null = "admin") {
     purgeAccount: vi.fn().mockResolvedValue({ deletedApplications: 2 }),
   } as unknown as PrivacyService;
 
+  const audit = {
+    recordDeletion: vi.fn(),
+    recordDemotion: vi.fn(),
+    recordReactivation: vi.fn(),
+    recordSessionRevocation: vi.fn(),
+    recordSuspension: vi.fn(),
+  } as unknown as AdminAuditService;
+  const directory = {
+    listDirectory: vi.fn().mockResolvedValue({
+      filters: { balance: "all", query: "", role: "all", status: "all" },
+      pagination: { page: 1, pageSize: 20, totalItems: 3, totalPages: 1 },
+      users: [],
+    }),
+  } as unknown as AdminUsersService;
+
   return {
+    audit,
     authService,
     controller: new AdminUsersController(
       authService,
       creditsService,
       privacyService,
+      audit,
+      directory,
     ),
+    directory,
     privacyService,
   };
 }
@@ -59,32 +90,20 @@ function createController(sessionRole: "admin" | "user" | null = "admin") {
 const request = { headers: { cookie: "cvforge_session=abc" } };
 
 describe("AdminUsersController", () => {
-  it("lists users with search, role filter and pagination", async () => {
-    const { controller } = createController();
+  it("passes search, filters and pagination to the directory, capped", async () => {
+    const { controller, directory } = createController();
 
-    const result = await controller.listUsers("1", "1", "o", "user", request);
+    await controller.listUsers("2", "500", "Alice", "user", "active", "low", request);
 
-    expect(result.pagination).toEqual({
-      page: 1,
-      pageSize: 1,
-      totalItems: 2,
-      totalPages: 2,
+    expect(directory.listDirectory).toHaveBeenCalledWith({
+      balance: "low",
+      maxPageSize: 100,
+      page: "2",
+      pageSize: "500",
+      query: "Alice",
+      role: "user",
+      status: "active",
     });
-    expect(result.users[0]).toMatchObject({ balance: 10, role: "user" });
-  });
-
-  it("caps the page size at 100", async () => {
-    const { controller } = createController();
-
-    const result = await controller.listUsers(
-      undefined,
-      "500",
-      undefined,
-      undefined,
-      request,
-    );
-
-    expect(result.pagination.pageSize).toBe(100);
   });
 
   it("demotes another user", async () => {
@@ -119,21 +138,107 @@ describe("AdminUsersController", () => {
     await expect(
       controller.updateUser("admin@example.com", { role: "user" }, request),
     ).rejects.toThrow(BadRequestException);
-    await expect(controller.deleteUser("admin@example.com", request)).rejects.toThrow(
-      BadRequestException,
-    );
+    await expect(
+      controller.deleteUser(
+        "admin@example.com",
+        { confirmationEmail: "admin@example.com" },
+        request,
+      ),
+    ).rejects.toThrow(BadRequestException);
   });
 
-  it("purges another user's data and rejects unknown users", async () => {
+  it("purges another user's data, logs it, and rejects unknown users", async () => {
+    const { audit, controller, privacyService } = createController();
+
+    await expect(
+      controller.deleteUser(
+        "bob@example.com",
+        { confirmationEmail: "BOB@example.com", note: "Demande RGPD" },
+        request,
+      ),
+    ).resolves.toEqual({ deletion: { deletedApplications: 2 } });
+    expect(privacyService.purgeAccount).toHaveBeenCalledWith("bob@example.com");
+    expect(audit.recordDeletion).toHaveBeenCalledWith({
+      actorEmail: "admin@example.com",
+      note: "Demande RGPD",
+      targetEmail: "bob@example.com",
+    });
+    await expect(
+      controller.deleteUser(
+        "ghost@example.com",
+        { confirmationEmail: "ghost@example.com" },
+        request,
+      ),
+    ).rejects.toThrow(NotFoundException);
+  });
+
+  it("refuses a deletion whose confirmation email does not match", async () => {
     const { controller, privacyService } = createController();
 
-    await expect(controller.deleteUser("bob@example.com", request)).resolves.toEqual({
-      deletion: { deletedApplications: 2 },
+    await expect(
+      controller.deleteUser(
+        "bob@example.com",
+        { confirmationEmail: "alice@example.com" },
+        request,
+      ),
+    ).rejects.toThrow(/adresse email du compte/);
+    await expect(
+      controller.deleteUser("bob@example.com", {}, request),
+    ).rejects.toThrow(BadRequestException);
+    expect(privacyService.purgeAccount).not.toHaveBeenCalled();
+  });
+
+  it("suspends and reactivates an account, logging each", async () => {
+    const { audit, authService, controller } = createController();
+
+    await expect(
+      controller.updateUserStatus(
+        "bob%40example.com",
+        { note: "Abus signale", status: "suspended" },
+        request,
+      ),
+    ).resolves.toEqual({
+      user: { email: "bob@example.com", status: "suspended" },
     });
-    expect(privacyService.purgeAccount).toHaveBeenCalledWith("bob@example.com");
-    await expect(controller.deleteUser("ghost@example.com", request)).rejects.toThrow(
-      NotFoundException,
+    expect(authService.suspendAccount).toHaveBeenCalledWith("bob@example.com");
+    expect(audit.recordSuspension).toHaveBeenCalledWith({
+      actorEmail: "admin@example.com",
+      note: "Abus signale",
+      targetEmail: "bob@example.com",
+    });
+
+    await controller.updateUserStatus(
+      "bob@example.com",
+      { status: "active" },
+      request,
     );
+    expect(authService.reactivateAccount).toHaveBeenCalledWith("bob@example.com");
+    expect(audit.recordReactivation).toHaveBeenCalled();
+  });
+
+  it("rejects an unknown status and self-suspension", async () => {
+    const { controller } = createController();
+
+    await expect(
+      controller.updateUserStatus("bob@example.com", { status: "banned" }, request),
+    ).rejects.toThrow(/active ou suspended/);
+    await expect(
+      controller.updateUserStatus(
+        "admin@example.com",
+        { status: "suspended" },
+        request,
+      ),
+    ).rejects.toThrow(/votre propre compte/);
+  });
+
+  it("revokes sessions and logs it", async () => {
+    const { audit, authService, controller } = createController();
+
+    await expect(
+      controller.revokeUserSessions("bob@example.com", {}, request),
+    ).resolves.toMatchObject({ user: { email: "bob@example.com" } });
+    expect(authService.revokeSessions).toHaveBeenCalledWith("bob@example.com");
+    expect(audit.recordSessionRevocation).toHaveBeenCalled();
   });
 
   // The tests above stub AuthService. This one wires the real service to the
@@ -173,6 +278,8 @@ describe("AdminUsersController", () => {
       authService,
       { getSummaryForUser: vi.fn().mockResolvedValue({ balance: 0, history: [] }) } as unknown as CreditsService,
       { purgeAccount: vi.fn() } as unknown as PrivacyService,
+      { recordDemotion: vi.fn() } as unknown as AdminAuditService,
+      { listDirectory: vi.fn() } as unknown as AdminUsersService,
     );
 
     await expect(
@@ -192,11 +299,17 @@ describe("AdminUsersController", () => {
         undefined,
         undefined,
         undefined,
+        undefined,
+        undefined,
         request,
       ),
     ).rejects.toThrow(ForbiddenException);
     await expect(
-      createController(null).controller.deleteUser("bob@example.com", request),
+      createController(null).controller.deleteUser(
+        "bob@example.com",
+        { confirmationEmail: "bob@example.com" },
+        request,
+      ),
     ).rejects.toThrow(UnauthorizedException);
   });
 });

@@ -184,7 +184,7 @@ describe("PgMetricsStore", () => {
         createdAt: new Date(NOW),
         id: "interview-2",
         profile: "neutral" as never,
-        status: "running" as never,
+        status: "ready" as never,
         updatedAt: new Date(NOW),
         userEmail: "user@example.com",
       },

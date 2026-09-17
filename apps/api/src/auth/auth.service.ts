@@ -6,7 +6,12 @@ import {
   Injectable,
   UnauthorizedException,
 } from "@nestjs/common";
+import {
+  ACCOUNT_STATUS_ACTIVE,
+  ACCOUNT_STATUS_SUSPENDED,
+} from "@cvforge/types";
 import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
+import { SUSPENDED_ACCOUNT_MESSAGE } from "./session-state.middleware";
 import type {
   AuthConsentRecord,
   AuthAccountRecord,
@@ -67,6 +72,11 @@ export class AuthService {
 
     if (!existingAccount && !consentAccepted) {
       throw new BadRequestException("Consent is required before creating an account.");
+    }
+
+    // A suspended account keeps its data but gets no way back in.
+    if (existingAccount?.status === ACCOUNT_STATUS_SUSPENDED) {
+      throw new ForbiddenException(SUSPENDED_ACCOUNT_MESSAGE);
     }
 
     const token = randomBytes(24).toString("base64url");
@@ -226,6 +236,75 @@ export class AuthService {
 
   listAccounts(): Promise<AuthAccountRecord[]> {
     return this.accountStore.listAccounts();
+  }
+
+  readAccountState(email: string) {
+    return this.accountStore.readAccountState(this.normalizeEmail(email));
+  }
+
+  /**
+   * Suspends an account: it keeps every byte of its data, loses access, and
+   * its live sessions die immediately (the stateless cookies are invalidated
+   * by moving `sessionsValidFrom`, checked by `SessionStateMiddleware`).
+   */
+  async suspendAccount(rawEmail: string) {
+    const email = this.normalizeEmail(rawEmail);
+    const accounts = await this.accountStore.listAccounts();
+    const target = accounts.find((account) => account.email === email);
+
+    if (!target) {
+      throw new NotFoundException("Utilisateur introuvable.");
+    }
+
+    const hasOtherActiveAdmin = accounts.some(
+      (account) =>
+        account.role === "admin" &&
+        account.email !== email &&
+        account.status !== ACCOUNT_STATUS_SUSPENDED,
+    );
+
+    if (target.role === "admin" && !hasOtherActiveAdmin) {
+      throw new ConflictException(
+        "Impossible de suspendre le dernier administrateur actif.",
+      );
+    }
+
+    return (await this.accountStore.setAccountStatus(
+      email,
+      ACCOUNT_STATUS_SUSPENDED,
+      new Date().toISOString(),
+    )) as AuthAccountRecord;
+  }
+
+  /** Reactivation restores access but does not resurrect revoked cookies. */
+  async reactivateAccount(rawEmail: string) {
+    const email = this.normalizeEmail(rawEmail);
+    const account = await this.accountStore.readAccount(email);
+
+    if (!account) {
+      throw new NotFoundException("Utilisateur introuvable.");
+    }
+
+    return (await this.accountStore.setAccountStatus(
+      email,
+      ACCOUNT_STATUS_ACTIVE,
+      null,
+    )) as AuthAccountRecord;
+  }
+
+  /** Force logout: every session issued before now is refused. */
+  async revokeSessions(rawEmail: string) {
+    const email = this.normalizeEmail(rawEmail);
+    const account = await this.accountStore.readAccount(email);
+
+    if (!account) {
+      throw new NotFoundException("Utilisateur introuvable.");
+    }
+
+    return (await this.accountStore.revokeSessions(
+      email,
+      new Date().toISOString(),
+    )) as AuthAccountRecord;
   }
 
   /**

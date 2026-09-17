@@ -4,6 +4,7 @@ import {
 } from "@nestjs/common";
 import { describe, expect, it, vi } from "vitest";
 import { AuthService } from "../auth/auth.service";
+import type { AdminAuditService } from "../admin/admin-audit.service";
 import { CreditsController } from "./credits.controller";
 import { CreditsService } from "./credits.service";
 
@@ -57,7 +58,7 @@ function makeController(session: unknown) {
     readSessionFromCookieHeader: vi.fn().mockReturnValue(session),
   } as unknown as AuthService;
 
-  return new CreditsController(creditsService, authService);
+  return new CreditsController(creditsService, authService, { recordCreditGrant: vi.fn() } as unknown as AdminAuditService);
 }
 
 describe("CreditsController", () => {

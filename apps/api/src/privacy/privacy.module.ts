@@ -1,5 +1,17 @@
 import { Module } from "@nestjs/common";
+import { AdminAuditModule } from "../admin/admin-audit.module";
+import {
+  ADMIN_AUDIT_STORE,
+  type AdminAuditStore,
+} from "../admin/admin-audit.types";
 import { ApplicationsModule } from "../applications/applications.module";
+import { BillingModule } from "../billing/billing.module";
+import { PgCreditOrdersStore } from "../billing/credit-orders.pg-store";
+import { InterviewModule } from "../interview/interview.module";
+import {
+  INTERVIEW_STORE,
+  type InterviewStore,
+} from "../interview/interview.types";
 import {
   APPLICATIONS_STORE,
   type ApplicationsStore,
@@ -20,9 +32,12 @@ import { PrivacyService } from "./privacy.service";
 
 @Module({
   imports: [
+    AdminAuditModule,
     ApplicationsModule,
     AuthModule,
+    BillingModule,
     CreditsModule,
+    InterviewModule,
     NotificationsModule,
     ProfilesModule,
   ],
@@ -36,6 +51,9 @@ import { PrivacyService } from "./privacy.service";
         PgCreditLedgerStore,
         NOTIFICATIONS_STORE,
         PROFILES_STORE,
+        INTERVIEW_STORE,
+        PgCreditOrdersStore,
+        ADMIN_AUDIT_STORE,
       ],
       useFactory: (
         authStore: AuthAccountStore,
@@ -43,6 +61,9 @@ import { PrivacyService } from "./privacy.service";
         creditsStore: PgCreditLedgerStore,
         notificationsStore: NotificationsStore,
         profilesStore: ProfilesStore,
+        interviewStore: InterviewStore,
+        creditOrdersStore: PgCreditOrdersStore,
+        auditStore: AdminAuditStore,
       ) =>
         new PrivacyService(
           authStore,
@@ -50,6 +71,9 @@ import { PrivacyService } from "./privacy.service";
           creditsStore,
           notificationsStore,
           profilesStore,
+          interviewStore,
+          creditOrdersStore,
+          auditStore,
         ),
     },
   ],

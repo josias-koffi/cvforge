@@ -1,3 +1,4 @@
+import { ACCOUNT_STATUS_ACTIVE } from "@cvforge/types";
 import type {
   AuthAccount,
   AuthAccountStore,
@@ -25,6 +26,46 @@ export function createInMemoryAccountStore(): AuthAccountStore {
         }))
         .sort((left, right) => left.email.localeCompare(right.email));
     },
+    async readAccountState(email) {
+      const account = accounts.get(email);
+
+      return account
+        ? {
+            sessionsValidFrom: account.sessionsValidFrom,
+            status: account.status,
+          }
+        : null;
+    },
+    async setAccountStatus(email, status, sessionsValidFrom) {
+      const account = accounts.get(email);
+
+      if (!account) {
+        return null;
+      }
+
+      const updated = {
+        ...account,
+        sessionsValidFrom: sessionsValidFrom ?? account.sessionsValidFrom,
+        status,
+      };
+
+      accounts.set(email, updated);
+
+      return { email, ...updated };
+    },
+    async revokeSessions(email, sessionsValidFrom) {
+      const account = accounts.get(email);
+
+      if (!account) {
+        return null;
+      }
+
+      const updated = { ...account, sessionsValidFrom };
+
+      accounts.set(email, updated);
+
+      return { email, ...updated };
+    },
     async demoteToUser(email) {
       const account = accounts.get(email);
 
@@ -50,7 +91,12 @@ export function createInMemoryAccountStore(): AuthAccountStore {
 
       const role: AuthRole = bootstrapConsumed ? "user" : "admin";
 
-      accounts.set(email, { consent: consent ?? null, role });
+      accounts.set(email, {
+        consent: consent ?? null,
+        role,
+        sessionsValidFrom: null,
+        status: ACCOUNT_STATUS_ACTIVE,
+      });
 
       if (role === "admin") {
         bootstrapConsumed = true;
@@ -63,7 +109,12 @@ export function createInMemoryAccountStore(): AuthAccountStore {
       const resolvedRole =
         existingRole === "admin" || role === "admin" ? "admin" : "user";
 
-      accounts.set(email, { consent, role: resolvedRole });
+      accounts.set(email, {
+        consent,
+        role: resolvedRole,
+        sessionsValidFrom: accounts.get(email)?.sessionsValidFrom ?? null,
+        status: accounts.get(email)?.status ?? ACCOUNT_STATUS_ACTIVE,
+      });
 
       if (resolvedRole === "admin") {
         bootstrapConsumed = true;

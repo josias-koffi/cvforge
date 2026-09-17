@@ -76,5 +76,6 @@ import { StripeWebhookService } from "./stripe-webhook.service";
         ),
     },
   ],
+  exports: [PgCreditOrdersStore],
 })
 export class BillingModule {}

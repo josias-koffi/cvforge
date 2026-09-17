@@ -84,6 +84,8 @@ describe("importLegacyAuth", () => {
     await expect(store.readAccount("admin@example.com")).resolves.toEqual({
       consent,
       role: "admin",
+      sessionsValidFrom: null,
+      status: "active",
     });
     await expect(store.readInvitation("hash-1")).resolves.toMatchObject({
       createdBy: "admin@example.com",

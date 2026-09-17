@@ -289,4 +289,81 @@ describe("AuthService", () => {
     expect(await store.readAccount("user@example.com")).toMatchObject({ role: "user" });
     expect("updateRole" in store).toBe(false);
   });
+
+  it("should suspend an account, keeping its data and killing its sessions", async () => {
+    const store = createInMemoryAccountStore();
+    const service = new AuthService(config, store);
+
+    await store.resolveRole("admin@example.com");
+    await store.resolveRole("user@example.com");
+
+    const suspended = await service.suspendAccount("USER@example.com");
+
+    expect(suspended).toMatchObject({
+      email: "user@example.com",
+      status: "suspended",
+    });
+    // Revocation timestamp set, so live cookies stop working at once.
+    expect(suspended.sessionsValidFrom).toBe("2026-04-19T20:19:09.000Z");
+    // The account itself is untouched otherwise: suspension is not deletion.
+    expect(await store.readAccount("user@example.com")).toMatchObject({
+      role: "user",
+      status: "suspended",
+    });
+  });
+
+  it("should refuse a magic link for a suspended account", async () => {
+    const store = createInMemoryAccountStore();
+    const service = new AuthService(config, store);
+
+    await store.resolveRole("admin@example.com");
+    await store.resolveRole("user@example.com");
+    await service.suspendAccount("user@example.com");
+
+    await expect(
+      service.requestMagicLink("user@example.com", true),
+    ).rejects.toThrow(/suspendu/i);
+  });
+
+  it("should refuse to suspend the last active admin", async () => {
+    const store = createInMemoryAccountStore();
+    const service = new AuthService(config, store);
+
+    await store.resolveRole("admin@example.com");
+
+    await expect(service.suspendAccount("admin@example.com")).rejects.toThrow(
+      /dernier administrateur actif/,
+    );
+  });
+
+  it("should reactivate without resurrecting the revoked cookies", async () => {
+    const store = createInMemoryAccountStore();
+    const service = new AuthService(config, store);
+
+    await store.resolveRole("admin@example.com");
+    await store.resolveRole("user@example.com");
+    await service.suspendAccount("user@example.com");
+
+    const reactivated = await service.reactivateAccount("user@example.com");
+
+    expect(reactivated).toMatchObject({ status: "active" });
+    expect(reactivated.sessionsValidFrom).toBe("2026-04-19T20:19:09.000Z");
+    await expect(
+      service.requestMagicLink("user@example.com", true),
+    ).resolves.toMatchObject({ email: "user@example.com" });
+  });
+
+  it("should revoke sessions on demand", async () => {
+    const store = createInMemoryAccountStore();
+    const service = new AuthService(config, store);
+
+    await store.resolveRole("user@example.com");
+
+    await expect(service.revokeSessions("user@example.com")).resolves.toMatchObject(
+      { sessionsValidFrom: "2026-04-19T20:19:09.000Z", status: "active" },
+    );
+    await expect(service.revokeSessions("ghost@example.com")).rejects.toThrow(
+      /introuvable/,
+    );
+  });
 });

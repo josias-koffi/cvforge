@@ -59,6 +59,8 @@ describe("PgAuthAccountStore", () => {
     await expect(store.readAccount("first@example.com")).resolves.toEqual({
       consent,
       role: "admin",
+      sessionsValidFrom: null,
+      status: "active",
     });
   });
 

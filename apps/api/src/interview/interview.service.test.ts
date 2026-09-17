@@ -31,7 +31,8 @@ function createStore(): InterviewStore {
       sessions.set(session.id, session);
       return session;
     },
-    purgeCompletedBefore: async () => 0,
+    deleteByUserEmail: async () => 0,
+  purgeCompletedBefore: async () => 0,
   };
 }
 

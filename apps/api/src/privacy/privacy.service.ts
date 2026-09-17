@@ -3,7 +3,10 @@ import {
   Injectable,
   UnauthorizedException,
 } from "@nestjs/common";
+import type { AdminAuditStore } from "../admin/admin-audit.types";
 import type { ApplicationsStore } from "../applications/applications.types";
+import type { CreditOrdersStore } from "../billing/billing.types";
+import type { InterviewStore } from "../interview/interview.types";
 import type { AuthAccountStore } from "../auth/auth.types";
 import type { CreditLedgerStore } from "../credits/credits.types";
 import type { NotificationsStore } from "../notifications/notifications.types";
@@ -26,6 +29,9 @@ export class PrivacyService {
     private readonly creditsStore: CreditLedgerStore,
     private readonly notificationsStore: NotificationsStore,
     private readonly profilesStore: ProfilesStore,
+    private readonly interviewStore: InterviewStore,
+    private readonly creditOrdersStore: CreditOrdersStore,
+    private readonly auditStore: AdminAuditStore,
   ) {}
 
   getRetentionPolicy() {
@@ -87,20 +93,33 @@ export class PrivacyService {
       await this.profilesStore.deleteByUserEmail(normalizedEmail);
     const deletedCreditEntries =
       await this.creditsStore.deleteByUserEmail(normalizedEmail);
+    // Sessions carry the interview transcripts; the chunks cascade with them.
+    const deletedInterviewSessions =
+      await this.interviewStore.deleteByUserEmail(normalizedEmail);
+    // Settled payments stay as accounting records, minus the buyer's identity.
+    const anonymizedCreditOrders =
+      await this.creditOrdersStore.anonymizeUserEmail(normalizedEmail);
+    // The admin actions stay auditable; their target does not stay named.
+    const scrubbedAuditEntries =
+      await this.auditStore.scrubTarget(normalizedEmail);
     const scrubbedAdminReferences =
       await this.creditsStore.anonymizeAdminReferences(normalizedEmail);
     const authSummary = await this.authStore.purgeUserData(normalizedEmail);
 
     return {
+      anonymizedCreditOrders,
       deletedApplications,
       deletedAt: new Date().toISOString(),
+      deletedInterviewSessions,
       deletedAuthAccount: authSummary.accountDeleted,
       deletedCreditEntries,
       deletedInvitations: authSummary.invitationsRemoved,
       deletedNotifications,
       deletedProfiles,
       scrubbedThirdPartyReferences:
-        scrubbedAdminReferences + authSummary.invitationsScrubbed,
+        scrubbedAdminReferences +
+        authSummary.invitationsScrubbed +
+        scrubbedAuditEntries,
       userEmail: normalizedEmail,
     };
   }
