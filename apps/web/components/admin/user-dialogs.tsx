@@ -5,7 +5,6 @@ import { CopyIcon, UserPlusIcon } from "lucide-react"
 import { toast } from "sonner"
 
 import {
-  deleteUser,
   demoteUser,
   grantUserCredits,
   inviteUser,
@@ -249,37 +248,5 @@ export function GrantCreditsDialog({ onOpenChange, open, user }: UserDialogProps
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  )
-}
-
-export function DeleteUserDialog({ onOpenChange, open, user }: UserDialogProps) {
-  const { pending, run } = useActionMutation(() => onOpenChange(false))
-
-  return (
-    <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Supprimer {user.email} ?</AlertDialogTitle>
-          <AlertDialogDescription>
-            Le compte, les candidatures, les documents, le profil, les crédits et les
-            notifications de cet utilisateur seront définitivement supprimés.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>Annuler</AlertDialogCancel>
-          <AlertDialogAction
-            variant="destructive"
-            disabled={pending}
-            onClick={(event) => {
-              event.preventDefault()
-              run(() => deleteUser(user.email))
-            }}
-          >
-            {pending ? <Spinner /> : null}
-            Supprimer
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
   )
 }

@@ -13,13 +13,15 @@ const PAGE_SIZE = 20
 
 export default async function AdminUsersPage(props: PageProps<"/admin/users">) {
   const session = await requireAdminSession()
-  const { page, query, role } = await props.searchParams
+  const { balance, page, query, role, status } = await props.searchParams
   const data = await api<AdminUsersPage>("/admin/users", {
     query: {
+      balance: typeof balance === "string" ? balance : undefined,
       page: typeof page === "string" ? page : undefined,
       pageSize: PAGE_SIZE,
       query: typeof query === "string" ? query : undefined,
       role: typeof role === "string" ? role : undefined,
+      status: typeof status === "string" ? status : undefined,
     },
   })
 
@@ -27,12 +29,12 @@ export default async function AdminUsersPage(props: PageProps<"/admin/users">) {
     <>
       <PageHeader
         title="Utilisateurs"
-        description="Invitez, gérez les rôles et les crédits, supprimez des comptes."
+        description="Invitez, suspendez, gérez les crédits et supprimez des comptes."
         actions={<InviteUserDialog />}
       />
       <div className="px-4 lg:px-6">
         <UsersTable
-          key={`${data.filters.query}-${data.filters.role}`}
+          key={`${data.filters.query}-${data.filters.role}-${data.filters.status}-${data.filters.balance}`}
           data={data}
           currentEmail={session.email}
         />

@@ -17,7 +17,12 @@ import { ACCOUNT_STATUS_SUSPENDED } from "@cvforge/types";
 import { AuthService } from "../auth/auth.service";
 import { requireAdminSession } from "../auth/request-session";
 import { CreditsService } from "../credits/credits.service";
+import {
+  APPLICATIONS_STORE,
+  type ApplicationsStore,
+} from "../applications/applications.types";
 import { PrivacyService } from "../privacy/privacy.service";
+import { PROFILES_STORE, type ProfilesStore } from "../profiles/profiles.types";
 import { AdminAuditService } from "./admin-audit.service";
 import { AdminUsersService } from "./admin-users.service";
 
@@ -39,6 +44,9 @@ export class AdminUsersController {
     @Inject(PrivacyService) private readonly privacyService: PrivacyService,
     @Inject(AdminAuditService) private readonly audit: AdminAuditService,
     @Inject(AdminUsersService) private readonly directory: AdminUsersService,
+    @Inject(APPLICATIONS_STORE)
+    private readonly applicationsStore: ApplicationsStore,
+    @Inject(PROFILES_STORE) private readonly profilesStore: ProfilesStore,
   ) {}
 
   @Get()
@@ -62,6 +70,50 @@ export class AdminUsersController {
       role,
       status,
     });
+  }
+
+  /** The single account behind /admin/users/[email] (US-090). */
+  @Get(":email")
+  async readUser(@Param("email") email: string, @Req() request: RequestLike) {
+    requireAdminSession(this.authService, request);
+
+    const targetEmail = normalizeEmail(email);
+    const accounts = await this.authService.listAccounts();
+    const account = accounts.find((entry) => entry.email === targetEmail);
+
+    if (!account) {
+      throw new NotFoundException("Utilisateur introuvable.");
+    }
+
+    const [credits, applications, profiles, auditLog] = await Promise.all([
+      this.creditsService.getSummaryForUser(targetEmail),
+      this.applicationsStore.listByUserEmail(targetEmail),
+      this.profilesStore.findByUserEmail(targetEmail),
+      this.audit.list({ maxPageSize: 50, pageSize: "20", targetEmail }),
+    ]);
+
+    return {
+      account: {
+        consent: account.consent,
+        email: account.email,
+        role: account.role,
+        sessionsValidFrom: account.sessionsValidFrom,
+        status: account.status,
+      },
+      // Enough to see what the person did, not the documents themselves.
+      applications: applications.map((application) => ({
+        companyName: application.extracted.companyName,
+        createdAt: application.createdAt,
+        hasCv: application.cvContent !== null,
+        hasLetter: application.letterContent !== null,
+        id: application.id,
+        status: application.status,
+        title: application.extracted.title,
+      })),
+      auditLog: auditLog.entries,
+      credits,
+      profileCount: profiles?.profiles.length ?? 0,
+    };
   }
 
   /**

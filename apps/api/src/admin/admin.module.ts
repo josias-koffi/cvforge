@@ -1,5 +1,7 @@
 import { Module } from "@nestjs/common";
+import { ApplicationsModule } from "../applications/applications.module";
 import { AuthModule } from "../auth/auth.module";
+import { ProfilesModule } from "../profiles/profiles.module";
 import { CreditsModule } from "../credits/credits.module";
 import { PrivacyModule } from "../privacy/privacy.module";
 import { DATABASE, type Database } from "../database/database.types";
@@ -11,7 +13,14 @@ import { AdminAuditController } from "./admin-audit.controller";
 import { AdminUsersController } from "./admin-users.controller";
 
 @Module({
-  imports: [AdminAuditModule, AuthModule, CreditsModule, PrivacyModule],
+  imports: [
+    AdminAuditModule,
+    ApplicationsModule,
+    AuthModule,
+    CreditsModule,
+    PrivacyModule,
+    ProfilesModule,
+  ],
   controllers: [AdminAuditController, AdminUsersController],
   providers: [
     {

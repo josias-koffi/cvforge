@@ -7,7 +7,9 @@ import {
 import { describe, expect, it, vi } from "vitest";
 import { AuthService } from "../auth/auth.service";
 import { createInMemoryAccountStore } from "../auth/testing/in-memory-account-store";
+import type { ApplicationsStore } from "../applications/applications.types";
 import type { CreditsService } from "../credits/credits.service";
+import type { ProfilesStore } from "../profiles/profiles.types";
 import type { PrivacyService } from "../privacy/privacy.service";
 import type { AdminAuditService } from "./admin-audit.service";
 import { AdminUsersController } from "./admin-users.controller";
@@ -57,7 +59,24 @@ function createController(sessionRole: "admin" | "user" | null = "admin") {
     purgeAccount: vi.fn().mockResolvedValue({ deletedApplications: 2 }),
   } as unknown as PrivacyService;
 
+  const applicationsStore = {
+    listByUserEmail: vi.fn().mockResolvedValue([
+      {
+        createdAt: "2026-09-01T08:00:00.000Z",
+        cvContent: {},
+        extracted: { companyName: "Acme", title: "Dev" },
+        id: "app-1",
+        letterContent: null,
+        status: "sent",
+      },
+    ]),
+  } as unknown as ApplicationsStore;
+  const profilesStore = {
+    findByUserEmail: vi.fn().mockResolvedValue({ profiles: [{}, {}] }),
+  } as unknown as ProfilesStore;
+
   const audit = {
+    list: vi.fn().mockResolvedValue({ entries: [] }),
     recordDeletion: vi.fn(),
     recordDemotion: vi.fn(),
     recordReactivation: vi.fn(),
@@ -81,6 +100,8 @@ function createController(sessionRole: "admin" | "user" | null = "admin") {
       privacyService,
       audit,
       directory,
+      applicationsStore,
+      profilesStore,
     ),
     directory,
     privacyService,
@@ -280,6 +301,8 @@ describe("AdminUsersController", () => {
       { purgeAccount: vi.fn() } as unknown as PrivacyService,
       { recordDemotion: vi.fn() } as unknown as AdminAuditService,
       { listDirectory: vi.fn() } as unknown as AdminUsersService,
+      { listByUserEmail: vi.fn() } as unknown as ApplicationsStore,
+      { findByUserEmail: vi.fn() } as unknown as ProfilesStore,
     );
 
     await expect(
@@ -311,5 +334,33 @@ describe("AdminUsersController", () => {
         request,
       ),
     ).rejects.toThrow(UnauthorizedException);
+  });
+
+  it("returns one account with its applications, credits, profiles and audit trail", async () => {
+    const { controller } = createController();
+
+    const detail = await controller.readUser("alice%40example.com", request);
+
+    expect(detail.account).toMatchObject({ email: "alice@example.com", role: "user" });
+    expect(detail.credits).toMatchObject({ balance: 10 });
+    expect(detail.profileCount).toBe(2);
+    expect(detail.auditLog).toEqual([]);
+    // A summary of each application, never the document contents.
+    expect(detail.applications[0]).toEqual({
+      companyName: "Acme",
+      createdAt: "2026-09-01T08:00:00.000Z",
+      hasCv: true,
+      hasLetter: false,
+      id: "app-1",
+      status: "sent",
+      title: "Dev",
+    });
+    expect(detail.applications[0]).not.toHaveProperty("cvContent");
+  });
+
+  it("answers 404 for an unknown account", async () => {
+    await expect(
+      createController().controller.readUser("ghost@example.com", request),
+    ).rejects.toThrow(NotFoundException);
   });
 });

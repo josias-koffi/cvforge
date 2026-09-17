@@ -9,6 +9,7 @@ import {
   LayoutDashboardIcon,
   ChartColumnIcon,
   PackageIcon,
+  ScrollTextIcon,
   PlusIcon,
   UserRoundIcon,
   UsersIcon,
@@ -34,6 +35,7 @@ const adminItems = [
   { href: "/admin/users", icon: UsersIcon, title: "Utilisateurs" },
   { href: "/admin/offers", icon: PackageIcon, title: "Offres de crédits" },
   { href: "/admin/metrics", icon: ChartColumnIcon, title: "Métriques" },
+  { href: "/admin/audit-log", icon: ScrollTextIcon, title: "Journal d'audit" },
 ]
 
 const mainItems = [
