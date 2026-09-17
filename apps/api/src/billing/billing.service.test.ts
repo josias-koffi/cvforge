@@ -95,7 +95,7 @@ describe("BillingService", () => {
   });
 
   it("credits the ledger for a verified checkout.session.completed event", async () => {
-    vi.mocked(creditsService.recordStripePurchase).mockReturnValue({
+    vi.mocked(creditsService.recordStripePurchase).mockResolvedValue({
       action: "stripe_purchase",
       amount: 550,
       balanceAfter: 550,

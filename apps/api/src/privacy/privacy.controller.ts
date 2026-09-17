@@ -29,11 +29,11 @@ export class PrivacyController {
   ) {}
 
   @Get("export")
-  exportUserData(@Req() request: RequestLike) {
+  async exportUserData(@Req() request: RequestLike) {
     const session = this.readSession(request);
 
     return {
-      exportData: this.privacyService.exportUserData(session.email),
+      exportData: await this.privacyService.exportUserData(session.email),
     };
   }
 
@@ -47,13 +47,13 @@ export class PrivacyController {
   }
 
   @Post("delete-account")
-  deleteAccount(
+  async deleteAccount(
     @Body() body: { confirmationEmail?: string },
     @Req() request: RequestLike,
     @Res({ passthrough: true }) response: CookieResponse,
   ) {
     const session = this.readSession(request);
-    const result = this.privacyService.deleteUserData(
+    const result = await this.privacyService.deleteUserData(
       session.email,
       body.confirmationEmail ?? "",
     );

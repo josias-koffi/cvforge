@@ -1,16 +1,12 @@
 import {
   AI_CREDIT_ACTION_CV_IMPORT,
-  AI_CREDIT_COSTS,
   type ImportedCvExtractionResult,
   type ImportedCvProfilePatch,
 } from "@cvforge/types";
 import { BadRequestException, Injectable, UnprocessableEntityException } from "@nestjs/common";
 import mammoth from "mammoth";
 import type { OpenRouterService } from "../ai/openrouter.service";
-import {
-  InsufficientCreditsException,
-  type CreditsService,
-} from "../credits/credits.service";
+import type { CreditsService } from "../credits/credits.service";
 import { pseudonymizeCvText } from "./cv-pseudonymizer";
 import { recognizeImages } from "./ocr.extractor";
 import { extractPdfText, renderPdfPages } from "./pdf-text.extractor";
@@ -210,10 +206,10 @@ export class CvImportService {
       );
     }
 
-    const { balance } = this.creditsService.getSummaryForUser(userEmail);
-    if (balance < AI_CREDIT_COSTS[AI_CREDIT_ACTION_CV_IMPORT]) {
-      throw new InsufficientCreditsException(AI_CREDIT_ACTION_CV_IMPORT);
-    }
+    await this.creditsService.assertSufficientCredits(
+      AI_CREDIT_ACTION_CV_IMPORT,
+      userEmail,
+    );
 
     const pseudonymized = pseudonymizeCvText(text);
 
@@ -243,7 +239,7 @@ export class CvImportService {
     }
 
     // Charged only once the extraction produced usable data.
-    this.creditsService.consumeCredits({
+    await this.creditsService.consumeCredits({
       action: AI_CREDIT_ACTION_CV_IMPORT,
       userEmail,
     });

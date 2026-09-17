@@ -73,7 +73,7 @@ export class CvGenerationService {
     assertLocalFieldsProvided(request.localFields);
     const application = this.getApplicationForUser(userEmail, applicationId);
     const offerContext = this.buildOfferContext(application);
-    this.creditsService.assertSufficientCredits(
+    await this.creditsService.assertSufficientCredits(
       AI_CREDIT_ACTION_CV_GENERATION,
       userEmail,
     );
@@ -103,7 +103,7 @@ export class CvGenerationService {
     const cvTemplateId = this.resolveDefaultTemplateId(TEMPLATE_KIND_CV);
 
     // Charged only once the output has been parsed, normalised and grounded.
-    this.creditsService.consumeCredits({
+    await this.creditsService.consumeCredits({
       action: AI_CREDIT_ACTION_CV_GENERATION,
       applicationId,
       userEmail,
@@ -138,7 +138,7 @@ export class CvGenerationService {
     assertLocalFieldsProvided(request.localFields);
     const application = this.getApplicationForUser(userEmail, applicationId);
     const offerContext = this.buildOfferContext(application);
-    this.creditsService.assertSufficientCredits(
+    await this.creditsService.assertSufficientCredits(
       AI_CREDIT_ACTION_LETTER_GENERATION,
       userEmail,
     );
@@ -176,7 +176,7 @@ export class CvGenerationService {
       this.resolveDefaultTemplateId(TEMPLATE_KIND_LETTER);
 
     // Charged only once the output has been parsed and normalised.
-    this.creditsService.consumeCredits({
+    await this.creditsService.consumeCredits({
       action: AI_CREDIT_ACTION_LETTER_GENERATION,
       applicationId,
       userEmail,
