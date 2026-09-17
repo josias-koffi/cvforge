@@ -37,7 +37,7 @@ export class AdminUsersController {
   ) {}
 
   @Get()
-  listUsers(
+  async listUsers(
     @Query("page") page: string | undefined,
     @Query("pageSize") pageSize: string | undefined,
     @Query("query") query: string | undefined,
@@ -47,7 +47,7 @@ export class AdminUsersController {
     requireAdminSession(this.authService, request);
 
     return buildAdminUserDirectory(
-      this.authService.listAccounts(),
+      await this.authService.listAccounts(),
       this.creditsService,
       { maxPageSize: MAX_ADMIN_PAGE_SIZE, page, pageSize, query, role },
     );
@@ -83,11 +83,9 @@ export class AdminUsersController {
       );
     }
 
-    if (
-      !this.authService
-        .listAccounts()
-        .some((account) => account.email === targetEmail)
-    ) {
+    const accounts = await this.authService.listAccounts();
+
+    if (!accounts.some((account) => account.email === targetEmail)) {
       throw new NotFoundException("Utilisateur introuvable.");
     }
 

@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { resolveAuthConfig } from "./auth.config";
+import {
+  resolveAuthConfig,
+  resolveLegacyAuthStateFile,
+} from "./auth.config";
 
 describe("resolveAuthConfig", () => {
   it("should provide secure defaults for local development", () => {
@@ -11,7 +14,6 @@ describe("resolveAuthConfig", () => {
     expect(config.sessionTtlDays).toBe(7);
     expect(config.cookieName).toBe("cvforge_session");
     expect(config.secureCookies).toBe(false);
-    expect(config.stateFilePath).toContain(".data/auth-state.json");
   });
 
   it("should require an explicit session secret in production", () => {
@@ -22,11 +24,12 @@ describe("resolveAuthConfig", () => {
     ).toThrow(/AUTH_SESSION_SECRET/);
   });
 
-  it("should allow overriding the auth state file path", () => {
-    const config = resolveAuthConfig({
-      AUTH_STATE_FILE: "/tmp/cvforge-auth-state.json",
-    });
-
-    expect(config.stateFilePath).toBe("/tmp/cvforge-auth-state.json");
+  it("should point the legacy import at the overridden state file", () => {
+    expect(
+      resolveLegacyAuthStateFile({
+        AUTH_STATE_FILE: "/tmp/cvforge-auth-state.json",
+      }),
+    ).toBe("/tmp/cvforge-auth-state.json");
+    expect(resolveLegacyAuthStateFile({})).toContain(".data/auth-state.json");
   });
 });

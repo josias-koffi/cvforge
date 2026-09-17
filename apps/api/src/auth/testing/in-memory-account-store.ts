@@ -6,9 +6,10 @@ import type {
 } from "../auth.types";
 
 /**
- * Memory-backed `AuthAccountStore` mirroring `FileAuthAccountStore`, minus the
- * disk. Shared by the auth service and controller suites so both exercise the
- * same semantics — first account becomes admin, invitations expire once.
+ * Memory-backed `AuthAccountStore` shared by the auth service and controller
+ * suites, which drive the clock with fake timers — PGlite's own async work
+ * does not survive that. `auth.pg-store.test.ts` covers the real store's
+ * semantics against Postgres instead.
  */
 export function createInMemoryAccountStore(): AuthAccountStore {
   const accounts = new Map<string, AuthAccount>();
@@ -16,7 +17,7 @@ export function createInMemoryAccountStore(): AuthAccountStore {
   let bootstrapConsumed = false;
 
   return {
-    listAccounts() {
+    async listAccounts() {
       return [...accounts.entries()]
         .map(([email, account]) => ({
           email,
@@ -24,7 +25,7 @@ export function createInMemoryAccountStore(): AuthAccountStore {
         }))
         .sort((left, right) => left.email.localeCompare(right.email));
     },
-    updateRole(email, role) {
+    async updateRole(email, role) {
       const account = accounts.get(email);
 
       if (!account) {
@@ -35,10 +36,10 @@ export function createInMemoryAccountStore(): AuthAccountStore {
 
       return { email, ...account, role };
     },
-    readAccount(email) {
+    async readAccount(email) {
       return accounts.get(email) ?? null;
     },
-    resolveRole(email, consent) {
+    async resolveRole(email, consent) {
       const existingRole = accounts.get(email)?.role;
 
       if (existingRole) {
@@ -55,7 +56,7 @@ export function createInMemoryAccountStore(): AuthAccountStore {
 
       return role;
     },
-    assignInvitedRole(email, role, consent) {
+    async assignInvitedRole(email, role, consent) {
       const existingRole = accounts.get(email)?.role;
       const resolvedRole =
         existingRole === "admin" || role === "admin" ? "admin" : "user";
@@ -68,13 +69,13 @@ export function createInMemoryAccountStore(): AuthAccountStore {
 
       return resolvedRole;
     },
-    readInvitation(tokenHash) {
+    async readInvitation(tokenHash) {
       return invitations.get(tokenHash) ?? null;
     },
-    saveInvitation(tokenHash, invitation) {
+    async saveInvitation(tokenHash, invitation) {
       invitations.set(tokenHash, invitation);
     },
-    consumeInvitation(tokenHash, consumedAt, now) {
+    async consumeInvitation(tokenHash, consumedAt, now) {
       const invitation = invitations.get(tokenHash);
 
       if (!invitation) {
@@ -97,7 +98,7 @@ export function createInMemoryAccountStore(): AuthAccountStore {
 
       return updatedInvitation;
     },
-    exportUserData(email) {
+    async exportUserData(email) {
       const account = accounts.get(email);
       const withTokenHash = ([tokenHash, invitation]: [
         string,
@@ -114,7 +115,7 @@ export function createInMemoryAccountStore(): AuthAccountStore {
           .map(withTokenHash),
       };
     },
-    purgeUserData(email) {
+    async purgeUserData(email) {
       const accountDeleted = accounts.delete(email);
       const received = [...invitations.entries()].filter(
         ([, invitation]) => invitation.email === email,

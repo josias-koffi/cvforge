@@ -1,0 +1,263 @@
+import { asc, eq, sql } from "drizzle-orm";
+import type { Database } from "../database/database.types";
+import { authAccounts, authInvitations, authSettings } from "../database/schema";
+import type {
+  AuthAccountStore,
+  AuthConsentRecord,
+  AuthInvitation,
+  AuthRole,
+} from "./auth.types";
+
+export const DELETED_ACCOUNT_MARKER = "[deleted-account]";
+
+const SETTINGS_ID = "singleton";
+
+type AccountRow = typeof authAccounts.$inferSelect;
+type InvitationRow = typeof authInvitations.$inferSelect;
+
+function toInvitation(row: InvitationRow): AuthInvitation {
+  return {
+    consumedAt: row.consumedAt?.toISOString() ?? null,
+    createdAt: row.createdAt.toISOString(),
+    createdBy: row.createdBy,
+    email: row.email,
+    expiresAt: row.expiresAt.toISOString(),
+    role: row.role,
+  };
+}
+
+function toAccount(row: AccountRow) {
+  return { consent: row.consent ?? null, role: row.role };
+}
+
+export class PgAuthAccountStore implements AuthAccountStore {
+  constructor(private readonly db: Database) {}
+
+  async listAccounts() {
+    const rows = await this.db
+      .select()
+      .from(authAccounts)
+      .orderBy(asc(authAccounts.email));
+
+    return rows.map((row) => ({ email: row.email, ...toAccount(row) }));
+  }
+
+  async readAccount(email: string) {
+    const [row] = await this.db
+      .select()
+      .from(authAccounts)
+      .where(eq(authAccounts.email, email));
+
+    return row ? toAccount(row) : null;
+  }
+
+  updateRole(email: string, role: AuthRole) {
+    return this.db.transaction(async (tx) => {
+      const [row] = await tx
+        .update(authAccounts)
+        .set({ role })
+        .where(eq(authAccounts.email, email))
+        .returning();
+
+      if (!row) {
+        return null;
+      }
+
+      if (role === "admin") {
+        await this.consumeBootstrap(tx);
+      }
+
+      return { email: row.email, ...toAccount(row) };
+    });
+  }
+
+  /**
+   * Reads the role, creating the account on first sight — the file store wrote
+   * during this read too. The whole thing is one transaction so two concurrent
+   * first sign-ins cannot both be handed admin.
+   */
+  resolveRole(email: string, consent?: AuthConsentRecord | null) {
+    return this.db.transaction(async (tx) => {
+      const [existing] = await tx
+        .select()
+        .from(authAccounts)
+        .where(eq(authAccounts.email, email))
+        .for("update");
+
+      if (existing) {
+        return existing.role;
+      }
+
+      const [settings] = await tx
+        .select()
+        .from(authSettings)
+        .where(eq(authSettings.id, SETTINGS_ID))
+        .for("update");
+
+      const role: AuthRole = settings?.bootstrapConsumed ? "user" : "admin";
+
+      await tx
+        .insert(authAccounts)
+        .values({ consent: consent ?? null, email, role });
+
+      if (role === "admin") {
+        await this.consumeBootstrap(tx);
+      }
+
+      return role;
+    });
+  }
+
+  assignInvitedRole(email: string, role: AuthRole, consent: AuthConsentRecord) {
+    return this.db.transaction(async (tx) => {
+      const [existing] = await tx
+        .select()
+        .from(authAccounts)
+        .where(eq(authAccounts.email, email))
+        .for("update");
+
+      const resolvedRole: AuthRole =
+        existing?.role === "admin" || role === "admin" ? "admin" : "user";
+      const values = { consent, email, role: resolvedRole };
+
+      await tx
+        .insert(authAccounts)
+        .values(values)
+        .onConflictDoUpdate({
+          target: authAccounts.email,
+          set: { consent, role: resolvedRole },
+        });
+
+      if (resolvedRole === "admin") {
+        await this.consumeBootstrap(tx);
+      }
+
+      return resolvedRole;
+    });
+  }
+
+  async readInvitation(tokenHash: string) {
+    const [row] = await this.db
+      .select()
+      .from(authInvitations)
+      .where(eq(authInvitations.tokenHash, tokenHash));
+
+    return row ? toInvitation(row) : null;
+  }
+
+  async saveInvitation(tokenHash: string, invitation: AuthInvitation) {
+    const values = {
+      consumedAt: invitation.consumedAt ? new Date(invitation.consumedAt) : null,
+      createdAt: new Date(invitation.createdAt),
+      createdBy: invitation.createdBy,
+      email: invitation.email,
+      expiresAt: new Date(invitation.expiresAt),
+      role: invitation.role,
+      tokenHash,
+    };
+
+    await this.db
+      .insert(authInvitations)
+      .values(values)
+      .onConflictDoUpdate({ target: authInvitations.tokenHash, set: values });
+  }
+
+  /**
+   * Single-use: the update only matches an invitation that is still unconsumed
+   * and unexpired, so two redemptions of one link cannot both succeed.
+   */
+  async consumeInvitation(tokenHash: string, consumedAt: string, now: number) {
+    const [row] = await this.db
+      .update(authInvitations)
+      .set({ consumedAt: new Date(consumedAt) })
+      .where(
+        sql`${authInvitations.tokenHash} = ${tokenHash}
+          and ${authInvitations.consumedAt} is null
+          and ${authInvitations.expiresAt} > ${new Date(now)}`,
+      )
+      .returning();
+
+    return row ? toInvitation(row) : null;
+  }
+
+  async exportUserData(email: string) {
+    const account = await this.readAccount(email);
+    const rows = await this.db.select().from(authInvitations);
+    const invitations = rows.map((row) => ({
+      tokenHash: row.tokenHash,
+      ...toInvitation(row),
+    }));
+
+    return {
+      account: account ? { email, ...account } : null,
+      issuedInvitations: invitations.filter(
+        (invitation) => invitation.createdBy === email,
+      ),
+      receivedInvitations: invitations.filter(
+        (invitation) => invitation.email === email,
+      ),
+    };
+  }
+
+  /**
+   * Account purge. Invitations addressed to the account go; invitations it
+   * issued to other people stay, with the issuer scrubbed — they are still
+   * other people's access. Purging the last admin clears the bootstrap latch,
+   * which is the documented way back in.
+   */
+  purgeUserData(email: string) {
+    return this.db.transaction(async (tx) => {
+      const [deletedAccount] = await tx
+        .delete(authAccounts)
+        .where(eq(authAccounts.email, email))
+        .returning({ role: authAccounts.role });
+
+      const removed = await tx
+        .delete(authInvitations)
+        .where(eq(authInvitations.email, email))
+        .returning({ tokenHash: authInvitations.tokenHash });
+
+      const scrubbed = await tx
+        .update(authInvitations)
+        .set({ createdBy: DELETED_ACCOUNT_MARKER })
+        .where(eq(authInvitations.createdBy, email))
+        .returning({ tokenHash: authInvitations.tokenHash });
+
+      if (deletedAccount?.role === "admin") {
+        const [remainingAdmin] = await tx
+          .select({ email: authAccounts.email })
+          .from(authAccounts)
+          .where(eq(authAccounts.role, "admin"))
+          .limit(1);
+
+        if (!remainingAdmin) {
+          await tx
+            .insert(authSettings)
+            .values({ bootstrapConsumed: false, id: SETTINGS_ID })
+            .onConflictDoUpdate({
+              target: authSettings.id,
+              set: { bootstrapConsumed: false },
+            });
+        }
+      }
+
+      return {
+        accountDeleted: Boolean(deletedAccount),
+        invitationsRemoved: removed.length,
+        invitationsScrubbed: scrubbed.length,
+      };
+    });
+  }
+
+  private async consumeBootstrap(tx: Parameters<
+    Parameters<Database["transaction"]>[0]
+  >[0]) {
+    await tx
+      .insert(authSettings)
+      .values({ bootstrapConsumed: true, id: SETTINGS_ID })
+      .onConflictDoUpdate({
+        target: authSettings.id,
+        set: { bootstrapConsumed: true },
+      });
+  }
+}

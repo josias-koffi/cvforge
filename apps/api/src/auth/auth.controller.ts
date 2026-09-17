@@ -35,7 +35,7 @@ export class AuthController {
   async requestMagicLink(
     @Body() body: { consentAccepted?: boolean; email?: string },
   ) {
-    const result = this.authService.requestMagicLink(
+    const result = await this.authService.requestMagicLink(
       body.email ?? "",
       body.consentAccepted === true,
     );
@@ -55,7 +55,7 @@ export class AuthController {
   }
 
   @Post("invitations")
-  createInvitation(
+  async createInvitation(
     @Body() body: { email?: string; role?: string },
     @Req() request: RequestLike,
   ) {
@@ -67,16 +67,16 @@ export class AuthController {
   }
 
   @Get("invitations/preview")
-  previewInvitation(@Query("token") token: string) {
+  async previewInvitation(@Query("token") token: string) {
     return this.authService.previewInvitation(token);
   }
 
   @Post("invitations/consume")
-  consumeInvitation(
+  async consumeInvitation(
     @Body() body: { consentAccepted?: boolean; token?: string },
     @Res({ passthrough: true }) response: CookieResponse,
   ) {
-    const result = this.authService.consumeInvitation(
+    const result = await this.authService.consumeInvitation(
       body.token ?? "",
       body.consentAccepted === true,
     );
@@ -89,12 +89,12 @@ export class AuthController {
   }
 
   @Get("passwordless/consume")
-  consumeMagicLink(
+  async consumeMagicLink(
     @Query("token") token: string,
     @Query("redirectTo") redirectTo: string | undefined,
     @Res() response: CookieResponse,
   ) {
-    const result = this.authService.consumeMagicLink(token, redirectTo);
+    const result = await this.authService.consumeMagicLink(token, redirectTo);
 
     response.cookie(result.cookie.name, result.cookie.value, result.cookie.options);
 
@@ -102,11 +102,11 @@ export class AuthController {
   }
 
   @Post("passwordless/consume")
-  consumeMagicLinkForApi(
+  async consumeMagicLinkForApi(
     @Body() body: { token?: string; redirectTo?: string },
     @Res({ passthrough: true }) response: CookieResponse,
   ) {
-    const result = this.authService.consumeMagicLink(
+    const result = await this.authService.consumeMagicLink(
       body.token ?? "",
       body.redirectTo,
     );

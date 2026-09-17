@@ -22,7 +22,6 @@ export type AuthConfig = {
   cookieDomain: string | undefined;
   sessionSecret: string;
   secureCookies: boolean;
-  stateFilePath: string;
 };
 
 export type AuthRole = "admin" | "user";
@@ -74,22 +73,31 @@ export type PurgedAuthAccountSummary = {
 export const AUTH_ACCOUNT_STORE = Symbol("AUTH_ACCOUNT_STORE");
 
 export type AuthAccountStore = {
-  listAccounts: () => AuthAccountRecord[];
-  readAccount: (email: string) => AuthAccount | null;
-  updateRole: (email: string, role: AuthRole) => AuthAccountRecord | null;
-  resolveRole: (email: string, consent?: AuthConsentRecord | null) => AuthRole;
+  listAccounts: () => Promise<AuthAccountRecord[]>;
+  readAccount: (email: string) => Promise<AuthAccount | null>;
+  updateRole: (
+    email: string,
+    role: AuthRole,
+  ) => Promise<AuthAccountRecord | null>;
+  resolveRole: (
+    email: string,
+    consent?: AuthConsentRecord | null,
+  ) => Promise<AuthRole>;
   assignInvitedRole: (
     email: string,
     role: AuthRole,
     consent: AuthConsentRecord,
-  ) => AuthRole;
-  readInvitation: (tokenHash: string) => AuthInvitation | null;
-  saveInvitation: (tokenHash: string, invitation: AuthInvitation) => void;
+  ) => Promise<AuthRole>;
+  readInvitation: (tokenHash: string) => Promise<AuthInvitation | null>;
+  saveInvitation: (
+    tokenHash: string,
+    invitation: AuthInvitation,
+  ) => Promise<void>;
   consumeInvitation: (
     tokenHash: string,
     consumedAt: string,
     now: number,
-  ) => AuthInvitation | null;
-  exportUserData: (email: string) => AuthExportSnapshot;
-  purgeUserData: (email: string) => PurgedAuthAccountSummary;
+  ) => Promise<AuthInvitation | null>;
+  exportUserData: (email: string) => Promise<AuthExportSnapshot>;
+  purgeUserData: (email: string) => Promise<PurgedAuthAccountSummary>;
 };

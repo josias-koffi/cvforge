@@ -60,13 +60,17 @@ export class CreditsController {
     const session = requireAdminSession(this.authService, request);
 
     return {
-      ...(await buildAdminUserDirectory(this.authService.listAccounts(), this.creditsService, {
-        maxPageSize: 20,
-        page: pageValue,
-        pageSize: pageSizeValue,
-        query: queryValue,
-        role: roleValue,
-      })),
+      ...(await buildAdminUserDirectory(
+        await this.authService.listAccounts(),
+        this.creditsService,
+        {
+          maxPageSize: 20,
+          page: pageValue,
+          pageSize: pageSizeValue,
+          query: queryValue,
+          role: roleValue,
+        },
+      )),
       requestedBy: session.email,
     };
   }

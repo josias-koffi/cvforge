@@ -113,7 +113,7 @@ describe("AdminUsersController", () => {
   });
 
   it("requires an admin session", async () => {
-    expect(() =>
+    await expect(
       createController("user").controller.listUsers(
         undefined,
         undefined,
@@ -121,7 +121,7 @@ describe("AdminUsersController", () => {
         undefined,
         request,
       ),
-    ).toThrow(ForbiddenException);
+    ).rejects.toThrow(ForbiddenException);
     await expect(
       createController(null).controller.deleteUser("bob@example.com", request),
     ).rejects.toThrow(UnauthorizedException);

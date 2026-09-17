@@ -15,7 +15,6 @@ const config: AuthConfig = {
   cookieDomain: undefined,
   sessionSecret: "test-secret",
   secureCookies: false,
-  stateFilePath: "/tmp/cvforge-auth-state-controller-test.json",
 };
 
 describe("AuthController", () => {
@@ -34,7 +33,7 @@ describe("AuthController", () => {
     const cookie = vi.fn();
     const redirect = vi.fn();
 
-    controller.consumeMagicLink(token, undefined, {
+    await controller.consumeMagicLink(token, undefined, {
       cookie,
       redirect,
     } as never);
@@ -100,13 +99,13 @@ describe("AuthController", () => {
     const loginCookie = vi.fn();
     const loginRedirect = vi.fn();
 
-    controller.consumeMagicLink(adminToken, undefined, {
+    await controller.consumeMagicLink(adminToken, undefined, {
       cookie: loginCookie,
       redirect: loginRedirect,
     } as never);
 
     const [cookieName, cookieValue] = loginCookie.mock.calls[0] as [string, string];
-    const invitation = controller.createInvitation(
+    const invitation = await controller.createInvitation(
       {
         email: "invitee@example.com",
         role: "admin",
@@ -122,7 +121,7 @@ describe("AuthController", () => {
     const consumeCookie = vi.fn();
 
     expect(request.email).toBe("admin@example.com");
-    expect(controller.previewInvitation(invitationToken)).toMatchObject({
+    expect(await controller.previewInvitation(invitationToken)).toMatchObject({
       email: "invitee@example.com",
       role: "admin",
     });
@@ -140,7 +139,7 @@ describe("AuthController", () => {
       },
     });
 
-    const consumed = controller.consumeInvitation(
+    const consumed = await controller.consumeInvitation(
       { consentAccepted: true, token: invitationToken },
       {
         cookie: consumeCookie,
@@ -166,7 +165,10 @@ describe("AuthController", () => {
     const controller = new AuthController(service, mailer);
 
     await expect(
-      controller.requestMagicLink({ consentAccepted: false, email: "user@example.com" }),
+      controller.requestMagicLink({
+        consentAccepted: false,
+        email: "user@example.com",
+      }),
     ).rejects.toThrow(/consent/i);
   });
 
@@ -187,13 +189,13 @@ describe("AuthController", () => {
     const loginCookie = vi.fn();
     const loginRedirect = vi.fn();
 
-    controller.consumeMagicLink(adminToken, undefined, {
+    await controller.consumeMagicLink(adminToken, undefined, {
       cookie: loginCookie,
       redirect: loginRedirect,
     } as never);
 
     const [cookieName, cookieValue] = loginCookie.mock.calls[0] as [string, string];
-    const invitation = controller.createInvitation(
+    const invitation = await controller.createInvitation(
       {
         email: "invitee@example.com",
         role: "admin",
@@ -208,12 +210,10 @@ describe("AuthController", () => {
       new URL(invitation.invitationUrl).searchParams.get("token") ?? "";
 
     expect(request.email).toBe("admin@example.com");
-    expect(() =>
-      controller.consumeInvitation(
+    await expect(controller.consumeInvitation(
         { consentAccepted: false, token: invitationToken },
         { cookie: vi.fn() } as never,
-      ),
-    ).toThrow(/consent/i);
+      )).rejects.toThrow(/consent/i);
   });
 
   it("should reject missing or non-admin sessions from the admin session probe", async () => {
@@ -225,9 +225,7 @@ describe("AuthController", () => {
     const controller = new AuthController(service, mailer);
 
     expect(() =>
-      controller.readAdminSession({
-        headers: {},
-      } as never),
+      controller.readAdminSession({ headers: {} } as never),
     ).toThrow(UnauthorizedException);
 
     const adminRequest = await controller.requestMagicLink({
@@ -242,7 +240,7 @@ describe("AuthController", () => {
     const adminCookie = vi.fn();
     const adminRedirect = vi.fn();
 
-    controller.consumeMagicLink(adminToken, undefined, {
+    await controller.consumeMagicLink(adminToken, undefined, {
       cookie: adminCookie,
       redirect: adminRedirect,
     } as never);
@@ -259,7 +257,7 @@ describe("AuthController", () => {
     const userCookie = vi.fn();
     const userRedirect = vi.fn();
 
-    controller.consumeMagicLink(userToken, undefined, {
+    await controller.consumeMagicLink(userToken, undefined, {
       cookie: userCookie,
       redirect: userRedirect,
     } as never);
@@ -269,9 +267,7 @@ describe("AuthController", () => {
     expect(userRequest.email).toBe("user@example.com");
     expect(() =>
       controller.readAdminSession({
-        headers: {
-          cookie: `${cookieName}=${cookieValue}`,
-        },
+        headers: { cookie: `${cookieName}=${cookieValue}` },
       } as never),
     ).toThrow(ForbiddenException);
   });
