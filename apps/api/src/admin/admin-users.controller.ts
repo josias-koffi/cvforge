@@ -54,7 +54,7 @@ export class AdminUsersController {
   }
 
   @Patch(":email")
-  updateUser(
+  async updateUser(
     @Param("email") email: string,
     @Body() body: { role?: string },
     @Req() request: RequestLike,
@@ -68,7 +68,7 @@ export class AdminUsersController {
       );
     }
 
-    return { user: this.authService.updateAccountRole(targetEmail, body.role) };
+    return { user: await this.authService.updateAccountRole(targetEmail, body.role) };
   }
 
   @Delete(":email")

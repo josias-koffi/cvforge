@@ -23,7 +23,7 @@ export class ProfilesController {
   ) {}
 
   @Get()
-  getProfiles(@Req() request: RequestLike) {
+  async getProfiles(@Req() request: RequestLike) {
     const session = this.authService.readSessionFromCookieHeader(
       request.headers.cookie,
     );
@@ -32,11 +32,11 @@ export class ProfilesController {
       throw new UnauthorizedException("A valid session is required.");
     }
 
-    return { registry: this.profilesService.getRegistry(session.email) };
+    return { registry: await this.profilesService.getRegistry(session.email) };
   }
 
   @Put()
-  saveProfiles(
+  async saveProfiles(
     @Body() body: { registry?: StoredProfileRegistry },
     @Req() request: RequestLike,
   ) {
@@ -53,11 +53,11 @@ export class ProfilesController {
       typeof body.registry !== "object" ||
       !Array.isArray(body.registry.profiles)
     ) {
-      return { registry: this.profilesService.getRegistry(session.email) };
+      return { registry: await this.profilesService.getRegistry(session.email) };
     }
 
     return {
-      registry: this.profilesService.saveRegistry(session.email, body.registry),
+      registry: await this.profilesService.saveRegistry(session.email, body.registry),
     };
   }
 }
