@@ -53,3 +53,10 @@
 - **Why**: Éviter de replanifier depuis zéro un travail déjà cadré et de perdre le contexte des décisions produit déjà prises (US-067→073).
 - **Learned**: La perception "rien ne va" vient surtout d'un backlog de refonte jamais exécuté, pas d'une absence de vision produit ; deux écrans (login/register, admin, notifications, onboarding) restent réellement non couverts par 016-019.
 - **Open**: ADR à écrire pour formaliser l'abandon de "mobile-first"/"Papier & Crayon" (vision §2.5/§2.6) au profit de desktop-first — non bloquant pour ce run mais recommandé avant le prochain freeze de vision.
+
+## 2026-09-17 — E16/E17 au backlog + audit gestion utilisateurs (US-088 · ad hoc)
+- **Did**: Ajouté E16 (supervision solde OpenRouter, métriques revenus) et E17 (gestion utilisateurs avancée) au backlog — verbatim, dans `.project/sprints/backlog.md` **et** le miroir `exports/claude-space/03-backlog-et-sprints.md` — puis rédigé sprint-022 (E16), sprint-023 (E17) et l'audit `.project/audits/user-management-20260917.md`.
+- **Why**: Les deux epics sont hors vision v0.7 et hors ADR : sans trace au backlog, aucune traçabilité de la décision produit du 2026-09-17.
+- **Learned**: L'énoncé d'une story peut être factuellement faux sur le code — 6 des 13 stories l'étaient (route `/credits/checkout` inexistante, notifications sans chemin d'écriture, `/api/v1/credits` exigeant une management key, pas de colonne `lastLoginAt`, purge RGPD incomplète, pagination admin en mémoire). Conserver l'énoncé verbatim et porter l'écart dans un bloc « Notes d'implémentation » évite d'avoir à réécrire la demande tout en empêchant de coder sur une prémisse fausse.
+- **Learned**: L'audit a révisé l'ordre d'exécution de E17 : le journal d'audit (US-094) d'abord, et US-091 (suspension) + US-095 (révocation) **ensemble** — une suspension sans révocation de session laisse l'accès ouvert 7 jours, donc la story seule livrerait une fausse promesse.
+- **Open**: 4 décisions d'architecture en attente du propriétaire (révocation de session, colonne de statut, périmètre RGPD des `credit_orders`, consolidation des deux routes `admin/users`) — bloquantes pour US-089→095.

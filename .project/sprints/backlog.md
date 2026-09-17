@@ -24,6 +24,8 @@
 | E13 | V1.2 | Produit interview complet et conformité audio | Le mode interview vocal, les profils d'interview, le rapport noté, la réécoute/transcription, le mode libre et la purge audio RGPD sont disponibles | 014 | vision `§10`, `§15.5`, `§16` |
 | E14 | V2.0 | Offre recruteur et extension entreprise | Les rôles recruteur, organisations, import PDF d'offre, extension browser, analytics admin avancés et étude enterprise OpenRouter sont cadrés et livrés | 015 | vision `§13.4`, `§16` |
 | E15 | V2.1 | UX Redesign desktop-first + refonte interview et éditeur | App desktop-first shadcn-minimal; tables candidatures/documents; interview VAD auto sans bouton; continuité agent via messages[] Redis; Puck admin full-screen uniquement; écrans intermédiaires; dashboard épuré | 016–019 | vision `§2.5`, `§2.6`, `§6`, `§8`, `§10`, feedback 2026-04-26 |
+| E16 | post-021 | Supervision solde IA & pilotage revenus admin | L'admin surveille le solde OpenRouter, est alerté avant rupture, ne vend pas de crédits qu'il ne peut pas honorer, et dispose d'un dashboard de métriques produit + revenus | 022 | Hors vision v0.7, hors ADR existante — décision produit du 2026-09-17 |
+| E17 | post-021 | Gestion utilisateurs avancée (admin) | Recherche/filtres/pagination serveur, fiche utilisateur complète, suspension, suppression RGPD vérifiée, rétrogradation admin→user uniquement, journal d'audit, révocation de session | 023 | Complète vision `§13.2`/`§15.1` ; US-093 contraint par vision `§3.2` |
 
 ## Estimate Scale
 
@@ -110,6 +112,54 @@ Référence de gate: le spec impose des branches courtes et des PRs <= 400 ligne
 | US-071 | Appliquer le design token shadcn-minimal à l'ensemble de l'app | E15 | M | P1 | 019 | vision `§2.6` |
 | US-072 | Refondre la page Crédits avec table ledger et cards packs | E15 | S | P1 | 019 | vision `§11` |
 | US-073 | Refondre la page Profil: accordions par section + switcher multi-profil | E15 | M | P1 | 019 | vision `§5`, `§5.1` |
+| US-083 | Service OpenRouterBalanceService : GET https://openrouter.ai/api/v1/credits, cache mémoire TTL 5 min, pas de nouvelle dépendance (pas de cron/Redis/BullMQ) | E16 | S | P0 | 022 | décision produit 2026-09-17 |
+| US-084 | Endpoint GET /admin/metrics/openrouter-balance + alerte in-app (réutilise le système notifications existant) si solde < seuil configurable (OPENROUTER_BALANCE_ALERT_THRESHOLD) | E16 | M | P0 | 022 | décision produit 2026-09-17 |
+| US-085 | Garde-fou : bloquer POST /credits/checkout (503 + message explicite) si solde OpenRouter sous seuil critique | E16 | M | P1 | 022 | décision produit 2026-09-17 |
+| US-086 | Dashboard admin /admin/metrics (apps/web, gabarit ADR-008) : CV/LM générés, interviews, utilisateurs actifs, crédits vendus vs consommés, CA Stripe, coût API estimé, marge nette — calculs côté apps/api | E16 | L | P1 | 022 | décision produit 2026-09-17, ADR-008 |
+| US-087 | Export CSV des métriques de /admin/metrics | E16 | S | P2 | 022 | décision produit 2026-09-17 |
+| US-088 | Auditer l'existant (/admin/users, US-033, US-082, US-036) vs vision §13.2/§15.1 : produire .project/audits/user-management-20260917.md listant précisément ce qui manque — aucun code | E17 | S | P0 | 023 | vision `§13.2`, `§15.1` |
+| US-089 | Recherche (email), filtres (rôle, statut, solde) et pagination serveur sur la table utilisateurs, filtres reflétés dans l'URL | E17 | M | P0 | 023 | vision `§13.2` |
+| US-090 | Fiche /admin/users/[id] : profil, candidatures, historique crédits, statut compte, sessions actives, actions rapides inline, WCAG 2.1 AA | E17 | L | P0 | 023 | vision `§13.2` |
+| US-091 | Suspension / réactivation de compte (magic link refusé si suspendu, données intactes) | E17 | M | P0 | 023 | vision `§13.2` |
+| US-092 | Suppression RGPD complète (double confirmation par saisie email) : profil, candidatures, documents, audio interviews, transactions crédits ; test d'intégration prouvant l'absence de données résiduelles | E17 | L | P0 | 023 | vision `§13.2`, `§15.1` |
+| US-093 | Rétrogradation admin → user UNIQUEMENT (jamais promotion user → admin, réservée à l'invitation US-011) ; bloquée si dernier admin | E17 | S | P1 | 023 | vision `§3.2`, `§13.2` |
+| US-094 | Journal d'audit /admin/audit-log (qui/quand/quoi/sur qui/note) pour suspension, réactivation, suppression, rétrogradation, octroi crédits | E17 | M | P1 | 023 | vision `§13.2` |
+| US-095 | Déconnexion forcée / révocation de session depuis la fiche utilisateur | E17 | S | P2 | 023 | vision `§13.2` |
+| US-096 | Hotfix §3.2 : rendre la promotion user→admin impossible par toute action admin | E17 | S | P0 | 022 | vision `§3.2` — ajout hors énoncé, validé le 2026-09-17 |
+
+## Critères d'acceptation détaillés — E16
+
+- **US-083** : retourne `{totalCredits, totalUsage, remaining}` ; fallback stale + flag `stale:true` si échec réseau ; tests cache hit/miss/échec
+- **US-084** : protégé rôle admin (403 sinon) ; alerte non dupliquée (1×/jour tant que seuil bas)
+- **US-085** : test avec solde simulé = 0 → achat bloqué, bandeau front explicite
+- **US-086** : fichiers ≤ 400 lignes, découpage par carte de métrique, WCAG 2.1 AA, aucune logique métier dans `apps/web`
+- **US-087** : CSV horodaté, mêmes métriques que le dashboard
+
+## Critères d'acceptation détaillés — E17
+
+> ⚠️ **RÈGLE DE SÉCURITÉ NON NÉGOCIABLE (vision `§3.2`)** : le rôle `admin` ne peut JAMAIS être
+> attribué depuis `/admin/users` ou toute action admin. Seule voie : le lien d'invitation nominatif
+> (US-011). US-093 n'implémente QUE admin → user.
+
+- **US-088** : ordre strict — obligatoire avant toute autre story E17 ; certaines (US-089 à US-095) peuvent être partiellement déjà livrées
+- **US-096** : `PATCH /admin/users/:email` avec `{role:"admin"}` renvoie 400 ; aucun select de rôle dans l'UI d'édition ; test de non-régression prouvant qu'aucun chemin de service ne promeut
+
+## Notes d'implémentation E16/E17 (audit du 2026-09-17)
+
+L'énoncé des stories est conservé verbatim ; ces écarts avec le code réel sont à intégrer à l'exécution.
+
+| Story | Énoncé | Réalité du code |
+| ----- | ------ | --------------- |
+| US-083 | `GET /api/v1/credits` avec la clé existante | Exige une **management key** ; `OPENROUTER_API_KEY` (clé d'inférence) reçoit un **403**. → nouvelle var `OPENROUTER_MANAGEMENT_API_KEY` |
+| US-084 | « réutilise le système notifications existant » | Ce système n'a **aucun chemin d'écriture** (dérivation paresseuse à la lecture, `ensureDueNotifications`), 2 types seulement, par utilisateur, sans audience admin, sans contrainte d'unicité → méthode de création publique + nouveau type + fan-out via `AuthService.listAccounts()` + garde de déduplication. Déclencheur : `setInterval` quotidien (pattern maison `interview-purge.service.ts`, Node pur, pas d'ADR) |
+| US-085 | « bloquer `POST /credits/checkout` » | Cette route n'existe pas. Le checkout est `POST /billing/checkout-sessions` (`apps/api/src/billing/billing.controller.ts:33`), point d'accroche `checkout.service.ts:30-34` |
+| US-086 | « utilisateurs actifs » | Aucune colonne `lastLoginAt`/`lastSeenAt` → à dériver d'une fenêtre d'activité (ledger/candidatures) ou nouvelle colonne. « coût API estimé » : le coût par génération n'est pas persisté ; seul `total_usage` OpenRouter (cumul, **USD**) existe, alors que le CA est en **EUR cents** |
+| US-089 | pagination serveur | Aujourd'hui `listAccounts()` puis filtre/tri/pagination **en JS**, + 1 requête `getSummaryForUser` **par compte** (`apps/api/src/credits/admin-user-directory.ts:33-83`) → pousser en SQL |
+| US-091/095 | suspension / révocation | Sessions = **cookie HMAC sans état**, aucune table, aucune révocation possible ; un suspendu garde l'accès jusqu'à 7 j. Décision d'archi à instruire par US-088 (colonne `sessionEpoch`/`revokedAt` vs table de sessions) ; `auth_accounts` n'a pas de colonne `status` |
+| US-092 | purge RGPD | `PrivacyService.purgeAccount` couvre candidatures, notifications, profils, ledger, compte auth — **mais pas** `interview_sessions`/`interview_chunks` (pas de `deleteByUserEmail` sur `InterviewStore`) ni `credit_orders` |
+
+Contexte persistance : la migration ADR-011 est **terminée** — tous les modules sont sur un
+`*.pg-store.ts` (migrations `0000`→`0010`). E16/E17 travaillent en SQL, pas sur des stores JSON.
 
 ## Maintenance Découverte
 
@@ -120,6 +170,7 @@ Référence de gate: le spec impose des branches courtes et des PRs <= 400 ligne
 - 2026-06-10 — Remplacer les liens internes restants vers `/` par leur destination explicite (`/dashboard` ou landing) pour éviter une redirection intermédiaire.
 - 2026-07-10 — US-075 : `share-card-content.ts` (`buildDashboardSharePageUrl`, `buildLinkedInShareUrl`) n'a plus d'appelant depuis le retrait de la carte LinkedIn du dashboard ; nettoyer quand `/share/*` sera replanifié.
 - 2026-07-10 — US-075 : `/share/dashboard` n'a plus de point d'entrée dans l'app (route/page/OG image conservées mais orphelines) ; décider de restaurer un accès ou de dépréciter la route.
+- 2026-09-17 — `pnpm build` échoue sur `apps/app` (v1 gelée) : `app/credits/**` référence `CreateCheckoutSessionRequest["packId"]`, champ supprimé de `@cvforge/types` par la refonte des offres de crédits. Panne préexistante, indépendante de E16/E17. Décider entre corriger la v1 ou la retirer du pipeline `build` (cf. contexte §6.2 « retrait de `apps/app` »).
 
 ## Clarifications Pendantes
 
@@ -153,6 +204,8 @@ Référence de gate: le spec impose des branches courtes et des PRs <= 400 ligne
 | `E13` | `E12` | Les fonctions interview avancées dépendent du socle temps réel |
 | `E14` | `E5`, `E9` | Le versant recruteur/entreprise dépend des workflows candidature et admin |
 | `E15` | `E2`, `E12`, `E13` | La refonte UX s'appuie sur le design system, le pipeline interview et les écrans documentaires existants |
+| `E16` | `E8`, `E9` | La supervision du solde et les métriques de revenus s'appuient sur le ledger crédits, les commandes Stripe et le panel admin |
+| `E17` | `E3`, `E9` | La gestion utilisateurs avancée prolonge l'auth/les rôles et le panel admin utilisateurs |
 
 ## Technical Gates
 
@@ -178,3 +231,5 @@ Référence de gate: le spec impose des branches courtes et des PRs <= 400 ligne
 - Librairie DOCX pour `V1.1`
 - Extension browser si une stack dédiée est introduite
 - OpenRouter enterprise si l'option change les garanties de déploiement ou de routing
+- E16 — clé de management OpenRouter (`OPENROUTER_MANAGEMENT_API_KEY`) : nouveau secret uniquement, pas de nouvelle dépendance, **pas d'ADR requise**
+- E17 — révocation de session (US-091/095) : colonne `sessionEpoch`/`revokedAt` sur `auth_accounts` vs table de sessions dédiée — arbitrage à porter par l'audit US-088

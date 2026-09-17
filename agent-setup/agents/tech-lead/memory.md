@@ -463,3 +463,10 @@
 - **Why**: Le changement reste un reflow présentation-only dans `apps/app`, sans modification de contrat API ni de persistance.
 - **Learned**: L'extraction d'un helper pur (`notification-groups.ts`) pour le regroupement/tri garde cette logique testable indépendamment du rendu, un pattern à réutiliser pour toute future page listant des éléments datés.
 - **Open**: US-077 (onboarding) est la dernière tâche du sprint 020.
+
+## 2026-09-17 — US-096 + US-083 finalization (sprint 022)
+- **Context**: [[sprints/sprint-022#US-096]], [[sprints/sprint-022#US-083]] · audit [[audits/user-management-20260917]]
+- **Did**: Signé les deux stories après vérification des critères et des gates (lint, 513 tests API, `tsc`, build web). Confirmé qu'**aucune ADR n'est requise** : US-096 retire de la surface, US-083 n'ajoute aucune dépendance (fetch global, cache en champ privé, pas de cron/Redis/BullMQ) — seul un nouveau secret `OPENROUTER_MANAGEMENT_API_KEY` est introduit.
+- **Why**: La violation §3.2 (promotion user→admin exposée dans l'UI admin) est une régression de sécurité livrée ; elle passe avant l'ordre d'exécution demandé.
+- **Learned**: Un invariant de sécurité tient mieux dans la **forme du contrat** que dans une garde : un store qui n'expose que `demoteToUser(email)` ne peut pas promouvoir, quel que soit l'appelant futur. Garde et test restent utiles, mais en second rideau.
+- **Open**: La rétrogradation (et plus tard la suspension) n'a aucun effet immédiat tant que les sessions sont des cookies HMAC sans état — décision d'archi n° 1 de l'audit, à trancher avant US-091/095.
