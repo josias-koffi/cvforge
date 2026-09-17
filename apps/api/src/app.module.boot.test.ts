@@ -49,4 +49,36 @@ describe("AppModule dependency graph", () => {
 
     await context.close();
   }, 30_000);
+
+  /**
+   * `createApplicationContext` above skips the HTTP layer entirely, so it
+   * never registers a route or a middleware. This one builds the real Express
+   * adapter and initialises it, which also resolves middleware.
+   *
+   * Known limit: it does **not** catch a circular import between a middleware
+   * and the service it injects. Vitest's ESM graph resolves the cycle, while
+   * the compiled CommonJS build leaves the class `undefined` at
+   * decorator-evaluation time and the container refuses to boot. Only running
+   * the built `dist/apps/api/src/main.js` reproduces that — see the note in
+   * the backlog about smoke-testing the image before it is deployed.
+   */
+  it("registers its routes and middleware on the HTTP adapter", async () => {
+    const { AppModule } = await import("./app.module");
+
+    const app = await NestFactory.create(AppModule, {
+      abortOnError: false,
+      logger: false,
+    });
+
+    await app.init();
+
+    const routes = app
+      .getHttpAdapter()
+      .getInstance()
+      .router.stack.filter((layer: { route?: unknown }) => layer.route);
+
+    expect(routes.length).toBeGreaterThan(0);
+
+    await app.close();
+  }, 30_000);
 });

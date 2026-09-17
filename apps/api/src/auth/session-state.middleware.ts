@@ -1,16 +1,15 @@
-import { ForbiddenException, Injectable, type NestMiddleware } from "@nestjs/common";
+import {
+  ForbiddenException,
+  Inject,
+  Injectable,
+  type NestMiddleware,
+} from "@nestjs/common";
 import { ACCOUNT_STATUS_SUSPENDED } from "@cvforge/types";
-import type { AuthService } from "./auth.service";
-
-export const SUSPENDED_ACCOUNT_MESSAGE =
-  "Votre compte est suspendu. Contactez le support pour le reactiver.";
-export const REVOKED_SESSION_MESSAGE =
-  "Votre session a ete revoquee. Reconnectez-vous pour continuer.";
-
-type SessionChecker = Pick<
-  AuthService,
-  "readAccountState" | "readSessionFromCookieHeader"
->;
+import { AuthService } from "./auth.service";
+import {
+  REVOKED_SESSION_MESSAGE,
+  SUSPENDED_ACCOUNT_MESSAGE,
+} from "./session-messages";
 
 type RequestLike = { headers: { cookie?: string } };
 
@@ -29,7 +28,18 @@ type RequestLike = { headers: { cookie?: string } };
  */
 @Injectable()
 export class SessionStateMiddleware implements NestMiddleware {
-  constructor(private readonly authService: SessionChecker) {}
+  /**
+   * `@Inject` with the concrete class, not a structural `Pick<>`: Nest builds
+   * middleware in the module that applies it, and a type-only parameter gives
+   * the injector no token to resolve — the container then refuses to boot.
+   */
+  constructor(
+    @Inject(AuthService)
+    private readonly authService: Pick<
+      AuthService,
+      "readAccountState" | "readSessionFromCookieHeader"
+    >,
+  ) {}
 
   async use(request: RequestLike, _response: unknown, next: () => void) {
     const session = this.authService.readSessionFromCookieHeader(

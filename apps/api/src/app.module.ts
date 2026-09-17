@@ -47,9 +47,12 @@ export class AppModule implements NestModule {
    * able to read the refusal and log out.
    */
   configure(consumer: MiddlewareConsumer) {
+    // Express 5 (NestJS 11) matches paths with path-to-regexp v8: a bare "*"
+    // is not a valid path and throws at bootstrap. Wildcards must be named,
+    // and braced to also match the base path.
     consumer
       .apply(SessionStateMiddleware)
-      .exclude("auth/(.*)", "health", "ready", "billing/stripe/webhook")
-      .forRoutes("*");
+      .exclude("auth/{*splat}", "health", "ready", "billing/stripe/webhook")
+      .forRoutes("{*splat}");
   }
 }

@@ -793,3 +793,12 @@
 - **Learned**: un test RGPD « aucune donnée résiduelle » doit **pouvoir échouer** : le scan de toutes les colonnes texte du schéma est précédé d'une assertion qu'il trouve bien des lignes *avant* la purge.
 - **Verified**: 592 tests API (+35), 34 web, lint monorepo, `tsc` API, build `apps/web` (toutes les routes admin compilent). Non vérifié : parcours navigateur, axe/contraste outillé (absents de `apps/web`), lecture réelle OpenRouter.
 - **Open**: `GET /credits/admin/users` (doublon) conservée car encore utilisée par `apps/app` gelée — décision propriétaire attendue.
+
+## 2026-09-18 — Incident : API staging KO après le push E17 (import circulaire)
+- **Did**: `SessionStateMiddleware` injectait `Pick<AuthService, …>` (type structurel, aucun token) **et** `auth.service.ts` importait le message de suspension depuis le middleware → cycle. Corrigé : `@Inject(AuthService)` explicite + messages extraits dans `src/auth/session-messages.ts`.
+- **Why**: Le conteneur API crashait au démarrage (`UndefinedDependencyException`), Traefik n'avait plus de route, `/health` renvoyait **404** (pas 502), et le smoke test du déploiement échouait.
+- **Learned**: **les 593 tests ne pouvaient pas l'attraper.** Vitest résout le graphe en ESM ; le build CommonJS laisse la classe `undefined` au moment d'évaluer les décorateurs. Un test `NestFactory.create` + `app.init()` en TS passe alors que `node dist/apps/api/src/main.js` échoue. Seul le binaire compilé reproduit le bug.
+- **Learned**: méthode de diagnostic qui a marché — Postgres 16 jetable en Docker, `migrate.main.ts` (OK, exit 0), puis boot du **vrai** `dist/apps/api/src/main.js` : l'erreur est apparue immédiatement. Ne pas se fier à `dist/main.js`, c'est un reliquat : tsc émet dans `dist/apps/api/src/` (cf. `CMD` du Dockerfile).
+- **Learned**: ma première hypothèse (wildcard `"*"` invalide avec Express 5) était **fausse** — vérifiée en testant les deux syntaxes, `/health` répondait 200 dans les deux cas. La syntaxe nommée `{*splat}` a été conservée (conforme à la doc Nest 11) mais ce n'était pas la cause.
+- **Verified**: binaire compilé démarré contre un vrai Postgres → `/health` 200, `/ready` 200, `/admin/users` et `/credits/me` 401 sans session. 593 tests, lint, build.
+- **Open**: le pipeline déploie sans jamais avoir démarré l'image (smoke test **après** `tofu apply`). Noté au backlog.

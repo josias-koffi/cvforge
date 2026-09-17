@@ -11,7 +11,7 @@ import {
   ACCOUNT_STATUS_SUSPENDED,
 } from "@cvforge/types";
 import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
-import { SUSPENDED_ACCOUNT_MESSAGE } from "./session-state.middleware";
+import { SUSPENDED_ACCOUNT_MESSAGE } from "./session-messages";
 import type {
   AuthConsentRecord,
   AuthAccountRecord,
