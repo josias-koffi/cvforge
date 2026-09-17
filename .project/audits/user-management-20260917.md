@@ -7,6 +7,9 @@
 - **Périmètre** : `/admin/users` (apps/web v2), US-033 (panel admin utilisateurs et crédits),
   US-082 (refonte table admin), US-036 (RGPD), vision `§13.2` et `§15.1`
 - **Base de code auditée** : `develop` @ `d57ec66`
+- **Statut** : ✅ audit clos — E17 intégralement livré le 2026-09-17 (sprint 023). Les décisions
+  n° 1 à 3 du §5 ont été tranchées et implémentées ; **la n° 4 (consolidation) reste ouverte**.
+  Ce document garde l'état *avant* travaux, comme référence.
 
 > **Fait majeur découvert pendant l'audit** — la règle non négociable vision `§3.2` était **violée
 > dans le code livré** : `PATCH /admin/users/:email` acceptait `{role:"admin"}` et l'UI exposait un

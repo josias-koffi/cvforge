@@ -470,3 +470,11 @@
 - **Why**: La violation §3.2 (promotion user→admin exposée dans l'UI admin) est une régression de sécurité livrée ; elle passe avant l'ordre d'exécution demandé.
 - **Learned**: Un invariant de sécurité tient mieux dans la **forme du contrat** que dans une garde : un store qui n'expose que `demoteToUser(email)` ne peut pas promouvoir, quel que soit l'appelant futur. Garde et test restent utiles, mais en second rideau.
 - **Open**: La rétrogradation (et plus tard la suspension) n'a aucun effet immédiat tant que les sessions sont des cookies HMAC sans état — décision d'archi n° 1 de l'audit, à trancher avant US-091/095.
+
+## 2026-09-17 — E16/E17 finalization (sprints 022 et 023)
+- **Context**: [[sprints/sprint-022]], [[sprints/sprint-023]] · [[audits/user-management-20260917]]
+- **Did**: Signé les 13 stories de E16/E17 + le hotfix US-096. Confirmé qu'**aucune ADR n'est requise** : zéro nouvelle dépendance sur l'ensemble (fetch global, `setInterval`, agrégats Drizzle déjà présent, middleware Nest natif). Migration `0011` revue (colonnes + CHECK + table append-only).
+- **Why**: Les 4 décisions d'architecture de l'audit ont été portées au propriétaire avant tout code E17 ; 3 ont été tranchées, la 4e (consolidation de la route dupliquée) reste ouverte car la retirer casserait `apps/app`.
+- **Learned**: quand une story annoncée « simple » exige de rendre asynchrone un helper synchrone utilisé partout, chercher le point d'application unique (middleware/guard) avant d'accepter un refactor de 65 fichiers. Le coût réel est une lecture indexée par requête, à surveiller si le trafic monte.
+- **Learned**: préférer réduire un **contrat** (le store) plutôt qu'ajouter une garde, quand l'invariant est de sécurité : la capacité disparaît du code au lieu d'être refusée à l'exécution.
+- **Open**: (1) clé de management OpenRouter à provisionner, sinon supervision inerte ; (2) consolidation `GET /credits/admin/users` ; (3) `apps/app` casse `pnpm build` (panne préexistante) ; (4) aucun axe/test de composant dans `apps/web`.

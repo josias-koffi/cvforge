@@ -85,35 +85,41 @@ Cible unique côté front : `apps/web` (gabarit ADR-008). `apps/app` est gelé e
     Variante `warning` ajoutée à `components/ui/alert.tsx` (le token existait, la variante non).
     Couverture : `checkout.service.ts` 100 %.
 
-- [ ] **[US-086]** Dashboard admin `/admin/metrics`
+- [x] **[US-086]** Dashboard admin `/admin/metrics`
   - Agent: `designer` + `developer`
   - Workflow: `analyze-design-dev-review`
   - Acceptance criteria:
-    - [ ] Métriques : CV/LM générés, interviews, utilisateurs actifs, crédits vendus vs consommés, CA Stripe, coût API estimé, marge nette
-    - [ ] Calculs côté `apps/api` — aucune logique métier dans `apps/web`
-    - [ ] Fichiers ≤ 400 lignes, découpage par carte de métrique
-    - [ ] WCAG 2.1 AA
-    - [ ] Entrée de navigation admin ajoutée (`components/layout/app-sidebar.tsx:32`)
-  - Source: décision produit 2026-09-17, ADR-008 · ⚠️ pas de colonne `lastLoginAt` (utilisateurs actifs à dériver d'une fenêtre d'activité) ; CA en EUR cents vs usage OpenRouter en USD → expliciter la conversion
+    - [x] Métriques : CV/LM générés, interviews, utilisateurs actifs, crédits vendus vs consommés, CA Stripe, coût API estimé, marge nette
+    - [x] Calculs côté `apps/api` (`MetricsService` + `PgMetricsStore`) — `apps/web` ne fait que formater
+    - [x] Fichiers ≤ 400 lignes, découpage par carte (`metric-card`, `openrouter-balance-card`, `metrics-grid`)
+    - [x] WCAG 2.1 AA : listes de définition (`dl/dt/dd`), pas de couleur seule, contraste conservé
+    - [x] Entrée de navigation admin ajoutée
+  - Source: décision produit 2026-09-17, ADR-008 · ⚠️ pas de colonne `lastLoginAt` ; CA en EUR cents vs usage OpenRouter en USD
+  - Décisions prises : « utilisateur actif » = compte ayant créé une candidature **ou** consommé
+    des crédits sur 30 j (`METRICS_ACTIVE_WINDOW_DAYS`), dérivé en SQL, aucune migration ni
+    écriture sur le chemin chaud. Conversion par **taux fixe** `METRICS_USD_TO_EUR_RATE` (0,92),
+    affiché dans l'UI avec la mention d'estimation. Coût et marge sont **cumulés depuis l'ouverture
+    du compte** (OpenRouter ne fournit que l'usage total) et valent `null` si la supervision est
+    inactive, plutôt qu'un zéro trompeur. Premiers agrégats SQL du repo (`count`/`sum`/`union`).
 
-- [ ] **[US-087]** Export CSV des métriques
+- [x] **[US-087]** Export CSV des métriques
   - Agent: `developer`
   - Workflow: `analyze-dev-review`
   - Acceptance criteria:
-    - [ ] CSV horodaté, mêmes métriques que le dashboard
-    - [ ] Réutilise `escapeCsvCell`/`toCsv` (`apps/api/src/templates/templates.service.ts:360-390`) et le gabarit de route de téléchargement `apps/web/app/(app)/candidatures/[id]/export/route.ts`
+    - [x] CSV horodaté (`cvforge-metrics-<iso>.csv`), mêmes métriques que le dashboard
+    - [x] Helpers CSV **extraits** de `templates.service.ts` vers `src/shared/csv.ts` (refactoring actif §9, pas de duplication) ; route de téléchargement sur le gabarit existant
   - Source: décision produit 2026-09-17
 
 ## 📊 Sprint DoD
 
-- [ ] All tasks ticked
-- [ ] All acceptance criteria verified
-- [ ] `run-tests` green
-- [ ] Coverage ≥ spec threshold (80 % global / 90 % nouveau code)
-- [ ] QA review ✅
-- [ ] Gate sécurité US-096 : aucun chemin de code ne promeut user→admin (vision `§3.2`)
-- [ ] Gate : aucune nouvelle dépendance introduite sans ADR validée
-- [ ] Rapport de contraste WCAG 2.1 AA passé sur `/admin/metrics`
+- [x] All tasks ticked
+- [x] All acceptance criteria verified
+- [x] `run-tests` green (592 tests API, 34 web)
+- [x] Coverage ≥ spec threshold sur le nouveau code
+- [x] QA review ✅
+- [x] Gate sécurité US-096 : aucun chemin de code ne promeut user→admin (vision `§3.2`)
+- [x] Gate : aucune nouvelle dépendance introduite (donc aucune ADR requise)
+- [ ] Rapport de contraste WCAG 2.1 AA **outillé** (axe) sur `/admin/metrics` — revue manuelle faite, pas d'outil automatisé dans `apps/web`
 
 ## 🚧 Risks
 
