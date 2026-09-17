@@ -257,7 +257,9 @@ export class ApplicationsService {
     private readonly store: ApplicationsStore,
     private readonly openRouterService: OpenRouterService,
     private readonly creditsService: CreditsService,
-    private readonly listProfileIds: ((userEmail: string) => string[]) | null = null,
+    private readonly listProfileIds:
+      | ((userEmail: string) => Promise<string[]>)
+      | null = null,
   ) {}
 
   listApplications(userEmail: string): DraftApplication[] {
@@ -388,11 +390,11 @@ export class ApplicationsService {
   }
 
   /** Remembers the base profile used for this application (null resets to the default one). */
-  setProfile(
+  async setProfile(
     userEmail: string,
     applicationId: string,
     profileIdValue: unknown,
-  ): DraftApplication {
+  ): Promise<DraftApplication> {
     const profileId =
       profileIdValue === null
         ? null
@@ -406,7 +408,11 @@ export class ApplicationsService {
 
     const application = this.getOwnedApplication(userEmail, applicationId);
 
-    if (profileId && this.listProfileIds && !this.listProfileIds(userEmail).includes(profileId)) {
+    if (
+      profileId &&
+      this.listProfileIds &&
+      !(await this.listProfileIds(userEmail)).includes(profileId)
+    ) {
       throw new NotFoundException("Le profil est introuvable.");
     }
 

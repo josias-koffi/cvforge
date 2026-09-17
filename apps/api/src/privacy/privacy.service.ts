@@ -49,7 +49,7 @@ export class PrivacyService {
         await this.notificationsStore.listByUserEmail(normalizedEmail),
       ownedApplications: this.applicationsStore.listByUserEmail(normalizedEmail),
       ownedCredits: await this.creditsStore.listEntriesForUser(normalizedEmail),
-      ownedProfiles: this.profilesStore.findByUserEmail(normalizedEmail),
+      ownedProfiles: await this.profilesStore.findByUserEmail(normalizedEmail),
       retentionPolicy: PRIVACY_RETENTION_POLICY,
       userEmail: normalizedEmail,
     };
@@ -81,7 +81,8 @@ export class PrivacyService {
     const deletedApplications = this.applicationsStore.deleteByUserEmail(normalizedEmail);
     const deletedNotifications =
       await this.notificationsStore.deleteByUserEmail(normalizedEmail);
-    const deletedProfiles = this.profilesStore.deleteByUserEmail(normalizedEmail);
+    const deletedProfiles =
+      await this.profilesStore.deleteByUserEmail(normalizedEmail);
     const deletedCreditEntries =
       await this.creditsStore.deleteByUserEmail(normalizedEmail);
     const scrubbedAdminReferences =

@@ -5,14 +5,14 @@ import type { ProfilesStore, StoredProfileRegistry } from "./profiles.types";
 export class ProfilesService {
   constructor(private readonly store: ProfilesStore) {}
 
-  getRegistry(userEmail: string): StoredProfileRegistry | null {
+  getRegistry(userEmail: string): Promise<StoredProfileRegistry | null> {
     return this.store.findByUserEmail(userEmail);
   }
 
   saveRegistry(
     userEmail: string,
     registry: StoredProfileRegistry,
-  ): StoredProfileRegistry {
+  ): Promise<StoredProfileRegistry> {
     return this.store.save(userEmail, registry);
   }
 }

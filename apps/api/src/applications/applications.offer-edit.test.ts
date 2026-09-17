@@ -185,37 +185,42 @@ describe("ApplicationsService offer editing", () => {
     ).rejects.toThrow(BadRequestException);
   });
 
-  it("remembers the profile picked for an application", () => {
+  it("remembers the profile picked for an application", async () => {
     const withProfiles = new ApplicationsService(
       store,
       openRouterService as never,
       creditsService,
-      () => ["profile_a", "profile_b"],
+      () => Promise.resolve(["profile_a", "profile_b"]),
     );
 
-    const application = withProfiles.setProfile("user@example.com", "app_1", " profile_b ");
+    const application = await withProfiles.setProfile(
+      "user@example.com",
+      "app_1",
+      " profile_b ",
+    );
 
     expect(application.profileId).toBe("profile_b");
     expect(application.updatedAt).toBe("2026-04-20T12:00:00.000Z");
-    expect(withProfiles.setProfile("user@example.com", "app_1", null).profileId).toBeNull();
+    const reset = await withProfiles.setProfile("user@example.com", "app_1", null);
+    expect(reset.profileId).toBeNull();
   });
 
-  it("rejects an unknown or missing profile", () => {
+  it("rejects an unknown or missing profile", async () => {
     const withProfiles = new ApplicationsService(
       store,
       openRouterService as never,
       creditsService,
-      () => ["profile_a"],
+      () => Promise.resolve(["profile_a"]),
     );
 
-    expect(() => withProfiles.setProfile("user@example.com", "app_1", "ghost")).toThrow(
-      NotFoundException,
-    );
-    expect(() => withProfiles.setProfile("user@example.com", "app_1", "")).toThrow(
-      BadRequestException,
-    );
-    expect(() => withProfiles.setProfile("other@example.com", "app_1", "profile_a")).toThrow(
-      NotFoundException,
-    );
+    await expect(
+      withProfiles.setProfile("user@example.com", "app_1", "ghost"),
+    ).rejects.toThrow(NotFoundException);
+    await expect(
+      withProfiles.setProfile("user@example.com", "app_1", ""),
+    ).rejects.toThrow(BadRequestException);
+    await expect(
+      withProfiles.setProfile("other@example.com", "app_1", "profile_a"),
+    ).rejects.toThrow(NotFoundException);
   });
 });
