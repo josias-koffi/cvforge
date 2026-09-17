@@ -74,7 +74,7 @@ export class AdminUsersController {
 
   @Delete(":email")
   @HttpCode(200)
-  deleteUser(@Param("email") email: string, @Req() request: RequestLike) {
+  async deleteUser(@Param("email") email: string, @Req() request: RequestLike) {
     const session = this.requireAdmin(request);
     const targetEmail = normalizeEmail(email);
 
@@ -92,7 +92,7 @@ export class AdminUsersController {
       throw new NotFoundException("Utilisateur introuvable.");
     }
 
-    return { deletion: this.privacyService.purgeAccount(targetEmail) };
+    return { deletion: await this.privacyService.purgeAccount(targetEmail) };
   }
 
   private requireAdmin(request: RequestLike) {

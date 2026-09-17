@@ -4,7 +4,7 @@ import { PrivacyController } from "./privacy.controller";
 import type { PrivacyService } from "./privacy.service";
 
 describe("PrivacyController", () => {
-  it("exports user data for an authenticated session", () => {
+  it("exports user data for an authenticated session", async () => {
     const authService = {
       readSessionFromCookieHeader: vi.fn().mockReturnValue({
         email: "user@example.com",
@@ -13,24 +13,24 @@ describe("PrivacyController", () => {
       }),
     } as unknown as AuthService;
     const privacyService = {
-      exportUserData: vi.fn().mockReturnValue({ userEmail: "user@example.com" }),
+      exportUserData: vi.fn().mockResolvedValue({ userEmail: "user@example.com" }),
     } as unknown as PrivacyService;
     const controller = new PrivacyController(privacyService, authService);
 
-    expect(
+    await expect(
       controller.exportUserData({
         headers: {
           cookie: "cvforge_session=test",
         },
       } as never),
-    ).toEqual({
+    ).resolves.toEqual({
       exportData: {
         userEmail: "user@example.com",
       },
     });
   });
 
-  it("clears the session cookie after account deletion", () => {
+  it("clears the session cookie after account deletion", async () => {
     const authService = {
       clearSessionCookie: vi.fn().mockReturnValue({
         name: "cvforge_session",
@@ -44,14 +44,14 @@ describe("PrivacyController", () => {
       }),
     } as unknown as AuthService;
     const privacyService = {
-      deleteUserData: vi.fn().mockReturnValue({
+      deleteUserData: vi.fn().mockResolvedValue({
         deletedAt: "2026-04-23T08:10:10.000Z",
       }),
     } as unknown as PrivacyService;
     const controller = new PrivacyController(privacyService, authService);
     const cookie = vi.fn();
 
-    expect(
+    await expect(
       controller.deleteAccount(
         {
           confirmationEmail: "user@example.com",
@@ -63,7 +63,7 @@ describe("PrivacyController", () => {
         } as never,
         { cookie } as never,
       ),
-    ).toEqual({
+    ).resolves.toEqual({
       result: {
         deletedAt: "2026-04-23T08:10:10.000Z",
       },

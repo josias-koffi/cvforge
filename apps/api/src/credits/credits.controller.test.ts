@@ -9,14 +9,14 @@ import { CreditsService } from "./credits.service";
 
 function makeController(session: unknown) {
   const creditsService = {
-    getSummaryForUser: vi.fn().mockReturnValue({
+    getSummaryForUser: vi.fn().mockResolvedValue({
       balance: 47,
       history: [],
       isLowBalance: false,
       lowBalanceThreshold: 20,
       userEmail: "user@example.com",
     }),
-    grantCredits: vi.fn().mockReturnValue({
+    grantCredits: vi.fn().mockResolvedValue({
       action: "admin_grant",
       amount: 50,
       balanceAfter: 50,
@@ -61,15 +61,15 @@ function makeController(session: unknown) {
 }
 
 describe("CreditsController", () => {
-  it("returns the authenticated user's credit summary", () => {
+  it("returns the authenticated user's credit summary", async () => {
     const controller = makeController({
       email: "user@example.com",
       role: "user",
     });
 
-    expect(
+    await expect(
       controller.getMyCredits({ headers: { cookie: "cvforge_session=abc" } }),
-    ).toEqual({
+    ).resolves.toEqual({
       credits: {
         balance: 47,
         history: [],
@@ -80,21 +80,21 @@ describe("CreditsController", () => {
     });
   });
 
-  it("rejects unauthenticated access", () => {
+  it("rejects unauthenticated access", async () => {
     const controller = makeController(null);
 
-    expect(() => controller.getMyCredits({ headers: {} })).toThrow(
+    await expect(controller.getMyCredits({ headers: {} })).rejects.toThrow(
       UnauthorizedException,
     );
   });
 
-  it("requires admin role for grants", () => {
+  it("requires admin role for grants", async () => {
     const controller = makeController({
       email: "user@example.com",
       role: "user",
     });
 
-    expect(() =>
+    await expect(
       controller.grantCredits(
         {
           credits: 50,
@@ -103,10 +103,10 @@ describe("CreditsController", () => {
         },
         { headers: { cookie: "cvforge_session=abc" } },
       ),
-    ).toThrow(ForbiddenException);
+    ).rejects.toThrow(ForbiddenException);
   });
 
-  it("lists paginated admin users with filters and latest manual grant metadata", () => {
+  it("lists paginated admin users with filters and latest manual grant metadata", async () => {
     const controller = makeController({
       email: "admin@example.com",
       role: "admin",
@@ -115,7 +115,7 @@ describe("CreditsController", () => {
       getSummaryForUser: ReturnType<typeof vi.fn>;
     };
 
-    creditsService.getSummaryForUser.mockImplementation((email: string) => {
+    creditsService.getSummaryForUser.mockImplementation(async (email: string) => {
       if (email === "user@example.com") {
         return {
           balance: 47,
@@ -147,7 +147,7 @@ describe("CreditsController", () => {
       };
     });
 
-    expect(
+    await expect(
       controller.listAdminUsers(
         "1",
         "1",
@@ -155,7 +155,7 @@ describe("CreditsController", () => {
         "user",
         { headers: { cookie: "cvforge_session=abc" } },
       ),
-    ).toEqual({
+    ).resolves.toEqual({
       filters: {
         query: "user",
         role: "user",

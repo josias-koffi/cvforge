@@ -541,7 +541,7 @@ export class ApplicationsService {
     }
 
     const metadata = extractOfferMetadata(html);
-    this.creditsService.consumeCredits({
+    await this.creditsService.consumeCredits({
       action: AI_CREDIT_ACTION_OFFER_ENRICHMENT,
       userEmail,
     });
@@ -567,7 +567,7 @@ export class ApplicationsService {
     rawOfferText: string,
   ): Promise<OfferExtractionResult> {
     const offerText = normalizeOfferText(rawOfferText);
-    this.creditsService.consumeCredits({
+    await this.creditsService.consumeCredits({
       action: AI_CREDIT_ACTION_OFFER_ENRICHMENT,
       userEmail,
     });

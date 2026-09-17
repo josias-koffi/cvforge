@@ -1,28 +1,41 @@
 import { rmSync } from "node:fs";
-import { describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { FileApplicationsStore } from "../applications/applications.store";
 import { FileAuthAccountStore } from "../auth/auth-account-store";
-import { FileCreditLedgerStore } from "../credits/credits.store";
+import { PgCreditLedgerStore } from "../credits/credits.pg-store";
+import {
+  createTestDatabase,
+  type TestDatabase,
+} from "../database/testing/test-database";
 import { FileNotificationsStore } from "../notifications/notifications.store";
 import { FileProfilesStore } from "../profiles/profiles.store";
 import { PrivacyService } from "./privacy.service";
 
-function createService(testId: string) {
+let testDatabase: TestDatabase;
+
+beforeAll(async () => {
+  testDatabase = await createTestDatabase();
+});
+
+afterAll(async () => {
+  await testDatabase.close();
+});
+
+async function createService(testId: string) {
   const authPath = `/tmp/${testId}-auth.json`;
   const applicationsPath = `/tmp/${testId}-applications.json`;
-  const creditsPath = `/tmp/${testId}-credits.json`;
   const notificationsPath = `/tmp/${testId}-notifications.json`;
   const profilesPath = `/tmp/${testId}-profiles.json`;
 
   rmSync(authPath, { force: true });
   rmSync(applicationsPath, { force: true });
-  rmSync(creditsPath, { force: true });
+  await testDatabase.reset();
   rmSync(notificationsPath, { force: true });
   rmSync(profilesPath, { force: true });
 
   const authStore = new FileAuthAccountStore(authPath);
   const applicationsStore = new FileApplicationsStore(applicationsPath);
-  const creditsStore = new FileCreditLedgerStore(creditsPath);
+  const creditsStore = new PgCreditLedgerStore(testDatabase.db);
   const notificationsStore = new FileNotificationsStore(notificationsPath);
   const profilesStore = new FileProfilesStore(profilesPath);
 
@@ -87,12 +100,9 @@ function createService(testId: string) {
     updatedAt: "2026-04-23T08:00:00.000Z",
     userEmail: "user@example.com",
   });
-  creditsStore.addEntry({
+  await creditsStore.applyEntry({
     action: "admin_grant",
     amount: 25,
-    balanceAfter: 25,
-    createdAt: "2026-04-23T08:00:00.000Z",
-    id: "credit-1",
     metadata: {
       adminEmail: "admin@example.com",
     },
@@ -100,12 +110,9 @@ function createService(testId: string) {
     type: "admin_grant",
     userEmail: "user@example.com",
   });
-  creditsStore.addEntry({
+  await creditsStore.applyEntry({
     action: "admin_grant",
     amount: 10,
-    balanceAfter: 10,
-    createdAt: "2026-04-23T09:00:00.000Z",
-    id: "credit-2",
     metadata: {
       adminEmail: "admin@example.com",
     },
@@ -143,10 +150,10 @@ function createService(testId: string) {
 }
 
 describe("PrivacyService", () => {
-  it("exports the owned data plus admin references and retention policy", () => {
-    const { service } = createService("privacy-export");
+  it("exports the owned data plus admin references and retention policy", async () => {
+    const { service } = await createService("privacy-export");
 
-    const result = service.exportUserData("admin@example.com");
+    const result = await service.exportUserData("admin@example.com");
 
     expect(result.userEmail).toBe("admin@example.com");
     expect(result.auth.account?.email).toBe("admin@example.com");
@@ -154,16 +161,16 @@ describe("PrivacyService", () => {
     expect(result.retentionPolicy.audioPurgePlan.retentionDays).toBe(30);
   });
 
-  it("deletes owned records and scrubs third-party admin references", () => {
+  it("deletes owned records and scrubs third-party admin references", async () => {
     const {
       applicationsStore,
       authStore,
       creditsStore,
       notificationsStore,
       service,
-    } = createService("privacy-delete");
+    } = await createService("privacy-delete");
 
-    const result = service.deleteUserData(
+    const result = await service.deleteUserData(
       "admin@example.com",
       "admin@example.com",
     );
@@ -173,21 +180,20 @@ describe("PrivacyService", () => {
     expect(authStore.exportUserData("admin@example.com").account).toBeNull();
     expect(applicationsStore.listByUserEmail("admin@example.com")).toEqual([]);
     expect(notificationsStore.listByUserEmail("admin@example.com")).toEqual([]);
-    expect(creditsStore.listEntriesByAdminEmail("admin@example.com")).toHaveLength(0);
-    expect(creditsStore.listEntriesForUser("other@example.com")[0]?.metadata.adminEmail).toBe(
-      "[deleted-account]",
-    );
+    await expect(creditsStore.listEntriesByAdminEmail("admin@example.com")).resolves.toHaveLength(0);
+    const [otherEntry] = await creditsStore.listEntriesForUser("other@example.com");
+    expect(otherEntry?.metadata.adminEmail).toBe("[deleted-account]");
     expect(authStore.exportUserData("user@example.com").receivedInvitations).toHaveLength(1);
     expect(
       authStore.exportUserData("user@example.com").receivedInvitations[0]?.createdBy,
     ).toBe("[deleted-account]");
   });
 
-  it("rejects mismatched confirmation emails", () => {
-    const { service } = createService("privacy-confirmation");
+  it("rejects mismatched confirmation emails", async () => {
+    const { service } = await createService("privacy-confirmation");
 
-    expect(() =>
+    await expect(
       service.deleteUserData("user@example.com", "other@example.com"),
-    ).toThrow(/confirmation email/i);
+    ).rejects.toThrow(/confirmation email/i);
   });
 });

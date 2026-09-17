@@ -19,9 +19,9 @@ function normalizeRoleFilter(value: string | undefined) {
   return value === "admin" || value === "user" ? value : null;
 }
 
-export function buildAdminUserDirectory(
+export async function buildAdminUserDirectory(
   accounts: AuthAccountRecord[],
-  creditsService: CreditsService,
+  creditsService: Pick<CreditsService, "getSummaryForUser">,
   params: AdminUserDirectoryQuery,
 ) {
   const query = (params.query ?? "").trim().toLowerCase();
@@ -30,14 +30,19 @@ export function buildAdminUserDirectory(
     parsePositiveInteger(params.pageSize, 6),
     params.maxPageSize,
   );
-  const matchingAccounts = accounts
-    .filter(
-      (account) =>
-        (!role || account.role === role) &&
-        (!query || account.email.toLowerCase().includes(query)),
-    )
-    .map((account) => {
-      const credits = creditsService.getSummaryForUser(account.email);
+  const filteredAccounts = accounts.filter(
+    (account) =>
+      (!role || account.role === role) &&
+      (!query || account.email.toLowerCase().includes(query)),
+  );
+  const summaries = await Promise.all(
+    filteredAccounts.map((account) =>
+      creditsService.getSummaryForUser(account.email),
+    ),
+  );
+  const matchingAccounts = filteredAccounts
+    .map((account, index) => {
+      const credits = summaries[index];
       const lastManualGrant =
         credits.history.find((entry) => entry.type === "admin_grant") ?? null;
 

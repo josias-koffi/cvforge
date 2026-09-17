@@ -275,7 +275,7 @@ export class BillingService {
 
     const pack = creditPacks[packId];
 
-    const entry = this.creditsService.recordStripePurchase({
+    const entry = await this.creditsService.recordStripePurchase({
       amountCents: session.amount_total ?? pack.priceCents,
       credits: pack.credits,
       packId,

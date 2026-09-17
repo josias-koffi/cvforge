@@ -1,6 +1,9 @@
 import { BadRequestException, UnprocessableEntityException } from "@nestjs/common";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { CreditsService } from "../credits/credits.service";
+import {
+  InsufficientCreditsException,
+  type CreditsService,
+} from "../credits/credits.service";
 import { CvImportService, type CvImportFile } from "./cv-import.service";
 import { recognizeImages } from "./ocr.extractor";
 import { extractPdfText, renderPdfPages } from "./pdf-text.extractor";
@@ -76,8 +79,8 @@ describe("CvImportService", () => {
       chat: vi.fn().mockResolvedValue(JSON.stringify(AI_RESPONSE)),
     };
     creditsService = {
-      consumeCredits: vi.fn(),
-      getSummaryForUser: vi.fn().mockReturnValue({ balance: 10 }),
+      assertSufficientCredits: vi.fn().mockResolvedValue(undefined),
+      consumeCredits: vi.fn().mockResolvedValue(undefined),
     } as unknown as CreditsService;
     vi.mocked(extractPdfText).mockImplementation(async (buffer) => buffer.toString("latin1").trim());
     vi.mocked(renderPdfPages).mockResolvedValue([]);
@@ -191,7 +194,9 @@ describe("CvImportService", () => {
   });
 
   it("refuses before calling the AI when the balance is too low", async () => {
-    vi.mocked(creditsService.getSummaryForUser).mockReturnValue({ balance: 0 } as never);
+    vi.mocked(creditsService.assertSufficientCredits).mockRejectedValue(
+      new InsufficientCreditsException("cv_import"),
+    );
 
     await expect(
       service.extractProfileFromCv("user@example.com", makeFile()),

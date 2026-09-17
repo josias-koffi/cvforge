@@ -29,10 +29,10 @@ function createController(sessionRole: "admin" | "user" | null = "admin") {
       .mockImplementation((email: string, role: string) => ({ email, role })),
   } as unknown as AuthService;
   const creditsService = {
-    getSummaryForUser: vi.fn().mockReturnValue({ balance: 10, history: [] }),
+    getSummaryForUser: vi.fn().mockResolvedValue({ balance: 10, history: [] }),
   } as unknown as CreditsService;
   const privacyService = {
-    purgeAccount: vi.fn().mockReturnValue({ deletedApplications: 2 }),
+    purgeAccount: vi.fn().mockResolvedValue({ deletedApplications: 2 }),
   } as unknown as PrivacyService;
 
   return {
@@ -49,10 +49,10 @@ function createController(sessionRole: "admin" | "user" | null = "admin") {
 const request = { headers: { cookie: "cvforge_session=abc" } };
 
 describe("AdminUsersController", () => {
-  it("lists users with search, role filter and pagination", () => {
+  it("lists users with search, role filter and pagination", async () => {
     const { controller } = createController();
 
-    const result = controller.listUsers("1", "1", "o", "user", request);
+    const result = await controller.listUsers("1", "1", "o", "user", request);
 
     expect(result.pagination).toEqual({
       page: 1,
@@ -63,13 +63,18 @@ describe("AdminUsersController", () => {
     expect(result.users[0]).toMatchObject({ balance: 10, role: "user" });
   });
 
-  it("caps the page size at 100", () => {
+  it("caps the page size at 100", async () => {
     const { controller } = createController();
 
-    expect(
-      controller.listUsers(undefined, "500", undefined, undefined, request)
-        .pagination.pageSize,
-    ).toBe(100);
+    const result = await controller.listUsers(
+      undefined,
+      "500",
+      undefined,
+      undefined,
+      request,
+    );
+
+    expect(result.pagination.pageSize).toBe(100);
   });
 
   it("updates the role of another user", () => {
@@ -84,30 +89,30 @@ describe("AdminUsersController", () => {
     );
   });
 
-  it("prevents an admin from demoting or deleting themselves", () => {
+  it("prevents an admin from demoting or deleting themselves", async () => {
     const { controller } = createController();
 
     expect(() =>
       controller.updateUser("admin@example.com", { role: "user" }, request),
     ).toThrow(BadRequestException);
-    expect(() => controller.deleteUser("admin@example.com", request)).toThrow(
+    await expect(controller.deleteUser("admin@example.com", request)).rejects.toThrow(
       BadRequestException,
     );
   });
 
-  it("purges another user's data and rejects unknown users", () => {
+  it("purges another user's data and rejects unknown users", async () => {
     const { controller, privacyService } = createController();
 
-    expect(controller.deleteUser("bob@example.com", request)).toEqual({
+    await expect(controller.deleteUser("bob@example.com", request)).resolves.toEqual({
       deletion: { deletedApplications: 2 },
     });
     expect(privacyService.purgeAccount).toHaveBeenCalledWith("bob@example.com");
-    expect(() => controller.deleteUser("ghost@example.com", request)).toThrow(
+    await expect(controller.deleteUser("ghost@example.com", request)).rejects.toThrow(
       NotFoundException,
     );
   });
 
-  it("requires an admin session", () => {
+  it("requires an admin session", async () => {
     expect(() =>
       createController("user").controller.listUsers(
         undefined,
@@ -117,8 +122,8 @@ describe("AdminUsersController", () => {
         request,
       ),
     ).toThrow(ForbiddenException);
-    expect(() =>
+    await expect(
       createController(null).controller.deleteUser("bob@example.com", request),
-    ).toThrow(UnauthorizedException);
+    ).rejects.toThrow(UnauthorizedException);
   });
 });
