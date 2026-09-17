@@ -1,87 +1,68 @@
 import { BadRequestException, UnauthorizedException } from "@nestjs/common";
 import { describe, expect, it, vi } from "vitest";
-import { AuthService } from "../auth/auth.service";
+import type { AuthService } from "../auth/auth.service";
 import { BillingController } from "./billing.controller";
-import { BillingService } from "./billing.service";
+import type { CheckoutService } from "./checkout.service";
+import type { StripeWebhookService } from "./stripe-webhook.service";
 
-function makeController(session: unknown) {
-  const billingService = {
-    createCheckoutSession: vi.fn().mockResolvedValue({
-      checkoutUrl: "https://checkout.stripe.com/c/session_123",
-      sessionId: "cs_test_123",
-    }),
-    handleWebhook: vi.fn().mockReturnValue({ handled: "ignored" }),
-  } as unknown as BillingService;
-  const authService = {
-    readSessionFromCookieHeader: vi.fn().mockReturnValue(session),
-  } as unknown as AuthService;
+const OFFER_ID = "0d4b8f0e-5c8e-4d1a-9b6c-7e2f3a1b9c0d";
+
+function makeController(session: unknown = { email: "user@example.com", role: "user" }) {
+  const checkout = {
+    createCheckoutSession: vi.fn().mockResolvedValue({ checkoutUrl: "https://stripe", sessionId: "cs_1" }),
+    listOrdersForUser: vi.fn().mockResolvedValue([{ id: "order-1" }]),
+  };
+  const webhooks = { handle: vi.fn().mockResolvedValue({ eventId: "evt_1", outcome: "credited" }) };
+  const authService = { readSessionFromCookieHeader: vi.fn().mockReturnValue(session) };
 
   return {
-    billingService,
-    controller: new BillingController(billingService, authService),
+    checkout,
+    controller: new BillingController(
+      checkout as unknown as CheckoutService,
+      webhooks as unknown as StripeWebhookService,
+      authService as unknown as AuthService,
+    ),
+    webhooks,
   };
 }
 
+const request = { headers: { cookie: "cvforge_session=abc" } };
+
 describe("BillingController", () => {
-  it("creates a checkout session for the authenticated user", async () => {
-    const { controller, billingService } = makeController({
-      email: "user@example.com",
-      role: "user",
+  it("starts a checkout for the session's user", async () => {
+    const { checkout, controller } = makeController();
+
+    await expect(controller.createCheckoutSession({ offerId: OFFER_ID }, request)).resolves.toEqual({
+      checkoutUrl: "https://stripe",
+      sessionId: "cs_1",
     });
-
-    const response = await controller.createCheckoutSession(
-      { packId: "pro" },
-      { headers: { cookie: "cvforge_session=abc" } },
-    );
-
-    expect(billingService.createCheckoutSession).toHaveBeenCalledWith({
-      packId: "pro",
+    expect(checkout.createCheckoutSession).toHaveBeenCalledWith({
+      offerId: OFFER_ID,
       userEmail: "user@example.com",
-    });
-    expect(response).toEqual({
-      checkoutUrl: "https://checkout.stripe.com/c/session_123",
-      sessionId: "cs_test_123",
     });
   });
 
-  it("rejects unauthenticated checkout creation", async () => {
-    const { controller } = makeController(null);
-
+  it("rejects an invalid offer id and anonymous buyers", () => {
+    expect(() => makeController().controller.createCheckoutSession({ offerId: "pro" }, request)).toThrow(
+      BadRequestException,
+    );
     expect(() =>
-      controller.createCheckoutSession(
-        { packId: "starter" },
-        { headers: {} },
-      ),
+      makeController(null).controller.createCheckoutSession({ offerId: OFFER_ID }, request),
     ).toThrow(UnauthorizedException);
   });
 
-  it("rejects invalid pack ids", () => {
-    const { controller } = makeController({
-      email: "user@example.com",
-      role: "user",
+  it("lists the user's orders", async () => {
+    await expect(makeController().controller.listMyOrders(request)).resolves.toEqual({
+      orders: [{ id: "order-1" }],
     });
-
-    expect(() =>
-      controller.createCheckoutSession(
-        { packId: "enterprise" as never },
-        { headers: { cookie: "cvforge_session=abc" } },
-      ),
-    ).toThrow(BadRequestException);
   });
 
-  it("passes the raw payload and signature to webhook handling", () => {
-    const { controller, billingService } = makeController(null);
+  it("passes the raw body and signature to the webhook service", async () => {
+    const { controller, webhooks } = makeController(null);
+    const rawBody = Buffer.from("{}");
 
-    controller.handleStripeWebhook({
-      headers: {
-        "stripe-signature": "t=1,v1=test",
-      },
-      rawBody: Buffer.from('{"id":"evt_123"}', "utf8"),
-    });
+    await controller.handleStripeWebhook({ headers: { "stripe-signature": "t=1,v1=x" }, rawBody });
 
-    expect(billingService.handleWebhook).toHaveBeenCalledWith({
-      payload: '{"id":"evt_123"}',
-      signatureHeader: "t=1,v1=test",
-    });
+    expect(webhooks.handle).toHaveBeenCalledWith(rawBody, "t=1,v1=x");
   });
 });

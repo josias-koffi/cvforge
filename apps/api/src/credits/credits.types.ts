@@ -52,7 +52,9 @@ export type GrantCreditsInput = {
 export type StripePurchaseInput = {
   amountCents: number;
   credits: number;
-  packId: string;
+  offerId: string;
+  offerLabel: string;
+  orderId: string;
   stripeCheckoutSessionId: string;
   stripePaymentIntentId?: string | null;
   userEmail: string;

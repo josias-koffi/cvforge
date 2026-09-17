@@ -286,12 +286,15 @@ export interface CreditLedgerEntry {
   metadata: {
     adminEmail?: string;
     applicationId?: string;
+    offerId?: string;
+    orderId?: string;
     packId?: string;
     stripeCheckoutSessionId?: string;
     stripePaymentIntentId?: string;
   };
 }
 
+/** @deprecated Legacy `apps/app` only; offers are managed by admins (`CreditOffer`). */
 export interface CreditPackDefinition {
   credits: number;
   currency: "eur";
@@ -300,6 +303,7 @@ export interface CreditPackDefinition {
   priceCents: number;
 }
 
+/** @deprecated Legacy `apps/app` only; offers are managed by admins (`CreditOffer`). */
 export const creditPacks: Record<CreditPackId, CreditPackDefinition> = {
   [CREDIT_PACK_STARTER]: {
     credits: 550,
@@ -317,8 +321,94 @@ export const creditPacks: Record<CreditPackId, CreditPackDefinition> = {
   },
 };
 
+export const CREDIT_OFFER_STATUS_DRAFT = "draft" as const;
+export const CREDIT_OFFER_STATUS_ACTIVE = "active" as const;
+export const CREDIT_OFFER_STATUS_ARCHIVED = "archived" as const;
+export const creditOfferStatuses = [
+  CREDIT_OFFER_STATUS_DRAFT,
+  CREDIT_OFFER_STATUS_ACTIVE,
+  CREDIT_OFFER_STATUS_ARCHIVED,
+] as const;
+export type CreditOfferStatus = (typeof creditOfferStatuses)[number];
+
+/** Vision §11: no pack under 5 EUR (VAT included). */
+export const CREDIT_OFFER_MIN_PRICE_CENTS = 500;
+
+export interface LocalizedText {
+  fr: string;
+  en: string;
+}
+
+export interface LocalizedList {
+  fr: string[];
+  en: string[];
+}
+
+/** An offer as shown to visitors and buyers (landing, credits page). */
+export interface PublicCreditOffer {
+  id: string;
+  slug: string;
+  name: LocalizedText;
+  description: LocalizedText;
+  /** Marketing bullet points; they do not gate any feature. */
+  features: LocalizedList;
+  credits: number;
+  priceCents: number;
+  currency: "eur";
+  isFeatured: boolean;
+  sortOrder: number;
+}
+
+export interface AdminCreditOffer extends PublicCreditOffer {
+  status: CreditOfferStatus;
+  stripeProductId: string | null;
+  stripePriceId: string | null;
+  stripeSyncedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreditOfferInput {
+  slug: string;
+  name: LocalizedText;
+  description: LocalizedText;
+  features: LocalizedList;
+  credits: number;
+  priceCents: number;
+  status: CreditOfferStatus;
+  sortOrder: number;
+}
+
+export interface AdminCreditOfferMutationResponse {
+  offer: AdminCreditOffer;
+  /** Set when the offer was saved but Stripe could not be updated. */
+  stripeSyncError: string | null;
+}
+
+export const CREDIT_ORDER_STATUS_PENDING = "pending" as const;
+export const CREDIT_ORDER_STATUS_PAID = "paid" as const;
+export const CREDIT_ORDER_STATUS_FAILED = "failed" as const;
+export const CREDIT_ORDER_STATUS_EXPIRED = "expired" as const;
+export type CreditOrderStatus =
+  | typeof CREDIT_ORDER_STATUS_PENDING
+  | typeof CREDIT_ORDER_STATUS_PAID
+  | typeof CREDIT_ORDER_STATUS_FAILED
+  | typeof CREDIT_ORDER_STATUS_EXPIRED;
+
+export interface CreditOrder {
+  id: string;
+  offerId: string;
+  offerName: LocalizedText;
+  credits: number;
+  priceCents: number;
+  currency: "eur";
+  status: CreditOrderStatus;
+  createdAt: string;
+  paidAt: string | null;
+}
+
 export interface CreateCheckoutSessionRequest {
-  packId: CreditPackId;
+  offerId: string;
 }
 
 export interface CreateCheckoutSessionResponse {

@@ -1,22 +1,21 @@
 import {
   Body,
   Controller,
-  ForbiddenException,
   Get,
   Inject,
   Param,
   Post,
   Query,
   Req,
-  UnauthorizedException,
 } from "@nestjs/common";
 import { AuthService } from "../auth/auth.service";
+import {
+  requireAdminSession,
+  requireSession,
+  type CookieRequest,
+} from "../auth/request-session";
 import { buildAdminUserDirectory } from "./admin-user-directory";
 import { CreditsService } from "./credits.service";
-
-type RequestLike = {
-  headers: { cookie?: string };
-};
 
 @Controller("credits")
 export class CreditsController {
@@ -27,8 +26,8 @@ export class CreditsController {
   ) {}
 
   @Get("me")
-  async getMyCredits(@Req() request: RequestLike) {
-    const session = this.readSession(request);
+  async getMyCredits(@Req() request: CookieRequest) {
+    const session = requireSession(this.authService, request);
 
     return {
       credits: await this.creditsService.getSummaryForUser(session.email),
@@ -38,9 +37,9 @@ export class CreditsController {
   @Get("users/:userEmail")
   async getUserCredits(
     @Param("userEmail") userEmail: string,
-    @Req() request: RequestLike,
+    @Req() request: CookieRequest,
   ) {
-    const session = this.readAdminSession(request);
+    const session = requireAdminSession(this.authService, request);
 
     return {
       requestedBy: session.email,
@@ -56,9 +55,9 @@ export class CreditsController {
     @Query("pageSize") pageSizeValue: string | undefined,
     @Query("query") queryValue: string | undefined,
     @Query("role") roleValue: string | undefined,
-    @Req() request: RequestLike,
+    @Req() request: CookieRequest,
   ) {
-    const session = this.readAdminSession(request);
+    const session = requireAdminSession(this.authService, request);
 
     return {
       ...(await buildAdminUserDirectory(this.authService.listAccounts(), this.creditsService, {
@@ -75,9 +74,9 @@ export class CreditsController {
   @Post("admin/grants")
   async grantCredits(
     @Body() body: { credits?: number; note?: string; userEmail?: string },
-    @Req() request: RequestLike,
+    @Req() request: CookieRequest,
   ) {
-    const session = this.readAdminSession(request);
+    const session = requireAdminSession(this.authService, request);
 
     return {
       entry: await this.creditsService.grantCredits({
@@ -87,27 +86,5 @@ export class CreditsController {
         userEmail: (body.userEmail ?? "").trim().toLowerCase(),
       }),
     };
-  }
-
-  private readSession(request: RequestLike) {
-    const session = this.authService.readSessionFromCookieHeader(
-      request.headers.cookie,
-    );
-
-    if (!session) {
-      throw new UnauthorizedException("A valid session is required.");
-    }
-
-    return session;
-  }
-
-  private readAdminSession(request: RequestLike) {
-    const session = this.readSession(request);
-
-    if (session.role !== "admin") {
-      throw new ForbiddenException("Admin access is required.");
-    }
-
-    return session;
   }
 }
