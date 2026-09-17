@@ -25,16 +25,18 @@ export function createInMemoryAccountStore(): AuthAccountStore {
         }))
         .sort((left, right) => left.email.localeCompare(right.email));
     },
-    async updateRole(email, role) {
+    async demoteToUser(email) {
       const account = accounts.get(email);
 
       if (!account) {
         return null;
       }
 
-      accounts.set(email, { ...account, role });
+      const demoted = { ...account, role: "user" as const };
 
-      return { email, ...account, role };
+      accounts.set(email, demoted);
+
+      return { email, ...demoted };
     },
     async readAccount(email) {
       return accounts.get(email) ?? null;

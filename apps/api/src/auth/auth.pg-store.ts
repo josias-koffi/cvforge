@@ -51,24 +51,14 @@ export class PgAuthAccountStore implements AuthAccountStore {
     return row ? toAccount(row) : null;
   }
 
-  updateRole(email: string, role: AuthRole) {
-    return this.db.transaction(async (tx) => {
-      const [row] = await tx
-        .update(authAccounts)
-        .set({ role })
-        .where(eq(authAccounts.email, email))
-        .returning();
+  async demoteToUser(email: string) {
+    const [row] = await this.db
+      .update(authAccounts)
+      .set({ role: "user" })
+      .where(eq(authAccounts.email, email))
+      .returning();
 
-      if (!row) {
-        return null;
-      }
-
-      if (role === "admin") {
-        await this.consumeBootstrap(tx);
-      }
-
-      return { email: row.email, ...toAccount(row) };
-    });
+    return row ? { email: row.email, ...toAccount(row) } : null;
   }
 
   /**

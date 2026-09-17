@@ -50,7 +50,7 @@ export const authInvitations = pgTable(
  * The "first account becomes admin" latch, one row.
  *
  * Stored rather than derived from `exists(admin)`. The two agree only while
- * `AuthService.updateAccountRole` keeps refusing to demote the last admin: drop
+ * `AuthService.demoteAccountToUser` keeps refusing to demote the last admin: drop
  * that service-level guard and a derived latch would re-open the bootstrap,
  * handing admin to the next person who signs in. A column does not depend on
  * that guard staying in place.

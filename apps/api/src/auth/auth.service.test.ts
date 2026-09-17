@@ -245,28 +245,48 @@ describe("AuthService", () => {
     await expect(service.consumeInvitation(invitationToken, false)).rejects.toThrow(/consent/i);
   });
 
-  it("should update account roles while keeping at least one admin", async () => {
+  it("should demote an admin while keeping at least one admin", async () => {
     const store = createInMemoryAccountStore();
     const service = new AuthService(config, store);
 
-    store.resolveRole("admin@example.com");
-    store.resolveRole("user@example.com");
-
-    expect(await service.updateAccountRole("USER@example.com", "admin")).toMatchObject({
-      email: "user@example.com",
-      role: "admin",
+    await store.resolveRole("admin@example.com");
+    await store.assignInvitedRole("second@example.com", "admin", {
+      acceptedAt: "2026-04-19T20:19:09.000Z",
+      source: "invitation",
+      version: "2026-04-mvp",
     });
-    expect(await service.updateAccountRole("admin@example.com", "user")).toMatchObject({
+
+    expect(await service.demoteAccountToUser("SECOND@example.com", "user")).toMatchObject({
+      email: "second@example.com",
       role: "user",
     });
-    await expect(service.updateAccountRole("user@example.com", "user")).rejects.toThrow(
+    await expect(service.demoteAccountToUser("admin@example.com", "user")).rejects.toThrow(
       /dernier administrateur/,
     );
-    await expect(service.updateAccountRole("user@example.com", "owner")).rejects.toThrow(
-      /role/,
-    );
-    await expect(service.updateAccountRole("ghost@example.com", "user")).rejects.toThrow(
+    await expect(service.demoteAccountToUser("ghost@example.com", "user")).rejects.toThrow(
       /introuvable/,
     );
+  });
+
+  // vision §3.2: the admin role is granted by nominative invitation only, so no
+  // admin action may hand it out. Guarded here and in admin-users.controller.
+  it("should never grant the admin role outside an invitation", async () => {
+    const store = createInMemoryAccountStore();
+    const service = new AuthService(config, store);
+
+    await store.resolveRole("admin@example.com");
+    await store.resolveRole("user@example.com");
+
+    await expect(service.demoteAccountToUser("user@example.com", "admin")).rejects.toThrow(
+      /invitation nominatif/,
+    );
+    await expect(service.demoteAccountToUser("user@example.com", "owner")).rejects.toThrow(
+      /retrogradation/,
+    );
+    await expect(service.demoteAccountToUser("user@example.com", undefined)).rejects.toThrow(
+      /retrogradation/,
+    );
+    expect(await store.readAccount("user@example.com")).toMatchObject({ role: "user" });
+    expect("updateRole" in store).toBe(false);
   });
 });

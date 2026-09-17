@@ -75,10 +75,13 @@ export const AUTH_ACCOUNT_STORE = Symbol("AUTH_ACCOUNT_STORE");
 export type AuthAccountStore = {
   listAccounts: () => Promise<AuthAccountRecord[]>;
   readAccount: (email: string) => Promise<AuthAccount | null>;
-  updateRole: (
-    email: string,
-    role: AuthRole,
-  ) => Promise<AuthAccountRecord | null>;
+  /**
+   * Demotion only. There is deliberately no store method that grants `admin`
+   * to an existing account: vision §3.2 reserves the role for the nominative
+   * invitation link, so `assignInvitedRole` and the one-shot bootstrap in
+   * `resolveRole` are the only ways in.
+   */
+  demoteToUser: (email: string) => Promise<AuthAccountRecord | null>;
   resolveRole: (
     email: string,
     consent?: AuthConsentRecord | null,

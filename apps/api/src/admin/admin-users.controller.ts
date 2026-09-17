@@ -53,6 +53,11 @@ export class AdminUsersController {
     );
   }
 
+  /**
+   * Demotion only — `{ role: "user" }`. Vision §3.2 reserves `admin` for the
+   * nominative invitation link, so `{ role: "admin" }` is rejected here and in
+   * the service below it.
+   */
   @Patch(":email")
   async updateUser(
     @Param("email") email: string,
@@ -62,13 +67,15 @@ export class AdminUsersController {
     const session = requireAdminSession(this.authService, request);
     const targetEmail = normalizeEmail(email);
 
-    if (targetEmail === session.email && body.role !== "admin") {
+    if (targetEmail === session.email) {
       throw new BadRequestException(
         "Vous ne pouvez pas retirer votre propre role administrateur.",
       );
     }
 
-    return { user: await this.authService.updateAccountRole(targetEmail, body.role) };
+    return {
+      user: await this.authService.demoteAccountToUser(targetEmail, body.role),
+    };
   }
 
   @Delete(":email")

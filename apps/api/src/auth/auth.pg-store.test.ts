@@ -92,8 +92,8 @@ describe("PgAuthAccountStore", () => {
     expect(emails).toEqual(["alice@example.com", "zoe@example.com"]);
   });
 
-  it("returns null when updating an unknown account", async () => {
-    await expect(store.updateRole("ghost@example.com", "admin")).resolves.toBeNull();
+  it("returns null when demoting an unknown account", async () => {
+    await expect(store.demoteToUser("ghost@example.com")).resolves.toBeNull();
   });
 
   it("promotes an invited account and never demotes an admin", async () => {

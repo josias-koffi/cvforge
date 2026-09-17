@@ -8,13 +8,13 @@ import {
   CoinsIcon,
   EllipsisVerticalIcon,
   SearchIcon,
-  ShieldIcon,
+  ShieldOffIcon,
   Trash2Icon,
 } from "lucide-react"
 
 import {
   DeleteUserDialog,
-  EditRoleDialog,
+  DemoteUserDialog,
   GrantCreditsDialog,
 } from "@/components/admin/user-dialogs"
 import { TableFrame } from "@/components/data-table/table-frame"
@@ -46,7 +46,7 @@ import {
 import type { AdminUserRow, AdminUsersPage } from "@/lib/admin"
 import { formatDateTime } from "@/lib/format"
 
-type DialogKind = "role" | "credits" | "delete"
+type DialogKind = "demote" | "credits" | "delete"
 
 function UserActions({
   currentEmail,
@@ -68,10 +68,12 @@ function UserActions({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48">
-        <DropdownMenuItem disabled={isSelf} onSelect={() => onOpen("role", user)}>
-          <ShieldIcon />
-          Modifier le rôle
-        </DropdownMenuItem>
+        {user.role === "admin" ? (
+          <DropdownMenuItem disabled={isSelf} onSelect={() => onOpen("demote", user)}>
+            <ShieldOffIcon />
+            Rétrograder en utilisateur
+          </DropdownMenuItem>
+        ) : null}
         <DropdownMenuItem onSelect={() => onOpen("credits", user)}>
           <CoinsIcon />
           Ajouter des crédits
@@ -217,8 +219,8 @@ export function UsersTable({
           </PagerButton>
         </div>
       ) : null}
-      {dialog?.kind === "role" ? (
-        <EditRoleDialog open user={dialog.user} onOpenChange={closeDialog} />
+      {dialog?.kind === "demote" ? (
+        <DemoteUserDialog open user={dialog.user} onOpenChange={closeDialog} />
       ) : null}
       {dialog?.kind === "credits" ? (
         <GrantCreditsDialog open user={dialog.user} onOpenChange={closeDialog} />

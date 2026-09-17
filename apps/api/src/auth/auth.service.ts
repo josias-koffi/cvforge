@@ -228,9 +228,16 @@ export class AuthService {
     return this.accountStore.listAccounts();
   }
 
-  async updateAccountRole(rawEmail: string, rawRole: string | undefined) {
-    if (rawRole !== "admin" && rawRole !== "user") {
-      throw new BadRequestException("Le role doit etre admin ou user.");
+  /**
+   * Demotes an admin to `user`. Promotion is not offered here on purpose:
+   * vision §3.2 makes the nominative invitation link (`createInvitation`) the
+   * only way to grant `admin`, so no admin action may hand out the role.
+   */
+  async demoteAccountToUser(rawEmail: string, rawRole: string | undefined) {
+    if (rawRole !== "user") {
+      throw new BadRequestException(
+        "Seule la retrogradation en utilisateur est possible. Le role administrateur s'accorde uniquement par lien d'invitation nominatif.",
+      );
     }
 
     const email = this.normalizeEmail(rawEmail);
@@ -241,18 +248,17 @@ export class AuthService {
       throw new NotFoundException("Utilisateur introuvable.");
     }
 
-    const remainingAdmins = accounts.filter(
+    const hasOtherAdmin = accounts.some(
       (account) => account.role === "admin" && account.email !== email,
     );
 
-    if (target.role === "admin" && rawRole === "user" && remainingAdmins.length === 0) {
-      throw new ConflictException("Impossible de retirer le dernier administrateur.");
+    if (target.role === "admin" && !hasOtherAdmin) {
+      throw new ConflictException(
+        "Impossible de retirer le dernier administrateur.",
+      );
     }
 
-    return (await this.accountStore.updateRole(
-      email,
-      rawRole,
-    )) as AuthAccountRecord;
+    return (await this.accountStore.demoteToUser(email)) as AuthAccountRecord;
   }
 
   private buildMagicLink(token: string) {

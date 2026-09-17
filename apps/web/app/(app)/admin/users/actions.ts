@@ -29,11 +29,15 @@ export async function inviteUser(
   }
 }
 
-export async function updateUserRole(email: string, role: "admin" | "user") {
+/**
+ * Demotion only — the API rejects `{ role: "admin" }`. Granting the admin role
+ * goes through `inviteUser` and nothing else (vision §3.2).
+ */
+export async function demoteUser(email: string) {
   await requireAdminSession()
   const result = await runAction(
-    () => api(userPath(email), { body: { role }, method: "PATCH" }),
-    "Rôle mis à jour."
+    () => api(userPath(email), { body: { role: "user" }, method: "PATCH" }),
+    "Utilisateur rétrogradé."
   )
 
   revalidatePath(USERS_PATH)
