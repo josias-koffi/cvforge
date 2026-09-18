@@ -10,6 +10,7 @@ import { CoinsIcon } from "lucide-react"
 
 import { BillingReturn } from "@/components/credits/billing-return"
 import { CreditOfferCard } from "@/components/credits/credit-offer-card"
+import { PurchaseUnavailableBanner } from "@/components/credits/purchase-unavailable-banner"
 import { PurchasesTable } from "@/components/credits/purchases-table"
 import { TableFrame } from "@/components/data-table/table-frame"
 import { PageHeader } from "@/components/layout/page-header"
@@ -29,6 +30,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { api } from "@/lib/api"
+import type { PurchaseAvailability } from "@/lib/billing"
 import { formatCredits, formatDateTime } from "@/lib/format"
 
 export const metadata: Metadata = { title: "Crédits" }
@@ -43,10 +45,11 @@ const actionLabels: Record<CreditLedgerEntry["action"], string> = {
 }
 
 export default async function CreditsPage() {
-  const [{ credits }, { offers }, { orders }] = await Promise.all([
+  const [{ credits }, { offers }, { orders }, availability] = await Promise.all([
     api<{ credits: CreditLedgerSummary }>("/credits/me"),
     api<{ offers: PublicCreditOffer[] }>("/public/credit-offers"),
     api<{ orders: CreditOrder[] }>("/billing/orders/me"),
+    api<PurchaseAvailability>("/billing/purchase-availability"),
   ])
 
   return (
@@ -56,6 +59,7 @@ export default async function CreditsPage() {
         title="Crédits"
         description="Chaque génération consomme des crédits. Rechargez quand vous voulez, sans abonnement."
       />
+      <PurchaseUnavailableBanner availability={availability} />
       <div className="grid gap-4 px-4 lg:px-6 @3xl/main:grid-cols-3">
         <Card>
           <CardHeader>
@@ -78,7 +82,11 @@ export default async function CreditsPage() {
           </CardContent>
         </Card>
         {offers.map((offer) => (
-          <CreditOfferCard key={offer.id} offer={offer} />
+          <CreditOfferCard
+            key={offer.id}
+            offer={offer}
+            purchasable={availability.available}
+          />
         ))}
       </div>
       <section className="flex flex-col gap-3 px-4 lg:px-6">

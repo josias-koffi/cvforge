@@ -139,6 +139,16 @@ export class PgInterviewStore implements InterviewStore {
   }
 
   /** Retention purge; the chunks cascade with their session. */
+  /** Chunks go with the session: the foreign key cascades on delete. */
+  async deleteByUserEmail(userEmail: string) {
+    const rows = await this.db
+      .delete(interviewSessions)
+      .where(eq(interviewSessions.userEmail, userEmail))
+      .returning({ id: interviewSessions.id });
+
+    return rows.length;
+  }
+
   async purgeCompletedBefore(cutoffIso: string) {
     const purged = await this.db
       .delete(interviewSessions)

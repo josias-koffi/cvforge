@@ -5,10 +5,9 @@ import { CopyIcon, UserPlusIcon } from "lucide-react"
 import { toast } from "sonner"
 
 import {
-  deleteUser,
+  demoteUser,
   grantUserCredits,
   inviteUser,
-  updateUserRole,
 } from "@/app/(app)/admin/users/actions"
 import {
   AlertDialog,
@@ -30,7 +29,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field"
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import {
   Select,
@@ -163,38 +162,39 @@ type UserDialogProps = {
   user: AdminUserRow
 }
 
-export function EditRoleDialog({ onOpenChange, open, user }: UserDialogProps) {
-  const [role, setRole] = useState<Role>(user.role)
+/**
+ * Demotion only. The admin role is granted exclusively through the nominative
+ * invitation link (`InviteUserDialog`), never from this table — see vision §3.2.
+ */
+export function DemoteUserDialog({ onOpenChange, open, user }: UserDialogProps) {
   const { pending, run } = useActionMutation(() => onOpenChange(false))
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Modifier le rôle</DialogTitle>
-          <DialogDescription>{user.email}</DialogDescription>
-        </DialogHeader>
-        <Field>
-          <FieldLabel htmlFor="edit-role">Rôle</FieldLabel>
-          <RoleSelect id="edit-role" value={role} onChange={setRole} />
-          <FieldDescription>
-            Le changement s&apos;applique à la prochaine connexion de l&apos;utilisateur.
-          </FieldDescription>
-        </Field>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Annuler
-          </Button>
-          <Button
-            disabled={pending || role === user.role}
-            onClick={() => run(() => updateUserRole(user.email, role))}
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Rétrograder en utilisateur ?</AlertDialogTitle>
+          <AlertDialogDescription>
+            {user.email} perdra l&apos;accès à l&apos;administration. Le rôle administrateur ne
+            peut être réaccordé que par un nouveau lien d&apos;invitation nominatif. La
+            rétrogradation s&apos;applique à la prochaine connexion de l&apos;utilisateur.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Annuler</AlertDialogCancel>
+          <AlertDialogAction
+            disabled={pending}
+            onClick={(event) => {
+              event.preventDefault()
+              run(() => demoteUser(user.email))
+            }}
           >
             {pending ? <Spinner /> : null}
-            Enregistrer
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+            Rétrograder
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   )
 }
 
@@ -248,37 +248,5 @@ export function GrantCreditsDialog({ onOpenChange, open, user }: UserDialogProps
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  )
-}
-
-export function DeleteUserDialog({ onOpenChange, open, user }: UserDialogProps) {
-  const { pending, run } = useActionMutation(() => onOpenChange(false))
-
-  return (
-    <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Supprimer {user.email} ?</AlertDialogTitle>
-          <AlertDialogDescription>
-            Le compte, les candidatures, les documents, le profil, les crédits et les
-            notifications de cet utilisateur seront définitivement supprimés.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>Annuler</AlertDialogCancel>
-          <AlertDialogAction
-            variant="destructive"
-            disabled={pending}
-            onClick={(event) => {
-              event.preventDefault()
-              run(() => deleteUser(user.email))
-            }}
-          >
-            {pending ? <Spinner /> : null}
-            Supprimer
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
   )
 }

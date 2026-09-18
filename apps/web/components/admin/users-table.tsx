@@ -1,22 +1,26 @@
 "use client"
 
 import { useState } from "react"
+import Link from "next/link"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
   CoinsIcon,
   EllipsisVerticalIcon,
+  LogOutIcon,
   SearchIcon,
-  ShieldIcon,
+  ShieldOffIcon,
   Trash2Icon,
+  UserRoundXIcon,
 } from "lucide-react"
 
+import { DemoteUserDialog, GrantCreditsDialog } from "@/components/admin/user-dialogs"
 import {
   DeleteUserDialog,
-  EditRoleDialog,
-  GrantCreditsDialog,
-} from "@/components/admin/user-dialogs"
+  RevokeSessionsDialog,
+  SuspendUserDialog,
+} from "@/components/admin/user-danger-dialogs"
 import { TableFrame } from "@/components/data-table/table-frame"
 import { PagerButton } from "@/components/data-table/data-table"
 import { Badge } from "@/components/ui/badge"
@@ -46,7 +50,7 @@ import {
 import type { AdminUserRow, AdminUsersPage } from "@/lib/admin"
 import { formatDateTime } from "@/lib/format"
 
-type DialogKind = "role" | "credits" | "delete"
+type DialogKind = "demote" | "credits" | "delete" | "suspend" | "revoke"
 
 function UserActions({
   currentEmail,
@@ -68,15 +72,25 @@ function UserActions({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48">
-        <DropdownMenuItem disabled={isSelf} onSelect={() => onOpen("role", user)}>
-          <ShieldIcon />
-          Modifier le rôle
-        </DropdownMenuItem>
+        {user.role === "admin" ? (
+          <DropdownMenuItem disabled={isSelf} onSelect={() => onOpen("demote", user)}>
+            <ShieldOffIcon />
+            Rétrograder en utilisateur
+          </DropdownMenuItem>
+        ) : null}
         <DropdownMenuItem onSelect={() => onOpen("credits", user)}>
           <CoinsIcon />
           Ajouter des crédits
         </DropdownMenuItem>
+        <DropdownMenuItem disabled={isSelf} onSelect={() => onOpen("revoke", user)}>
+          <LogOutIcon />
+          Déconnecter partout
+        </DropdownMenuItem>
         <DropdownMenuSeparator />
+        <DropdownMenuItem disabled={isSelf} onSelect={() => onOpen("suspend", user)}>
+          <UserRoundXIcon />
+          {user.status === "suspended" ? "Réactiver le compte" : "Suspendre le compte"}
+        </DropdownMenuItem>
         <DropdownMenuItem
           variant="destructive"
           disabled={isSelf}
@@ -149,6 +163,33 @@ export function UsersTable({
             <SelectItem value="admin">Administrateurs</SelectItem>
           </SelectContent>
         </Select>
+        <Select
+          value={data.filters.status}
+          onValueChange={(status) => navigate({ page: null, status })}
+        >
+          <SelectTrigger className="w-full sm:w-40" aria-label="Filtrer par statut">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tous les statuts</SelectItem>
+            <SelectItem value="active">Actifs</SelectItem>
+            <SelectItem value="suspended">Suspendus</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select
+          value={data.filters.balance}
+          onValueChange={(balance) => navigate({ balance, page: null })}
+        >
+          <SelectTrigger className="w-full sm:w-40" aria-label="Filtrer par solde">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tous les soldes</SelectItem>
+            <SelectItem value="empty">Sans crédit</SelectItem>
+            <SelectItem value="low">Solde faible (1-19)</SelectItem>
+            <SelectItem value="stocked">20 crédits ou plus</SelectItem>
+          </SelectContent>
+        </Select>
         <span className="text-sm text-muted-foreground sm:ml-auto">
           {totalItems} utilisateur{totalItems > 1 ? "s" : ""}
         </span>
@@ -158,6 +199,7 @@ export function UsersTable({
           <TableRow>
             <TableHead>E-mail</TableHead>
             <TableHead>Rôle</TableHead>
+            <TableHead>Statut</TableHead>
             <TableHead className="text-right">Crédits</TableHead>
             <TableHead className="text-right">Opérations</TableHead>
             <TableHead>Dernière activité</TableHead>
@@ -169,7 +211,7 @@ export function UsersTable({
         <TableBody>
           {data.users.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+              <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
                 Aucun utilisateur ne correspond.
               </TableCell>
             </TableRow>
@@ -177,7 +219,12 @@ export function UsersTable({
             data.users.map((user) => (
               <TableRow key={user.email}>
                 <TableCell className="font-medium">
-                  {user.email}
+                  <Link
+                    href={`/admin/users/${encodeURIComponent(user.email)}`}
+                    className="underline-offset-4 hover:underline"
+                  >
+                    {user.email}
+                  </Link>
                   {user.email === currentEmail ? (
                     <span className="ml-2 text-xs text-muted-foreground">(vous)</span>
                   ) : null}
@@ -185,6 +232,11 @@ export function UsersTable({
                 <TableCell>
                   <Badge variant={user.role === "admin" ? "default" : "outline"}>
                     {user.role === "admin" ? "Administrateur" : "Utilisateur"}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  <Badge variant={user.status === "suspended" ? "warning" : "outline"}>
+                    {user.status === "suspended" ? "Suspendu" : "Actif"}
                   </Badge>
                 </TableCell>
                 <TableCell className="text-right tabular-nums">{user.balance}</TableCell>
@@ -217,14 +269,20 @@ export function UsersTable({
           </PagerButton>
         </div>
       ) : null}
-      {dialog?.kind === "role" ? (
-        <EditRoleDialog open user={dialog.user} onOpenChange={closeDialog} />
+      {dialog?.kind === "demote" ? (
+        <DemoteUserDialog open user={dialog.user} onOpenChange={closeDialog} />
       ) : null}
       {dialog?.kind === "credits" ? (
         <GrantCreditsDialog open user={dialog.user} onOpenChange={closeDialog} />
       ) : null}
       {dialog?.kind === "delete" ? (
         <DeleteUserDialog open user={dialog.user} onOpenChange={closeDialog} />
+      ) : null}
+      {dialog?.kind === "suspend" ? (
+        <SuspendUserDialog open user={dialog.user} onOpenChange={closeDialog} />
+      ) : null}
+      {dialog?.kind === "revoke" ? (
+        <RevokeSessionsDialog open user={dialog.user} onOpenChange={closeDialog} />
       ) : null}
     </div>
   )

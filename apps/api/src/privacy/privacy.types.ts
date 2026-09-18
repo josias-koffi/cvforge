@@ -36,7 +36,10 @@ export type PrivacyExportPayload = {
 
 export type PrivacyDeletionSummary = {
   deletedAt: string;
+  /** Kept as accounting records with the buyer's identity removed. */
+  anonymizedCreditOrders: number;
   deletedApplications: number;
+  deletedInterviewSessions: number;
   deletedAuthAccount: boolean;
   deletedCreditEntries: number;
   deletedNotifications: number;

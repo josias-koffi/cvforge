@@ -393,3 +393,14 @@
 - **Why**: La refonte devait rester un pur reflow d'un flux existant sans casser le lien candidature ni le contrat de préférences email déjà livré (US-041).
 - **Learned**: `#6B6860` sur `#FAFAF7` (4.6:1 AA) suffit pour les nouveaux libellés de section jour sans introduire de nouveau token.
 - **Open**: Migration des couleurs hex codées en dur vers les tokens nommés reste un avisé de dette (non bloquant), partagé avec US-074/075.
+
+## 2026-09-17 — Revue US-096 + US-083 (sprint 022)
+- **Did**: Revu et accepté les deux stories. Exigé un renforcement pendant la revue : le test de non-régression du contrôleur mockait `AuthService` et se contentait de vérifier le passe-plat — remplacé par un test du **chemin complet** contrôleur → service réel → store, avec cookie issu du vrai parcours magic link.
+- **Why**: Un test de sécurité qui mocke la couche qui applique la règle ne prouve rien ; il aurait laissé passer une réintroduction de la promotion.
+- **Learned**: Sur une règle d'invariant, viser 3 niveaux de test — service, contrôleur isolé, et chemin complet. Vérifier aussi la dégradation gracieuse par une variable d'environnement retirée (`env -u` sur le boot test) plutôt que par lecture du code.
+- **Open**: Aucun test navigateur/axe sur le dialogue de rétrogradation (pas de tests de composants dans `apps/web`, dont la config vitest ne couvre que `lib/**`). À couvrir quand US-090 ajoutera de la surface admin.
+
+## 2026-09-17 — Revue US-084 + US-085 (sprint 022)
+- **Did**: Accepté les deux stories. Points vérifiés au-delà des critères : l'alerte ne part jamais à un compte `user`, le garde-fou ne laisse aucune commande `pending` orpheline, et `GET /billing/purchase-availability` ne renvoie qu'un booléen + motif (aucune fuite du solde fournisseur vers un acheteur).
+- **Learned**: Sur une dépendance optionnelle (`creditSupply` nullable), tester les **trois** états : garde qui bloque, garde qui autorise, et absence de garde — le troisième est celui qu'on oublie et c'est la configuration de production actuelle (pas de clé de management).
+- **Open**: Toujours aucun test de composant/axe dans `apps/web` (vitest n'y couvre que `lib/**`) : le bandeau et l'état désactivé des boutons ne sont pas couverts automatiquement.

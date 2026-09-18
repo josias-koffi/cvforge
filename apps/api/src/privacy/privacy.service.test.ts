@@ -1,5 +1,8 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { PgAdminAuditStore } from "../admin/admin-audit.pg-store";
 import { PgApplicationsStore } from "../applications/applications.pg-store";
+import { PgCreditOrdersStore } from "../billing/credit-orders.pg-store";
+import { PgInterviewStore } from "../interview/interview.pg-store";
 import { PgAuthAccountStore } from "../auth/auth.pg-store";
 import { PgCreditLedgerStore } from "../credits/credits.pg-store";
 import {
@@ -8,7 +11,41 @@ import {
 } from "../database/testing/test-database";
 import { PgNotificationsStore } from "../notifications/notifications.pg-store";
 import { PgProfilesStore } from "../profiles/profiles.pg-store";
+import { createSellableOffer } from "../billing/testing/billing-fixtures";
+import { interviewChunks } from "../database/schema";
+import { eq, sql } from "drizzle-orm";
 import { PrivacyService } from "./privacy.service";
+
+/**
+ * Scans every text column of every table for the address. Blunt on purpose:
+ * it catches a table nobody remembered to purge, including one added later.
+ */
+async function findResidualRows(email: string) {
+  const columnsResult = (await testDatabase.db.execute(sql`
+    select table_name, column_name
+      from information_schema.columns
+     where table_schema = 'public'
+       and data_type in ('text', 'character varying')
+  `)) as unknown as {
+    rows: Array<{ column_name: string; table_name: string }>;
+  };
+  const columns = columnsResult.rows;
+  const hits: string[] = [];
+
+  for (const { column_name, table_name } of columns) {
+    const result = (await testDatabase.db.execute(
+      sql.raw(
+        `select count(*)::int as total from "${table_name}" where "${column_name}" = '${email}'`,
+      ),
+    )) as unknown as { rows: Array<{ total: number }> };
+
+    if (Number(result.rows[0]?.total ?? 0) > 0) {
+      hits.push(`${table_name}.${column_name}`);
+    }
+  }
+
+  return hits;
+}
 
 let testDatabase: TestDatabase;
 
@@ -29,6 +66,11 @@ async function createService() {
   const creditsStore = new PgCreditLedgerStore(testDatabase.db);
   const notificationsStore = new PgNotificationsStore(testDatabase.db);
   const profilesStore = new PgProfilesStore(testDatabase.db);
+  // Real stores, not mocks: US-092 asks for proof that nothing is left behind,
+  // which a stubbed purge cannot give.
+  const interviewStore = new PgInterviewStore(testDatabase.db);
+  const creditOrdersStore = new PgCreditOrdersStore(testDatabase.db);
+  const auditStore = new PgAdminAuditStore(testDatabase.db);
 
   await authStore.assignInvitedRole(
     "user@example.com",
@@ -127,8 +169,11 @@ async function createService() {
 
   return {
     applicationsStore,
+    auditStore,
     authStore,
+    creditOrdersStore,
     creditsStore,
+    interviewStore,
     notificationsStore,
     service: new PrivacyService(
       authStore,
@@ -136,6 +181,9 @@ async function createService() {
       creditsStore,
       notificationsStore,
       profilesStore,
+      interviewStore,
+      creditOrdersStore,
+      auditStore,
     ),
   };
 }
@@ -185,6 +233,133 @@ describe("PrivacyService", () => {
     expect(userExport.receivedInvitations[0]?.createdBy).toBe(
       "[deleted-account]",
     );
+  });
+
+  /**
+   * US-092: proof, not a claim. Every table that can hold something about the
+   * account gets a row, the purge runs, then every table is checked. A new
+   * table holding personal data will fail here until the purge covers it.
+   */
+  it("leaves no residual personal data anywhere after a purge", async () => {
+    const {
+      applicationsStore,
+      auditStore,
+      authStore,
+      creditOrdersStore,
+      creditsStore,
+      interviewStore,
+      notificationsStore,
+      service,
+    } = await createService();
+
+    await interviewStore.save({
+      aiResponse: null,
+      aiResponseGeneratedAt: null,
+      aiStatus: "idle",
+      applicationId: null,
+      chunks: [
+        {
+          chunkId: "chunk-1",
+          createdAt: "2026-04-23T08:00:00.000Z",
+          endedAt: "2026-04-23T08:00:05.000Z",
+          errorMessage: null,
+          isFinal: true,
+          mimeType: "audio/webm",
+          sequence: 1,
+          startedAt: "2026-04-23T08:00:00.000Z",
+          status: "transcribed",
+          transcript: "Bonjour, je suis ravi de vous rencontrer.",
+        },
+      ],
+      completedAt: null,
+      createdAt: "2026-04-23T08:00:00.000Z",
+      id: "interview-1",
+      language: "fr",
+      lastError: null,
+      messages: [],
+      prefetchedQuestion: null,
+      profile: "standard",
+      recoverable: false,
+      report: null,
+      status: "idle",
+      transcript: "Bonjour",
+      updatedAt: "2026-04-23T08:00:00.000Z",
+      userEmail: "user@example.com",
+    });
+
+    const offer = await createSellableOffer(testDatabase.db);
+    const order = await creditOrdersStore.createPending({
+      credits: offer.credits,
+      currency: "eur",
+      offerId: offer.id,
+      offerName: offer.name,
+      priceCents: offer.priceCents,
+      userEmail: "user@example.com",
+    });
+
+    await auditStore.record({
+      action: "account_suspended",
+      actorEmail: "admin@example.com",
+      metadata: {},
+      note: "Abus signale",
+      targetEmail: "user@example.com",
+    });
+
+    // The scan has to be able to fail, or the assertion below proves nothing.
+    expect(await findResidualRows("user@example.com")).not.toEqual([]);
+
+    const summary = await service.purgeAccount("user@example.com");
+
+    expect(summary).toMatchObject({
+      anonymizedCreditOrders: 1,
+      deletedAuthAccount: true,
+      deletedInterviewSessions: 1,
+    });
+
+    // Nothing left, table by table.
+    await expect(
+      authStore.exportUserData("user@example.com"),
+    ).resolves.toMatchObject({ account: null });
+    await expect(
+      applicationsStore.listByUserEmail("user@example.com"),
+    ).resolves.toEqual([]);
+    await expect(
+      notificationsStore.listByUserEmail("user@example.com"),
+    ).resolves.toEqual([]);
+    await expect(
+      creditsStore.listEntriesForUser("user@example.com"),
+    ).resolves.toEqual([]);
+    await expect(interviewStore.findById("interview-1")).resolves.toBeNull();
+    await expect(
+      creditOrdersStore.listForUser("user@example.com"),
+    ).resolves.toEqual([]);
+
+    // The transcript chunks go with their session, via the cascade.
+    const chunks = await testDatabase.db
+      .select()
+      .from(interviewChunks)
+      .where(eq(interviewChunks.sessionId, "interview-1"));
+    expect(chunks).toEqual([]);
+
+    // The order survives as an accounting record, without the buyer.
+    const purgedOrder = await creditOrdersStore.findById(order.id);
+    expect(purgedOrder).toMatchObject({
+      priceCents: offer.priceCents,
+      userEmail: "[deleted-account]",
+    });
+
+    // The admin action stays auditable, its target does not stay named.
+    const auditPage = await auditStore.list({ limit: 10, offset: 0 });
+    expect(auditPage.entries).toHaveLength(1);
+    expect(auditPage.entries[0]).toMatchObject({
+      action: "account_suspended",
+      actorEmail: "admin@example.com",
+      targetEmail: "[deleted-account]",
+    });
+
+    // Last line of defence: no table mentions the address any more.
+    const leftovers = await findResidualRows("user@example.com");
+    expect(leftovers).toEqual([]);
   });
 
   it("rejects mismatched confirmation emails", async () => {

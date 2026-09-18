@@ -34,6 +34,47 @@ export const NOTIFICATION_TYPE_APPLICATION_FOLLOW_UP =
   "application_follow_up" as const;
 export const NOTIFICATION_TYPE_CREDIT_PURCHASE_CONFIRMED =
   "credit_purchase_confirmed" as const;
+/** Admin-only: the OpenRouter account balance fell under the alert threshold. */
+export const NOTIFICATION_TYPE_OPENROUTER_LOW_BALANCE =
+  "openrouter_low_balance" as const;
+
+export const ADMIN_AUDIT_ACCOUNT_SUSPENDED = "account_suspended" as const;
+export const ADMIN_AUDIT_ACCOUNT_REACTIVATED = "account_reactivated" as const;
+export const ADMIN_AUDIT_ACCOUNT_DELETED = "account_deleted" as const;
+export const ADMIN_AUDIT_ROLE_DEMOTED = "role_demoted" as const;
+export const ADMIN_AUDIT_CREDITS_GRANTED = "credits_granted" as const;
+export const ADMIN_AUDIT_SESSIONS_REVOKED = "sessions_revoked" as const;
+
+export const adminAuditActions = [
+  ADMIN_AUDIT_ACCOUNT_SUSPENDED,
+  ADMIN_AUDIT_ACCOUNT_REACTIVATED,
+  ADMIN_AUDIT_ACCOUNT_DELETED,
+  ADMIN_AUDIT_ROLE_DEMOTED,
+  ADMIN_AUDIT_CREDITS_GRANTED,
+  ADMIN_AUDIT_SESSIONS_REVOKED,
+] as const;
+export type AdminAuditAction = (typeof adminAuditActions)[number];
+
+/** One admin action on one account: who, when, what, on whom, and why. */
+export interface AdminAuditEntry {
+  id: string;
+  actorEmail: string;
+  action: AdminAuditAction;
+  /** Null for an action that targets no single account. */
+  targetEmail: string | null;
+  note: string | null;
+  metadata: { credits?: number; previousRole?: "admin" | "user" };
+  createdAt: string;
+}
+
+/** An account kept out without losing its data. */
+export const ACCOUNT_STATUS_ACTIVE = "active" as const;
+export const ACCOUNT_STATUS_SUSPENDED = "suspended" as const;
+export const accountStatuses = [
+  ACCOUNT_STATUS_ACTIVE,
+  ACCOUNT_STATUS_SUSPENDED,
+] as const;
+export type AccountStatus = (typeof accountStatuses)[number];
 
 export const applicationStatuses = [
   APPLICATION_STATUS_DRAFT,
@@ -62,6 +103,7 @@ export type CreditPackId = (typeof creditPackIds)[number];
 export const notificationTypes = [
   NOTIFICATION_TYPE_APPLICATION_FOLLOW_UP,
   NOTIFICATION_TYPE_CREDIT_PURCHASE_CONFIRMED,
+  NOTIFICATION_TYPE_OPENROUTER_LOW_BALANCE,
 ] as const;
 export type NotificationType = (typeof notificationTypes)[number];
 export type TemplateKind =

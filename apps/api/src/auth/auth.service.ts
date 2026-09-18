@@ -6,7 +6,12 @@ import {
   Injectable,
   UnauthorizedException,
 } from "@nestjs/common";
+import {
+  ACCOUNT_STATUS_ACTIVE,
+  ACCOUNT_STATUS_SUSPENDED,
+} from "@cvforge/types";
 import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
+import { SUSPENDED_ACCOUNT_MESSAGE } from "./session-messages";
 import type {
   AuthConsentRecord,
   AuthAccountRecord,
@@ -67,6 +72,11 @@ export class AuthService {
 
     if (!existingAccount && !consentAccepted) {
       throw new BadRequestException("Consent is required before creating an account.");
+    }
+
+    // A suspended account keeps its data but gets no way back in.
+    if (existingAccount?.status === ACCOUNT_STATUS_SUSPENDED) {
+      throw new ForbiddenException(SUSPENDED_ACCOUNT_MESSAGE);
     }
 
     const token = randomBytes(24).toString("base64url");
@@ -228,9 +238,85 @@ export class AuthService {
     return this.accountStore.listAccounts();
   }
 
-  async updateAccountRole(rawEmail: string, rawRole: string | undefined) {
-    if (rawRole !== "admin" && rawRole !== "user") {
-      throw new BadRequestException("Le role doit etre admin ou user.");
+  readAccountState(email: string) {
+    return this.accountStore.readAccountState(this.normalizeEmail(email));
+  }
+
+  /**
+   * Suspends an account: it keeps every byte of its data, loses access, and
+   * its live sessions die immediately (the stateless cookies are invalidated
+   * by moving `sessionsValidFrom`, checked by `SessionStateMiddleware`).
+   */
+  async suspendAccount(rawEmail: string) {
+    const email = this.normalizeEmail(rawEmail);
+    const accounts = await this.accountStore.listAccounts();
+    const target = accounts.find((account) => account.email === email);
+
+    if (!target) {
+      throw new NotFoundException("Utilisateur introuvable.");
+    }
+
+    const hasOtherActiveAdmin = accounts.some(
+      (account) =>
+        account.role === "admin" &&
+        account.email !== email &&
+        account.status !== ACCOUNT_STATUS_SUSPENDED,
+    );
+
+    if (target.role === "admin" && !hasOtherActiveAdmin) {
+      throw new ConflictException(
+        "Impossible de suspendre le dernier administrateur actif.",
+      );
+    }
+
+    return (await this.accountStore.setAccountStatus(
+      email,
+      ACCOUNT_STATUS_SUSPENDED,
+      new Date().toISOString(),
+    )) as AuthAccountRecord;
+  }
+
+  /** Reactivation restores access but does not resurrect revoked cookies. */
+  async reactivateAccount(rawEmail: string) {
+    const email = this.normalizeEmail(rawEmail);
+    const account = await this.accountStore.readAccount(email);
+
+    if (!account) {
+      throw new NotFoundException("Utilisateur introuvable.");
+    }
+
+    return (await this.accountStore.setAccountStatus(
+      email,
+      ACCOUNT_STATUS_ACTIVE,
+      null,
+    )) as AuthAccountRecord;
+  }
+
+  /** Force logout: every session issued before now is refused. */
+  async revokeSessions(rawEmail: string) {
+    const email = this.normalizeEmail(rawEmail);
+    const account = await this.accountStore.readAccount(email);
+
+    if (!account) {
+      throw new NotFoundException("Utilisateur introuvable.");
+    }
+
+    return (await this.accountStore.revokeSessions(
+      email,
+      new Date().toISOString(),
+    )) as AuthAccountRecord;
+  }
+
+  /**
+   * Demotes an admin to `user`. Promotion is not offered here on purpose:
+   * vision §3.2 makes the nominative invitation link (`createInvitation`) the
+   * only way to grant `admin`, so no admin action may hand out the role.
+   */
+  async demoteAccountToUser(rawEmail: string, rawRole: string | undefined) {
+    if (rawRole !== "user") {
+      throw new BadRequestException(
+        "Seule la retrogradation en utilisateur est possible. Le role administrateur s'accorde uniquement par lien d'invitation nominatif.",
+      );
     }
 
     const email = this.normalizeEmail(rawEmail);
@@ -241,18 +327,17 @@ export class AuthService {
       throw new NotFoundException("Utilisateur introuvable.");
     }
 
-    const remainingAdmins = accounts.filter(
+    const hasOtherAdmin = accounts.some(
       (account) => account.role === "admin" && account.email !== email,
     );
 
-    if (target.role === "admin" && rawRole === "user" && remainingAdmins.length === 0) {
-      throw new ConflictException("Impossible de retirer le dernier administrateur.");
+    if (target.role === "admin" && !hasOtherAdmin) {
+      throw new ConflictException(
+        "Impossible de retirer le dernier administrateur.",
+      );
     }
 
-    return (await this.accountStore.updateRole(
-      email,
-      rawRole,
-    )) as AuthAccountRecord;
+    return (await this.accountStore.demoteToUser(email)) as AuthAccountRecord;
   }
 
   private buildMagicLink(token: string) {

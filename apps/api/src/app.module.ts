@@ -1,7 +1,8 @@
-import { Module } from "@nestjs/common";
+import { Module, type MiddlewareConsumer, type NestModule } from "@nestjs/common";
 import { AdminModule } from "./admin/admin.module";
 import { AppController } from "./app.controller";
 import { AuthModule } from "./auth/auth.module";
+import { SessionStateMiddleware } from "./auth/session-state.middleware";
 import { SmtpModule } from "./smtp/smtp.module";
 import { OpenRouterModule } from "./ai/openrouter.module";
 import { ApplicationsModule } from "./applications/applications.module";
@@ -15,6 +16,7 @@ import { PrivacyModule } from "./privacy/privacy.module";
 import { ProfilesModule } from "./profiles/profiles.module";
 import { TemplatesModule } from "./templates/templates.module";
 import { InterviewModule } from "./interview/interview.module";
+import { MetricsModule } from "./metrics/metrics.module";
 
 @Module({
   imports: [
@@ -33,7 +35,24 @@ import { InterviewModule } from "./interview/interview.module";
     ProfilesModule,
     TemplatesModule,
     InterviewModule,
+    MetricsModule,
   ],
   controllers: [AppController],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  /**
+   * Suspension and session revocation are enforced here, once per request,
+   * rather than in each handler's `requireSession` — see
+   * `SessionStateMiddleware`. Excluding the auth routes keeps a suspended user
+   * able to read the refusal and log out.
+   */
+  configure(consumer: MiddlewareConsumer) {
+    // Express 5 (NestJS 11) matches paths with path-to-regexp v8: a bare "*"
+    // is not a valid path and throws at bootstrap. Wildcards must be named,
+    // and braced to also match the base path.
+    consumer
+      .apply(SessionStateMiddleware)
+      .exclude("auth/{*splat}", "health", "ready", "billing/stripe/webhook")
+      .forRoutes("{*splat}");
+  }
+}

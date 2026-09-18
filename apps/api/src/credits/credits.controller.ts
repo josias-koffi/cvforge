@@ -14,6 +14,7 @@ import {
   requireSession,
   type CookieRequest,
 } from "../auth/request-session";
+import { AdminAuditService } from "../admin/admin-audit.service";
 import { buildAdminUserDirectory } from "./admin-user-directory";
 import { CreditsService } from "./credits.service";
 
@@ -23,6 +24,7 @@ export class CreditsController {
     @Inject(CreditsService)
     private readonly creditsService: CreditsService,
     @Inject(AuthService) private readonly authService: AuthService,
+    @Inject(AdminAuditService) private readonly audit: AdminAuditService,
   ) {}
 
   @Get("me")
@@ -81,14 +83,25 @@ export class CreditsController {
     @Req() request: CookieRequest,
   ) {
     const session = requireAdminSession(this.authService, request);
+    const userEmail = (body.userEmail ?? "").trim().toLowerCase();
+    const credits = body.credits ?? 0;
+    const note = body.note ?? "";
+    // The service validates the amount and the mandatory note, so the audit
+    // entry is written only once the grant actually happened.
+    const entry = await this.creditsService.grantCredits({
+      adminEmail: session.email,
+      credits,
+      note,
+      userEmail,
+    });
 
-    return {
-      entry: await this.creditsService.grantCredits({
-        adminEmail: session.email,
-        credits: body.credits ?? 0,
-        note: body.note ?? "",
-        userEmail: (body.userEmail ?? "").trim().toLowerCase(),
-      }),
-    };
+    await this.audit.recordCreditGrant({
+      actorEmail: session.email,
+      credits,
+      note,
+      targetEmail: userEmail,
+    });
+
+    return { entry };
   }
 }

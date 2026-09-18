@@ -45,6 +45,17 @@ export class BillingController {
     return this.checkout.createCheckoutSession({ offerId, userEmail: session.email });
   }
 
+  /**
+   * Whether credits can be bought right now. A boolean on purpose: a buyer has
+   * no business knowing our provider's balance (US-085).
+   */
+  @Get("purchase-availability")
+  async readPurchaseAvailability(@Req() request: CookieRequest) {
+    requireSession(this.authService, request);
+
+    return this.checkout.readPurchaseAvailability();
+  }
+
   @Get("orders/me")
   async listMyOrders(@Req() request: CookieRequest) {
     const session = requireSession(this.authService, request);

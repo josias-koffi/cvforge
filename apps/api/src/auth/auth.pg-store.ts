@@ -1,6 +1,7 @@
 import { asc, eq, sql } from "drizzle-orm";
 import type { Database } from "../database/database.types";
 import { authAccounts, authInvitations, authSettings } from "../database/schema";
+import type { AccountStatus } from "@cvforge/types";
 import type {
   AuthAccountStore,
   AuthConsentRecord,
@@ -27,7 +28,12 @@ function toInvitation(row: InvitationRow): AuthInvitation {
 }
 
 function toAccount(row: AccountRow) {
-  return { consent: row.consent ?? null, role: row.role };
+  return {
+    consent: row.consent ?? null,
+    role: row.role,
+    sessionsValidFrom: row.sessionsValidFrom?.toISOString() ?? null,
+    status: row.status,
+  };
 }
 
 export class PgAuthAccountStore implements AuthAccountStore {
@@ -51,24 +57,62 @@ export class PgAuthAccountStore implements AuthAccountStore {
     return row ? toAccount(row) : null;
   }
 
-  updateRole(email: string, role: AuthRole) {
-    return this.db.transaction(async (tx) => {
-      const [row] = await tx
-        .update(authAccounts)
-        .set({ role })
-        .where(eq(authAccounts.email, email))
-        .returning();
+  async readAccountState(email: string) {
+    const [row] = await this.db
+      .select({
+        sessionsValidFrom: authAccounts.sessionsValidFrom,
+        status: authAccounts.status,
+      })
+      .from(authAccounts)
+      .where(eq(authAccounts.email, email));
 
-      if (!row) {
-        return null;
-      }
+    return row
+      ? {
+          sessionsValidFrom: row.sessionsValidFrom?.toISOString() ?? null,
+          status: row.status,
+        }
+      : null;
+  }
 
-      if (role === "admin") {
-        await this.consumeBootstrap(tx);
-      }
+  async setAccountStatus(
+    email: string,
+    status: AccountStatus,
+    sessionsValidFrom: string | null,
+  ) {
+    const [row] = await this.db
+      .update(authAccounts)
+      .set({
+        status,
+        // Suspending revokes what is already out there; reactivating leaves
+        // the revocation in place, so old cookies stay dead.
+        ...(sessionsValidFrom
+          ? { sessionsValidFrom: new Date(sessionsValidFrom) }
+          : {}),
+      })
+      .where(eq(authAccounts.email, email))
+      .returning();
 
-      return { email: row.email, ...toAccount(row) };
-    });
+    return row ? { email: row.email, ...toAccount(row) } : null;
+  }
+
+  async revokeSessions(email: string, sessionsValidFrom: string) {
+    const [row] = await this.db
+      .update(authAccounts)
+      .set({ sessionsValidFrom: new Date(sessionsValidFrom) })
+      .where(eq(authAccounts.email, email))
+      .returning();
+
+    return row ? { email: row.email, ...toAccount(row) } : null;
+  }
+
+  async demoteToUser(email: string) {
+    const [row] = await this.db
+      .update(authAccounts)
+      .set({ role: "user" })
+      .where(eq(authAccounts.email, email))
+      .returning();
+
+    return row ? { email: row.email, ...toAccount(row) } : null;
   }
 
   /**

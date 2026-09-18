@@ -54,6 +54,19 @@ per-environment configuration left: `POSTGRES_PASSWORD`, `MINIO_ACCESS_KEY`,
 `NEXT_SERVER_ACTIONS_ENCRYPTION_KEY` (fixed value, or every redeploy invalidates
 in-flight server actions).
 
+Optional, per environment: `OPENROUTER_MANAGEMENT_API_KEY`. It enables balance
+supervision — the OpenRouter balance on `/admin/metrics`, the low-balance alert
+to every admin, and the guard that refuses to sell credits the provider can no
+longer honour. It must be a **management** key, created at
+<https://openrouter.ai/settings/management-keys>: the inference key above gets a
+403 on `/credits`, and a management key cannot run completions, so the two are
+never interchangeable. Left unset, the deploy succeeds and supervision stays
+inert (no balance shown, no alert, purchases unaffected). The two thresholds,
+`OPENROUTER_BALANCE_ALERT_THRESHOLD` (default 5) and
+`OPENROUTER_BALANCE_CRITICAL_THRESHOLD` (default 0, so a sale is refused only
+once the account is empty), are non-secret defaults in
+`infra/dokploy/variables.tf` and only need overriding to change them.
+
 Generate `DOKPLOY_API_KEY` from the Dokploy UI (*Settings > Profile > API/CLI
 Keys > Generate New Key*) and leave **Enable Rate Limiting off**: a rate-limited
 key answers `401`, not `429`, and the window is 24 hours.

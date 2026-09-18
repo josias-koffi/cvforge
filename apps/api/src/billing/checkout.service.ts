@@ -15,13 +15,33 @@ export const CHECKOUT_INTEGRATION_IDENTIFIER = "cvspark_credit_packs_qhzmxvtk";
 
 type CheckoutApi = { checkout: { sessions: Pick<Stripe["checkout"]["sessions"], "create"> } };
 
+/** Just enough of `OpenRouterBalanceService` to refuse a sale (US-085). */
+type CreditSupplyGuard = { isUnderCriticalThreshold: () => Promise<boolean> };
+
 export class CheckoutService {
   constructor(
     private readonly config: BillingConfig,
     private readonly stripe: CheckoutApi | null,
     private readonly offers: Pick<CreditOffersService, "getPurchasableOffer">,
     private readonly orders: CreditOrdersStore,
+    private readonly creditSupply: CreditSupplyGuard | null = null,
   ) {}
+
+  /** Mirrors the guard in `createCheckoutSession`, for the front's banner. */
+  async readPurchaseAvailability(): Promise<{
+    available: boolean;
+    reason: "stripe_unavailable" | "ai_credits_exhausted" | null;
+  }> {
+    if (!this.stripe) {
+      return { available: false, reason: "stripe_unavailable" };
+    }
+
+    if (await this.creditSupply?.isUnderCriticalThreshold()) {
+      return { available: false, reason: "ai_credits_exhausted" };
+    }
+
+    return { available: true, reason: null };
+  }
 
   async createCheckoutSession(input: {
     offerId: string;
@@ -30,6 +50,14 @@ export class CheckoutService {
     if (!this.stripe) {
       throw new ServiceUnavailableException(
         "Le paiement n'est pas disponible pour le moment.",
+      );
+    }
+
+    // Refuse before creating an order: selling credits the AI provider can no
+    // longer honour would mean refunding, so we stop at the door (US-085).
+    if (await this.creditSupply?.isUnderCriticalThreshold()) {
+      throw new ServiceUnavailableException(
+        "L'achat de credits est momentanement suspendu : notre fournisseur d'IA est a court de credits. Reessayez dans quelques heures, nous rechargeons le compte.",
       );
     }
 

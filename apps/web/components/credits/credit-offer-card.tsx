@@ -15,7 +15,13 @@ import {
 } from "@/components/ui/card"
 import { formatPrice } from "@/lib/format"
 
-export function CreditOfferCard({ offer }: { offer: PublicCreditOffer }) {
+export function CreditOfferCard({
+  offer,
+  purchasable = true,
+}: {
+  offer: PublicCreditOffer
+  purchasable?: boolean
+}) {
   return (
     <Card className={cn(offer.isFeatured && "ring-2 ring-spark")}>
       <CardHeader>
@@ -42,10 +48,13 @@ export function CreditOfferCard({ offer }: { offer: PublicCreditOffer }) {
         <ActionButton
           className="w-full"
           variant={offer.isFeatured ? "spark" : undefined}
+          disabled={!purchasable}
           pendingLabel="Redirection vers Stripe…"
           action={startCheckout.bind(null, offer.id)}
         >
-          Acheter · {formatPrice(offer.priceCents)}
+          {purchasable
+            ? `Acheter · ${formatPrice(offer.priceCents)}`
+            : "Achat indisponible"}
         </ActionButton>
       </CardFooter>
     </Card>

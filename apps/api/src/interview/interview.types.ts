@@ -22,6 +22,8 @@ export type InterviewStore = {
     session: StoredInterviewSession,
   ) => Promise<StoredInterviewSession>;
   purgeCompletedBefore: (cutoffIso: string) => Promise<number>;
+  /** Account purge: sessions and their transcript chunks (RGPD, US-092). */
+  deleteByUserEmail: (userEmail: string) => Promise<number>;
 };
 
 export function summarizeInterviewSession(

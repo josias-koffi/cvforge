@@ -39,8 +39,11 @@ describe("CheckoutService", () => {
     });
   });
 
-  function service(client: typeof stripe | null = stripe) {
-    return new CheckoutService(BILLING_CONFIG, client, offers, orders);
+  function service(
+    client: typeof stripe | null = stripe,
+    creditSupply: { isUnderCriticalThreshold: () => Promise<boolean> } | null = null,
+  ) {
+    return new CheckoutService(BILLING_CONFIG, client, offers, orders, creditSupply);
   }
 
   it("creates a pending order and a Checkout Session for the offer's price", async () => {
@@ -110,5 +113,62 @@ describe("CheckoutService", () => {
     expect(order).toMatchObject({ offerName: offer.name, status: "pending" });
     expect(order).not.toHaveProperty("userEmail");
     expect(order).not.toHaveProperty("ledgerEntryId");
+  });
+
+  it("refuses the purchase when the AI provider is out of credits", async () => {
+    const creditSupply = {
+      isUnderCriticalThreshold: vi.fn().mockResolvedValue(true),
+    };
+
+    await expect(
+      service(stripe, creditSupply).createCheckoutSession({
+        offerId: offer.id,
+        userEmail: USER,
+      }),
+    ).rejects.toThrow(ServiceUnavailableException);
+
+    // Refused at the door: no Stripe session, and no dangling pending order.
+    expect(stripe.checkout.sessions.create).not.toHaveBeenCalled();
+    await expect(orders.listForUser(USER)).resolves.toEqual([]);
+  });
+
+  it("sells normally when the provider balance is healthy or unknown", async () => {
+    const healthy = { isUnderCriticalThreshold: vi.fn().mockResolvedValue(false) };
+
+    await expect(
+      service(stripe, healthy).createCheckoutSession({
+        offerId: offer.id,
+        userEmail: USER,
+      }),
+    ).resolves.toMatchObject({ sessionId: "cs_test_1" });
+    expect(healthy.isUnderCriticalThreshold).toHaveBeenCalledOnce();
+
+    // No guard wired at all (supervision off) must not block the sale either.
+    stripe.checkout.sessions.create.mockResolvedValue({
+      id: "cs_test_2",
+      url: "https://checkout.stripe.com/c/pay/cs_test_2",
+    });
+
+    await expect(
+      service().createCheckoutSession({ offerId: offer.id, userEmail: USER }),
+    ).resolves.toMatchObject({ sessionId: "cs_test_2" });
+  });
+
+  it("reports purchase availability without leaking the provider balance", async () => {
+    await expect(service().readPurchaseAvailability()).resolves.toEqual({
+      available: true,
+      reason: null,
+    });
+
+    await expect(
+      service(stripe, {
+        isUnderCriticalThreshold: vi.fn().mockResolvedValue(true),
+      }).readPurchaseAvailability(),
+    ).resolves.toEqual({ available: false, reason: "ai_credits_exhausted" });
+
+    await expect(service(null).readPurchaseAvailability()).resolves.toEqual({
+      available: false,
+      reason: "stripe_unavailable",
+    });
   });
 });

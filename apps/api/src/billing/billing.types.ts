@@ -28,4 +28,10 @@ export type CreditOrdersStore = {
   /** Moves a still-pending order to a terminal failure status. */
   markUnpaid: (id: string, status: "expired" | "failed") => Promise<void>;
   listForUser: (userEmail: string) => Promise<StoredCreditOrder[]>;
+  /**
+   * Account purge: the buyer's email is replaced, amounts and dates stay.
+   * A settled payment is an accounting record we must be able to produce, so
+   * the order is anonymised rather than deleted (RGPD, US-092).
+   */
+  anonymizeUserEmail: (userEmail: string) => Promise<number>;
 };

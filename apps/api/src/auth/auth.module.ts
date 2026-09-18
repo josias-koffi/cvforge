@@ -12,6 +12,7 @@ import {
 import { AuthController } from "./auth.controller";
 import { AuthService } from "./auth.service";
 import { resolveAuthConfig } from "./auth.config";
+import { SessionStateMiddleware } from "./session-state.middleware";
 import { AUTH_ACCOUNT_STORE, type AuthAccountStore } from "./auth.types";
 
 function readEmailFrom(env: NodeJS.ProcessEnv) {
@@ -34,6 +35,12 @@ function readEmailFrom(env: NodeJS.ProcessEnv) {
       inject: [AUTH_ACCOUNT_STORE],
       useFactory: (store: AuthAccountStore) =>
         new AuthService(resolveAuthConfig(process.env), store),
+    },
+    {
+      provide: SessionStateMiddleware,
+      inject: [AuthService],
+      useFactory: (authService: AuthService) =>
+        new SessionStateMiddleware(authService),
     },
     {
       provide: AUTH_EMAIL_FROM,
@@ -60,6 +67,6 @@ function readEmailFrom(env: NodeJS.ProcessEnv) {
     },
     AuthMailerService,
   ],
-  exports: [AUTH_ACCOUNT_STORE, AuthService, AuthMailerService],
+  exports: [AUTH_ACCOUNT_STORE, AuthService, AuthMailerService, SessionStateMiddleware],
 })
 export class AuthModule {}
