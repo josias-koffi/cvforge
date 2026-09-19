@@ -24,6 +24,7 @@ import {
   type InterviewTranscriptionChunkRequest,
 } from "@cvforge/types";
 import { Injectable, BadRequestException, NotFoundException } from "@nestjs/common";
+import { withOpenRouterHttpErrors } from "../ai/openrouter.exception";
 import type { OpenRouterService } from "../ai/openrouter.service";
 import type { ApplicationsService } from "../applications/applications.service";
 import type { StoredApplication } from "../applications/applications.types";
@@ -595,38 +596,40 @@ export class InterviewService {
             "Les details doivent rester concis, factuels et actionnables pour le candidat.",
           ].join(" ");
 
-    const raw = await this.openRouter.chat(
-      [
+    const raw = await withOpenRouterHttpErrors(() =>
+      this.openRouter.chat(
+        [
+          {
+            role: "system",
+            content: reportPrompt,
+          },
+          {
+            role: "user",
+            content: [
+              `Interview language: ${session.language}`,
+              `Recruiter profile: ${session.profile}`,
+              applicationContext,
+              `Transcript: ${session.transcript}`,
+              `Average response duration (seconds): ${
+                transcriptStats.averageResponseDurationSeconds ?? "unknown"
+              }`,
+              `Hesitation count: ${transcriptStats.hesitationCount}`,
+              `Keyword coverage (%): ${transcriptStats.keywordCoverage}`,
+              `Keyword mentions: ${
+                transcriptStats.keywordMentions.join(", ") || "none"
+              }`,
+              `Response count: ${transcriptStats.responseCount}`,
+            ].join("\n\n"),
+          },
+        ],
         {
-          role: "system",
-          content: reportPrompt,
+          maxTokens: 500,
+          model: AI_MODEL,
+          provider: INTERVIEW_PROVIDER,
+          responseFormat: REPORT_RESPONSE_FORMAT,
+          temperature: 0.2,
         },
-        {
-          role: "user",
-          content: [
-            `Interview language: ${session.language}`,
-            `Recruiter profile: ${session.profile}`,
-            applicationContext,
-            `Transcript: ${session.transcript}`,
-            `Average response duration (seconds): ${
-              transcriptStats.averageResponseDurationSeconds ?? "unknown"
-            }`,
-            `Hesitation count: ${transcriptStats.hesitationCount}`,
-            `Keyword coverage (%): ${transcriptStats.keywordCoverage}`,
-            `Keyword mentions: ${
-              transcriptStats.keywordMentions.join(", ") || "none"
-            }`,
-            `Response count: ${transcriptStats.responseCount}`,
-          ].join("\n\n"),
-        },
-      ],
-      {
-        maxTokens: 500,
-        model: AI_MODEL,
-        provider: INTERVIEW_PROVIDER,
-        responseFormat: REPORT_RESPONSE_FORMAT,
-        temperature: 0.2,
-      },
+      ),
     );
 
     const parsed = JSON.parse(raw) as {

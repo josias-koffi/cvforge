@@ -79,6 +79,7 @@ function createStore(initial: StoredApplication[]): ApplicationsStore {
 describe("ApplicationsService offer editing", () => {
   const openRouterService = { chat: vi.fn() };
   const creditsService = {
+    assertSufficientCredits: vi.fn(),
     consumeCredits: vi.fn(),
   } as unknown as CreditsService;
   let store: ApplicationsStore;

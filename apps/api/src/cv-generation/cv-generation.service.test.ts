@@ -2,8 +2,10 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import {
   BadRequestException,
   NotFoundException,
+  ServiceUnavailableException,
   UnprocessableEntityException,
 } from "@nestjs/common";
+import { OpenRouterRequestError } from "../ai/openrouter.error";
 import type {
   CVDocumentContent,
   LetterDocumentContent,
@@ -681,6 +683,32 @@ describe("CvGenerationService", () => {
         applicationId: "app-001",
         userEmail: "user@test.example",
       });
+    });
+
+    it("leaves the balance untouched and answers 503 when the provider is throttled", async () => {
+      openRouter.chat.mockRejectedValue(
+        new OpenRouterRequestError("throttled", 429, "", null, "Mistral"),
+      );
+
+      await expect(
+        service.translateCv("user@test.example", "app-001", "en"),
+      ).rejects.toBeInstanceOf(ServiceUnavailableException);
+
+      expect(creditsService.assertSufficientCredits).toHaveBeenCalled();
+      expect(creditsService.consumeCredits).not.toHaveBeenCalled();
+    });
+
+    it("refuses to call the provider when the balance is too low", async () => {
+      vi.mocked(creditsService.assertSufficientCredits).mockRejectedValue(
+        new Error("insufficient"),
+      );
+
+      await expect(
+        service.translateCv("user@test.example", "app-001", "en"),
+      ).rejects.toThrow("insufficient");
+
+      expect(openRouter.chat).not.toHaveBeenCalled();
+      expect(creditsService.consumeCredits).not.toHaveBeenCalled();
     });
 
     it("restores the identity and stores a translation version", async () => {

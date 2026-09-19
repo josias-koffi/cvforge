@@ -23,6 +23,7 @@ import {
   type InterviewReport,
 } from "@cvforge/types";
 import { randomUUID } from "node:crypto";
+import { withOpenRouterHttpErrors } from "../ai/openrouter.exception";
 import type { OpenRouterService } from "../ai/openrouter.service";
 import type { CreditsService } from "../credits/credits.service";
 import type {
@@ -563,15 +564,13 @@ export class ApplicationsService {
     }
 
     const metadata = extractOfferMetadata(html);
-    await this.creditsService.consumeCredits({
-      action: AI_CREDIT_ACTION_OFFER_ENRICHMENT,
-      userEmail,
-    });
-    const extracted = await this.extractStructuredFields(
-      offerText,
-      metadata,
-      offerUrl,
-      APPLICATION_SOURCE_URL,
+    const extracted = await this.extractWithCredits(userEmail, () =>
+      this.extractStructuredFields(
+        offerText,
+        metadata,
+        offerUrl,
+        APPLICATION_SOURCE_URL,
+      ),
     );
 
     return {
@@ -589,19 +588,17 @@ export class ApplicationsService {
     rawOfferText: string,
   ): Promise<OfferExtractionResult> {
     const offerText = normalizeOfferText(rawOfferText);
-    await this.creditsService.consumeCredits({
-      action: AI_CREDIT_ACTION_OFFER_ENRICHMENT,
-      userEmail,
-    });
-    const extracted = await this.extractStructuredFields(
-      offerText,
-      {
-        description: buildOfferPreview(offerText, 320),
-        siteName: null,
-        title: null,
-      },
-      null,
-      APPLICATION_SOURCE_TEXT,
+    const extracted = await this.extractWithCredits(userEmail, () =>
+      this.extractStructuredFields(
+        offerText,
+        {
+          description: buildOfferPreview(offerText, 320),
+          siteName: null,
+          title: null,
+        },
+        null,
+        APPLICATION_SOURCE_TEXT,
+      ),
     );
 
     return {
@@ -648,6 +645,30 @@ export class ApplicationsService {
     return html;
   }
 
+  /**
+   * Checks the balance up front so a broke user never triggers a paid call,
+   * but debits only once the extraction succeeded: a throttled provider used
+   * to burn the user's credits and still return an error.
+   */
+  private async extractWithCredits<T>(
+    userEmail: string,
+    extract: () => Promise<T>,
+  ): Promise<T> {
+    await this.creditsService.assertSufficientCredits(
+      AI_CREDIT_ACTION_OFFER_ENRICHMENT,
+      userEmail,
+    );
+
+    const extracted = await extract();
+
+    await this.creditsService.consumeCredits({
+      action: AI_CREDIT_ACTION_OFFER_ENRICHMENT,
+      userEmail,
+    });
+
+    return extracted;
+  }
+
   private async extractStructuredFields(
     offerText: string,
     metadata: {
@@ -658,26 +679,28 @@ export class ApplicationsService {
     offerUrl: string | null,
     sourceType: DraftApplication["sourceType"],
   ) {
-    const response = await this.openRouterService.chat(
-      [
-        {
-          role: "system",
-          content:
-            "You extract structured job-offer data. Return JSON only with keys: title, companyName, location, contractType, salaryRange, summary, responsibilities, requirements, language.",
-        },
-        {
-          role: "user",
-          content: JSON.stringify({
-            description: metadata.description,
-            offerText,
-            offerUrl,
-            sourceType,
-            siteName: metadata.siteName,
-            titleHint: metadata.title,
-          }),
-        },
-      ],
-      { temperature: 0 },
+    const response = await withOpenRouterHttpErrors(() =>
+      this.openRouterService.chat(
+        [
+          {
+            role: "system",
+            content:
+              "You extract structured job-offer data. Return JSON only with keys: title, companyName, location, contractType, salaryRange, summary, responsibilities, requirements, language.",
+          },
+          {
+            role: "user",
+            content: JSON.stringify({
+              description: metadata.description,
+              offerText,
+              offerUrl,
+              sourceType,
+              siteName: metadata.siteName,
+              titleHint: metadata.title,
+            }),
+          },
+        ],
+        { temperature: 0 },
+      ),
     );
 
     const payload = extractFirstJsonObject(response);
