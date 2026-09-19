@@ -27,8 +27,8 @@ describe('resolveOpenRouterConfig', () => {
     process.env.OPENROUTER_API_KEY = 'key';
     delete process.env.OPENROUTER_FALLBACK_MODELS;
     expect(resolveOpenRouterConfig().fallbackModels).toEqual([
+      'deepseek/deepseek-v4-flash',
       'google/gemini-2.5-flash',
-      'openai/gpt-5-mini',
     ]);
   });
 
@@ -54,8 +54,8 @@ describe('resolveOpenRouterConfig', () => {
     const config = resolveOpenRouterConfig();
 
     expect(config.fallbackModels).toEqual([
+      'deepseek/deepseek-v4-flash',
       'google/gemini-2.5-flash',
-      'openai/gpt-5-mini',
     ]);
     expect(config.defaultModel).toBe('mistralai/mistral-small-2603');
   });
