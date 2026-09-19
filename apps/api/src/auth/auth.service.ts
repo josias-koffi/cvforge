@@ -4,6 +4,7 @@ import {
   ForbiddenException,
   NotFoundException,
   Injectable,
+  Logger,
   UnauthorizedException,
 } from "@nestjs/common";
 import {
@@ -23,6 +24,9 @@ import type {
   InvitationResponse,
   MagicLinkResponse,
 } from "./auth.types";
+
+/** Runs once an account exists for the first time; failures never block sign-in. */
+export type AccountCreatedListener = (email: string) => Promise<unknown> | unknown;
 
 type MagicLinkRecord = {
   consent: AuthConsentRecord | null;
@@ -51,6 +55,8 @@ const CONSENT_VERSION = "2026-04-mvp";
 @Injectable()
 export class AuthService {
   private readonly magicLinks = new Map<string, MagicLinkRecord>();
+  private readonly accountCreatedListeners: AccountCreatedListener[] = [];
+  private readonly logger = new Logger(AuthService.name);
 
   constructor(
     private readonly config: AuthConfig,
@@ -95,6 +101,27 @@ export class AuthService {
       expiresAt: new Date(expiresAt).toISOString(),
       sessionDurationDays: this.config.sessionTtlDays,
     };
+  }
+
+  /**
+   * Lets a module that depends on auth react to sign-ups without auth
+   * depending on it back. Two concurrent first sign-ins may both notify, so
+   * listeners must be idempotent.
+   */
+  onAccountCreated(listener: AccountCreatedListener) {
+    this.accountCreatedListeners.push(listener);
+  }
+
+  private async notifyAccountCreated(email: string) {
+    for (const listener of this.accountCreatedListeners) {
+      try {
+        await listener(email);
+      } catch (error) {
+        this.logger.error(
+          `Account-created listener failed: ${error instanceof Error ? error.message : String(error)}`,
+        );
+      }
+    }
   }
 
   async createInvitation(
@@ -167,11 +194,17 @@ export class AuthService {
       throw new UnauthorizedException("This invitation is invalid or expired.");
     }
 
+    const isNewAccount = !(await this.accountStore.readAccount(invitation.email));
     const role = await this.accountStore.assignInvitedRole(
       invitation.email,
       invitation.role,
       this.createConsentRecord("invitation"),
     );
+
+    if (isNewAccount) {
+      await this.notifyAccountCreated(invitation.email);
+    }
+
     const session = this.createSession(invitation.email, role);
 
     return {
@@ -197,10 +230,14 @@ export class AuthService {
 
     record.consumedAt = Date.now();
 
-    const session = this.createSession(
-      record.email,
-      await this.accountStore.resolveRole(record.email, record.consent),
-    );
+    const isNewAccount = !(await this.accountStore.readAccount(record.email));
+    const role = await this.accountStore.resolveRole(record.email, record.consent);
+
+    if (isNewAccount) {
+      await this.notifyAccountCreated(record.email);
+    }
+
+    const session = this.createSession(record.email, role);
 
     return {
       redirectUrl: this.normalizeRedirectTarget(redirectTo),

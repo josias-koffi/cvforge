@@ -7,6 +7,8 @@ import {
   CREDIT_EVENT_AI_USAGE,
   CREDIT_EVENT_ADMIN_GRANT,
   CREDIT_EVENT_STRIPE_PURCHASE,
+  CREDIT_EVENT_WELCOME_GRANT,
+  WELCOME_CREDITS,
   type CreditLedgerEntry,
   type CreditLedgerSummary,
 } from "@cvforge/types";
@@ -127,6 +129,21 @@ export class CreditsService {
       type: CREDIT_EVENT_ADMIN_GRANT,
       userEmail: input.userEmail,
     });
+  }
+
+  /** Idempotent per email: a second sign-in, or a racing one, adds nothing. */
+  async grantWelcomeCredits(userEmail: string): Promise<CreditLedgerEntry> {
+    return this.applyCredit(
+      {
+        action: "welcome_grant",
+        amount: WELCOME_CREDITS,
+        metadata: {},
+        note: "Crédits de bienvenue",
+        type: CREDIT_EVENT_WELCOME_GRANT,
+        userEmail,
+      },
+      `welcome:${userEmail}`,
+    );
   }
 
   async recordStripePurchase(
