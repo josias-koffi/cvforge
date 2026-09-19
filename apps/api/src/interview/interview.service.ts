@@ -37,9 +37,23 @@ const AI_MODEL =
   process.env.INTERVIEW_AI_MODEL ??
   process.env.OPENROUTER_MODEL ??
   "mistralai/mistral-small-2603";
-const INTERVIEW_PROVIDER = {
+/**
+ * Voxtral is served by Mistral alone and audio needs a provider that accepts
+ * `input_audio`, so speech-to-text stays pinned — there is nothing to fall
+ * back to.
+ */
+const INTERVIEW_STT_PROVIDER = {
   allow_fallbacks: false,
   order: ["mistral"] as string[],
+  require_parameters: true,
+} as const;
+
+/**
+ * Text calls only need a provider honouring `response_format`. Routing stays
+ * open on purpose: pinning them to Mistral, as speech-to-text must be, took
+ * the whole interview down whenever the shared Mistral pool was throttled.
+ */
+const INTERVIEW_CHAT_PROVIDER = {
   require_parameters: true,
 } as const;
 const MAX_MESSAGES = 20;
@@ -320,7 +334,7 @@ export class InterviewService {
       const conversation = this.buildConversation(session.language, session.profile, session.messages);
       const question = await this.openRouter.chat(
         conversation,
-        { maxTokens: 120, model: AI_MODEL, provider: INTERVIEW_PROVIDER, temperature: 0.35 },
+        { maxTokens: 120, model: AI_MODEL, provider: INTERVIEW_CHAT_PROVIDER, temperature: 0.35 },
       );
 
       session.prefetchedQuestion = question.trim();
@@ -392,7 +406,7 @@ export class InterviewService {
           {
             maxTokens: 64,
             model: STT_MODEL,
-            provider: INTERVIEW_PROVIDER,
+            provider: INTERVIEW_STT_PROVIDER,
             temperature: 0,
             transcriptionPrompt: this.getLanguageConfig(session.language).transcriptionPrompt,
           },
@@ -508,7 +522,7 @@ export class InterviewService {
         {
           maxTokens: 120,
           model: AI_MODEL,
-          provider: INTERVIEW_PROVIDER,
+          provider: INTERVIEW_CHAT_PROVIDER,
           temperature: 0.35,
         },
       );
@@ -625,7 +639,7 @@ export class InterviewService {
         {
           maxTokens: 500,
           model: AI_MODEL,
-          provider: INTERVIEW_PROVIDER,
+          provider: INTERVIEW_CHAT_PROVIDER,
           responseFormat: REPORT_RESPONSE_FORMAT,
           temperature: 0.2,
         },

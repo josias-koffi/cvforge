@@ -29,6 +29,11 @@ type OpenRouterMessage =
 
 export interface ChatOptions {
   model?: string;
+  /**
+   * Forbids the fallback chain and sends `model` alone. Reserved for requests
+   * no other model can serve — audio input, chiefly.
+   */
+  pinModel?: boolean;
   temperature?: number;
   maxTokens?: number;
   transcriptionPrompt?: string;
@@ -101,14 +106,17 @@ export class OpenRouterService {
   }
 
   /**
-   * An explicit per-call model is honoured as-is; otherwise the configured
-   * fallbacks ride along in `models`, which OpenRouter walks in order once all
-   * providers of the first model are exhausted.
+   * A per-call model becomes the primary rather than the only choice: the
+   * configured fallbacks still ride along in `models`, which OpenRouter walks
+   * in order once every provider of the primary is exhausted. Only `pinModel`
+   * opts out, for requests no other model can serve.
    */
-  private buildModelSelection(model: string | undefined) {
-    if (model) return { model };
-    if (this.config.fallbackModels.length === 0) return { model: this.config.defaultModel };
-    return { models: [this.config.defaultModel, ...this.config.fallbackModels] };
+  private buildModelSelection(options: ChatOptions) {
+    const primary = options.model ?? this.config.defaultModel;
+    const fallbacks = this.config.fallbackModels.filter((model) => model !== primary);
+
+    if (options.pinModel || fallbacks.length === 0) return { model: primary };
+    return { models: [primary, ...fallbacks] };
   }
 
   private buildRequestBody(
@@ -118,7 +126,7 @@ export class OpenRouterService {
     extra: Record<string, unknown> = {},
   ) {
     return JSON.stringify({
-      ...this.buildModelSelection(options.model),
+      ...this.buildModelSelection(options),
       messages,
       ...extra,
       ...(options.provider && { provider: options.provider }),
@@ -236,6 +244,8 @@ export class OpenRouterService {
         maxTokens: options.maxTokens ?? 48,
         temperature: options.temperature ?? 0,
         model: this.resolveTranscriptionModel(options.model),
+        // No text model can take audio input, so a fallback chain is meaningless.
+        pinModel: true,
         provider: options.provider,
         responseFormat: TRANSCRIPTION_RESPONSE_FORMAT,
       },
