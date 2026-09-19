@@ -1,3 +1,5 @@
+import { WELCOME_APPLICATIONS } from "@cvforge/types"
+
 import type { LandingDictionary } from "./types"
 
 /** Copy source: .project/marketing/cvspark-storytelling.md (English adaptation) */
@@ -29,7 +31,11 @@ export const en: LandingDictionary = {
       "Stop spending your evenings rewriting the same resume. CVSpark reads the offer, takes your profile and generates an ATS-ready resume and cover letter in seconds.",
     primaryCta: "Create my resume",
     secondaryCta: "See how it works",
-    highlights: ["No subscription", "ATS-ready", "PDF and Word export"],
+    highlights: [
+      `${WELCOME_APPLICATIONS} free applications`,
+      "No subscription",
+      "ATS-ready",
+    ],
     screenshotAlt:
       "CVSpark resume editor: form on the left, A4 preview of the tailored resume on the right",
   },
@@ -148,12 +154,13 @@ export const en: LandingDictionary = {
   },
   pricing: {
     eyebrow: "Pricing",
-    title: "Pay as you go. No subscription.",
+    title: "Pay for the applications you send.",
     subtitle:
-      "Buy a credit pack once and use it at your own pace. Credits never expire.",
+      "One pack, paid once, used at your own pace. No subscription, no automatic renewal, and your credits never expire.",
     popular: "Most popular",
-    creditsLabel: "{credits} credits",
-    applicationsLabel: "≈ {count} complete applications",
+    welcome: `${WELCOME_APPLICATIONS} complete applications free when you sign up, no card required.`,
+    applicationsLabel: "{count} applications",
+    creditsDetail: "{credits} credits · {unitPrice} per application",
     buy: "Choose {pack}",
     unavailable:
       "Our packs cannot be displayed right now. You can find them in the app.",
@@ -219,6 +226,10 @@ export const en: LandingDictionary = {
         question: "What happens to my data?",
         answer:
           "When you import a resume, your name is pseudonymised before it is sent to the AI. You can export or delete your data at any time.",
+      },
+      {
+        question: "Can I try it for free?",
+        answer: `Yes. Your account gets ${WELCOME_APPLICATIONS} complete applications when you sign up (resume import, offer analysis, resume and letter), no card required.`,
       },
       {
         question: "Do I need a subscription?",

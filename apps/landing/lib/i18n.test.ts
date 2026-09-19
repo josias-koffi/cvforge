@@ -24,8 +24,8 @@ describe("dictionaries", () => {
   it("keep the same placeholders in both languages", () => {
     const placeholders = (text: string) => text.match(/\{\w+\}/g) ?? []
     for (const key of [
-      "creditsLabel",
       "applicationsLabel",
+      "creditsDetail",
       "buy",
       "costsNote",
     ] as const) {

@@ -68,8 +68,10 @@ export interface LandingDictionary {
   }
   pricing: SectionHeading & {
     popular: string
-    creditsLabel: string
+    /** Offered on sign-up; the count comes from `WELCOME_APPLICATIONS`. */
+    welcome: string
     applicationsLabel: string
+    creditsDetail: string
     buy: string
     /** Shown instead of the packs when the API cannot serve the offers. */
     unavailable: string

@@ -2,21 +2,21 @@ import type { PublicCreditOffer } from "@cvforge/types"
 import { describe, expect, it, vi } from "vitest"
 
 import { apiUrl, fetchPublicOffers } from "@/lib/offers-api"
-import { CREDITS_PER_APPLICATION, toPackSummaries } from "@/lib/pricing"
+import { toPackSummaries } from "@/lib/pricing"
 
 const env = (values: Record<string, string>) =>
   values as unknown as NodeJS.ProcessEnv
 
 const offer: PublicCreditOffer = {
-  credits: 1400,
+  credits: 145,
   currency: "eur",
   description: { en: "", fr: "Pour une recherche active." },
   features: { en: [], fr: ["TVA incluse"] },
-  id: "o-pro",
+  id: "o-active",
   isFeatured: true,
-  name: { en: "Pro", fr: "Pro" },
-  priceCents: 1999,
-  slug: "pro",
+  name: { en: "Active search", fr: "Recherche active" },
+  priceCents: 1490,
+  slug: "recherche-active",
   sortOrder: 20,
 }
 
@@ -71,13 +71,14 @@ describe("toPackSummaries", () => {
     const [en] = toPackSummaries([offer], "en")
 
     expect(fr).toMatchObject({
-      applications: Math.floor(1400 / CREDITS_PER_APPLICATION),
+      applications: 20,
       featured: true,
       features: ["TVA incluse"],
-      label: "Pro",
+      label: "Recherche active",
     })
-    expect(fr.price).toMatch(/19,99\s€/)
-    expect(en.price).toBe("€19.99")
+    expect(fr.price).toMatch(/14,90\s€/)
+    expect(fr.unitPrice).toMatch(/0,75\s€/)
+    expect(en.price).toBe("€14.90")
     expect(en.description).toBe("Pour une recherche active.")
   })
 })
