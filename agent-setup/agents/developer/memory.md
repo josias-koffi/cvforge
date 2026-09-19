@@ -802,3 +802,9 @@
 - **Learned**: ma première hypothèse (wildcard `"*"` invalide avec Express 5) était **fausse** — vérifiée en testant les deux syntaxes, `/health` répondait 200 dans les deux cas. La syntaxe nommée `{*splat}` a été conservée (conforme à la doc Nest 11) mais ce n'était pas la cause.
 - **Verified**: binaire compilé démarré contre un vrai Postgres → `/health` 200, `/ready` 200, `/admin/users` et `/credits/me` 401 sans session. 593 tests, lint, build.
 - **Open**: le pipeline déploie sans jamais avoir démarré l'image (smoke test **après** `tofu apply`). Noté au backlog.
+
+## 2026-09-19 — Launch pricing + welcome credits (ADR-012)
+- Packs are seeded by migration `0012_launch_pricing` (Starter/Pro archived, never deleted). Seeds only exist before `testDatabase.reset()`, so they are tested in `offers.seed.test.ts`.
+- Welcome credits: `AuthService.onAccountCreated` listener registered by `WelcomeCreditsListener` (credits → auth dependency direction), idempotency key `welcome:<email>`.
+- `CREDITS_PER_APPLICATION` / `estimateApplications` / `WELCOME_CREDITS` live in `@cvforge/types` (built to dist: rebuild the package before app tests).
+- Do NOT run `pnpm format` at the root: it rewrites hundreds of untouched files (api and web are not Prettier-formatted). Format only the touched landing files.
