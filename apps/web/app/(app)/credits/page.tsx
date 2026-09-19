@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import {
   AI_CREDIT_COSTS,
+  estimateApplications,
   type CreditLedgerEntry,
   type CreditLedgerSummary,
   type CreditOrder,
@@ -31,7 +32,7 @@ import {
 } from "@/components/ui/table"
 import { api } from "@/lib/api"
 import type { PurchaseAvailability } from "@/lib/billing"
-import { formatCredits, formatDateTime } from "@/lib/format"
+import { formatApplications, formatCredits, formatDateTime } from "@/lib/format"
 
 export const metadata: Metadata = { title: "Crédits" }
 
@@ -42,6 +43,7 @@ const actionLabels: Record<CreditLedgerEntry["action"], string> = {
   letter_generation: "Génération de lettre",
   offer_enrichment: "Analyse d'offre",
   stripe_purchase: "Achat de crédits",
+  welcome_grant: "Crédits de bienvenue",
 }
 
 export default async function CreditsPage() {
@@ -51,6 +53,7 @@ export default async function CreditsPage() {
     api<{ orders: CreditOrder[] }>("/billing/orders/me"),
     api<PurchaseAvailability>("/billing/purchase-availability"),
   ])
+  const remainingApplications = estimateApplications(credits.balance)
 
   return (
     <>
@@ -71,6 +74,10 @@ export default async function CreditsPage() {
               {credits.balance}
               {credits.isLowBalance ? <Badge variant="warning">Solde faible</Badge> : null}
             </CardTitle>
+            <p className="text-sm text-muted-foreground">
+              ≈ {formatApplications(remainingApplications)} restante
+              {remainingApplications > 1 ? "s" : ""}
+            </p>
           </CardHeader>
           <CardContent>
             <ul className="space-y-1 text-sm text-muted-foreground">
