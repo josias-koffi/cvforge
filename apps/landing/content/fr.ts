@@ -1,3 +1,5 @@
+import { WELCOME_APPLICATIONS } from "@cvforge/types"
+
 import type { LandingDictionary } from "./types"
 
 /** Copy source: .project/marketing/cvspark-storytelling.md */
@@ -29,7 +31,11 @@ export const fr: LandingDictionary = {
       "Arrêtez de passer vos soirées à réécrire le même CV. CVSpark lit l'offre, reprend votre profil et génère un CV et une lettre prêts pour l'ATS, en quelques secondes.",
     primaryCta: "Créer mon CV",
     secondaryCta: "Voir comment ça marche",
-    highlights: ["Sans abonnement", "Prêt pour l'ATS", "Export PDF et Word"],
+    highlights: [
+      `${WELCOME_APPLICATIONS} candidatures offertes`,
+      "Sans abonnement",
+      "Prêt pour l'ATS",
+    ],
     screenshotAlt:
       "Éditeur de CV CVSpark : formulaire à gauche, aperçu A4 du CV adapté à droite",
   },
@@ -149,12 +155,13 @@ export const fr: LandingDictionary = {
   },
   pricing: {
     eyebrow: "Tarifs",
-    title: "Payez à l'usage. Sans abonnement.",
+    title: "Payez les candidatures que vous envoyez.",
     subtitle:
-      "Achetez un pack de crédits une fois, utilisez-le à votre rythme. Les crédits n'expirent jamais.",
+      "Un pack, payé une seule fois, utilisé à votre rythme. Pas d'abonnement, pas de renouvellement automatique, et vos crédits n'expirent jamais.",
     popular: "Le plus choisi",
-    creditsLabel: "{credits} crédits",
-    applicationsLabel: "≈ {count} candidatures complètes",
+    welcome: `${WELCOME_APPLICATIONS} candidatures complètes offertes à l'inscription, sans carte bancaire.`,
+    applicationsLabel: "{count} candidatures",
+    creditsDetail: "{credits} crédits · {unitPrice} la candidature",
     buy: "Choisir {pack}",
     unavailable:
       "Les offres ne peuvent pas être affichées pour le moment. Retrouvez-les dans l'application.",
@@ -220,6 +227,10 @@ export const fr: LandingDictionary = {
         question: "Que deviennent mes données ?",
         answer:
           "À l'import d'un CV, votre nom est pseudonymisé avant d'être transmis à l'IA. Vous pouvez exporter ou supprimer vos données à tout moment.",
+      },
+      {
+        question: "Puis-je essayer gratuitement ?",
+        answer: `Oui. Votre compte est crédité de ${WELCOME_APPLICATIONS} candidatures complètes à l'inscription (import de votre CV, analyse de l'offre, CV et lettre), sans carte bancaire.`,
       },
       {
         question: "Faut-il un abonnement ?",

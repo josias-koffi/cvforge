@@ -1,5 +1,5 @@
 import { CheckIcon } from "lucide-react"
-import type { PublicCreditOffer } from "@cvforge/types"
+import { CREDITS_PER_APPLICATION, type PublicCreditOffer } from "@cvforge/types"
 
 import { Reveal } from "@/components/reveal"
 import { Section, SectionHeading } from "@/components/section"
@@ -9,7 +9,6 @@ import type { LandingDictionary } from "@/content/types"
 import { format, type Locale } from "@/lib/i18n"
 import { LOGIN_PATH } from "@/lib/links"
 import {
-  CREDITS_PER_APPLICATION,
   creditCost,
   formatNumber,
   pricedActions,
@@ -36,6 +35,9 @@ export function Pricing({
         title={pricing.title}
         subtitle={pricing.subtitle}
       />
+      <p className="mx-auto -mt-4 mb-10 w-fit rounded-full border border-primary/30 bg-primary/5 px-4 py-1.5 text-center text-sm text-foreground">
+        {pricing.welcome}
+      </p>
       {packs.length > 0 ? (
         <div
           className={cn(
@@ -110,14 +112,19 @@ function PackCard({
         {featured ? <Badge>{pricing.popular}</Badge> : null}
       </div>
       <p className="mt-4 text-4xl font-semibold tracking-tight">{pack.price}</p>
-      <p className="mt-2 text-foreground">
-        {format(pricing.creditsLabel, {
-          credits: formatNumber(pack.credits, locale),
+      <p className="mt-2 text-lg font-medium text-foreground">
+        {format(pricing.applicationsLabel, {
+          count: formatNumber(pack.applications, locale),
         })}
       </p>
-      <p className="text-sm text-muted-foreground">
-        {format(pricing.applicationsLabel, { count: pack.applications })}
-      </p>
+      {pack.unitPrice ? (
+        <p className="text-sm text-muted-foreground">
+          {format(pricing.creditsDetail, {
+            credits: formatNumber(pack.credits, locale),
+            unitPrice: pack.unitPrice,
+          })}
+        </p>
+      ) : null}
       {pack.description ? (
         <p className="mt-4 text-sm text-muted-foreground">{pack.description}</p>
       ) : null}
