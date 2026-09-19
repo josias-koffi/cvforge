@@ -400,6 +400,21 @@ describe('OpenRouterService', () => {
     await expect(svc.chat(MESSAGES)).rejects.toThrow('mistralai/mistral-small-2603');
   });
 
+  it('skips to the next model when one is unroutable (404), without retrying it', async () => {
+    fetchMock
+      .mockImplementationOnce(() => makeErrorResponse(404, '{"error":{"message":"No allowed providers"}}'))
+      .mockImplementationOnce(() => makeResponse('From gpt-5-mini'));
+
+    const svc = makeService({
+      fallbackModels: ['google/gemini-2.5-flash', 'openai/gpt-5-mini'],
+      defaultModel: 'google/gemini-2.5-flash',
+    });
+
+    await expect(svc.chat(MESSAGES)).resolves.toBe('From gpt-5-mini');
+    // A 404 is not retried on the same model — straight to the next one.
+    expect(modelsSent()).toEqual(['google/gemini-2.5-flash', 'openai/gpt-5-mini']);
+  });
+
   it('aborts the chain on a permanent error instead of repeating the mistake', async () => {
     fetchMock.mockImplementation(() => makeErrorResponse(400));
     const svc = makeService({ fallbackModels: ['google/gemini-2.5-flash'] });

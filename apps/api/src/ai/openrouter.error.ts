@@ -38,6 +38,16 @@ export function isRetryableStatus(status: number): boolean {
 }
 
 /**
+ * 404 means OpenRouter could route this model nowhere — no provider serves it,
+ * or the account's allowed-providers setting filtered them all out. Retrying
+ * the same model is pointless, but the next model of the chain may well be
+ * reachable, so it must not abort the chain the way a malformed request does.
+ */
+export function isModelUnavailable(error: unknown): boolean {
+  return error instanceof OpenRouterRequestError && error.status === 404;
+}
+
+/**
  * Builds the error from a failed response, reading the body only once: the
  * caller cannot re-read it afterwards, so the raw text is kept in `detail`.
  */

@@ -1,5 +1,5 @@
 import { OpenRouterConfig } from './openrouter.config';
-import { buildOpenRouterError } from './openrouter.error';
+import { buildOpenRouterError, isModelUnavailable } from './openrouter.error';
 import {
   DEFAULT_RETRY_POLICY,
   RetryHooks,
@@ -155,8 +155,10 @@ export class OpenRouterService {
 
   /**
    * Walks the model chain, retrying each entry on a transient failure before
-   * moving to the next. A permanent error (bad request, unknown model) aborts
-   * the chain: trying another model would only repeat the mistake.
+   * moving to the next. A 404 skips straight to the next model — the account's
+   * allowed-providers setting can make one model unroutable while the next is
+   * fine. A malformed request or an auth failure aborts the chain instead:
+   * every model would reject it identically.
    */
   private async fetchCompletion(
     messages: OpenRouterMessage[],
@@ -187,7 +189,8 @@ export class OpenRouterService {
       } catch (error) {
         lastError = error;
         const isLastModel = index === chain.length - 1;
-        if (isLastModel || !isTransientFailure(error)) throw error;
+        const worthAnotherModel = isTransientFailure(error) || isModelUnavailable(error);
+        if (isLastModel || !worthAnotherModel) throw error;
       }
     }
 
