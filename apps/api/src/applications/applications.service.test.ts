@@ -3,6 +3,7 @@ import {
   BadRequestException,
   ConflictException,
   NotFoundException,
+  ServiceUnavailableException,
   UnprocessableEntityException,
 } from "@nestjs/common";
 import type { DraftApplication } from "@cvforge/types";
@@ -13,6 +14,13 @@ import type {
   StoredApplication,
 } from "./applications.types";
 import type { CreditsService } from "../credits/credits.service";
+import { OpenRouterRequestError } from "../ai/openrouter.error";
+
+/** Long enough to clear MIN_OFFER_TEXT_LENGTH and reach the AI call. */
+const LONG_OFFER_TEXT = "Software Engineer role at Acme Corp. "
+  + "We are looking for a talented engineer with strong TypeScript skills. "
+  + "Responsibilities include building APIs and mentoring junior developers. "
+  + "Requirements include Node.js, TypeScript, PostgreSQL, and cloud infrastructure experience.";
 
 function createStore(): ApplicationsStore {
   const applications = new Map<string, StoredApplication>();
@@ -63,6 +71,7 @@ describe("ApplicationsService", () => {
     chat: vi.fn(),
   };
   const creditsService = {
+    assertSufficientCredits: vi.fn(),
     consumeCredits: vi.fn(),
   } as unknown as CreditsService;
 
@@ -70,6 +79,7 @@ describe("ApplicationsService", () => {
     vi.restoreAllMocks();
     openRouterService.chat.mockReset();
     vi.mocked(creditsService.consumeCredits).mockReset();
+    vi.mocked(creditsService.assertSufficientCredits).mockReset();
   });
 
   it("imports a draft application from an offer url", async () => {
@@ -131,6 +141,42 @@ describe("ApplicationsService", () => {
       action: "offer_enrichment",
       userEmail: "user@example.com",
     });
+  });
+
+  it("leaves the balance untouched and answers 503 when the AI provider is throttled", async () => {
+    openRouterService.chat.mockRejectedValue(
+      new OpenRouterRequestError("throttled", 429, "", null, "Mistral"),
+    );
+    const service = new ApplicationsService(
+      createStore(),
+      openRouterService as never,
+      creditsService,
+    );
+
+    await expect(
+      service.importFromText("user@example.com", LONG_OFFER_TEXT),
+    ).rejects.toBeInstanceOf(ServiceUnavailableException);
+
+    expect(creditsService.assertSufficientCredits).toHaveBeenCalled();
+    expect(creditsService.consumeCredits).not.toHaveBeenCalled();
+  });
+
+  it("refuses to call the AI provider when the balance is too low", async () => {
+    vi.mocked(creditsService.assertSufficientCredits).mockRejectedValue(
+      new Error("insufficient"),
+    );
+    const service = new ApplicationsService(
+      createStore(),
+      openRouterService as never,
+      creditsService,
+    );
+
+    await expect(
+      service.importFromText("user@example.com", LONG_OFFER_TEXT),
+    ).rejects.toThrow("insufficient");
+
+    expect(openRouterService.chat).not.toHaveBeenCalled();
+    expect(creditsService.consumeCredits).not.toHaveBeenCalled();
   });
 
   it("imports a draft application from pasted offer text", async () => {
@@ -406,12 +452,7 @@ describe("ApplicationsService", () => {
       creditsService,
     );
 
-    const offerText = "Software Engineer role at Acme Corp. "
-      + "We are looking for a talented engineer with strong TypeScript skills. "
-      + "Responsibilities include building APIs and mentoring junior developers. "
-      + "Requirements include Node.js, TypeScript, PostgreSQL, and cloud infrastructure experience.";
-
-    const created = await service.importFromText("user@example.com", offerText);
+    const created = await service.importFromText("user@example.com", LONG_OFFER_TEXT);
     const found = await service.getApplicationForUser("user@example.com", created.id);
 
     expect(found.id).toBe(created.id);

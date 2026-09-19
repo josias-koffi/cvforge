@@ -5,6 +5,7 @@ import {
 } from "@cvforge/types";
 import { BadRequestException, Injectable, UnprocessableEntityException } from "@nestjs/common";
 import mammoth from "mammoth";
+import { withOpenRouterHttpErrors } from "../ai/openrouter.exception";
 import type { OpenRouterService } from "../ai/openrouter.service";
 import type { CreditsService } from "../credits/credits.service";
 import { pseudonymizeCvText } from "./cv-pseudonymizer";
@@ -213,21 +214,23 @@ export class CvImportService {
 
     const pseudonymized = pseudonymizeCvText(text);
 
-    const rawResponse = await this.openRouterService.chat(
-      [
-        { role: "system", content: CV_IMPORT_SYSTEM_PROMPT },
-        {
-          role: "user",
-          content: JSON.stringify({
-            candidateHint: {
-              firstName: pseudonymized.firstName,
-              lastName: "[CANDIDATE]",
-            },
-            pseudonymisedCvText: pseudonymized.text,
-          }),
-        },
-      ],
-      { temperature: 0.2 },
+    const rawResponse = await withOpenRouterHttpErrors(() =>
+      this.openRouterService.chat(
+        [
+          { role: "system", content: CV_IMPORT_SYSTEM_PROMPT },
+          {
+            role: "user",
+            content: JSON.stringify({
+              candidateHint: {
+                firstName: pseudonymized.firstName,
+                lastName: "[CANDIDATE]",
+              },
+              pseudonymisedCvText: pseudonymized.text,
+            }),
+          },
+        ],
+        { temperature: 0.2 },
+      ),
     );
 
     const extractedProfile = normalizeImportedProfile(extractFirstJsonObject(rawResponse));

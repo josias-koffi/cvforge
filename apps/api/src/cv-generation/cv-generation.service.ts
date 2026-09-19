@@ -14,6 +14,7 @@ import {
   TEMPLATE_KIND_LETTER,
 } from "@cvforge/types";
 import { Injectable, NotFoundException } from "@nestjs/common";
+import { withOpenRouterHttpErrors } from "../ai/openrouter.exception";
 import type { OpenRouterService } from "../ai/openrouter.service";
 import type { ApplicationsStore } from "../applications/applications.types";
 import type { CreditsService } from "../credits/credits.service";
@@ -81,18 +82,20 @@ export class CvGenerationService {
       userEmail,
     );
 
-    const rawResponse = await this.openRouterService.chat(
-      [
-        { role: "system", content: CV_SYSTEM_PROMPT },
-        {
-          role: "user",
-          content: buildGroundedUserMessage(
-            request.promptProfile,
-            offerContext,
-          ),
-        },
-      ],
-      { temperature: 0.1 },
+    const rawResponse = await withOpenRouterHttpErrors(() =>
+      this.openRouterService.chat(
+        [
+          { role: "system", content: CV_SYSTEM_PROMPT },
+          {
+            role: "user",
+            content: buildGroundedUserMessage(
+              request.promptProfile,
+              offerContext,
+            ),
+          },
+        ],
+        { temperature: 0.1 },
+      ),
     );
 
     const rawJson = extractJsonFromContent<RawCvJson>(rawResponse);
@@ -149,19 +152,21 @@ export class CvGenerationService {
       userEmail,
     );
 
-    const rawResponse = await this.openRouterService.chat(
-      [
-        { role: "system", content: LETTER_SYSTEM_PROMPT },
-        {
-          role: "user",
-          content: buildGroundedUserMessage(
-            request.promptProfile,
-            offerContext,
-            { includePreferences: true, refinement: request.refinement },
-          ),
-        },
-      ],
-      { temperature: 0.25 },
+    const rawResponse = await withOpenRouterHttpErrors(() =>
+      this.openRouterService.chat(
+        [
+          { role: "system", content: LETTER_SYSTEM_PROMPT },
+          {
+            role: "user",
+            content: buildGroundedUserMessage(
+              request.promptProfile,
+              offerContext,
+              { includePreferences: true, refinement: request.refinement },
+            ),
+          },
+        ],
+        { temperature: 0.25 },
+      ),
     );
 
     const rawJson = extractJsonFromContent<RawLetterJson>(rawResponse);
