@@ -6,6 +6,7 @@ import { resolveCreditsConfig } from "./credits.config";
 import { CreditsController } from "./credits.controller";
 import { PgCreditLedgerStore } from "./credits.pg-store";
 import { CreditsService } from "./credits.service";
+import { WelcomeCreditsListener } from "./welcome-credits.listener";
 
 @Module({
   imports: [AdminAuditModule, AuthModule],
@@ -22,6 +23,7 @@ import { CreditsService } from "./credits.service";
       useFactory: (store: PgCreditLedgerStore) =>
         new CreditsService(store, resolveCreditsConfig(process.env)),
     },
+    WelcomeCreditsListener,
   ],
   exports: [CreditsService, PgCreditLedgerStore],
 })

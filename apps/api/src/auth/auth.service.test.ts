@@ -14,6 +14,12 @@ const config: AuthConfig = {
   secureCookies: false,
 };
 
+async function signIn(service: AuthService, email: string) {
+  const { magicLink } = await service.requestMagicLink(email, true);
+
+  return service.consumeMagicLink(new URL(magicLink).searchParams.get("token") ?? "");
+}
+
 describe("AuthService", () => {
   beforeEach(() => {
     vi.useFakeTimers();
@@ -66,6 +72,48 @@ describe("AuthService", () => {
       email: "user@example.com",
       role: "user",
     });
+  });
+
+  it("should notify account-created listeners on the first sign-in only", async () => {
+    const service = new AuthService(config, createInMemoryAccountStore());
+    const listener = vi.fn();
+    service.onAccountCreated(listener);
+
+    await signIn(service, "first@example.com");
+    await signIn(service, "first@example.com");
+
+    expect(listener).toHaveBeenCalledTimes(1);
+    expect(listener).toHaveBeenCalledWith("first@example.com");
+  });
+
+  it("should notify listeners when an invitation creates the account", async () => {
+    const service = new AuthService(config, createInMemoryAccountStore());
+    const adminSession = await signIn(service, "admin@example.com");
+    const listener = vi.fn();
+    service.onAccountCreated(listener);
+    const invitation = await service.createInvitation(
+      `${adminSession.cookie.name}=${adminSession.cookie.value}`,
+      "invitee@example.com",
+      "user",
+    );
+
+    await service.consumeInvitation(
+      new URL(invitation.invitationUrl).searchParams.get("token") ?? "",
+      true,
+    );
+
+    expect(listener).toHaveBeenCalledWith("invitee@example.com");
+  });
+
+  it("should still sign in when an account-created listener fails", async () => {
+    const service = new AuthService(config, createInMemoryAccountStore());
+    service.onAccountCreated(() => {
+      throw new Error("ledger unavailable");
+    });
+
+    const consumed = await signIn(service, "first@example.com");
+
+    expect(consumed.session.email).toBe("first@example.com");
   });
 
   it("should reject an invalid email address", async () => {
