@@ -45,7 +45,7 @@ export async function withRetry<T>(
       lastError = error;
 
       const isLastAttempt = attempt === maxAttempts;
-      if (isLastAttempt || !isRetryable(error)) throw error;
+      if (isLastAttempt || !isTransientFailure(error)) throw error;
 
       await sleep(computeDelayMs(error, attempt, policy, random));
     }
@@ -54,8 +54,12 @@ export async function withRetry<T>(
   throw lastError;
 }
 
-/** A `fetch` rejection (DNS, socket reset, timeout) is transient too. */
-function isRetryable(error: unknown): boolean {
+/**
+ * Worth trying again — same model, or the next one in the chain. A `fetch`
+ * rejection (DNS, socket reset, timeout) counts: it says nothing about the
+ * request being wrong.
+ */
+export function isTransientFailure(error: unknown): boolean {
   if (error instanceof OpenRouterRequestError) return error.isRetryable;
   return error instanceof TypeError;
 }
