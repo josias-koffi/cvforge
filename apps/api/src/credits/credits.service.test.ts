@@ -1,3 +1,4 @@
+import { WELCOME_CREDITS } from "@cvforge/types";
 import { UnprocessableEntityException } from "@nestjs/common";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import {
@@ -137,6 +138,17 @@ describe("CreditsService", () => {
     expect(second.id).toBe(first.id);
     expect(summary.history).toHaveLength(1);
     expect(summary.balance).toBe(550);
+  });
+
+  it("grants welcome credits only once per account", async () => {
+    const first = await service.grantWelcomeCredits(USER);
+    const second = await service.grantWelcomeCredits(USER);
+    const summary = await service.getSummaryForUser(USER);
+
+    expect(second.id).toBe(first.id);
+    expect(first).toMatchObject({ action: "welcome_grant", type: "welcome_grant" });
+    expect(summary.history).toHaveLength(1);
+    expect(summary.balance).toBe(WELCOME_CREDITS);
   });
 
   it("rejects a Stripe purchase without credits", async () => {
