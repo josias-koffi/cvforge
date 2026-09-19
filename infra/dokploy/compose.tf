@@ -50,6 +50,8 @@ resource "dokploy_compose" "cvspark" {
     "OPENROUTER_BALANCE_ALERT_THRESHOLD=${var.openrouter_balance_alert_threshold}",
     "OPENROUTER_BALANCE_CRITICAL_THRESHOLD=${var.openrouter_balance_critical_threshold}",
     "OPENROUTER_MODEL=${var.openrouter_model}",
+    "OPENROUTER_FALLBACK_MODELS=${var.openrouter_fallback_models}",
+    "OPENROUTER_MAX_ATTEMPTS=${var.openrouter_max_attempts}",
     "INTERVIEW_STT_MODEL=${var.interview_stt_model}",
     "INTERVIEW_AI_MODEL=${var.interview_ai_model}",
     "STRIPE_SECRET_KEY=${var.stripe_secret_key}",

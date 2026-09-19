@@ -94,6 +94,23 @@ variable "openrouter_model" {
   default     = "mistralai/mistral-small-2603"
 }
 
+variable "openrouter_fallback_models" {
+  type        = string
+  description = <<-EOT
+    Comma-separated models tried in order once every provider of
+    openrouter_model is exhausted. Pick models served by OTHER providers, or
+    the fallback is throttled along with the primary. Empty keeps the
+    application defaults; "none" disables fallbacks altogether.
+  EOT
+  default     = ""
+}
+
+variable "openrouter_max_attempts" {
+  type        = string
+  description = "Attempts per OpenRouter request, first call included. 1 disables retrying."
+  default     = "3"
+}
+
 variable "interview_stt_model" {
   type        = string
   description = "OpenRouter model used for interview speech-to-text"

@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { BadGatewayException, NotFoundException } from '@nestjs/common';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { BadGatewayException, Logger, NotFoundException } from '@nestjs/common';
 import { OpenRouterRequestError } from './openrouter.error';
 import { toHttpExceptionFromOpenRouter } from './openrouter.exception';
 
@@ -8,6 +8,40 @@ function openRouterError(status: number) {
 }
 
 describe('toHttpExceptionFromOpenRouter', () => {
+  let errorLog: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    errorLog = vi.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('logs the upstream detail the client never sees', () => {
+    const detail = '{"error":{"message":"Insufficient credits"}}';
+    toHttpExceptionFromOpenRouter(
+      new OpenRouterRequestError('failed', 402, detail, null, 'Mistral'),
+    );
+
+    expect(errorLog).toHaveBeenCalledWith(expect.stringContaining('Insufficient credits'));
+    expect(errorLog.mock.calls[0][0]).toContain('402');
+    expect(errorLog.mock.calls[0][0]).toContain('Mistral');
+  });
+
+  it('logs an unexpected non-OpenRouter failure too', () => {
+    toHttpExceptionFromOpenRouter(new Error('boom'));
+    expect(errorLog).toHaveBeenCalledWith(
+      expect.stringContaining('boom'),
+      expect.anything(),
+    );
+  });
+
+  it('stays silent for a deliberate domain error', () => {
+    toHttpExceptionFromOpenRouter(new NotFoundException('nope'));
+    expect(errorLog).not.toHaveBeenCalled();
+  });
+
   it('maps a rate limit to 503 with a retry-friendly message', () => {
     const exception = toHttpExceptionFromOpenRouter(openRouterError(429));
 
