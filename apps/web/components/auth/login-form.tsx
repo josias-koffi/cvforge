@@ -1,6 +1,7 @@
 "use client"
 
 import { useActionState } from "react"
+import { WELCOME_APPLICATIONS } from "@cvforge/types"
 import { MailIcon } from "lucide-react"
 
 import { requestMagicLink } from "@/app/login/actions"
@@ -63,7 +64,8 @@ export function LoginForm({ notice }: { notice?: string }) {
                 {pending ? "Envoi en cours…" : "Recevoir mon lien"}
               </Button>
               <FieldDescription className="text-center">
-                Première visite ? Votre compte se crée à la connexion.
+                Première visite ? Votre compte se crée à la connexion, avec{" "}
+                {WELCOME_APPLICATIONS} candidatures offertes.
               </FieldDescription>
             </Field>
           </FieldGroup>

@@ -1,4 +1,4 @@
-import { AI_CREDIT_COSTS, type ApplicationsKpiSummary } from "@cvforge/types"
+import { estimateApplications, type ApplicationsKpiSummary } from "@cvforge/types"
 import {
   BriefcaseBusinessIcon,
   CalendarCheckIcon,
@@ -14,7 +14,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { formatCredits } from "@/lib/format"
+import { formatApplications } from "@/lib/format"
 
 type SectionCardsProps = {
   balance: number | null
@@ -51,7 +51,10 @@ export function SectionCards({ balance, summary }: SectionCardsProps) {
     {
       description: "Crédits",
       footer: "Solde disponible",
-      hint: `${formatCredits(AI_CREDIT_COSTS.offer_enrichment)} par analyse, ${formatCredits(AI_CREDIT_COSTS.cv_generation)} par document`,
+      hint:
+        balance === null
+          ? "Analyse, CV et lettre à chaque candidature"
+          : `≈ ${formatApplications(estimateApplications(balance))}`,
       icon: CoinsIcon,
       tone: "bg-spark/20 text-spark-foreground dark:text-spark",
       value: balance ?? "—",
