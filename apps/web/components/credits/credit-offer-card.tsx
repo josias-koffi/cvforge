@@ -1,4 +1,4 @@
-import type { PublicCreditOffer } from "@cvforge/types"
+import { estimateApplications, type PublicCreditOffer } from "@cvforge/types"
 import { CheckIcon } from "lucide-react"
 import { cn } from "cn"
 
@@ -13,7 +13,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { formatPrice } from "@/lib/format"
+import { formatApplications, formatPrice } from "@/lib/format"
 
 export function CreditOfferCard({
   offer,
@@ -29,7 +29,12 @@ export function CreditOfferCard({
           {offer.name.fr}
           {offer.isFeatured ? <Badge variant="spark">Le plus choisi</Badge> : null}
         </CardDescription>
-        <CardTitle className="text-3xl tabular-nums">{offer.credits} crédits</CardTitle>
+        <CardTitle className="text-3xl tabular-nums">
+          {formatApplications(estimateApplications(offer.credits))}
+        </CardTitle>
+        <p className="text-sm tabular-nums text-muted-foreground">
+          {offer.credits} crédits · analyse, CV et lettre
+        </p>
         {offer.description.fr ? (
           <p className="text-sm text-muted-foreground">{offer.description.fr}</p>
         ) : null}

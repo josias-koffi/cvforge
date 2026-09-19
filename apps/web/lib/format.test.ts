@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest"
 
 import {
   creditCostLabel,
+  formatApplications,
   formatCredits,
   formatDate,
   formatPrice,
@@ -22,6 +23,8 @@ describe("format helpers", () => {
   it("pluralizes credit amounts and reads costs from the shared table", () => {
     expect(formatCredits(1)).toBe("1 crédit")
     expect(formatCredits(3)).toBe("3 crédits")
+    expect(formatApplications(1)).toBe("1 candidature")
+    expect(formatApplications(20)).toBe("20 candidatures")
     expect(creditCostLabel("offer_enrichment")).toBe("Coût : 1 crédit")
     expect(creditCostLabel("cv_generation")).toBe("Coût : 3 crédits")
   })

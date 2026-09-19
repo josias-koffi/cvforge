@@ -49,6 +49,11 @@ export function formatCredits(amount: number) {
   return `${amount} crédit${Math.abs(amount) > 1 ? "s" : ""}`
 }
 
+/** e.g. "1 candidature", "20 candidatures". */
+export function formatApplications(count: number) {
+  return `${count} candidature${count > 1 ? "s" : ""}`
+}
+
 /** Cost label of an AI action, e.g. "Coût : 3 crédits". */
 export function creditCostLabel(action: AiCreditAction) {
   return `Coût : ${formatCredits(AI_CREDIT_COSTS[action])}`
