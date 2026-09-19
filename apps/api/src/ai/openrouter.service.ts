@@ -1,4 +1,6 @@
 import { OpenRouterConfig } from './openrouter.config';
+import { buildOpenRouterError } from './openrouter.error';
+import { DEFAULT_RETRY_POLICY, RetryHooks, withRetry } from './openrouter.retry';
 
 export interface ChatMessage {
   role: 'system' | 'user' | 'assistant';
@@ -80,7 +82,52 @@ const TRANSCRIPTION_RESPONSE_FORMAT = {
 } as const;
 
 export class OpenRouterService {
-  constructor(private readonly config: OpenRouterConfig) {}
+  constructor(
+    private readonly config: OpenRouterConfig,
+    private readonly retryHooks: RetryHooks = {},
+  ) {}
+
+  private get retryPolicy() {
+    return { ...DEFAULT_RETRY_POLICY, maxAttempts: this.config.maxAttempts };
+  }
+
+  private buildHeaders() {
+    return {
+      Authorization: `Bearer ${this.config.apiKey}`,
+      'Content-Type': 'application/json',
+      'HTTP-Referer': 'https://cvforge.app',
+      'X-Title': 'CVforge',
+    };
+  }
+
+  /**
+   * An explicit per-call model is honoured as-is; otherwise the configured
+   * fallbacks ride along in `models`, which OpenRouter walks in order once all
+   * providers of the first model are exhausted.
+   */
+  private buildModelSelection(model: string | undefined) {
+    if (model) return { model };
+    if (this.config.fallbackModels.length === 0) return { model: this.config.defaultModel };
+    return { models: [this.config.defaultModel, ...this.config.fallbackModels] };
+  }
+
+  private buildRequestBody(
+    messages: OpenRouterMessage[],
+    options: ChatOptions,
+    enableZdr: boolean,
+    extra: Record<string, unknown> = {},
+  ) {
+    return JSON.stringify({
+      ...this.buildModelSelection(options.model),
+      messages,
+      ...extra,
+      ...(options.provider && { provider: options.provider }),
+      ...(options.responseFormat && { response_format: options.responseFormat }),
+      ...(options.maxTokens !== undefined && { max_tokens: options.maxTokens }),
+      ...(options.temperature !== undefined && { temperature: options.temperature }),
+      ...this.buildDefaults(enableZdr),
+    });
+  }
 
   // data_collection: "deny" is a per-request routing filter that restricts
   // OpenRouter to providers advertising ZDR support. Voxtral has no ZDR-capable
@@ -101,36 +148,31 @@ export class OpenRouterService {
     messages: ChatMessage[],
     options: ChatOptions = {},
   ): AsyncGenerator<string, void, undefined> {
-    const response = await fetch(`${this.config.baseUrl}/chat/completions`, {
-      body: JSON.stringify({
-        model: options.model ?? this.config.defaultModel,
-        messages,
-        stream: true,
-        ...(options.provider && { provider: options.provider }),
-        ...(options.responseFormat && { response_format: options.responseFormat }),
-        ...(options.maxTokens !== undefined && { max_tokens: options.maxTokens }),
-        ...(options.temperature !== undefined && { temperature: options.temperature }),
-        ...this.buildDefaults(this.config.enableZdrChat),
-      }),
-      headers: {
-        Authorization: `Bearer ${this.config.apiKey}`,
-        'Content-Type': 'application/json',
-        'HTTP-Referer': 'https://cvforge.app',
-        'X-Title': 'CVforge',
-      },
-      method: 'POST',
-    });
+    const response = await withRetry(
+      async () => {
+        const attempt = await fetch(`${this.config.baseUrl}/chat/completions`, {
+          body: this.buildRequestBody(messages, options, this.config.enableZdrChat, {
+            stream: true,
+          }),
+          headers: this.buildHeaders(),
+          method: 'POST',
+        });
 
-    if (!response.ok || !response.body) {
-      let detail = '';
-      try { detail = await response.text(); } catch { /* ignore */ }
-      throw new Error(
-        `OpenRouter stream failed: ${response.status} ${response.statusText}${detail ? ` — ${detail}` : ''}`,
-      );
-    }
+        if (!attempt.ok || !attempt.body) {
+          throw await buildOpenRouterError(attempt, 'OpenRouter stream failed');
+        }
+
+        return attempt;
+      },
+      this.retryPolicy,
+      this.retryHooks,
+    );
+
+    const body = response.body;
+    if (!body) throw new Error('OpenRouter stream failed: response had no body');
 
     const decoder = new TextDecoder();
-    const reader = response.body.getReader();
+    const reader = body.getReader();
     let buffer = '';
 
     try {
@@ -222,36 +264,23 @@ export class OpenRouterService {
     options: ChatOptions,
     enableZdr = this.config.enableZdrChat,
   ): Promise<string> {
-    const response = await fetch(`${this.config.baseUrl}/chat/completions`, {
-      body: JSON.stringify({
-        model: options.model ?? this.config.defaultModel,
-        messages,
-        ...(options.provider && { provider: options.provider }),
-        ...(options.responseFormat && { response_format: options.responseFormat }),
-        ...(options.maxTokens !== undefined && { max_tokens: options.maxTokens }),
-        ...(options.temperature !== undefined && { temperature: options.temperature }),
-        ...this.buildDefaults(enableZdr),
-      }),
-      headers: {
-        Authorization: `Bearer ${this.config.apiKey}`,
-        'Content-Type': 'application/json',
-        'HTTP-Referer': 'https://cvforge.app',
-        'X-Title': 'CVforge',
-      },
-      method: 'POST',
-    });
+    const response = await withRetry(
+      async () => {
+        const attempt = await fetch(`${this.config.baseUrl}/chat/completions`, {
+          body: this.buildRequestBody(messages, options, enableZdr),
+          headers: this.buildHeaders(),
+          method: 'POST',
+        });
 
-    if (!response.ok) {
-      let detail = '';
-      try {
-        detail = await response.text();
-      } catch {
-        // ignore
-      }
-      throw new Error(
-        `OpenRouter request failed: ${response.status} ${response.statusText}${detail ? ` — ${detail}` : ''}`,
-      );
-    }
+        if (!attempt.ok) {
+          throw await buildOpenRouterError(attempt, 'OpenRouter request failed');
+        }
+
+        return attempt;
+      },
+      this.retryPolicy,
+      this.retryHooks,
+    );
 
     const data = (await response.json()) as {
       choices: Array<{
