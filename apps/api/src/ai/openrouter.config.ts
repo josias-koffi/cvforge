@@ -12,8 +12,18 @@ export interface OpenRouterConfig {
 /**
  * Served by providers other than Mistral on purpose: an upstream throttle on
  * the shared Mistral pool must not take the whole extraction path down.
+ *
+ * deepseek-v4-flash comes first on two counts — 16 providers serve it, so a
+ * single one throttling is a non-event, and it costs a fifth of the primary.
+ * gemini-2.5-flash closes the chain as the expensive but dependable last
+ * resort. Any candidate needs several providers and structured-output
+ * support: a single-provider fallback repeats the very trap this chain exists
+ * to escape.
  */
-const DEFAULT_FALLBACK_MODELS = ["google/gemini-2.5-flash", "openai/gpt-5-mini"];
+const DEFAULT_FALLBACK_MODELS = [
+  "deepseek/deepseek-v4-flash",
+  "google/gemini-2.5-flash",
+];
 
 const DEFAULT_MAX_ATTEMPTS = 3;
 
