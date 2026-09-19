@@ -23,6 +23,61 @@ describe('resolveOpenRouterConfig', () => {
     expect(config.apiKey).toBe('my-key');
   });
 
+  it('falls back to non-Mistral models by default', () => {
+    process.env.OPENROUTER_API_KEY = 'key';
+    delete process.env.OPENROUTER_FALLBACK_MODELS;
+    expect(resolveOpenRouterConfig().fallbackModels).toEqual([
+      'google/gemini-2.5-flash',
+      'openai/gpt-5-mini',
+    ]);
+  });
+
+  it('parses OPENROUTER_FALLBACK_MODELS as a trimmed comma-separated list', () => {
+    process.env.OPENROUTER_API_KEY = 'key';
+    process.env.OPENROUTER_FALLBACK_MODELS = ' openai/gpt-5-mini , , qwen/qwen3-30b-a3b-instruct-2507 ';
+    expect(resolveOpenRouterConfig().fallbackModels).toEqual([
+      'openai/gpt-5-mini',
+      'qwen/qwen3-30b-a3b-instruct-2507',
+    ]);
+  });
+
+  it('opts out of fallbacks on the explicit "none" value', () => {
+    process.env.OPENROUTER_API_KEY = 'key';
+    process.env.OPENROUTER_FALLBACK_MODELS = 'none';
+    expect(resolveOpenRouterConfig().fallbackModels).toEqual([]);
+  });
+
+  it('treats a blank value as unset, since docker compose blanks unset vars', () => {
+    process.env.OPENROUTER_API_KEY = 'key';
+    process.env.OPENROUTER_FALLBACK_MODELS = '';
+    process.env.OPENROUTER_MODEL = '  ';
+    const config = resolveOpenRouterConfig();
+
+    expect(config.fallbackModels).toEqual([
+      'google/gemini-2.5-flash',
+      'openai/gpt-5-mini',
+    ]);
+    expect(config.defaultModel).toBe('mistralai/mistral-small-2603');
+  });
+
+  it('defaults to 3 attempts and ignores a non-positive OPENROUTER_MAX_ATTEMPTS', () => {
+    process.env.OPENROUTER_API_KEY = 'key';
+    delete process.env.OPENROUTER_MAX_ATTEMPTS;
+    expect(resolveOpenRouterConfig().maxAttempts).toBe(3);
+
+    process.env.OPENROUTER_MAX_ATTEMPTS = '0';
+    expect(resolveOpenRouterConfig().maxAttempts).toBe(3);
+
+    process.env.OPENROUTER_MAX_ATTEMPTS = 'nope';
+    expect(resolveOpenRouterConfig().maxAttempts).toBe(3);
+  });
+
+  it('uses OPENROUTER_MAX_ATTEMPTS when it is a positive integer', () => {
+    process.env.OPENROUTER_API_KEY = 'key';
+    process.env.OPENROUTER_MAX_ATTEMPTS = '5';
+    expect(resolveOpenRouterConfig().maxAttempts).toBe(5);
+  });
+
   it('uses the default OpenRouter base URL', () => {
     process.env.OPENROUTER_API_KEY = 'key';
     delete process.env.OPENROUTER_BASE_URL;
