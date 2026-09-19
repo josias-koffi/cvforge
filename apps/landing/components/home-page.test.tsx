@@ -52,6 +52,10 @@ describe("HomePage", () => {
     expect(html).toContain(dict.hero.titleAccent)
     expect(html).toContain('id="pricing"')
     expect(html).toContain("Starter")
+    expect(html).toContain(escapeHtml(dict.pricing.welcome))
+    expect(html).toContain(
+      locale === "fr" ? "78 candidatures" : "78 applications"
+    )
     expect(html).toContain(dict.pricing.popular)
     expect(html).toContain(locale === "fr" ? "TVA incluse" : "VAT included")
     expect(html).toContain(escapeHtml(dict.faq.items[0].question))
