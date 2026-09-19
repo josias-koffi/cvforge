@@ -2,6 +2,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import {
   OpenRouterRequestError,
   buildOpenRouterError,
+  isModelUnavailable,
   isRetryableStatus,
   parseRetryAfterMs,
 } from './openrouter.error';
@@ -74,6 +75,19 @@ describe('parseRetryAfterMs', () => {
     vi.setSystemTime(new Date('2026-09-19T12:00:00Z'));
     expect(parseRetryAfterMs('Sat, 19 Sep 2026 11:59:00 GMT')).toBe(0);
     expect(parseRetryAfterMs('3600')).toBe(30_000);
+  });
+});
+
+describe('isModelUnavailable', () => {
+  it('recognises the allowed-providers 404 that makes a model unroutable', () => {
+    const error = new OpenRouterRequestError('failed', 404, '', null, null, 'google/gemini-2.5-flash');
+    expect(isModelUnavailable(error)).toBe(true);
+  });
+
+  it('is false for a throttle, a bad request and a non-OpenRouter error', () => {
+    expect(isModelUnavailable(new OpenRouterRequestError('x', 429, '', null, null))).toBe(false);
+    expect(isModelUnavailable(new OpenRouterRequestError('x', 400, '', null, null))).toBe(false);
+    expect(isModelUnavailable(new Error('boom'))).toBe(false);
   });
 });
 
