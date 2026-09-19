@@ -355,14 +355,33 @@ describe('OpenRouterService', () => {
     expect(body.model).toBeUndefined();
   });
 
-  it('honours an explicit per-call model over the fallback chain', async () => {
+  it('makes an explicit per-call model the primary, keeping the fallback chain', async () => {
     const svc = makeService({ fallbackModels: ['google/gemini-2.5-flash'] });
     await svc.chat(MESSAGES, { model: 'mistralai/mistral-large' });
 
     const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
     const body = JSON.parse(init.body as string);
+    expect(body.models).toEqual(['mistralai/mistral-large', 'google/gemini-2.5-flash']);
+    expect(body.model).toBeUndefined();
+  });
+
+  it('sends the model alone when the caller pins it', async () => {
+    const svc = makeService({ fallbackModels: ['google/gemini-2.5-flash'] });
+    await svc.chat(MESSAGES, { model: 'mistralai/mistral-large', pinModel: true });
+
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const body = JSON.parse(init.body as string);
     expect(body.model).toBe('mistralai/mistral-large');
     expect(body.models).toBeUndefined();
+  });
+
+  it('never repeats the primary inside its own fallback chain', async () => {
+    const svc = makeService({ fallbackModels: ['mistralai/mistral-small-2603', 'openai/gpt-5-mini'] });
+    await svc.chat(MESSAGES);
+
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const body = JSON.parse(init.body as string);
+    expect(body.models).toEqual(['mistralai/mistral-small-2603', 'openai/gpt-5-mini']);
   });
 
   it('keeps transcription on a single model, never the chat fallback chain', async () => {
