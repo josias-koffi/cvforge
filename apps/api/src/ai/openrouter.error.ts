@@ -17,6 +17,8 @@ export class OpenRouterRequestError extends Error {
     readonly detail: string,
     readonly retryAfterMs: number | null,
     readonly providerName: string | null,
+    /** Which model of the chain produced this, so logs name the culprit. */
+    readonly model: string | null = null,
   ) {
     super(message);
     this.name = "OpenRouterRequestError";
@@ -42,6 +44,7 @@ export function isRetryableStatus(status: number): boolean {
 export async function buildOpenRouterError(
   response: Response,
   operation: string,
+  model: string | null = null,
 ): Promise<OpenRouterRequestError> {
   let detail = "";
   try {
@@ -51,11 +54,13 @@ export async function buildOpenRouterError(
   }
 
   return new OpenRouterRequestError(
-    `${operation}: ${response.status} ${response.statusText}${detail ? ` — ${detail}` : ""}`,
+    `${operation}${model ? ` (${model})` : ""}: ${response.status} ${response.statusText}` +
+      `${detail ? ` — ${detail}` : ""}`,
     response.status,
     detail,
     parseRetryAfterMs(response.headers.get("Retry-After")),
     parseProviderName(detail),
+    model,
   );
 }
 

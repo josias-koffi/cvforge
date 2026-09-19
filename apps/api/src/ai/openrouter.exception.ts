@@ -38,7 +38,9 @@ export function toHttpExceptionFromOpenRouter(error: unknown): HttpException {
   }
 
   logger.error(
-    `OpenRouter ${error.status}${error.providerName ? ` via ${error.providerName}` : ""}` +
+    `OpenRouter ${error.status}` +
+      `${error.model ? ` on ${error.model}` : ""}` +
+      `${error.providerName ? ` via ${error.providerName}` : ""}` +
       ` — ${error.detail || error.message}`,
   );
 

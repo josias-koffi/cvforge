@@ -1,6 +1,11 @@
 import { OpenRouterConfig } from './openrouter.config';
 import { buildOpenRouterError } from './openrouter.error';
-import { DEFAULT_RETRY_POLICY, RetryHooks, withRetry } from './openrouter.retry';
+import {
+  DEFAULT_RETRY_POLICY,
+  RetryHooks,
+  isTransientFailure,
+  withRetry,
+} from './openrouter.retry';
 
 export interface ChatMessage {
   role: 'system' | 'user' | 'assistant';
@@ -106,17 +111,17 @@ export class OpenRouterService {
   }
 
   /**
-   * A per-call model becomes the primary rather than the only choice: the
-   * configured fallbacks still ride along in `models`, which OpenRouter walks
-   * in order once every provider of the primary is exhausted. Only `pinModel`
-   * opts out, for requests no other model can serve.
+   * The models to try, in order. We walk this chain ourselves rather than
+   * handing OpenRouter a `models` array: in production a throttled Mistral
+   * came back 429 without any fallback model ever being attempted, so the
+   * bascule has to be ours to be observable and certain. `pinModel` keeps the
+   * chain to one entry, for requests no other model can serve.
    */
-  private buildModelSelection(options: ChatOptions) {
+  private buildModelChain(options: ChatOptions): string[] {
     const primary = options.model ?? this.config.defaultModel;
-    const fallbacks = this.config.fallbackModels.filter((model) => model !== primary);
+    if (options.pinModel) return [primary];
 
-    if (options.pinModel || fallbacks.length === 0) return { model: primary };
-    return { models: [primary, ...fallbacks] };
+    return [primary, ...this.config.fallbackModels.filter((model) => model !== primary)];
   }
 
   private buildRequestBody(
@@ -126,7 +131,7 @@ export class OpenRouterService {
     extra: Record<string, unknown> = {},
   ) {
     return JSON.stringify({
-      ...this.buildModelSelection(options),
+      model: options.model ?? this.config.defaultModel,
       messages,
       ...extra,
       ...(options.provider && { provider: options.provider }),
@@ -148,6 +153,47 @@ export class OpenRouterService {
     };
   }
 
+  /**
+   * Walks the model chain, retrying each entry on a transient failure before
+   * moving to the next. A permanent error (bad request, unknown model) aborts
+   * the chain: trying another model would only repeat the mistake.
+   */
+  private async fetchCompletion(
+    messages: OpenRouterMessage[],
+    options: ChatOptions,
+    enableZdr: boolean,
+    operation: string,
+    extra: Record<string, unknown> = {},
+  ): Promise<Response> {
+    const chain = this.buildModelChain(options);
+    let lastError: unknown;
+
+    for (const [index, model] of chain.entries()) {
+      try {
+        return await withRetry(
+          async () => {
+            const attempt = await fetch(`${this.config.baseUrl}/chat/completions`, {
+              body: this.buildRequestBody(messages, { ...options, model }, enableZdr, extra),
+              headers: this.buildHeaders(),
+              method: 'POST',
+            });
+
+            if (!attempt.ok) throw await buildOpenRouterError(attempt, operation, model);
+            return attempt;
+          },
+          this.retryPolicy,
+          this.retryHooks,
+        );
+      } catch (error) {
+        lastError = error;
+        const isLastModel = index === chain.length - 1;
+        if (isLastModel || !isTransientFailure(error)) throw error;
+      }
+    }
+
+    throw lastError;
+  }
+
   async chat(messages: ChatMessage[], options: ChatOptions = {}): Promise<string> {
     return this.requestCompletion(messages, options);
   }
@@ -156,24 +202,12 @@ export class OpenRouterService {
     messages: ChatMessage[],
     options: ChatOptions = {},
   ): AsyncGenerator<string, void, undefined> {
-    const response = await withRetry(
-      async () => {
-        const attempt = await fetch(`${this.config.baseUrl}/chat/completions`, {
-          body: this.buildRequestBody(messages, options, this.config.enableZdrChat, {
-            stream: true,
-          }),
-          headers: this.buildHeaders(),
-          method: 'POST',
-        });
-
-        if (!attempt.ok || !attempt.body) {
-          throw await buildOpenRouterError(attempt, 'OpenRouter stream failed');
-        }
-
-        return attempt;
-      },
-      this.retryPolicy,
-      this.retryHooks,
+    const response = await this.fetchCompletion(
+      messages,
+      options,
+      this.config.enableZdrChat,
+      'OpenRouter stream failed',
+      { stream: true },
     );
 
     const body = response.body;
@@ -274,22 +308,11 @@ export class OpenRouterService {
     options: ChatOptions,
     enableZdr = this.config.enableZdrChat,
   ): Promise<string> {
-    const response = await withRetry(
-      async () => {
-        const attempt = await fetch(`${this.config.baseUrl}/chat/completions`, {
-          body: this.buildRequestBody(messages, options, enableZdr),
-          headers: this.buildHeaders(),
-          method: 'POST',
-        });
-
-        if (!attempt.ok) {
-          throw await buildOpenRouterError(attempt, 'OpenRouter request failed');
-        }
-
-        return attempt;
-      },
-      this.retryPolicy,
-      this.retryHooks,
+    const response = await this.fetchCompletion(
+      messages,
+      options,
+      enableZdr,
+      'OpenRouter request failed',
     );
 
     const data = (await response.json()) as {

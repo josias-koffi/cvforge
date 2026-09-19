@@ -122,7 +122,7 @@ describe('OpenRouterService', () => {
       Promise.resolve(new Response('{"error":"model not found"}', { status: 404, statusText: 'Not Found' })),
     );
     const svc = new OpenRouterService(BASE_CONFIG);
-    await expect(svc.chat(MESSAGES)).rejects.toThrow('OpenRouter request failed: 404');
+    await expect(svc.chat(MESSAGES)).rejects.toThrow('OpenRouter request failed (mistralai/mistral-small-2603): 404');
   });
 
   it('throws when response has no choices content', async () => {
@@ -323,7 +323,7 @@ describe('OpenRouterService', () => {
     );
     const svc = new OpenRouterService(BASE_CONFIG);
     const gen = svc.streamChat(MESSAGES);
-    await expect(gen.next()).rejects.toThrow('OpenRouter stream failed: 404');
+    await expect(gen.next()).rejects.toThrow('OpenRouter stream failed (mistralai/mistral-small-2603): 404');
   });
 
   it('throws when the transcription response has no text', async () => {
@@ -342,46 +342,101 @@ describe('OpenRouterService', () => {
     );
   });
 
-  it('sends the fallback chain in models when no per-call model is given', async () => {
+  /** Each request carries exactly one model; the chain is walked by us. */
+  function modelsSent() {
+    return fetchMock.mock.calls.map(
+      ([, init]) => JSON.parse((init as RequestInit).body as string).model as string,
+    );
+  }
+
+  it('sends one model per request, never a models array', async () => {
     const svc = makeService({ fallbackModels: ['google/gemini-2.5-flash'] });
     await svc.chat(MESSAGES);
 
     const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
     const body = JSON.parse(init.body as string);
-    expect(body.models).toEqual([
-      'mistralai/mistral-small-2603',
-      'google/gemini-2.5-flash',
-    ]);
-    expect(body.model).toBeUndefined();
-  });
-
-  it('makes an explicit per-call model the primary, keeping the fallback chain', async () => {
-    const svc = makeService({ fallbackModels: ['google/gemini-2.5-flash'] });
-    await svc.chat(MESSAGES, { model: 'mistralai/mistral-large' });
-
-    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
-    const body = JSON.parse(init.body as string);
-    expect(body.models).toEqual(['mistralai/mistral-large', 'google/gemini-2.5-flash']);
-    expect(body.model).toBeUndefined();
-  });
-
-  it('sends the model alone when the caller pins it', async () => {
-    const svc = makeService({ fallbackModels: ['google/gemini-2.5-flash'] });
-    await svc.chat(MESSAGES, { model: 'mistralai/mistral-large', pinModel: true });
-
-    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
-    const body = JSON.parse(init.body as string);
-    expect(body.model).toBe('mistralai/mistral-large');
+    expect(body.model).toBe('mistralai/mistral-small-2603');
     expect(body.models).toBeUndefined();
   });
 
-  it('never repeats the primary inside its own fallback chain', async () => {
-    const svc = makeService({ fallbackModels: ['mistralai/mistral-small-2603', 'openai/gpt-5-mini'] });
-    await svc.chat(MESSAGES);
+  it('falls back to the next model once the primary is throttled', async () => {
+    fetchMock
+      .mockImplementationOnce(() => makeErrorResponse(429))
+      .mockImplementationOnce(() => makeErrorResponse(429))
+      .mockImplementationOnce(() => makeErrorResponse(429))
+      .mockImplementationOnce(() => makeResponse('From the fallback'));
 
-    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
-    const body = JSON.parse(init.body as string);
-    expect(body.models).toEqual(['mistralai/mistral-small-2603', 'openai/gpt-5-mini']);
+    const svc = makeService({ fallbackModels: ['google/gemini-2.5-flash'] });
+
+    await expect(svc.chat(MESSAGES)).resolves.toBe('From the fallback');
+    // Three attempts on the primary, then one on the fallback.
+    expect(modelsSent()).toEqual([
+      'mistralai/mistral-small-2603',
+      'mistralai/mistral-small-2603',
+      'mistralai/mistral-small-2603',
+      'google/gemini-2.5-flash',
+    ]);
+  });
+
+  it('walks the whole chain before giving up', async () => {
+    fetchMock.mockImplementation(() => makeErrorResponse(429));
+    const svc = makeService({
+      maxAttempts: 1,
+      fallbackModels: ['google/gemini-2.5-flash', 'openai/gpt-5-mini'],
+    });
+
+    await expect(svc.chat(MESSAGES)).rejects.toThrow('429');
+    expect(modelsSent()).toEqual([
+      'mistralai/mistral-small-2603',
+      'google/gemini-2.5-flash',
+      'openai/gpt-5-mini',
+    ]);
+  });
+
+  it('names the failing model in the error, so logs identify the culprit', async () => {
+    fetchMock.mockImplementation(() => makeErrorResponse(429));
+    const svc = makeService({ maxAttempts: 1, fallbackModels: [] });
+
+    await expect(svc.chat(MESSAGES)).rejects.toThrow('mistralai/mistral-small-2603');
+  });
+
+  it('aborts the chain on a permanent error instead of repeating the mistake', async () => {
+    fetchMock.mockImplementation(() => makeErrorResponse(400));
+    const svc = makeService({ fallbackModels: ['google/gemini-2.5-flash'] });
+
+    await expect(svc.chat(MESSAGES)).rejects.toThrow('400');
+    expect(modelsSent()).toEqual(['mistralai/mistral-small-2603']);
+  });
+
+  it('makes an explicit per-call model the head of the chain', async () => {
+    fetchMock
+      .mockImplementationOnce(() => makeErrorResponse(429))
+      .mockImplementationOnce(() => makeResponse('ok'));
+    const svc = makeService({ maxAttempts: 1, fallbackModels: ['google/gemini-2.5-flash'] });
+
+    await svc.chat(MESSAGES, { model: 'mistralai/mistral-large' });
+    expect(modelsSent()).toEqual(['mistralai/mistral-large', 'google/gemini-2.5-flash']);
+  });
+
+  it('keeps a pinned model alone, with no fallback', async () => {
+    fetchMock.mockImplementation(() => makeErrorResponse(429));
+    const svc = makeService({ maxAttempts: 1, fallbackModels: ['google/gemini-2.5-flash'] });
+
+    await expect(
+      svc.chat(MESSAGES, { model: 'mistralai/mistral-large', pinModel: true }),
+    ).rejects.toThrow('429');
+    expect(modelsSent()).toEqual(['mistralai/mistral-large']);
+  });
+
+  it('never repeats the primary inside its own fallback chain', async () => {
+    fetchMock.mockImplementation(() => makeErrorResponse(429));
+    const svc = makeService({
+      maxAttempts: 1,
+      fallbackModels: ['mistralai/mistral-small-2603', 'openai/gpt-5-mini'],
+    });
+
+    await expect(svc.chat(MESSAGES)).rejects.toThrow('429');
+    expect(modelsSent()).toEqual(['mistralai/mistral-small-2603', 'openai/gpt-5-mini']);
   });
 
   it('keeps transcription on a single model, never the chat fallback chain', async () => {
@@ -412,7 +467,7 @@ describe('OpenRouterService', () => {
     fetchMock.mockImplementation(() => makeErrorResponse(429));
 
     await expect(makeService({ maxAttempts: 2 }).chat(MESSAGES)).rejects.toThrow(
-      'OpenRouter request failed: 429',
+      'OpenRouter request failed (mistralai/mistral-small-2603): 429',
     );
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
