@@ -4,6 +4,10 @@ import {
   NOTIFICATION_TYPE_APPLICATION_FOLLOW_UP,
   CREDIT_PACK_PRO,
   CREDIT_PACK_STARTER,
+  CREDITS_PER_APPLICATION,
+  WELCOME_APPLICATIONS,
+  WELCOME_CREDITS,
+  estimateApplications,
   APPLICATION_STATUS_DRAFT,
   APPLICATION_STATUS_OFFER_RECEIVED,
   APPLICATION_STATUS_REJECTED,
@@ -47,6 +51,18 @@ import {
 } from "./index";
 
 describe("types package", () => {
+  it("should count complete applications from a credit amount", () => {
+    expect(CREDITS_PER_APPLICATION).toBe(7);
+    expect(estimateApplications(145)).toBe(20);
+    expect(estimateApplications(6)).toBe(0);
+    expect(estimateApplications(-3)).toBe(0);
+  });
+
+  it("should offer a CV import plus two applications on sign-up", () => {
+    expect(WELCOME_CREDITS).toBe(16);
+    expect(WELCOME_APPLICATIONS).toBe(2);
+  });
+
   it("should allow the supported locales", () => {
     const locale: Locale = "fr";
 

@@ -28,6 +28,7 @@ export const AI_CREDIT_ACTION_CV_IMPORT = "cv_import" as const;
 export const CREDIT_EVENT_AI_USAGE = "ai_usage" as const;
 export const CREDIT_EVENT_ADMIN_GRANT = "admin_grant" as const;
 export const CREDIT_EVENT_STRIPE_PURCHASE = "stripe_purchase" as const;
+export const CREDIT_EVENT_WELCOME_GRANT = "welcome_grant" as const;
 export const CREDIT_PACK_STARTER = "starter" as const;
 export const CREDIT_PACK_PRO = "pro" as const;
 export const NOTIFICATION_TYPE_APPLICATION_FOLLOW_UP =
@@ -96,6 +97,7 @@ export const creditEventTypes = [
   CREDIT_EVENT_AI_USAGE,
   CREDIT_EVENT_ADMIN_GRANT,
   CREDIT_EVENT_STRIPE_PURCHASE,
+  CREDIT_EVENT_WELCOME_GRANT,
 ] as const;
 export type CreditEventType = (typeof creditEventTypes)[number];
 export const creditPackIds = [CREDIT_PACK_STARTER, CREDIT_PACK_PRO] as const;
@@ -316,11 +318,27 @@ export const AI_CREDIT_COSTS: Record<AiCreditAction, number> = {
   [AI_CREDIT_ACTION_LETTER_GENERATION]: 3,
 };
 
+/** One application = offer analysis + tailored CV + cover letter. */
+export const CREDITS_PER_APPLICATION =
+  AI_CREDIT_COSTS[AI_CREDIT_ACTION_OFFER_ENRICHMENT] +
+  AI_CREDIT_COSTS[AI_CREDIT_ACTION_CV_GENERATION] +
+  AI_CREDIT_COSTS[AI_CREDIT_ACTION_LETTER_GENERATION];
+
+/** How many complete applications a credit amount pays for. */
+export function estimateApplications(credits: number) {
+  return Math.max(0, Math.floor(credits / CREDITS_PER_APPLICATION));
+}
+
+/** Granted once on account creation: a CV import plus two complete applications. */
+export const WELCOME_CREDITS =
+  AI_CREDIT_COSTS[AI_CREDIT_ACTION_CV_IMPORT] + 2 * CREDITS_PER_APPLICATION;
+export const WELCOME_APPLICATIONS = estimateApplications(WELCOME_CREDITS);
+
 export interface CreditLedgerEntry {
   id: string;
   userEmail: string;
   type: CreditEventType;
-  action: AiCreditAction | "admin_grant" | "stripe_purchase";
+  action: AiCreditAction | "admin_grant" | "stripe_purchase" | "welcome_grant";
   amount: number;
   balanceAfter: number;
   createdAt: string;
