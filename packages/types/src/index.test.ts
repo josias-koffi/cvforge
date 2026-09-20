@@ -2,8 +2,6 @@ import { describe, expect, it } from "vitest";
 import {
   APPLICATION_STATUS_INTERVIEW_SCHEDULED,
   NOTIFICATION_TYPE_APPLICATION_FOLLOW_UP,
-  CREDIT_PACK_PRO,
-  CREDIT_PACK_STARTER,
   CREDITS_PER_APPLICATION,
   WELCOME_APPLICATIONS,
   WELCOME_CREDITS,
@@ -30,8 +28,6 @@ import {
   type CvContentUpdateRequest,
   type LetterContentUpdateRequest,
   type ApplicationsKpiSummary,
-  creditPackIds,
-  creditPacks,
   type CreateCheckoutSessionRequest,
   type CreateCheckoutSessionResponse,
   type DraftApplication,
@@ -313,19 +309,16 @@ describe("types package", () => {
     expect(report.transcriptStats.keywordCoverage).toBe(60);
   });
 
-  it("should expose the supported credit packs", () => {
+  it("should open a checkout session against an admin-managed offer", () => {
     const request: CreateCheckoutSessionRequest = {
-      packId: CREDIT_PACK_STARTER,
+      offerId: "offer_launch_starter",
     };
     const response: CreateCheckoutSessionResponse = {
       checkoutUrl: "https://checkout.stripe.com/c/session_123",
       sessionId: "cs_test_123",
     };
 
-    expect(creditPackIds).toEqual([CREDIT_PACK_STARTER, CREDIT_PACK_PRO]);
-    expect(creditPacks.starter.priceCents).toBe(999);
-    expect(creditPacks.pro.credits).toBe(1400);
-    expect(request.packId).toBe("starter");
+    expect(request.offerId).toBe("offer_launch_starter");
     expect(response.sessionId).toContain("cs_test_");
   });
 
