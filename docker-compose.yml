@@ -1,29 +1,4 @@
 services:
-  app:
-    build:
-      context: .
-      dockerfile: docker/app.Dockerfile
-    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
-    ports:
-      - "3000:3000"
-    environment:
-      NEXT_PUBLIC_APP_URL: http://localhost:3000
-      NEXT_PUBLIC_API_URL: http://localhost:3333
-      API_INTERNAL_URL: http://api:3333
-      CHOKIDAR_USEPOLLING: "true"
-      WATCHPACK_POLLING: "true"
-    depends_on:
-      - api
-    volumes:
-      - ./apps/app:/workspace/apps/app
-      - /workspace/apps/app/.next
-      - /workspace/apps/app/node_modules
-      - ./packages/document-renderer:/workspace/packages/document-renderer
-      - /workspace/packages/document-renderer/dist
-      - ./packages/ui:/workspace/packages/ui
-      - ./packages/types:/workspace/packages/types
-      - ./packages/config:/workspace/packages/config
-
   web:
     build:
       context: .
