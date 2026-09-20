@@ -18,19 +18,21 @@ export interface OpenRouterConfig {
 const DEFAULT_MODEL = "mistralai/mistral-small-3.2-24b-instruct";
 
 /**
- * Ordered by grounding fidelity, measured on a CV whose offer demanded skills
- * the profile did not hold: gemini-2.5-flash drifted on 1 summary out of 4,
- * deepseek-v4-flash on 4 out of 4 — it never copies a forbidden word but
- * paraphrases the offer's themes onto the candidate, which is worse because a
- * lexical check misses it. DeepSeek stays last because at that point a
- * slightly oversold CV beats a 503.
+ * Ordered by grounding fidelity, measured on a CV whose target offer demanded
+ * skills the profile did not hold: gpt-4.1-nano drifted on 0 summaries out of
+ * 4, gemini-2.5-flash on 1. Each entry also sits on a different provider
+ * family — DeepInfra/Parasail/Venice, then Azure/OpenAI, then Google — so no
+ * single upstream outage can empty the chain.
  *
- * Any candidate needs several providers and structured-output support: a
- * single-provider fallback repeats the very trap this chain exists to escape.
+ * deepseek-v4-flash is deliberately absent despite being the cheapest of all:
+ * it drifted on 4 summaries out of 4, never copying a forbidden word but
+ * paraphrasing the offer's themes onto the candidate. A lexical check misses
+ * that entirely, and a CV claiming experience its owner never had is worse
+ * than an error page.
  */
 const DEFAULT_FALLBACK_MODELS = [
+  "openai/gpt-4.1-nano",
   "google/gemini-2.5-flash",
-  "deepseek/deepseek-v4-flash",
 ];
 
 const DEFAULT_MAX_ATTEMPTS = 3;
