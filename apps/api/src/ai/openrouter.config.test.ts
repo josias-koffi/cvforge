@@ -27,8 +27,8 @@ describe('resolveOpenRouterConfig', () => {
     process.env.OPENROUTER_API_KEY = 'key';
     delete process.env.OPENROUTER_FALLBACK_MODELS;
     expect(resolveOpenRouterConfig().fallbackModels).toEqual([
-      'deepseek/deepseek-v4-flash',
       'google/gemini-2.5-flash',
+      'deepseek/deepseek-v4-flash',
     ]);
   });
 
@@ -54,10 +54,10 @@ describe('resolveOpenRouterConfig', () => {
     const config = resolveOpenRouterConfig();
 
     expect(config.fallbackModels).toEqual([
-      'deepseek/deepseek-v4-flash',
       'google/gemini-2.5-flash',
+      'deepseek/deepseek-v4-flash',
     ]);
-    expect(config.defaultModel).toBe('mistralai/mistral-small-2603');
+    expect(config.defaultModel).toBe('mistralai/mistral-small-3.2-24b-instruct');
   });
 
   it('defaults to 3 attempts and ignores a non-positive OPENROUTER_MAX_ATTEMPTS', () => {
@@ -92,11 +92,11 @@ describe('resolveOpenRouterConfig', () => {
     expect(config.baseUrl).toBe('https://custom.example.com/v1');
   });
 
-  it('uses the default Mistral Small 4 model', () => {
+  it('uses the multi-provider Mistral Small variant by default', () => {
     process.env.OPENROUTER_API_KEY = 'key';
     delete process.env.OPENROUTER_MODEL;
     const config = resolveOpenRouterConfig();
-    expect(config.defaultModel).toBe('mistralai/mistral-small-2603');
+    expect(config.defaultModel).toBe('mistralai/mistral-small-3.2-24b-instruct');
   });
 
   it('uses OPENROUTER_MODEL when set', () => {
