@@ -32,7 +32,7 @@ export default tseslint.config(
   },
   ...compat.extends("next/core-web-vitals").map((config) => ({
     ...config,
-    files: ["apps/app/**/*.{js,jsx,ts,tsx}", "apps/landing/**/*.{js,jsx,ts,tsx}"],
+    files: ["apps/landing/**/*.{js,jsx,ts,tsx}"],
   })),
   {
     files: ["**/*.{js,mjs,cjs}"],
