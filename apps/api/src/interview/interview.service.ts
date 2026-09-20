@@ -36,7 +36,7 @@ const STT_MODEL =
 const AI_MODEL =
   process.env.INTERVIEW_AI_MODEL ??
   process.env.OPENROUTER_MODEL ??
-  "mistralai/mistral-small-2603";
+  "mistralai/mistral-small-3.2-24b-instruct";
 /**
  * Voxtral is served by Mistral alone and audio needs a provider that accepts
  * `input_audio`, so speech-to-text stays pinned — there is nothing to fall

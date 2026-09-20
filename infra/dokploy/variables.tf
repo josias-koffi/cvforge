@@ -90,8 +90,13 @@ variable "openrouter_balance_critical_threshold" {
 
 variable "openrouter_model" {
   type        = string
-  description = "OpenRouter model used for CV and cover-letter generation"
-  default     = "mistralai/mistral-small-2603"
+  description = <<-EOT
+    OpenRouter model used for CV and cover-letter generation. Avoid
+    mistral-small-2603: Mistral is its only provider, so OpenRouter's shared
+    pool throttling it leaves no way through. This variant is the same family
+    served by DeepInfra, Parasail and Venice.
+  EOT
+  default     = "mistralai/mistral-small-3.2-24b-instruct"
 }
 
 variable "openrouter_fallback_models" {
@@ -120,7 +125,7 @@ variable "interview_stt_model" {
 variable "interview_ai_model" {
   type        = string
   description = "OpenRouter model used for interview answers"
-  default     = "mistralai/mistral-small-2603"
+  default     = "mistralai/mistral-small-3.2-24b-instruct"
 }
 
 variable "smtp_provider" {

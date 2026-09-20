@@ -10,19 +10,27 @@ export interface OpenRouterConfig {
 }
 
 /**
- * Served by providers other than Mistral on purpose: an upstream throttle on
- * the shared Mistral pool must not take the whole extraction path down.
+ * mistral-small-2603 is served by Mistral and nobody else, so OpenRouter's
+ * shared pool throttling it left no way through — measured at 0 successes in
+ * 18 attempts. This variant is the same family served by DeepInfra, Parasail
+ * and Venice instead, which sidesteps that pool entirely, and it costs less.
+ */
+const DEFAULT_MODEL = "mistralai/mistral-small-3.2-24b-instruct";
+
+/**
+ * Ordered by grounding fidelity, measured on a CV whose offer demanded skills
+ * the profile did not hold: gemini-2.5-flash drifted on 1 summary out of 4,
+ * deepseek-v4-flash on 4 out of 4 — it never copies a forbidden word but
+ * paraphrases the offer's themes onto the candidate, which is worse because a
+ * lexical check misses it. DeepSeek stays last because at that point a
+ * slightly oversold CV beats a 503.
  *
- * deepseek-v4-flash comes first on two counts — 16 providers serve it, so a
- * single one throttling is a non-event, and it costs a fifth of the primary.
- * gemini-2.5-flash closes the chain as the expensive but dependable last
- * resort. Any candidate needs several providers and structured-output
- * support: a single-provider fallback repeats the very trap this chain exists
- * to escape.
+ * Any candidate needs several providers and structured-output support: a
+ * single-provider fallback repeats the very trap this chain exists to escape.
  */
 const DEFAULT_FALLBACK_MODELS = [
-  "deepseek/deepseek-v4-flash",
   "google/gemini-2.5-flash",
+  "deepseek/deepseek-v4-flash",
 ];
 
 const DEFAULT_MAX_ATTEMPTS = 3;
@@ -33,7 +41,7 @@ export function resolveOpenRouterConfig(): OpenRouterConfig {
   return {
     apiKey,
     baseUrl: process.env.OPENROUTER_BASE_URL ?? 'https://openrouter.ai/api/v1',
-    defaultModel: nonEmpty(process.env.OPENROUTER_MODEL) ?? 'mistralai/mistral-small-2603',
+    defaultModel: nonEmpty(process.env.OPENROUTER_MODEL) ?? DEFAULT_MODEL,
     fallbackModels: parseFallbackModels(process.env.OPENROUTER_FALLBACK_MODELS),
     maxAttempts: parseMaxAttempts(process.env.OPENROUTER_MAX_ATTEMPTS),
     enableZdrChat: process.env.ENABLE_ZDR_CHAT === 'true',
