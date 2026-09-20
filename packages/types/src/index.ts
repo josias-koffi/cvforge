@@ -29,8 +29,6 @@ export const CREDIT_EVENT_AI_USAGE = "ai_usage" as const;
 export const CREDIT_EVENT_ADMIN_GRANT = "admin_grant" as const;
 export const CREDIT_EVENT_STRIPE_PURCHASE = "stripe_purchase" as const;
 export const CREDIT_EVENT_WELCOME_GRANT = "welcome_grant" as const;
-export const CREDIT_PACK_STARTER = "starter" as const;
-export const CREDIT_PACK_PRO = "pro" as const;
 export const NOTIFICATION_TYPE_APPLICATION_FOLLOW_UP =
   "application_follow_up" as const;
 export const NOTIFICATION_TYPE_CREDIT_PURCHASE_CONFIRMED =
@@ -100,8 +98,6 @@ export const creditEventTypes = [
   CREDIT_EVENT_WELCOME_GRANT,
 ] as const;
 export type CreditEventType = (typeof creditEventTypes)[number];
-export const creditPackIds = [CREDIT_PACK_STARTER, CREDIT_PACK_PRO] as const;
-export type CreditPackId = (typeof creditPackIds)[number];
 export const notificationTypes = [
   NOTIFICATION_TYPE_APPLICATION_FOLLOW_UP,
   NOTIFICATION_TYPE_CREDIT_PURCHASE_CONFIRMED,
@@ -353,33 +349,6 @@ export interface CreditLedgerEntry {
     stripePaymentIntentId?: string;
   };
 }
-
-/** @deprecated Legacy `apps/app` only; offers are managed by admins (`CreditOffer`). */
-export interface CreditPackDefinition {
-  credits: number;
-  currency: "eur";
-  id: CreditPackId;
-  label: string;
-  priceCents: number;
-}
-
-/** @deprecated Legacy `apps/app` only; offers are managed by admins (`CreditOffer`). */
-export const creditPacks: Record<CreditPackId, CreditPackDefinition> = {
-  [CREDIT_PACK_STARTER]: {
-    credits: 550,
-    currency: "eur",
-    id: CREDIT_PACK_STARTER,
-    label: "Starter",
-    priceCents: 999,
-  },
-  [CREDIT_PACK_PRO]: {
-    credits: 1400,
-    currency: "eur",
-    id: CREDIT_PACK_PRO,
-    label: "Pro",
-    priceCents: 1999,
-  },
-};
 
 export const CREDIT_OFFER_STATUS_DRAFT = "draft" as const;
 export const CREDIT_OFFER_STATUS_ACTIVE = "active" as const;
