@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
-import type { OpenRouterTranscriptionService } from "../ai/openrouter-transcription.service";
 import { InterviewReportService } from "./interview-report.service";
 import type { OpenRouterService } from "../ai/openrouter.service";
 import type { ApplicationsService } from "../applications/applications.service";
 import type { CreditsService } from "../credits/credits.service";
+import type { CompanyContextService } from "../applications/company-context.service";
 import type { InterviewStore } from "./interview.types";
 import { InterviewService } from "./interview.service";
 
@@ -53,16 +53,18 @@ function createApplicationsService(): ApplicationsService {
   } as unknown as ApplicationsService;
 }
 
-/**
- * The service now takes two OpenRouter clients: one for chat, one for
- * transcription. Tests still declare a single bag of doubles; this splits it,
- * and defaults the transcriber to silence so chat-only tests stay terse.
- */
 function createCreditsService(): CreditsService {
   return {
     assertSufficientCredits: vi.fn().mockResolvedValue(undefined),
     consumeCredits: vi.fn().mockResolvedValue({}),
   } as unknown as CreditsService;
+}
+
+/** Derivation is a separate concern; here it is simply a no-op. */
+function noCompanyContext(): CompanyContextService {
+  return {
+    ensureFor: vi.fn(async (application) => application),
+  } as unknown as CompanyContextService;
 }
 
 function makeService(
@@ -71,13 +73,12 @@ function makeService(
   applications: ApplicationsService = createApplicationsService(),
   credits: CreditsService = createCreditsService(),
 ) {
-  const { transcribe = vi.fn().mockResolvedValue(""), ...chat } = doubles;
+  const chat = doubles;
 
   return new InterviewService(
     store,
-    chat as unknown as OpenRouterService,
-    { transcribe } as unknown as OpenRouterTranscriptionService,
     applications,
+    noCompanyContext(),
     new InterviewReportService(chat as unknown as OpenRouterService),
     credits,
   );
@@ -288,4 +289,62 @@ describe("InterviewService", () => {
 
 
 
+
+  it("freezes the offer onto the session, so the recruiter knows the job", () => {
+    // The application used to be fetched only to check ownership and then
+    // thrown away, which is why every interview was generic.
+    const service = makeService();
+
+    return service
+      .startSession("user@example.com", "fr", "standard", "app-001")
+      .then(({ session }) => {
+        expect(session.context).toMatchObject({
+          companyName: "Acme",
+          offerTitle: "Product Engineer",
+        });
+      });
+  });
+
+  it("derives the company context once, before freezing it", async () => {
+    const companyContext = {
+      ensureFor: vi.fn(async (application: unknown) => ({
+        ...(application as Record<string, unknown>),
+        companyContext: {
+          culture: "Remote-first",
+          salaryEstimate: null,
+          sector: "SaaS RH",
+          size: null,
+          values: ["Transparence"],
+        },
+      })),
+    } as unknown as CompanyContextService;
+
+    const service = new InterviewService(
+      createStore(),
+      createApplicationsService(),
+      companyContext,
+      new InterviewReportService({} as unknown as OpenRouterService),
+      createCreditsService(),
+    );
+
+    const { session } = await service.startSession(
+      "user@example.com",
+      "fr",
+      "standard",
+      "app-001",
+    );
+
+    expect(companyContext.ensureFor).toHaveBeenCalledOnce();
+    expect(session.context?.company).toMatchObject({ sector: "SaaS RH" });
+  });
+
+  it("stores the chosen duration, and falls back on a nonsense one", async () => {
+    const service = makeService();
+
+    const chosen = await service.startSession("a@example.com", "fr", "standard", "", 30);
+    expect(chosen.session.durationMinutes).toBe(30);
+
+    const nonsense = await service.startSession("b@example.com", "fr", "standard", "", 7);
+    expect(nonsense.session.durationMinutes).toBe(10);
+  });
 });

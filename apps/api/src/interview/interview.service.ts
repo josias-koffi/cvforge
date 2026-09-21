@@ -16,9 +16,8 @@ import {
   Logger,
   NotFoundException,
 } from "@nestjs/common";
-import type { OpenRouterTranscriptionService } from "../ai/openrouter-transcription.service";
-import type { OpenRouterService } from "../ai/openrouter.service";
 import type { ApplicationsService } from "../applications/applications.service";
+import type { CompanyContextService } from "../applications/company-context.service";
 import type { StoredApplication } from "../applications/applications.types";
 import { buildContextSnapshot } from "./interview.context";
 import type { CreditsService } from "../credits/credits.service";
@@ -34,9 +33,8 @@ const REUSE_WINDOW_MS = 30 * 60 * 1000;
 export class InterviewService {
   constructor(
     private readonly store: InterviewStore,
-    private readonly openRouter: OpenRouterService,
-    private readonly transcription: OpenRouterTranscriptionService,
     private readonly applicationsService: ApplicationsService,
+    private readonly companyContext: CompanyContextService,
     private readonly reportService: InterviewReportService,
     private readonly creditsService: CreditsService,
   ) {}
@@ -84,6 +82,10 @@ export class InterviewService {
         userEmail,
         linkedApplicationId,
       );
+      // Derived once per application, here rather than at creation: it costs
+      // a call, and most applications never lead to an interview. A failure
+      // returns the application untouched, so the session still opens.
+      application = await this.companyContext.ensureFor(application);
     }
 
     // A second click on "Démarrer" must not cost a second time. An untouched

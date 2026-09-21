@@ -52,6 +52,9 @@ function toApplication(
     extracted: row.extracted,
     id: row.id,
     interviewReports: row.interviewReports,
+    companyContext: row.companyContext ?? null,
+    companyContextGeneratedAt:
+      row.companyContextGeneratedAt?.toISOString() ?? null,
     letterContent: row.letterContent ?? null,
     letterGeneratedAt: row.letterGeneratedAt?.toISOString() ?? null,
     letterTemplateId: row.letterTemplateId,
@@ -80,6 +83,10 @@ function toRow(application: StoredApplication) {
     extracted: application.extracted,
     id: application.id,
     interviewReports: application.interviewReports ?? [],
+    companyContext: application.companyContext ?? null,
+    companyContextGeneratedAt: application.companyContextGeneratedAt
+      ? new Date(application.companyContextGeneratedAt)
+      : null,
     letterContent: application.letterContent ?? null,
     letterGeneratedAt: application.letterGeneratedAt
       ? new Date(application.letterGeneratedAt)
