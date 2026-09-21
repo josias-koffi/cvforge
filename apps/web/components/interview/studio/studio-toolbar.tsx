@@ -4,18 +4,26 @@ import { MicOffIcon, MicIcon, SquareIcon } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { cn } from "@/lib/utils"
 import { profileLabels } from "@/lib/interview/labels"
+import type { CountdownState } from "@/lib/interview/countdown"
 import type { InterviewRecruiterProfile } from "@cvforge/types"
 
-/** mm:ss — an interview is minutes long, never hours. */
-function formatElapsed(seconds: number) {
-  const minutes = Math.floor(seconds / 60)
+/** Spelled out, never signalled by colour alone — WCAG 1.4.1. */
+const TONE_LABELS: Record<CountdownState["tone"], string> = {
+  overtime: "temps écoulé",
+  running: "restant",
+  wrapup: "dernière minute",
+}
 
-  return `${String(minutes).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`
+const TONE_CLASSES: Record<CountdownState["tone"], string> = {
+  overtime: "text-warning",
+  running: "text-muted-foreground",
+  wrapup: "text-warning",
 }
 
 export function StudioToolbar({
-  elapsedSeconds,
+  countdown,
   muted,
   profile,
   canFinish,
@@ -23,7 +31,7 @@ export function StudioToolbar({
   onToggleMute,
   onFinish,
 }: {
-  elapsedSeconds: number
+  countdown: CountdownState
   muted: boolean
   profile: InterviewRecruiterProfile
   canFinish: boolean
@@ -36,10 +44,16 @@ export function StudioToolbar({
       <div className="flex items-center gap-3">
         <Badge variant="outline">{profileLabels[profile]}</Badge>
         <span
-          aria-label={`Durée de la session : ${formatElapsed(elapsedSeconds)}`}
-          className="font-mono text-sm tabular-nums text-muted-foreground"
+          // Polite, so the last minute is announced without interrupting the
+          // candidate mid-answer.
+          aria-live="polite"
+          className={cn(
+            "font-mono text-sm tabular-nums",
+            TONE_CLASSES[countdown.tone]
+          )}
         >
-          {formatElapsed(elapsedSeconds)}
+          {countdown.label}{" "}
+          <span className="font-sans">{TONE_LABELS[countdown.tone]}</span>
         </span>
       </div>
 
