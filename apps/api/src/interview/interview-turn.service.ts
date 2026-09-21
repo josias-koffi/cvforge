@@ -10,6 +10,7 @@ import { Injectable, Logger, NotFoundException } from "@nestjs/common";
 import type { OpenRouterTranscriptionService } from "../ai/openrouter-transcription.service";
 import type { OpenRouterVoiceService } from "../ai/openrouter-voice.service";
 import { buildAiPrompt, buildOpeningInstruction } from "./interview.prompts";
+import { createTurnLog } from "./interview.turn-log";
 import {
   MAX_MESSAGES,
   appendMessage,
@@ -54,6 +55,8 @@ export class InterviewTurnService {
       return;
     }
 
+    const turnLog = createTurnLog(this.logger, "interview.turn", sessionId);
+    const transcribedAt = Date.now();
     const transcribing = this.transcribeAside(request);
     let candidateText: string | null = null;
     let emittedCandidate = false;
@@ -66,9 +69,11 @@ export class InterviewTurnService {
           content: message.content,
           role: message.role,
         })),
+        onTelemetry: turnLog.onTelemetry,
         systemPrompt: buildAiPrompt(session.language, session.profile),
       })) {
         if (event.type === "audio") {
+          turnLog.markFirstAudio();
           yield { type: "audio", data: event.data };
         } else {
           reply += event.text;
@@ -85,6 +90,7 @@ export class InterviewTurnService {
       }
     } catch (error) {
       const message = describe(error, "Le recruteur n'a pas pu repondre.");
+      turnLog.write(null);
       await this.recordFailure(session, request, message);
       yield { type: "error", message };
       return;
@@ -92,6 +98,10 @@ export class InterviewTurnService {
 
     const transcript = (await transcribing.promise) ?? "";
     if (!emittedCandidate) yield { type: "candidate", text: transcript };
+
+    // Written before the save so the line lands even if persistence fails,
+    // and late enough to show whether transcription held the turn open.
+    turnLog.write(Date.now() - transcribedAt);
 
     await this.recordTurn(session, request, transcript, reply.trim());
 
@@ -118,15 +128,18 @@ export class InterviewTurnService {
       return;
     }
 
+    const turnLog = createTurnLog(this.logger, "interview.opening", sessionId);
     let reply = "";
 
     try {
       for await (const event of this.voice.streamTurn({
         history: [],
         instruction: buildOpeningInstruction(session.language),
+        onTelemetry: turnLog.onTelemetry,
         systemPrompt: buildAiPrompt(session.language, session.profile),
       })) {
         if (event.type === "audio") {
+          turnLog.markFirstAudio();
           yield { type: "audio", data: event.data };
         } else {
           reply += event.text;
@@ -135,9 +148,12 @@ export class InterviewTurnService {
       }
     } catch (error) {
       const message = describe(error, "Le recruteur n'a pas pu repondre.");
+      turnLog.write(null);
       yield { type: "error", message };
       return;
     }
+
+    turnLog.write(null);
 
     await this.recordOpening(session, reply.trim());
 

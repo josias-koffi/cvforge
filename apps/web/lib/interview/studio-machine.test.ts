@@ -33,8 +33,8 @@ describe("studioReducer", () => {
     const state = run(
       [
         { type: "AI_OPENING" },
-        { type: "AI_AUDIO", elapsedMs: 700 },
-        { type: "AI_DELTA", text: "Parlez-moi de vous.", elapsedMs: 700 },
+        { type: "AI_AUDIO", atMs: 1700 },
+        { type: "AI_DELTA", text: "Parlez-moi de vous.", atMs: 1700 },
         { type: "AI_DONE" },
         { type: "VOICE_DONE" },
       ],
@@ -58,11 +58,11 @@ describe("studioReducer", () => {
     const state = run(
       [
         { type: "SPEECH_START" },
-        { type: "SPEECH_END" },
-        { type: "AI_AUDIO", elapsedMs: 800 },
+        { type: "SPEECH_END", atMs: 1000 },
+        { type: "AI_AUDIO", atMs: 1800 },
         { type: "TRANSCRIBED", text: "J'ai mené la refonte." },
-        { type: "AI_DELTA", text: "Très bien. ", elapsedMs: 800 },
-        { type: "AI_DELTA", text: "Quel rôle ?", elapsedMs: 1200 },
+        { type: "AI_DELTA", text: "Très bien. ", atMs: 1800 },
+        { type: "AI_DELTA", text: "Quel rôle ?", atMs: 2200 },
         { type: "AI_DONE" },
         { type: "VOICE_DONE" },
       ],
@@ -87,7 +87,7 @@ describe("studioReducer", () => {
     // and the candidate could not get a word in.
     const spoken = run(
       [
-        { type: "AI_DELTA", text: "Et ensuite ?", elapsedMs: 700 },
+        { type: "AI_DELTA", text: "Et ensuite ?", atMs: 1700 },
         { type: "AI_DONE" },
       ],
       ready
@@ -111,13 +111,40 @@ describe("studioReducer", () => {
   it("times the first token, not the last", () => {
     const state = run(
       [
-        { type: "AI_DELTA", text: "a", elapsedMs: 900 },
-        { type: "AI_DELTA", text: "b", elapsedMs: 1500 },
+        { type: "SPEECH_START" },
+        { type: "SPEECH_END", atMs: 1000 },
+        { type: "AI_DELTA", text: "a", atMs: 1900 },
+        { type: "AI_DELTA", text: "b", atMs: 2500 },
       ],
       ready
     )
 
     expect(state.firstTokenMs).toBe(900)
+  })
+
+  it("times the wait from the last word, not from the request", () => {
+    // Encoding the answer and uploading a megabyte of audio happen inside the
+    // silence the candidate sits through. Starting the clock at the fetch hid
+    // them, so the strip flattered us.
+    const state = run(
+      [
+        { type: "SPEECH_START" },
+        { type: "SPEECH_END", atMs: 10_000 },
+        { type: "AI_AUDIO", atMs: 11_900 },
+      ],
+      ready
+    )
+
+    expect(state.firstTokenMs).toBe(1900)
+  })
+
+  it("reports no latency for the opening: nothing preceded it", () => {
+    const state = run(
+      [{ type: "AI_OPENING" }, { type: "AI_AUDIO", atMs: 4000 }],
+      ready
+    )
+
+    expect(state.firstTokenMs).toBeNull()
   })
 
   it("records what the candidate said without touching the phase", () => {
@@ -126,8 +153,8 @@ describe("studioReducer", () => {
     const speaking = run(
       [
         { type: "SPEECH_START" },
-        { type: "SPEECH_END" },
-        { type: "AI_AUDIO", elapsedMs: 900 },
+        { type: "SPEECH_END", atMs: 1000 },
+        { type: "AI_AUDIO", atMs: 1900 },
         { type: "TRANSCRIBED", text: "J'ai mené la refonte." },
       ],
       ready
@@ -149,9 +176,9 @@ describe("studioReducer", () => {
     const state = run(
       [
         { type: "SPEECH_START" },
-        { type: "SPEECH_END" },
-        { type: "AI_AUDIO", elapsedMs: 1100 },
-        { type: "AI_AUDIO", elapsedMs: 1400 },
+        { type: "SPEECH_END", atMs: 1000 },
+        { type: "AI_AUDIO", atMs: 2100 },
+        { type: "AI_AUDIO", atMs: 2400 },
       ],
       ready
     )
@@ -166,7 +193,7 @@ describe("studioReducer", () => {
     const stale = { ...ready, streamingReply: "vieux texte", firstTokenMs: 900 }
 
     const state = run(
-      [{ type: "SPEECH_START" }, { type: "SPEECH_END" }],
+      [{ type: "SPEECH_START" }, { type: "SPEECH_END", atMs: 1000 }],
       stale
     )
 
@@ -201,7 +228,7 @@ describe("studioReducer", () => {
   })
 
   it("ignores an end of speech that never started", () => {
-    expect(studioReducer(ready, { type: "SPEECH_END" }).phase).toBe("listening")
+    expect(studioReducer(ready, { type: "SPEECH_END", atMs: 1000 }).phase).toBe("listening")
   })
 
   it("keeps the session alive when a turn fails", () => {
@@ -248,7 +275,7 @@ describe("studioReducer", () => {
 
     expect(done.phase).toBe("completed")
     expect(studioReducer(done, { type: "SPEECH_START" })).toBe(done)
-    expect(studioReducer(done, { type: "AI_DELTA", text: "x", elapsedMs: 1 })).toBe(
+    expect(studioReducer(done, { type: "AI_DELTA", text: "x", atMs: 1001 })).toBe(
       done
     )
   })
