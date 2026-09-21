@@ -40,6 +40,12 @@ export type StudioState = {
    * silence they sit through.
    */
   answerEndedAtMs: number | null
+  /**
+   * When the interview actually began, as the server stamped it on the first
+   * spoken turn. Null until then: a session can be created minutes before
+   * anyone reaches the studio, and the countdown must not run on that gap.
+   */
+  startedAt: string | null
 }
 
 export type StudioEvent =
@@ -58,6 +64,8 @@ export type StudioEvent =
   | { type: "AI_AUDIO"; atMs: number }
   | { type: "AI_DELTA"; text: string; atMs: number }
   | { type: "AI_DONE" }
+  /** The server stamped the interview's start; the countdown can run. */
+  | { type: "SESSION_STARTED"; startedAt: string }
   /** The spoken reply has finished playing — only now is the mic safe. */
   | { type: "VOICE_DONE" }
   | { type: "AI_FAILED"; message: string }
@@ -74,6 +82,7 @@ export const initialStudioState: StudioState = {
   error: null,
   firstTokenMs: null,
   answerEndedAtMs: null,
+  startedAt: null,
 }
 
 /**
@@ -224,6 +233,13 @@ export function studioReducer(
               }),
       }
     }
+
+    case "SESSION_STARTED":
+      // First stamp wins: later turns report the same instant, and a stale
+      // one arriving out of order must not move the clock.
+      return state.startedAt === null
+        ? { ...state, startedAt: event.startedAt }
+        : state
 
     case "VOICE_DONE":
       // Only reopens the mic if the reply was what we were waiting on.

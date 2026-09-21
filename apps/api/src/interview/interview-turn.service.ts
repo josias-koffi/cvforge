@@ -58,7 +58,7 @@ export class InterviewTurnService {
 
     // Already handled: replaying it would charge for the turn twice.
     if (session.chunks.some((chunk) => chunk.chunkId === request.chunkId)) {
-      yield { type: "done" };
+      yield { type: "done", startedAt: session.startedAt };
       return;
     }
 
@@ -112,7 +112,7 @@ export class InterviewTurnService {
 
     await this.recordTurn(session, request, transcript, reply.trim());
 
-    yield { type: "done" };
+    yield { type: "done", startedAt: session.startedAt };
   }
 
   /**
@@ -159,7 +159,7 @@ export class InterviewTurnService {
     if (!session) throw new NotFoundException("Session d'interview introuvable.");
 
     if (session.messages.length > 0) {
-      yield { type: "done" };
+      yield { type: "done", startedAt: session.startedAt };
       return;
     }
 
@@ -192,7 +192,7 @@ export class InterviewTurnService {
 
     await this.recordOpening(session, reply.trim());
 
-    yield { type: "done" };
+    yield { type: "done", startedAt: session.startedAt };
   }
 
   private async recordOpening(
