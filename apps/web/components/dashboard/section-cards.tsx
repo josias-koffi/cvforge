@@ -85,7 +85,7 @@ export function SectionCards({
       footer: "Solde disponible",
       hint:
         balance === null
-          ? "Analyse, CV et lettre à chaque candidature"
+          ? "Analyse, CV, lettre et entretien simulé"
           : `≈ ${formatApplications(estimateApplications(balance))}`,
       icon: CoinsIcon,
       tone: "bg-spark/20 text-spark-foreground dark:text-spark",

@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest"
 import {
   creditCostLabel,
   formatApplications,
+  interviewCostLabel,
   formatCredits,
   formatDate,
   formatPrice,
@@ -28,6 +29,11 @@ describe("format helpers", () => {
     expect(formatApplications(20)).toBe("20 candidatures")
     expect(creditCostLabel("offer_enrichment")).toBe("Coût : 1 crédit")
     expect(creditCostLabel("cv_generation")).toBe("Coût : 3 crédits")
+  })
+
+  it("prices an interview by the length the candidate picked", () => {
+    expect(interviewCostLabel(10)).toBe("Coût : 10 crédits")
+    expect(interviewCostLabel(30)).toBe("Coût : 30 crédits")
   })
 
   it("gives each application status a distinct semantic badge", () => {
