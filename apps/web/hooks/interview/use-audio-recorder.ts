@@ -3,7 +3,12 @@
 import * as React from "react"
 
 import type { MicStreamRef } from "@/hooks/interview/use-mic-stream"
-import { chunkSampleCount, createCaptureBatcher } from "@/lib/interview/capture"
+import {
+  PRE_ROLL_MS,
+  chunkSampleCount,
+  createCaptureBatcher,
+  createPreRoll,
+} from "@/lib/interview/capture"
 import {
   bytesToBase64,
   encodePcm16,
@@ -69,6 +74,7 @@ export function useAudioRecorder({
   const batcherRef = React.useRef<ReturnType<
     typeof createCaptureBatcher
   > | null>(null)
+  const preRollRef = React.useRef<ReturnType<typeof createPreRoll> | null>(null)
   const partsRef = React.useRef<Uint8Array[]>([])
   const byteLengthRef = React.useRef(0)
   const startedAtRef = React.useRef<string>("")
@@ -110,13 +116,21 @@ export function useAudioRecorder({
     // A listener rather than `onmessage`: assigning a property on something
     // reached through a ref is exactly what the compiler will not allow, and
     // `start()` is needed either way once a listener is used.
+    const preRoll = createPreRoll(chunkSampleCount(sampleRate, PRE_ROLL_MS))
+    preRollRef.current = preRoll
+
     const receive = (event: MessageEvent<ArrayBuffer>) => {
-      if (!recordingRef.current) return
-
+      const frame = new Float32Array(event.data)
       const batcher = batcherRef.current
-      if (!batcher) return
 
-      for (const chunk of batcher.push(new Float32Array(event.data))) {
+      // Nothing is being recorded yet, so this is the room — and the start of
+      // whatever the candidate is about to say.
+      if (!recordingRef.current || !batcher) {
+        preRoll.push(frame)
+        return
+      }
+
+      for (const chunk of batcher.push(frame)) {
         encodeChunk(chunk, sampleRate)
       }
     }
@@ -124,19 +138,31 @@ export function useAudioRecorder({
     recorder.port.addEventListener("message", receive)
     recorder.port.start()
 
-    return () => recorder.port.removeEventListener("message", receive)
+    return () => {
+      preRollRef.current = null
+      recorder.port.removeEventListener("message", receive)
+    }
   }, [encodeChunk, micRef, ready])
 
   const start = React.useCallback(() => {
     const sampleRate = micRef.current?.context.sampleRate
     if (!sampleRate || recordingRef.current) return
 
-    batcherRef.current = createCaptureBatcher(chunkSampleCount(sampleRate))
+    const batcher = createCaptureBatcher(chunkSampleCount(sampleRate))
     partsRef.current = []
     byteLengthRef.current = 0
     startedAtRef.current = new Date().toISOString()
+
+    // The answer opens on what was already in the room: the detector cannot
+    // fire on a word until that word has started, so without this the first
+    // syllable is missing from every single answer.
+    for (const frame of preRollRef.current?.take() ?? []) {
+      for (const chunk of batcher.push(frame)) encodeChunk(chunk, sampleRate)
+    }
+
+    batcherRef.current = batcher
     recordingRef.current = true
-  }, [micRef])
+  }, [encodeChunk, micRef])
 
   const stop = React.useCallback(() => {
     const sampleRate = micRef.current?.context.sampleRate
@@ -182,6 +208,9 @@ export function useAudioRecorder({
     batcherRef.current = null
     partsRef.current = []
     byteLengthRef.current = 0
+    // The room since the burst began is still the room; keeping it would
+    // start the next answer with a cough in front of it.
+    preRollRef.current?.reset()
   }, [])
 
   // Leaving the page must not keep an answer buffered.

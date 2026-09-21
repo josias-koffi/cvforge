@@ -101,3 +101,56 @@ export function createCaptureBatcher(chunkSamples: number): CaptureBatcher {
     },
   }
 }
+
+/**
+ * How much of the room to keep behind the detector at all times.
+ *
+ * No threshold can fire on a word before that word has started, so the
+ * opening syllable was always lost — and the louder it had to be to be heard,
+ * the more of it went. Keeping the recent past means the recording can begin
+ * slightly before the decision to record, which is also what makes a lower
+ * onset threshold safe: being a little eager costs a discarded buffer.
+ */
+export const PRE_ROLL_MS = 400
+
+export type PreRoll = {
+  /** Adds a frame and forgets whatever has aged out. */
+  push(frame: Float32Array): void
+  /** What is held, oldest first. Emptied by the call. */
+  take(): Float32Array[]
+  reset(): void
+}
+
+/** A rolling window of the last `maxSamples`, kept while nothing is recording. */
+export function createPreRoll(maxSamples: number): PreRoll {
+  let frames: Float32Array[] = []
+  let length = 0
+
+  return {
+    push(frame) {
+      if (frame.length === 0) return
+
+      frames.push(frame)
+      length += frame.length
+
+      // Whole frames only: trimming inside one would cost a copy on every
+      // quantum, to save at most a frame's worth of memory.
+      while (frames.length > 1 && length - (frames[0]?.length ?? 0) >= maxSamples) {
+        length -= frames.shift()?.length ?? 0
+      }
+    },
+
+    take() {
+      const held = frames
+      frames = []
+      length = 0
+
+      return held
+    },
+
+    reset() {
+      frames = []
+      length = 0
+    },
+  }
+}

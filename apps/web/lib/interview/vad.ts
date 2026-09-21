@@ -18,8 +18,15 @@ import { computeAmplitudeRms } from "@/lib/interview/analyser"
  * and the studio draws a shader-driven sphere beside it.
  */
 export const VAD_INTERVAL_MS = 25
-/** Amplitude that opens a recording. */
-export const SPEECH_START_RMS = 0.045
+/**
+ * Amplitude that opens a recording.
+ *
+ * Lowered from 0.045: a candidate speaking at a normal indoor level, a little
+ * back from the microphone, sat under it and could not open a turn at all.
+ * Opening too eagerly is cheap — a burst under `MIN_SPEECH_MS` is thrown away
+ * and the pre-roll means nothing of the first word is lost either way.
+ */
+export const SPEECH_START_RMS = 0.03
 /** Amplitude that keeps one open: a trailing syllable is not silence. */
 export const SPEECH_CONTINUE_RMS = 0.02
 /** How far above the measured room tone the onset must sit. */
@@ -27,11 +34,15 @@ export const NOISE_FLOOR_MARGIN = 2.5
 /**
  * Silence that ends an answer once the candidate is clearly under way.
  *
- * Two people swapping turns leave something like 600 to 800 ms between them.
- * This sat at 1500 ms, which is most of a second of dead air on every single
- * exchange and the largest share of the wait by far.
+ * Casual conversation swaps turns on 600 to 800 ms of silence, and this was
+ * set to 900 ms on the strength of that. An interview answer is not casual
+ * conversation: someone building an example pauses for over a second between
+ * clauses, and at 900 ms they were cut off mid-sentence and answered.
+ *
+ * It is the floor of the budget now rather than the whole of it — see
+ * `resolveSilenceBudget`, which lets a candidate who pauses earn more.
  */
-export const SILENCE_MS_TO_STOP = 900
+export const SILENCE_MS_TO_STOP = 1800
 /**
  * Silence tolerated while the answer is still being searched for.
  *
@@ -39,20 +50,31 @@ export const SILENCE_MS_TO_STOP = 900
  * an example is the normal opening of a considered answer, and cutting it off
  * hands the floor back to an interviewer who then moves on.
  *
- * So there is still more patience here than once the answer is running — but
- * less than the 2800 ms it used to be. That number was really compensating for
- * something else: with no way to interrupt, being cut off early meant sitting
- * through a whole question before getting another go, so the only safe setting
- * was to wait far too long. Barge-in makes an early cut recoverable in a word,
- * and the patience can come back down to what the hesitation actually needs.
+ * This was cut to 1800 ms on the theory that barge-in made an early cut
+ * recoverable. It does not: being cut off does not hand the floor back, it
+ * spends the answer. Talking over the reply that follows is not the same
+ * thing as having been allowed to finish.
  */
-export const SILENCE_MS_WHILE_SEARCHING = 1800
+export const SILENCE_MS_WHILE_SEARCHING = 3200
 /** Speech below this is still a false start, not an answer under way. */
-export const SETTLED_SPEECH_MS = 1500
+export const SETTLED_SPEECH_MS = 2000
 /** Below this, a burst was a cough or a chair, not an answer. */
 export const MIN_SPEECH_MS = 400
 /** Nothing else ever stops a recording, so something has to. */
 export const MAX_ANSWER_MS = 90_000
+
+/**
+ * A silence this long, survived, is thinking rather than finishing.
+ *
+ * Someone who pauses once will pause again, so each one that turns out to
+ * have been a pause buys patience for the rest of the answer — the same
+ * bargain the playback margin makes with a stuttering network.
+ */
+export const LONG_PAUSE_MS = 700
+/** What surviving one is worth. */
+export const PAUSE_GRANT_MS = 600
+/** The ceiling: past this, nobody can tell a pause from an ending anyway. */
+export const MAX_SILENCE_BUDGET_MS = 3500
 
 /**
  * How much louder than a normal onset the candidate must be to cut the
@@ -83,8 +105,15 @@ const INITIAL_NOISE_FLOOR = 0.005
 /** How fast the floor follows the room. Slow on purpose: it must not chase speech. */
 const NOISE_FLOOR_RISE = 0.02
 const NOISE_FLOOR_FALL = 0.2
-/** The floor is a room, not a voice; past this it is measuring the candidate. */
-const MAX_NOISE_FLOOR = 0.05
+/**
+ * The floor is a room, not a voice.
+ *
+ * At 0.05 the adaptive threshold could reach 0.125, which is a shout — the bar
+ * ran away from whoever it was supposed to be listening for. Capped here, it
+ * never rises above `SPEECH_CONTINUE_RMS`, so it can only ever measure
+ * something already agreed not to be speech.
+ */
+const MAX_NOISE_FLOOR = 0.02
 
 export type VadStatus = "listening" | "recording" | "processing" | "muted"
 
@@ -98,6 +127,8 @@ export type VadAccumulator = {
   /** Speech only — silent frames are not counted, so a cough stays short. */
   speechMs: number
   noiseFloor: number
+  /** Extra silence this answer has earned by pausing and carrying on. */
+  grantedMs: number
 }
 
 export type VadDecision = VadAccumulator & {
@@ -128,6 +159,7 @@ export type VadInput = VadAccumulator & {
 
 /** What a caller starts a session with, and returns to between turns. */
 export const initialVadAccumulator: VadAccumulator = {
+  grantedMs: 0,
   noiseFloor: INITIAL_NOISE_FLOOR,
   silenceMs: 0,
   speechMs: 0,
@@ -161,11 +193,22 @@ export function resolveStartThreshold(noiseFloor: number): number {
  *
  * Longer while the candidate has barely started: those first seconds are where
  * the searching happens, and a pause there means thinking, not finishing.
+ *
+ * And longer again for someone who has already shown they pause. A fixed
+ * budget has to be either too short for them or too slow for everyone else;
+ * this one is short by default and grows to fit whoever is talking, one
+ * survived pause at a time.
  */
-export function resolveSilenceBudget(speechMs: number): number {
-  return speechMs >= SETTLED_SPEECH_MS
-    ? SILENCE_MS_TO_STOP
-    : SILENCE_MS_WHILE_SEARCHING
+export function resolveSilenceBudget(
+  speechMs: number,
+  grantedMs = 0,
+): number {
+  const base =
+    speechMs >= SETTLED_SPEECH_MS
+      ? SILENCE_MS_TO_STOP
+      : SILENCE_MS_WHILE_SEARCHING
+
+  return Math.min(base + grantedMs, MAX_SILENCE_BUDGET_MS)
 }
 
 /**
@@ -211,11 +254,22 @@ export function nextVadDecision(input: VadInput): VadDecision {
   }
 
   if (input.status === "listening") {
-    const noiseFloor = nextNoiseFloor(input.noiseFloor, rms, false)
+    // Measured against the room as it was, and only updated by frames quiet
+    // enough to be the room. Adapting on the candidate's own voice first and
+    // then testing against the result let the bar climb towards them without
+    // ever being reached: someone speaking just under it could not open a
+    // turn at all, and the harder they tried the higher it went.
+    const started = rms > resolveStartThreshold(input.noiseFloor)
+    const noiseFloor = nextNoiseFloor(
+      input.noiseFloor,
+      rms,
+      rms > SPEECH_CONTINUE_RMS,
+    )
 
-    return rms > resolveStartThreshold(noiseFloor)
+    return started
       ? {
           action: "start",
+          grantedMs: 0,
           noiseFloor,
           reason: null,
           silenceMs: 0,
@@ -235,6 +289,7 @@ export function nextVadDecision(input: VadInput): VadDecision {
 
   return {
     action: "none",
+    grantedMs: input.grantedMs,
     noiseFloor: input.noiseFloor,
     reason: null,
     silenceMs: input.silenceMs,
@@ -274,10 +329,22 @@ function decideWhileProcessing(
   ) {
     // The floor is the candidate's again, and the run that earned it is the
     // start of the answer, not something to carry into the next decision.
-    return { ...unchanged, action: "barge-in", speechMs: 0, status: "recording" }
+    return {
+      ...unchanged,
+      action: "barge-in",
+      grantedMs: 0,
+      speechMs: 0,
+      status: "recording",
+    }
   }
 
-  return { ...unchanged, action: "none", speechMs, status: "processing" }
+  return {
+    ...unchanged,
+    action: "none",
+    grantedMs: input.grantedMs,
+    speechMs,
+    status: "processing",
+  }
 }
 
 /**
@@ -295,6 +362,13 @@ function decideWhileRecording(
   const silenceMs = isSpeech ? 0 : input.silenceMs + elapsedMs
   const noiseFloor = nextNoiseFloor(input.noiseFloor, rms, isSpeech)
 
+  // Speech picking up again after a long gap proves the gap was a pause. The
+  // answer is credited for it, and keeps the credit to its end.
+  const grantedMs =
+    isSpeech && input.silenceMs >= LONG_PAUSE_MS
+      ? input.grantedMs + PAUSE_GRANT_MS
+      : input.grantedMs
+
   const ended = { ...initialVadAccumulator, noiseFloor, status: "processing" as const }
 
   // Someone talking for this long is not waiting for a question; send it
@@ -303,7 +377,7 @@ function decideWhileRecording(
     return { ...ended, action: "stop", reason: "max-duration" }
   }
 
-  if (silenceMs >= resolveSilenceBudget(speechMs)) {
+  if (silenceMs >= resolveSilenceBudget(speechMs, grantedMs)) {
     // A cough is loud and brief. Sending it would have the interviewer answer
     // a noise, so the recording is dropped and the floor stays with the
     // candidate.
@@ -318,5 +392,13 @@ function decideWhileRecording(
         }
   }
 
-  return { action: "none", noiseFloor, reason: null, silenceMs, speechMs, status: "recording" }
+  return {
+    action: "none",
+    grantedMs,
+    noiseFloor,
+    reason: null,
+    silenceMs,
+    speechMs,
+    status: "recording",
+  }
 }

@@ -2,8 +2,10 @@ import { describe, expect, it } from "vitest"
 
 import {
   CAPTURE_CHUNK_MS,
+  PRE_ROLL_MS,
   chunkSampleCount,
   createCaptureBatcher,
+  createPreRoll,
 } from "@/lib/interview/capture"
 
 /** A ramp, so a sample says where in the stream it came from. */
@@ -85,5 +87,73 @@ describe("createCaptureBatcher", () => {
 
     expect(batcher.drain()).toBeNull()
     expect(flatten(batcher.push(ramp(100, 4)))).toEqual([100, 101, 102, 103])
+  })
+})
+
+describe("createPreRoll", () => {
+  it("holds nothing before the room has been heard", () => {
+    expect(createPreRoll(10).take()).toEqual([])
+  })
+
+  it("keeps what would otherwise be lost before the detector fires", () => {
+    // No threshold can fire on a word before that word has started.
+    const preRoll = createPreRoll(10)
+
+    preRoll.push(ramp(0, 4))
+    preRoll.push(ramp(4, 4))
+
+    expect(flatten(preRoll.take())).toEqual(flatten([ramp(0, 8)]))
+  })
+
+  it("forgets the room once it is older than the window", () => {
+    const preRoll = createPreRoll(6)
+
+    for (let start = 0; start < 40; start += 4) preRoll.push(ramp(start, 4))
+
+    const held = flatten(preRoll.take())
+    expect(held.length).toBeLessThanOrEqual(10)
+    // Whatever it kept is the most recent of it, ending on the last sample.
+    expect(held.at(-1)).toBe(39)
+  })
+
+  it("always keeps something, however long the window has been running", () => {
+    const preRoll = createPreRoll(2)
+
+    for (let start = 0; start < 100; start += 4) preRoll.push(ramp(start, 4))
+
+    expect(flatten(preRoll.take()).length).toBeGreaterThan(0)
+  })
+
+  it("empties on being taken, so an answer opens on the room once", () => {
+    const preRoll = createPreRoll(10)
+
+    preRoll.push(ramp(0, 4))
+    preRoll.take()
+
+    expect(preRoll.take()).toEqual([])
+  })
+
+  it("drops the room a discarded burst happened in", () => {
+    // A cough kept here would sit in front of the next answer.
+    const preRoll = createPreRoll(10)
+
+    preRoll.push(ramp(0, 4))
+    preRoll.reset()
+
+    expect(preRoll.take()).toEqual([])
+  })
+
+  it("ignores an empty frame", () => {
+    const preRoll = createPreRoll(10)
+
+    preRoll.push(new Float32Array(0))
+
+    expect(preRoll.take()).toEqual([])
+  })
+
+  it("is long enough to cover a syllable", () => {
+    expect(chunkSampleCount(48_000, PRE_ROLL_MS)).toBeGreaterThan(
+      chunkSampleCount(48_000, 200)
+    )
   })
 })

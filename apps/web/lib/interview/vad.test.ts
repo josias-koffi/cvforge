@@ -2,7 +2,10 @@ import { describe, expect, it } from "vitest"
 
 import {
   BARGE_IN_SPEECH_MS,
+  LONG_PAUSE_MS,
   MAX_ANSWER_MS,
+  MAX_SILENCE_BUDGET_MS,
+  PAUSE_GRANT_MS,
   MIN_SPEECH_MS,
   SETTLED_SPEECH_MS,
   VAD_INTERVAL_MS,
@@ -274,7 +277,7 @@ describe("barge-in", () => {
 
   it("ignores a sound that is loud for the room but not deliberate", () => {
     // Over the onset threshold, under the margin talking over someone takes.
-    expect(talkOver(frameAt(0.06), 2_000, 0).action).toBe("none")
+    expect(talkOver(frameAt(0.04), 2_000, 0).action).toBe("none")
   })
 
   it("needs the run to be continuous, not merely cumulative", () => {
@@ -297,7 +300,7 @@ describe("shouldBargeIn", () => {
   it("requires all three conditions at once", () => {
     expect(shouldBargeIn(base)).toBe(true)
     expect(shouldBargeIn({ ...base, speechMs: 100 })).toBe(false)
-    expect(shouldBargeIn({ ...base, rms: 0.05 })).toBe(false)
+    expect(shouldBargeIn({ ...base, rms: 0.04 })).toBe(false)
     expect(shouldBargeIn({ ...base, voiceRms: 0.9 })).toBe(false)
   })
 
@@ -309,9 +312,11 @@ describe("shouldBargeIn", () => {
 
 describe("the adaptive noise floor", () => {
   it("raises the bar in a noisy room", () => {
-    const noisy = nextNoiseFloor(0.03, 0.04, false)
+    // Within a band that can never reach a speaking level: the cap is what
+    // stops the bar running away from the voice it is listening for.
+    const noisy = nextNoiseFloor(0.018, 0.02, false)
 
-    expect(noisy).toBeGreaterThan(0.03)
+    expect(noisy).toBeGreaterThan(0.018)
     expect(resolveStartThreshold(noisy)).toBeGreaterThan(SPEECH_START_RMS)
   })
 
@@ -349,10 +354,12 @@ describe("the turn budget", () => {
     expect(SILENCE_MS_WHILE_SEARCHING).toBeGreaterThan(SILENCE_MS_TO_STOP)
   })
 
-  it("hands over within the gap two people actually leave each other", () => {
-    // Around 600-800 ms between turns in conversation. Much past a second and
-    // the recruiter reads as slow on every single exchange.
-    expect(SILENCE_MS_TO_STOP).toBeLessThanOrEqual(1000)
+  it("waits longer than a candidate pauses between clauses", () => {
+    // The 900 ms this once was came from casual conversation, where turns
+    // swap on 600 to 800 ms. An interview answer is not that: someone
+    // building an example pauses for over a second, and at 900 ms they were
+    // cut off mid-sentence and answered.
+    expect(SILENCE_MS_TO_STOP).toBeGreaterThanOrEqual(1500)
   })
 
   it("still waits longer than the burst it refuses to treat as an answer", () => {
@@ -366,5 +373,120 @@ describe("the turn budget", () => {
       SILENCE_MS_WHILE_SEARCHING
     )
     expect(resolveSilenceBudget(SETTLED_SPEECH_MS)).toBe(SILENCE_MS_TO_STOP)
+  })
+})
+
+describe("patience earned by pausing", () => {
+  it("starts an answer with none of it", () => {
+    expect(resolveSilenceBudget(SETTLED_SPEECH_MS)).toBe(SILENCE_MS_TO_STOP)
+  })
+
+  it("adds what the answer has earned", () => {
+    expect(resolveSilenceBudget(SETTLED_SPEECH_MS, PAUSE_GRANT_MS)).toBe(
+      SILENCE_MS_TO_STOP + PAUSE_GRANT_MS
+    )
+  })
+
+  it("never waits longer than anyone could tell a pause from an ending", () => {
+    expect(resolveSilenceBudget(SETTLED_SPEECH_MS, 99_999)).toBe(
+      MAX_SILENCE_BUDGET_MS
+    )
+    expect(resolveSilenceBudget(0, 99_999)).toBe(MAX_SILENCE_BUDGET_MS)
+  })
+
+  it("credits an answer once speech picks up after a long gap", () => {
+    const paused = decide(
+      "recording",
+      SPEECH,
+      { silenceMs: LONG_PAUSE_MS, speechMs: 3_000 },
+      { deltaMs: 25 }
+    )
+
+    expect(paused.grantedMs).toBe(PAUSE_GRANT_MS)
+  })
+
+  it("credits nothing for a gap short enough to be a breath", () => {
+    const breathed = decide(
+      "recording",
+      SPEECH,
+      { silenceMs: LONG_PAUSE_MS - 100, speechMs: 3_000 },
+      { deltaMs: 25 }
+    )
+
+    expect(breathed.grantedMs).toBe(0)
+  })
+
+  it("keeps the credit to the end of the answer", () => {
+    // The whole point: someone who pauses once will pause again, and the
+    // second pause must not be the one that cuts them off.
+    const held = decide(
+      "recording",
+      SILENT,
+      { grantedMs: PAUSE_GRANT_MS, silenceMs: SILENCE_MS_TO_STOP, speechMs: 3_000 },
+      { deltaMs: 25 }
+    )
+
+    expect(held.action).toBe("none")
+    expect(held.grantedMs).toBe(PAUSE_GRANT_MS)
+  })
+
+  it("still ends the answer once even the earned budget is spent", () => {
+    const ended = decide(
+      "recording",
+      SILENT,
+      {
+        grantedMs: PAUSE_GRANT_MS,
+        silenceMs: SILENCE_MS_TO_STOP + PAUSE_GRANT_MS,
+        speechMs: 3_000,
+      },
+      { deltaMs: 25 }
+    )
+
+    expect(ended.action).toBe("stop")
+  })
+
+  it("hands the next answer a clean slate", () => {
+    expect(decide("listening", SPEECH).grantedMs).toBe(0)
+  })
+})
+
+describe("the onset threshold", () => {
+  it("does not climb towards the voice it is listening for", () => {
+    // The bug: the room tone was updated with the candidate's own voice and
+    // the bar computed from the result, so someone speaking just under it
+    // pushed it further out of reach the longer they tried.
+    const quiet = frameAt(SPEECH_START_RMS - 0.005)
+    let decision = decide("listening", quiet)
+
+    for (let index = 0; index < 400; index += 1) {
+      decision = decide("listening", quiet, decision, { deltaMs: 25 })
+    }
+
+    expect(resolveStartThreshold(decision.noiseFloor)).toBe(SPEECH_START_RMS)
+  })
+
+  it("still rises for a room that is genuinely noisy", () => {
+    const noisy = frameAt(0.015)
+    let decision = decide("listening", noisy)
+
+    for (let index = 0; index < 400; index += 1) {
+      decision = decide("listening", noisy, decision, { deltaMs: 25 })
+    }
+
+    expect(decision.action).toBe("none")
+    expect(resolveStartThreshold(decision.noiseFloor)).toBeGreaterThan(
+      SPEECH_START_RMS
+    )
+  })
+
+  it("never rises past a shout, whatever the room", () => {
+    const loud = frameAt(0.5)
+    let decision = decide("listening", loud)
+
+    for (let index = 0; index < 400; index += 1) {
+      decision = decide("listening", loud, decision, { deltaMs: 25 })
+    }
+
+    expect(resolveStartThreshold(decision.noiseFloor)).toBeLessThanOrEqual(0.05)
   })
 })

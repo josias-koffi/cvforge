@@ -115,6 +115,7 @@ export function useVad({
       })
 
       accumulator = {
+        grantedMs: decision.grantedMs,
         noiseFloor: decision.noiseFloor,
         silenceMs: decision.silenceMs,
         speechMs: decision.speechMs,
