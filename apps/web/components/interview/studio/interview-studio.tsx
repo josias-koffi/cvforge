@@ -202,7 +202,10 @@ export function InterviewStudio({
       {/* The stage: one thing to look at, the full width of the page. */}
       <section className="flex min-h-72 flex-col items-center justify-center gap-4 rounded-xl border bg-card p-6">
         <VoiceOrb input={volumes.input} output={volumes.output} state={orb} />
-        <LatencyStrip firstTokenMs={state.firstTokenMs} />
+        <LatencyStrip
+          firstTokenMs={state.firstTokenMs}
+          playback={state.playback}
+        />
 
         {countdown.tone === "overtime" && state.phase !== "completed" ? (
           // Nothing is cut off mid-turn: the studio waits for a gap before

@@ -6,6 +6,7 @@ import * as React from "react"
 import type { RecordedSegment } from "@/hooks/interview/use-audio-recorder"
 import { useVoicePlayer } from "@/hooks/interview/use-voice-player"
 import { openOpeningStream, openTurnStream } from "@/lib/interview/client"
+import { createPlaybackStats } from "@/lib/interview/playback-stats"
 import { createSseParser } from "@/lib/interview/sse"
 import type { StudioEvent } from "@/lib/interview/studio-machine"
 
@@ -39,6 +40,12 @@ export function useInterviewTurn({
 }: UseInterviewTurnOptions) {
   const sequenceRef = React.useRef(0)
   const abortRef = React.useRef<AbortController | null>(null)
+  // A lazy initial state, not a ref: the recorder has to be readable while the
+  // player is being built, and React 19 forbids touching a ref during render.
+  const [stats] = React.useState(createPlaybackStats)
+  // Carried from the recorder to the snapshot below: encoding happens before
+  // the turn starts, so it has nowhere else to live.
+  const encodeMsRef = React.useRef<number | null>(null)
 
   // The microphone reopens only once the voice has actually stopped, plus a
   // short tail: speakers keep ringing, and the interviewer hearing itself was
@@ -50,6 +57,7 @@ export function useInterviewTurn({
   const player = useVoicePlayer({
     onIdle: reopenMic,
     onLevel: (level) => dispatch({ level, type: "VOICE_LEVEL" }),
+    stats,
   })
 
   const consume = React.useCallback(
@@ -58,8 +66,18 @@ export function useInterviewTurn({
       abortRef.current = controller
       let spoke = false
 
+      stats.reset()
+      if (encodeMsRef.current !== null) stats.markEncode(encodeMsRef.current)
+
       try {
+        // `fetch` settles on the response headers, and the controller flushes
+        // them before it starts generating. What this measures is therefore
+        // the answer going up and a round trip — the part of the wait the
+        // server's own per-turn log cannot see.
+        const requestStartedMs = Date.now()
         const stream = await openStream(controller.signal)
+        stats.markUpload(Date.now() - requestStartedMs)
+
         const reader = stream.getReader()
         const parser = createSseParser()
 
@@ -74,13 +92,18 @@ export function useInterviewTurn({
                   dispatch({ text: frame.text, type: "TRANSCRIBED" })
                   break
 
-                case "audio":
+                case "audio": {
                   spoke = true
-                  player.push(frame.data)
-                  // The clock lives in the reducer, which knows when the
-                  // candidate stopped talking; here we only say when.
-                  dispatch({ atMs: Date.now(), type: "AI_AUDIO" })
+                  // The instant the frame becomes audible, not the instant it
+                  // came off the network: the clock lives in the reducer,
+                  // which knows when the candidate stopped talking, and what
+                  // it should measure is the silence they sat through.
+                  const audibleAtMs = player.push(frame.data)
+                  if (audibleAtMs !== null) {
+                    dispatch({ atMs: audibleAtMs, type: "AI_AUDIO" })
+                  }
                   break
+                }
 
                 case "reply":
                   dispatch({
@@ -112,6 +135,9 @@ export function useInterviewTurn({
         }
 
         dispatch({ type: "AI_DONE" })
+        // Every frame has been queued by now, so the snapshot is the whole
+        // turn even though the last of it is still playing.
+        dispatch({ stats: stats.snapshot(), type: "PLAYBACK_STATS" })
         // Fires `reopenMic` once the last frame has finished playing — or at
         // once when the interviewer said nothing at all.
         player.flush()
@@ -128,13 +154,14 @@ export function useInterviewTurn({
         abortRef.current = null
       }
     },
-    [dispatch, player]
+    [dispatch, player, stats]
   )
 
   const submit = React.useCallback(
     async (segment: RecordedSegment) => {
       sequenceRef.current += 1
       const sequence = sequenceRef.current
+      encodeMsRef.current = segment.encodeMs
 
       await consume((signal) =>
         openTurnStream(

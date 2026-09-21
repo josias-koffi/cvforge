@@ -9,6 +9,12 @@ export type RecordedSegment = {
   audioBase64: string
   startedAt: string
   endedAt: string
+  /**
+   * How long the re-encoding below took. Part of the silence the candidate
+   * sits through, and invisible to the server's own per-turn log, which only
+   * starts counting once the request reaches it.
+   */
+  encodeMs: number
 }
 
 type UseAudioRecorderOptions = {
@@ -62,12 +68,18 @@ export function useAudioRecorder({
       if (blobs.length === 0 || !context) return
 
       try {
+        const startedMs = Date.now()
         const buffer = await context.decodeAudioData(
           await new Blob(blobs, { type: blobs[0]?.type }).arrayBuffer()
         )
+        const audioBase64 = encodeSegment(
+          buffer.getChannelData(0),
+          buffer.sampleRate
+        )
 
         callbacks.current.onSegment({
-          audioBase64: encodeSegment(buffer.getChannelData(0), buffer.sampleRate),
+          audioBase64,
+          encodeMs: Date.now() - startedMs,
           endedAt: new Date().toISOString(),
           startedAt: startedAtRef.current,
         })

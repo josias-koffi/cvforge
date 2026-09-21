@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest"
 
+import { emptyPlaybackStats } from "@/lib/interview/playback-stats"
 import {
   initialStudioState,
   studioReducer,
@@ -96,7 +97,9 @@ describe("studioReducer", () => {
     expect(spoken.phase).toBe("speaking")
     expect(spoken.vadStatus).toBe("processing")
     // Speech arriving while the recruiter talks is its own echo: ignored.
-    expect(studioReducer(spoken, { type: "SPEECH_START" }).phase).toBe("speaking")
+    expect(studioReducer(spoken, { type: "SPEECH_START" }).phase).toBe(
+      "speaking"
+    )
 
     const done = studioReducer(spoken, { type: "VOICE_DONE" })
 
@@ -189,6 +192,25 @@ describe("studioReducer", () => {
     expect(state.firstTokenMs).toBe(1100)
   })
 
+  it("records how a turn played without moving the studio", () => {
+    // Pure measurement: it must not pull the mic open mid-sentence.
+    const speaking = run(
+      [
+        { type: "SPEECH_START" },
+        { type: "SPEECH_END", atMs: 1000 },
+        { type: "AI_AUDIO", atMs: 2100 },
+      ],
+      ready
+    )
+    const stats = { ...emptyPlaybackStats, frames: 40, underruns: 2 }
+
+    const state = studioReducer(speaking, { stats, type: "PLAYBACK_STATS" })
+
+    expect(state.playback).toEqual(stats)
+    expect(state.phase).toBe("speaking")
+    expect(state.vadStatus).toBe("processing")
+  })
+
   it("clears the previous reply when a new answer begins", () => {
     const stale = { ...ready, streamingReply: "vieux texte", firstTokenMs: 900 }
 
@@ -228,7 +250,9 @@ describe("studioReducer", () => {
   })
 
   it("ignores an end of speech that never started", () => {
-    expect(studioReducer(ready, { type: "SPEECH_END", atMs: 1000 }).phase).toBe("listening")
+    expect(studioReducer(ready, { type: "SPEECH_END", atMs: 1000 }).phase).toBe(
+      "listening"
+    )
   })
 
   it("keeps the session alive when a turn fails", () => {
@@ -257,7 +281,10 @@ describe("studioReducer", () => {
   })
 
   it("unmutes back to listening", () => {
-    const state = run([{ type: "MUTE_TOGGLED" }, { type: "MUTE_TOGGLED" }], ready)
+    const state = run(
+      [{ type: "MUTE_TOGGLED" }, { type: "MUTE_TOGGLED" }],
+      ready
+    )
 
     expect(state.muted).toBe(false)
     expect(state.vadStatus).toBe("listening")
@@ -283,9 +310,9 @@ describe("studioReducer", () => {
 
     expect(speaking.voiceLevel).toBe(0.7)
     // Same deduplication as the microphone meter: sixty frames a second.
-    expect(
-      studioReducer(speaking, { level: 0.7, type: "VOICE_LEVEL" })
-    ).toBe(speaking)
+    expect(studioReducer(speaking, { level: 0.7, type: "VOICE_LEVEL" })).toBe(
+      speaking
+    )
 
     const done = studioReducer(speaking, { type: "VOICE_DONE" })
 
@@ -297,9 +324,9 @@ describe("studioReducer", () => {
 
     expect(done.phase).toBe("completed")
     expect(studioReducer(done, { type: "SPEECH_START" })).toBe(done)
-    expect(studioReducer(done, { type: "AI_DELTA", text: "x", atMs: 1001 })).toBe(
-      done
-    )
+    expect(
+      studioReducer(done, { type: "AI_DELTA", text: "x", atMs: 1001 })
+    ).toBe(done)
   })
 
   it("takes the interview's start from the server, once", () => {
@@ -331,7 +358,9 @@ describe("studioReducer", () => {
     expect(done.phase).toBe("completed")
     expect(failed.phase).toBe("listening")
     expect(failed.error).toBe("L'analyse n'a pas abouti.")
-    expect(studioReducer(failed, { type: "SPEECH_START" }).phase).toBe("recording")
+    expect(studioReducer(failed, { type: "SPEECH_START" }).phase).toBe(
+      "recording"
+    )
   })
 
   it("drops an empty reply rather than adding a blank bubble", () => {

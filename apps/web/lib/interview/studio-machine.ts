@@ -1,5 +1,6 @@
 import type { InterviewMessage } from "@cvforge/types"
 
+import type { PlaybackStats } from "@/lib/interview/playback-stats"
 import type { VadStatus } from "@/lib/interview/vad"
 
 /**
@@ -48,6 +49,8 @@ export type StudioState = {
    * anyone reaches the studio, and the countdown must not run on that gap.
    */
   startedAt: string | null
+  /** How the last reply actually played. Null until one has. */
+  playback: PlaybackStats | null
 }
 
 export type StudioEvent =
@@ -68,6 +71,8 @@ export type StudioEvent =
   | { type: "AI_AUDIO"; atMs: number }
   | { type: "AI_DELTA"; text: string; atMs: number }
   | { type: "AI_DONE" }
+  /** What the turn cost, measured where the server's log cannot reach. */
+  | { type: "PLAYBACK_STATS"; stats: PlaybackStats }
   /** The server stamped the interview's start; the countdown can run. */
   | { type: "SESSION_STARTED"; startedAt: string }
   /** The spoken reply has finished playing — only now is the mic safe. */
@@ -90,6 +95,7 @@ export const initialStudioState: StudioState = {
   firstTokenMs: null,
   answerEndedAtMs: null,
   startedAt: null,
+  playback: null,
 }
 
 /**
@@ -250,6 +256,11 @@ export function studioReducer(
               }),
       }
     }
+
+    case "PLAYBACK_STATS":
+      // Pure measurement: it says how the last reply sounded and moves
+      // nothing, so the phase is left exactly where the audio events put it.
+      return { ...state, playback: event.stats }
 
     case "SESSION_STARTED":
       // First stamp wins: later turns report the same instant, and a stale

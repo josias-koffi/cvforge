@@ -1,9 +1,13 @@
 import { renderToStaticMarkup } from "react-dom/server"
 import { describe, expect, it } from "vitest"
 
-import { LatencyStrip } from "@/components/interview/studio/latency-strip"
+import {
+  DEBUG_ENABLED,
+  LatencyStrip,
+} from "@/components/interview/studio/latency-strip"
 import { VoiceOrb } from "@/components/interview/studio/voice-orb"
 import { orbStateLabels } from "@/lib/interview/labels"
+import { emptyPlaybackStats } from "@/lib/interview/playback-stats"
 import type { OrbState } from "@/lib/interview/orb"
 
 /** React escapes apostrophes, which French labels are full of. */
@@ -51,5 +55,19 @@ describe("LatencyStrip", () => {
     expect(render(<LatencyStrip firstTokenMs={1500} />)).toContain(
       "1.5 s"
     )
+  })
+
+  it("keeps the per-turn measurements out of the candidate's way", () => {
+    // They are for us, behind NEXT_PUBLIC_INTERVIEW_DEBUG, not for someone
+    // sitting an interview.
+    const markup = render(
+      <LatencyStrip
+        firstTokenMs={900}
+        playback={{ ...emptyPlaybackStats, frames: 12, underruns: 3 }}
+      />
+    )
+
+    expect(DEBUG_ENABLED).toBe(false)
+    expect(markup).not.toContain("Trous")
   })
 })

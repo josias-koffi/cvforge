@@ -2,12 +2,16 @@
 
 import * as React from "react"
 
+import type { PlaybackStatsRecorder } from "@/lib/interview/playback-stats"
 import {
   VOICE_SAMPLE_RATE,
   decodeVoiceFrame,
   frameDurationSeconds,
 } from "@/lib/interview/pcm"
 import { VAD_FFT_SIZE, computeLevel } from "@/lib/interview/vad"
+
+/** A small lead keeps the first frame from being clipped by scheduling. */
+const FRAME_LEAD_SECONDS = 0.05
 
 /**
  * Plays the interviewer's voice as it streams in.
@@ -27,9 +31,12 @@ import { VAD_FFT_SIZE, computeLevel } from "@/lib/interview/vad"
 export function useVoicePlayer({
   onIdle,
   onLevel,
+  stats,
 }: {
   onIdle: () => void
   onLevel: (level: number) => void
+  /** Records what the candidate heard, gaps included. */
+  stats: PlaybackStatsRecorder
 }) {
   const contextRef = React.useRef<AudioContext | null>(null)
   const analyserRef = React.useRef<AnalyserNode | null>(null)
@@ -116,18 +123,24 @@ export function useVoicePlayer({
     }, delay)
   }, [stopMeter])
 
-  /** Queues one streamed frame. */
+  /**
+   * Queues one streamed frame, and reports when it will actually be audible.
+   *
+   * That instant, not the moment the frame came off the network, is the one
+   * the candidate experiences — which is what the latency readout should show.
+   * Null when there was nothing to play.
+   */
   const push = React.useCallback(
-    (base64: string) => {
+    (base64: string): number | null => {
       const context = ensureContext()
-      if (!context) return
+      if (!context) return null
 
       // Browsers start contexts suspended until a gesture; the candidate
       // clicked to start the session, so this resolves immediately.
       void context.resume().catch(() => {})
 
       const samples = decodeVoiceFrame(base64)
-      if (samples.length === 0) return
+      if (samples.length === 0) return null
 
       const buffer = context.createBuffer(1, samples.length, VOICE_SAMPLE_RATE)
       buffer.getChannelData(0).set(samples)
@@ -136,15 +149,25 @@ export function useVoicePlayer({
       source.buffer = buffer
       source.connect(analyserRef.current ?? context.destination)
 
-      // A small lead keeps the first frame from being clipped by scheduling.
-      const startAt = Math.max(playheadRef.current, context.currentTime + 0.05)
+      const earliest = context.currentTime + FRAME_LEAD_SECONDS
+      const startAt = Math.max(playheadRef.current, earliest)
       source.start(startAt)
+
+      // A playhead of zero is the start of a turn, not a frame that arrived
+      // too late; only a playhead the speakers have already overtaken is.
+      stats.record({
+        leadMs: (startAt - context.currentTime) * 1000,
+        misaligned: base64.length % 4 !== 0,
+        underrun: playheadRef.current > 0 && playheadRef.current < earliest,
+      })
 
       playheadRef.current = startAt + frameDurationSeconds(samples)
       startMeter()
       scheduleIdle(playheadRef.current)
+
+      return Date.now() + (startAt - context.currentTime) * 1000
     },
-    [ensureContext, scheduleIdle, startMeter]
+    [ensureContext, scheduleIdle, startMeter, stats]
   )
 
   /** Nothing more is coming: if nothing is playing, the turn is already over. */
