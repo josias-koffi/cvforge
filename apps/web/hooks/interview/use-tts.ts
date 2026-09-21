@@ -8,6 +8,8 @@ import { drainSentences, flushSentences } from "@/lib/interview/sentences"
 type Queue = {
   pending: string[]
   speaking: boolean
+  /** Fired when the queue drains, so the caller knows the voice has stopped. */
+  onIdle: (() => void) | null
 }
 
 function pickVoice(synthesis: SpeechSynthesis, lang: string) {
@@ -26,7 +28,10 @@ function speakQueue(synthesis: SpeechSynthesis, queue: Queue, lang: string) {
   if (queue.speaking) return
 
   const text = queue.pending.shift()
-  if (!text) return
+  if (!text) {
+    queue.onIdle?.()
+    return
+  }
 
   const utterance = new SpeechSynthesisUtterance(text)
   utterance.lang = lang
@@ -56,9 +61,18 @@ function speakQueue(synthesis: SpeechSynthesis, queue: Queue, lang: string) {
  * turn never depends on it: if it is missing or fails, the reply is still
  * there to read in the transcript.
  */
-export function useTts(language: Locale) {
+export function useTts(language: Locale, onIdle?: () => void) {
   const bufferRef = React.useRef("")
-  const queueRef = React.useRef<Queue>({ pending: [], speaking: false })
+  const queueRef = React.useRef<Queue>({
+    onIdle: null,
+    pending: [],
+    speaking: false,
+  })
+
+  // Written in an effect, not during render: React 19 forbids the latter.
+  React.useEffect(() => {
+    queueRef.current.onIdle = onIdle ?? null
+  })
 
   const synthesis =
     typeof window !== "undefined" && "speechSynthesis" in window
@@ -87,7 +101,12 @@ export function useTts(language: Locale) {
     const remaining = flushSentences(bufferRef.current)
     bufferRef.current = ""
 
-    if (remaining.length === 0 || !synthesis) return
+    // Nothing left to say, or no voice at all: the caller is waiting on an
+    // idle signal that would otherwise never come.
+    if (remaining.length === 0 || !synthesis) {
+      if (!queueRef.current.speaking) queueRef.current.onIdle?.()
+      return
+    }
 
     queueRef.current.pending.push(...remaining)
     speakQueue(synthesis, queueRef.current, lang)
@@ -95,7 +114,11 @@ export function useTts(language: Locale) {
 
   const cancel = React.useCallback(() => {
     bufferRef.current = ""
-    queueRef.current = { pending: [], speaking: false }
+    queueRef.current = {
+      onIdle: queueRef.current.onIdle,
+      pending: [],
+      speaking: false,
+    }
     synthesis?.cancel()
   }, [synthesis])
 

@@ -37,6 +37,7 @@ describe("studioReducer", () => {
         { type: "AI_DELTA", text: "Très bien. ", elapsedMs: 800 },
         { type: "AI_DELTA", text: "Quel rôle ?", elapsedMs: 1200 },
         { type: "AI_DONE" },
+        { type: "VOICE_DONE" },
       ],
       ready
     )
@@ -51,6 +52,34 @@ describe("studioReducer", () => {
       "user",
       "assistant",
     ])
+  })
+
+  it("keeps the microphone shut until the voice has actually stopped", () => {
+    // The text stream finishing is not the voice finishing. Reopening on
+    // AI_DONE let the speakers feed the recruiter back into the microphone,
+    // and the candidate could not get a word in.
+    const spoken = run(
+      [
+        { type: "TRANSCRIBED", text: "ma réponse" },
+        { type: "AI_DELTA", text: "Et ensuite ?", elapsedMs: 700 },
+        { type: "AI_DONE" },
+      ],
+      ready
+    )
+
+    expect(spoken.phase).toBe("speaking")
+    expect(spoken.vadStatus).toBe("processing")
+    // Speech arriving while the recruiter talks is its own echo: ignored.
+    expect(studioReducer(spoken, { type: "SPEECH_START" }).phase).toBe("speaking")
+
+    const done = studioReducer(spoken, { type: "VOICE_DONE" })
+
+    expect(done.phase).toBe("listening")
+    expect(done.vadStatus).toBe("listening")
+  })
+
+  it("ignores a voice ending that nobody was waiting for", () => {
+    expect(studioReducer(ready, { type: "VOICE_DONE" })).toBe(ready)
   })
 
   it("times the first token, not the last", () => {
@@ -143,7 +172,11 @@ describe("studioReducer", () => {
 
   it("drops an empty reply rather than adding a blank bubble", () => {
     const state = run(
-      [{ type: "TRANSCRIBED", text: "bonjour" }, { type: "AI_DONE" }],
+      [
+        { type: "TRANSCRIBED", text: "bonjour" },
+        { type: "AI_DONE" },
+        { type: "VOICE_DONE" },
+      ],
       ready
     )
 

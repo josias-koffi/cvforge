@@ -46,6 +46,8 @@ export type StudioEvent =
   | { type: "TRANSCRIBE_FAILED"; message: string }
   | { type: "AI_DELTA"; text: string; elapsedMs: number }
   | { type: "AI_DONE" }
+  /** The spoken reply has finished playing — only now is the mic safe. */
+  | { type: "VOICE_DONE" }
   | { type: "AI_FAILED"; message: string }
   | { type: "MUTE_TOGGLED" }
   | { type: "FINISHED" }
@@ -144,10 +146,14 @@ export function studioReducer(
     case "AI_DONE": {
       const reply = state.streamingReply.trim()
 
+      // The text is complete, the voice is not. Staying in `speaking` keeps
+      // the microphone shut until `VOICE_DONE`: reopening it here let the
+      // speakers feed the recruiter's own voice back in, and the candidate
+      // could not get a word in edgeways.
       return {
         ...state,
-        phase: "listening",
-        vadStatus: "listening",
+        phase: "speaking",
+        vadStatus: "processing",
         streamingReply: "",
         messages:
           reply.length === 0
@@ -159,6 +165,12 @@ export function studioReducer(
               }),
       }
     }
+
+    case "VOICE_DONE":
+      // Only reopens the mic if the reply was what we were waiting on.
+      return state.phase === "speaking"
+        ? { ...state, phase: "listening", vadStatus: "listening" }
+        : state
 
     case "AI_FAILED":
       // The turn is lost, the session is not: the mic reopens.
