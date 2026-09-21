@@ -38,14 +38,33 @@ export function orbState({
 }
 
 /**
- * The amplitude the orb breathes on, 0-1.
+ * What the orb shows when nobody is talking.
  *
- * Whoever holds the floor drives it: the microphone while the candidate
- * answers, the interviewer's own output while it replies. The rest of the
- * time it rests on a slow idle breath rather than sitting perfectly still —
- * a frozen orb reads as a frozen app.
+ * Not zero: the sphere's flow and its rings are driven by these two numbers,
+ * and at zero it freezes into a hard-edged pinwheel that reads as a crashed
+ * page. Upstream's own idle animation sits around here.
  */
-export function orbAmplitude({
+const RESTING_INPUT = 0.2
+const RESTING_OUTPUT = 0.3
+
+/**
+ * How much of the range a live voice is given above the resting level.
+ *
+ * Speech peaks around 0.3 on our meter — passed through raw, the orb would
+ * barely move. This maps it onto the range the shader was tuned for.
+ */
+const LIVE_GAIN = 2.2
+
+/**
+ * The two volumes the orb is driven by, 0-1 each.
+ *
+ * Split rather than merged because the orb draws them differently: `input` is
+ * the room coming in, `output` is the voice going out. Each is zeroed unless
+ * its side actually holds the floor — the microphone meter freezes on its
+ * last reading while the recruiter talks (voice detection is paused then),
+ * and a frozen reading would show as a permanently half-open microphone.
+ */
+export function orbVolumes({
   state,
   level,
   voiceLevel,
@@ -54,10 +73,24 @@ export function orbAmplitude({
   level: number
   voiceLevel: number
 }) {
-  if (state === "speaking") return clamp(voiceLevel)
-  if (state === "recording") return clamp(level)
+  const listening = state === "listening" || state === "recording"
+  const quiet = state === "idle" || state === "muted"
 
-  return 0
+  return {
+    input: listening ? live(RESTING_INPUT, level) : RESTING_INPUT,
+    output:
+      state === "speaking"
+        ? live(RESTING_OUTPUT, voiceLevel)
+        : // Still and pale once the session is over or the mic is off: the
+          // orb should look switched off, not merely quiet.
+          quiet
+          ? 0.1
+          : RESTING_OUTPUT,
+  }
+}
+
+function live(resting: number, level: number) {
+  return clamp(resting + clamp(level) * LIVE_GAIN * (1 - resting))
 }
 
 function clamp(value: number) {
