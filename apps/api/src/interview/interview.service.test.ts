@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import type { OpenRouterTranscriptionService } from "../ai/openrouter-transcription.service";
+import { InterviewReportService } from "./interview-report.service";
 import type { OpenRouterService } from "../ai/openrouter.service";
 import type { ApplicationsService } from "../applications/applications.service";
 import type { InterviewStore } from "./interview.types";
@@ -73,6 +74,7 @@ function makeService(
     chat as unknown as OpenRouterService,
     { transcribe } as unknown as OpenRouterTranscriptionService,
     applications,
+    new InterviewReportService(chat as unknown as OpenRouterService),
   );
 }
 
@@ -403,6 +405,25 @@ describe("InterviewService", () => {
     );
 
     expect(result.session.applicationId).toBe("app-001");
+  });
+
+  it("refuses to open a session against somebody else's application", async () => {
+    // The ownership check used to go unawaited: the rejection escaped as an
+    // unhandled promise and the session was created regardless.
+    const applicationsService = {
+      appendInterviewReport: vi.fn(),
+      getOwnedApplication: vi
+        .fn()
+        .mockRejectedValue(new Error("Candidature introuvable.")),
+    } as unknown as ApplicationsService;
+    const store = createStore();
+    const service = makeService({ transcribe: vi.fn() }, store, applicationsService);
+
+    await expect(
+      service.startSession("user@example.com", "fr", "standard", "app-999"),
+    ).rejects.toThrow("Candidature introuvable.");
+
+    expect(await store.findById("app-999")).toBeNull();
   });
 
   it("initialises session with an empty messages array", async () => {
