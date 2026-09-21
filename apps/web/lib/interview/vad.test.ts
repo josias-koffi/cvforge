@@ -4,6 +4,8 @@ import {
   MAX_ANSWER_MS,
   MIN_SPEECH_MS,
   SETTLED_SPEECH_MS,
+  VAD_FFT_SIZE,
+  VAD_INTERVAL_MS,
   SILENCE_MS_TO_STOP,
   SILENCE_MS_WHILE_SEARCHING,
   SPEECH_START_RMS,
@@ -260,5 +262,29 @@ describe("the adaptive noise floor", () => {
   it("keeps a sustained room tone from ever starting a recording", () => {
     // The end-to-end proof: 300 frames of room noise, no recording.
     expect(feed("listening", ROOM, 300, 16).action).toBe("none")
+  })
+})
+
+describe("sampling window", () => {
+  // `getByteTimeDomainData` hands back only the most recent `fftSize` samples,
+  // so anything spoken in the gap between two reads is never looked at. The
+  // window has to be at least as long as that gap.
+  //
+  // It was 256 samples — 5.3 ms — read on `requestAnimationFrame`. At 60 fps
+  // that listened to a third of the time; once a WebGL canvas pulled the page
+  // to 5 fps it listened to 3% of it, fell between the syllables, and the
+  // microphone went deaf.
+  const LOWEST_LIKELY_SAMPLE_RATE = 44_100
+
+  it("covers the gap between two samples, at any usual sample rate", () => {
+    const windowMs = (VAD_FFT_SIZE / LOWEST_LIKELY_SAMPLE_RATE) * 1000
+
+    expect(windowMs).toBeGreaterThanOrEqual(VAD_INTERVAL_MS)
+  })
+
+  it("samples often enough to catch the shortest burst it accepts", () => {
+    // Nothing under MIN_SPEECH_MS counts as an answer, so sampling has to be
+    // comfortably finer than that or a real answer reads as a cough.
+    expect(VAD_INTERVAL_MS).toBeLessThan(MIN_SPEECH_MS / 4)
   })
 })

@@ -12,8 +12,26 @@
  * turn never ended by itself. Amplitude is what the threshold always meant.
  */
 
-/** Analyser window; 256 samples is plenty to tell speech from silence. */
-export const VAD_FFT_SIZE = 256
+/**
+ * Analyser window. 2048 samples is ~43 ms at 48 kHz.
+ *
+ * `getByteTimeDomainData` returns only the most recent `fftSize` samples, so
+ * the window has to be at least as long as the gap between two reads or the
+ * detector is sampling a fraction of what was said. At 256 samples — 5.3 ms —
+ * it listened to a third of a 60 fps frame, and to 3% of a frame once a WebGL
+ * canvas pulled the page down to 5 fps: speech fell between the samples and
+ * the microphone appeared deaf.
+ */
+export const VAD_FFT_SIZE = 2048
+
+/**
+ * How often the detector samples, in milliseconds.
+ *
+ * A timer, not `requestAnimationFrame`. Speech detection has no business
+ * depending on the frame rate: rAF is throttled by whatever else is painting,
+ * and the studio draws a shader-driven sphere beside it.
+ */
+export const VAD_INTERVAL_MS = 25
 /** Amplitude that opens a recording. */
 export const SPEECH_START_RMS = 0.045
 /** Amplitude that keeps one open: a trailing syllable is not silence. */
@@ -38,7 +56,7 @@ export const MIN_SPEECH_MS = 400
 /** Nothing else ever stops a recording, so something has to. */
 export const MAX_ANSWER_MS = 90_000
 /**
- * A frame gap longer than this is a stall — a backgrounded tab, a long paint.
+ * A gap longer than this is a stall — a backgrounded tab, a long paint.
  * Counting it in full would end the answer on a hiccup.
  */
 export const MAX_FRAME_DELTA_MS = 100

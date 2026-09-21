@@ -154,6 +154,14 @@ under 400 ms is dropped as a cough rather than sent.
 `autoGainControl` is off on purpose — it lifts room tone into the speech band
 during exactly the pauses the detector needs to hear.
 
+Sampled on a **25 ms timer, never `requestAnimationFrame`**, through a 43 ms
+analyser window. `getByteTimeDomainData` returns only the most recent
+`fftSize` samples, so the window must be at least as long as the gap between
+two reads. It was 5.3 ms read on rAF: at 60 fps the detector listened to a
+third of the time, and once the WebGL orb pulled the page to 5 fps it listened
+to 3% of it and went deaf. What the microphone hears cannot depend on what the
+GPU is doing.
+
 ## Audio and retention
 
 **Recorded audio is never persisted.** Segments are re-encoded to 16 kHz mono
