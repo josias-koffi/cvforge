@@ -8,7 +8,12 @@ type MicStream = {
   stream: MediaStream
   context: AudioContext
   analyser: AnalyserNode
+  /** Posts raw samples back while the candidate is still speaking. */
+  recorder: AudioWorkletNode
 }
+
+/** Served from `public`, so the path is the URL. */
+const RECORDER_WORKLET_URL = "/interview/pcm-recorder.worklet.js"
 
 type UseMicStreamOptions = {
   onReady: () => void
@@ -73,15 +78,34 @@ export function useMicStream({ onReady, onError }: UseMicStreamOptions) {
         }
 
         const context = new AudioContextCtor()
+        await context.audioWorklet.addModule(RECORDER_WORKLET_URL)
+
+        // Unmounting can also happen while the worklet loads.
+        if (cancelled) {
+          for (const track of stream.getTracks()) track.stop()
+          void context.close().catch(() => {})
+          return
+        }
+
         const analyser = context.createAnalyser()
         analyser.fftSize = ANALYSER_FFT_SIZE
         // The default 0.8 averages each frame with the last, adding roughly
         // 200 ms of decay after the candidate stops — silence the detector
         // would then have to wait out twice.
         analyser.smoothingTimeConstant = 0
-        context.createMediaStreamSource(stream).connect(analyser)
 
-        micRef.current = { analyser, context, stream }
+        const recorder = new AudioWorkletNode(context, "pcm-recorder")
+        // Both taps hang off the one source: the detector reads the analyser
+        // while the worklet posts the same audio back for uploading.
+        const source = context.createMediaStreamSource(stream)
+        source.connect(analyser)
+        source.connect(recorder)
+        // Connected only so the graph pulls the node — an unconnected worklet
+        // is not guaranteed to be rendered. It writes nothing to its output,
+        // so what reaches the speakers is silence, not the candidate.
+        recorder.connect(context.destination)
+
+        micRef.current = { analyser, context, recorder, stream }
         callbacks.current.onReady()
       } catch {
         if (!cancelled) {

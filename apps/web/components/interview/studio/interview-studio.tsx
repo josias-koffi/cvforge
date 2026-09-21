@@ -89,6 +89,7 @@ export function InterviewStudio({
 
   const recorder = useAudioRecorder({
     micRef,
+    ready: state.phase !== "booting" && state.phase !== "error",
     onError: (message) => dispatch({ message, type: "TRANSCRIBE_FAILED" }),
     onSegment: (segment) => void submit(segment),
   })

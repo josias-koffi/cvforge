@@ -2,10 +2,13 @@ import { describe, expect, it } from "vitest"
 
 import {
   TARGET_SAMPLE_RATE,
+  encodePcm16,
   encodeSegment,
   encodeWav,
   resampleMonoPcm,
+  resolveTargetRate,
   toBase64,
+  wrapPcm16InWav,
   writeWavHeader,
 } from "@/lib/interview/wav"
 
@@ -109,5 +112,63 @@ describe("encodeSegment", () => {
     expect(decoded.slice(8, 12)).toBe("WAVE")
     // One second at 48 kHz becomes one second at 16 kHz.
     expect(decoded.length).toBe(44 + TARGET_SAMPLE_RATE * 2)
+  })
+})
+
+describe("encodePcm16", () => {
+  it("writes little-endian samples with no container around them", () => {
+    const bytes = encodePcm16(Float32Array.from([0, 0.5, -0.5]))
+    const view = new DataView(bytes.buffer)
+
+    expect(bytes).toHaveLength(6)
+    expect(view.getInt16(0, true)).toBe(0)
+    // Truncated, not rounded: `setInt16` drops the fraction.
+    expect(view.getInt16(2, true)).toBe(Math.trunc(0.5 * 0x7fff))
+    expect(view.getInt16(4, true)).toBe(-0x4000)
+  })
+
+  it("clamps rather than wrapping, which would be a loud click", () => {
+    const view = new DataView(encodePcm16(Float32Array.from([2, -2])).buffer)
+
+    expect(view.getInt16(0, true)).toBe(0x7fff)
+    expect(view.getInt16(2, true)).toBe(-0x8000)
+  })
+})
+
+describe("wrapPcm16InWav", () => {
+  it("puts a header on samples encoded piece by piece", () => {
+    // What the studio does now: each chunk is encoded while the candidate
+    // talks, and only the header waits for the end.
+    const pcm = Float32Array.from([0.25, -0.25, 0.75])
+
+    expect(
+      Array.from(new Uint8Array(wrapPcm16InWav(encodePcm16(pcm), 16000)))
+    ).toEqual(Array.from(new Uint8Array(encodeWav(pcm, 16000))))
+  })
+
+  it("counts the samples, not the bytes, in the header", () => {
+    const view = new DataView(wrapPcm16InWav(new Uint8Array(200), 16000))
+
+    expect(view.getUint32(40, true)).toBe(200)
+  })
+})
+
+describe("resolveTargetRate", () => {
+  it("is the target for any device above it", () => {
+    expect(resolveTargetRate(48000)).toBe(TARGET_SAMPLE_RATE)
+    expect(resolveTargetRate(44100)).toBe(TARGET_SAMPLE_RATE)
+  })
+
+  it("leaves a device already below it alone", () => {
+    // The header has to say what came out, not what was asked for.
+    expect(resolveTargetRate(8000)).toBe(8000)
+  })
+
+  it("agrees with what the resampler actually returns", () => {
+    for (const rate of [8000, 16000, 44100, 48000]) {
+      expect(resampleMonoPcm(new Float32Array(64), rate).sampleRate).toBe(
+        resolveTargetRate(rate)
+      )
+    }
   })
 })
