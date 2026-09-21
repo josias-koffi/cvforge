@@ -124,9 +124,13 @@ The report and the company-context derivation use the shared chat chain
 
 Amplitude over `getByteTimeDomainData`, with hysteresis and an adaptive noise
 floor: the onset threshold sits above the measured room tone rather than at a
-fixed value. An answer ends after 900 ms of silence, measured in milliseconds
-rather than animation frames, and is capped at 90 seconds. A burst under
-400 ms is dropped as a cough rather than sent.
+fixed value.
+
+The silence that ends an answer is **1.5 s once the candidate is under way,
+2.8 s before that** — an interview question is not chat, and "alors… euh…"
+while someone gathers an example is how a considered answer starts. Measured in
+milliseconds rather than animation frames, and capped at 90 seconds. A burst
+under 400 ms is dropped as a cough rather than sent.
 
 `autoGainControl` is off on purpose — it lifts room tone into the speech band
 during exactly the pauses the detector needs to hear.
