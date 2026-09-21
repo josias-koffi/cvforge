@@ -13,6 +13,16 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
 
+/**
+ * Looked up by full path first, then by segment. `new` means a different thing
+ * under `/candidatures` than under `/entretiens`, and a bare segment map
+ * cannot say so.
+ */
+const pathLabels: Record<string, string> = {
+  "/candidatures/new": "Nouvelle candidature",
+  "/entretiens/new": "Nouvel entretien",
+}
+
 const segmentLabels: Record<string, string> = {
   admin: "Administration",
   candidatures: "Candidatures",
@@ -20,19 +30,26 @@ const segmentLabels: Record<string, string> = {
   cv: "CV",
   dashboard: "Tableau de bord",
   edit: "Modifier",
+  entretiens: "Entretiens",
   letter: "Lettre de motivation",
-  new: "Nouvelle candidature",
+  new: "Nouveau",
   notifications: "Notifications",
   profile: "Mes profils",
+  progression: "Progression",
+  rapport: "Rapport",
   users: "Utilisateurs",
 }
 
 export function HeaderBreadcrumb() {
   const segments = usePathname().split("/").filter(Boolean)
-  const crumbs = segments.map((segment, index) => ({
-    href: `/${segments.slice(0, index + 1).join("/")}`,
-    label: segmentLabels[segment] ?? "Détail",
-  }))
+  const crumbs = segments.map((segment, index) => {
+    const href = `/${segments.slice(0, index + 1).join("/")}`
+
+    return {
+      href,
+      label: pathLabels[href] ?? segmentLabels[segment] ?? "Détail",
+    }
+  })
 
   return (
     <Breadcrumb>
