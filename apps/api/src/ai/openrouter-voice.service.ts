@@ -1,7 +1,7 @@
 import { buildChain, runModelChain } from "./openrouter.chain";
 import type { OpenRouterVoiceConfig } from "./openrouter-voice.config";
 import { buildOpenRouterError } from "./openrouter.error";
-import { DEFAULT_RETRY_POLICY, type RetryHooks } from "./openrouter.retry";
+import { VOICE_RETRY_POLICY, type RetryHooks } from "./openrouter.retry";
 
 export interface VoiceTurnRequest {
   /** What the interviewer is and how it should behave. */
@@ -119,7 +119,7 @@ export class OpenRouterVoiceService {
 
         return attempt;
       },
-      { ...DEFAULT_RETRY_POLICY, maxAttempts: this.config.maxAttempts },
+      { ...VOICE_RETRY_POLICY, maxAttempts: this.config.maxAttempts },
       this.retryHooks,
     );
   }

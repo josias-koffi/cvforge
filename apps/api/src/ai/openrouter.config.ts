@@ -1,4 +1,4 @@
-import { nonEmpty, parseMaxAttempts, parseModelList } from './openrouter.env';
+import { nonEmpty, parsePositiveInt, parseModelList } from './openrouter.env';
 
 export interface OpenRouterConfig {
   apiKey: string;
@@ -50,7 +50,7 @@ export function resolveOpenRouterConfig(): OpenRouterConfig {
       process.env.OPENROUTER_FALLBACK_MODELS,
       DEFAULT_FALLBACK_MODELS,
     ),
-    maxAttempts: parseMaxAttempts(
+    maxAttempts: parsePositiveInt(
       process.env.OPENROUTER_MAX_ATTEMPTS,
       DEFAULT_MAX_ATTEMPTS,
     ),

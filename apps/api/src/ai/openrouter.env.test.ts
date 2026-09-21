@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { nonEmpty, parseMaxAttempts, parseModelList } from "./openrouter.env";
+import { nonEmpty, parsePositiveInt, parseModelList } from "./openrouter.env";
 
 describe("nonEmpty", () => {
   it("treats undefined, blank and whitespace alike as unset", () => {
@@ -35,14 +35,14 @@ describe("parseModelList", () => {
   });
 });
 
-describe("parseMaxAttempts", () => {
+describe("parsePositiveInt", () => {
   it("falls back on anything that is not a positive integer", () => {
     for (const raw of [undefined, "", "zero", "0", "-1", "2.5"]) {
-      expect(parseMaxAttempts(raw, 3)).toBe(3);
+      expect(parsePositiveInt(raw, 3)).toBe(3);
     }
   });
 
   it("keeps a positive integer", () => {
-    expect(parseMaxAttempts("5", 3)).toBe(5);
+    expect(parsePositiveInt("5", 3)).toBe(5);
   });
 });

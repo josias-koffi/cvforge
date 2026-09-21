@@ -29,7 +29,8 @@ export function parseModelList(
     .filter((model) => model.length > 0);
 }
 
-export function parseMaxAttempts(
+/** A whole number of one or more — attempts, tokens, anything countable. */
+export function parsePositiveInt(
   raw: string | undefined,
   fallback: number,
 ): number {
@@ -37,3 +38,4 @@ export function parseMaxAttempts(
   if (!Number.isInteger(parsed) || parsed < 1) return fallback;
   return parsed;
 }
+
