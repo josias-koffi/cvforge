@@ -310,6 +310,23 @@ export interface InterviewSessionSummary {
 }
 
 /**
+ * What the browser receives while one spoken turn plays out.
+ *
+ * The candidate's own transcription and the interviewer's reply are produced
+ * by two calls running side by side, so `candidate` can arrive at any point
+ * among the audio frames rather than strictly before them.
+ */
+export type InterviewTurnEvent =
+  /** What the candidate said, once transcription lands. */
+  | { type: "candidate"; text: string }
+  /** Base64 PCM16 at 24 kHz, to be played in arrival order. */
+  | { type: "audio"; data: string }
+  /** What the interviewer is saying, as it is spoken. */
+  | { type: "reply"; text: string }
+  | { type: "done" }
+  | { type: "error"; message: string };
+
+/**
  * One row of the session history. Deliberately carries neither `chunks` nor
  * `messages` nor `transcript`: a list of twenty sessions would otherwise drag
  * the whole `interview_chunks` table across the wire.

@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { InterviewSessionSummary } from "@cvforge/types";
 import { AuthService } from "../auth/auth.service";
 import type { InterviewProgressService } from "./interview-progress.service";
+import type { InterviewTurnService } from "./interview-turn.service";
 import { InterviewController } from "./interview.controller";
 import { InterviewService } from "./interview.service";
 
@@ -57,7 +58,16 @@ function makeController(sessionOverride: unknown = { email: "user@test.example" 
     readSessionFromCookieHeader: vi.fn().mockReturnValue(sessionOverride),
   } as unknown as AuthService;
 
-  return new InterviewController(interviewService, progressService, authService);
+  const turnService = {
+    streamTurn: vi.fn(),
+  } as unknown as InterviewTurnService;
+
+  return new InterviewController(
+    interviewService,
+    progressService,
+    turnService,
+    authService,
+  );
 }
 
 describe("InterviewController", () => {
@@ -141,6 +151,7 @@ describe("InterviewController", () => {
     const controller = new InterviewController(
       interviewService,
       {} as unknown as InterviewProgressService,
+      {} as unknown as InterviewTurnService,
       authService,
     );
 

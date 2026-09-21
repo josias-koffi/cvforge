@@ -17,11 +17,30 @@ import type {
 import { Observable } from "rxjs";
 import { AuthService } from "../auth/auth.service";
 import { InterviewProgressService } from "./interview-progress.service";
+import { InterviewTurnService } from "./interview-turn.service";
 import { InterviewService } from "./interview.service";
 
 type RequestLike = {
   headers: { cookie?: string };
 };
+
+/** Adapts an async generator to the Observable `@Sse` expects. */
+function toMessageEvents<T>(
+  generator: AsyncGenerator<T, void, undefined>,
+): Observable<MessageEvent> {
+  return new Observable<MessageEvent>((subscriber) => {
+    (async () => {
+      try {
+        for await (const event of generator) {
+          subscriber.next({ data: JSON.stringify(event) } as MessageEvent);
+        }
+        subscriber.complete();
+      } catch (error) {
+        subscriber.error(error);
+      }
+    })();
+  });
+}
 
 @Controller("interviews")
 export class InterviewController {
@@ -30,6 +49,8 @@ export class InterviewController {
     private readonly interviewService: InterviewService,
     @Inject(InterviewProgressService)
     private readonly progressService: InterviewProgressService,
+    @Inject(InterviewTurnService)
+    private readonly turnService: InterviewTurnService,
     @Inject(AuthService) private readonly authService: AuthService,
   ) {}
 
@@ -80,6 +101,26 @@ export class InterviewController {
     return this.interviewService.transcribeChunk(session.email, sessionId, body);
   }
 
+  /**
+   * One spoken turn: the candidate's answer in, the interviewer's voice out.
+   *
+   * SSE rather than a plain POST because the reply is played as it arrives —
+   * waiting for the whole answer would put its generation time into the
+   * silence the candidate hears.
+   */
+  @Sse("sessions/:sessionId/turn")
+  streamTurn(
+    @Param("sessionId") sessionId: string,
+    @Body() body: InterviewTranscriptionChunkRequest,
+    @Req() request: RequestLike,
+  ): Observable<MessageEvent> {
+    const session = this.readSession(request);
+
+    return toMessageEvents(
+      this.turnService.streamTurn(session.email, sessionId, body),
+    );
+  }
+
   @Post("sessions/:sessionId/finish")
   async finishSession(
     @Param("sessionId") sessionId: string,
@@ -104,23 +145,10 @@ export class InterviewController {
     @Req() request: RequestLike,
   ): Observable<MessageEvent> {
     const session = this.readSession(request);
-    const generator = this.interviewService.streamAIResponse(
-      session.email,
-      sessionId,
-    );
 
-    return new Observable<MessageEvent>((subscriber) => {
-      (async () => {
-        try {
-          for await (const event of generator) {
-            subscriber.next({ data: JSON.stringify(event) } as MessageEvent);
-          }
-          subscriber.complete();
-        } catch (error) {
-          subscriber.error(error);
-        }
-      })();
-    });
+    return toMessageEvents(
+      this.interviewService.streamAIResponse(session.email, sessionId),
+    );
   }
 
   private readSession(request: RequestLike) {
