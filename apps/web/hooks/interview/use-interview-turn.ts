@@ -56,7 +56,7 @@ export function useInterviewTurn({
 
   const player = useVoicePlayer({
     onIdle: reopenMic,
-    onLevel: (level) => dispatch({ level, type: "VOICE_LEVEL" }),
+    onLevel: ({ level, rms }) => dispatch({ level, rms, type: "VOICE_LEVEL" }),
     stats,
   })
 
@@ -151,7 +151,9 @@ export function useInterviewTurn({
           type: "AI_FAILED",
         })
       } finally {
-        abortRef.current = null
+        // Only if it is still ours: an interrupted turn unwinds after the
+        // answer that interrupted it may already have started its own.
+        if (abortRef.current === controller) abortRef.current = null
       }
     },
     [dispatch, player, stats]
@@ -183,6 +185,19 @@ export function useInterviewTurn({
     [consume, sessionId]
   )
 
+  /**
+   * The candidate is talking over the interviewer: stop the voice and let go
+   * of the stream.
+   *
+   * Dropping the request matters as much as silencing the speakers — without
+   * it the server keeps generating, and billing, a reply nobody will hear.
+   */
+  const interrupt = React.useCallback(() => {
+    player.interrupt()
+    abortRef.current?.abort()
+    abortRef.current = null
+  }, [player])
+
   /** The interviewer speaks first; the candidate answers a real question. */
   const open = React.useCallback(async () => {
     dispatch({ type: "AI_OPENING" })
@@ -198,5 +213,5 @@ export function useInterviewTurn({
     []
   )
 
-  return { open, submit }
+  return { interrupt, open, submit }
 }

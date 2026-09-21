@@ -3,9 +3,9 @@
 import * as React from "react"
 
 import type { MicStreamRef } from "@/hooks/interview/use-mic-stream"
+import { computeLevel } from "@/lib/interview/analyser"
 import {
   VAD_INTERVAL_MS,
-  computeLevel,
   initialVadAccumulator,
   nextVadDecision,
   type VadStatus,
@@ -17,11 +17,15 @@ type UseVadOptions = {
   active: boolean
   muted: boolean
   status: VadStatus
+  /** Loudness of the interviewer's own voice, on the microphone's scale. */
+  voiceRms: number
   onLevel: (level: number) => void
   onSpeechStart: () => void
   onSpeechEnd: () => void
   /** The noise that opened the microphone was not an answer: drop it. */
   onSpeechAbort: () => void
+  /** The candidate talked over the interviewer: cut it off and record them. */
+  onBargeIn: () => void
 }
 
 /**
@@ -43,30 +47,36 @@ export function useVad({
   active,
   muted,
   status,
+  voiceRms,
   onLevel,
   onSpeechStart,
   onSpeechEnd,
   onSpeechAbort,
+  onBargeIn,
 }: UseVadOptions) {
   const inputs = React.useRef({
     active,
     muted,
+    onBargeIn,
     onLevel,
     onSpeechAbort,
     onSpeechEnd,
     onSpeechStart,
     status,
+    voiceRms,
   })
   // Written in an effect, not during render: React 19 forbids the latter.
   React.useEffect(() => {
     inputs.current = {
       active,
       muted,
+      onBargeIn,
       onLevel,
       onSpeechAbort,
       onSpeechEnd,
       onSpeechStart,
       status,
+      voiceRms,
     }
   })
 
@@ -101,6 +111,7 @@ export function useVad({
         frame,
         muted: current.muted,
         status: current.status,
+        voiceRms: current.voiceRms,
       })
 
       accumulator = {
@@ -113,6 +124,7 @@ export function useVad({
       if (decision.action === "start") current.onSpeechStart()
       if (decision.action === "stop") current.onSpeechEnd()
       if (decision.action === "abort") current.onSpeechAbort()
+      if (decision.action === "barge-in") current.onBargeIn()
     }
 
     const timer = setInterval(tick, VAD_INTERVAL_MS)

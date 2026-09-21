@@ -2,7 +2,7 @@
 
 import * as React from "react"
 
-import { VAD_FFT_SIZE } from "@/lib/interview/vad"
+import { ANALYSER_FFT_SIZE } from "@/lib/interview/analyser"
 
 type MicStream = {
   stream: MediaStream
@@ -74,7 +74,7 @@ export function useMicStream({ onReady, onError }: UseMicStreamOptions) {
 
         const context = new AudioContextCtor()
         const analyser = context.createAnalyser()
-        analyser.fftSize = VAD_FFT_SIZE
+        analyser.fftSize = ANALYSER_FFT_SIZE
         // The default 0.8 averages each frame with the last, adding roughly
         // 200 ms of decay after the candidate stops — silence the detector
         // would then have to wait out twice.

@@ -4,25 +4,11 @@
  * here is what makes "starts on speech, stops after silence" testable without
  * a microphone.
  *
- * Frames are *time-domain* samples (`getByteTimeDomainData`), centred on 128.
- * The first version read `getByteFrequencyData`, whose bytes are decibels
- * mapped through the analyser's `minDecibels`/`maxDecibels` — left at -100 and
- * -30. A 0.05 threshold there meant roughly -96 dB, which is digital silence:
- * no real room ever goes that quiet, so the silence counter never moved and a
- * turn never ended by itself. Amplitude is what the threshold always meant.
+ * Every threshold below is an amplitude on the scale `analyser` measures, so
+ * the microphone and the interviewer's own voice can be compared directly.
  */
 
-/**
- * Analyser window. 2048 samples is ~43 ms at 48 kHz.
- *
- * `getByteTimeDomainData` returns only the most recent `fftSize` samples, so
- * the window has to be at least as long as the gap between two reads or the
- * detector is sampling a fraction of what was said. At 256 samples — 5.3 ms —
- * it listened to a third of a 60 fps frame, and to 3% of a frame once a WebGL
- * canvas pulled the page down to 5 fps: speech fell between the samples and
- * the microphone appeared deaf.
- */
-export const VAD_FFT_SIZE = 2048
+import { computeAmplitudeRms } from "@/lib/interview/analyser"
 
 /**
  * How often the detector samples, in milliseconds.
@@ -55,6 +41,25 @@ export const SETTLED_SPEECH_MS = 2000
 export const MIN_SPEECH_MS = 400
 /** Nothing else ever stops a recording, so something has to. */
 export const MAX_ANSWER_MS = 90_000
+
+/**
+ * How much louder than a normal onset the candidate must be to cut the
+ * interviewer off. Talking over someone is deliberate; it should take
+ * deliberate volume.
+ */
+export const BARGE_IN_RMS_MARGIN = 1.6
+/** And long enough to be a word rather than a chair or a cough. */
+export const BARGE_IN_SPEECH_MS = 280
+/**
+ * The echo guard, and the one that decides whether this feature is usable.
+ *
+ * `getUserMedia` cancels echo, but never perfectly — on external speakers at
+ * volume, some of the interviewer's own voice comes back down the microphone.
+ * Without this, the recruiter interrupts itself on its own first word and the
+ * interview is over. The candidate has to be at least this loud *relative to
+ * what the speakers are putting out*, measured the same way on both sides.
+ */
+export const BARGE_IN_ECHO_RATIO = 0.6
 /**
  * A gap longer than this is a stall — a backgrounded tab, a long paint.
  * Counting it in full would end the answer on a hiccup.
@@ -88,9 +93,10 @@ export type VadDecision = VadAccumulator & {
   /**
    * What the hook should do about it, if anything. `abort` throws the
    * recording away instead of sending it: the microphone opened on a noise
-   * that turned out not to be an answer.
+   * that turned out not to be an answer. `barge-in` cuts the interviewer off
+   * and starts recording in the same breath.
    */
-  action: "start" | "stop" | "abort" | "none"
+  action: "start" | "stop" | "abort" | "barge-in" | "none"
   reason: VadStopReason | null
 }
 
@@ -101,6 +107,11 @@ export type VadInput = VadAccumulator & {
   /** Milliseconds since the previous frame. */
   deltaMs: number
   muted: boolean
+  /**
+   * Loudness of what the speakers are putting out, on the same scale as the
+   * microphone's. Zero when the interviewer is not talking.
+   */
+  voiceRms: number
 }
 
 /** What a caller starts a session with, and returns to between turns. */
@@ -108,19 +119,6 @@ export const initialVadAccumulator: VadAccumulator = {
   noiseFloor: INITIAL_NOISE_FLOOR,
   silenceMs: 0,
   speechMs: 0,
-}
-
-/** Loudness of one frame as amplitude, 0-1. */
-export function computeAmplitudeRms(frame: Uint8Array): number {
-  if (frame.length === 0) return 0
-
-  let sumOfSquares = 0
-  for (let index = 0; index < frame.length; index += 1) {
-    const centered = ((frame[index] ?? 128) - 128) / 128
-    sumOfSquares += centered * centered
-  }
-
-  return Math.sqrt(sumOfSquares / frame.length)
 }
 
 /**
@@ -159,11 +157,38 @@ export function resolveSilenceBudget(speechMs: number): number {
 }
 
 /**
+ * Whether the candidate is talking over the interviewer on purpose.
+ *
+ * Three conditions, all required, because the cost of a false positive is the
+ * recruiter cutting itself off mid-question: loud enough against this room's
+ * own onset threshold, sustained long enough to be a word, and loud enough
+ * relative to the speakers that it cannot be echo coming back in.
+ */
+export function shouldBargeIn({
+  rms,
+  noiseFloor,
+  voiceRms,
+  speechMs,
+}: {
+  rms: number
+  noiseFloor: number
+  voiceRms: number
+  speechMs: number
+}): boolean {
+  return (
+    speechMs >= BARGE_IN_SPEECH_MS &&
+    rms > resolveStartThreshold(noiseFloor) * BARGE_IN_RMS_MARGIN &&
+    rms > voiceRms * BARGE_IN_ECHO_RATIO
+  )
+}
+
+/**
  * The next VAD state for one frame.
  *
- * Only `listening` starts a recording and only `recording` ends one:
- * `processing` is the window where an answer is being answered, and reacting
- * to sound there would record the interviewer's own voice.
+ * Only `listening` starts a recording and only `recording` ends one.
+ * `processing` is the window where an answer is being answered: sound there is
+ * the interviewer's own voice far more often than not, so it takes the
+ * deliberate effort of `shouldBargeIn` to be treated as the candidate.
  */
 export function nextVadDecision(input: VadInput): VadDecision {
   const rms = computeAmplitudeRms(input.frame)
@@ -192,6 +217,10 @@ export function nextVadDecision(input: VadInput): VadDecision {
     return decideWhileRecording(input, rms, elapsedMs)
   }
 
+  if (input.status === "processing") {
+    return decideWhileProcessing(input, rms, elapsedMs)
+  }
+
   return {
     action: "none",
     noiseFloor: input.noiseFloor,
@@ -200,6 +229,43 @@ export function nextVadDecision(input: VadInput): VadDecision {
     speechMs: input.speechMs,
     status: input.status,
   }
+}
+
+/**
+ * Listens under the interviewer's voice for the candidate cutting in.
+ *
+ * The run of loud speech resets the moment it drops back, so a burst has to be
+ * continuous to count — the noise floor is left alone throughout, since what
+ * the microphone hears here is mostly the speakers and measuring the room off
+ * that would poison the threshold for the next answer.
+ */
+function decideWhileProcessing(
+  input: VadInput,
+  rms: number,
+  elapsedMs: number
+): VadDecision {
+  const loud = rms > resolveStartThreshold(input.noiseFloor) * BARGE_IN_RMS_MARGIN
+  const speechMs = loud ? input.speechMs + elapsedMs : 0
+  const unchanged = {
+    noiseFloor: input.noiseFloor,
+    reason: null,
+    silenceMs: 0,
+  }
+
+  if (
+    shouldBargeIn({
+      noiseFloor: input.noiseFloor,
+      rms,
+      speechMs,
+      voiceRms: input.voiceRms,
+    })
+  ) {
+    // The floor is the candidate's again, and the run that earned it is the
+    // start of the answer, not something to carry into the next decision.
+    return { ...unchanged, action: "barge-in", speechMs: 0, status: "recording" }
+  }
+
+  return { ...unchanged, action: "none", speechMs, status: "processing" }
 }
 
 /**
@@ -241,20 +307,4 @@ function decideWhileRecording(
   }
 
   return { action: "none", noiseFloor, reason: null, silenceMs, speechMs, status: "recording" }
-}
-
-/**
- * Peak deviation from the centre line, 0-1: it tracks a voice legibly on a
- * meter where an RMS would barely move.
- *
- * Shared by the microphone loop and the interviewer's voice, so the orb
- * breathes at the same scale whoever is talking.
- */
-export function computeLevel(frame: Uint8Array) {
-  let peak = 0
-  for (let index = 0; index < frame.length; index += 1) {
-    peak = Math.max(peak, Math.abs((frame[index] ?? 128) - 128))
-  }
-
-  return Math.round((peak / 128) * 100) / 100
 }

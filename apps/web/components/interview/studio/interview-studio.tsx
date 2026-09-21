@@ -26,8 +26,15 @@ import {
   type StudioMessage,
 } from "@/lib/interview/studio-machine"
 
-/** Phases where a new answer may begin. */
-const LISTENING_PHASES = new Set(["listening", "recording"])
+/**
+ * Phases where the detector runs.
+ *
+ * `speaking` is in the set so the candidate can cut the interviewer off, which
+ * is what the detector's barge-in branch is for. `processing` is not: nothing
+ * is coming out of the speakers yet, so there is nothing to interrupt, and a
+ * door slamming while the model thinks would throw the turn away.
+ */
+const DETECTING_PHASES = new Set(["listening", "recording", "speaking"])
 
 function toStudioMessages(session: InterviewSessionSummary): StudioMessage[] {
   return session.messages.map((message) => ({ ...message }))
@@ -75,7 +82,10 @@ export function InterviewStudio({
     onReady: () => dispatch({ type: "MIC_READY" }),
   })
 
-  const { open, submit } = useInterviewTurn({ dispatch, sessionId: session.id })
+  const { interrupt, open, submit } = useInterviewTurn({
+    dispatch,
+    sessionId: session.id,
+  })
 
   const recorder = useAudioRecorder({
     micRef,
@@ -84,9 +94,16 @@ export function InterviewStudio({
   })
 
   useVad({
-    active: LISTENING_PHASES.has(state.phase),
+    active: DETECTING_PHASES.has(state.phase),
     micRef,
     muted: state.muted,
+    // Cutting in: the reply stops where it is and the answer starts recording
+    // immediately, with no echo tail — the candidate is already mid-word.
+    onBargeIn: () => {
+      dispatch({ type: "BARGE_IN" })
+      interrupt()
+      recorder.start()
+    },
     onLevel: (level) => dispatch({ level, type: "LEVEL" }),
     // Too short to be an answer: the floor goes straight back to the
     // candidate, with nothing sent and no turn spent.
@@ -106,6 +123,7 @@ export function InterviewStudio({
       recorder.start()
     },
     status: state.vadStatus,
+    voiceRms: state.voiceRms,
   })
 
   // Muting mid-sentence drops the half-spoken answer. Without this the

@@ -97,9 +97,7 @@ describe("studioReducer", () => {
     expect(spoken.phase).toBe("speaking")
     expect(spoken.vadStatus).toBe("processing")
     // Speech arriving while the recruiter talks is its own echo: ignored.
-    expect(studioReducer(spoken, { type: "SPEECH_START" }).phase).toBe(
-      "speaking"
-    )
+    expect(studioReducer(spoken, { type: "SPEECH_START" }).phase).toBe("speaking")
 
     const done = studioReducer(spoken, { type: "VOICE_DONE" })
 
@@ -211,6 +209,42 @@ describe("studioReducer", () => {
     expect(state.vadStatus).toBe("processing")
   })
 
+  it("gives the floor back the moment the candidate cuts in", () => {
+    const speaking = run(
+      [
+        { type: "SPEECH_START" },
+        { type: "SPEECH_END", atMs: 1000 },
+        { type: "AI_AUDIO", atMs: 2100 },
+        { type: "AI_DELTA", text: "Et pouvez-vous me dire", atMs: 2100 },
+        { level: 0.7, rms: 0.3, type: "VOICE_LEVEL" },
+      ],
+      ready
+    )
+
+    const state = studioReducer(speaking, { type: "BARGE_IN" })
+
+    // Straight to recording: no processing step, no echo tail — the candidate
+    // is already mid-word.
+    expect(state.phase).toBe("recording")
+    expect(state.vadStatus).toBe("recording")
+    expect(state.voiceLevel).toBe(0)
+    expect(state.voiceRms).toBe(0)
+    // The half-spoken question is kept: it is what the answer answers, and
+    // the final report is scored against the transcript.
+    expect(state.streamingReply).toBe("")
+    expect(state.messages.map((message) => message.content)).toEqual([
+      "Et pouvez-vous me dire",
+    ])
+  })
+
+  it("cannot cut in on a recruiter that is not talking", () => {
+    for (const phase of ["listening", "recording", "processing"] as const) {
+      const from = { ...ready, phase }
+
+      expect(studioReducer(from, { type: "BARGE_IN" })).toBe(from)
+    }
+  })
+
   it("clears the previous reply when a new answer begins", () => {
     const stale = { ...ready, streamingReply: "vieux texte", firstTokenMs: 900 }
 
@@ -250,9 +284,7 @@ describe("studioReducer", () => {
   })
 
   it("ignores an end of speech that never started", () => {
-    expect(studioReducer(ready, { type: "SPEECH_END", atMs: 1000 }).phase).toBe(
-      "listening"
-    )
+    expect(studioReducer(ready, { type: "SPEECH_END", atMs: 1000 }).phase).toBe("listening")
   })
 
   it("keeps the session alive when a turn fails", () => {
@@ -281,10 +313,7 @@ describe("studioReducer", () => {
   })
 
   it("unmutes back to listening", () => {
-    const state = run(
-      [{ type: "MUTE_TOGGLED" }, { type: "MUTE_TOGGLED" }],
-      ready
-    )
+    const state = run([{ type: "MUTE_TOGGLED" }, { type: "MUTE_TOGGLED" }], ready)
 
     expect(state.muted).toBe(false)
     expect(state.vadStatus).toBe("listening")
@@ -303,16 +332,16 @@ describe("studioReducer", () => {
         { type: "SPEECH_START" },
         { type: "SPEECH_END", atMs: 1000 },
         { atMs: 1200, type: "AI_AUDIO" },
-        { level: 0.7, type: "VOICE_LEVEL" },
+        { level: 0.7, rms: 0.2, type: "VOICE_LEVEL" },
       ],
       ready
     )
 
     expect(speaking.voiceLevel).toBe(0.7)
     // Same deduplication as the microphone meter: sixty frames a second.
-    expect(studioReducer(speaking, { level: 0.7, type: "VOICE_LEVEL" })).toBe(
-      speaking
-    )
+    expect(
+      studioReducer(speaking, { level: 0.7, rms: 0.2, type: "VOICE_LEVEL" })
+    ).toBe(speaking)
 
     const done = studioReducer(speaking, { type: "VOICE_DONE" })
 
@@ -324,9 +353,9 @@ describe("studioReducer", () => {
 
     expect(done.phase).toBe("completed")
     expect(studioReducer(done, { type: "SPEECH_START" })).toBe(done)
-    expect(
-      studioReducer(done, { type: "AI_DELTA", text: "x", atMs: 1001 })
-    ).toBe(done)
+    expect(studioReducer(done, { type: "AI_DELTA", text: "x", atMs: 1001 })).toBe(
+      done
+    )
   })
 
   it("takes the interview's start from the server, once", () => {
@@ -358,9 +387,7 @@ describe("studioReducer", () => {
     expect(done.phase).toBe("completed")
     expect(failed.phase).toBe("listening")
     expect(failed.error).toBe("L'analyse n'a pas abouti.")
-    expect(studioReducer(failed, { type: "SPEECH_START" }).phase).toBe(
-      "recording"
-    )
+    expect(studioReducer(failed, { type: "SPEECH_START" }).phase).toBe("recording")
   })
 
   it("drops an empty reply rather than adding a blank bubble", () => {

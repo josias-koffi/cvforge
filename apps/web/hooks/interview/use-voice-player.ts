@@ -9,7 +9,11 @@ import {
   createVoiceFrameDecoder,
   frameDurationSeconds,
 } from "@/lib/interview/pcm"
-import { VAD_FFT_SIZE, computeLevel } from "@/lib/interview/vad"
+import {
+  ANALYSER_FFT_SIZE,
+  computeAmplitudeRms,
+  computeLevel,
+} from "@/lib/interview/analyser"
 
 /**
  * Plays the interviewer's voice as it streams in.
@@ -26,9 +30,11 @@ import { VAD_FFT_SIZE, computeLevel } from "@/lib/interview/vad"
  * `onIdle` fires when the last scheduled frame has finished — that, and not
  * the end of the network stream, is when the microphone may safely reopen.
  *
- * `onLevel` reports the amplitude of what is actually coming out of the
- * speakers, so the orb can breathe with the interviewer's voice instead of
- * sitting frozen on a spinner while it talks.
+ * `onLevel` reports what is actually coming out of the speakers: `level` for
+ * the orb, so it breathes with the interviewer's voice instead of sitting
+ * frozen on a spinner, and `rms` on the microphone's own scale, which is what
+ * lets the detector tell the candidate cutting in from the speakers echoing
+ * back.
  */
 export function useVoicePlayer({
   onIdle,
@@ -36,7 +42,7 @@ export function useVoicePlayer({
   stats,
 }: {
   onIdle: () => void
-  onLevel: (level: number) => void
+  onLevel: (output: { level: number; rms: number }) => void
   /** Records what the candidate heard, gaps included. */
   stats: PlaybackStatsRecorder
 }) {
@@ -44,6 +50,7 @@ export function useVoicePlayer({
   const analyserRef = React.useRef<AnalyserNode | null>(null)
   const decoderRef = React.useRef(createVoiceFrameDecoder())
   const jitterRef = React.useRef(initialJitterState)
+  const gainRef = React.useRef<GainNode | null>(null)
   const idleTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null)
   const frameIdRef = React.useRef(0)
   const onIdleRef = React.useRef(onIdle)
@@ -73,10 +80,17 @@ export function useVoicePlayer({
     // the meter then reads what the candidate hears, gaps included, rather
     // than what the network happened to deliver.
     const analyser = context.createAnalyser()
-    analyser.fftSize = VAD_FFT_SIZE
+    analyser.fftSize = ANALYSER_FFT_SIZE
     analyser.smoothingTimeConstant = 0
     analyser.connect(context.destination)
 
+    // Every frame goes through one gain node, which is how the reply can be
+    // cut off mid-sentence: turning it down silences what is already queued,
+    // without chasing individual buffer sources around.
+    const gain = context.createGain()
+    gain.connect(analyser)
+
+    gainRef.current = gain
     contextRef.current = context
     analyserRef.current = analyser
 
@@ -99,7 +113,10 @@ export function useVoicePlayer({
         frame = new Uint8Array(analyser.fftSize)
       }
       analyser.getByteTimeDomainData(frame)
-      onLevelRef.current(computeLevel(frame))
+      onLevelRef.current({
+        level: computeLevel(frame),
+        rms: computeAmplitudeRms(frame),
+      })
     }
 
     frameIdRef.current = requestAnimationFrame(tick)
@@ -109,7 +126,7 @@ export function useVoicePlayer({
     if (frameIdRef.current) cancelAnimationFrame(frameIdRef.current)
 
     frameIdRef.current = 0
-    onLevelRef.current(0)
+    onLevelRef.current({ level: 0, rms: 0 })
   }, [])
 
   const scheduleIdle = React.useCallback((at: number) => {
@@ -152,7 +169,7 @@ export function useVoicePlayer({
 
       const source = context.createBufferSource()
       source.buffer = buffer
-      source.connect(analyserRef.current ?? context.destination)
+      source.connect(gainRef.current ?? context.destination)
 
       const scheduled = scheduleFrame(jitterRef.current, {
         durationSeconds: frameDurationSeconds(samples),
@@ -176,6 +193,49 @@ export function useVoicePlayer({
     [ensureContext, scheduleIdle, startMeter, stats]
   )
 
+  /**
+   * Cuts the reply off where it is, keeping the context for the next turn.
+   *
+   * Used when the candidate starts talking over the interviewer, and so
+   * deliberately silent about `onIdle`: that is the signal to reopen the
+   * microphone after a tail of quiet, and here it is already open and the
+   * candidate is already mid-word.
+   */
+  const interrupt = React.useCallback(() => {
+    if (idleTimerRef.current) {
+      clearTimeout(idleTimerRef.current)
+      idleTimerRef.current = null
+    }
+
+    const context = contextRef.current
+    const gain = gainRef.current
+    if (context && gain) {
+      // Faded rather than cut, over a span too short to hear as a word ending
+      // but long enough not to click — so it stays connected, since
+      // disconnecting would be the very hard cut the ramp is avoiding.
+      //
+      // A fresh node then takes over. Reusing this one would let the abandoned
+      // reply, which can still have seconds of audio queued on it, come back
+      // underneath the next one the moment the gain returned. The old node is
+      // left behind at zero; there is one per interruption, and they are
+      // silent.
+      gain.gain.setValueAtTime(gain.gain.value, context.currentTime)
+      gain.gain.linearRampToValueAtTime(0, context.currentTime + 0.015)
+
+      const replacement = context.createGain()
+      replacement.connect(analyserRef.current ?? context.destination)
+      gainRef.current = replacement
+    }
+
+    stopMeter()
+    // The margin starts over with the next reply: it was widened for a network
+    // that stuttered a minute ago, not for this one.
+    jitterRef.current = initialJitterState
+    // And the half sample left over from an abandoned reply would shift the
+    // start of the next one by a byte, which comes out as static.
+    decoderRef.current.reset()
+  }, [stopMeter])
+
   /** Nothing more is coming: if nothing is playing, the turn is already over. */
   const flush = React.useCallback(() => {
     const context = contextRef.current
@@ -189,26 +249,17 @@ export function useVoicePlayer({
     scheduleIdle(jitterRef.current.playhead)
   }, [scheduleIdle, stopMeter])
 
+  /** The same, and the audio hardware goes too: the session is over. */
   const stop = React.useCallback(() => {
-    if (idleTimerRef.current) {
-      clearTimeout(idleTimerRef.current)
-      idleTimerRef.current = null
-    }
-
-    stopMeter()
-    // The margin starts over with the next reply: it was widened for a network
-    // that stuttered a minute ago, not for this one.
-    jitterRef.current = initialJitterState
-    // Otherwise the half sample left over from an abandoned reply shifts the
-    // start of the next one by a byte, and it comes out as static.
-    decoderRef.current.reset()
+    interrupt()
     void contextRef.current?.close().catch(() => {})
     contextRef.current = null
     analyserRef.current = null
-  }, [stopMeter])
+    gainRef.current = null
+  }, [interrupt])
 
   // Leaving the page mid-sentence must not leave a voice talking.
   React.useEffect(() => () => stop(), [stop])
 
-  return { flush, push, stop }
+  return { flush, interrupt, push, stop }
 }

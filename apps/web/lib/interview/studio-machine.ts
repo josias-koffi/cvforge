@@ -31,6 +31,12 @@ export type StudioState = {
   level: number
   /** Latest level of the interviewer's own voice, 0-1, on the same scale. */
   voiceLevel: number
+  /**
+   * The same output as an amplitude RMS, which is the scale the detector
+   * measures the room on. It is what tells the candidate cutting in apart from
+   * the speakers echoing back into the microphone.
+   */
+  voiceRms: number
   messages: StudioMessage[]
   /** The reply being streamed, before it is committed to `messages`. */
   streamingReply: string
@@ -58,7 +64,9 @@ export type StudioEvent =
   | { type: "MIC_FAILED"; message: string }
   | { type: "LEVEL"; level: number }
   /** A frame of the reply as it plays, so the orb breathes with the voice. */
-  | { type: "VOICE_LEVEL"; level: number }
+  | { type: "VOICE_LEVEL"; level: number; rms: number }
+  /** The candidate talked over the interviewer and took the floor back. */
+  | { type: "BARGE_IN" }
   | { type: "SPEECH_START" }
   | { type: "SPEECH_END"; atMs: number }
   /** The noise that opened the microphone was not an answer. */
@@ -89,6 +97,7 @@ export const initialStudioState: StudioState = {
   muted: false,
   level: 0,
   voiceLevel: 0,
+  voiceRms: 0,
   messages: [],
   streamingReply: "",
   error: null,
@@ -146,9 +155,36 @@ export function studioReducer(
         : { ...state, level: event.level }
 
     case "VOICE_LEVEL":
-      return state.voiceLevel === event.level
+      return state.voiceLevel === event.level && state.voiceRms === event.rms
         ? state
-        : { ...state, voiceLevel: event.level }
+        : { ...state, voiceLevel: event.level, voiceRms: event.rms }
+
+    case "BARGE_IN": {
+      // Only ever from under the interviewer's own voice.
+      if (state.phase !== "speaking") return state
+
+      const reply = state.streamingReply.trim()
+
+      return {
+        ...state,
+        phase: "recording",
+        vadStatus: "recording",
+        voiceLevel: 0,
+        voiceRms: 0,
+        streamingReply: "",
+        // Committed even though it was cut short: the candidate answered what
+        // they heard, and a transcript missing the question they answered is
+        // what the final report would be scored against.
+        messages:
+          reply.length === 0
+            ? state.messages
+            : withMessage(state, {
+                role: "assistant",
+                content: reply,
+                timestamp: new Date().toISOString(),
+              }),
+      }
+    }
 
     case "SPEECH_START":
       // Ignored unless the studio is actually waiting for an answer, so a
@@ -277,6 +313,7 @@ export function studioReducer(
             phase: "listening",
             vadStatus: "listening",
             voiceLevel: 0,
+            voiceRms: 0,
           }
         : state
 
@@ -288,6 +325,7 @@ export function studioReducer(
         vadStatus: "listening",
         streamingReply: "",
         voiceLevel: 0,
+        voiceRms: 0,
         error: event.message,
       }
 
@@ -311,6 +349,7 @@ export function studioReducer(
         vadStatus: "listening",
         level: 0,
         voiceLevel: 0,
+        voiceRms: 0,
       }
 
     case "FINISH_FAILED":
