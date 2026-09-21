@@ -72,7 +72,10 @@ export function InterviewStudio({
       recorder.cancel()
     },
     onSpeechEnd: () => {
-      dispatch({ type: "SPEECH_END" })
+      // Stamped before the recorder stops: encoding and uploading the answer
+      // are part of the silence the candidate sits through, so the latency
+      // shown has to include them.
+      dispatch({ atMs: Date.now(), type: "SPEECH_END" })
       recorder.stop()
     },
     onSpeechStart: () => {

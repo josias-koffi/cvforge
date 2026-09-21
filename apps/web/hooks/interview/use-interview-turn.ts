@@ -53,7 +53,6 @@ export function useInterviewTurn({
     async (openStream: OpenStream) => {
       const controller = new AbortController()
       abortRef.current = controller
-      const startedAt = Date.now()
       let spoke = false
 
       try {
@@ -75,15 +74,14 @@ export function useInterviewTurn({
                 case "audio":
                   spoke = true
                   player.push(frame.data)
-                  dispatch({
-                    elapsedMs: Date.now() - startedAt,
-                    type: "AI_AUDIO",
-                  })
+                  // The clock lives in the reducer, which knows when the
+                  // candidate stopped talking; here we only say when.
+                  dispatch({ atMs: Date.now(), type: "AI_AUDIO" })
                   break
 
                 case "reply":
                   dispatch({
-                    elapsedMs: Date.now() - startedAt,
+                    atMs: Date.now(),
                     text: frame.text,
                     type: "AI_DELTA",
                   })

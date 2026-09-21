@@ -2,6 +2,11 @@ import { buildChain, runModelChain } from "./openrouter.chain";
 import type { OpenRouterVoiceConfig } from "./openrouter-voice.config";
 import { buildOpenRouterError } from "./openrouter.error";
 import { VOICE_RETRY_POLICY, type RetryHooks } from "./openrouter.retry";
+import {
+  summarizeAttempts,
+  type ChainAttempt,
+  type ChainTelemetry,
+} from "./openrouter.telemetry";
 
 export interface VoiceTurnRequest {
   /** What the interviewer is and how it should behave. */
@@ -15,6 +20,11 @@ export interface VoiceTurnRequest {
    * still answers with voice; only the prompt differs.
    */
   instruction?: string;
+  /**
+   * Called once the stream is open, with what the chain had to do to open it.
+   * Optional: nothing about the turn depends on anyone listening.
+   */
+  onTelemetry?: (telemetry: ChainTelemetry) => void;
 }
 
 export type VoiceTurnEvent =
@@ -77,37 +87,41 @@ export class OpenRouterVoiceService {
     }
   }
 
-  private openStream(request: VoiceTurnRequest) {
+  private async openStream(request: VoiceTurnRequest) {
     const chain = buildChain(this.config.model, this.config.fallbackModels);
+    // Recorded here rather than inside `runModelChain`: this closure is the
+    // only place that knows when one call starts and ends.
+    const attempts: ChainAttempt[] = [];
 
+    try {
+      return await this.runChain(chain, request, attempts);
+    } finally {
+      request.onTelemetry?.(summarizeAttempts(attempts));
+    }
+  }
+
+  private runChain(
+    chain: string[],
+    request: VoiceTurnRequest,
+    attempts: ChainAttempt[],
+  ) {
     return runModelChain(
       chain,
       async (model) => {
-        const attempt = await fetch(
-          `${this.config.baseUrl}/chat/completions`,
-          {
-            body: JSON.stringify({
-              model,
-              // Audio output is only served over SSE, never in one payload.
-              stream: true,
-              modalities: ["text", "audio"],
-              audio: { voice: this.config.voice, format: "pcm16" },
-              max_completion_tokens: this.config.maxTokens,
-              messages: [
-                { role: "system", content: request.systemPrompt },
-                ...request.history,
-                userMessage(request),
-              ],
-            }),
-            headers: {
-              Authorization: `Bearer ${this.config.apiKey}`,
-              "Content-Type": "application/json",
-              "HTTP-Referer": "https://cvforge.app",
-              "X-Title": "CVforge",
-            },
-            method: "POST",
-          },
-        );
+        const startedAt = Date.now();
+        const record: ChainAttempt = { durationMs: 0, failed: true, model };
+        attempts.push(record);
+
+        let attempt: Response;
+        try {
+          attempt = await this.callModel(model, request);
+        } finally {
+          // Timed in a finally so a socket failure is measured too: a call
+          // that dies after four seconds is the one worth seeing in the log.
+          record.durationMs = Date.now() - startedAt;
+        }
+
+        record.status = attempt.status;
 
         if (!attempt.ok) {
           throw await buildOpenRouterError(
@@ -117,11 +131,38 @@ export class OpenRouterVoiceService {
           );
         }
 
+        record.failed = false;
+
         return attempt;
       },
       { ...VOICE_RETRY_POLICY, maxAttempts: this.config.maxAttempts },
       this.retryHooks,
     );
+  }
+
+  private callModel(model: string, request: VoiceTurnRequest) {
+    return fetch(`${this.config.baseUrl}/chat/completions`, {
+      body: JSON.stringify({
+        model,
+        // Audio output is only served over SSE, never in one payload.
+        stream: true,
+        modalities: ["text", "audio"],
+        audio: { voice: this.config.voice, format: "pcm16" },
+        max_completion_tokens: this.config.maxTokens,
+        messages: [
+          { role: "system", content: request.systemPrompt },
+          ...request.history,
+          userMessage(request),
+        ],
+      }),
+      headers: {
+        Authorization: `Bearer ${this.config.apiKey}`,
+        "Content-Type": "application/json",
+        "HTTP-Referer": "https://cvforge.app",
+        "X-Title": "CVforge",
+      },
+      method: "POST",
+    });
   }
 }
 
