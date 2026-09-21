@@ -3,11 +3,7 @@ import {
   INTERVIEW_AI_STATUS_ERROR,
   INTERVIEW_AI_STATUS_GENERATING,
   INTERVIEW_AI_STATUS_IDLE,
-  INTERVIEW_PROFILE_AGGRESSIVE,
-  INTERVIEW_PROFILE_BEHAVIORAL,
-  INTERVIEW_PROFILE_PASSIVE,
   INTERVIEW_PROFILE_STANDARD,
-  INTERVIEW_PROFILE_TECHNICAL,
   INTERVIEW_CHUNK_STATUS_FAILED,
   INTERVIEW_CHUNK_STATUS_TRANSCRIBED,
   INTERVIEW_SESSION_STATUS_COMPLETED,
@@ -17,18 +13,26 @@ import {
   INTERVIEW_SESSION_STATUS_RECORDING,
   type Locale,
   type InterviewAIResponseEvent,
-  type InterviewMessage,
-  type InterviewReport,
-  type InterviewReportMetric,
   type InterviewRecruiterProfile,
   type InterviewTranscriptionChunkRequest,
 } from "@cvforge/types";
-import { Injectable, BadRequestException, NotFoundException } from "@nestjs/common";
+import {
+  Injectable,
+  BadRequestException,
+  Logger,
+  NotFoundException,
+} from "@nestjs/common";
 import type { OpenRouterTranscriptionService } from "../ai/openrouter-transcription.service";
-import { withOpenRouterHttpErrors } from "../ai/openrouter.exception";
 import type { OpenRouterService } from "../ai/openrouter.service";
 import type { ApplicationsService } from "../applications/applications.service";
-import type { StoredApplication } from "../applications/applications.types";
+import type { InterviewReportService } from "./interview-report.service";
+import { buildConversation } from "./interview.prompts";
+import {
+  appendMessage,
+  joinTranscript,
+  nowIso,
+  normalizeTranscript,
+} from "./interview.stats";
 import type { InterviewStore, StoredInterviewSession } from "./interview.types";
 import { sortChunks, summarizeInterviewSession } from "./interview.types";
 
@@ -40,197 +44,6 @@ import { sortChunks, summarizeInterviewSession } from "./interview.types";
 const INTERVIEW_CHAT_PROVIDER = {
   require_parameters: true,
 } as const;
-const MAX_MESSAGES = 20;
-const HESITATION_TOKENS = [
-  "euh",
-  "heu",
-  "hum",
-  "uh",
-  "um",
-  "erm",
-] as const;
-const REPORT_RESPONSE_FORMAT = {
-  type: "json_schema",
-  json_schema: {
-    name: "interview_report",
-    strict: true,
-    schema: {
-      type: "object",
-      additionalProperties: false,
-      properties: {
-        overallScore: { type: "integer", minimum: 0, maximum: 10 },
-        summary: { type: "string" },
-        improvements: {
-          type: "array",
-          items: { type: "string" },
-          minItems: 1,
-          maxItems: 3,
-        },
-        metrics: {
-          type: "array",
-          minItems: 5,
-          maxItems: 5,
-          items: {
-            type: "object",
-            additionalProperties: false,
-            properties: {
-              key: {
-                type: "string",
-                enum: [
-                  "clarity",
-                  "keywords",
-                  "pacing",
-                  "hesitations",
-                  "relevance",
-                ],
-              },
-              label: { type: "string" },
-              score: { type: "integer", minimum: 0, maximum: 10 },
-              detail: { type: "string" },
-            },
-            required: ["key", "label", "score", "detail"],
-          },
-        },
-      },
-      required: ["overallScore", "summary", "improvements", "metrics"],
-    },
-  },
-} as const;
-
-type InterviewLanguageConfig = {
-  label: string;
-};
-
-/**
- * Transcription no longer takes a prompt: the dedicated endpoint accepts an
- * ISO-639-1 `language` hint instead (ADR-013). Only the label, which names the
- * language to the interviewer model, survives.
- */
-const LANGUAGE_CONFIG: Record<Locale, InterviewLanguageConfig> = {
-  en: { label: "English" },
-  fr: { label: "French" },
-};
-
-const BASE_AI_PROMPTS: Record<Locale, string> = {
-  en: [
-    "You are a human-sounding mock interviewer conducting a live voice interview.",
-    "Respond in English only.",
-    "Reply as spoken dialogue, not as an essay.",
-    "Use exactly one natural follow-up question unless one short piece of feedback is more useful.",
-    "Keep it concise: one short sentence, occasionally two.",
-    "Do not mention being an AI assistant.",
-    "Do not use bullet points, disclaimers, or generic helper phrasing.",
-  ].join(" "),
-  fr: [
-    "Tu es un recruteur qui mene un entretien blanc en direct.",
-    "Reponds uniquement en francais.",
-    "Parle comme a l'oral, pas comme une fiche de cours.",
-    "Pose exactement une question de relance naturelle, sauf si une courte remarque de feedback est plus utile.",
-    "Reste concis: une phrase courte, parfois deux.",
-    "Ne dis jamais que tu es une IA.",
-    "N'utilise ni listes, ni avertissements, ni formulations d'assistant generique.",
-  ].join(" "),
-};
-
-const PROFILE_PROMPTS: Record<InterviewRecruiterProfile, Record<Locale, string>> = {
-  [INTERVIEW_PROFILE_STANDARD]: {
-    en: "Adopt a balanced HR interview style: calm, professional, and neutral.",
-    fr: "Adopte un style RH classique: calme, professionnel et neutre.",
-  },
-  [INTERVIEW_PROFILE_AGGRESSIVE]: {
-    en: "Be demanding and high-pressure with sharper follow-ups, but remain realistic and never insulting.",
-    fr: "Sois exigeant et met une pression realiste avec des relances plus incisives, sans jamais etre insultant.",
-  },
-  [INTERVIEW_PROFILE_PASSIVE]: {
-    en: "Be reserved and understated, with shorter prompts, occasional silence cues, and slightly vague follow-ups.",
-    fr: "Sois reserve et peu expressif, avec des relances plus courtes, parfois vagues, et des silences implicites.",
-  },
-  [INTERVIEW_PROFILE_TECHNICAL]: {
-    en: "Focus on hard skills, architecture, tools, debugging, and concrete technical scenarios.",
-    fr: "Concentre-toi sur les hard skills, l'architecture, les outils, le debug et les mises en situation techniques.",
-  },
-  [INTERVIEW_PROFILE_BEHAVIORAL]: {
-    en: "Focus on behavioral STAR questions covering situation, task, action, and result.",
-    fr: "Concentre-toi sur des questions comportementales de type STAR: situation, tache, action, resultat.",
-  },
-};
-
-function nowIso() {
-  return new Date().toISOString();
-}
-
-function appendMessage(messages: InterviewMessage[], msg: InterviewMessage): InterviewMessage[] {
-  const updated = [...messages, msg];
-  if (updated.length <= MAX_MESSAGES) {
-    return updated;
-  }
-  // Drop the oldest user+assistant pair to stay within context budget
-  return updated.slice(updated.length - MAX_MESSAGES);
-}
-
-function normalizeTranscript(value: string) {
-  return value.replace(/\s+/g, " ").trim();
-}
-
-function joinTranscript(session: StoredInterviewSession) {
-  return sortChunks(session.chunks)
-    .filter((chunk) => chunk.status === INTERVIEW_CHUNK_STATUS_TRANSCRIBED)
-    .map((chunk) => chunk.transcript)
-    .filter((chunk) => chunk.length > 0)
-    .join(" ")
-    .trim();
-}
-
-function normalizeToken(value: string) {
-  return value
-    .normalize("NFD")
-    .replace(/\p{Diacritic}/gu, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9\s]/g, " ");
-}
-
-function extractKeywords(values: Array<string | null | undefined>) {
-  return [...new Set(
-    values
-      .flatMap((value) => normalizeToken(value ?? "").split(/\s+/))
-      .map((token) => token.trim())
-      .filter((token) => token.length >= 4),
-  )];
-}
-
-function countHesitations(transcript: string) {
-  const normalized = normalizeToken(transcript);
-
-  return HESITATION_TOKENS.reduce(
-    (count, token) =>
-      count +
-      (normalized.match(new RegExp(`\\b${token}\\b`, "g"))?.length ?? 0),
-    0,
-  );
-}
-
-function averageChunkDurationSeconds(chunks: StoredInterviewSession["chunks"]) {
-  const durations = chunks
-    .map((chunk) => {
-      const startedAt = new Date(chunk.startedAt).getTime();
-      const endedAt = new Date(chunk.endedAt).getTime();
-
-      if (!Number.isFinite(startedAt) || !Number.isFinite(endedAt) || endedAt <= startedAt) {
-        return null;
-      }
-
-      return (endedAt - startedAt) / 1000;
-    })
-    .filter((value): value is number => value !== null);
-
-  if (durations.length === 0) {
-    return null;
-  }
-
-  return Math.round(
-    durations.reduce((sum, value) => sum + value, 0) / durations.length,
-  );
-}
 
 @Injectable()
 export class InterviewService {
@@ -239,7 +52,10 @@ export class InterviewService {
     private readonly openRouter: OpenRouterService,
     private readonly transcription: OpenRouterTranscriptionService,
     private readonly applicationsService: ApplicationsService,
+    private readonly reportService: InterviewReportService,
   ) {}
+
+  private readonly logger = new Logger(InterviewService.name);
 
   async startSession(
     userEmail: string,
@@ -250,7 +66,12 @@ export class InterviewService {
     const linkedApplicationId = applicationId.trim() || null;
 
     if (linkedApplicationId) {
-      this.applicationsService.getOwnedApplication(userEmail, linkedApplicationId);
+      // Awaited: unawaited, an application owned by somebody else still created
+      // a session, and the rejection surfaced as an unhandled promise.
+      await this.applicationsService.getOwnedApplication(
+        userEmail,
+        linkedApplicationId,
+      );
     }
 
     const createdAt = nowIso();
@@ -302,7 +123,7 @@ export class InterviewService {
     }
 
     try {
-      const conversation = this.buildConversation(session.language, session.profile, session.messages);
+      const conversation = buildConversation(session.language, session.profile, session.messages);
       const question = await this.openRouter.chat(
         conversation,
         { maxTokens: 120, provider: INTERVIEW_CHAT_PROVIDER, temperature: 0.35 },
@@ -311,8 +132,14 @@ export class InterviewService {
       session.prefetchedQuestion = question.trim();
       session.updatedAt = nowIso();
       await this.store.save(session);
-    } catch {
-      // prefetch is best-effort; never fail the session on prefetch error
+    } catch (error) {
+      // Best-effort: a failed prefetch costs latency on the next turn, never the
+      // session. Logged because silence here hid a broken model chain for weeks.
+      this.logger.warn(
+        `Interview prefetch failed for ${sessionId}: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
     }
 
     return summarizeInterviewSession(session);
@@ -333,7 +160,7 @@ export class InterviewService {
           session.applicationId,
         )
       : null;
-    const report = await this.generateInterviewReport(session, linkedApplication);
+    const report = await this.reportService.generate(session, linkedApplication);
     const completedAt = report.createdAt;
 
     session.completedAt = completedAt;
@@ -413,7 +240,7 @@ export class InterviewService {
       const errorMessage =
         error instanceof Error
           ? error.message
-          : "La transcription Voxtral a echoue.";
+          : "La transcription audio a echoue.";
 
       session.chunks = sortChunks([
         ...session.chunks,
@@ -481,7 +308,7 @@ export class InterviewService {
     let chunkIndex = 0;
 
     try {
-      const conversation = this.buildConversation(session.language, session.profile, session.messages);
+      const conversation = buildConversation(session.language, session.profile, session.messages);
       const stream = this.openRouter.streamChat(
         conversation,
         {
@@ -540,174 +367,4 @@ export class InterviewService {
     return session;
   }
 
-  private getLanguageConfig(language: Locale): InterviewLanguageConfig {
-    return LANGUAGE_CONFIG[language] ?? LANGUAGE_CONFIG.fr;
-  }
-
-  private async generateInterviewReport(
-    session: StoredInterviewSession,
-    application: StoredApplication | null,
-  ): Promise<InterviewReport> {
-    const createdAt = nowIso();
-    const transcriptStats = this.buildTranscriptStats(session, application);
-    const applicationContext = application
-      ? [
-          `Offer title: ${application.extracted.title}`,
-          `Company: ${application.extracted.companyName ?? "Unknown"}`,
-          `Summary: ${application.extracted.summary}`,
-          `Requirements: ${application.extracted.requirements.join(", ") || "None"}`,
-          `Responsibilities: ${application.extracted.responsibilities.join(", ") || "None"}`,
-        ].join("\n")
-      : "No linked application context.";
-    const reportPrompt =
-      session.language === "en"
-        ? [
-            "You are evaluating a mock interview transcript.",
-            "Score each metric from 0 to 10.",
-            "Use the provided transcript statistics as supporting evidence, but assess the transcript content directly.",
-            "Keep details concise, factual, and useful for a candidate.",
-          ].join(" ")
-        : [
-            "Tu evalues la transcription d'un entretien blanc.",
-            "Note chaque metrique de 0 a 10.",
-            "Utilise les statistiques fournies comme indices, mais evalue directement le contenu de la transcription.",
-            "Les details doivent rester concis, factuels et actionnables pour le candidat.",
-          ].join(" ");
-
-    const raw = await withOpenRouterHttpErrors(() =>
-      this.openRouter.chat(
-        [
-          {
-            role: "system",
-            content: reportPrompt,
-          },
-          {
-            role: "user",
-            content: [
-              `Interview language: ${session.language}`,
-              `Recruiter profile: ${session.profile}`,
-              applicationContext,
-              `Transcript: ${session.transcript}`,
-              `Average response duration (seconds): ${
-                transcriptStats.averageResponseDurationSeconds ?? "unknown"
-              }`,
-              `Hesitation count: ${transcriptStats.hesitationCount}`,
-              `Keyword coverage (%): ${transcriptStats.keywordCoverage}`,
-              `Keyword mentions: ${
-                transcriptStats.keywordMentions.join(", ") || "none"
-              }`,
-              `Response count: ${transcriptStats.responseCount}`,
-            ].join("\n\n"),
-          },
-        ],
-        {
-          maxTokens: 500,
-          provider: INTERVIEW_CHAT_PROVIDER,
-          responseFormat: REPORT_RESPONSE_FORMAT,
-          temperature: 0.2,
-        },
-      ),
-    );
-
-    const parsed = JSON.parse(raw) as {
-      improvements?: string[];
-      metrics?: InterviewReportMetric[];
-      overallScore?: number;
-      summary?: string;
-    };
-    const metrics = Array.isArray(parsed.metrics)
-      ? parsed.metrics
-          .map((metric) => ({
-            detail: typeof metric.detail === "string" ? metric.detail.trim() : "",
-            key: metric.key,
-            label: typeof metric.label === "string" ? metric.label.trim() : "",
-            score:
-              typeof metric.score === "number"
-                ? Math.max(0, Math.min(10, Math.round(metric.score)))
-                : 0,
-          }))
-          .filter(
-            (metric): metric is InterviewReportMetric =>
-              metric.key === "clarity" ||
-              metric.key === "keywords" ||
-              metric.key === "pacing" ||
-              metric.key === "hesitations" ||
-              metric.key === "relevance",
-          )
-      : [];
-
-    return {
-      createdAt,
-      improvements: Array.isArray(parsed.improvements)
-        ? parsed.improvements
-            .map((item) => (typeof item === "string" ? item.trim() : ""))
-            .filter((item) => item.length > 0)
-        : [],
-      metrics,
-      overallScore:
-        typeof parsed.overallScore === "number"
-          ? Math.max(0, Math.min(10, Math.round(parsed.overallScore)))
-          : 0,
-      summary: typeof parsed.summary === "string" ? parsed.summary.trim() : "",
-      transcriptStats,
-    };
-  }
-
-  private buildTranscriptStats(
-    session: StoredInterviewSession,
-    application: StoredApplication | null,
-  ) {
-    const keywords = application
-      ? extractKeywords([
-          application.extracted.title,
-          application.extracted.summary,
-          application.extracted.companyName,
-          ...application.extracted.requirements,
-          ...application.extracted.responsibilities,
-        ])
-      : [];
-    const transcriptKeywords = new Set(extractKeywords([session.transcript]));
-    const keywordMentions = keywords.filter((keyword) =>
-      transcriptKeywords.has(keyword),
-    );
-
-    return {
-      averageResponseDurationSeconds: averageChunkDurationSeconds(session.chunks),
-      hesitationCount: countHesitations(session.transcript),
-      keywordCoverage:
-        keywords.length === 0
-          ? 0
-          : Math.round((keywordMentions.length / keywords.length) * 100),
-      keywordMentions,
-      responseCount: session.chunks.length,
-    };
-  }
-
-  private buildAiPrompt(
-    language: Locale,
-    profile: InterviewRecruiterProfile,
-  ) {
-    const resolvedLanguage = language === "en" ? "en" : "fr";
-    const resolvedProfile =
-      PROFILE_PROMPTS[profile] !== undefined
-        ? profile
-        : INTERVIEW_PROFILE_STANDARD;
-
-    return [
-      BASE_AI_PROMPTS[resolvedLanguage],
-      PROFILE_PROMPTS[resolvedProfile][resolvedLanguage],
-    ].join(" ");
-  }
-
-  private buildConversation(
-    language: Locale,
-    profile: InterviewRecruiterProfile,
-    messages: InterviewMessage[],
-  ): Array<{ role: "system" | "user" | "assistant"; content: string }> {
-    const recentMessages = messages.slice(-MAX_MESSAGES);
-    return [
-      { role: "system", content: this.buildAiPrompt(language, profile) },
-      ...recentMessages.map((m) => ({ role: m.role, content: m.content })),
-    ];
-  }
 }
