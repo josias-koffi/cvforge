@@ -18,7 +18,8 @@ import {
 import { buildOpeningInstruction, buildTurnPrompt } from "./interview.prompts";
 import { createTurnLog } from "./interview.turn-log";
 import {
-  MAX_MESSAGES,
+  selectPromptMessages,
+  summarizeCoveredGround,
   appendMessage,
   joinTranscript,
   normalizeTranscript,
@@ -71,7 +72,7 @@ export class InterviewTurnService {
     try {
       for await (const event of this.voice.streamTurn({
         audio: { base64: request.chunkBase64, format: request.format },
-        history: session.messages.slice(-MAX_MESSAGES).map((message) => ({
+        history: selectPromptMessages(session.messages).map((message) => ({
           content: message.content,
           role: message.role,
         })),
@@ -122,6 +123,10 @@ export class InterviewTurnService {
     const agenda = buildAgenda(session.profile, session.durationMinutes, {
       hasContext: session.context !== null,
     });
+    const window = selectPromptMessages(session.messages);
+    const dropped = session.messages.filter(
+      (message) => !window.includes(message),
+    );
 
     return buildTurnPrompt({
       agendaState: resolveAgendaState(agenda, {
@@ -129,6 +134,10 @@ export class InterviewTurnService {
         exchanges: countExchanges(session.messages),
       }),
       context: session.context,
+      coveredGround: summarizeCoveredGround(
+        dropped,
+        session.language === "en" ? "en" : "fr",
+      ),
       language: session.language,
       profile: session.profile,
     });
