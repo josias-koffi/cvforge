@@ -12,6 +12,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import {
   elapsedSeconds,
   resolveCountdown,
+  shouldAutoFinish,
 } from "@/lib/interview/countdown"
 import { useAudioRecorder } from "@/hooks/interview/use-audio-recorder"
 import { useInterviewTurn } from "@/hooks/interview/use-interview-turn"
@@ -49,7 +50,12 @@ export function InterviewStudio({
     messages: toStudioMessages(session),
     startedAt: session.startedAt,
   })
-  const [nowMs, setNowMs] = React.useState(() => Date.now())
+  // Zero, not `Date.now()`: this component renders on the server too, and a
+  // clock read there never matches the client's a moment later — React threw
+  // the whole tree away as a hydration mismatch, which took the router with
+  // it and is why finishing stopped navigating to the report. Zero renders
+  // the full duration on both sides; the mount effect below corrects it.
+  const [nowMs, setNowMs] = React.useState(0)
   const [finishing, setFinishing] = React.useState(false)
 
   const micRef = useMicStream({
@@ -128,7 +134,7 @@ export function InterviewStudio({
     if (state.error) toast.error(state.error)
   }, [state.error])
 
-  async function finish() {
+  const finish = React.useCallback(async () => {
     setFinishing(true)
     dispatch({ type: "FINISHED" })
 
@@ -137,15 +143,31 @@ export function InterviewStudio({
     } finally {
       setFinishing(false)
     }
-  }
+  }, [onFinish])
 
   const hasAnswered = state.messages.some((message) => message.role === "user")
-  const countdown = resolveCountdown(
-    // From the reducer, not the prop: the prop was fetched before the first
-    // turn existed, and the server stamps the start only when someone speaks.
-    elapsedSeconds(state.startedAt, nowMs),
-    session.durationMinutes
-  )
+  // From the reducer, not the prop: the prop was fetched before the first
+  // turn existed, and the server stamps the start only when someone speaks.
+  const elapsed = elapsedSeconds(state.startedAt, nowMs)
+  const countdown = resolveCountdown(elapsed, session.durationMinutes)
+
+  // Scores the interview on its own once the time is spent, and the redirect
+  // in `finishInterview` carries the candidate to their report. Waits for a
+  // gap: `shouldAutoFinish` will not stop a turn in progress.
+  const autoFinish = shouldAutoFinish({
+    durationMinutes: session.durationMinutes,
+    elapsed,
+    finishing,
+    hasAnswered,
+    phase: state.phase,
+  })
+  const autoFinishedRef = React.useRef(false)
+  React.useEffect(() => {
+    if (!autoFinish || autoFinishedRef.current) return
+
+    autoFinishedRef.current = true
+    void finish()
+  }, [autoFinish, finish])
 
   return (
     <div className="grid gap-6 @4xl/main:grid-cols-[280px_1fr]">
@@ -153,11 +175,12 @@ export function InterviewStudio({
         <MicOrb level={state.level} status={state.vadStatus} />
         <LatencyStrip firstTokenMs={state.firstTokenMs} />
         {countdown.tone === "overtime" && state.phase !== "completed" ? (
-          // Nothing stops on its own: cutting a turn short would throw away
-          // the answer and the credit. The recruiter is already wrapping up.
+          // Nothing is cut off mid-turn: the studio waits for a gap before
+          // scoring, and the recruiter is already wrapping up.
           <Alert>
             <AlertDescription>
-              Le temps imparti est écoulé — terminez quand vous le souhaitez.
+              Le temps imparti est écoulé — l’analyse se lancera dès que vous
+              aurez fini de parler.
             </AlertDescription>
           </Alert>
         ) : null}

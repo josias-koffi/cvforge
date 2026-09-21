@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest"
 
 import {
+  AUTO_FINISH_GRACE_SECONDS,
   elapsedSeconds,
   formatDuration,
   resolveCountdown,
+  shouldAutoFinish,
 } from "@/lib/interview/countdown"
 
 describe("elapsedSeconds", () => {
@@ -85,5 +87,49 @@ describe("resolveCountdown", () => {
     for (const minutes of [10, 20, 30]) {
       expect(resolveCountdown(0, minutes).label).toBe(`${minutes}:00`)
     }
+  })
+})
+
+describe("shouldAutoFinish", () => {
+  const spent = 10 * 60 + AUTO_FINISH_GRACE_SECONDS
+
+  /** A ten-minute interview, past its deadline, in a gap between turns. */
+  function ready(overrides: Partial<Parameters<typeof shouldAutoFinish>[0]> = {}) {
+    return shouldAutoFinish({
+      durationMinutes: 10,
+      elapsed: spent,
+      finishing: false,
+      hasAnswered: true,
+      phase: "listening",
+      ...overrides,
+    })
+  }
+
+  it("scores the interview once the time is spent", () => {
+    expect(ready()).toBe(true)
+  })
+
+  it("leaves a grace period for the closing exchange", () => {
+    expect(ready({ elapsed: 10 * 60 })).toBe(false)
+    expect(ready({ elapsed: spent - 1 })).toBe(false)
+  })
+
+  it("never stops a turn in progress", () => {
+    // Ending here would throw away the answer and the credit that paid for it.
+    for (const phase of ["recording", "processing", "speaking"]) {
+      expect(ready({ phase })).toBe(false)
+    }
+  })
+
+  it("does not score an interview nobody answered", () => {
+    expect(ready({ hasAnswered: false })).toBe(false)
+  })
+
+  it("does not fire again while the report is being built", () => {
+    expect(ready({ finishing: true })).toBe(false)
+  })
+
+  it("stays quiet before the clock has even started", () => {
+    expect(ready({ elapsed: 0 })).toBe(false)
   })
 })
