@@ -1,4 +1,7 @@
-import type { InterviewTranscriptChunk } from "@cvforge/types";
+import {
+  INTERVIEW_DEFAULT_DURATION_MINUTES,
+  type InterviewTranscriptChunk,
+} from "@cvforge/types";
 import { and, asc, desc, eq, lt } from "drizzle-orm";
 import type { Database } from "../database/database.types";
 import { applications, interviewChunks, interviewSessions } from "../database/schema";
@@ -49,6 +52,9 @@ function toSession(
     transcript: row.transcript,
     updatedAt: row.updatedAt.toISOString(),
     userEmail: row.userEmail,
+    durationMinutes: row.durationMinutes,
+    startedAt: row.startedAt?.toISOString() ?? null,
+    context: row.context ?? null,
   };
 }
 
@@ -74,6 +80,10 @@ function toRow(session: StoredInterviewSession) {
     transcript: session.transcript ?? "",
     updatedAt: new Date(session.updatedAt),
     userEmail: session.userEmail,
+    durationMinutes:
+      session.durationMinutes ?? INTERVIEW_DEFAULT_DURATION_MINUTES,
+    startedAt: session.startedAt ? new Date(session.startedAt) : null,
+    context: session.context ?? null,
   };
 }
 

@@ -9,10 +9,12 @@ import {
   Res,
   UnauthorizedException,
 } from "@nestjs/common";
-import type {
-  InterviewRecruiterProfile,
-  InterviewSessionStartRequest,
-  InterviewTranscriptionChunkRequest,
+import {
+  INTERVIEW_DEFAULT_DURATION_MINUTES,
+  isInterviewDuration,
+  type InterviewRecruiterProfile,
+  type InterviewSessionStartRequest,
+  type InterviewTranscriptionChunkRequest,
 } from "@cvforge/types";
 import { AuthService } from "../auth/auth.service";
 import { InterviewProgressService } from "./interview-progress.service";
@@ -87,6 +89,9 @@ export class InterviewController {
       body?.language === "en" ? "en" : "fr",
       this.readProfile(body?.profile),
       typeof body?.applicationId === "string" ? body.applicationId.trim() : "",
+      isInterviewDuration(body?.durationMinutes)
+        ? body.durationMinutes
+        : INTERVIEW_DEFAULT_DURATION_MINUTES,
     );
   }
 

@@ -1,5 +1,6 @@
 import type {
   InterviewAIStatus,
+  InterviewContextSnapshot,
   InterviewMessage,
   InterviewRecruiterProfile,
   InterviewReport,
@@ -47,6 +48,12 @@ export const interviewSessions = pgTable(
     completedAt: timestamp("completed_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
+    durationMinutes: integer("duration_minutes").notNull().default(10),
+    // Set on the first spoken turn, not at creation: credits are spent when
+    // the session opens, which can be minutes before anyone reaches the
+    // studio, and the agenda must not burn its budget on that gap.
+    startedAt: timestamp("started_at", { withTimezone: true }),
+    context: jsonb("context").$type<InterviewContextSnapshot | null>(),
   },
   (table) => [
     // History reads by user, newest first. With `user_email` leading, this
