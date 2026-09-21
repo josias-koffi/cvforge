@@ -7,7 +7,6 @@ import {
   Post,
   Req,
   Res,
-  Sse,
   UnauthorizedException,
 } from "@nestjs/common";
 import type {
@@ -15,7 +14,6 @@ import type {
   InterviewSessionStartRequest,
   InterviewTranscriptionChunkRequest,
 } from "@cvforge/types";
-import { Observable } from "rxjs";
 import { AuthService } from "../auth/auth.service";
 import { InterviewProgressService } from "./interview-progress.service";
 import { InterviewTurnService } from "./interview-turn.service";
@@ -64,24 +62,6 @@ async function writeEventStream<T>(
   } finally {
     response.end();
   }
-}
-
-/** Adapts an async generator to the Observable `@Sse` expects. */
-function toMessageEvents<T>(
-  generator: AsyncGenerator<T, void, undefined>,
-): Observable<MessageEvent> {
-  return new Observable<MessageEvent>((subscriber) => {
-    (async () => {
-      try {
-        for await (const event of generator) {
-          subscriber.next({ data: JSON.stringify(event) } as MessageEvent);
-        }
-        subscriber.complete();
-      } catch (error) {
-        subscriber.error(error);
-      }
-    })();
-  });
 }
 
 @Controller("interviews")
@@ -133,16 +113,6 @@ export class InterviewController {
     return this.interviewService.getSession(session.email, sessionId);
   }
 
-  @Post("sessions/:sessionId/chunks")
-  transcribeChunk(
-    @Param("sessionId") sessionId: string,
-    @Body() body: InterviewTranscriptionChunkRequest,
-    @Req() request: RequestLike,
-  ) {
-    const session = this.readSession(request);
-    return this.interviewService.transcribeChunk(session.email, sessionId, body);
-  }
-
   /** One spoken turn: the candidate's answer in, the interviewer's voice out. */
   @Post("sessions/:sessionId/turn")
   async streamTurn(
@@ -188,27 +158,6 @@ export class InterviewController {
   ) {
     const session = this.readSession(request);
     return this.interviewService.finishSession(session.email, sessionId);
-  }
-
-  @Post("sessions/:sessionId/prefetch")
-  async prefetchNextQuestion(
-    @Param("sessionId") sessionId: string,
-    @Req() request: RequestLike,
-  ) {
-    const session = this.readSession(request);
-    return this.interviewService.prefetchNextQuestion(session.email, sessionId);
-  }
-
-  @Sse("sessions/:sessionId/respond")
-  streamAIResponse(
-    @Param("sessionId") sessionId: string,
-    @Req() request: RequestLike,
-  ): Observable<MessageEvent> {
-    const session = this.readSession(request);
-
-    return toMessageEvents(
-      this.interviewService.streamAIResponse(session.email, sessionId),
-    );
   }
 
   private readSession(request: RequestLike) {

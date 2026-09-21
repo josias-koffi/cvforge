@@ -8,9 +8,8 @@ vi.mock("@/lib/api", () => ({ apiRequest }))
 
 import { POST as createSession } from "./sessions/route"
 import { GET as getSession } from "./sessions/[sessionId]/route"
-import { POST as uploadChunk } from "./sessions/[sessionId]/chunks/route"
-import { GET as respond } from "./sessions/[sessionId]/respond/route"
-import { POST as prefetch } from "./sessions/[sessionId]/prefetch/route"
+import { POST as turn } from "./sessions/[sessionId]/turn/route"
+import { POST as opening } from "./sessions/[sessionId]/opening/route"
 
 const CHUNK = {
   chunkBase64: "AAAA",
@@ -139,25 +138,29 @@ describe("interview route handlers", () => {
     })
   })
 
-  describe("POST /sessions/[sessionId]/chunks", () => {
+  describe("POST /sessions/[sessionId]/turn", () => {
     it("forwards a complete segment", async () => {
-      apiRequest.mockResolvedValue(jsonResponse({ status: "recording" }))
+      apiRequest.mockResolvedValue(
+        new Response(new ReadableStream<Uint8Array>(), {
+          headers: { "content-type": "text/event-stream" },
+        })
+      )
 
-      const response = await uploadChunk(
-        postRequest("/api/interviews/sessions/s1/chunks", CHUNK),
+      const response = await turn(
+        postRequest("/api/interviews/sessions/s1/turn", CHUNK),
         context("s1")
       )
 
       expect(response.status).toBe(200)
       expect(apiRequest).toHaveBeenCalledWith(
-        "/interviews/sessions/s1/chunks",
-        { body: CHUNK, method: "POST" }
+        "/interviews/sessions/s1/turn",
+        expect.objectContaining({ body: CHUNK, method: "POST" })
       )
     })
 
     it("refuses an incomplete segment without calling the API", async () => {
-      const response = await uploadChunk(
-        postRequest("/api/interviews/sessions/s1/chunks", {
+      const response = await turn(
+        postRequest("/api/interviews/sessions/s1/turn", {
           ...CHUNK,
           sequence: "first",
         }),
@@ -167,9 +170,7 @@ describe("interview route handlers", () => {
       expect(response.status).toBe(400)
       expect(apiRequest).not.toHaveBeenCalled()
     })
-  })
 
-  describe("GET /sessions/[sessionId]/respond", () => {
     it("hands the upstream stream through without reading it", async () => {
       const body = new ReadableStream<Uint8Array>({
         start(controller) {
@@ -181,13 +182,14 @@ describe("interview route handlers", () => {
         new Response(body, { headers: { "content-type": "text/event-stream" } })
       )
 
-      const response = await respond(
-        new NextRequest("http://localhost/api/interviews/sessions/s1/respond"),
+      const response = await turn(
+        postRequest("/api/interviews/sessions/s1/turn", CHUNK),
         context("s1")
       )
 
-      // Same stream object: buffering it here would break sentence-by-sentence
-      // speech, so the identity is the assertion that matters.
+      // Same stream object: reading it here would hold the whole reply back
+      // and the voice would arrive in one lump, so the identity is the
+      // assertion that matters.
       expect(response.body).toBe(body)
       expect(response.headers.get("content-type")).toContain("text/event-stream")
       expect(response.headers.get("cache-control")).toContain("no-transform")
@@ -197,8 +199,8 @@ describe("interview route handlers", () => {
     it("answers JSON when the interviewer cannot be reached", async () => {
       apiRequest.mockResolvedValue(new Response("nope", { status: 503 }))
 
-      const response = await respond(
-        new NextRequest("http://localhost/api/interviews/sessions/s1/respond"),
+      const response = await turn(
+        postRequest("/api/interviews/sessions/s1/turn", CHUNK),
         context("s1")
       )
 
@@ -207,16 +209,25 @@ describe("interview route handlers", () => {
     })
   })
 
-  describe("POST /sessions/[sessionId]/prefetch", () => {
-    it("answers 204 even when warming fails", async () => {
-      apiRequest.mockRejectedValue(new Error("upstream down"))
+  describe("POST /sessions/[sessionId]/opening", () => {
+    it("streams the greeting with no body of its own", async () => {
+      const body = new ReadableStream<Uint8Array>()
+      apiRequest.mockResolvedValue(
+        new Response(body, { headers: { "content-type": "text/event-stream" } })
+      )
 
-      const response = await prefetch(
-        new NextRequest("http://localhost/api/interviews/sessions/s1/prefetch"),
+      const response = await opening(
+        new NextRequest("http://localhost/api/interviews/sessions/s1/opening", {
+          method: "POST",
+        }),
         context("s1")
       )
 
-      expect(response.status).toBe(204)
+      expect(response.body).toBe(body)
+      expect(apiRequest).toHaveBeenCalledWith(
+        "/interviews/sessions/s1/opening",
+        expect.objectContaining({ method: "POST" })
+      )
     })
   })
 })
