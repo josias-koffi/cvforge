@@ -54,6 +54,9 @@ function makeSession(
     transcript: "",
     updatedAt: "2026-04-24T13:00:00.000Z",
     userEmail: "user@example.com",
+    durationMinutes: 10,
+    startedAt: null,
+    context: null,
     ...overrides,
   };
 }

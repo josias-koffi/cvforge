@@ -6,6 +6,7 @@ import { Injectable } from "@nestjs/common";
 import { withOpenRouterHttpErrors } from "../ai/openrouter.exception";
 import type { OpenRouterService } from "../ai/openrouter.service";
 import type { StoredApplication } from "../applications/applications.types";
+import { buildContextSnapshot, describeContext } from "./interview.context";
 import { REPORT_RESPONSE_FORMAT } from "./interview.prompts";
 import { buildTranscriptStats, nowIso } from "./interview.stats";
 import type { StoredInterviewSession } from "./interview.types";
@@ -81,7 +82,7 @@ export class InterviewReportService {
             content: [
               `Interview language: ${session.language}`,
               `Recruiter profile: ${session.profile}`,
-              describeApplication(application),
+              describeContext(buildContextSnapshot(application), "en"),
               `Transcript: ${session.transcript}`,
               `Average response duration (seconds): ${
                 transcriptStats.averageResponseDurationSeconds ?? "unknown"
@@ -122,22 +123,6 @@ export class InterviewReportService {
       transcriptStats,
     };
   }
-}
-
-function describeApplication(application: StoredApplication | null) {
-  if (!application) {
-    return "No linked application context.";
-  }
-
-  return [
-    `Offer title: ${application.extracted.title}`,
-    `Company: ${application.extracted.companyName ?? "Unknown"}`,
-    `Summary: ${application.extracted.summary}`,
-    `Requirements: ${application.extracted.requirements.join(", ") || "None"}`,
-    `Responsibilities: ${
-      application.extracted.responsibilities.join(", ") || "None"
-    }`,
-  ].join("\n");
 }
 
 /** An unknown metric key is dropped rather than shown as a nameless score. */

@@ -26,6 +26,9 @@ const SESSION_SUMMARY: InterviewSessionSummary = {
   status: "idle",
   transcript: "",
   updatedAt: "2026-04-24T13:00:00.000Z",
+  durationMinutes: 10,
+  startedAt: null,
+  context: null,
 };
 
 function makeController(sessionOverride: unknown = { email: "user@test.example" }) {

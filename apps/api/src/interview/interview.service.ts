@@ -1,9 +1,11 @@
 import {
   AI_CREDIT_ACTION_INTERVIEW_SESSION,
+  INTERVIEW_DEFAULT_DURATION_MINUTES,
   INTERVIEW_AI_STATUS_IDLE,
   INTERVIEW_PROFILE_STANDARD,
   INTERVIEW_SESSION_STATUS_COMPLETED,
   INTERVIEW_SESSION_STATUS_IDLE,
+  isInterviewDuration,
   type Locale,
   type InterviewRecruiterProfile,
 } from "@cvforge/types";
@@ -17,6 +19,8 @@ import {
 import type { OpenRouterTranscriptionService } from "../ai/openrouter-transcription.service";
 import type { OpenRouterService } from "../ai/openrouter.service";
 import type { ApplicationsService } from "../applications/applications.service";
+import type { StoredApplication } from "../applications/applications.types";
+import { buildContextSnapshot } from "./interview.context";
 import type { CreditsService } from "../credits/credits.service";
 import type { InterviewReportService } from "./interview-report.service";
 import { nowIso } from "./interview.stats";
@@ -66,13 +70,17 @@ export class InterviewService {
     language: Locale = "fr",
     profile: InterviewRecruiterProfile = INTERVIEW_PROFILE_STANDARD,
     applicationId = "",
+    durationMinutes: number = INTERVIEW_DEFAULT_DURATION_MINUTES,
   ) {
     const linkedApplicationId = applicationId.trim() || null;
+    let application: StoredApplication | null = null;
 
     if (linkedApplicationId) {
       // Awaited: unawaited, an application owned by somebody else still created
-      // a session, and the rejection surfaced as an unhandled promise.
-      await this.applicationsService.getOwnedApplication(
+      // a session, and the rejection surfaced as an unhandled promise. The
+      // result used to be discarded, which is why the recruiter knew nothing
+      // about the job it was interviewing for.
+      application = await this.applicationsService.getOwnedApplication(
         userEmail,
         linkedApplicationId,
       );
@@ -116,6 +124,13 @@ export class InterviewService {
       transcript: "",
       updatedAt: createdAt,
       userEmail,
+      durationMinutes: isInterviewDuration(durationMinutes)
+        ? durationMinutes
+        : INTERVIEW_DEFAULT_DURATION_MINUTES,
+      // Stamped on the first spoken turn: the candidate may not reach the
+      // studio for minutes, and the agenda must not spend its budget waiting.
+      startedAt: null,
+      context: buildContextSnapshot(application),
     };
 
     await this.store.save(session);

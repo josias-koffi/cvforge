@@ -1,9 +1,10 @@
-import type {
-  InterviewMessage,
-  InterviewReport,
-  InterviewSessionListItem,
-  InterviewSessionSummary,
-  InterviewTranscriptChunk,
+import {
+  INTERVIEW_DEFAULT_DURATION_MINUTES,
+  type InterviewMessage,
+  type InterviewReport,
+  type InterviewSessionListItem,
+  type InterviewSessionSummary,
+  type InterviewTranscriptChunk,
 } from "@cvforge/types";
 
 export type StoredInterviewSession = InterviewSessionSummary & {
@@ -62,6 +63,10 @@ export function summarizeInterviewSession(
     status: session.status,
     transcript: session.transcript,
     updatedAt: session.updatedAt,
+    durationMinutes:
+      session.durationMinutes ?? INTERVIEW_DEFAULT_DURATION_MINUTES,
+    startedAt: session.startedAt ?? null,
+    context: session.context ?? null,
   };
 }
 
