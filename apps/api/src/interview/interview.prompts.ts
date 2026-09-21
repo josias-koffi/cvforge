@@ -12,7 +12,7 @@ import {
 import type { AgendaState } from "./interview.agenda";
 import { buildAgendaDirective } from "./interview.agenda-prompt";
 import { describeContext } from "./interview.context";
-import { MAX_MESSAGES } from "./interview.stats";
+import { selectPromptMessages } from "./interview.stats";
 
 /**
  * Transcription no longer takes a prompt: the dedicated endpoint accepts an
@@ -169,12 +169,17 @@ export function buildTurnPrompt(input: {
   profile: InterviewRecruiterProfile;
   agendaState: AgendaState;
   context: InterviewContextSnapshot | null;
+  /** What fell out of the prompt window, so it is not asked twice. */
+  coveredGround?: string | null;
 }): string {
   return [
     buildAiPrompt(input.language, input.profile),
     describeContext(input.context, input.language),
+    input.coveredGround,
     buildAgendaDirective(input.agendaState, input.language),
-  ].join("\n\n");
+  ]
+    .filter((part): part is string => Boolean(part))
+    .join("\n\n");
 }
 
 export function buildConversation(
@@ -182,7 +187,7 @@ export function buildConversation(
   profile: InterviewRecruiterProfile,
   messages: InterviewMessage[],
 ): Array<{ role: "system" | "user" | "assistant"; content: string }> {
-  const recentMessages = messages.slice(-MAX_MESSAGES);
+  const recentMessages = selectPromptMessages(messages);
 
   return [
     { role: "system", content: buildAiPrompt(language, profile) },
