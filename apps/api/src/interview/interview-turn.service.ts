@@ -63,7 +63,7 @@ export class InterviewTurnService {
     }
 
     const turnLog = createTurnLog(this.logger, "interview.turn", sessionId);
-    const transcribing = this.transcribeAside(request);
+    const transcribing = this.transcribeAside(request, session.language);
     let candidateText: string | null = null;
     let emittedCandidate = false;
     let reply = "";
@@ -231,7 +231,10 @@ export class InterviewTurnService {
    * and as a plain value once settled, so the streaming loop can pick it up
    * without awaiting.
    */
-  private transcribeAside(request: InterviewTranscriptionChunkRequest) {
+  private transcribeAside(
+    request: InterviewTranscriptionChunkRequest,
+    language: string,
+  ) {
     const state: {
       promise: Promise<string | null>;
       settled: string | null;
@@ -251,7 +254,10 @@ export class InterviewTurnService {
       .transcribe({
         audioBase64: request.chunkBase64,
         format: request.format,
-        language: undefined,
+        // The session already knows. Left undefined, the model guessed from
+        // the audio — and guessed English on anything that was not clearly
+        // speech, which is how a French interview came back as "Thank you."
+        language,
       })
       .then((text) => {
         stamp();

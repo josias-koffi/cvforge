@@ -319,6 +319,23 @@ describe("InterviewTurnService", () => {
     }
   });
 
+  it("tells the transcriber which language the interview is in", async () => {
+    // Left to guess, the model read a French answer as English and returned
+    // Whisper's canonical hallucination on non-speech: "Thank you."
+    const transcriber = transcriberSaying("J'ai mene la refonte.");
+    const service = new InterviewTurnService(
+      createStore().store,
+      voiceYielding([{ type: "transcript", text: "Et ensuite ?" }]),
+      transcriber,
+    );
+
+    await collect(service);
+
+    expect(transcriber.transcribe).toHaveBeenCalledWith(
+      expect.objectContaining({ language: "fr" }),
+    );
+  });
+
   it("refuses a session belonging to somebody else", async () => {
     const { store } = createStore();
     const service = new InterviewTurnService(
