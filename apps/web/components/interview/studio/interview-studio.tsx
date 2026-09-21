@@ -45,7 +45,17 @@ export function InterviewStudio({
   onFinish,
 }: {
   session: InterviewSessionSummary
-  onFinish: () => Promise<ActionResult | void>
+  /**
+   * The server action itself, not a wrapper around it.
+   *
+   * The page used to pass an inline `"use server"` closure that captured
+   * `sessionId`. Next.js gives such a closure its own encrypted server
+   * reference, and staging rejected it: `Server Reference ID did not match the
+   * expected format. Received "x"` — so finishing did nothing at all. The id
+   * travels as an argument instead, and what crosses the boundary is the
+   * top-level action's own 42-character reference.
+   */
+  onFinish: (sessionId: string) => Promise<ActionResult | void>
 }) {
   const [state, dispatch] = React.useReducer(studioReducer, {
     ...initialStudioState,
@@ -143,7 +153,7 @@ export function InterviewStudio({
     dispatch({ type: "FINISHED" })
 
     try {
-      const result = await onFinish()
+      const result = await onFinish(session.id)
 
       // Scoring the session redirects to the report and never returns, so
       // reaching here at all means it failed. Saying nothing left the
@@ -154,7 +164,7 @@ export function InterviewStudio({
     } finally {
       setFinishing(false)
     }
-  }, [onFinish])
+  }, [onFinish, session.id])
 
   const hasAnswered = state.messages.some((message) => message.role === "user")
   // From the reducer, not the prop: the prop was fetched before the first
