@@ -1,4 +1,5 @@
 import type {
+  InterviewDurationMinutes,
   InterviewRecruiterProfile,
   InterviewSessionStartResponse,
   InterviewSessionSummary,
@@ -34,6 +35,7 @@ export async function startSession(input: {
   applicationId?: string
   language: Locale
   profile: InterviewRecruiterProfile
+  durationMinutes: InterviewDurationMinutes
 }): Promise<InterviewSessionStartResponse> {
   const response = await fetch(`${BASE}/sessions`, {
     body: JSON.stringify(input),
