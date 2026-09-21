@@ -122,6 +122,42 @@ describe("resolveAgendaState", () => {
     expect(early.current).not.toBe("warmup");
   });
 
+  it("does not reach the closing while a third of the time is left", () => {
+    // The live complaint: the interviewer wound a ten-minute session up with
+    // 3:58 still on the clock, because eight answers were all the agenda
+    // budgeted for the whole interview.
+    const ten = buildAgenda("standard", 10, WITH_OFFER);
+
+    for (const exchanges of [8, 12, 20, 60]) {
+      const state = resolveAgendaState(ten, {
+        elapsedMs: 6 * 60_000,
+        exchanges,
+      });
+
+      expect(state.current).not.toBe("closing");
+      expect(state.shouldWrapUp).toBe(false);
+    }
+  });
+
+  it("lets the conversation lead by one phase, never more", () => {
+    // Brisk answers should move things along; they should not skip the middle
+    // of the interview, which is where the profile actually gets swept.
+    const order = INTERVIEW_PHASES.indexOf.bind(INTERVIEW_PHASES);
+    const onTheClock = at(agenda, 6, 0);
+    const racing = at(agenda, 6, 200);
+
+    expect(order(racing.current)).toBe(order(onTheClock.current) + 1);
+  });
+
+  it("budgets a ten-minute interview at more than eight exchanges", () => {
+    // A spoken turn runs about 45 seconds, not 90: pricing the phases at the
+    // slower pace is what let the conversation outrun the clock.
+    const ten = buildAgenda("standard", 10, WITH_OFFER);
+    const budgeted = ten.slots.reduce((sum, slot) => sum + slot.minExchanges, 0);
+
+    expect(budgeted).toBeGreaterThanOrEqual(12);
+  });
+
   it("never goes backwards, whichever signal is ahead", () => {
     const byClock = at(agenda, 12, 0);
     const byBoth = at(agenda, 12, 30);

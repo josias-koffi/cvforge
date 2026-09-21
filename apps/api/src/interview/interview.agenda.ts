@@ -130,9 +130,19 @@ const PHASE_SHARES: Record<
   },
 };
 
-/** Roughly one exchange per 90 seconds of phase, and never none. */
+/**
+ * How much wall clock one spoken exchange is worth.
+ *
+ * 90 s was a guess made before anything had been measured, and it priced a
+ * ten-minute interview at nine exchanges in total. A real turn — question,
+ * answer, reply — runs closer to 45 s, so the conversation reached the last
+ * phase while a third of the time was still on the clock.
+ */
+const EXCHANGE_MS = 45_000;
+
+/** How many exchanges a phase is worth, and never none. */
 function minExchangesFor(slotMs: number) {
-  return Math.max(1, Math.round(slotMs / 90_000));
+  return Math.max(1, Math.round(slotMs / EXCHANGE_MS));
 }
 
 /**
@@ -253,7 +263,13 @@ function resolveIndex(
     byExchanges = Math.min(index + 1, last);
   }
 
-  return Math.min(last, Math.max(byTime === -1 ? last : byTime, byExchanges));
+  const byClock = byTime === -1 ? last : byTime;
+
+  // The conversation may pull the interview forward, but never more than one
+  // phase ahead of the clock. Unbounded, a brisk candidate reached the closing
+  // with four minutes still to run and the interviewer wound the session up —
+  // which is the opposite of sweeping the whole profile in the time chosen.
+  return Math.min(last, byClock + 1, Math.max(byClock, byExchanges));
 }
 
 /** The number of times the candidate has spoken. */
