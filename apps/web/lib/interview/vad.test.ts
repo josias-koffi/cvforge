@@ -3,7 +3,9 @@ import { describe, expect, it } from "vitest"
 import {
   MAX_ANSWER_MS,
   MIN_SPEECH_MS,
+  SETTLED_SPEECH_MS,
   SILENCE_MS_TO_STOP,
+  SILENCE_MS_WHILE_SEARCHING,
   SPEECH_START_RMS,
   computeAmplitudeRms,
   initialVadAccumulator,
@@ -141,7 +143,7 @@ describe("nextVadDecision", () => {
     // A cough, a chair, a door. Sending it would have the interviewer reply to
     // a noise and waste a turn.
     const decision = decide("recording", SILENT, {
-      silenceMs: SILENCE_MS_TO_STOP,
+      silenceMs: SILENCE_MS_WHILE_SEARCHING,
       speechMs: MIN_SPEECH_MS - 100,
     })
 
@@ -154,6 +156,38 @@ describe("nextVadDecision", () => {
 
     expect(decision.speechMs).toBe(200)
     expect(decision.silenceMs).toBe(416)
+  })
+
+  it("waits out a hesitation at the start of an answer", () => {
+    // "Alors... euh..." while the candidate gathers an example. Ending the
+    // turn here hands the floor back and the interviewer moves on, which is
+    // exactly what the first live test ran into.
+    const decision = decide("recording", SILENT, {
+      silenceMs: SILENCE_MS_TO_STOP + 100,
+      speechMs: SETTLED_SPEECH_MS - 500,
+    })
+
+    expect(decision.action).toBe("none")
+    expect(decision.status).toBe("recording")
+  })
+
+  it("does not wait forever on someone who never got going", () => {
+    const decision = decide("recording", SILENT, {
+      silenceMs: SILENCE_MS_WHILE_SEARCHING,
+      speechMs: SETTLED_SPEECH_MS - 500,
+    })
+
+    expect(decision.action).toBe("stop")
+    expect(decision.reason).toBe("silence")
+  })
+
+  it("is quicker to hand over once the answer is under way", () => {
+    const decision = decide("recording", SILENT, {
+      silenceMs: SILENCE_MS_TO_STOP,
+      speechMs: SETTLED_SPEECH_MS,
+    })
+
+    expect(decision.action).toBe("stop")
   })
 
   it("stops a runaway answer rather than buffering it forever", () => {
