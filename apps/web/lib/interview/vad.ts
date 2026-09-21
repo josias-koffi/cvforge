@@ -20,8 +20,19 @@ export const SPEECH_START_RMS = 0.045
 export const SPEECH_CONTINUE_RMS = 0.02
 /** How far above the measured room tone the onset must sit. */
 export const NOISE_FLOOR_MARGIN = 2.5
-/** Silence that ends an answer. */
-export const SILENCE_MS_TO_STOP = 900
+/** Silence that ends an answer once the candidate is clearly under way. */
+export const SILENCE_MS_TO_STOP = 1500
+/**
+ * Silence tolerated while the answer is still being searched for.
+ *
+ * An interview question is not chat: "alors... euh..." while someone gathers
+ * an example is the normal opening of a considered answer, and cutting it off
+ * hands the floor back to an interviewer who then moves on. Patience costs a
+ * second of dead air; impatience costs the answer.
+ */
+export const SILENCE_MS_WHILE_SEARCHING = 2800
+/** Speech below this is still a false start, not an answer under way. */
+export const SETTLED_SPEECH_MS = 2000
 /** Below this, a burst was a cough or a chair, not an answer. */
 export const MIN_SPEECH_MS = 400
 /** Nothing else ever stops a recording, so something has to. */
@@ -118,6 +129,18 @@ export function resolveStartThreshold(noiseFloor: number): number {
 }
 
 /**
+ * How long to wait before deciding the answer is over.
+ *
+ * Longer while the candidate has barely started: those first seconds are where
+ * the searching happens, and a pause there means thinking, not finishing.
+ */
+export function resolveSilenceBudget(speechMs: number): number {
+  return speechMs >= SETTLED_SPEECH_MS
+    ? SILENCE_MS_TO_STOP
+    : SILENCE_MS_WHILE_SEARCHING
+}
+
+/**
  * The next VAD state for one frame.
  *
  * Only `listening` starts a recording and only `recording` ends one:
@@ -184,7 +207,7 @@ function decideWhileRecording(
     return { ...ended, action: "stop", reason: "max-duration" }
   }
 
-  if (silenceMs >= SILENCE_MS_TO_STOP) {
+  if (silenceMs >= resolveSilenceBudget(speechMs)) {
     // A cough is loud and brief. Sending it would have the interviewer answer
     // a noise, so the recording is dropped and the floor stays with the
     // candidate.
