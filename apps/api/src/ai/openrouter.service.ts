@@ -1,11 +1,7 @@
+import { buildChain, runModelChain } from './openrouter.chain';
 import { OpenRouterConfig } from './openrouter.config';
-import { buildOpenRouterError, isModelUnavailable } from './openrouter.error';
-import {
-  DEFAULT_RETRY_POLICY,
-  RetryHooks,
-  isTransientFailure,
-  withRetry,
-} from './openrouter.retry';
+import { buildOpenRouterError } from './openrouter.error';
+import { DEFAULT_RETRY_POLICY, RetryHooks } from './openrouter.retry';
 
 export interface ChatMessage {
   role: 'system' | 'user' | 'assistant';
@@ -17,31 +13,17 @@ type MultimodalTextPart = {
   text: string;
 };
 
-type MultimodalAudioPart = {
-  type: 'input_audio';
-  input_audio: {
-    data: string;
-    format: string;
-  };
-};
-
 type OpenRouterMessage =
   | ChatMessage
   | {
       role: 'system' | 'user' | 'assistant';
-      content: Array<MultimodalTextPart | MultimodalAudioPart>;
+      content: Array<MultimodalTextPart>;
     };
 
 export interface ChatOptions {
   model?: string;
-  /**
-   * Forbids the fallback chain and sends `model` alone. Reserved for requests
-   * no other model can serve — audio input, chiefly.
-   */
-  pinModel?: boolean;
   temperature?: number;
   maxTokens?: number;
-  transcriptionPrompt?: string;
   provider?: {
     order?: string[];
     allow_fallbacks?: boolean;
@@ -56,40 +38,6 @@ export interface ChatOptions {
     };
   };
 }
-
-const DEFAULT_TRANSCRIPTION_MODEL = 'mistralai/voxtral-small-24b-2507';
-const DEFAULT_TRANSCRIPTION_SYSTEM_PROMPT = [
-  'You are a speech transcription engine.',
-  'Transcribe the audio exactly as spoken.',
-  'Never answer the question in the audio.',
-  'Never continue the conversation.',
-  'Never introduce yourself.',
-  'Return plain text only.',
-].join(' ');
-const DEFAULT_TRANSCRIPTION_PROMPT = [
-  'Transcribe this audio faithfully.',
-  'Keep the original wording and language.',
-  'Do not add speaker labels, timestamps, explanations, or commentary.',
-  'If the audio is unclear, return an empty transcript instead of inventing content.',
-].join(' ');
-const TRANSCRIPTION_RESPONSE_FORMAT = {
-  type: 'json_schema',
-  json_schema: {
-    name: 'transcription_result',
-    strict: true,
-    schema: {
-      type: 'object',
-      additionalProperties: false,
-      properties: {
-        transcript: {
-          type: 'string',
-          description: 'Exact plain-text transcription of the spoken audio.',
-        },
-      },
-      required: ['transcript'],
-    },
-  },
-} as const;
 
 export class OpenRouterService {
   constructor(
@@ -110,18 +58,11 @@ export class OpenRouterService {
     };
   }
 
-  /**
-   * The models to try, in order. We walk this chain ourselves rather than
-   * handing OpenRouter a `models` array: in production a throttled Mistral
-   * came back 429 without any fallback model ever being attempted, so the
-   * bascule has to be ours to be observable and certain. `pinModel` keeps the
-   * chain to one entry, for requests no other model can serve.
-   */
   private buildModelChain(options: ChatOptions): string[] {
-    const primary = options.model ?? this.config.defaultModel;
-    if (options.pinModel) return [primary];
-
-    return [primary, ...this.config.fallbackModels.filter((model) => model !== primary)];
+    return buildChain(
+      options.model ?? this.config.defaultModel,
+      this.config.fallbackModels,
+    );
   }
 
   private buildRequestBody(
@@ -143,9 +84,9 @@ export class OpenRouterService {
   }
 
   // data_collection: "deny" is a per-request routing filter that restricts
-  // OpenRouter to providers advertising ZDR support. Voxtral has no ZDR-capable
-  // provider, so ENABLE_ZDR_STT must stay false. Chat models (e.g. mistral-small)
-  // can opt in via ENABLE_ZDR_CHAT=true when the account does not enforce ZDR globally.
+  // OpenRouter to providers advertising ZDR support. Chat models can opt in via
+  // ENABLE_ZDR_CHAT=true when the account does not enforce ZDR globally — note
+  // that when it does, the account rule applies whatever this sends (ADR-013).
   private buildDefaults(enableZdr: boolean) {
     return {
       transforms: [],
@@ -153,13 +94,6 @@ export class OpenRouterService {
     };
   }
 
-  /**
-   * Walks the model chain, retrying each entry on a transient failure before
-   * moving to the next. A 404 skips straight to the next model — the account's
-   * allowed-providers setting can make one model unroutable while the next is
-   * fine. A malformed request or an auth failure aborts the chain instead:
-   * every model would reject it identically.
-   */
   private async fetchCompletion(
     messages: OpenRouterMessage[],
     options: ChatOptions,
@@ -167,34 +101,21 @@ export class OpenRouterService {
     operation: string,
     extra: Record<string, unknown> = {},
   ): Promise<Response> {
-    const chain = this.buildModelChain(options);
-    let lastError: unknown;
+    return runModelChain(
+      this.buildModelChain(options),
+      async (model) => {
+        const attempt = await fetch(`${this.config.baseUrl}/chat/completions`, {
+          body: this.buildRequestBody(messages, { ...options, model }, enableZdr, extra),
+          headers: this.buildHeaders(),
+          method: 'POST',
+        });
 
-    for (const [index, model] of chain.entries()) {
-      try {
-        return await withRetry(
-          async () => {
-            const attempt = await fetch(`${this.config.baseUrl}/chat/completions`, {
-              body: this.buildRequestBody(messages, { ...options, model }, enableZdr, extra),
-              headers: this.buildHeaders(),
-              method: 'POST',
-            });
-
-            if (!attempt.ok) throw await buildOpenRouterError(attempt, operation, model);
-            return attempt;
-          },
-          this.retryPolicy,
-          this.retryHooks,
-        );
-      } catch (error) {
-        lastError = error;
-        const isLastModel = index === chain.length - 1;
-        const worthAnotherModel = isTransientFailure(error) || isModelUnavailable(error);
-        if (isLastModel || !worthAnotherModel) throw error;
-      }
-    }
-
-    throw lastError;
+        if (!attempt.ok) throw await buildOpenRouterError(attempt, operation, model);
+        return attempt;
+      },
+      this.retryPolicy,
+      this.retryHooks,
+    );
   }
 
   async chat(messages: ChatMessage[], options: ChatOptions = {}): Promise<string> {
@@ -246,64 +167,6 @@ export class OpenRouterService {
     } finally {
       reader.releaseLock();
     }
-  }
-
-  async transcribeAudio(
-    audioBase64: string,
-    format: string,
-    options: ChatOptions = {},
-  ): Promise<string> {
-    const transcript = await this.requestCompletion(
-      [
-        {
-          role: 'system',
-          content: DEFAULT_TRANSCRIPTION_SYSTEM_PROMPT,
-        },
-        {
-          role: 'user',
-          content: [
-            {
-              text: options.transcriptionPrompt ?? DEFAULT_TRANSCRIPTION_PROMPT,
-              type: 'text',
-            },
-            {
-              input_audio: {
-                data: audioBase64,
-                format: this.normalizeAudioFormat(format),
-              },
-              type: 'input_audio',
-            },
-          ],
-        },
-      ],
-      {
-        ...options,
-        maxTokens: options.maxTokens ?? 48,
-        temperature: options.temperature ?? 0,
-        model: this.resolveTranscriptionModel(options.model),
-        // No text model can take audio input, so a fallback chain is meaningless.
-        pinModel: true,
-        provider: options.provider,
-        responseFormat: TRANSCRIPTION_RESPONSE_FORMAT,
-      },
-      this.config.enableZdrStt,
-    );
-
-    let parsedTranscript = transcript;
-    try {
-      const parsed = JSON.parse(transcript) as { transcript?: string };
-      if (typeof parsed.transcript === 'string') {
-        parsedTranscript = parsed.transcript;
-      }
-    } catch {
-      throw new Error('OpenRouter transcription response was not valid JSON');
-    }
-
-    if (parsedTranscript.trim().length === 0) {
-      throw new Error('OpenRouter transcription response contained no text');
-    }
-
-    return parsedTranscript;
   }
 
   private async requestCompletion(
@@ -362,30 +225,5 @@ export class OpenRouterService {
       .trim();
 
     return text.length > 0 ? text : null;
-  }
-
-  private normalizeAudioFormat(format: string) {
-    const normalized = format.trim().toLowerCase();
-    if (normalized === 'mp3') return 'mp3';
-    if (normalized === 'ogg') return 'ogg';
-    if (normalized === 'wav') return 'wav';
-    return 'webm';
-  }
-
-  private resolveTranscriptionModel(model: string | undefined) {
-    const candidate = model?.trim();
-    if (!candidate) {
-      return DEFAULT_TRANSCRIPTION_MODEL;
-    }
-
-    if (candidate === 'voxtral-mini-latest') {
-      return DEFAULT_TRANSCRIPTION_MODEL;
-    }
-
-    if (candidate === 'voxtral-small-24b-2507') {
-      return DEFAULT_TRANSCRIPTION_MODEL;
-    }
-
-    return candidate;
   }
 }

@@ -24,29 +24,13 @@ import {
   type InterviewTranscriptionChunkRequest,
 } from "@cvforge/types";
 import { Injectable, BadRequestException, NotFoundException } from "@nestjs/common";
+import type { OpenRouterTranscriptionService } from "../ai/openrouter-transcription.service";
 import { withOpenRouterHttpErrors } from "../ai/openrouter.exception";
 import type { OpenRouterService } from "../ai/openrouter.service";
 import type { ApplicationsService } from "../applications/applications.service";
 import type { StoredApplication } from "../applications/applications.types";
 import type { InterviewStore, StoredInterviewSession } from "./interview.types";
 import { sortChunks, summarizeInterviewSession } from "./interview.types";
-
-const STT_MODEL =
-  process.env.INTERVIEW_STT_MODEL ?? "mistralai/voxtral-small-24b-2507";
-const AI_MODEL =
-  process.env.INTERVIEW_AI_MODEL ??
-  process.env.OPENROUTER_MODEL ??
-  "mistralai/mistral-small-3.2-24b-instruct";
-/**
- * Voxtral is served by Mistral alone and audio needs a provider that accepts
- * `input_audio`, so speech-to-text stays pinned — there is nothing to fall
- * back to.
- */
-const INTERVIEW_STT_PROVIDER = {
-  allow_fallbacks: false,
-  order: ["mistral"] as string[],
-  require_parameters: true,
-} as const;
 
 /**
  * Text calls only need a provider honouring `response_format`. Routing stays
@@ -115,30 +99,16 @@ const REPORT_RESPONSE_FORMAT = {
 
 type InterviewLanguageConfig = {
   label: string;
-  transcriptionPrompt: string;
 };
 
+/**
+ * Transcription no longer takes a prompt: the dedicated endpoint accepts an
+ * ISO-639-1 `language` hint instead (ADR-013). Only the label, which names the
+ * language to the interviewer model, survives.
+ */
 const LANGUAGE_CONFIG: Record<Locale, InterviewLanguageConfig> = {
-  en: {
-    label: "English",
-    transcriptionPrompt: [
-      "The speaker is expected to speak English.",
-      "Transcribe exactly what is said in English.",
-      "Keep the original wording, including questions.",
-      "If a word is slightly unclear, return the closest literal guess instead of answering as an assistant.",
-      "Return plain text only.",
-    ].join(" "),
-  },
-  fr: {
-    label: "French",
-    transcriptionPrompt: [
-      "La langue attendue du locuteur est le francais.",
-      "Transcris exactement ce qui est dit en francais.",
-      "Conserve la formulation originale, y compris les questions.",
-      "Si un mot est un peu flou, renvoie la meilleure approximation litterale au lieu de repondre comme un assistant.",
-      "Retourne uniquement le texte transcrit.",
-    ].join(" "),
-  },
+  en: { label: "English" },
+  fr: { label: "French" },
 };
 
 const BASE_AI_PROMPTS: Record<Locale, string> = {
@@ -267,6 +237,7 @@ export class InterviewService {
   constructor(
     private readonly store: InterviewStore,
     private readonly openRouter: OpenRouterService,
+    private readonly transcription: OpenRouterTranscriptionService,
     private readonly applicationsService: ApplicationsService,
   ) {}
 
@@ -334,7 +305,7 @@ export class InterviewService {
       const conversation = this.buildConversation(session.language, session.profile, session.messages);
       const question = await this.openRouter.chat(
         conversation,
-        { maxTokens: 120, model: AI_MODEL, provider: INTERVIEW_CHAT_PROVIDER, temperature: 0.35 },
+        { maxTokens: 120, provider: INTERVIEW_CHAT_PROVIDER, temperature: 0.35 },
       );
 
       session.prefetchedQuestion = question.trim();
@@ -400,17 +371,11 @@ export class InterviewService {
 
     try {
       const transcript = normalizeTranscript(
-        await this.openRouter.transcribeAudio(
-          request.chunkBase64,
-          request.format,
-          {
-            maxTokens: 64,
-            model: STT_MODEL,
-            provider: INTERVIEW_STT_PROVIDER,
-            temperature: 0,
-            transcriptionPrompt: this.getLanguageConfig(session.language).transcriptionPrompt,
-          },
-        ),
+        await this.transcription.transcribe({
+          audioBase64: request.chunkBase64,
+          format: request.format,
+          language: session.language,
+        }),
       );
 
       const chunkTimestamp = nowIso();
@@ -521,7 +486,6 @@ export class InterviewService {
         conversation,
         {
           maxTokens: 120,
-          model: AI_MODEL,
           provider: INTERVIEW_CHAT_PROVIDER,
           temperature: 0.35,
         },
@@ -638,7 +602,6 @@ export class InterviewService {
         ],
         {
           maxTokens: 500,
-          model: AI_MODEL,
           provider: INTERVIEW_CHAT_PROVIDER,
           responseFormat: REPORT_RESPONSE_FORMAT,
           temperature: 0.2,
