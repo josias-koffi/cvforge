@@ -253,6 +253,9 @@ describe("PrivacyService", () => {
     } = await createService();
 
     await interviewStore.save({
+      durationMinutes: 10,
+      startedAt: null,
+      context: null,
       aiResponse: null,
       aiResponseGeneratedAt: null,
       aiStatus: "idle",

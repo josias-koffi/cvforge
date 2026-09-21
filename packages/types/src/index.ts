@@ -216,10 +216,63 @@ export interface InterviewAIResponseEvent {
   timestamp: string;
 }
 
+/**
+ * How long the interview should run. The agenda spreads its phases over this,
+ * so it decides how much ground gets covered, not just when to stop.
+ */
+export const INTERVIEW_DURATION_CHOICES = [10, 20, 30] as const;
+export type InterviewDurationMinutes =
+  (typeof INTERVIEW_DURATION_CHOICES)[number];
+/** Vision §10.5: a screening interview, and the shortest that covers everything. */
+export const INTERVIEW_DEFAULT_DURATION_MINUTES: InterviewDurationMinutes = 10;
+
+export function isInterviewDuration(
+  value: unknown,
+): value is InterviewDurationMinutes {
+  return INTERVIEW_DURATION_CHOICES.some((choice) => choice === value);
+}
+
 export interface InterviewSessionStartRequest {
   applicationId?: string;
   language?: Locale;
   profile?: InterviewRecruiterProfile;
+  durationMinutes?: number;
+}
+
+/** What an offer says about the company, beyond the role itself. */
+export interface CompanyContext {
+  sector: string | null;
+  size: string | null;
+  culture: string | null;
+  values: string[];
+  salaryEstimate: string | null;
+}
+
+/**
+ * The job, the company and the candidate, frozen when the session opens.
+ *
+ * Frozen rather than read each turn for two reasons: a database round trip
+ * does not belong on the critical path of a turn budgeted at a second, and an
+ * offer edited mid-interview must not change the questions being asked.
+ */
+export interface InterviewContextSnapshot {
+  offerTitle: string | null;
+  companyName: string | null;
+  offerSummary: string | null;
+  /** A slice of the raw offer, which is where its own tone shows through. */
+  offerExcerpt: string | null;
+  requirements: string[];
+  responsibilities: string[];
+  company: CompanyContext | null;
+  candidateHeadline: string | null;
+  candidateSkills: string[];
+  candidateExperiences: InterviewContextExperience[];
+}
+
+export interface InterviewContextExperience {
+  role: string;
+  company: string;
+  period: string;
 }
 
 export type InterviewReportMetricKey =
@@ -307,6 +360,14 @@ export interface InterviewSessionSummary {
   status: InterviewSessionStatus;
   transcript: string;
   updatedAt: string;
+  durationMinutes: number;
+  /**
+   * When the candidate actually reached the studio, which is where the agenda
+   * starts counting. Credits are spent at creation, sometimes minutes earlier,
+   * and that gap must not eat into the interview.
+   */
+  startedAt: string | null;
+  context: InterviewContextSnapshot | null;
 }
 
 /**
@@ -580,6 +641,12 @@ export interface DraftApplication {
   updatedAt: string;
   userEmail: string;
   extracted: ExtractedOfferFields;
+  /**
+   * What the offer says about the company itself, derived once and cached.
+   * Absent until an interview asks for it — see ADR-016.
+   */
+  companyContext?: CompanyContext | null;
+  companyContextGeneratedAt?: string | null;
 }
 
 

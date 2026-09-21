@@ -1,6 +1,7 @@
 import type {
   ApplicationStatus,
   ApplicationStatusHistoryEntry,
+  CompanyContext,
   CVDocumentContent,
   DocumentVersionSource,
   ExtractedOfferFields,
@@ -55,6 +56,13 @@ export const applications = pgTable(
       .$type<InterviewReport[]>()
       .notNull()
       .default([]),
+    // Derived from the offer the first time an interview needs it, then
+    // cached: generating it for every application would charge for something
+    // most of them never use.
+    companyContext: jsonb("company_context").$type<CompanyContext | null>(),
+    companyContextGeneratedAt: timestamp("company_context_generated_at", {
+      withTimezone: true,
+    }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
   },

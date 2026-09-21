@@ -23,6 +23,9 @@ function makeSession(overrides: Partial<StoredInterviewSession> = {}): StoredInt
     transcript: "",
     updatedAt: new Date().toISOString(),
     userEmail: "user@test.example",
+    durationMinutes: 10,
+    startedAt: null,
+    context: null,
     ...overrides,
   };
 }
