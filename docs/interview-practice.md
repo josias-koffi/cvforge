@@ -37,8 +37,10 @@ recruiter spends nearly half the interview on competencies — and each has a
 45-second floor so a short interview still reaches a real closing.
 
 The phase advances on whichever is further along, the clock or the number of
-answers, and never goes backwards. The clock starts on the first spoken turn,
-not when the session was created.
+answers, and never goes backwards — but the answer count may only lead the
+clock by **one phase**, so a brisk candidate moves faster through the trame
+without finishing the interview early. The clock starts on the first spoken
+turn, not when the session was created.
 
 **Nothing stops on its own.** At the end the recruiter is told to wrap up, the
 studio says the time is spent, and the candidate finishes when they choose.
