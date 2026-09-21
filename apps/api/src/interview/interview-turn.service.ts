@@ -9,7 +9,13 @@ import {
 import { Injectable, Logger, NotFoundException } from "@nestjs/common";
 import type { OpenRouterTranscriptionService } from "../ai/openrouter-transcription.service";
 import type { OpenRouterVoiceService } from "../ai/openrouter-voice.service";
-import { buildAiPrompt, buildOpeningInstruction } from "./interview.prompts";
+import {
+  buildAgenda,
+  countExchanges,
+  elapsedSince,
+  resolveAgendaState,
+} from "./interview.agenda";
+import { buildOpeningInstruction, buildTurnPrompt } from "./interview.prompts";
 import { createTurnLog } from "./interview.turn-log";
 import {
   MAX_MESSAGES,
@@ -70,7 +76,7 @@ export class InterviewTurnService {
           role: message.role,
         })),
         onTelemetry: turnLog.onTelemetry,
-        systemPrompt: buildAiPrompt(session.language, session.profile),
+        systemPrompt: this.buildPrompt(session),
       })) {
         if (event.type === "audio") {
           turnLog.markFirstAudio();
@@ -109,6 +115,26 @@ export class InterviewTurnService {
   }
 
   /**
+   * The brief for this turn: the recruiter, the job, and where the interview
+   * has got to. Recomputed each time, because the phase moves.
+   */
+  private buildPrompt(session: StoredInterviewSession) {
+    const agenda = buildAgenda(session.profile, session.durationMinutes, {
+      hasContext: session.context !== null,
+    });
+
+    return buildTurnPrompt({
+      agendaState: resolveAgendaState(agenda, {
+        elapsedMs: elapsedSince(session.startedAt),
+        exchanges: countExchanges(session.messages),
+      }),
+      context: session.context,
+      language: session.language,
+      profile: session.profile,
+    });
+  }
+
+  /**
    * The interviewer's opening words, before the candidate has said anything.
    *
    * Nothing is transcribed here — there is no candidate audio — so this is the
@@ -136,7 +162,7 @@ export class InterviewTurnService {
         history: [],
         instruction: buildOpeningInstruction(session.language),
         onTelemetry: turnLog.onTelemetry,
-        systemPrompt: buildAiPrompt(session.language, session.profile),
+        systemPrompt: this.buildPrompt(session),
       })) {
         if (event.type === "audio") {
           turnLog.markFirstAudio();
@@ -178,6 +204,10 @@ export class InterviewTurnService {
     session.recoverable = true;
     session.status = INTERVIEW_SESSION_STATUS_READY;
     session.updatedAt = timestamp;
+    // The interview begins when somebody speaks, not when credits were spent:
+    // the candidate may have opened the session minutes earlier, and the
+    // agenda must not have burned its budget waiting for them.
+    session.startedAt ??= timestamp;
 
     await this.store.save(session);
   }
@@ -262,6 +292,10 @@ export class InterviewTurnService {
     session.recoverable = true;
     session.status = INTERVIEW_SESSION_STATUS_READY;
     session.updatedAt = timestamp;
+    // The interview begins when somebody speaks, not when credits were spent:
+    // the candidate may have opened the session minutes earlier, and the
+    // agenda must not have burned its budget waiting for them.
+    session.startedAt ??= timestamp;
 
     await this.store.save(session);
   }
