@@ -384,7 +384,12 @@ export type InterviewTurnEvent =
   | { type: "audio"; data: string }
   /** What the interviewer is saying, as it is spoken. */
   | { type: "reply"; text: string }
-  | { type: "done" }
+  /**
+   * End of turn. Carries when the interview actually began: the server stamps
+   * it on the first spoken turn, long after the session was created, so it is
+   * not in the summary the studio was opened with.
+   */
+  | { type: "done"; startedAt?: string | null }
   | { type: "error"; message: string };
 
 /**
