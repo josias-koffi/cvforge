@@ -42,8 +42,11 @@ clock by **one phase**, so a brisk candidate moves faster through the trame
 without finishing the interview early. The clock starts on the first spoken
 turn, not when the session was created.
 
-**Nothing stops on its own.** At the end the recruiter is told to wrap up, the
-studio says the time is spent, and the candidate finishes when they choose.
+**Nothing is cut off mid-turn.** At the end the recruiter is told to wrap up
+and the studio says the time is spent. Twenty seconds past the deadline, at the
+first gap where nobody is speaking, the studio scores the interview itself and
+the candidate lands on their report. `shouldAutoFinish` will not stop a turn in
+progress: ending one would discard the answer and the credit that paid for it.
 
 ## What the recruiter knows
 

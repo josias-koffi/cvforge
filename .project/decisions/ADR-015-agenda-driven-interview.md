@@ -87,9 +87,15 @@ privacy answer.
 - `startedAt` is stamped on the first spoken turn, not at session creation.
   Credits are spent when the session opens, sometimes minutes before anyone
   reaches the studio, and the agenda must not spend its budget waiting.
-- Nothing stops when the time runs out. The interviewer is told to wrap up, the
-  studio says so, and the candidate finishes when they choose — cutting a turn
-  short would discard the answer and the credit that paid for it.
+- **The studio ends the interview itself, but only in a gap.** The original
+  decision left finishing entirely to the candidate. Asked for on 2026-09-21,
+  after a live session where the clock ran on long past the recruiter's
+  closing: twenty seconds past the deadline, at the first moment nobody is
+  speaking, the studio scores the session and the candidate is redirected to
+  their report. The constraint that produced the original decision is
+  unchanged and now enforced by `shouldAutoFinish` — a turn in progress is
+  never cut short, because ending one discards the answer and the credit that
+  paid for it.
 - `MAX_MESSAGES = 20` had to be split in two. It was serving as both the model's
   context window and a destructive cap applied on write, which deleted the first
   half of any interview past ten exchanges — and that array is what the final
