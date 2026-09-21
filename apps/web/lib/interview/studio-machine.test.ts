@@ -21,6 +21,32 @@ describe("studioReducer", () => {
     expect(ready.vadStatus).toBe("listening")
   })
 
+  it("shuts the microphone while the recruiter's opening is on its way", () => {
+    // The candidate must not be recorded answering a question nobody asked.
+    const state = run([{ type: "AI_OPENING" }], ready)
+
+    expect(state.phase).toBe("processing")
+    expect(run([{ type: "SPEECH_START" }], state).phase).toBe("processing")
+  })
+
+  it("hands the floor back once the opening has been spoken", () => {
+    const state = run(
+      [
+        { type: "AI_OPENING" },
+        { type: "AI_AUDIO", elapsedMs: 700 },
+        { type: "AI_DELTA", text: "Parlez-moi de vous.", elapsedMs: 700 },
+        { type: "AI_DONE" },
+        { type: "VOICE_DONE" },
+      ],
+      ready
+    )
+
+    expect(state.phase).toBe("listening")
+    expect(state.messages.map((m) => [m.role, m.content])).toEqual([
+      ["assistant", "Parlez-moi de vous."],
+    ])
+  })
+
   it("stops at an unusable microphone", () => {
     const state = run([{ type: "MIC_FAILED", message: "Micro refusé." }])
 

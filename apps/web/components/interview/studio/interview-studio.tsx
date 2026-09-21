@@ -52,7 +52,7 @@ export function InterviewStudio({
     onReady: () => dispatch({ type: "MIC_READY" }),
   })
 
-  const { submit } = useInterviewTurn({ dispatch, sessionId: session.id })
+  const { open, submit } = useInterviewTurn({ dispatch, sessionId: session.id })
 
   const recorder = useAudioRecorder({
     micRef,
@@ -75,6 +75,17 @@ export function InterviewStudio({
     },
     status: state.vadStatus,
   })
+
+  // The recruiter opens the interview, not the candidate. Held until the
+  // microphone is live so that the greeting cannot play while the VAD is
+  // still off — the candidate's reply would be missed.
+  const openedRef = React.useRef(state.messages.length > 0)
+  React.useEffect(() => {
+    if (openedRef.current || state.phase !== "listening") return
+
+    openedRef.current = true
+    void open()
+  }, [open, state.phase])
 
   // The timer runs from the moment the microphone is live.
   React.useEffect(() => {

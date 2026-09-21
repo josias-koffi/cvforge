@@ -135,6 +135,23 @@ export function buildAiPrompt(
   ].join(" ");
 }
 
+/**
+ * What the interviewer is told when nobody has spoken yet.
+ *
+ * A real recruiter opens the interview; leaving it to the candidate meant
+ * staring at a silent microphone with no idea what was expected. This is sent
+ * as the user turn of an otherwise empty conversation, so the reply that comes
+ * back is the greeting itself rather than a description of one.
+ */
+const OPENING_INSTRUCTIONS: Record<Locale, string> = {
+  en: "The interview starts now. Greet the candidate in one short sentence and ask your first question.",
+  fr: "L'entretien commence. Salue le candidat en une phrase courte et pose ta premiere question.",
+};
+
+export function buildOpeningInstruction(language: Locale) {
+  return OPENING_INSTRUCTIONS[language === "en" ? "en" : "fr"];
+}
+
 export function buildConversation(
   language: Locale,
   profile: InterviewRecruiterProfile,

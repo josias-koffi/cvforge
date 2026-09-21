@@ -19,8 +19,7 @@ const BASE_CONFIG: OpenRouterVoiceConfig = {
 const NO_SLEEP_HOOKS = { random: () => 0, sleep: () => Promise.resolve() };
 
 const REQUEST = {
-  audioBase64: "AAAA",
-  format: "wav",
+  audio: { base64: "AAAA", format: "wav" },
   history: [{ role: "user" as const, content: "Bonjour." }],
   systemPrompt: "Tu es un recruteur.",
 };
@@ -105,6 +104,30 @@ describe("OpenRouterVoiceService", () => {
     ]);
   });
 
+  it("sends the instruction as text when the interviewer opens", async () => {
+    // No audio exists yet: the candidate has not spoken. Sending an empty
+    // `input_audio` instead would make the model answer silence.
+    const service = makeService();
+    for await (const _event of service.streamTurn({
+      history: [],
+      instruction: "L'entretien commence.",
+      systemPrompt: "Tu es un recruteur.",
+    })) {
+      // Drained; the request body is what is under test.
+    }
+
+    const body = bodyOf(fetchMock.mock.calls[0] as [string, RequestInit]);
+    const messages = body.messages as Array<{ role: string; content: unknown }>;
+
+    expect(messages).toHaveLength(2);
+    expect(messages[1]).toEqual({
+      role: "user",
+      content: "L'entretien commence.",
+    });
+    // The reply must still be spoken, not written.
+    expect(body.modalities).toEqual(["text", "audio"]);
+  });
+
   it("yields audio and transcript in the order they are spoken", async () => {
     fetchMock.mockResolvedValue(
       sseResponse([
@@ -184,7 +207,7 @@ describe("OpenRouterVoiceService", () => {
       const events: VoiceTurnEvent[] = [];
       for await (const event of service.streamTurn({
         ...REQUEST,
-        format: format!,
+        audio: { base64: "AAAA", format: format! },
       })) {
         events.push(event);
       }
