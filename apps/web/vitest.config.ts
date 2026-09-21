@@ -5,8 +5,15 @@ export default defineConfig({
   resolve: {
     alias: { "@": fileURLToPath(new URL("./", import.meta.url)) },
   },
+  esbuild: { jsx: "automatic" },
   test: {
     environment: "node",
-    include: ["lib/**/*.test.ts"],
+    include: ["**/*.test.ts", "**/*.test.tsx"],
+    exclude: ["node_modules/**", "tmp/**", ".next/**"],
+    coverage: {
+      include: ["app/**/*.ts", "components/**/*.tsx", "lib/**/*.ts"],
+      provider: "v8",
+      reporter: ["text"],
+    },
   },
 })
