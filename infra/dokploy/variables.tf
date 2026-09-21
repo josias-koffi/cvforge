@@ -116,16 +116,65 @@ variable "openrouter_max_attempts" {
   default     = "3"
 }
 
+# Every interview model below defaults to blank, which keeps the value
+# compiled into the application. Pinning one here is how the transcription
+# chain ended up on voxtral-small: OpenRouter has no route to it under this
+# account's privacy settings (ADR-013), so the IaC was overriding the very
+# default that fixed it. A blank cannot drift from the code; a name can.
+
 variable "interview_stt_model" {
   type        = string
-  description = "OpenRouter model used for interview speech-to-text"
-  default     = "mistralai/voxtral-small-24b-2507"
+  description = "OpenRouter model for interview speech-to-text. Blank keeps the application default."
+  default     = ""
 }
 
-variable "interview_ai_model" {
+variable "interview_stt_fallback_models" {
   type        = string
-  description = "OpenRouter model used for interview answers"
-  default     = "mistralai/mistral-small-3.2-24b-instruct"
+  description = <<-EOT
+    Comma-separated speech-to-text models tried once every provider of
+    interview_stt_model is exhausted. Blank keeps the application defaults;
+    "none" disables fallbacks altogether.
+  EOT
+  default     = ""
+}
+
+variable "interview_voice_model" {
+  type        = string
+  description = "OpenRouter speech-to-speech model answering a spoken turn. Blank keeps the application default."
+  default     = ""
+}
+
+variable "interview_voice" {
+  type        = string
+  description = "Voice the interviewer speaks with. Blank keeps the application default."
+  default     = ""
+}
+
+variable "interview_voice_fallback_models" {
+  type        = string
+  description = <<-EOT
+    Comma-separated speech-to-speech models tried once every provider of
+    interview_voice_model is exhausted. Blank keeps the application defaults;
+    "none" disables fallbacks altogether.
+  EOT
+  default     = ""
+}
+
+variable "interview_voice_max_attempts" {
+  type        = string
+  description = <<-EOT
+    Attempts per voice turn, first call included. Deliberately separate from
+    openrouter_max_attempts: a spoken turn has about a second of perceived
+    budget, so it fails over to the next model rather than waiting out a
+    throttle (ADR-016). Blank keeps the application default.
+  EOT
+  default     = ""
+}
+
+variable "interview_voice_max_tokens" {
+  type        = string
+  description = "Token ceiling for one spoken reply. Blank keeps the application default."
+  default     = ""
 }
 
 variable "smtp_provider" {
