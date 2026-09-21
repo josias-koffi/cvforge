@@ -34,7 +34,8 @@ function createStore(): InterviewStore {
       return session;
     },
     deleteByUserEmail: async () => 0,
-  purgeCompletedBefore: async () => 0,
+    listByUserEmail: async () => [],
+    purgeCompletedBefore: async () => 0,
   };
 }
 

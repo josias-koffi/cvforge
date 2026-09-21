@@ -307,6 +307,58 @@ export interface InterviewSessionSummary {
   updatedAt: string;
 }
 
+/**
+ * One row of the session history. Deliberately carries neither `chunks` nor
+ * `messages` nor `transcript`: a list of twenty sessions would otherwise drag
+ * the whole `interview_chunks` table across the wire.
+ */
+export interface InterviewSessionListItem {
+  applicationId: string | null;
+  /** Title of the linked offer, when there is one; null in free-practice mode. */
+  applicationTitle: string | null;
+  completedAt: string | null;
+  createdAt: string;
+  id: string;
+  language: Locale;
+  /** Null until the session is finished and scored. */
+  overallScore: number | null;
+  profile: InterviewRecruiterProfile;
+  responseCount: number;
+  status: InterviewSessionStatus;
+}
+
+export interface InterviewMetricTrendPoint {
+  completedAt: string;
+  score: number;
+}
+
+export interface InterviewMetricTrend {
+  key: InterviewReportMetricKey;
+  label: string;
+  /** Mean over the window, rounded to one decimal. */
+  average: number;
+  /** Last minus first in the window; 0 with a single session. */
+  delta: number;
+  points: InterviewMetricTrendPoint[];
+}
+
+/**
+ * Aggregated over a candidate's recent finished sessions, so they can see
+ * whether they are improving rather than only how the last one went.
+ */
+export interface InterviewProgressSummary {
+  /** How many finished sessions the window covers. */
+  sessionCount: number;
+  overallScoreAverage: number | null;
+  overallScoreDelta: number;
+  overallScorePoints: InterviewMetricTrendPoint[];
+  metrics: InterviewMetricTrend[];
+  /** Consistently high metrics, best first; empty until there is evidence. */
+  strengths: InterviewMetricTrend[];
+  /** Consistently low metrics, worst first. */
+  weaknesses: InterviewMetricTrend[];
+}
+
 export const AI_CREDIT_COSTS: Record<AiCreditAction, number> = {
   [AI_CREDIT_ACTION_CV_IMPORT]: 2,
   [AI_CREDIT_ACTION_OFFER_ENRICHMENT]: 1,
