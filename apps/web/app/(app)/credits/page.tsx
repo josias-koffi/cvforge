@@ -40,6 +40,7 @@ const actionLabels: Record<CreditLedgerEntry["action"], string> = {
   admin_grant: "Crédits offerts",
   cv_generation: "Génération de CV",
   cv_import: "Import de CV",
+  interview_session: "Entretien simulé",
   letter_generation: "Génération de lettre",
   offer_enrichment: "Analyse d'offre",
   stripe_purchase: "Achat de crédits",
@@ -83,6 +84,10 @@ export default async function CreditsPage() {
             <ul className="space-y-1 text-sm text-muted-foreground">
               <li>Analyse d&apos;offre : {formatCredits(AI_CREDIT_COSTS.offer_enrichment)}</li>
               <li>Import de CV : {formatCredits(AI_CREDIT_COSTS.cv_import)}</li>
+              <li>
+                Entretien simulé :{" "}
+                {formatCredits(AI_CREDIT_COSTS.interview_session)}
+              </li>
               <li>CV généré : {formatCredits(AI_CREDIT_COSTS.cv_generation)}</li>
               <li>Lettre générée : {formatCredits(AI_CREDIT_COSTS.letter_generation)}</li>
             </ul>

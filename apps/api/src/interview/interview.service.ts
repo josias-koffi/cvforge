@@ -1,4 +1,5 @@
 import {
+  AI_CREDIT_ACTION_INTERVIEW_SESSION,
   INTERVIEW_AI_STATUS_DONE,
   INTERVIEW_AI_STATUS_ERROR,
   INTERVIEW_AI_STATUS_GENERATING,
@@ -16,6 +17,7 @@ import {
   type InterviewRecruiterProfile,
   type InterviewTranscriptionChunkRequest,
 } from "@cvforge/types";
+import { randomUUID } from "node:crypto";
 import {
   Injectable,
   BadRequestException,
@@ -25,6 +27,7 @@ import {
 import type { OpenRouterTranscriptionService } from "../ai/openrouter-transcription.service";
 import type { OpenRouterService } from "../ai/openrouter.service";
 import type { ApplicationsService } from "../applications/applications.service";
+import type { CreditsService } from "../credits/credits.service";
 import type { InterviewReportService } from "./interview-report.service";
 import { buildConversation } from "./interview.prompts";
 import {
@@ -45,6 +48,9 @@ const INTERVIEW_CHAT_PROVIDER = {
   require_parameters: true,
 } as const;
 
+/** How long an unused session stays reusable, so a double-click costs once. */
+const REUSE_WINDOW_MS = 30 * 60 * 1000;
+
 @Injectable()
 export class InterviewService {
   constructor(
@@ -53,9 +59,32 @@ export class InterviewService {
     private readonly transcription: OpenRouterTranscriptionService,
     private readonly applicationsService: ApplicationsService,
     private readonly reportService: InterviewReportService,
+    private readonly creditsService: CreditsService,
   ) {}
 
   private readonly logger = new Logger(InterviewService.name);
+
+  /**
+   * The most recent session this user opened and never used, if it is still
+   * fresh. Guards against a double-click on "Démarrer" costing twice: the
+   * charge happens at creation, so a second creation is a second charge.
+   */
+  private async findReusableSession(userEmail: string) {
+    const [latest] = await this.store.listByUserEmail(userEmail, { limit: 1 });
+
+    if (
+      !latest ||
+      latest.status !== INTERVIEW_SESSION_STATUS_IDLE ||
+      Date.now() - new Date(latest.createdAt).getTime() > REUSE_WINDOW_MS
+    ) {
+      return null;
+    }
+
+    const session = await this.store.findByIdForUserEmail(userEmail, latest.id);
+
+    // An idle session with chunks would be an inconsistency; treat it as used.
+    return session && session.chunks.length === 0 ? session : null;
+  }
 
   async startSession(
     userEmail: string,
@@ -74,6 +103,23 @@ export class InterviewService {
       );
     }
 
+    // A second click on "Démarrer" must not cost a second time. An untouched
+    // session from the last few minutes is handed back as-is.
+    const reusable = await this.findReusableSession(userEmail);
+    if (reusable) {
+      return {
+        session: summarizeInterviewSession(reusable),
+        sessionId: reusable.id,
+      };
+    }
+
+    // Checked before anything is written, so a user who cannot pay never gets
+    // a session; `consumeCredits` re-checks inside its transaction.
+    await this.creditsService.assertSufficientCredits(
+      AI_CREDIT_ACTION_INTERVIEW_SESSION,
+      userEmail,
+    );
+
     const createdAt = nowIso();
     const session: StoredInterviewSession = {
       applicationId: linkedApplicationId,
@@ -83,7 +129,7 @@ export class InterviewService {
       chunks: [],
       completedAt: null,
       createdAt,
-      id: `interview_${Date.now().toString(36)}`,
+      id: `interview_${randomUUID()}`,
       language,
       lastError: null,
       messages: [],
@@ -98,6 +144,15 @@ export class InterviewService {
     };
 
     await this.store.save(session);
+
+    // Charged after the session exists, never before: if the write fails the
+    // user has lost nothing, and if the charge fails they get a free session.
+    // Of the two ways this can go wrong, that is the right one.
+    await this.creditsService.consumeCredits({
+      action: AI_CREDIT_ACTION_INTERVIEW_SESSION,
+      applicationId: linkedApplicationId ?? undefined,
+      userEmail,
+    });
 
     return {
       session: summarizeInterviewSession(session),
