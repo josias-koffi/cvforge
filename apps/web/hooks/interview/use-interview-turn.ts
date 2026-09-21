@@ -5,7 +5,11 @@ import * as React from "react"
 
 import type { RecordedSegment } from "@/hooks/interview/use-audio-recorder"
 import { useVoicePlayer } from "@/hooks/interview/use-voice-player"
-import { openOpeningStream, openTurnStream } from "@/lib/interview/client"
+import {
+  openOpeningStream,
+  openTurnStream,
+  uploadAnswerPart,
+} from "@/lib/interview/client"
 import { createPlaybackStats } from "@/lib/interview/playback-stats"
 import { createSseParser } from "@/lib/interview/sse"
 import type { StudioEvent } from "@/lib/interview/studio-machine"
@@ -47,6 +51,15 @@ export function useInterviewTurn({
 }: UseInterviewTurnOptions) {
   const sequenceRef = React.useRef(0)
   const abortRef = React.useRef<AbortController | null>(null)
+  // The answer being spoken: its id, and whether every piece of it reached
+  // the server. A single failure sends the whole thing in the body instead,
+  // so streaming stays an optimisation rather than a way to lose an answer.
+  const answerRef = React.useRef<{
+    chunkId: string
+    sequence: number
+    parts: number
+    complete: boolean
+  } | null>(null)
   // A lazy initial state, not a ref: the recorder has to be readable while the
   // player is being built, and React 19 forbids touching a ref during render.
   const [stats] = React.useState(createPlaybackStats)
@@ -168,16 +181,22 @@ export function useInterviewTurn({
 
   const submit = React.useCallback(
     async (segment: RecordedSegment) => {
-      sequenceRef.current += 1
-      const sequence = sequenceRef.current
       encodeMsRef.current = segment.encodeMs
+
+      // An answer that never went up in pieces, or one that lost any of them,
+      // travels whole. The server assembles only what it actually holds.
+      const answer = answerRef.current
+      const streamed = answer !== null && answer.complete && answer.parts > 0
+      const sequence = answer?.sequence ?? sequenceRef.current
+      const chunkId = answer?.chunkId ?? `${sessionId}-${sequence}`
+      answerRef.current = null
 
       await consume((signal) =>
         openTurnStream(
           sessionId,
           {
-            chunkBase64: segment.audioBase64,
-            chunkId: `${sessionId}-${sequence}`,
+            chunkBase64: streamed ? "" : segment.audioBase64,
+            chunkId,
             endedAt: segment.endedAt,
             format: "wav",
             isFinal: false,
@@ -190,6 +209,49 @@ export function useInterviewTurn({
       )
     },
     [consume, sessionId]
+  )
+
+  /**
+   * A new answer is starting: give it an id the pieces can travel under.
+   *
+   * Allocated here rather than at submit time because the first piece goes up
+   * long before the candidate has finished talking.
+   */
+  const beginAnswer = React.useCallback(() => {
+    sequenceRef.current += 1
+    answerRef.current = {
+      chunkId: `${sessionId}-${sequenceRef.current}`,
+      complete: true,
+      parts: 0,
+      sequence: sequenceRef.current,
+    }
+  }, [sessionId])
+
+  /**
+   * Sends one piece of the answer, without waiting for it.
+   *
+   * Waiting would put the upload back inside the recording loop, which is the
+   * whole point of sending as we go. A failure is remembered rather than
+   * surfaced: the answer is still whole in the browser, and `submit` falls
+   * back to sending it.
+   */
+  const uploadPart = React.useCallback(
+    (audioBase64: string) => {
+      const answer = answerRef.current
+      if (!answer) return
+
+      const part = answer.parts
+      answer.parts += 1
+
+      void uploadAnswerPart(sessionId, {
+        audioBase64,
+        chunkId: answer.chunkId,
+        part,
+      }).catch(() => {
+        answer.complete = false
+      })
+    },
+    [sessionId]
   )
 
   /**
@@ -220,5 +282,5 @@ export function useInterviewTurn({
     []
   )
 
-  return { interrupt, open, submit }
+  return { beginAnswer, interrupt, open, submit, uploadPart }
 }

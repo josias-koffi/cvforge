@@ -1,4 +1,5 @@
 import type {
+  InterviewAnswerPartRequest,
   InterviewDurationMinutes,
   InterviewRecruiterProfile,
   InterviewSessionStartResponse,
@@ -101,6 +102,32 @@ export async function openTurnStream(
   }
 
   return response.body
+}
+
+/**
+ * Sends one piece of the answer while the candidate is still speaking.
+ *
+ * Deliberately not awaited in order by the caller: the server keys each piece
+ * by its position, so what matters is that they all arrive, not when.
+ */
+export async function uploadAnswerPart(
+  sessionId: string,
+  part: InterviewAnswerPartRequest,
+  signal?: AbortSignal
+): Promise<void> {
+  const response = await fetch(`${BASE}/sessions/${sessionId}/turn/chunk`, {
+    body: JSON.stringify(part),
+    headers: { "content-type": "application/json" },
+    method: "POST",
+    signal,
+  })
+
+  if (!response.ok) {
+    throw new InterviewRequestError(
+      response.status,
+      await readMessage(response, "Le micro n'a pas pu être envoyé.")
+    )
+  }
 }
 
 /**

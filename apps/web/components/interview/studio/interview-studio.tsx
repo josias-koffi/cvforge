@@ -82,15 +82,14 @@ export function InterviewStudio({
     onReady: () => dispatch({ type: "MIC_READY" }),
   })
 
-  const { interrupt, open, submit } = useInterviewTurn({
-    dispatch,
-    sessionId: session.id,
-  })
+  const { beginAnswer, interrupt, open, submit, uploadPart } =
+    useInterviewTurn({ dispatch, sessionId: session.id })
 
   const recorder = useAudioRecorder({
     micRef,
     ready: state.phase !== "booting" && state.phase !== "error",
     onError: (message) => dispatch({ message, type: "TRANSCRIBE_FAILED" }),
+    onPart: uploadPart,
     onSegment: (segment) => void submit(segment),
   })
 
@@ -103,6 +102,7 @@ export function InterviewStudio({
     onBargeIn: () => {
       dispatch({ type: "BARGE_IN" })
       interrupt()
+      beginAnswer()
       recorder.start()
     },
     onLevel: (level) => dispatch({ level, type: "LEVEL" }),
@@ -121,6 +121,9 @@ export function InterviewStudio({
     },
     onSpeechStart: () => {
       dispatch({ type: "SPEECH_START" })
+      // The id comes first: the pieces start going up a quarter of a second
+      // later, long before anyone knows how the answer ends.
+      beginAnswer()
       recorder.start()
     },
     status: state.vadStatus,

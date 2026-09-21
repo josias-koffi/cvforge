@@ -10,6 +10,7 @@ import { POST as createSession } from "./sessions/route"
 import { GET as getSession } from "./sessions/[sessionId]/route"
 import { POST as turn } from "./sessions/[sessionId]/turn/route"
 import { POST as opening } from "./sessions/[sessionId]/opening/route"
+import { POST as turnChunk } from "./sessions/[sessionId]/turn/chunk/route"
 
 const CHUNK = {
   chunkBase64: "AAAA",
@@ -218,6 +219,51 @@ describe("interview route handlers", () => {
 
       expect(response.status).toBe(503)
       expect(response.headers.get("content-type")).toContain("application/json")
+    })
+  })
+
+  describe("POST /sessions/[sessionId]/turn/chunk", () => {
+    const PART = { audioBase64: "AAAA", chunkId: "c1", part: 0 }
+
+    it("forwards one piece of an answer and returns the count", async () => {
+      apiRequest.mockResolvedValue(jsonResponse({ parts: 4 }))
+
+      const response = await turnChunk(
+        postRequest("/api/interviews/sessions/s1/turn/chunk", PART),
+        context("s1")
+      )
+
+      expect(await response.json()).toEqual({ parts: 4 })
+      expect(apiRequest).toHaveBeenCalledWith(
+        "/interviews/sessions/s1/turn/chunk",
+        expect.objectContaining({ body: PART, method: "POST" })
+      )
+    })
+
+    it("refuses an incomplete piece without calling the API", async () => {
+      const response = await turnChunk(
+        postRequest("/api/interviews/sessions/s1/turn/chunk", {
+          ...PART,
+          part: "first",
+        }),
+        context("s1")
+      )
+
+      expect(response.status).toBe(400)
+      expect(apiRequest).not.toHaveBeenCalled()
+    })
+
+    it("passes the API's own refusal through", async () => {
+      // A piece past the ceiling has to reach the studio as such, so it can
+      // fall back to sending the answer whole.
+      apiRequest.mockResolvedValue(jsonResponse({ message: "trop long" }, 413))
+
+      const response = await turnChunk(
+        postRequest("/api/interviews/sessions/s1/turn/chunk", PART),
+        context("s1")
+      )
+
+      expect(response.status).toBe(413)
     })
   })
 

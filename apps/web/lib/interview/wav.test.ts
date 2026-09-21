@@ -2,9 +2,8 @@ import { describe, expect, it } from "vitest"
 
 import {
   TARGET_SAMPLE_RATE,
+  bytesToBase64,
   encodePcm16,
-  encodeSegment,
-  encodeWav,
   resampleMonoPcm,
   resolveTargetRate,
   toBase64,
@@ -66,15 +65,17 @@ describe("resampleMonoPcm", () => {
   })
 })
 
-describe("encodeWav", () => {
-  it("sizes the file from the sample count", () => {
-    const buffer = encodeWav(new Float32Array(10), 16000)
+describe("encodePcm16 into wrapPcm16InWav", () => {
+  const file = (pcm: Float32Array) =>
+    new DataView(wrapPcm16InWav(encodePcm16(pcm), 16000))
 
-    expect(buffer.byteLength).toBe(44 + 20)
+  it("sizes the file from the sample count", () => {
+    expect(wrapPcm16InWav(encodePcm16(new Float32Array(10)), 16000).byteLength)
+      .toBe(44 + 20)
   })
 
   it("maps the full-scale range to signed 16-bit", () => {
-    const view = new DataView(encodeWav(new Float32Array([0, 1, -1]), 16000))
+    const view = file(new Float32Array([0, 1, -1]))
 
     expect(view.getInt16(44, true)).toBe(0)
     expect(view.getInt16(46, true)).toBe(32767)
@@ -82,7 +83,7 @@ describe("encodeWav", () => {
   })
 
   it("clamps out-of-range samples instead of letting them wrap into a click", () => {
-    const view = new DataView(encodeWav(new Float32Array([4, -4]), 16000))
+    const view = file(new Float32Array([4, -4]))
 
     expect(view.getInt16(44, true)).toBe(32767)
     expect(view.getInt16(46, true)).toBe(-32768)
@@ -100,18 +101,6 @@ describe("toBase64", () => {
     const bytes = new Uint8Array(0x8000 * 2 + 7).fill(65)
 
     expect(atob(toBase64(bytes.buffer))).toHaveLength(bytes.length)
-  })
-})
-
-describe("encodeSegment", () => {
-  it("produces a base64 WAV that starts with a RIFF header", () => {
-    const base64 = encodeSegment(new Float32Array(48000).fill(0.2), 48000)
-    const decoded = atob(base64)
-
-    expect(decoded.slice(0, 4)).toBe("RIFF")
-    expect(decoded.slice(8, 12)).toBe("WAVE")
-    // One second at 48 kHz becomes one second at 16 kHz.
-    expect(decoded.length).toBe(44 + TARGET_SAMPLE_RATE * 2)
   })
 })
 
@@ -136,16 +125,6 @@ describe("encodePcm16", () => {
 })
 
 describe("wrapPcm16InWav", () => {
-  it("puts a header on samples encoded piece by piece", () => {
-    // What the studio does now: each chunk is encoded while the candidate
-    // talks, and only the header waits for the end.
-    const pcm = Float32Array.from([0.25, -0.25, 0.75])
-
-    expect(
-      Array.from(new Uint8Array(wrapPcm16InWav(encodePcm16(pcm), 16000)))
-    ).toEqual(Array.from(new Uint8Array(encodeWav(pcm, 16000))))
-  })
-
   it("counts the samples, not the bytes, in the header", () => {
     const view = new DataView(wrapPcm16InWav(new Uint8Array(200), 16000))
 
@@ -170,5 +149,17 @@ describe("resolveTargetRate", () => {
         resolveTargetRate(rate)
       )
     }
+  })
+})
+
+describe("bytesToBase64", () => {
+  it("encodes the pieces an answer is sent in", () => {
+    expect(bytesToBase64(new Uint8Array([72, 105]))).toBe(btoa("Hi"))
+  })
+
+  it("handles a run larger than one chunk", () => {
+    expect(atob(bytesToBase64(new Uint8Array(0x8000 * 2 + 7)))).toHaveLength(
+      0x8000 * 2 + 7
+    )
   })
 })

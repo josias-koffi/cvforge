@@ -123,14 +123,8 @@ export function wrapPcm16InWav(
   return buffer
 }
 
-/** Float samples in [-1, 1] to a complete WAV file. */
-export function encodeWav(pcm: Float32Array, sampleRate: number): ArrayBuffer {
-  return wrapPcm16InWav(encodePcm16(pcm), sampleRate)
-}
-
 /** Chunked so a long answer does not blow the argument limit of `apply`. */
-export function toBase64(buffer: ArrayBuffer): string {
-  const bytes = new Uint8Array(buffer)
+export function bytesToBase64(bytes: Uint8Array): string {
   const CHUNK = 0x8000
   let binary = ""
 
@@ -141,9 +135,6 @@ export function toBase64(buffer: ArrayBuffer): string {
   return btoa(binary)
 }
 
-/** Downsamples to 16 kHz and returns the base64 WAV the API expects. */
-export function encodeSegment(pcm: Float32Array, sampleRate: number) {
-  const resampled = resampleMonoPcm(pcm, sampleRate)
-
-  return toBase64(encodeWav(resampled.pcm, resampled.sampleRate))
+export function toBase64(buffer: ArrayBuffer): string {
+  return bytesToBase64(new Uint8Array(buffer))
 }

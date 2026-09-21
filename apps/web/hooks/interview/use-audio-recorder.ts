@@ -5,6 +5,7 @@ import * as React from "react"
 import type { MicStreamRef } from "@/hooks/interview/use-mic-stream"
 import { chunkSampleCount, createCaptureBatcher } from "@/lib/interview/capture"
 import {
+  bytesToBase64,
   encodePcm16,
   resampleMonoPcm,
   resolveTargetRate,
@@ -29,6 +30,8 @@ type UseAudioRecorderOptions = {
   micRef: MicStreamRef
   /** The microphone opens asynchronously; nothing can be bound before it has. */
   ready: boolean
+  /** One piece of the answer, ready to go up while it is still being spoken. */
+  onPart: (audioBase64: string) => void
   onSegment: (segment: RecordedSegment) => void
   onError: (message: string) => void
 }
@@ -58,6 +61,7 @@ function concat(parts: Uint8Array[], length: number) {
 export function useAudioRecorder({
   micRef,
   ready,
+  onPart,
   onSegment,
   onError,
 }: UseAudioRecorderOptions) {
@@ -68,13 +72,20 @@ export function useAudioRecorder({
   const partsRef = React.useRef<Uint8Array[]>([])
   const byteLengthRef = React.useRef(0)
   const startedAtRef = React.useRef<string>("")
-  const callbacks = React.useRef({ onError, onSegment })
+  const callbacks = React.useRef({ onError, onPart, onSegment })
   // Written in an effect, not during render: React 19 forbids the latter.
   React.useEffect(() => {
-    callbacks.current = { onError, onSegment }
+    callbacks.current = { onError, onPart, onSegment }
   })
 
-  /** Downsamples one chunk and keeps it as bytes. */
+  /**
+   * Downsamples one chunk, sends it, and keeps it.
+   *
+   * Kept as well as sent on purpose: if any piece fails to reach the server
+   * the whole answer still exists here, and the turn falls back to carrying
+   * it. Streaming is then an optimisation rather than a way to lose an
+   * answer, and it costs the memory the old recorder spent anyway.
+   */
   const encodeChunk = React.useCallback(
     (chunk: Float32Array, sampleRate: number) => {
       const { pcm } = resampleMonoPcm(chunk, sampleRate)
@@ -82,6 +93,7 @@ export function useAudioRecorder({
 
       partsRef.current.push(bytes)
       byteLengthRef.current += bytes.length
+      callbacks.current.onPart(bytesToBase64(bytes))
     },
     []
   )
