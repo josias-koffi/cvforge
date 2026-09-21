@@ -318,6 +318,22 @@ describe("studioReducer", () => {
     expect(later).toBe(started)
   })
 
+  it("reopens the studio when the analysis fails", () => {
+    // The session was never closed server-side, so the credit still stands.
+    // Leaving the candidate on a finished page with no microphone and no
+    // message is how a failed report used to look.
+    const done = run([{ type: "FINISHED" }], ready)
+    const failed = studioReducer(done, {
+      message: "L'analyse n'a pas abouti.",
+      type: "FINISH_FAILED",
+    })
+
+    expect(done.phase).toBe("completed")
+    expect(failed.phase).toBe("listening")
+    expect(failed.error).toBe("L'analyse n'a pas abouti.")
+    expect(studioReducer(failed, { type: "SPEECH_START" }).phase).toBe("recording")
+  })
+
   it("drops an empty reply rather than adding a blank bubble", () => {
     const state = run(
       [

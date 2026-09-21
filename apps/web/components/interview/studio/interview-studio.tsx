@@ -9,6 +9,7 @@ import { VoiceOrb } from "@/components/interview/studio/voice-orb"
 import { StudioToolbar } from "@/components/interview/studio/studio-toolbar"
 import { TranscriptPanel } from "@/components/interview/studio/transcript-panel"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import type { ActionResult } from "@/lib/api"
 import { orbState, orbVolumes } from "@/lib/interview/orb"
 import {
   elapsedSeconds,
@@ -44,7 +45,7 @@ export function InterviewStudio({
   onFinish,
 }: {
   session: InterviewSessionSummary
-  onFinish: () => Promise<void>
+  onFinish: () => Promise<ActionResult | void>
 }) {
   const [state, dispatch] = React.useReducer(studioReducer, {
     ...initialStudioState,
@@ -137,10 +138,19 @@ export function InterviewStudio({
 
   const finish = React.useCallback(async () => {
     setFinishing(true)
+    // Shuts the microphone for the analysis, so a stray noise cannot open a
+    // turn against a session that is being closed.
     dispatch({ type: "FINISHED" })
 
     try {
-      await onFinish()
+      const result = await onFinish()
+
+      // Scoring the session redirects to the report and never returns, so
+      // reaching here at all means it failed. Saying nothing left the
+      // candidate on a dead page wondering whether the click had registered.
+      if (result && !result.ok) {
+        dispatch({ message: result.message, type: "FINISH_FAILED" })
+      }
     } finally {
       setFinishing(false)
     }
