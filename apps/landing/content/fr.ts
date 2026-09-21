@@ -172,6 +172,7 @@ export const fr: LandingDictionary = {
     creditUnit: "crédits",
     actions: {
       cv_import: "Import d'un CV existant",
+      interview_session: "Une session d'entretien simulé",
       offer_enrichment: "Analyse de l'offre et de l'entreprise",
       cv_generation: "Génération d'un CV adapté",
       letter_generation: "Génération d'une lettre",

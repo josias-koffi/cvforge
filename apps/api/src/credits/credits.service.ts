@@ -1,6 +1,7 @@
 import {
   AI_CREDIT_ACTION_CV_GENERATION,
   AI_CREDIT_ACTION_CV_IMPORT,
+  AI_CREDIT_ACTION_INTERVIEW_SESSION,
   AI_CREDIT_ACTION_LETTER_GENERATION,
   AI_CREDIT_ACTION_OFFER_ENRICHMENT,
   AI_CREDIT_COSTS,
@@ -37,6 +38,8 @@ function buildAiUsageNote(action: ConsumeCreditsInput["action"]) {
       return "Import CV";
     case AI_CREDIT_ACTION_LETTER_GENERATION:
       return "Generation lettre de motivation";
+    case AI_CREDIT_ACTION_INTERVIEW_SESSION:
+      return "Session d'entretien simule";
   }
 }
 
