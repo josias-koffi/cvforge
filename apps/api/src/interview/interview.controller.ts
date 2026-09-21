@@ -6,6 +6,7 @@ import {
   Param,
   Post,
   Req,
+  Res,
   Sse,
   UnauthorizedException,
 } from "@nestjs/common";
@@ -22,6 +23,14 @@ import { InterviewService } from "./interview.service";
 
 type RequestLike = {
   headers: { cookie?: string };
+};
+
+/** The slice of the Express response the streamed turn needs. */
+type SseResponse = {
+  setHeader: (name: string, value: string) => void;
+  flushHeaders?: () => void;
+  write: (chunk: string) => boolean;
+  end: () => void;
 };
 
 /** Adapts an async generator to the Observable `@Sse` expects. */
@@ -104,21 +113,44 @@ export class InterviewController {
   /**
    * One spoken turn: the candidate's answer in, the interviewer's voice out.
    *
-   * SSE rather than a plain POST because the reply is played as it arrives —
-   * waiting for the whole answer would put its generation time into the
-   * silence the candidate hears.
+   * Written to the response by hand rather than with `@Sse`. That decorator
+   * targets the browser's `EventSource`, which only ever issues GET, while a
+   * recorded answer is around a megabyte of base64 and has to travel in a
+   * body. The client reads this with `fetch` and a `ReadableStream` instead,
+   * which POSTs happily. Frames are flushed as they come, so the voice starts
+   * playing while the rest is still being generated.
    */
-  @Sse("sessions/:sessionId/turn")
-  streamTurn(
+  @Post("sessions/:sessionId/turn")
+  async streamTurn(
     @Param("sessionId") sessionId: string,
     @Body() body: InterviewTranscriptionChunkRequest,
     @Req() request: RequestLike,
-  ): Observable<MessageEvent> {
+    @Res() response: SseResponse,
+  ): Promise<void> {
     const session = this.readSession(request);
 
-    return toMessageEvents(
-      this.turnService.streamTurn(session.email, sessionId, body),
-    );
+    response.setHeader("Content-Type", "text/event-stream; charset=utf-8");
+    response.setHeader("Cache-Control", "no-cache, no-transform");
+    response.setHeader("Connection", "keep-alive");
+    response.setHeader("X-Accel-Buffering", "no");
+    response.flushHeaders?.();
+
+    try {
+      for await (const event of this.turnService.streamTurn(
+        session.email,
+        sessionId,
+        body,
+      )) {
+        response.write(`data: ${JSON.stringify(event)}\n\n`);
+      }
+    } catch (error) {
+      // The headers are already sent, so the failure travels as a frame.
+      const message =
+        error instanceof Error ? error.message : "Le tour a echoue.";
+      response.write(`data: ${JSON.stringify({ message, type: "error" })}\n\n`);
+    } finally {
+      response.end();
+    }
   }
 
   @Post("sessions/:sessionId/finish")
