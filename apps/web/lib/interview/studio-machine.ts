@@ -34,6 +34,12 @@ export type StudioState = {
   error: string | null
   /** Milliseconds from the end of the answer to the first reply token. */
   firstTokenMs: number | null
+  /**
+   * When the candidate stopped talking. The latency that matters starts here,
+   * not at the request: encoding the answer and uploading it are part of the
+   * silence they sit through.
+   */
+  answerEndedAtMs: number | null
 }
 
 export type StudioEvent =
@@ -41,7 +47,7 @@ export type StudioEvent =
   | { type: "MIC_FAILED"; message: string }
   | { type: "LEVEL"; level: number }
   | { type: "SPEECH_START" }
-  | { type: "SPEECH_END" }
+  | { type: "SPEECH_END"; atMs: number }
   /** The noise that opened the microphone was not an answer. */
   | { type: "SPEECH_ABORTED" }
   | { type: "TRANSCRIBED"; text: string }
@@ -49,8 +55,8 @@ export type StudioEvent =
   /** The interviewer is about to open the interview, before any audio. */
   | { type: "AI_OPENING" }
   /** A frame of the spoken reply — what the candidate actually hears. */
-  | { type: "AI_AUDIO"; elapsedMs: number }
-  | { type: "AI_DELTA"; text: string; elapsedMs: number }
+  | { type: "AI_AUDIO"; atMs: number }
+  | { type: "AI_DELTA"; text: string; atMs: number }
   | { type: "AI_DONE" }
   /** The spoken reply has finished playing — only now is the mic safe. */
   | { type: "VOICE_DONE" }
@@ -67,6 +73,21 @@ export const initialStudioState: StudioState = {
   streamingReply: "",
   error: null,
   firstTokenMs: null,
+  answerEndedAtMs: null,
+}
+
+/**
+ * The wait the candidate actually sat through: from their last word to the
+ * interviewer's first. Set once per turn — later frames are the reply
+ * continuing, not the reply starting.
+ *
+ * Null when nothing preceded, as on the opening greeting.
+ */
+function sinceAnswer(state: StudioState, atMs: number): number | null {
+  if (state.firstTokenMs !== null) return state.firstTokenMs
+  if (state.answerEndedAtMs === null) return null
+
+  return atMs - state.answerEndedAtMs
 }
 
 function withMessage(
@@ -112,6 +133,7 @@ export function studioReducer(
             vadStatus: "processing",
             streamingReply: "",
             firstTokenMs: null,
+            answerEndedAtMs: event.atMs,
           }
         : state
 
@@ -159,6 +181,8 @@ export function studioReducer(
         vadStatus: "processing",
         streamingReply: "",
         firstTokenMs: null,
+        // The greeting follows no answer, so there is no wait to measure.
+        answerEndedAtMs: null,
       }
 
     case "AI_AUDIO":
@@ -166,7 +190,7 @@ export function studioReducer(
         ...state,
         phase: "speaking",
         vadStatus: "processing",
-        firstTokenMs: state.firstTokenMs ?? event.elapsedMs,
+        firstTokenMs: sinceAnswer(state, event.atMs),
       }
 
     case "AI_DELTA":
@@ -175,7 +199,7 @@ export function studioReducer(
         phase: "speaking",
         vadStatus: "processing",
         streamingReply: state.streamingReply + event.text,
-        firstTokenMs: state.firstTokenMs ?? event.elapsedMs,
+        firstTokenMs: sinceAnswer(state, event.atMs),
       }
 
     case "AI_DONE": {
