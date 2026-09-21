@@ -6,6 +6,7 @@ import {
   formatCredits,
   formatDate,
   formatPrice,
+  formatTime,
   splitLines,
   statusVariants,
 } from "@/lib/format"
@@ -31,5 +32,15 @@ describe("format helpers", () => {
 
   it("gives each application status a distinct semantic badge", () => {
     expect(new Set(Object.values(statusVariants)).size).toBe(5)
+  })
+})
+
+describe("formatTime", () => {
+  it("shows clock time, for a transcript whose date is already in the header", () => {
+    expect(formatTime("2026-04-24T13:05:00.000Z")).toMatch(/^\d{2}:\d{2}$/)
+  })
+
+  it("degrades to a placeholder rather than rendering NaN", () => {
+    expect(formatTime("nonsense")).toBe("--:--")
   })
 })
