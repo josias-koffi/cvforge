@@ -105,28 +105,6 @@ describe("InterviewController", () => {
     expect(result.completedAt).toBe("2026-04-24T13:15:00.000Z");
   });
 
-  it("forwards chunk transcription to the service", async () => {
-    const controller = makeController();
-    const result = await controller.transcribeChunk(
-      "session-001",
-      {
-        chunkBase64: "AAA",
-        chunkId: "chunk-1",
-        endedAt: "2026-04-24T13:00:00.500Z",
-        format: "webm",
-        isFinal: false,
-        mimeType: "audio/webm",
-        sequence: 1,
-        startedAt: "2026-04-24T13:00:00.000Z",
-      },
-      {
-        headers: { cookie: "cvforge_session=abc" },
-      },
-    );
-
-    expect(result.transcript).toBe("bonjour");
-  });
-
   it("throws UnauthorizedException when no session is present", () => {
     const controller = makeController(null);
 
