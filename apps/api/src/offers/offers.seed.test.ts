@@ -19,7 +19,7 @@ describe("seeded credit offers", () => {
     await testDatabase.close();
   });
 
-  it("sells the launch packs, sized in applications, with one featured", async () => {
+  it("sells the launch packs, sized in applications with their interview, with one featured", async () => {
     const active = await store.listActive();
 
     expect(
@@ -30,14 +30,14 @@ describe("seeded credit offers", () => {
         slug,
       })),
     ).toEqual([
-      { credits: 40, isFeatured: false, priceCents: 590, slug: "essentiel" },
+      { credits: 90, isFeatured: false, priceCents: 590, slug: "essentiel" },
       {
-        credits: 145,
+        credits: 350,
         isFeatured: true,
         priceCents: 1490,
         slug: "recherche-active",
       },
-      { credits: 355, isFeatured: false, priceCents: 2900, slug: "intensif" },
+      { credits: 870, isFeatured: false, priceCents: 2900, slug: "intensif" },
     ]);
   });
 
