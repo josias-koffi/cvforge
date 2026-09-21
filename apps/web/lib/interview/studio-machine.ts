@@ -44,6 +44,8 @@ export type StudioEvent =
   | { type: "SPEECH_END" }
   | { type: "TRANSCRIBED"; text: string }
   | { type: "TRANSCRIBE_FAILED"; message: string }
+  /** A frame of the spoken reply — what the candidate actually hears. */
+  | { type: "AI_AUDIO"; elapsedMs: number }
   | { type: "AI_DELTA"; text: string; elapsedMs: number }
   | { type: "AI_DONE" }
   /** The spoken reply has finished playing — only now is the mic safe. */
@@ -100,24 +102,25 @@ export function studioReducer(
 
     case "SPEECH_END":
       return state.phase === "recording"
-        ? { ...state, phase: "processing", vadStatus: "processing" }
+        ? {
+            ...state,
+            phase: "processing",
+            vadStatus: "processing",
+            streamingReply: "",
+            firstTokenMs: null,
+          }
         : state
 
     case "TRANSCRIBED": {
       const text = event.text.trim()
 
-      // Silence: the segment is recorded server-side but says nothing, so the
-      // conversation does not advance and the mic simply reopens.
-      if (text.length === 0) {
-        return { ...state, phase: "listening", vadStatus: "listening" }
-      }
+      // Arrives while the interviewer is already speaking — transcription runs
+      // beside the voice, not before it — so this only records what was said
+      // and leaves the phase to the audio events.
+      if (text.length === 0) return state
 
       return {
         ...state,
-        phase: "speaking",
-        vadStatus: "processing",
-        streamingReply: "",
-        firstTokenMs: null,
         messages: withMessage(state, {
           role: "user",
           content: text,
@@ -135,10 +138,19 @@ export function studioReducer(
         error: event.message,
       }
 
+    case "AI_AUDIO":
+      return {
+        ...state,
+        phase: "speaking",
+        vadStatus: "processing",
+        firstTokenMs: state.firstTokenMs ?? event.elapsedMs,
+      }
+
     case "AI_DELTA":
       return {
         ...state,
         phase: "speaking",
+        vadStatus: "processing",
         streamingReply: state.streamingReply + event.text,
         firstTokenMs: state.firstTokenMs ?? event.elapsedMs,
       }

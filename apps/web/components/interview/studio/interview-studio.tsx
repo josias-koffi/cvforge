@@ -52,11 +52,7 @@ export function InterviewStudio({
     onReady: () => dispatch({ type: "MIC_READY" }),
   })
 
-  const { submit } = useInterviewTurn({
-    dispatch,
-    language: session.language,
-    sessionId: session.id,
-  })
+  const { submit } = useInterviewTurn({ dispatch, sessionId: session.id })
 
   const recorder = useAudioRecorder({
     micRef,
