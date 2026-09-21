@@ -24,6 +24,7 @@ describe("summarizeAttempts", () => {
     expect(summarizeAttempts([served("openai/gpt-audio-mini")])).toEqual({
       attempts: 1,
       callMs: 900,
+      failures: [],
       fellBack: false,
       model: "openai/gpt-audio-mini",
       modelsTried: ["openai/gpt-audio-mini"],
@@ -76,6 +77,7 @@ describe("summarizeAttempts", () => {
     expect(summarizeAttempts([])).toEqual({
       attempts: 0,
       callMs: 0,
+      failures: [],
       fellBack: false,
       model: null,
       modelsTried: [],
@@ -87,6 +89,28 @@ describe("summarizeAttempts", () => {
     const dead: ChainAttempt = { durationMs: 4000, failed: true, model: "a/one" };
 
     expect(summarizeAttempts([dead, served("b/two")]).callMs).toBe(4900);
+  });
+
+  it("names the failed attempts a successful turn used to hide", () => {
+    // Staging logged `attempts: 2, callMs: 34581` and nothing else: the first
+    // connection hung for 34 seconds, the retry answered, and `withRetry`
+    // swallowed the reason whole. The turn succeeded, so nothing was an error
+    // — which is exactly why it had to be recorded here.
+    const telemetry = summarizeAttempts([
+      { durationMs: 34_581, failed: true, model: "openai/gpt-audio-mini", status: 408 },
+      served("openai/gpt-audio-mini", 1300),
+    ]);
+
+    expect(telemetry.model).toBe("openai/gpt-audio-mini");
+    expect(telemetry.failures).toEqual(["openai/gpt-audio-mini:408"]);
+  });
+
+  it("marks an attempt that never got a status at all", () => {
+    const dead: ChainAttempt = { durationMs: 4000, failed: true, model: "a/one" };
+
+    expect(summarizeAttempts([dead, served("b/two")]).failures).toEqual([
+      "a/one:no-reply",
+    ]);
   });
 });
 
@@ -108,6 +132,7 @@ describe("formatTurnLog", () => {
       attempts: 2,
       callMs: 900,
       event: "interview.turn",
+      failures: "openai/gpt-audio-mini:429",
       fellBack: true,
       firstAudioMs: 1400,
       model: "openai/gpt-audio",

@@ -27,6 +27,14 @@ export interface ChainTelemetry {
   fellBack: boolean;
   /** Time spent inside the calls; the gap to `totalMs` is backoff. */
   callMs: number;
+  /**
+   * Every attempt that did not serve, as `model:status`.
+   *
+   * Empty on a healthy turn. Without it a retried failure left no trace at all:
+   * the only sign of a 34-second dead connection was `attempts: 2` beside a
+   * `callMs` nobody could explain.
+   */
+  failures: string[];
 }
 
 export function summarizeAttempts(attempts: ChainAttempt[]): ChainTelemetry {
@@ -36,6 +44,10 @@ export function summarizeAttempts(attempts: ChainAttempt[]): ChainTelemetry {
   return {
     attempts: attempts.length,
     callMs: attempts.reduce((total, attempt) => total + attempt.durationMs, 0),
+    failures: attempts
+      .filter((attempt) => attempt.failed)
+      // `no-reply` rather than a status: the call never got one back at all.
+      .map((attempt) => `${attempt.model}:${attempt.status ?? "no-reply"}`),
     fellBack: modelsTried.length > 1,
     model: served && !served.failed ? served.model : null,
     modelsTried,
@@ -78,6 +90,9 @@ export function formatTurnLog(
     attempts: telemetry.attempts,
     callMs: telemetry.callMs,
     event: scope,
+    // Empty string on a healthy turn: the field is always present so a log
+    // search can filter on it without knowing which turns have one.
+    failures: telemetry.failures.join(","),
     fellBack: telemetry.fellBack,
     firstAudioMs: timings.firstAudioMs,
     model: telemetry.model,

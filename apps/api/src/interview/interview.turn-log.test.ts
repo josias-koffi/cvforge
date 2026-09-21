@@ -5,6 +5,7 @@ import { createTurnLog } from "./interview.turn-log";
 const TELEMETRY: ChainTelemetry = {
   attempts: 2,
   callMs: 900,
+  failures: [],
   fellBack: true,
   model: "openai/gpt-audio",
   modelsTried: ["openai/gpt-audio-mini", "openai/gpt-audio"],

@@ -87,6 +87,7 @@ function voiceReportingTelemetry(events: VoiceTurnEvent[]): OpenRouterVoiceServi
       request.onTelemetry?.({
         attempts: 1,
         callMs: 900,
+        failures: [],
         fellBack: false,
         model: "openai/gpt-audio-mini",
         modelsTried: ["openai/gpt-audio-mini"],

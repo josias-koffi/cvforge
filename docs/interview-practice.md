@@ -96,9 +96,22 @@ Override with `INTERVIEW_VOICE_MODEL`, `INTERVIEW_VOICE_FALLBACK_MODELS`,
 `OPENROUTER_MAX_ATTEMPTS`: a turn has about a second, so it fails over rather
 than waiting out a throttle (`ADR-016`).
 
+Every call has a deadline on **opening** — 8 s for the voice, 45 s for
+transcription, 90 s for chat — and never on the stream that follows: a reply
+legitimately streams audio for a minute, and a blanket `AbortSignal.timeout`
+would cut the interviewer off mid-sentence. The timer is cleared the moment the
+response headers arrive. Without it a stalled socket cost one staging turn
+**34.6 seconds**; the retry that followed answered in 1.3 s.
+
+A timeout is reported as `408`, which `isRetryable` already lists, so the chain
+retries a dead connection instead of treating it as a permanent failure.
+
 Every turn writes one JSON log line naming the model that actually served it,
 the attempt count and the time to first audio — without it, a fall back to the
-pricier model is indistinguishable from a slow cheap one.
+pricier model is indistinguishable from a slow cheap one. `failures` lists each
+attempt that did not serve, as `model:status` (`model:no-reply` when nothing came
+back at all): a retried failure is invisible otherwise, because the turn
+succeeded and `withRetry` swallowed the reason.
 
 `waitedMs` is everything outside the voice call: backoff between attempts, the
 wait on transcription, and the cost of streaming frames out. Read it with
