@@ -33,6 +33,39 @@ type SseResponse = {
   end: () => void;
 };
 
+/**
+ * Writes an event stream by hand, frame by frame.
+ *
+ * `@Sse` is not usable for these two routes: it targets the browser's
+ * `EventSource`, which only ever issues GET, while a recorded answer is around
+ * a megabyte of base64 and has to travel in a body. The client reads this with
+ * `fetch` and a `ReadableStream` instead, which POSTs happily. Frames are
+ * flushed as they come, so the voice starts playing while the rest is still
+ * being generated.
+ */
+async function writeEventStream<T>(
+  response: SseResponse,
+  events: AsyncGenerator<T, void, undefined>,
+): Promise<void> {
+  response.setHeader("Content-Type", "text/event-stream; charset=utf-8");
+  response.setHeader("Cache-Control", "no-cache, no-transform");
+  response.setHeader("Connection", "keep-alive");
+  response.setHeader("X-Accel-Buffering", "no");
+  response.flushHeaders?.();
+
+  try {
+    for await (const event of events) {
+      response.write(`data: ${JSON.stringify(event)}\n\n`);
+    }
+  } catch (error) {
+    // The headers are already sent, so the failure travels as a frame.
+    const message = error instanceof Error ? error.message : "Le tour a echoue.";
+    response.write(`data: ${JSON.stringify({ message, type: "error" })}\n\n`);
+  } finally {
+    response.end();
+  }
+}
+
 /** Adapts an async generator to the Observable `@Sse` expects. */
 function toMessageEvents<T>(
   generator: AsyncGenerator<T, void, undefined>,
@@ -110,16 +143,7 @@ export class InterviewController {
     return this.interviewService.transcribeChunk(session.email, sessionId, body);
   }
 
-  /**
-   * One spoken turn: the candidate's answer in, the interviewer's voice out.
-   *
-   * Written to the response by hand rather than with `@Sse`. That decorator
-   * targets the browser's `EventSource`, which only ever issues GET, while a
-   * recorded answer is around a megabyte of base64 and has to travel in a
-   * body. The client reads this with `fetch` and a `ReadableStream` instead,
-   * which POSTs happily. Frames are flushed as they come, so the voice starts
-   * playing while the rest is still being generated.
-   */
+  /** One spoken turn: the candidate's answer in, the interviewer's voice out. */
   @Post("sessions/:sessionId/turn")
   async streamTurn(
     @Param("sessionId") sessionId: string,
@@ -129,28 +153,32 @@ export class InterviewController {
   ): Promise<void> {
     const session = this.readSession(request);
 
-    response.setHeader("Content-Type", "text/event-stream; charset=utf-8");
-    response.setHeader("Cache-Control", "no-cache, no-transform");
-    response.setHeader("Connection", "keep-alive");
-    response.setHeader("X-Accel-Buffering", "no");
-    response.flushHeaders?.();
+    await writeEventStream(
+      response,
+      this.turnService.streamTurn(session.email, sessionId, body),
+    );
+  }
 
-    try {
-      for await (const event of this.turnService.streamTurn(
-        session.email,
-        sessionId,
-        body,
-      )) {
-        response.write(`data: ${JSON.stringify(event)}\n\n`);
-      }
-    } catch (error) {
-      // The headers are already sent, so the failure travels as a frame.
-      const message =
-        error instanceof Error ? error.message : "Le tour a echoue.";
-      response.write(`data: ${JSON.stringify({ message, type: "error" })}\n\n`);
-    } finally {
-      response.end();
-    }
+  /**
+   * The interviewer's opening words, streamed the same way as a turn.
+   *
+   * The candidate used to have to speak first into a silent room. A recruiter
+   * opens the interview, so the studio calls this as soon as the session is
+   * on screen. It carries no body, but stays a POST because it writes: it
+   * appends the greeting to the conversation.
+   */
+  @Post("sessions/:sessionId/opening")
+  async streamOpening(
+    @Param("sessionId") sessionId: string,
+    @Req() request: RequestLike,
+    @Res() response: SseResponse,
+  ): Promise<void> {
+    const session = this.readSession(request);
+
+    await writeEventStream(
+      response,
+      this.turnService.streamOpening(session.email, sessionId),
+    );
   }
 
   @Post("sessions/:sessionId/finish")

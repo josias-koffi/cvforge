@@ -121,6 +121,30 @@ export async function openTurnStream(
   return response.body
 }
 
+/**
+ * The interviewer's opening words. Carries no body: the session is all the
+ * server needs, and the greeting depends only on its language and profile.
+ */
+export async function openOpeningStream(
+  sessionId: string,
+  signal: AbortSignal
+): Promise<ReadableStream<Uint8Array>> {
+  const response = await fetch(`${BASE}/sessions/${sessionId}/opening`, {
+    headers: { accept: "text/event-stream" },
+    method: "POST",
+    signal,
+  })
+
+  if (!response.ok || !response.body) {
+    throw new InterviewRequestError(
+      response.status,
+      await readMessage(response, "Le recruteur n'a pas pu répondre.")
+    )
+  }
+
+  return response.body
+}
+
 /** Fire-and-forget: the answer is irrelevant, only the warming matters. */
 export function triggerPrefetch(sessionId: string) {
   void fetch(`${BASE}/sessions/${sessionId}/prefetch`, {

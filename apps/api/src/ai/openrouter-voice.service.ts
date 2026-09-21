@@ -8,9 +8,13 @@ export interface VoiceTurnRequest {
   systemPrompt: string;
   /** The conversation so far, as text — cheaper than replaying the audio. */
   history: Array<{ role: "user" | "assistant"; content: string }>;
-  /** The candidate's latest answer. */
-  audioBase64: string;
-  format: string;
+  /** The candidate's latest answer. Absent when the interviewer opens. */
+  audio?: { base64: string; format: string };
+  /**
+   * Sent in place of audio to make the interviewer speak first. The model
+   * still answers with voice; only the prompt differs.
+   */
+  instruction?: string;
 }
 
 export type VoiceTurnEvent =
@@ -92,18 +96,7 @@ export class OpenRouterVoiceService {
               messages: [
                 { role: "system", content: request.systemPrompt },
                 ...request.history,
-                {
-                  role: "user",
-                  content: [
-                    {
-                      type: "input_audio",
-                      input_audio: {
-                        data: request.audioBase64,
-                        format: normalizeFormat(request.format),
-                      },
-                    },
-                  ],
-                },
+                userMessage(request),
               ],
             }),
             headers: {
@@ -130,6 +123,30 @@ export class OpenRouterVoiceService {
       this.retryHooks,
     );
   }
+}
+
+/**
+ * The candidate's side of the exchange: their recorded answer, or — on the
+ * opening turn, when they have not spoken yet — the instruction that makes the
+ * interviewer break the silence itself.
+ */
+function userMessage(request: VoiceTurnRequest) {
+  if (!request.audio) {
+    return { role: "user" as const, content: request.instruction ?? "" };
+  }
+
+  return {
+    role: "user" as const,
+    content: [
+      {
+        type: "input_audio",
+        input_audio: {
+          data: request.audio.base64,
+          format: normalizeFormat(request.audio.format),
+        },
+      },
+    ],
+  };
 }
 
 const SUPPORTED_FORMATS = new Set(["wav", "mp3", "flac", "m4a", "ogg", "webm"]);

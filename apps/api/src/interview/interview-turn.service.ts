@@ -9,7 +9,7 @@ import {
 import { Injectable, Logger, NotFoundException } from "@nestjs/common";
 import type { OpenRouterTranscriptionService } from "../ai/openrouter-transcription.service";
 import type { OpenRouterVoiceService } from "../ai/openrouter-voice.service";
-import { buildAiPrompt } from "./interview.prompts";
+import { buildAiPrompt, buildOpeningInstruction } from "./interview.prompts";
 import {
   MAX_MESSAGES,
   appendMessage,
@@ -61,8 +61,7 @@ export class InterviewTurnService {
 
     try {
       for await (const event of this.voice.streamTurn({
-        audioBase64: request.chunkBase64,
-        format: request.format,
+        audio: { base64: request.chunkBase64, format: request.format },
         history: session.messages.slice(-MAX_MESSAGES).map((message) => ({
           content: message.content,
           role: message.role,
@@ -97,6 +96,74 @@ export class InterviewTurnService {
     await this.recordTurn(session, request, transcript, reply.trim());
 
     yield { type: "done" };
+  }
+
+  /**
+   * The interviewer's opening words, before the candidate has said anything.
+   *
+   * Nothing is transcribed here — there is no candidate audio — so this is the
+   * voice stream alone. Replaying it on a session that has already started is
+   * a no-op rather than a second greeting, which is what a page reload would
+   * otherwise produce.
+   */
+  async *streamOpening(
+    userEmail: string,
+    sessionId: string,
+  ): AsyncGenerator<InterviewTurnEvent, void, undefined> {
+    const session = await this.store.findByIdForUserEmail(userEmail, sessionId);
+    if (!session) throw new NotFoundException("Session d'interview introuvable.");
+
+    if (session.messages.length > 0) {
+      yield { type: "done" };
+      return;
+    }
+
+    let reply = "";
+
+    try {
+      for await (const event of this.voice.streamTurn({
+        history: [],
+        instruction: buildOpeningInstruction(session.language),
+        systemPrompt: buildAiPrompt(session.language, session.profile),
+      })) {
+        if (event.type === "audio") {
+          yield { type: "audio", data: event.data };
+        } else {
+          reply += event.text;
+          yield { type: "reply", text: event.text };
+        }
+      }
+    } catch (error) {
+      const message = describe(error, "Le recruteur n'a pas pu repondre.");
+      yield { type: "error", message };
+      return;
+    }
+
+    await this.recordOpening(session, reply.trim());
+
+    yield { type: "done" };
+  }
+
+  private async recordOpening(
+    session: StoredInterviewSession,
+    reply: string,
+  ) {
+    if (!reply) return;
+
+    const timestamp = nowIso();
+
+    session.messages = appendMessage(session.messages, {
+      content: reply,
+      role: "assistant",
+      timestamp,
+    });
+    session.transcript = joinTranscript(session);
+    session.lastError = null;
+    session.recoverable = true;
+    session.status = INTERVIEW_SESSION_STATUS_READY;
+    session.updatedAt = timestamp;
+
+    await this.store.save(session);
   }
 
   /**

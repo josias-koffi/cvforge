@@ -44,6 +44,8 @@ export type StudioEvent =
   | { type: "SPEECH_END" }
   | { type: "TRANSCRIBED"; text: string }
   | { type: "TRANSCRIBE_FAILED"; message: string }
+  /** The interviewer is about to open the interview, before any audio. */
+  | { type: "AI_OPENING" }
   /** A frame of the spoken reply — what the candidate actually hears. */
   | { type: "AI_AUDIO"; elapsedMs: number }
   | { type: "AI_DELTA"; text: string; elapsedMs: number }
@@ -136,6 +138,18 @@ export function studioReducer(
         phase: "listening",
         vadStatus: "listening",
         error: event.message,
+      }
+
+    case "AI_OPENING":
+      // Shuts the microphone for the gap between asking for the greeting and
+      // hearing it: a cough in that second would otherwise be recorded as an
+      // answer to a question that has not been asked yet.
+      return {
+        ...state,
+        phase: "processing",
+        vadStatus: "processing",
+        streamingReply: "",
+        firstTokenMs: null,
       }
 
     case "AI_AUDIO":
