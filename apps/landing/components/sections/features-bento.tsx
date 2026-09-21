@@ -5,6 +5,7 @@ import {
   LanguagesIcon,
   ListChecksIcon,
   MailIcon,
+  MicIcon,
   UploadIcon,
   type LucideIcon,
 } from "lucide-react"
@@ -40,12 +41,18 @@ const TILES: BentoTile[] = [
     screenshot: { name: "candidatures", position: "object-[0%_0%]" },
   },
   {
+    key: "interview",
+    icon: MicIcon,
+    className: "md:col-span-4",
+    screenshot: { name: "interview-report", position: "object-[0%_0%]" },
+  },
+  { key: "export", icon: FileDownIcon, className: "md:col-span-2" },
+  {
     key: "translate",
     icon: LanguagesIcon,
-    className: "md:col-span-3",
+    className: "md:col-span-6",
     screenshot: { name: "translate", position: "object-center" },
   },
-  { key: "export", icon: FileDownIcon, className: "md:col-span-3" },
 ]
 
 export function FeaturesBento({

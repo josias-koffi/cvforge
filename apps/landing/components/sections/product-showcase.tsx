@@ -10,6 +10,9 @@ const SCREEN_PATHS: Record<ScreenshotName, string> = {
   "cv-editor": "/candidatures/cv",
   "letter-editor": "/candidatures/letter",
   translate: "/candidatures/cv",
+  "interview-studio": "/entretiens",
+  "interview-report": "/entretiens/rapport",
+  "interview-progress": "/entretiens/progression",
 }
 
 export function ProductShowcase({

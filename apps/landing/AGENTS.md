@@ -26,6 +26,8 @@ Public showcase site. Same stack as `apps/web` (Next 16, Tailwind v4, shadcn `ra
 
 `public/screenshots/{light,dark}/<name>.webp`, captured from `apps/web` at 1440×900, named after `ScreenshotName` in `content/types.ts`. They must never contain real personal data — capture them from a demo account.
 
+The interview captures (`interview-studio`, `interview-report`, `interview-progress`) were taken from `cvspark-demo@yopmail.com` against a fictional interview history seeded locally: the studio needs a spoken session, which cannot be replayed. Re-shoot them the same way, and crop the sidebar footer out — it carries the demo address, and in `next dev` the issue badge sits there too.
+
 ## Commands
 
 ```bash

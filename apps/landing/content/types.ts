@@ -2,7 +2,14 @@ import type { AiCreditAction } from "@cvforge/types"
 
 /** Screens captured from apps/web and stored under public/screenshots/{light,dark}. */
 export type ScreenshotName =
-  "dashboard" | "candidatures" | "cv-editor" | "letter-editor" | "translate"
+  | "dashboard"
+  | "candidatures"
+  | "cv-editor"
+  | "letter-editor"
+  | "translate"
+  | "interview-studio"
+  | "interview-report"
+  | "interview-progress"
 
 interface TitledText {
   title: string
@@ -22,6 +29,7 @@ export interface LandingDictionary {
     howItWorks: string
     pricing: string
     faq: string
+    interview: string
     story: string
     login: string
     start: string
@@ -59,9 +67,31 @@ export interface LandingDictionary {
   }
   features: SectionHeading & {
     items: Record<
-      "import" | "tailor" | "letter" | "translate" | "tracking" | "export",
+      | "import"
+      | "tailor"
+      | "letter"
+      | "translate"
+      | "tracking"
+      | "export"
+      | "interview",
       TitledText
     >
+  }
+  interview: SectionHeading & {
+    /** The five recruiter styles, named as the product names them. */
+    profiles: TitledText[]
+    durationsTitle: string
+    /** One line per available length; the product names them, not just times. */
+    durations: string[]
+    report: TitledText & {
+      /** The five scored dimensions of the report. */
+      metrics: string[]
+    }
+    /** Audio is never stored: worth saying where people decide to speak. */
+    privacyNote: string
+    cta: string
+    screenshotAlt: string
+    reportScreenshotAlt: string
   }
   showcase: SectionHeading & {
     tabs: { id: ScreenshotName; label: string; caption: string; alt: string }[]

@@ -2,6 +2,7 @@ import { Cta } from "@/components/sections/cta"
 import { Faq } from "@/components/sections/faq"
 import { FeaturesBento } from "@/components/sections/features-bento"
 import { Hero } from "@/components/sections/hero"
+import { Interview } from "@/components/sections/interview"
 import { HowItWorks } from "@/components/sections/how-it-works"
 import { Pricing } from "@/components/sections/pricing"
 import { Problem } from "@/components/sections/problem"
@@ -29,6 +30,7 @@ export function HomePage({
       <Problem problem={dict.problem} />
       <HowItWorks howItWorks={dict.howItWorks} />
       <FeaturesBento features={dict.features} />
+      <Interview interview={dict.interview} />
       <ProductShowcase showcase={dict.showcase} />
       {withTestimonials ? (
         <Testimonials testimonials={dict.testimonials} />

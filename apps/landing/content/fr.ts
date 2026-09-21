@@ -15,6 +15,7 @@ export const fr: LandingDictionary = {
     howItWorks: "Comment ça marche",
     pricing: "Tarifs",
     faq: "FAQ",
+    interview: "Entretien",
     story: "Notre histoire",
     login: "Connexion",
     start: "Commencer",
@@ -24,7 +25,7 @@ export const fr: LandingDictionary = {
     home: "Accueil CVSpark",
   },
   hero: {
-    badge: "Nouveau · Traduction FR ⇄ EN de vos documents",
+    badge: "Nouveau · Entraînez-vous à l'entretien, à l'oral",
     title: "Un profil. Une offre.",
     titleAccent: "Une étincelle.",
     subtitle:
@@ -119,7 +120,57 @@ export const fr: LandingDictionary = {
         title: "Export PDF et Word",
         body: "Des documents propres et lisibles par les ATS, prêts à être envoyés.",
       },
+      interview: {
+        title: "Entretien simulé",
+        body: "Un recruteur qui vous répond à l'oral, et un rapport noté à la fin.",
+      },
     },
+  },
+  interview: {
+    eyebrow: "Entretien",
+    title: "Le CV vous ouvre la porte. L'entretien, lui, se prépare.",
+    subtitle:
+      "Parlez à un recruteur qui connaît l'offre que vous visez. À la fin, un rapport noté vous dit ce qui a porté et ce qui a manqué.",
+    profiles: [
+      {
+        title: "Standard",
+        body: "Entretien RH classique, neutre et professionnel.",
+      },
+      {
+        title: "Agressif",
+        body: "Questions pièges, pression et relances incisives.",
+      },
+      {
+        title: "Passif",
+        body: "Ton sobre, silences implicites et relances vagues.",
+      },
+      {
+        title: "Technique",
+        body: "Hard skills, architecture et mises en situation.",
+      },
+      {
+        title: "Comportemental",
+        body: "Questions STAR sur des situations vécues.",
+      },
+    ],
+    durationsTitle: "Le temps que vous avez",
+    durations: [
+      "10 minutes — entretien de filtrage",
+      "20 minutes — entretien RH complet",
+      "30 minutes — entretien approfondi",
+    ],
+    report: {
+      title: "Un rapport, pas une impression",
+      body: "Une note sur dix, cinq dimensions évaluées, les points à travailler en priorité, et la transcription complète de l'échange. Session après session, votre progression se lit sur une courbe.",
+      metrics: ["Clarté", "Mots-clés", "Rythme", "Hésitations", "Pertinence"],
+    },
+    privacyNote:
+      "Votre voix n'est jamais conservée : chaque passage est transcrit puis abandonné. Seul le texte reste, et il est supprimé au bout de trente jours.",
+    cta: "Passer un entretien",
+    screenshotAlt:
+      "Studio d'entretien CVSpark : sphère vocale animée, compte à rebours et transcription en cours",
+    reportScreenshotAlt:
+      "Rapport d'entretien CVSpark : note globale et radar des cinq dimensions évaluées",
   },
   showcase: {
     eyebrow: "L'application",
@@ -150,6 +201,18 @@ export const fr: LandingDictionary = {
         label: "Lettre",
         caption: "Une lettre adaptée à l'offre, à relire et personnaliser.",
         alt: "Éditeur de lettre de motivation avec aperçu",
+      },
+      {
+        id: "interview-studio",
+        label: "Studio d'entretien",
+        caption: "Vous parlez, le recruteur répond. Sans bouton à maintenir.",
+        alt: "Studio d'entretien avec sphère vocale, compte à rebours et transcription",
+      },
+      {
+        id: "interview-report",
+        label: "Rapport d'entretien",
+        caption: "Une note sur dix, cinq dimensions, et ce qu'il faut travailler.",
+        alt: "Rapport d'entretien avec note globale, radar des dimensions et conseils",
       },
     ],
   },

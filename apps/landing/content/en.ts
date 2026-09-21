@@ -15,6 +15,7 @@ export const en: LandingDictionary = {
     howItWorks: "How it works",
     pricing: "Pricing",
     faq: "FAQ",
+    interview: "Interview",
     story: "Our story",
     login: "Log in",
     start: "Get started",
@@ -24,7 +25,7 @@ export const en: LandingDictionary = {
     home: "CVSpark home",
   },
   hero: {
-    badge: "New · Translate your documents FR ⇄ EN",
+    badge: "New · Practise the interview out loud",
     title: "Where your profile meets the job,",
     titleAccent: "instantly.",
     subtitle:
@@ -118,7 +119,57 @@ export const en: LandingDictionary = {
         title: "PDF and Word export",
         body: "Clean, ATS-readable documents, ready to send.",
       },
+      interview: {
+        title: "Mock interview",
+        body: "A recruiter that answers out loud, and a scored report at the end.",
+      },
     },
+  },
+  interview: {
+    eyebrow: "Interview",
+    title: "The resume opens the door. The interview is what you prepare.",
+    subtitle:
+      "Speak with a recruiter that knows the job you are after. At the end, a scored report tells you what landed and what was missing.",
+    profiles: [
+      {
+        title: "Standard",
+        body: "A classic HR interview, neutral and professional.",
+      },
+      {
+        title: "Aggressive",
+        body: "Trick questions, pressure and sharp follow-ups.",
+      },
+      {
+        title: "Passive",
+        body: "A flat tone, unspoken silences and vague prompts.",
+      },
+      {
+        title: "Technical",
+        body: "Hard skills, architecture and practical scenarios.",
+      },
+      {
+        title: "Behavioural",
+        body: "STAR questions on situations you have lived.",
+      },
+    ],
+    durationsTitle: "The time you have",
+    durations: [
+      "10 minutes — screening interview",
+      "20 minutes — full HR interview",
+      "30 minutes — in-depth interview",
+    ],
+    report: {
+      title: "A report, not an impression",
+      body: "A score out of ten, five scored dimensions, what to work on first, and the full transcript of the conversation. Session after session, your progress reads as a curve.",
+      metrics: ["Clarity", "Keywords", "Pacing", "Hesitations", "Relevance"],
+    },
+    privacyNote:
+      "Your voice is never kept: every passage is transcribed, then dropped. Only the text remains, and it is deleted after thirty days.",
+    cta: "Take an interview",
+    screenshotAlt:
+      "CVSpark interview studio: animated voice orb, countdown and live transcript",
+    reportScreenshotAlt:
+      "CVSpark interview report: overall score and radar of the five scored dimensions",
   },
   showcase: {
     eyebrow: "The app",
@@ -149,6 +200,18 @@ export const en: LandingDictionary = {
         caption:
           "A letter tailored to the offer, ready to review and personalise.",
         alt: "Cover letter editor with preview",
+      },
+      {
+        id: "interview-studio",
+        label: "Interview studio",
+        caption: "You speak, the recruiter answers. No button to hold down.",
+        alt: "Interview studio with voice orb, countdown and live transcript",
+      },
+      {
+        id: "interview-report",
+        label: "Interview report",
+        caption: "A score out of ten, five dimensions, and what to work on.",
+        alt: "Interview report with overall score, dimension radar and advice",
       },
     ],
   },

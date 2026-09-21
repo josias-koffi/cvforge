@@ -16,6 +16,7 @@ export function buildNavLinks(
   return [
     { href: homePath(locale, "features"), label: nav.features },
     { href: homePath(locale, "how-it-works"), label: nav.howItWorks },
+    { href: homePath(locale, "interview"), label: nav.interview },
     { href: homePath(locale, "pricing"), label: nav.pricing },
     { href: homePath(locale, "faq"), label: nav.faq },
     { href: storyPath(locale), label: nav.story },
