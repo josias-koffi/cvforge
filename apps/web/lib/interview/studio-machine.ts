@@ -28,6 +28,8 @@ export type StudioState = {
   muted: boolean
   /** Latest microphone level, 0-1, for the visual meter. */
   level: number
+  /** Latest level of the interviewer's own voice, 0-1, on the same scale. */
+  voiceLevel: number
   messages: StudioMessage[]
   /** The reply being streamed, before it is committed to `messages`. */
   streamingReply: string
@@ -52,6 +54,8 @@ export type StudioEvent =
   | { type: "MIC_READY" }
   | { type: "MIC_FAILED"; message: string }
   | { type: "LEVEL"; level: number }
+  /** A frame of the reply as it plays, so the orb breathes with the voice. */
+  | { type: "VOICE_LEVEL"; level: number }
   | { type: "SPEECH_START" }
   | { type: "SPEECH_END"; atMs: number }
   /** The noise that opened the microphone was not an answer. */
@@ -77,6 +81,7 @@ export const initialStudioState: StudioState = {
   vadStatus: "listening",
   muted: false,
   level: 0,
+  voiceLevel: 0,
   messages: [],
   streamingReply: "",
   error: null,
@@ -126,6 +131,11 @@ export function studioReducer(
       return state.level === event.level
         ? state
         : { ...state, level: event.level }
+
+    case "VOICE_LEVEL":
+      return state.voiceLevel === event.level
+        ? state
+        : { ...state, voiceLevel: event.level }
 
     case "SPEECH_START":
       // Ignored unless the studio is actually waiting for an answer, so a
@@ -244,7 +254,12 @@ export function studioReducer(
     case "VOICE_DONE":
       // Only reopens the mic if the reply was what we were waiting on.
       return state.phase === "speaking"
-        ? { ...state, phase: "listening", vadStatus: "listening" }
+        ? {
+            ...state,
+            phase: "listening",
+            vadStatus: "listening",
+            voiceLevel: 0,
+          }
         : state
 
     case "AI_FAILED":
@@ -254,6 +269,7 @@ export function studioReducer(
         phase: "listening",
         vadStatus: "listening",
         streamingReply: "",
+        voiceLevel: 0,
         error: event.message,
       }
 
@@ -271,7 +287,13 @@ export function studioReducer(
     }
 
     case "FINISHED":
-      return { ...state, phase: "completed", vadStatus: "listening", level: 0 }
+      return {
+        ...state,
+        phase: "completed",
+        vadStatus: "listening",
+        level: 0,
+        voiceLevel: 0,
+      }
 
     default:
       return state

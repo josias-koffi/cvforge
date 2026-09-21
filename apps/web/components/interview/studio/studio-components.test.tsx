@@ -2,40 +2,48 @@ import { renderToStaticMarkup } from "react-dom/server"
 import { describe, expect, it } from "vitest"
 
 import { LatencyStrip } from "@/components/interview/studio/latency-strip"
-import { MicOrb } from "@/components/interview/studio/mic-orb"
-import { vadStatusLabels } from "@/lib/interview/labels"
-import type { VadStatus } from "@/lib/interview/vad"
+import { VoiceOrb } from "@/components/interview/studio/voice-orb"
+import { orbStateLabels } from "@/lib/interview/labels"
+import type { OrbState } from "@/lib/interview/orb"
 
 /** React escapes apostrophes, which French labels are full of. */
 const render = (element: React.ReactElement) =>
   renderToStaticMarkup(element).replaceAll("&#x27;", "'")
 
-describe("MicOrb", () => {
-  it("spells out every microphone state, so it is not colour alone", () => {
-    for (const status of Object.keys(vadStatusLabels) as VadStatus[]) {
-      const markup = render(<MicOrb level={0.4} status={status} />)
+describe("VoiceOrb", () => {
+  it("spells out every state, so it is not colour alone", () => {
+    for (const state of Object.keys(orbStateLabels) as OrbState[]) {
+      const markup = render(<VoiceOrb amplitude={0.4} state={state} />)
 
-      expect(markup).toContain(vadStatusLabels[status])
+      expect(markup).toContain(orbStateLabels[state])
     }
   })
 
   it("announces the state politely for a screen reader", () => {
-    const markup = render(<MicOrb level={0} status="recording" />)
+    const markup = render(<VoiceOrb amplitude={0} state="speaking" />)
 
     expect(markup).toContain('aria-live="polite"')
   })
 
-  it("shows the level halo only while recording, and hides it from assistive tech", () => {
-    const recording = renderToStaticMarkup(
-      <MicOrb level={1} status="recording" />
-    )
-    const listening = renderToStaticMarkup(
-      <MicOrb level={1} status="listening" />
+  it("breathes on the live level and hides the sphere from assistive tech", () => {
+    const loud = renderToStaticMarkup(
+      <VoiceOrb amplitude={0.8} state="speaking" />
     )
 
-    expect(recording).toContain("scale(1.35)")
-    expect(recording).toContain('aria-hidden="true"')
-    expect(listening).not.toContain("scale(")
+    expect(loud).toContain("--amp:0.8")
+    expect(loud).toContain('aria-hidden="true"')
+  })
+
+  it("colours the recruiter's voice and the candidate's differently", () => {
+    const speaking = renderToStaticMarkup(
+      <VoiceOrb amplitude={0.5} state="speaking" />
+    )
+    const recording = renderToStaticMarkup(
+      <VoiceOrb amplitude={0.5} state="recording" />
+    )
+
+    expect(speaking).toContain("--orb:var(--chart-5)")
+    expect(recording).toContain("--orb:var(--spark)")
   })
 })
 
