@@ -19,6 +19,9 @@ type UseInterviewTurnOptions = {
   dispatch: (event: StudioEvent) => void
 }
 
+/** Let the speakers settle before listening again. */
+const ECHO_TAIL_MS = 350
+
 function describe(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback
 }
@@ -32,7 +35,14 @@ export function useInterviewTurn({
   language,
   dispatch,
 }: UseInterviewTurnOptions) {
-  const tts = useTts(language)
+  // The microphone only reopens once the voice has actually stopped, plus a
+  // short tail: speakers keep ringing for a moment, and the recruiter hearing
+  // itself was what made the session unusable.
+  const reopenMic = React.useCallback(() => {
+    setTimeout(() => dispatch({ type: "VOICE_DONE" }), ECHO_TAIL_MS)
+  }, [dispatch])
+
+  const tts = useTts(language, reopenMic)
   const sequenceRef = React.useRef(0)
   const abortRef = React.useRef<AbortController | null>(null)
 
@@ -70,8 +80,10 @@ export function useInterviewTurn({
         reader.releaseLock()
       }
 
-      tts.flush()
       dispatch({ type: "AI_DONE" })
+      // `flush` fires `reopenMic` once the queue drains — including
+      // immediately when there is no voice to speak with.
+      tts.flush()
       triggerPrefetch(sessionId)
     } catch (error) {
       // An abort is the component going away, not a failure to report.
