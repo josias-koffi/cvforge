@@ -36,6 +36,38 @@ export function formatDuration(totalSeconds: number): string {
   return `${String(minutes).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`
 }
 
+/**
+ * Grace after the deadline before the studio scores the interview itself.
+ *
+ * The recruiter delivers its closing in the last minute; this leaves room for
+ * the candidate to answer it rather than being cut off mid-goodbye.
+ */
+export const AUTO_FINISH_GRACE_SECONDS = 20
+
+/**
+ * Whether the studio should end and score the interview without being asked.
+ *
+ * Only ever in a gap. `listening` is the one phase where nobody is talking:
+ * the candidate is not mid-answer and the recruiter is not mid-sentence.
+ * Ending anywhere else throws away an answer and the credit that paid for it.
+ */
+export function shouldAutoFinish(input: {
+  elapsed: number
+  durationMinutes: number
+  /** The studio's phase; only `listening` is a safe moment to stop. */
+  phase: string
+  /** An interview nobody answered is not worth a report. */
+  hasAnswered: boolean
+  finishing: boolean
+}): boolean {
+  if (input.finishing || !input.hasAnswered) return false
+  if (input.phase !== "listening") return false
+
+  return (
+    input.elapsed >= input.durationMinutes * 60 + AUTO_FINISH_GRACE_SECONDS
+  )
+}
+
 export function resolveCountdown(
   elapsed: number,
   durationMinutes: number
