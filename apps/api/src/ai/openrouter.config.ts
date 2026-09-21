@@ -1,3 +1,5 @@
+import { nonEmpty, parseMaxAttempts, parseModelList } from './openrouter.env';
+
 export interface OpenRouterConfig {
   apiKey: string;
   baseUrl: string;
@@ -44,37 +46,15 @@ export function resolveOpenRouterConfig(): OpenRouterConfig {
     apiKey,
     baseUrl: process.env.OPENROUTER_BASE_URL ?? 'https://openrouter.ai/api/v1',
     defaultModel: nonEmpty(process.env.OPENROUTER_MODEL) ?? DEFAULT_MODEL,
-    fallbackModels: parseFallbackModels(process.env.OPENROUTER_FALLBACK_MODELS),
-    maxAttempts: parseMaxAttempts(process.env.OPENROUTER_MAX_ATTEMPTS),
+    fallbackModels: parseModelList(
+      process.env.OPENROUTER_FALLBACK_MODELS,
+      DEFAULT_FALLBACK_MODELS,
+    ),
+    maxAttempts: parseMaxAttempts(
+      process.env.OPENROUTER_MAX_ATTEMPTS,
+      DEFAULT_MAX_ATTEMPTS,
+    ),
     enableZdrChat: process.env.ENABLE_ZDR_CHAT === 'true',
     enableZdrStt: process.env.ENABLE_ZDR_STT === 'true',
   };
-}
-
-/** `docker compose` turns an unset `${VAR:-}` into an empty string, so blank
- *  must mean "unset" everywhere, never "no value". */
-function nonEmpty(raw: string | undefined): string | undefined {
-  const trimmed = raw?.trim();
-  return trimmed ? trimmed : undefined;
-}
-
-/**
- * Comma-separated list. Blank falls back to the defaults (see `nonEmpty`);
- * the literal `none` is the explicit opt-out.
- */
-function parseFallbackModels(raw: string | undefined): string[] {
-  const value = nonEmpty(raw);
-  if (value === undefined) return DEFAULT_FALLBACK_MODELS;
-  if (value.toLowerCase() === 'none') return [];
-
-  return value
-    .split(',')
-    .map((model) => model.trim())
-    .filter((model) => model.length > 0);
-}
-
-function parseMaxAttempts(raw: string | undefined): number {
-  const parsed = Number(raw);
-  if (!Number.isInteger(parsed) || parsed < 1) return DEFAULT_MAX_ATTEMPTS;
-  return parsed;
 }
