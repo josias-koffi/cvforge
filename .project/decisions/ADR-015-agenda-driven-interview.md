@@ -44,6 +44,15 @@ The current phase is the later of what the clock says and what the conversation
 says, and it never goes backwards. A candidate answering in three words still
 progresses; a verbose one is still moved on.
 
+**The conversation may lead by one phase, no more.** Unbounded, the exchange
+count is not a second opinion about where the interview stands — it overrides
+the clock outright, and the first live ten-minute session ended with 3:58 still
+to run. The pace that fed it was a guess: 90 s per exchange priced the whole
+interview at nine, where a spoken turn measures nearer 45 s. Both are fixed,
+and either alone would have been enough to end a session early, so both are
+now asserted. The clock owns the interview's length; the conversation only
+decides how quickly it moves inside it.
+
 Per-turn steering travels in the system prompt because there is nowhere else:
 `VoiceTurnRequest` carries a system prompt, a history and audio, and nothing
 more. The prompt is rebuilt every turn anyway, so this is free.
