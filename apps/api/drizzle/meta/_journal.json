@@ -92,6 +92,13 @@
       "when": 1789830000000,
       "tag": "0012_launch_pricing",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1790000000000,
+      "tag": "0013_interview_sessions_user_created_idx",
+      "breakpoints": true
     }
   ]
 }

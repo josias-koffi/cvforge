@@ -1,8 +1,11 @@
 import type { InterviewTranscriptChunk } from "@cvforge/types";
-import { and, asc, eq, lt } from "drizzle-orm";
+import { and, asc, desc, eq, lt } from "drizzle-orm";
 import type { Database } from "../database/database.types";
-import { interviewChunks, interviewSessions } from "../database/schema";
+import { applications, interviewChunks, interviewSessions } from "../database/schema";
 import type { InterviewStore, StoredInterviewSession } from "./interview.types";
+
+/** One page of history; the UI shows a handful at a time. */
+const DEFAULT_LIST_LIMIT = 20;
 
 type SessionRow = typeof interviewSessions.$inferSelect;
 type ChunkRow = typeof interviewChunks.$inferSelect;
@@ -136,6 +139,46 @@ export class PgInterviewStore implements InterviewStore {
 
       return session;
     });
+  }
+
+  /**
+   * The session history, newest first. Reads named columns and never touches
+   * `interview_chunks`: a twenty-row page would otherwise pull every audio
+   * segment the user ever recorded. `responseCount` comes from the stored
+   * report, which already counted them.
+   */
+  async listByUserEmail(userEmail: string, options: { limit?: number } = {}) {
+    const rows = await this.db
+      .select({
+        applicationId: interviewSessions.applicationId,
+        applicationExtracted: applications.extracted,
+        completedAt: interviewSessions.completedAt,
+        createdAt: interviewSessions.createdAt,
+        id: interviewSessions.id,
+        language: interviewSessions.language,
+        profile: interviewSessions.profile,
+        report: interviewSessions.report,
+        status: interviewSessions.status,
+      })
+      .from(interviewSessions)
+      .leftJoin(applications, eq(applications.id, interviewSessions.applicationId))
+      .where(eq(interviewSessions.userEmail, userEmail))
+      .orderBy(desc(interviewSessions.createdAt))
+      .limit(options.limit ?? DEFAULT_LIST_LIMIT);
+
+    return rows.map((row) => ({
+      applicationId: row.applicationId,
+      applicationTitle: row.applicationExtracted?.title ?? null,
+      completedAt: row.completedAt?.toISOString() ?? null,
+      createdAt: row.createdAt.toISOString(),
+      id: row.id,
+      language: row.language,
+      overallScore: row.report?.overallScore ?? null,
+      profile: row.profile,
+      report: row.report ?? null,
+      responseCount: row.report?.transcriptStats.responseCount ?? 0,
+      status: row.status,
+    }));
   }
 
   /** Retention purge; the chunks cascade with their session. */

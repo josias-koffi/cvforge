@@ -11,6 +11,7 @@ import { ApplicationsService } from "../applications/applications.service";
 import { AuthModule } from "../auth/auth.module";
 import { DATABASE, type Database } from "../database/database.types";
 import { InterviewPurgeService } from "./interview-purge.service";
+import { InterviewProgressService } from "./interview-progress.service";
 import { InterviewReportService } from "./interview-report.service";
 import { InterviewController } from "./interview.controller";
 import { InterviewService } from "./interview.service";
@@ -47,6 +48,12 @@ import { INTERVIEW_STORE, type InterviewStore } from "./interview.types";
         ApplicationsService,
         INTERVIEW_STORE,
       ],
+    },
+    {
+      provide: InterviewProgressService,
+      useFactory: (store: InterviewStore) =>
+        new InterviewProgressService(store),
+      inject: [INTERVIEW_STORE],
     },
     {
       provide: InterviewPurgeService,

@@ -1,12 +1,21 @@
 import type {
   InterviewMessage,
   InterviewReport,
+  InterviewSessionListItem,
   InterviewSessionSummary,
   InterviewTranscriptChunk,
 } from "@cvforge/types";
 
 export type StoredInterviewSession = InterviewSessionSummary & {
   userEmail: string;
+};
+
+/**
+ * A history row. It carries the whole `report` on top of the list fields so
+ * the progress aggregation can read its metrics from the same single query.
+ */
+export type InterviewSessionListRow = InterviewSessionListItem & {
+  report: InterviewReport | null;
 };
 
 /** DI token for the interview store. */
@@ -21,6 +30,11 @@ export type InterviewStore = {
   save: (
     session: StoredInterviewSession,
   ) => Promise<StoredInterviewSession>;
+  /** History, newest first. Carries no chunks — see the store for why. */
+  listByUserEmail: (
+    userEmail: string,
+    options?: { limit?: number },
+  ) => Promise<InterviewSessionListRow[]>;
   purgeCompletedBefore: (cutoffIso: string) => Promise<number>;
   /** Account purge: sessions and their transcript chunks (RGPD, US-092). */
   deleteByUserEmail: (userEmail: string) => Promise<number>;

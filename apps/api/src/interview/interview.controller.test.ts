@@ -2,6 +2,7 @@ import { NotFoundException, UnauthorizedException } from "@nestjs/common";
 import { describe, expect, it, vi } from "vitest";
 import type { InterviewSessionSummary } from "@cvforge/types";
 import { AuthService } from "../auth/auth.service";
+import type { InterviewProgressService } from "./interview-progress.service";
 import { InterviewController } from "./interview.controller";
 import { InterviewService } from "./interview.service";
 
@@ -47,11 +48,16 @@ function makeController(sessionOverride: unknown = { email: "user@test.example" 
     }),
   } as unknown as InterviewService;
 
+  const progressService = {
+    getProgress: vi.fn().mockResolvedValue({ progress: null }),
+    list: vi.fn().mockResolvedValue({ sessions: [] }),
+  } as unknown as InterviewProgressService;
+
   const authService = {
     readSessionFromCookieHeader: vi.fn().mockReturnValue(sessionOverride),
   } as unknown as AuthService;
 
-  return new InterviewController(interviewService, authService);
+  return new InterviewController(interviewService, progressService, authService);
 }
 
 describe("InterviewController", () => {
@@ -132,7 +138,11 @@ describe("InterviewController", () => {
         .fn()
         .mockReturnValue({ email: "user@test.example" }),
     } as unknown as AuthService;
-    const controller = new InterviewController(interviewService, authService);
+    const controller = new InterviewController(
+      interviewService,
+      {} as unknown as InterviewProgressService,
+      authService,
+    );
 
     expect(() =>
       controller.getSession("missing", { headers: { cookie: "x=y" } }),
