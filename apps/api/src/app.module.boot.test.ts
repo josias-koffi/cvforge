@@ -79,6 +79,18 @@ describe("AppModule dependency graph", () => {
 
     expect(routes.length).toBeGreaterThan(0);
 
+    const paths = routes.map(
+      (layer: { route: { path: string } }) => layer.route.path,
+    );
+
+    // Literal paths must be registered before the parameterised one, or
+    // `/interviews/progress` resolves as a session id.
+    expect(paths).toContain("/interviews/sessions");
+    expect(paths).toContain("/interviews/progress");
+    expect(paths.indexOf("/interviews/progress")).toBeLessThan(
+      paths.indexOf("/interviews/sessions/:sessionId"),
+    );
+
     await app.close();
   }, 30_000);
 });
