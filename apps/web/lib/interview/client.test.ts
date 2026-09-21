@@ -6,8 +6,6 @@ import {
   openOpeningStream,
   openTurnStream,
   startSession,
-  triggerPrefetch,
-  uploadChunk,
 } from "@/lib/interview/client"
 
 const CHUNK = {
@@ -95,23 +93,7 @@ describe("interview client", () => {
     )
   })
 
-  it("uploads a segment and returns the updated session", async () => {
-    fetchMock.mockResolvedValue(jsonResponse({ status: "recording" }))
 
-    await expect(uploadChunk("s1", CHUNK)).resolves.toEqual({
-      status: "recording",
-    })
-    const [url] = fetchMock.mock.calls[0] as [string]
-    expect(url).toBe("/api/interviews/sessions/s1/chunks")
-  })
-
-  it("reports a failed transcription", async () => {
-    fetchMock.mockResolvedValue(new Response("", { status: 500 }))
-
-    await expect(uploadChunk("s1", CHUNK)).rejects.toThrow(
-      "La transcription a échoué."
-    )
-  })
 
   it("posts the answer and returns the spoken reply stream", async () => {
     const body = new ReadableStream<Uint8Array>()
@@ -162,13 +144,4 @@ describe("interview client", () => {
     ).rejects.toThrow("Le recruteur n'a pas pu répondre.")
   })
 
-  it("warms the next question without waiting, and swallows a failure", async () => {
-    fetchMock.mockRejectedValue(new Error("offline"))
-
-    expect(() => triggerPrefetch("s1")).not.toThrow()
-    expect(fetchMock).toHaveBeenCalledWith(
-      "/api/interviews/sessions/s1/prefetch",
-      { method: "POST" }
-    )
-  })
 })

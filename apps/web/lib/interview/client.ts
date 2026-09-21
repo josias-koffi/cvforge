@@ -71,26 +71,6 @@ export async function fetchSession(
   return (await response.json()) as InterviewSessionSummary
 }
 
-export async function uploadChunk(
-  sessionId: string,
-  chunk: InterviewTranscriptionChunkRequest
-): Promise<InterviewSessionSummary> {
-  const response = await fetch(`${BASE}/sessions/${sessionId}/chunks`, {
-    body: JSON.stringify(chunk),
-    headers: { "content-type": "application/json" },
-    method: "POST",
-  })
-
-  if (!response.ok) {
-    throw new InterviewRequestError(
-      response.status,
-      await readMessage(response, "La transcription a échoué.")
-    )
-  }
-
-  return (await response.json()) as InterviewSessionSummary
-}
-
 /**
  * Sends the candidate's answer and opens the spoken reply.
  *
@@ -143,11 +123,4 @@ export async function openOpeningStream(
   }
 
   return response.body
-}
-
-/** Fire-and-forget: the answer is irrelevant, only the warming matters. */
-export function triggerPrefetch(sessionId: string) {
-  void fetch(`${BASE}/sessions/${sessionId}/prefetch`, {
-    method: "POST",
-  }).catch(() => {})
 }
