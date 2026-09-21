@@ -1,4 +1,9 @@
-import { interviewRecruiterProfiles, supportedLocales } from "@cvforge/types"
+import {
+  INTERVIEW_DEFAULT_DURATION_MINUTES,
+  interviewRecruiterProfiles,
+  isInterviewDuration,
+  supportedLocales,
+} from "@cvforge/types"
 import { NextResponse, type NextRequest } from "next/server"
 
 import { apiRequest } from "@/lib/api"
@@ -30,9 +35,15 @@ export async function POST(request: NextRequest) {
     : "standard"
   const applicationId =
     typeof body.applicationId === "string" ? body.applicationId : undefined
+  // Forwarded like the rest: dropped, the studio silently ran every interview
+  // for ten minutes whatever the candidate picked — and now it would also be
+  // billed for a length it never got.
+  const durationMinutes = isInterviewDuration(body.durationMinutes)
+    ? body.durationMinutes
+    : INTERVIEW_DEFAULT_DURATION_MINUTES
 
   const response = await apiRequest("/interviews/sessions", {
-    body: { applicationId, language, profile },
+    body: { applicationId, durationMinutes, language, profile },
     method: "POST",
   })
 
