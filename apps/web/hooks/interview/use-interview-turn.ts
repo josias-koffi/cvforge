@@ -18,8 +18,15 @@ type UseInterviewTurnOptions = {
 /** Opens the stream for one exchange, given a signal that can abandon it. */
 type OpenStream = (signal: AbortSignal) => Promise<ReadableStream<Uint8Array>>
 
-/** Let the speakers settle before listening again. */
-const ECHO_TAIL_MS = 350
+/**
+ * Let the speakers settle before listening again.
+ *
+ * Was 350 ms, which was doing two jobs: waiting out the ring, and standing in
+ * for a guard against the recruiter's own voice being recorded as an answer.
+ * The detector now has a real one — it compares the microphone against what
+ * the speakers are putting out — so this is back to what it says it is.
+ */
+const ECHO_TAIL_MS = 150
 
 function describe(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback

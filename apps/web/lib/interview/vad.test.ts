@@ -12,6 +12,7 @@ import {
   initialVadAccumulator,
   nextNoiseFloor,
   nextVadDecision,
+  resolveSilenceBudget,
   resolveStartThreshold,
   shouldBargeIn,
   type VadAccumulator,
@@ -339,5 +340,31 @@ describe("the adaptive noise floor", () => {
   it("keeps a sustained room tone from ever starting a recording", () => {
     // The end-to-end proof: 300 frames of room noise, no recording.
     expect(feed("listening", ROOM, 300, 16).action).toBe("none")
+  })
+})
+
+describe("the turn budget", () => {
+  it("is more patient while the answer is still being searched for", () => {
+    // The hesitation at the start of a considered answer is not the end of it.
+    expect(SILENCE_MS_WHILE_SEARCHING).toBeGreaterThan(SILENCE_MS_TO_STOP)
+  })
+
+  it("hands over within the gap two people actually leave each other", () => {
+    // Around 600-800 ms between turns in conversation. Much past a second and
+    // the recruiter reads as slow on every single exchange.
+    expect(SILENCE_MS_TO_STOP).toBeLessThanOrEqual(1000)
+  })
+
+  it("still waits longer than the burst it refuses to treat as an answer", () => {
+    // Otherwise a real answer could end before it was even allowed to count.
+    expect(SILENCE_MS_TO_STOP).toBeGreaterThan(MIN_SPEECH_MS)
+  })
+
+  it("lets an answer settle before the short budget applies", () => {
+    expect(SETTLED_SPEECH_MS).toBeGreaterThan(MIN_SPEECH_MS)
+    expect(resolveSilenceBudget(SETTLED_SPEECH_MS - 1)).toBe(
+      SILENCE_MS_WHILE_SEARCHING
+    )
+    expect(resolveSilenceBudget(SETTLED_SPEECH_MS)).toBe(SILENCE_MS_TO_STOP)
   })
 })

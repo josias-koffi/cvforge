@@ -24,19 +24,31 @@ export const SPEECH_START_RMS = 0.045
 export const SPEECH_CONTINUE_RMS = 0.02
 /** How far above the measured room tone the onset must sit. */
 export const NOISE_FLOOR_MARGIN = 2.5
-/** Silence that ends an answer once the candidate is clearly under way. */
-export const SILENCE_MS_TO_STOP = 1500
+/**
+ * Silence that ends an answer once the candidate is clearly under way.
+ *
+ * Two people swapping turns leave something like 600 to 800 ms between them.
+ * This sat at 1500 ms, which is most of a second of dead air on every single
+ * exchange and the largest share of the wait by far.
+ */
+export const SILENCE_MS_TO_STOP = 900
 /**
  * Silence tolerated while the answer is still being searched for.
  *
  * An interview question is not chat: "alors... euh..." while someone gathers
  * an example is the normal opening of a considered answer, and cutting it off
- * hands the floor back to an interviewer who then moves on. Patience costs a
- * second of dead air; impatience costs the answer.
+ * hands the floor back to an interviewer who then moves on.
+ *
+ * So there is still more patience here than once the answer is running — but
+ * less than the 2800 ms it used to be. That number was really compensating for
+ * something else: with no way to interrupt, being cut off early meant sitting
+ * through a whole question before getting another go, so the only safe setting
+ * was to wait far too long. Barge-in makes an early cut recoverable in a word,
+ * and the patience can come back down to what the hesitation actually needs.
  */
-export const SILENCE_MS_WHILE_SEARCHING = 2800
+export const SILENCE_MS_WHILE_SEARCHING = 1800
 /** Speech below this is still a false start, not an answer under way. */
-export const SETTLED_SPEECH_MS = 2000
+export const SETTLED_SPEECH_MS = 1500
 /** Below this, a burst was a cough or a chair, not an answer. */
 export const MIN_SPEECH_MS = 400
 /** Nothing else ever stops a recording, so something has to. */
