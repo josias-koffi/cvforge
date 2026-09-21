@@ -1,4 +1,4 @@
-import { nonEmpty, parseMaxAttempts, parseModelList } from "./openrouter.env";
+import { nonEmpty, parsePositiveInt, parseModelList } from "./openrouter.env";
 
 export interface OpenRouterVoiceConfig {
   apiKey: string;
@@ -51,10 +51,17 @@ export function resolveVoiceConfig(): OpenRouterVoiceConfig {
       DEFAULT_FALLBACK_MODELS,
     ),
     voice: nonEmpty(process.env.INTERVIEW_VOICE) ?? DEFAULT_VOICE,
-    maxAttempts: parseMaxAttempts(
-      process.env.OPENROUTER_MAX_ATTEMPTS,
+    // Deliberately not OPENROUTER_MAX_ATTEMPTS: that one is set to 3 in every
+    // compose file and was silently overriding the voice budget, giving three
+    // attempts on each of two models — six round trips while the candidate
+    // waits.
+    maxAttempts: parsePositiveInt(
+      process.env.INTERVIEW_VOICE_MAX_ATTEMPTS,
       DEFAULT_MAX_ATTEMPTS,
     ),
-    maxTokens: DEFAULT_MAX_TOKENS,
+    maxTokens: parsePositiveInt(
+      process.env.INTERVIEW_VOICE_MAX_TOKENS,
+      DEFAULT_MAX_TOKENS,
+    ),
   };
 }

@@ -13,6 +13,17 @@ export const DEFAULT_RETRY_POLICY: RetryPolicy = {
   maxDelayMs: 8_000,
 };
 
+/**
+ * A spoken turn has a perceived budget of about a second — an eight-second
+ * ceiling has no meaning there. Better to fail over to the next voice model
+ * than to leave the candidate talking to a silent room.
+ */
+export const VOICE_RETRY_POLICY: RetryPolicy = {
+  maxAttempts: 2,
+  baseDelayMs: 200,
+  maxDelayMs: 900,
+};
+
 /** Injected in tests so backoff neither sleeps for real nor picks random delays. */
 export interface RetryHooks {
   sleep?: (delayMs: number) => Promise<void>;
@@ -71,7 +82,11 @@ function computeDelayMs(
   random: () => number,
 ): number {
   if (error instanceof OpenRouterRequestError && error.retryAfterMs !== null) {
-    return error.retryAfterMs;
+    // Capped rather than obeyed. A provider asking us to wait five seconds is
+    // telling us about its own queue, not about ours: on a voice turn the
+    // candidate is sitting in silence, and waiting it out is worse than
+    // failing over to the next model.
+    return Math.min(error.retryAfterMs, policy.maxDelayMs);
   }
 
   const exponentialMs = Math.min(
