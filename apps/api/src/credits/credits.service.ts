@@ -28,7 +28,16 @@ import type {
   StripePurchaseInput,
 } from "./credits.types";
 
-function buildAiUsageNote(action: ConsumeCreditsInput["action"]) {
+function buildAiUsageNote(
+  action: ConsumeCreditsInput["action"],
+  durationMinutes?: number,
+) {
+  if (action === AI_CREDIT_ACTION_INTERVIEW_SESSION && durationMinutes) {
+    // Without the duration, a -10 and a -30 line read identically and the user
+    // cannot reconcile their balance.
+    return `Session d'entretien simule (${durationMinutes} min)`;
+  }
+
   switch (action) {
     case AI_CREDIT_ACTION_OFFER_ENRICHMENT:
       return "Enrichissement contexte entreprise";
@@ -41,6 +50,25 @@ function buildAiUsageNote(action: ConsumeCreditsInput["action"]) {
     case AI_CREDIT_ACTION_INTERVIEW_SESSION:
       return "Session d'entretien simule";
   }
+}
+
+/**
+ * The action fixes the price unless the caller says otherwise. An explicit
+ * amount is validated here rather than trusted: it is the only path by which a
+ * caller could write an arbitrary number into the ledger.
+ */
+function resolveCost(action: ConsumeCreditsInput["action"], amount?: number) {
+  if (amount === undefined) {
+    return AI_CREDIT_COSTS[action];
+  }
+
+  if (!Number.isInteger(amount) || amount <= 0) {
+    throw new UnprocessableEntityException(
+      "Le montant debite doit etre un entier positif.",
+    );
+  }
+
+  return amount;
 }
 
 export class InsufficientCreditsException extends HttpException {
@@ -82,8 +110,11 @@ export class CreditsService {
   async assertSufficientCredits(
     action: ConsumeCreditsInput["action"],
     userEmail: string,
+    amount?: number,
   ): Promise<void> {
-    if ((await this.store.getBalance(userEmail)) < AI_CREDIT_COSTS[action]) {
+    const cost = resolveCost(action, amount);
+
+    if ((await this.store.getBalance(userEmail)) < cost) {
       throw new InsufficientCreditsException(action);
     }
   }
@@ -91,11 +122,12 @@ export class CreditsService {
   async consumeCredits(input: ConsumeCreditsInput): Promise<CreditLedgerEntry> {
     const result = await this.store.applyEntry({
       action: input.action,
-      amount: -AI_CREDIT_COSTS[input.action],
+      amount: -resolveCost(input.action, input.amount),
       metadata: {
         applicationId: input.applicationId,
+        durationMinutes: input.durationMinutes,
       },
-      note: buildAiUsageNote(input.action),
+      note: buildAiUsageNote(input.action, input.durationMinutes),
       type: CREDIT_EVENT_AI_USAGE,
       userEmail: input.userEmail,
     });

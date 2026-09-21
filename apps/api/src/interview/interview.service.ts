@@ -5,6 +5,7 @@ import {
   INTERVIEW_PROFILE_STANDARD,
   INTERVIEW_SESSION_STATUS_COMPLETED,
   INTERVIEW_SESSION_STATUS_IDLE,
+  interviewSessionCost,
   isInterviewDuration,
   type Locale,
   type InterviewRecruiterProfile,
@@ -71,6 +72,13 @@ export class InterviewService {
     durationMinutes: number = INTERVIEW_DEFAULT_DURATION_MINUTES,
   ) {
     const linkedApplicationId = applicationId.trim() || null;
+    // Resolved before the balance check, not with the rest of the session: it
+    // is what the session costs, so checking a stale price would let someone
+    // open a thirty-minute interview on a ten-minute balance.
+    const duration = isInterviewDuration(durationMinutes)
+      ? durationMinutes
+      : INTERVIEW_DEFAULT_DURATION_MINUTES;
+    const cost = interviewSessionCost(duration);
     let application: StoredApplication | null = null;
 
     if (linkedApplicationId) {
@@ -89,9 +97,12 @@ export class InterviewService {
     }
 
     // A second click on "Démarrer" must not cost a second time. An untouched
-    // session from the last few minutes is handed back as-is.
+    // session from the last few minutes is handed back as-is — but only if it
+    // runs for as long as the one being asked for, since the two do not cost
+    // the same and handing back the shorter one would silently ignore the
+    // duration the candidate just picked.
     const reusable = await this.findReusableSession(userEmail);
-    if (reusable) {
+    if (reusable && reusable.durationMinutes === duration) {
       return {
         session: summarizeInterviewSession(reusable),
         sessionId: reusable.id,
@@ -103,6 +114,7 @@ export class InterviewService {
     await this.creditsService.assertSufficientCredits(
       AI_CREDIT_ACTION_INTERVIEW_SESSION,
       userEmail,
+      cost,
     );
 
     const createdAt = nowIso();
@@ -126,9 +138,7 @@ export class InterviewService {
       transcript: "",
       updatedAt: createdAt,
       userEmail,
-      durationMinutes: isInterviewDuration(durationMinutes)
-        ? durationMinutes
-        : INTERVIEW_DEFAULT_DURATION_MINUTES,
+      durationMinutes: duration,
       // Stamped on the first spoken turn: the candidate may not reach the
       // studio for minutes, and the agenda must not spend its budget waiting.
       startedAt: null,
@@ -142,7 +152,9 @@ export class InterviewService {
     // Of the two ways this can go wrong, that is the right one.
     await this.creditsService.consumeCredits({
       action: AI_CREDIT_ACTION_INTERVIEW_SESSION,
+      amount: cost,
       applicationId: linkedApplicationId ?? undefined,
+      durationMinutes: duration,
       userEmail,
     });
 
