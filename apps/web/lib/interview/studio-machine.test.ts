@@ -403,3 +403,32 @@ describe("studioReducer", () => {
     expect(state.messages).toHaveLength(1)
   })
 })
+
+describe("the recruiter running out of things to ask", () => {
+  it("records it without ending the turn that carried it", () => {
+    // The goodbye is still playing; scoring waits for VOICE_DONE.
+    const speaking = run(
+      [
+        { type: "SPEECH_START" },
+        { type: "SPEECH_END", atMs: 1000 },
+        { type: "AI_AUDIO", atMs: 2100 },
+      ],
+      ready
+    )
+
+    const state = studioReducer(speaking, { type: "CONCLUDED" })
+
+    expect(state.concluded).toBe(true)
+    expect(state.phase).toBe("speaking")
+  })
+
+  it("is not set until the server says so", () => {
+    expect(ready.concluded).toBe(false)
+  })
+
+  it("stays set once it is", () => {
+    const concluded = studioReducer(ready, { type: "CONCLUDED" })
+
+    expect(studioReducer(concluded, { type: "CONCLUDED" })).toBe(concluded)
+  })
+})

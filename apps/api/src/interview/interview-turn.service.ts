@@ -185,7 +185,31 @@ export class InterviewTurnService {
 
     await this.recordTurn(session, request, transcript, reply.trim());
 
-    yield { type: "done", startedAt: session.startedAt };
+    // Counted after the turn is recorded, so this exchange is part of it: the
+    // goodbye that just played is what completes the agenda.
+    yield {
+      closed: this.isInterviewOver(session),
+      startedAt: session.startedAt,
+      type: "done",
+    };
+  }
+
+  /**
+   * Whether the recruiter has nothing left to ask.
+   *
+   * The studio waits for this rather than for the clock. An interview whose
+   * closing has been delivered leaves the candidate sitting in front of a
+   * recruiter that has already said goodbye, which is its worst moment.
+   */
+  private isInterviewOver(session: StoredInterviewSession): boolean {
+    const agenda = buildAgenda(session.profile, session.durationMinutes, {
+      hasContext: session.context !== null,
+    });
+
+    return resolveAgendaState(agenda, {
+      elapsedMs: elapsedSince(session.startedAt),
+      exchanges: countExchanges(session.messages),
+    }).isComplete;
   }
 
   /**

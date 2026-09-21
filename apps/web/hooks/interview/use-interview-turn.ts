@@ -137,6 +137,9 @@ export function useInterviewTurn({
                   throw new Error(frame.message)
 
                 case "done":
+                  // The recruiter is done asking. The studio scores the
+                  // session once the goodbye has finished playing.
+                  if (frame.closed) dispatch({ type: "CONCLUDED" })
                   // The interview's start is stamped server-side on the first
                   // spoken turn, so the summary the studio opened with still
                   // has it null. Without this the countdown never moves.

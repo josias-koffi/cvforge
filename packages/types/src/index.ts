@@ -426,7 +426,16 @@ export type InterviewTurnEvent =
    * it on the first spoken turn, long after the session was created, so it is
    * not in the summary the studio was opened with.
    */
-  | { type: "done"; startedAt?: string | null }
+  | {
+      type: "done";
+      startedAt?: string | null;
+      /**
+       * The interview is over: every phase has had its exchanges and the
+       * recruiter has said goodbye. The studio scores it without waiting for
+       * the clock to run out.
+       */
+      closed?: boolean;
+    }
   | { type: "error"; message: string };
 
 /**

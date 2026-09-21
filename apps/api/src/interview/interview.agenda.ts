@@ -61,6 +61,13 @@ export interface AgendaState {
   /** Time to thank the candidate and stop asking new questions. */
   shouldWrapUp: boolean;
   isOvertime: boolean;
+  /**
+   * Every phase has had its exchanges, the closing included: there is nothing
+   * left to ask, and the studio can score the session without waiting for the
+   * clock. The recruiter has already said goodbye by this point, and leaving
+   * the candidate sitting in front of it is the interview's worst moment.
+   */
+  isComplete: boolean;
 }
 
 /** No phase is worth opening for less than this. */
@@ -236,7 +243,20 @@ export function resolveAgendaState(
     remainingInPhaseMs: Math.max(0, slot.endMs - elapsedMs),
     remainingMs: Math.max(0, remainingMs),
     shouldWrapUp: slot.phase === "closing" || remainingMs <= WRAP_UP_MS,
+    isComplete:
+      slot.phase === "closing" && exchanges >= totalMinExchanges(agenda),
   };
+}
+
+/**
+ * What the whole agenda is worth in answers.
+ *
+ * Reaching the closing is not enough on its own to call an interview over:
+ * `resolveIndex` can pull the phase forward on a brisk candidate, and ending
+ * there would score a session that never covered the ground it was sold.
+ */
+function totalMinExchanges(agenda: InterviewAgenda): number {
+  return agenda.slots.reduce((total, slot) => total + slot.minExchanges, 0);
 }
 
 /**

@@ -198,6 +198,7 @@ export function InterviewStudio({
   // in `finishInterview` carries the candidate to their report. Waits for a
   // gap: `shouldAutoFinish` will not stop a turn in progress.
   const autoFinish = shouldAutoFinish({
+    concluded: state.concluded,
     durationMinutes: session.durationMinutes,
     elapsed,
     finishing,

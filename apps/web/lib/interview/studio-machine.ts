@@ -57,6 +57,13 @@ export type StudioState = {
   startedAt: string | null
   /** How the last reply actually played. Null until one has. */
   playback: PlaybackStats | null
+  /**
+   * The recruiter has nothing left to ask and has said goodbye.
+   *
+   * Set by the server, which owns the agenda. The studio scores the session
+   * on it rather than waiting out the clock.
+   */
+  concluded: boolean
 }
 
 export type StudioEvent =
@@ -83,6 +90,8 @@ export type StudioEvent =
   | { type: "PLAYBACK_STATS"; stats: PlaybackStats }
   /** The server stamped the interview's start; the countdown can run. */
   | { type: "SESSION_STARTED"; startedAt: string }
+  /** The recruiter has said goodbye: there is nothing left to ask. */
+  | { type: "CONCLUDED" }
   /** The spoken reply has finished playing — only now is the mic safe. */
   | { type: "VOICE_DONE" }
   | { type: "AI_FAILED"; message: string }
@@ -105,6 +114,7 @@ export const initialStudioState: StudioState = {
   answerEndedAtMs: null,
   startedAt: null,
   playback: null,
+  concluded: false,
 }
 
 /**
@@ -297,6 +307,11 @@ export function studioReducer(
       // Pure measurement: it says how the last reply sounded and moves
       // nothing, so the phase is left exactly where the audio events put it.
       return { ...state, playback: event.stats }
+
+    case "CONCLUDED":
+      // Only ever recorded here. Scoring waits for `VOICE_DONE`, so the
+      // goodbye is heard in full before the report takes the screen.
+      return state.concluded ? state : { ...state, concluded: true }
 
     case "SESSION_STARTED":
       // First stamp wins: later turns report the same instant, and a stale
