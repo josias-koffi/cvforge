@@ -86,6 +86,17 @@ export function interviewCostLabel(minutes: InterviewDurationMinutes) {
   return `Coût : ${formatCredits(interviewSessionCost(minutes))}`
 }
 
+/** e.g. "842 Ko", "1,8 Mo" — enough for a user to recognise the file they picked. */
+export function formatFileSize(bytes: number) {
+  const kilobytes = bytes / 1024
+
+  if (kilobytes < 1000) return `${Math.max(1, Math.round(kilobytes))} Ko`
+
+  return `${new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 1 }).format(
+    kilobytes / 1024
+  )} Mo`
+}
+
 export function splitLines(value: string) {
   return value
     .split("\n")

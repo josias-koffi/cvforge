@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Field, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
+import { cn } from "@/lib/utils"
 
 export type FieldSpec<T> = {
   key: keyof T & string
@@ -31,7 +32,7 @@ export function SpecField<T extends object>({
   const inputId = `${id}-${spec.key}`
 
   return (
-    <Field className={spec.wide || spec.type ? "@lg/editor:col-span-2" : undefined}>
+    <Field className={spec.wide || spec.type ? "@lg/editor:col-span-full" : undefined}>
       <FieldLabel htmlFor={inputId}>{spec.label}</FieldLabel>
       {spec.type === "lines" ? (
         <Textarea
@@ -58,8 +59,24 @@ export function SpecField<T extends object>({
   )
 }
 
-export function FieldGrid({ children }: { children: React.ReactNode }) {
-  return <div className="grid gap-4 @lg/editor:grid-cols-2">{children}</div>
+/** Field rows; `columns` is the widest count, reached progressively as the editor grows. */
+export function FieldGrid({
+  children,
+  columns = 2,
+}: {
+  children: React.ReactNode
+  columns?: 2 | 3
+}) {
+  return (
+    <div
+      className={cn(
+        "grid gap-4 @lg/editor:grid-cols-2",
+        columns === 3 && "@4xl/editor:grid-cols-3"
+      )}
+    >
+      {children}
+    </div>
+  )
 }
 
 type ListEditorProps<T extends object> = {

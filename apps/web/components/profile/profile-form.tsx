@@ -11,7 +11,9 @@ import {
   SpecField,
   type FieldSpec,
 } from "@/components/documents/list-editor"
+import { CvDropzone } from "@/components/profile/cv-dropzone"
 import { ProfileIdentityCard } from "@/components/profile/profile-identity-card"
+import { ProfileSaveBar } from "@/components/profile/profile-save-bar"
 import { Card, CardContent } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import type {
@@ -54,6 +56,13 @@ const certificationFields: FieldSpec<CertificationEntry>[] = [
   { key: "issuer", label: "Organisme" },
   { key: "year", label: "Année" },
 ]
+
+/** A profile with substance no longer needs the import zone to sit centre stage. */
+function hasContent(profile: BaseProfile) {
+  const { experiences, summary, technicalSkills } = profile.sections
+
+  return Boolean(summary.trim() || experiences.length > 0 || technicalSkills.length > 0)
+}
 
 function normalizeProfile(profile: BaseProfile): BaseProfile {
   return {
@@ -108,7 +117,8 @@ export function ProfileForm({
 
   return (
     <div className="@container/editor flex min-w-0 flex-col gap-4">
-      <ProfileIdentityCard profile={profile} saving={saving} onChange={setProfile} onSave={save} />
+      <CvDropzone compact={hasContent(profile)} onImported={setProfile} />
+      <ProfileIdentityCard profile={profile} onChange={setProfile} />
       <Card>
         <CardContent>
           <Tabs defaultValue="summary" className="gap-4">
@@ -267,6 +277,13 @@ export function ProfileForm({
           </Tabs>
         </CardContent>
       </Card>
+      <ProfileSaveBar
+        dirty={dirty}
+        lastSavedAt={savedProfile.meta.lastSavedAt}
+        saving={saving}
+        onReset={() => setProfile(savedProfile)}
+        onSave={save}
+      />
     </div>
   )
 }
