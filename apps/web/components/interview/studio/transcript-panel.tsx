@@ -2,39 +2,22 @@
 
 import * as React from "react"
 
+import { Bubble, TranscriptThread } from "@/components/interview/transcript-thread"
 import { cn } from "@/lib/utils"
 import type { StudioMessage } from "@/lib/interview/studio-machine"
 
-function Bubble({
-  role,
-  children,
-  pending,
-}: {
-  role: StudioMessage["role"]
-  children: React.ReactNode
-  pending?: boolean
-}) {
-  const isCandidate = role === "user"
-
-  return (
-    <div className={cn("flex", isCandidate ? "justify-end" : "justify-start")}>
-      <p
-        className={cn(
-          "max-w-[85%] rounded-lg px-3 py-2 text-sm whitespace-pre-wrap",
-          isCandidate
-            ? "bg-primary text-primary-foreground"
-            : "bg-muted text-foreground",
-          pending && "opacity-70"
-        )}
-      >
-        {children}
-      </p>
-    </div>
-  )
-}
+/**
+ * How far from the bottom still counts as "following the conversation".
+ * Beyond it the candidate has scrolled back to reread something, and yanking
+ * them down on the next token would be rude.
+ */
+const FOLLOW_THRESHOLD_PX = 80
 
 /**
  * The conversation so far, plus the reply currently arriving.
+ *
+ * Fixed height and its own scrollbar: the thread behaves like any chat, and
+ * the page around it stays where the candidate left it.
  *
  * `aria-live="polite"` rather than assertive: the recruiter's question should
  * be announced once it settles, not interrupt itself on every token.
@@ -42,21 +25,36 @@ function Bubble({
 export function TranscriptPanel({
   messages,
   streamingReply,
+  className,
 }: {
   messages: StudioMessage[]
   streamingReply: string
+  className?: string
 }) {
-  const endRef = React.useRef<HTMLDivElement>(null)
+  const scrollRef = React.useRef<HTMLDivElement>(null)
 
   React.useEffect(() => {
-    endRef.current?.scrollIntoView({ block: "end" })
+    const container = scrollRef.current
+    if (!container) return
+
+    // `scrollIntoView` moved the whole page as well as the thread, which is
+    // exactly what a fixed-height panel is meant to avoid.
+    const distance =
+      container.scrollHeight - container.scrollTop - container.clientHeight
+    if (distance > FOLLOW_THRESHOLD_PX) return
+
+    container.scrollTop = container.scrollHeight
   }, [messages.length, streamingReply])
 
   return (
     <div
       aria-label="Transcription de l'entretien"
       aria-live="polite"
-      className="flex h-full flex-col gap-3 overflow-y-auto rounded-lg border bg-background p-4"
+      className={cn(
+        "flex flex-col gap-4 overflow-y-auto rounded-xl border bg-card p-4",
+        className
+      )}
+      ref={scrollRef}
       role="log"
     >
       {messages.length === 0 && streamingReply.length === 0 ? (
@@ -67,19 +65,13 @@ export function TranscriptPanel({
         </p>
       ) : null}
 
-      {messages.map((message) => (
-        <Bubble key={`${message.timestamp}-${message.role}`} role={message.role}>
-          {message.content}
-        </Bubble>
-      ))}
+      <TranscriptThread messages={messages} />
 
       {streamingReply.length > 0 ? (
         <Bubble pending role="assistant">
           {streamingReply}
         </Bubble>
       ) : null}
-
-      <div ref={endRef} />
     </div>
   )
 }

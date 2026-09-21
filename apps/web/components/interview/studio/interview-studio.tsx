@@ -5,10 +5,11 @@ import * as React from "react"
 import { toast } from "sonner"
 
 import { LatencyStrip } from "@/components/interview/studio/latency-strip"
-import { MicOrb } from "@/components/interview/studio/mic-orb"
+import { VoiceOrb } from "@/components/interview/studio/voice-orb"
 import { StudioToolbar } from "@/components/interview/studio/studio-toolbar"
 import { TranscriptPanel } from "@/components/interview/studio/transcript-panel"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { orbAmplitude, orbState } from "@/lib/interview/orb"
 import {
   elapsedSeconds,
   resolveCountdown,
@@ -169,15 +170,26 @@ export function InterviewStudio({
     void finish()
   }, [autoFinish, finish])
 
+  const orb = orbState({ muted: state.muted, phase: state.phase })
+
   return (
-    <div className="grid gap-6 @4xl/main:grid-cols-[280px_1fr]">
-      <div className="flex flex-col items-center gap-4 rounded-lg border bg-card p-6">
-        <MicOrb level={state.level} status={state.vadStatus} />
+    <div className="flex flex-col gap-4">
+      {/* The stage: one thing to look at, the full width of the page. */}
+      <section className="flex min-h-72 flex-col items-center justify-center gap-4 rounded-xl border bg-card p-6">
+        <VoiceOrb
+          amplitude={orbAmplitude({
+            level: state.level,
+            state: orb,
+            voiceLevel: state.voiceLevel,
+          })}
+          state={orb}
+        />
         <LatencyStrip firstTokenMs={state.firstTokenMs} />
+
         {countdown.tone === "overtime" && state.phase !== "completed" ? (
           // Nothing is cut off mid-turn: the studio waits for a gap before
           // scoring, and the recruiter is already wrapping up.
-          <Alert>
+          <Alert className="max-w-lg">
             <AlertDescription>
               Le temps imparti est écoulé — l’analyse se lancera dès que vous
               aurez fini de parler.
@@ -185,29 +197,28 @@ export function InterviewStudio({
           </Alert>
         ) : null}
         {state.phase === "error" ? (
-          <Alert variant="destructive">
+          <Alert className="max-w-lg" variant="destructive">
             <AlertDescription>{state.error}</AlertDescription>
           </Alert>
         ) : null}
-      </div>
+      </section>
 
-      <div className="flex min-h-[28rem] flex-col gap-4">
-        <StudioToolbar
-          canFinish={hasAnswered}
-          countdown={countdown}
-          finishing={finishing}
-          muted={state.muted}
-          onFinish={() => void finish()}
-          onToggleMute={() => dispatch({ type: "MUTE_TOGGLED" })}
-          profile={session.profile}
-        />
-        <div className="min-h-0 flex-1">
-          <TranscriptPanel
-            messages={state.messages}
-            streamingReply={state.streamingReply}
-          />
-        </div>
-      </div>
+      <StudioToolbar
+        canFinish={hasAnswered}
+        countdown={countdown}
+        finishing={finishing}
+        muted={state.muted}
+        onFinish={() => void finish()}
+        onToggleMute={() => dispatch({ type: "MUTE_TOGGLED" })}
+        profile={session.profile}
+      />
+
+      {/* A height of its own, so new turns scroll the thread and not the page. */}
+      <TranscriptPanel
+        className="h-96 @4xl/main:h-[28rem]"
+        messages={state.messages}
+        streamingReply={state.streamingReply}
+      />
     </div>
   )
 }

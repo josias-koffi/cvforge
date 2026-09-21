@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server"
 import { describe, expect, it } from "vitest"
 
 import { ReportCard } from "@/components/interview/report/report-card"
-import { TranscriptStats } from "@/components/interview/report/transcript-stats"
+import { ReportStats } from "@/components/interview/report/report-stats"
 
 /** React escapes apostrophes, which French labels are full of. */
 const render = (element: React.ReactElement) =>
@@ -57,9 +57,9 @@ describe("ReportCard", () => {
   })
 })
 
-describe("TranscriptStats", () => {
+describe("ReportStats", () => {
   it("reports the measured facts", () => {
-    const markup = render(<TranscriptStats hasLinkedOffer stats={STATS} />)
+    const markup = render(<ReportStats hasLinkedOffer stats={STATS} />)
 
     expect(markup).toContain("5") // responses
     expect(markup).toContain("14 s")
@@ -70,7 +70,7 @@ describe("TranscriptStats", () => {
   it("shows no coverage figure when there is no offer to measure against", () => {
     // A flat 0 would read as a bad score rather than as no score at all.
     const markup = render(
-      <TranscriptStats
+      <ReportStats
         hasLinkedOffer={false}
         stats={{ ...STATS, keywordCoverage: 0, keywordMentions: [] }}
       />
@@ -82,7 +82,7 @@ describe("TranscriptStats", () => {
 
   it("handles an unmeasurable average duration", () => {
     const markup = render(
-      <TranscriptStats
+      <ReportStats
         hasLinkedOffer
         stats={{ ...STATS, averageResponseDurationSeconds: null }}
       />

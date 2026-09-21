@@ -29,8 +29,10 @@ function destination(session: InterviewSessionListItem) {
 
 export function SessionsTable({
   sessions,
+  pageSize = 10,
 }: {
   sessions: InterviewSessionListItem[]
+  pageSize?: number
 }) {
   const columns = React.useMemo(
     () => [
@@ -104,7 +106,7 @@ export function SessionsTable({
       data={sessions}
       emptyMessage="Aucun entretien pour le moment."
       getRowId={(session) => session.id}
-      pageSize={10}
+      pageSize={pageSize}
     />
   )
 }

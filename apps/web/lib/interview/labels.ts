@@ -6,6 +6,7 @@ import type {
   Locale,
 } from "@cvforge/types"
 
+import type { OrbState } from "@/lib/interview/orb"
 import type { VadStatus } from "@/lib/interview/vad"
 
 export const profileLabels: Record<InterviewRecruiterProfile, string> = {
@@ -71,6 +72,21 @@ export const vadStatusLabels: Record<VadStatus, string> = {
   listening: "À l'écoute",
   recording: "Enregistrement",
   processing: "Traitement",
+  muted: "Micro coupé",
+}
+
+/**
+ * What the orb is saying, in words.
+ *
+ * Written out under the orb because a sphere that swells says nothing to a
+ * screen reader, and colour alone would not meet WCAG 1.4.1.
+ */
+export const orbStateLabels: Record<OrbState, string> = {
+  idle: "En attente",
+  listening: "À vous, parlez",
+  recording: "Je vous écoute",
+  thinking: "Analyse de votre réponse",
+  speaking: "Le recruteur répond",
   muted: "Micro coupé",
 }
 
