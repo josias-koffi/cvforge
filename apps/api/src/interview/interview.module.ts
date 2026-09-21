@@ -1,6 +1,8 @@
 import { Module } from "@nestjs/common";
+import type { OpenRouterTranscriptionService } from "../ai/openrouter-transcription.service";
 import {
   OPENROUTER_SERVICE,
+  OPENROUTER_TRANSCRIPTION_SERVICE,
   OpenRouterModule,
 } from "../ai/openrouter.module";
 import type { OpenRouterService } from "../ai/openrouter.service";
@@ -27,10 +29,22 @@ import { INTERVIEW_STORE, type InterviewStore } from "./interview.types";
       provide: InterviewService,
       useFactory: (
         openRouter: OpenRouterService,
+        transcription: OpenRouterTranscriptionService,
         applicationsService: ApplicationsService,
         store: InterviewStore,
-      ) => new InterviewService(store, openRouter, applicationsService),
-      inject: [OPENROUTER_SERVICE, ApplicationsService, INTERVIEW_STORE],
+      ) =>
+        new InterviewService(
+          store,
+          openRouter,
+          transcription,
+          applicationsService,
+        ),
+      inject: [
+        OPENROUTER_SERVICE,
+        OPENROUTER_TRANSCRIPTION_SERVICE,
+        ApplicationsService,
+        INTERVIEW_STORE,
+      ],
     },
     {
       provide: InterviewPurgeService,

@@ -138,81 +138,6 @@ describe('OpenRouterService', () => {
     await expect(svc.chat(MESSAGES)).rejects.toThrow('no content');
   });
 
-  it('sends audio transcription requests through OpenRouter chat completions', async () => {
-    fetchMock.mockImplementation(() =>
-      Promise.resolve(
-        new Response(
-          JSON.stringify({
-            choices: [
-              {
-                message: {
-                  content: JSON.stringify({ transcript: 'Bonjour le monde' }),
-                },
-              },
-            ],
-          }),
-          {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' },
-          },
-        ),
-      ),
-    );
-    const svc = new OpenRouterService(BASE_CONFIG);
-
-    const result = await svc.transcribeAudio('UklGRiQAAABXQVZF', 'wav');
-
-    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
-    expect(url).toBe('https://openrouter.ai/api/v1/chat/completions');
-    expect((init.headers as Record<string, string>).Authorization).toBe('Bearer test-key');
-    expect(result).toBe('Bonjour le monde');
-
-    const body = JSON.parse(init.body as string);
-    expect(body.model).toBe('mistralai/voxtral-small-24b-2507');
-    expect(body.max_tokens).toBe(48);
-    expect(body.temperature).toBe(0);
-    expect(body.response_format).toEqual({
-      json_schema: {
-        name: 'transcription_result',
-        schema: {
-          additionalProperties: false,
-          properties: {
-            transcript: {
-              description: 'Exact plain-text transcription of the spoken audio.',
-              type: 'string',
-            },
-          },
-          required: ['transcript'],
-          type: 'object',
-        },
-        strict: true,
-      },
-      type: 'json_schema',
-    });
-    expect(body.messages).toEqual([
-      {
-        content: expect.stringContaining('You are a speech transcription engine.'),
-        role: 'system',
-      },
-      {
-        content: [
-          {
-            text: 'Transcribe this audio faithfully. Keep the original wording and language. Do not add speaker labels, timestamps, explanations, or commentary. If the audio is unclear, return an empty transcript instead of inventing content.',
-            type: 'text',
-          },
-          {
-            input_audio: {
-              data: 'UklGRiQAAABXQVZF',
-              format: 'wav',
-            },
-            type: 'input_audio',
-          },
-        ],
-        role: 'user',
-      },
-    ]);
-  });
-
   it('streams chat completion chunks via streamChat', async () => {
     const ssePayload = [
       'data: {"choices":[{"delta":{"content":"Bonne "}}]}\n',
@@ -262,42 +187,6 @@ describe('OpenRouterService', () => {
     expect(body.data_collection).toBe('deny');
   });
 
-  it('omits data_collection on STT when enableZdrStt is false', async () => {
-    fetchMock.mockImplementation(() =>
-      Promise.resolve(
-        new Response(JSON.stringify({ choices: [{ message: { content: '{"transcript":"Bonjour"}' } }] }), {
-          status: 200,
-          headers: { 'Content-Type': 'application/json' },
-        }),
-      ),
-    );
-    const svc = new OpenRouterService({ ...BASE_CONFIG, enableZdrStt: false });
-    await svc.transcribeAudio('AAA', 'webm');
-
-    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
-    const body = JSON.parse(init.body as string);
-    expect(body.data_collection).toBeUndefined();
-  });
-
-  it('normalizes legacy OpenRouter Voxtral model names to the Mistral transcription service', async () => {
-    fetchMock.mockImplementation(() =>
-      Promise.resolve(
-        new Response(JSON.stringify({ choices: [{ message: { content: '{"transcript":"Bonjour"}' } }] }), {
-          status: 200,
-          headers: { 'Content-Type': 'application/json' },
-        }),
-      ),
-    );
-    const svc = new OpenRouterService(BASE_CONFIG);
-    await svc.transcribeAudio('AAA', 'webm', {
-      model: 'mistralai/voxtral-small-24b-2507',
-    });
-
-    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
-    const body = JSON.parse(init.body as string);
-    expect(body.model).toBe('mistralai/voxtral-small-24b-2507');
-  });
-
   it('passes provider routing preferences when provided', async () => {
     const svc = new OpenRouterService(BASE_CONFIG);
     await svc.chat(MESSAGES, {
@@ -324,22 +213,6 @@ describe('OpenRouterService', () => {
     const svc = new OpenRouterService(BASE_CONFIG);
     const gen = svc.streamChat(MESSAGES);
     await expect(gen.next()).rejects.toThrow('OpenRouter stream failed (mistralai/mistral-small-2603): 404');
-  });
-
-  it('throws when the transcription response has no text', async () => {
-    fetchMock.mockImplementation(() =>
-      Promise.resolve(
-        new Response(
-          JSON.stringify({ choices: [{ message: { content: '{"transcript":""}' } }] }),
-          { status: 200, headers: { 'Content-Type': 'application/json' } },
-        ),
-      ),
-    );
-
-    const svc = new OpenRouterService(BASE_CONFIG);
-    await expect(svc.transcribeAudio('UklGRiQAAABXQVZF', 'webm')).rejects.toThrow(
-      'contained no text',
-    );
   });
 
   /** Each request carries exactly one model; the chain is walked by us. */
@@ -433,16 +306,6 @@ describe('OpenRouterService', () => {
     expect(modelsSent()).toEqual(['mistralai/mistral-large', 'google/gemini-2.5-flash']);
   });
 
-  it('keeps a pinned model alone, with no fallback', async () => {
-    fetchMock.mockImplementation(() => makeErrorResponse(429));
-    const svc = makeService({ maxAttempts: 1, fallbackModels: ['google/gemini-2.5-flash'] });
-
-    await expect(
-      svc.chat(MESSAGES, { model: 'mistralai/mistral-large', pinModel: true }),
-    ).rejects.toThrow('429');
-    expect(modelsSent()).toEqual(['mistralai/mistral-large']);
-  });
-
   it('never repeats the primary inside its own fallback chain', async () => {
     fetchMock.mockImplementation(() => makeErrorResponse(429));
     const svc = makeService({
@@ -452,17 +315,6 @@ describe('OpenRouterService', () => {
 
     await expect(svc.chat(MESSAGES)).rejects.toThrow('429');
     expect(modelsSent()).toEqual(['mistralai/mistral-small-2603', 'openai/gpt-5-mini']);
-  });
-
-  it('keeps transcription on a single model, never the chat fallback chain', async () => {
-    fetchMock.mockImplementation(() => makeResponse('{"transcript":"Bonjour"}'));
-    const svc = makeService({ fallbackModels: ['google/gemini-2.5-flash'] });
-    await svc.transcribeAudio('AAA', 'webm');
-
-    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
-    const body = JSON.parse(init.body as string);
-    expect(body.model).toBe('mistralai/voxtral-small-24b-2507');
-    expect(body.models).toBeUndefined();
   });
 
   it('retries an upstream 429 and returns the retried result', async () => {
@@ -535,19 +387,4 @@ describe('OpenRouterService', () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
-  it('throws when the transcription response is not valid JSON', async () => {
-    fetchMock.mockImplementation(() =>
-      Promise.resolve(
-        new Response(
-          JSON.stringify({ choices: [{ message: { content: 'Bonjour le monde' } }] }),
-          { status: 200, headers: { 'Content-Type': 'application/json' } },
-        ),
-      ),
-    );
-
-    const svc = new OpenRouterService(BASE_CONFIG);
-    await expect(svc.transcribeAudio('UklGRiQAAABXQVZF', 'webm')).rejects.toThrow(
-      'not valid JSON',
-    );
-  });
 });
