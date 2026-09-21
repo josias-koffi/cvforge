@@ -7,8 +7,22 @@ import type { StoredApplication } from "../applications/applications.types";
 import type { StoredInterviewSession } from "./interview.types";
 import { sortChunks } from "./interview.types";
 
-/** How many turns of context the interviewer model is given. */
-export const MAX_MESSAGES = 20;
+/**
+ * How many turns of context the interviewer model is given.
+ *
+ * Distinct from what is *kept*: this one is a per-turn token budget, the
+ * other is the record of the interview.
+ */
+export const MAX_PROMPT_MESSAGES = 20;
+
+/**
+ * A safety valve, not a budget. Twenty used to serve both roles, and being
+ * applied on write it deleted the first half of any interview past ten
+ * exchanges — which is also what the final report reads from, so a
+ * thirty-minute interview was graded on its second half alone.
+ */
+export const MAX_STORED_MESSAGES = 200;
+
 
 const HESITATION_TOKENS = ["euh", "heu", "hum", "uh", "um", "erm"] as const;
 
@@ -16,16 +30,57 @@ export function nowIso() {
   return new Date().toISOString();
 }
 
+/** Lossless in practice; the cap only stops an unbounded row. */
 export function appendMessage(
   messages: InterviewMessage[],
   msg: InterviewMessage,
 ): InterviewMessage[] {
   const updated = [...messages, msg];
-  if (updated.length <= MAX_MESSAGES) {
+  if (updated.length <= MAX_STORED_MESSAGES) {
     return updated;
   }
-  // Drop the oldest user+assistant pair to stay within context budget
-  return updated.slice(updated.length - MAX_MESSAGES);
+
+  return updated.slice(updated.length - MAX_STORED_MESSAGES);
+}
+
+/**
+ * The slice of the conversation the model is shown.
+ *
+ * The opening is kept whatever happens: it is where the interviewer said what
+ * this interview is, and dropping it lets the recruiter forget its own brief
+ * halfway through a long session.
+ */
+export function selectPromptMessages(
+  messages: InterviewMessage[],
+  max = MAX_PROMPT_MESSAGES,
+): InterviewMessage[] {
+  if (messages.length <= max) return messages;
+
+  const opening = messages[0]!;
+
+  return [opening, ...messages.slice(messages.length - (max - 1))];
+}
+
+/**
+ * One line naming what has already been asked, for the questions that fell
+ * out of the prompt window. Without it a long interview circles back and asks
+ * about a job it covered twenty minutes earlier.
+ */
+export function summarizeCoveredGround(
+  dropped: InterviewMessage[],
+  language: "en" | "fr",
+): string | null {
+  const asked = dropped
+    .filter((message) => message.role === "assistant")
+    .map((message) => normalizeTranscript(message.content))
+    .filter(Boolean);
+
+  if (asked.length === 0) return null;
+
+  const label = language === "en" ? "Already covered" : "Deja aborde";
+  const joined = asked.join(" ");
+
+  return `${label}: ${joined.length > 400 ? `${joined.slice(0, 400)}…` : joined}`;
 }
 
 export function normalizeTranscript(value: string) {

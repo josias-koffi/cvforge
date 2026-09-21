@@ -7,7 +7,7 @@ import {
   buildTurnPrompt,
   resolveLanguageLabel,
 } from "./interview.prompts";
-import { MAX_MESSAGES } from "./interview.stats";
+import { MAX_PROMPT_MESSAGES } from "./interview.stats";
 
 const message = (content: string): InterviewMessage => ({
   role: "user",
@@ -70,16 +70,17 @@ describe("buildConversation", () => {
   });
 
   it("keeps only the most recent turns, so the context stays within budget", () => {
-    const messages = Array.from({ length: MAX_MESSAGES + 5 }, (_, i) =>
+    const messages = Array.from({ length: MAX_PROMPT_MESSAGES + 5 }, (_, i) =>
       message(`m${i}`),
     );
 
     const conversation = buildConversation("fr", "standard", messages);
 
     // The system prompt plus the window.
-    expect(conversation).toHaveLength(MAX_MESSAGES + 1);
-    expect(conversation.at(-1)?.content).toBe(`m${MAX_MESSAGES + 4}`);
-    expect(conversation.at(1)?.content).toBe("m5");
+    expect(conversation).toHaveLength(MAX_PROMPT_MESSAGES + 1);
+    expect(conversation.at(-1)?.content).toBe(`m${MAX_PROMPT_MESSAGES + 4}`);
+    // The opening survives, so the recruiter keeps its own brief.
+    expect(conversation.at(1)?.content).toBe("m0");
   });
 
   it("no longer orders the recruiter to follow up forever", () => {
