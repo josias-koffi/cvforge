@@ -270,6 +270,28 @@ describe("studioReducer", () => {
     expect(state).toBe(ready)
   })
 
+  it("tracks the interviewer's voice and drops it when the voice stops", () => {
+    const speaking = run(
+      [
+        { type: "SPEECH_START" },
+        { type: "SPEECH_END", atMs: 1000 },
+        { atMs: 1200, type: "AI_AUDIO" },
+        { level: 0.7, type: "VOICE_LEVEL" },
+      ],
+      ready
+    )
+
+    expect(speaking.voiceLevel).toBe(0.7)
+    // Same deduplication as the microphone meter: sixty frames a second.
+    expect(
+      studioReducer(speaking, { level: 0.7, type: "VOICE_LEVEL" })
+    ).toBe(speaking)
+
+    const done = studioReducer(speaking, { type: "VOICE_DONE" })
+
+    expect(done.voiceLevel).toBe(0)
+  })
+
   it("freezes once the session is over", () => {
     const done = run([{ type: "FINISHED" }], ready)
 

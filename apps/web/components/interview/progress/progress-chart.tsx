@@ -2,22 +2,9 @@
 
 import type { InterviewProgressSummary } from "@cvforge/types"
 import * as React from "react"
-import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts"
 
-import {
-  Card,
-  CardAction,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-  type ChartConfig,
-} from "@/components/ui/chart"
+import { TrendCard } from "@/components/charts/trend-card"
+import { type ChartConfig } from "@/components/ui/chart"
 import {
   Select,
   SelectContent,
@@ -34,9 +21,11 @@ const chartConfig = {
 /**
  * One dimension at a time, over the recent sessions.
  *
- * The figures are also listed below the chart: a line is a quick read, but it
- * is not accessible on its own, and two sessions rarely make a trend worth
- * squinting at.
+ * Drawn by the same card as the dashboard's activity chart — same gradient,
+ * same grid, same height — so moving between the two pages does not feel like
+ * moving between two products. The figures are also listed below: a line is a
+ * quick read, but it is not accessible on its own, and two sessions rarely
+ * make a trend worth squinting at.
  */
 export function ProgressChart({
   progress,
@@ -49,57 +38,28 @@ export function ProgressChart({
 
   if (!current) return null
 
+  const plural = progress.sessionCount > 1 ? "s" : ""
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Évolution</CardTitle>
-        <CardDescription>
-          Sur vos {progress.sessionCount} dernière
-          {progress.sessionCount > 1 ? "s" : ""} session
-          {progress.sessionCount > 1 ? "s" : ""} terminée
-          {progress.sessionCount > 1 ? "s" : ""}.
-        </CardDescription>
-        <CardAction>
-          <Select onValueChange={setSelected} value={current.key}>
-            <SelectTrigger aria-label="Dimension à afficher" className="w-44">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {series.map((entry) => (
-                <SelectItem key={entry.key} value={entry.key}>
-                  {entry.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </CardAction>
-      </CardHeader>
-
-      <CardContent className="flex flex-col gap-4">
-        <div aria-hidden="true">
-          <ChartContainer className="max-h-64 w-full" config={chartConfig}>
-            <LineChart data={current.points} margin={{ left: 8, right: 8 }}>
-              <CartesianGrid vertical={false} />
-              <XAxis axisLine={false} dataKey="label" tickLine={false} />
-              <YAxis
-                axisLine={false}
-                domain={[0, 10]}
-                tickCount={6}
-                tickLine={false}
-                width={24}
-              />
-              <ChartTooltip content={<ChartTooltipContent />} />
-              <Line
-                dataKey="score"
-                dot
-                stroke="var(--color-score)"
-                strokeWidth={2}
-                type="monotone"
-              />
-            </LineChart>
-          </ChartContainer>
-        </div>
-
+    <TrendCard
+      action={
+        <Select onValueChange={setSelected} value={current.key}>
+          <SelectTrigger aria-label="Dimension à afficher" className="w-44">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {series.map((entry) => (
+              <SelectItem key={entry.key} value={entry.key}>
+                {entry.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      }
+      config={chartConfig}
+      data={current.points.map((point) => ({ ...point }))}
+      description={`Sur vos ${progress.sessionCount} dernière${plural} session${plural} terminée${plural}.`}
+      footer={
         <ol className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
           {current.points.map((point, index) => (
             <li key={`${point.label}-${index}`}>
@@ -110,7 +70,11 @@ export function ProgressChart({
             </li>
           ))}
         </ol>
-      </CardContent>
-    </Card>
+      }
+      series={[{ key: "score" }]}
+      title="Évolution"
+      xKey="label"
+      yDomain={[0, 10]}
+    />
   )
 }

@@ -40,14 +40,29 @@ const segmentLabels: Record<string, string> = {
   users: "Utilisateurs",
 }
 
+/**
+ * What an id-shaped segment is called, by what it hangs off. Bare "Détail"
+ * says nothing once there are three of them in the app.
+ */
+const parentFallbacks: Record<string, string> = {
+  candidatures: "Détail de la candidature",
+  entretiens: "Détail de l'entretien",
+  users: "Détail du compte",
+}
+
 export function HeaderBreadcrumb() {
   const segments = usePathname().split("/").filter(Boolean)
   const crumbs = segments.map((segment, index) => {
     const href = `/${segments.slice(0, index + 1).join("/")}`
+    const parent = segments[index - 1] ?? ""
 
     return {
       href,
-      label: pathLabels[href] ?? segmentLabels[segment] ?? "Détail",
+      label:
+        pathLabels[href] ??
+        segmentLabels[segment] ??
+        parentFallbacks[parent] ??
+        "Détail",
     }
   })
 

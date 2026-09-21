@@ -4,6 +4,7 @@ import * as React from "react"
 
 import type { MicStreamRef } from "@/hooks/interview/use-mic-stream"
 import {
+  computeLevel,
   initialVadAccumulator,
   nextVadDecision,
   type VadStatus,
@@ -113,14 +114,4 @@ export function useVad({
 
     return () => cancelAnimationFrame(frameId)
   }, [micRef])
-}
-
-/** Peak deviation from the centre line: it tracks the voice legibly on a meter. */
-function computeLevel(frame: Uint8Array) {
-  let peak = 0
-  for (let index = 0; index < frame.length; index += 1) {
-    peak = Math.max(peak, Math.abs((frame[index] ?? 128) - 128))
-  }
-
-  return Math.round((peak / 128) * 100) / 100
 }

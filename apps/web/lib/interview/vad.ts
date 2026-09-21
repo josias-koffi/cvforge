@@ -224,3 +224,19 @@ function decideWhileRecording(
 
   return { action: "none", noiseFloor, reason: null, silenceMs, speechMs, status: "recording" }
 }
+
+/**
+ * Peak deviation from the centre line, 0-1: it tracks a voice legibly on a
+ * meter where an RMS would barely move.
+ *
+ * Shared by the microphone loop and the interviewer's voice, so the orb
+ * breathes at the same scale whoever is talking.
+ */
+export function computeLevel(frame: Uint8Array) {
+  let peak = 0
+  for (let index = 0; index < frame.length; index += 1) {
+    peak = Math.max(peak, Math.abs((frame[index] ?? 128) - 128))
+  }
+
+  return Math.round((peak / 128) * 100) / 100
+}

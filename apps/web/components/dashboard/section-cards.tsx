@@ -1,8 +1,13 @@
-import { estimateApplications, type ApplicationsKpiSummary } from "@cvforge/types"
+import {
+  estimateApplications,
+  type ApplicationsKpiSummary,
+  type InterviewProgressSummary,
+} from "@cvforge/types"
 import {
   BriefcaseBusinessIcon,
   CalendarCheckIcon,
   CoinsIcon,
+  MicIcon,
   SendIcon,
 } from "lucide-react"
 
@@ -15,13 +20,40 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { formatApplications } from "@/lib/format"
+import { formatDelta } from "@/lib/interview/labels"
 
 type SectionCardsProps = {
   balance: number | null
+  /** Null when the interview history could not be read; the card says so. */
+  interviews: InterviewProgressSummary | null
   summary: ApplicationsKpiSummary
 }
 
-export function SectionCards({ balance, summary }: SectionCardsProps) {
+/** The interview average, or a nudge when there is nothing to average yet. */
+function interviewCard(interviews: InterviewProgressSummary | null) {
+  const score = interviews?.overallScoreAverage ?? null
+
+  return {
+    description: "Score d'entretien",
+    footer:
+      score === null
+        ? "Aucun entretien terminé"
+        : `${formatDelta(interviews?.overallScoreDelta ?? 0)} depuis la première session`,
+    hint:
+      score === null
+        ? "Entraînez-vous avant le vrai"
+        : `Moyenne sur ${interviews?.sessionCount} session${(interviews?.sessionCount ?? 0) > 1 ? "s" : ""}`,
+    icon: MicIcon,
+    tone: "bg-info/12 text-info",
+    value: score === null ? "—" : `${score}/10`,
+  }
+}
+
+export function SectionCards({
+  balance,
+  interviews,
+  summary,
+}: SectionCardsProps) {
   const counts = summary.statusCounts
   const cards = [
     {
@@ -59,10 +91,11 @@ export function SectionCards({ balance, summary }: SectionCardsProps) {
       tone: "bg-spark/20 text-spark-foreground dark:text-spark",
       value: balance ?? "—",
     },
+    interviewCard(interviews),
   ]
 
   return (
-    <div className="grid grid-cols-1 gap-4 px-4 lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-4">
+    <div className="grid grid-cols-1 gap-4 px-4 lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-3 @7xl/main:grid-cols-5">
       {cards.map((card, index) => (
         <Card
           key={card.description}

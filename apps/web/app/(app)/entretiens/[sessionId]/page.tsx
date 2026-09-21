@@ -1,16 +1,19 @@
 import type { InterviewSessionSummary } from "@cvforge/types"
 import type { Metadata } from "next"
 import Link from "next/link"
-import { notFound, redirect } from "next/navigation"
+import { notFound } from "next/navigation"
 
 import { finishInterview } from "@/app/(app)/entretiens/actions"
+import { SessionDetails } from "@/components/interview/session-details"
 import { InterviewStudio } from "@/components/interview/studio/interview-studio"
 import { PageHeader } from "@/components/layout/page-header"
 import { Button } from "@/components/ui/button"
 import { ApiError, api } from "@/lib/api"
 import { profileHints } from "@/lib/interview/labels"
 
-export const metadata: Metadata = { title: "Entretien en cours" }
+// One route, two states — a finished session is read back here rather than
+// resumed, so the title cannot claim an interview is under way.
+export const metadata: Metadata = { title: "Entretien" }
 
 export default async function InterviewSessionPage({
   params,
@@ -27,10 +30,32 @@ export default async function InterviewSessionPage({
     throw error
   }
 
-  // Loading the session on the server is what lets a reload resume the
-  // interview: there is no client-side copy of the session id to go stale.
+  // A finished session is read, not resumed. It used to redirect to the
+  // report, which left the breadcrumb's "Détail" crumb pointing at the page
+  // the candidate was already on.
   if (session.status === "completed") {
-    redirect(`/entretiens/${sessionId}/rapport`)
+    return (
+      <>
+        <PageHeader
+          actions={
+            session.report ? (
+              <Button asChild>
+                <Link href={`/entretiens/${sessionId}/rapport`}>
+                  Voir le rapport
+                </Link>
+              </Button>
+            ) : (
+              <Button asChild variant="outline">
+                <Link href="/entretiens">Retour aux entretiens</Link>
+              </Button>
+            )
+          }
+          description="L'échange complet, tel qu'il s'est déroulé."
+          title="Détail de l'entretien"
+        />
+        <SessionDetails session={session} />
+      </>
+    )
   }
 
   return (

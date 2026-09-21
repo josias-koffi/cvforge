@@ -47,7 +47,10 @@ export function useInterviewTurn({
     setTimeout(() => dispatch({ type: "VOICE_DONE" }), ECHO_TAIL_MS)
   }, [dispatch])
 
-  const player = useVoicePlayer(reopenMic)
+  const player = useVoicePlayer({
+    onIdle: reopenMic,
+    onLevel: (level) => dispatch({ level, type: "VOICE_LEVEL" }),
+  })
 
   const consume = React.useCallback(
     async (openStream: OpenStream) => {
