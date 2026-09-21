@@ -7,6 +7,7 @@ import {
   BriefcaseBusinessIcon,
   CoinsIcon,
   LayoutDashboardIcon,
+  MicIcon,
   ChartColumnIcon,
   PackageIcon,
   ScrollTextIcon,
@@ -41,6 +42,7 @@ const adminItems = [
 const mainItems = [
   { href: "/dashboard", icon: LayoutDashboardIcon, title: "Tableau de bord" },
   { href: "/candidatures", icon: BriefcaseBusinessIcon, title: "Candidatures" },
+  { href: "/entretiens", icon: MicIcon, title: "Entretiens" },
   { href: "/profile", icon: UserRoundIcon, title: "Mes profils" },
   { href: "/credits", icon: CoinsIcon, title: "Crédits" },
   { href: "/notifications", icon: BellIcon, title: "Notifications" },

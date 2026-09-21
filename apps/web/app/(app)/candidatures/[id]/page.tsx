@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { AI_CREDIT_COSTS } from "@cvforge/types"
-import { ExternalLinkIcon, PencilIcon } from "lucide-react"
+import { ExternalLinkIcon, MicIcon, PencilIcon } from "lucide-react"
 
 import { PageHeader } from "@/components/layout/page-header"
 import { OfferDocuments } from "@/components/offers/document-card"
@@ -77,6 +77,12 @@ export default async function OfferPage(props: PageProps<"/candidatures/[id]">) 
         actions={
           <>
             <StatusMenu offerId={offer.id} status={offer.status} />
+            <Button asChild variant="outline">
+              <Link href={`/entretiens/new?candidature=${offer.id}`}>
+                <MicIcon />
+                S&apos;entraîner à l&apos;entretien
+              </Link>
+            </Button>
             <Button asChild>
               <Link href={`/candidatures/${offer.id}/edit`}>
                 <PencilIcon />
