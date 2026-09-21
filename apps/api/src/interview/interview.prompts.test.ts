@@ -1,8 +1,10 @@
 import { interviewRecruiterProfiles, type InterviewMessage } from "@cvforge/types";
 import { describe, expect, it } from "vitest";
+import { buildAgenda, resolveAgendaState } from "./interview.agenda";
 import {
   buildAiPrompt,
   buildConversation,
+  buildTurnPrompt,
   resolveLanguageLabel,
 } from "./interview.prompts";
 import { MAX_MESSAGES } from "./interview.stats";
@@ -78,5 +80,53 @@ describe("buildConversation", () => {
     expect(conversation).toHaveLength(MAX_MESSAGES + 1);
     expect(conversation.at(-1)?.content).toBe(`m${MAX_MESSAGES + 4}`);
     expect(conversation.at(1)?.content).toBe("m5");
+  });
+
+  it("no longer orders the recruiter to follow up forever", () => {
+    // "Pose exactement une question de relance" was the literal instruction
+    // never to change topic, and it is why one interview covered one subject.
+    const prompt = buildAiPrompt("fr", "standard");
+
+    expect(prompt).not.toContain("relance");
+    expect(prompt).toContain("une question a la fois");
+  });
+
+  it("builds a turn prompt carrying the job and the current phase", () => {
+    const agenda = buildAgenda("standard", 20, { hasContext: true });
+    const prompt = buildTurnPrompt({
+      agendaState: resolveAgendaState(agenda, { elapsedMs: 0, exchanges: 0 }),
+      context: {
+        candidateExperiences: [],
+        candidateHeadline: null,
+        candidateSkills: [],
+        company: null,
+        companyName: "Acme",
+        offerExcerpt: null,
+        offerSummary: null,
+        offerTitle: "Product Engineer",
+        requirements: [],
+        responsibilities: [],
+      },
+      language: "fr",
+      profile: "standard",
+    });
+
+    expect(prompt).toContain("recruteur");
+    expect(prompt).toContain("Product Engineer");
+    expect(prompt).toContain("Acme");
+    expect(prompt).toContain("Phase actuelle");
+  });
+
+  it("keeps a turn prompt usable without any offer", () => {
+    const agenda = buildAgenda("standard", 10, { hasContext: false });
+    const prompt = buildTurnPrompt({
+      agendaState: resolveAgendaState(agenda, { elapsedMs: 0, exchanges: 0 }),
+      context: null,
+      language: "fr",
+      profile: "standard",
+    });
+
+    expect(prompt).toContain("Aucune offre");
+    expect(prompt).toContain("Phase actuelle");
   });
 });

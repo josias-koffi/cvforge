@@ -393,3 +393,86 @@ describe("InterviewTurnService.streamOpening", () => {
     ).rejects.toBeInstanceOf(NotFoundException);
   });
 });
+
+describe("the interview agenda reaches the model", () => {
+  /** The system prompt the voice service was handed on call `index`. */
+  function promptAt(voice: OpenRouterVoiceService, index: number) {
+    const calls = (voice.streamTurn as unknown as ReturnType<typeof vi.fn>).mock
+      .calls;
+    return (calls[index]![0] as { systemPrompt: string }).systemPrompt;
+  }
+
+  it("tells the recruiter which phase it is in", async () => {
+    const { store } = createStore();
+    const voice = voiceYielding([{ type: "transcript", text: "Et ensuite ?" }]);
+    const service = new InterviewTurnService(store, voice, transcriberSaying("x"));
+
+    await collect(service);
+
+    expect(promptAt(voice, 0)).toContain("Phase actuelle");
+  });
+
+  it("moves the interview on as the clock runs", async () => {
+    // The defect this whole lot exists for: one question, then the same
+    // question for the rest of the session.
+    const { store } = createStore(
+      makeSession({
+        startedAt: new Date(Date.now() - 14 * 60_000).toISOString(),
+        messages: Array.from({ length: 12 }, (_, index) => ({
+          content: `tour ${index}`,
+          role: index % 2 === 0 ? ("user" as const) : ("assistant" as const),
+          timestamp: "2026-04-24T13:00:00.000Z",
+        })),
+      }),
+    );
+    const voice = voiceYielding([{ type: "transcript", text: "Bien." }]);
+    const service = new InterviewTurnService(store, voice, transcriberSaying("x"));
+
+    await collect(service);
+
+    const prompt = promptAt(voice, 0);
+    expect(prompt).not.toContain("accueil");
+  });
+
+  it("asks for a conclusion once the time is spent", async () => {
+    const { store } = createStore(
+      makeSession({
+        durationMinutes: 10,
+        startedAt: new Date(Date.now() - 11 * 60_000).toISOString(),
+      }),
+    );
+    const voice = voiceYielding([{ type: "transcript", text: "Merci." }]);
+    const service = new InterviewTurnService(store, voice, transcriberSaying("x"));
+
+    await collect(service);
+
+    expect(promptAt(voice, 0)).toContain("Ne pose pas de nouvelle question");
+  });
+
+  it("starts the clock on the first turn, not when credits were spent", async () => {
+    const { saved, store } = createStore();
+    const service = new InterviewTurnService(
+      store,
+      voiceYielding([{ type: "transcript", text: "Bonjour." }]),
+      transcriberSaying("x"),
+    );
+
+    await collect(service);
+
+    expect(saved.at(-1)!.startedAt).not.toBeNull();
+  });
+
+  it("does not restart the clock on the second turn", async () => {
+    const started = "2026-04-24T13:00:00.000Z";
+    const { saved, store } = createStore(makeSession({ startedAt: started }));
+    const service = new InterviewTurnService(
+      store,
+      voiceYielding([{ type: "transcript", text: "Bien." }]),
+      transcriberSaying("x"),
+    );
+
+    await collect(service);
+
+    expect(saved.at(-1)!.startedAt).toBe(started);
+  });
+});

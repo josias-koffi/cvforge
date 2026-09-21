@@ -7,7 +7,11 @@ import {
   type InterviewMessage,
   type InterviewRecruiterProfile,
   type Locale,
+  type InterviewContextSnapshot,
 } from "@cvforge/types";
+import type { AgendaState } from "./interview.agenda";
+import { buildAgendaDirective } from "./interview.agenda-prompt";
+import { describeContext } from "./interview.context";
 import { MAX_MESSAGES } from "./interview.stats";
 
 /**
@@ -29,7 +33,7 @@ const BASE_AI_PROMPTS: Record<Locale, string> = {
     "You are a human-sounding mock interviewer conducting a live voice interview.",
     "Respond in English only.",
     "Reply as spoken dialogue, not as an essay.",
-    "Use exactly one natural follow-up question unless one short piece of feedback is more useful.",
+    "Ask one question at a time.",
     "Keep it concise: one short sentence, occasionally two.",
     "Do not mention being an AI assistant.",
     "Do not use bullet points, disclaimers, or generic helper phrasing.",
@@ -38,7 +42,7 @@ const BASE_AI_PROMPTS: Record<Locale, string> = {
     "Tu es un recruteur qui mene un entretien blanc en direct.",
     "Reponds uniquement en francais.",
     "Parle comme a l'oral, pas comme une fiche de cours.",
-    "Pose exactement une question de relance naturelle, sauf si une courte remarque de feedback est plus utile.",
+    "Pose une question a la fois.",
     "Reste concis: une phrase courte, parfois deux.",
     "Ne dis jamais que tu es une IA.",
     "N'utilise ni listes, ni avertissements, ni formulations d'assistant generique.",
@@ -150,6 +154,27 @@ const OPENING_INSTRUCTIONS: Record<Locale, string> = {
 
 export function buildOpeningInstruction(language: Locale) {
   return OPENING_INSTRUCTIONS[language === "en" ? "en" : "fr"];
+}
+
+/**
+ * The whole brief for one turn: who the interviewer is, what job it is
+ * interviewing for, and where in the interview it currently stands.
+ *
+ * Rebuilt every turn, which is what makes per-turn steering possible at all —
+ * the voice request carries a system prompt, a history and audio, and nothing
+ * else.
+ */
+export function buildTurnPrompt(input: {
+  language: Locale;
+  profile: InterviewRecruiterProfile;
+  agendaState: AgendaState;
+  context: InterviewContextSnapshot | null;
+}): string {
+  return [
+    buildAiPrompt(input.language, input.profile),
+    describeContext(input.context, input.language),
+    buildAgendaDirective(input.agendaState, input.language),
+  ].join("\n\n");
 }
 
 export function buildConversation(
