@@ -8,7 +8,7 @@ const env = (values: Record<string, string>) =>
   values as unknown as NodeJS.ProcessEnv
 
 const offer: PublicCreditOffer = {
-  credits: 145,
+  credits: 350,
   currency: "eur",
   description: { en: "", fr: "Pour une recherche active." },
   features: { en: [], fr: ["TVA incluse"] },
