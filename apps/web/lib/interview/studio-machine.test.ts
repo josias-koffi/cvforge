@@ -182,6 +182,24 @@ describe("studioReducer", () => {
     }
   })
 
+  it("gives the floor back when a noise turns out not to be an answer", () => {
+    const recording = run([{ type: "SPEECH_START" }], ready)
+
+    const aborted = studioReducer(recording, { type: "SPEECH_ABORTED" })
+
+    expect(aborted.phase).toBe("listening")
+    expect(aborted.vadStatus).toBe("listening")
+    // Nothing was said, so nothing is recorded and no turn is spent.
+    expect(aborted.messages).toHaveLength(0)
+    expect(aborted.error).toBeNull()
+  })
+
+  it("ignores an abort while the recruiter is talking", () => {
+    const speaking = { ...ready, phase: "speaking" as const }
+
+    expect(studioReducer(speaking, { type: "SPEECH_ABORTED" })).toBe(speaking)
+  })
+
   it("ignores an end of speech that never started", () => {
     expect(studioReducer(ready, { type: "SPEECH_END" }).phase).toBe("listening")
   })

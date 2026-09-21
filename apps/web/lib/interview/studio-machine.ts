@@ -42,6 +42,8 @@ export type StudioEvent =
   | { type: "LEVEL"; level: number }
   | { type: "SPEECH_START" }
   | { type: "SPEECH_END" }
+  /** The noise that opened the microphone was not an answer. */
+  | { type: "SPEECH_ABORTED" }
   | { type: "TRANSCRIBED"; text: string }
   | { type: "TRANSCRIBE_FAILED"; message: string }
   /** The interviewer is about to open the interview, before any audio. */
@@ -111,6 +113,13 @@ export function studioReducer(
             streamingReply: "",
             firstTokenMs: null,
           }
+        : state
+
+    case "SPEECH_ABORTED":
+      // A cough opened the microphone and nothing followed. The floor goes
+      // straight back to the candidate: no upload, no turn, no error.
+      return state.phase === "recording"
+        ? { ...state, phase: "listening", vadStatus: "listening", level: 0 }
         : state
 
     case "TRANSCRIBED": {
