@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import {
   AI_CREDIT_COSTS,
+  CREDITS_PER_INTERVIEW_MINUTE,
   estimateApplications,
   type CreditLedgerEntry,
   type CreditLedgerSummary,
@@ -85,8 +86,8 @@ export default async function CreditsPage() {
               <li>Analyse d&apos;offre : {formatCredits(AI_CREDIT_COSTS.offer_enrichment)}</li>
               <li>Import de CV : {formatCredits(AI_CREDIT_COSTS.cv_import)}</li>
               <li>
-                Entretien simulé :{" "}
-                {formatCredits(AI_CREDIT_COSTS.interview_session)}
+                Entretien simulé et rapport :{" "}
+                {formatCredits(CREDITS_PER_INTERVIEW_MINUTE)} par minute
               </li>
               <li>CV généré : {formatCredits(AI_CREDIT_COSTS.cv_generation)}</li>
               <li>Lettre générée : {formatCredits(AI_CREDIT_COSTS.letter_generation)}</li>
