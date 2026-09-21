@@ -6,6 +6,7 @@ import { CreditsModule } from "../credits/credits.module";
 import { CreditsService } from "../credits/credits.service";
 import { ApplicationsController } from "./applications.controller";
 import { ApplicationsService } from "./applications.service";
+import { CompanyContextService } from "./company-context.service";
 import { PgApplicationsStore } from "./applications.pg-store";
 import { APPLICATIONS_STORE, type ApplicationsStore } from "./applications.types";
 import { ProfilesModule } from "../profiles/profiles.module";
@@ -44,7 +45,15 @@ import { PROFILES_STORE, type ProfilesStore } from "../profiles/profiles.types";
             ) ?? [],
         ),
     },
+    {
+      provide: CompanyContextService,
+      inject: [OPENROUTER_SERVICE, APPLICATIONS_STORE],
+      useFactory: (
+        openRouterService: ConstructorParameters<typeof CompanyContextService>[0],
+        store: ApplicationsStore,
+      ) => new CompanyContextService(openRouterService, store),
+    },
   ],
-  exports: [APPLICATIONS_STORE, ApplicationsService],
+  exports: [APPLICATIONS_STORE, ApplicationsService, CompanyContextService],
 })
 export class ApplicationsModule {}

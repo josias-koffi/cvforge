@@ -1,10 +1,10 @@
 import { AI_CREDIT_ACTION_INTERVIEW_SESSION } from "@cvforge/types";
 import { HttpException, HttpStatus } from "@nestjs/common";
 import { describe, expect, it, vi } from "vitest";
-import type { OpenRouterTranscriptionService } from "../ai/openrouter-transcription.service";
 import type { OpenRouterService } from "../ai/openrouter.service";
 import type { ApplicationsService } from "../applications/applications.service";
 import type { CreditsService } from "../credits/credits.service";
+import type { CompanyContextService } from "../applications/company-context.service";
 import { InterviewReportService } from "./interview-report.service";
 import { InterviewService } from "./interview.service";
 import type { InterviewSessionListRow, InterviewStore } from "./interview.types";
@@ -55,6 +55,13 @@ function createApplicationsService(): ApplicationsService {
   } as unknown as ApplicationsService;
 }
 
+/** Derivation is a separate concern; here it is simply a no-op. */
+function noCompanyContext(): CompanyContextService {
+  return {
+    ensureFor: vi.fn(async (application) => application),
+  } as unknown as CompanyContextService;
+}
+
 function makeService(
   credits: CreditsService,
   store: InterviewStore = createStore(),
@@ -63,9 +70,8 @@ function makeService(
 
   return new InterviewService(
     store,
-    openRouter,
-    { transcribe: vi.fn() } as unknown as OpenRouterTranscriptionService,
     createApplicationsService(),
+    noCompanyContext(),
     new InterviewReportService(openRouter),
     credits,
   );

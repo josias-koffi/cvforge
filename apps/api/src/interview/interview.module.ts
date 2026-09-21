@@ -10,6 +10,7 @@ import {
 import type { OpenRouterService } from "../ai/openrouter.service";
 import { ApplicationsModule } from "../applications/applications.module";
 import { ApplicationsService } from "../applications/applications.service";
+import { CompanyContextService } from "../applications/company-context.service";
 import { AuthModule } from "../auth/auth.module";
 import { CreditsModule } from "../credits/credits.module";
 import { CreditsService } from "../credits/credits.service";
@@ -36,23 +37,22 @@ import { INTERVIEW_STORE, type InterviewStore } from "./interview.types";
       provide: InterviewService,
       useFactory: (
         openRouter: OpenRouterService,
-        transcription: OpenRouterTranscriptionService,
         applicationsService: ApplicationsService,
+        companyContext: CompanyContextService,
         store: InterviewStore,
         creditsService: CreditsService,
       ) =>
         new InterviewService(
           store,
-          openRouter,
-          transcription,
           applicationsService,
+          companyContext,
           new InterviewReportService(openRouter),
           creditsService,
         ),
       inject: [
         OPENROUTER_SERVICE,
-        OPENROUTER_TRANSCRIPTION_SERVICE,
         ApplicationsService,
+        CompanyContextService,
         INTERVIEW_STORE,
         CreditsService,
       ],

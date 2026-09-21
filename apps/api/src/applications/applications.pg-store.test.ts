@@ -19,6 +19,8 @@ function makeApplication(
   overrides: Partial<StoredApplication> = {},
 ): StoredApplication {
   return {
+    companyContext: null,
+    companyContextGeneratedAt: null,
     createdAt: "2026-04-20T12:00:00.000Z",
     cvContent: null,
     cvGeneratedAt: null,
