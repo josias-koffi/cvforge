@@ -94,13 +94,47 @@ describe("interview credits", () => {
     expect(credits.assertSufficientCredits).toHaveBeenCalledWith(
       AI_CREDIT_ACTION_INTERVIEW_SESSION,
       "user@example.com",
+      10,
     );
     expect(credits.consumeCredits).toHaveBeenCalledTimes(1);
     expect(credits.consumeCredits).toHaveBeenCalledWith({
       action: AI_CREDIT_ACTION_INTERVIEW_SESSION,
+      amount: 10,
       applicationId: "app-001",
+      durationMinutes: 10,
       userEmail: "user@example.com",
     });
+  });
+
+  it("charges a longer interview by the minute", async () => {
+    const credits = payingCredits();
+    const service = makeService(credits);
+
+    await service.startSession("user@example.com", "fr", "standard", "", 30);
+
+    expect(credits.assertSufficientCredits).toHaveBeenCalledWith(
+      AI_CREDIT_ACTION_INTERVIEW_SESSION,
+      "user@example.com",
+      30,
+    );
+    expect(credits.consumeCredits).toHaveBeenCalledWith({
+      action: AI_CREDIT_ACTION_INTERVIEW_SESSION,
+      amount: 30,
+      applicationId: undefined,
+      durationMinutes: 30,
+      userEmail: "user@example.com",
+    });
+  });
+
+  it("falls back to the default duration's price for a length nobody offers", async () => {
+    const credits = payingCredits();
+    const service = makeService(credits);
+
+    await service.startSession("user@example.com", "fr", "standard", "", 45);
+
+    expect(credits.consumeCredits).toHaveBeenCalledWith(
+      expect.objectContaining({ amount: 10, durationMinutes: 10 }),
+    );
   });
 
   it("refuses without enough credits, and persists nothing", async () => {
@@ -131,6 +165,32 @@ describe("interview credits", () => {
 
     expect(second.sessionId).toBe(first.sessionId);
     expect(credits.consumeCredits).toHaveBeenCalledTimes(1);
+  });
+
+  it("opens a new session rather than hand back one of another length", async () => {
+    const credits = payingCredits();
+    const service = makeService(credits);
+
+    const short = await service.startSession(
+      "user@example.com",
+      "fr",
+      "standard",
+      "",
+      10,
+    );
+    const long = await service.startSession(
+      "user@example.com",
+      "fr",
+      "standard",
+      "",
+      30,
+    );
+
+    expect(long.sessionId).not.toBe(short.sessionId);
+    expect(credits.consumeCredits).toHaveBeenCalledTimes(2);
+    expect(credits.consumeCredits).toHaveBeenLastCalledWith(
+      expect.objectContaining({ amount: 30, durationMinutes: 30 }),
+    );
   });
 
   it("charges again once the previous session has been spoken into", async () => {
