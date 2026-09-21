@@ -111,6 +111,25 @@ export function useAudioRecorder({
     if (recorder?.state === "recording") recorder.stop()
   }, [])
 
+  /**
+   * Ends the recording and throws it away.
+   *
+   * Muting mid-sentence used to leave the recorder running with `recorderRef`
+   * still set, which made every later `start()` a silent no-op — one mute and
+   * the microphone was dead for the rest of the session. The VAD uses this too
+   * when a burst turns out to have been a cough.
+   */
+  const cancel = React.useCallback(() => {
+    const recorder = recorderRef.current
+    recorderRef.current = null
+    chunksRef.current = []
+
+    if (recorder?.state === "recording") {
+      recorder.onstop = null
+      recorder.stop()
+    }
+  }, [])
+
   React.useEffect(
     () => () => {
       const recorder = recorderRef.current
@@ -124,5 +143,5 @@ export function useAudioRecorder({
     []
   )
 
-  return { start, stop }
+  return { cancel, start, stop }
 }

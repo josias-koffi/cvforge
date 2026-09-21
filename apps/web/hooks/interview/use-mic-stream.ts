@@ -56,7 +56,11 @@ export function useMicStream({ onReady, onError }: UseMicStreamOptions) {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
           audio: {
-            autoGainControl: true,
+            // Off on purpose: automatic gain lifts the room tone into the
+            // speech band during pauses, which is exactly when the detector
+            // needs to hear silence. Echo cancellation stays — the recruiter
+            // is playing through the speakers.
+            autoGainControl: false,
             echoCancellation: true,
             noiseSuppression: true,
           },
@@ -71,6 +75,10 @@ export function useMicStream({ onReady, onError }: UseMicStreamOptions) {
         const context = new AudioContextCtor()
         const analyser = context.createAnalyser()
         analyser.fftSize = VAD_FFT_SIZE
+        // The default 0.8 averages each frame with the last, adding roughly
+        // 200 ms of decay after the candidate stops — silence the detector
+        // would then have to wait out twice.
+        analyser.smoothingTimeConstant = 0
         context.createMediaStreamSource(stream).connect(analyser)
 
         micRef.current = { analyser, context, stream }

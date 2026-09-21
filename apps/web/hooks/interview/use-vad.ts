@@ -3,7 +3,11 @@
 import * as React from "react"
 
 import type { MicStreamRef } from "@/hooks/interview/use-mic-stream"
-import { nextVadDecision, type VadStatus } from "@/lib/interview/vad"
+import {
+  initialVadAccumulator,
+  nextVadDecision,
+  type VadStatus,
+} from "@/lib/interview/vad"
 
 type UseVadOptions = {
   micRef: MicStreamRef
@@ -14,6 +18,8 @@ type UseVadOptions = {
   onLevel: (level: number) => void
   onSpeechStart: () => void
   onSpeechEnd: () => void
+  /** The noise that opened the microphone was not an answer: drop it. */
+  onSpeechAbort: () => void
 }
 
 /**
@@ -32,11 +38,13 @@ export function useVad({
   onLevel,
   onSpeechStart,
   onSpeechEnd,
+  onSpeechAbort,
 }: UseVadOptions) {
   const inputs = React.useRef({
     active,
     muted,
     onLevel,
+    onSpeechAbort,
     onSpeechEnd,
     onSpeechStart,
     status,
@@ -47,6 +55,7 @@ export function useVad({
       active,
       muted,
       onLevel,
+      onSpeechAbort,
       onSpeechEnd,
       onSpeechStart,
       status,
@@ -55,30 +64,49 @@ export function useVad({
 
   React.useEffect(() => {
     let frameId = 0
-    let silenceFrames = 0
+    let accumulator = initialVadAccumulator
+    let previousMs: number | null = null
+    // Hoisted: allocating one per frame is sixty allocations a second.
+    let frame = new Uint8Array(0)
 
-    function tick() {
+    function tick(nowMs: number) {
       frameId = requestAnimationFrame(tick)
 
       const analyser = micRef.current?.analyser
       const current = inputs.current
-      if (!analyser || !current.active) return
 
-      const frame = new Uint8Array(analyser.frequencyBinCount)
-      analyser.getByteFrequencyData(frame)
+      if (!analyser || !current.active) {
+        // A count left over from the last turn would end the next answer
+        // early, so the run is abandoned rather than paused.
+        accumulator = initialVadAccumulator
+        previousMs = null
+        return
+      }
+
+      if (frame.length !== analyser.fftSize) frame = new Uint8Array(analyser.fftSize)
+      analyser.getByteTimeDomainData(frame)
+
+      const deltaMs = previousMs === null ? 0 : nowMs - previousMs
+      previousMs = nowMs
 
       const decision = nextVadDecision({
+        ...accumulator,
+        deltaMs,
         frame,
         muted: current.muted,
-        silenceFrames,
         status: current.status,
       })
 
-      silenceFrames = decision.silenceFrames
+      accumulator = {
+        noiseFloor: decision.noiseFloor,
+        silenceMs: decision.silenceMs,
+        speechMs: decision.speechMs,
+      }
       current.onLevel(current.muted ? 0 : computeLevel(frame))
 
       if (decision.action === "start") current.onSpeechStart()
       if (decision.action === "stop") current.onSpeechEnd()
+      if (decision.action === "abort") current.onSpeechAbort()
     }
 
     frameId = requestAnimationFrame(tick)
@@ -87,12 +115,12 @@ export function useVad({
   }, [micRef])
 }
 
-/** Peak rather than RMS: it tracks the voice more legibly on a meter. */
+/** Peak deviation from the centre line: it tracks the voice legibly on a meter. */
 function computeLevel(frame: Uint8Array) {
   let peak = 0
   for (let index = 0; index < frame.length; index += 1) {
-    peak = Math.max(peak, frame[index] ?? 0)
+    peak = Math.max(peak, Math.abs((frame[index] ?? 128) - 128))
   }
 
-  return Math.round((peak / 255) * 100) / 100
+  return Math.round((peak / 128) * 100) / 100
 }
