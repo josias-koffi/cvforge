@@ -324,8 +324,18 @@ export const en: LandingDictionary = {
   footer: {
     tagline: "The spark between your profile and the job.",
     product: "Product",
+    legal: "Legal",
     company: "CVSpark",
     rights: "All rights reserved.",
+  },
+  legal: {
+    updated: "Last updated on",
+    links: {
+      terms: "Terms of use",
+      "sales-terms": "Terms of sale",
+      "legal-notice": "Legal notice",
+      privacy: "Privacy",
+    },
   },
   story: {
     metaTitle: "Our story",

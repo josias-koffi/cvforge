@@ -10,6 +10,8 @@ import {
   MicIcon,
   ChartColumnIcon,
   PackageIcon,
+  ScaleIcon,
+  SettingsIcon,
   ScrollTextIcon,
   PlusIcon,
   UserRoundIcon,
@@ -37,6 +39,7 @@ const adminItems = [
   { href: "/admin/offers", icon: PackageIcon, title: "Offres de crédits" },
   { href: "/admin/metrics", icon: ChartColumnIcon, title: "Métriques" },
   { href: "/admin/audit-log", icon: ScrollTextIcon, title: "Journal d'audit" },
+  { href: "/admin/legal", icon: ScaleIcon, title: "Documents légaux" },
 ]
 
 const mainItems = [
@@ -46,6 +49,7 @@ const mainItems = [
   { href: "/profile", icon: UserRoundIcon, title: "Mes profils" },
   { href: "/credits", icon: CoinsIcon, title: "Crédits" },
   { href: "/notifications", icon: BellIcon, title: "Notifications" },
+  { href: "/compte", icon: SettingsIcon, title: "Mon compte" },
 ]
 
 type AppSidebarProps = React.ComponentProps<typeof Sidebar> & {

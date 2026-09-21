@@ -1,4 +1,4 @@
-import type { AiCreditAction } from "@cvforge/types"
+import type { AiCreditAction, LegalDocumentSlug } from "@cvforge/types"
 
 /** Screens captured from apps/web and stored under public/screenshots/{light,dark}. */
 export type ScreenshotName =
@@ -119,8 +119,15 @@ export interface LandingDictionary {
   footer: {
     tagline: string
     product: string
+    legal: string
     company: string
     rights: string
+  }
+  /** Chrome around the legal documents; their bodies come from the API. */
+  legal: {
+    /** Prefix of the publication date, e.g. "Dernière mise à jour le". */
+    updated: string
+    links: Record<LegalDocumentSlug, string>
   }
   story: {
     metaTitle: string

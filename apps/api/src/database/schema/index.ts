@@ -5,6 +5,7 @@ export * from "./auth";
 export * from "./credits";
 export * from "./offers";
 export * from "./interview";
+export * from "./legal";
 export * from "./notifications";
 export * from "./profiles";
 export * from "./templates";

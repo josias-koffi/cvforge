@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest"
 vi.mock("next/navigation", () => ({ usePathname: () => "/fr" }))
 
 import { HomePage } from "@/components/home-page"
+import { SiteFooter } from "@/components/site-footer"
 import { SiteHeader } from "@/components/site-header"
 import { StoryPage } from "@/components/story-page"
 import { en } from "@/content/en"
@@ -126,6 +127,25 @@ describe("SiteHeader", () => {
     expect(html).toContain('href="/fr#pricing"')
     expect(html).toContain('href="/fr/histoire"')
     expect(html).toContain('href="/en"')
+  })
+})
+
+describe("SiteFooter", () => {
+  it("links to the four legal documents, in the page's language", () => {
+    const html = renderToStaticMarkup(<SiteFooter locale="fr" dict={fr} />)
+
+    expect(html).toContain('href="/fr/legal/cgu"')
+    expect(html).toContain('href="/fr/legal/cgv"')
+    expect(html).toContain('href="/fr/legal/mentions-legales"')
+    expect(html).toContain('href="/fr/legal/confidentialite"')
+    expect(html).toContain(fr.footer.legal)
+  })
+
+  it("serves the English addresses on the English site", () => {
+    const html = renderToStaticMarkup(<SiteFooter locale="en" dict={en} />)
+
+    expect(html).toContain('href="/en/legal/terms"')
+    expect(html).toContain('href="/en/legal/privacy"')
   })
 })
 

@@ -326,8 +326,18 @@ export const fr: LandingDictionary = {
   footer: {
     tagline: "L'étincelle entre votre profil et l'offre.",
     product: "Produit",
+    legal: "Légal",
     company: "CVSpark",
     rights: "Tous droits réservés.",
+  },
+  legal: {
+    updated: "Dernière mise à jour le",
+    links: {
+      terms: "Conditions d'utilisation",
+      "sales-terms": "Conditions de vente",
+      "legal-notice": "Mentions légales",
+      privacy: "Confidentialité",
+    },
   },
   story: {
     metaTitle: "Notre histoire",

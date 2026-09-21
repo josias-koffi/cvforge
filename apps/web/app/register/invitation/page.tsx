@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 
 import { AuthLayout } from "@/components/auth/auth-layout"
+import { ConsentLabel } from "@/components/auth/consent-label"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -63,8 +64,7 @@ export default async function InvitationPage(
                 <Field orientation="horizontal">
                   <Checkbox id="consent" name="consent" required />
                   <FieldLabel htmlFor="consent" className="font-normal">
-                    J&apos;accepte que mes données soient traitées pour générer
-                    mes candidatures.
+                    <ConsentLabel />
                   </FieldLabel>
                 </Field>
                 {errorMessage ? <FieldError>{errorMessage}</FieldError> : null}
