@@ -56,10 +56,27 @@ Refondre l'expérience interview : écran de setup, VAD automatique (plus de bou
   - Acceptance criteria:
     - [ ] Score global affiché (0–100)
     - [ ] 3–4 dimensions notées: pertinence, clarté, structure, méthode STAR
-    - [ ] Transcript complet avec timestamps
+    - [x] Transcript complet avec timestamps
     - [ ] Lecteur audio natif `<audio controls>` si audio disponible
     - [ ] Actions: "Voir la candidature" (→ `/candidatures/[id]`) et "Retour au dashboard"
-    - [ ] Page accessible sans connexion audio (rapport texte seul)
+    - [x] Page accessible sans connexion audio (rapport texte seul)
+  - **Livré le 2026-09-21** dans `apps/web` à `/entretiens/[sessionId]/rapport`
+    (la route `/interview/[id]/report` visait le front v1, supprimé depuis).
+    Score, dimensions notées, transcript horodaté, actions « Voir la
+    candidature » et « Retour aux entretiens », page utilisable sans audio.
+  - **Écarts à arbitrer par le propriétaire — case principale laissée décochée :**
+    - Score affiché sur **10**, pas sur 100 : c'est l'échelle que l'API produit
+      (`InterviewReport.overallScore`, 0–10) et que le prompt impose au modèle.
+      Passer à 100 est un changement de contrat, pas d'affichage.
+    - **5 dimensions** (`clarity`, `keywords`, `pacing`, `hesitations`,
+      `relevance`) au lieu des 3–4 énoncées (« structure », « méthode STAR »
+      n'existent pas côté API). Les renommer suppose de changer le schéma du
+      rapport et les rapports déjà stockés.
+    - **Pas de lecteur audio** : l'audio n'est jamais persisté (transcrit à la
+      volée puis jeté, cf. `docs/privacy-retention-policy.md`), donc il n'y a
+      rien à rejouer. Le critère « rapport texte seul » est lui satisfait.
+    - Retour vers `/entretiens` plutôt que le dashboard : c'est de là que
+      l'utilisateur vient.
   - Source: vision `§10`
 
 ## 📊 Sprint DoD

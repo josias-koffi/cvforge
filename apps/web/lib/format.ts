@@ -34,6 +34,18 @@ export function formatDate(value: string | null | undefined) {
   return value ? dateFormatter.format(new Date(value)) : "—"
 }
 
+const timeFormatter = new Intl.DateTimeFormat("fr-FR", {
+  hour: "2-digit",
+  minute: "2-digit",
+})
+
+/** Clock time alone, for a transcript where the date is already in the header. */
+export function formatTime(value: string) {
+  const date = new Date(value)
+
+  return Number.isNaN(date.getTime()) ? "--:--" : timeFormatter.format(date)
+}
+
 export function formatDateTime(value: string | null | undefined) {
   return value ? dateTimeFormatter.format(new Date(value)) : "—"
 }

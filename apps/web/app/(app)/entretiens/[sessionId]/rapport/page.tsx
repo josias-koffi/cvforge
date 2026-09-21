@@ -16,7 +16,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { ApiError, api } from "@/lib/api"
-import { formatDate } from "@/lib/format"
+import { formatDate, formatTime } from "@/lib/format"
 import { profileLabels } from "@/lib/interview/labels"
 
 export const metadata: Metadata = { title: "Rapport d'entretien" }
@@ -87,6 +87,12 @@ export default async function InterviewReportPage({
                     className="text-sm"
                     key={`${message.timestamp}-${message.role}`}
                   >
+                    <time
+                      className="mr-2 text-xs tabular-nums text-muted-foreground"
+                      dateTime={message.timestamp}
+                    >
+                      {formatTime(message.timestamp)}
+                    </time>
                     <span className="font-medium">
                       {message.role === "user" ? "Vous" : "Recruteur"} :{" "}
                     </span>
