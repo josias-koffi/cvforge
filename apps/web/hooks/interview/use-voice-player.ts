@@ -2,6 +2,7 @@
 
 import * as React from "react"
 
+import { initialJitterState, scheduleFrame } from "@/lib/interview/jitter"
 import type { PlaybackStatsRecorder } from "@/lib/interview/playback-stats"
 import {
   VOICE_SAMPLE_RATE,
@@ -10,9 +11,6 @@ import {
 } from "@/lib/interview/pcm"
 import { VAD_FFT_SIZE, computeLevel } from "@/lib/interview/vad"
 
-/** A small lead keeps the first frame from being clipped by scheduling. */
-const FRAME_LEAD_SECONDS = 0.05
-
 /**
  * Plays the interviewer's voice as it streams in.
  *
@@ -20,6 +18,10 @@ const FRAME_LEAD_SECONDS = 0.05
  * the speech comes out continuous rather than in audible steps. Playing them
  * as they arrive is the whole point: waiting for the last frame would put the
  * entire generation back into the silence the candidate hears.
+ *
+ * Two things keep it continuous, and both live in their own module: `pcm`
+ * carries the half sample a frame can end on, and `jitter` decides how far
+ * ahead of the speakers to queue. The hook only owns the audio nodes.
  *
  * `onIdle` fires when the last scheduled frame has finished — that, and not
  * the end of the network stream, is when the microphone may safely reopen.
@@ -41,7 +43,7 @@ export function useVoicePlayer({
   const contextRef = React.useRef<AudioContext | null>(null)
   const analyserRef = React.useRef<AnalyserNode | null>(null)
   const decoderRef = React.useRef(createVoiceFrameDecoder())
-  const playheadRef = React.useRef(0)
+  const jitterRef = React.useRef(initialJitterState)
   const idleTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null)
   const frameIdRef = React.useRef(0)
   const onIdleRef = React.useRef(onIdle)
@@ -152,24 +154,24 @@ export function useVoicePlayer({
       source.buffer = buffer
       source.connect(analyserRef.current ?? context.destination)
 
-      const earliest = context.currentTime + FRAME_LEAD_SECONDS
-      const startAt = Math.max(playheadRef.current, earliest)
-      source.start(startAt)
+      const scheduled = scheduleFrame(jitterRef.current, {
+        durationSeconds: frameDurationSeconds(samples),
+        now: context.currentTime,
+      })
+      source.start(scheduled.startAt)
+      jitterRef.current = scheduled.next
 
-      // A playhead of zero is the start of a turn, not a frame that arrived
-      // too late; only a playhead the speakers have already overtaken is.
       const carried = decoderRef.current.pending()
       stats.record({
-        leadMs: (startAt - context.currentTime) * 1000,
+        leadMs: scheduled.leadMs,
         misaligned: carried.chars > 0 || carried.bytes > 0,
-        underrun: playheadRef.current > 0 && playheadRef.current < earliest,
+        underrun: scheduled.underrun,
       })
 
-      playheadRef.current = startAt + frameDurationSeconds(samples)
       startMeter()
-      scheduleIdle(playheadRef.current)
+      scheduleIdle(jitterRef.current.playhead)
 
-      return Date.now() + (startAt - context.currentTime) * 1000
+      return Date.now() + scheduled.leadMs
     },
     [ensureContext, scheduleIdle, startMeter, stats]
   )
@@ -178,13 +180,13 @@ export function useVoicePlayer({
   const flush = React.useCallback(() => {
     const context = contextRef.current
 
-    if (!context || playheadRef.current <= context.currentTime) {
+    if (!context || jitterRef.current.playhead <= context.currentTime) {
       stopMeter()
       onIdleRef.current()
       return
     }
 
-    scheduleIdle(playheadRef.current)
+    scheduleIdle(jitterRef.current.playhead)
   }, [scheduleIdle, stopMeter])
 
   const stop = React.useCallback(() => {
@@ -194,7 +196,9 @@ export function useVoicePlayer({
     }
 
     stopMeter()
-    playheadRef.current = 0
+    // The margin starts over with the next reply: it was widened for a network
+    // that stuttered a minute ago, not for this one.
+    jitterRef.current = initialJitterState
     // Otherwise the half sample left over from an abandoned reply shifts the
     // start of the next one by a byte, and it comes out as static.
     decoderRef.current.reset()
