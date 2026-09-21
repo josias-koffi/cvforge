@@ -97,9 +97,17 @@ Override with `INTERVIEW_VOICE_MODEL`, `INTERVIEW_VOICE_FALLBACK_MODELS`,
 than waiting out a throttle (`ADR-016`).
 
 Every turn writes one JSON log line naming the model that actually served it,
-the attempt count, time to first audio and the time spent asleep in backoff —
-without it, a fall back to the pricier model is indistinguishable from a slow
-cheap one.
+the attempt count and the time to first audio — without it, a fall back to the
+pricier model is indistinguishable from a slow cheap one.
+
+`waitedMs` is everything outside the voice call: backoff between attempts, the
+wait on transcription, and the cost of streaming frames out. Read it with
+`attempts` and `transcriptionWaitMs` beside it, never as backoff on its own.
+
+`transcriptionMs` is the transcription call's own duration and
+`transcriptionWaitMs` is what the turn waited on it *after* the voice stream
+ended. The second is the one that matters: zero means running transcription
+beside the voice cost the turn nothing.
 
 **No barge-in.** OpenRouter is request/response with no bidirectional socket,
 so the candidate cannot interrupt mid-sentence. That needs a realtime API.

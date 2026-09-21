@@ -63,7 +63,6 @@ export class InterviewTurnService {
     }
 
     const turnLog = createTurnLog(this.logger, "interview.turn", sessionId);
-    const transcribedAt = Date.now();
     const transcribing = this.transcribeAside(request);
     let candidateText: string | null = null;
     let emittedCandidate = false;
@@ -97,18 +96,24 @@ export class InterviewTurnService {
       }
     } catch (error) {
       const message = describe(error, "Le recruteur n'a pas pu repondre.");
-      turnLog.write(null);
+      turnLog.write();
       await this.recordFailure(session, request, message);
       yield { type: "error", message };
       return;
     }
 
+    // Stamped before the await, so what is measured is the wait the turn
+    // actually incurred — zero when transcription had already settled while
+    // the voice was still streaming, which is the whole point of running it
+    // alongside.
+    const waitStartedAt = Date.now();
     const transcript = (await transcribing.promise) ?? "";
+    const waitedMs = Date.now() - waitStartedAt;
     if (!emittedCandidate) yield { type: "candidate", text: transcript };
 
     // Written before the save so the line lands even if persistence fails,
     // and late enough to show whether transcription held the turn open.
-    turnLog.write(Date.now() - transcribedAt);
+    turnLog.write({ durationMs: transcribing.durationMs, waitedMs });
 
     await this.recordTurn(session, request, transcript, reply.trim());
 
@@ -183,12 +188,12 @@ export class InterviewTurnService {
       }
     } catch (error) {
       const message = describe(error, "Le recruteur n'a pas pu repondre.");
-      turnLog.write(null);
+      turnLog.write();
       yield { type: "error", message };
       return;
     }
 
-    turnLog.write(null);
+    turnLog.write();
 
     await this.recordOpening(session, reply.trim());
 
@@ -227,9 +232,19 @@ export class InterviewTurnService {
    * without awaiting.
    */
   private transcribeAside(request: InterviewTranscriptionChunkRequest) {
-    const state: { promise: Promise<string | null>; settled: string | null } = {
+    const state: {
+      promise: Promise<string | null>;
+      settled: string | null;
+      /** How long the call took, from its own start. Null until it settles. */
+      durationMs: number | null;
+    } = {
+      durationMs: null,
       promise: Promise.resolve(null),
       settled: null,
+    };
+    const startedAt = Date.now();
+    const stamp = () => {
+      state.durationMs = Date.now() - startedAt;
     };
 
     state.promise = this.transcription
@@ -239,10 +254,12 @@ export class InterviewTurnService {
         language: undefined,
       })
       .then((text) => {
+        stamp();
         state.settled = normalizeTranscript(text);
         return state.settled;
       })
       .catch((error: unknown) => {
+        stamp();
         // The turn still works without it; only the report loses detail.
         this.logger.warn(
           `Interview transcription failed for ${request.chunkId}: ${describe(

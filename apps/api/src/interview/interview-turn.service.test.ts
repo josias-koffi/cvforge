@@ -1,5 +1,5 @@
 import type { InterviewTurnEvent } from "@cvforge/types";
-import { NotFoundException } from "@nestjs/common";
+import { Logger, NotFoundException } from "@nestjs/common";
 import { describe, expect, it, vi } from "vitest";
 import type { OpenRouterTranscriptionService } from "../ai/openrouter-transcription.service";
 import type {
@@ -73,6 +73,24 @@ function voiceYielding(events: VoiceTurnEvent[]): OpenRouterVoiceService {
   return {
     streamTurn: vi.fn(async function* () {
       for (const event of events) yield event;
+    }),
+  } as unknown as OpenRouterVoiceService;
+}
+
+/** Like `voiceYielding`, but reporting telemetry the way the real chain does. */
+function voiceReportingTelemetry(events: VoiceTurnEvent[]): OpenRouterVoiceService {
+  return {
+    streamTurn: vi.fn(async function* (request: {
+      onTelemetry?: (telemetry: unknown) => void;
+    }) {
+      for (const event of events) yield event;
+      request.onTelemetry?.({
+        attempts: 1,
+        callMs: 900,
+        fellBack: false,
+        model: "openai/gpt-audio-mini",
+        modelsTried: ["openai/gpt-audio-mini"],
+      });
     }),
   } as unknown as OpenRouterVoiceService;
 }
@@ -258,6 +276,47 @@ describe("InterviewTurnService", () => {
 
     expect(done.startedAt).toBe(saved.at(-1)!.startedAt);
     expect(done.startedAt).toBeTruthy();
+  });
+
+  it("times the transcription call, not the whole turn", async () => {
+    // The first version subtracted the turn's start rather than the call's,
+    // so `transcriptionMs` always came out equal to `totalMs` and could not
+    // say whether running transcription beside the voice was free. Every
+    // logged turn showed the two identical, which is what gave it away.
+    const lines: string[] = [];
+    const spy = vi
+      .spyOn(Logger.prototype, "log")
+      .mockImplementation((message: unknown) => {
+        lines.push(String(message));
+      });
+
+    try {
+      const { store } = createStore();
+      const service = new InterviewTurnService(
+        store,
+        voiceReportingTelemetry([
+          { type: "audio", data: "QUJD" },
+          { type: "transcript", text: "Et ensuite ?" },
+        ]),
+        transcriberSaying("J'ai mene la refonte."),
+      );
+
+      await collect(service);
+
+      const line = JSON.parse(lines.at(-1)!) as {
+        totalMs: number;
+        transcriptionMs: number | null;
+        transcriptionWaitMs: number | null;
+      };
+
+      // Settled while the voice was still streaming, so it cost the turn
+      // nothing — which is the entire reason it runs alongside.
+      expect(line.transcriptionWaitMs).toBe(0);
+      expect(line.transcriptionMs).not.toBeNull();
+      expect(line.transcriptionMs).toBeLessThanOrEqual(line.totalMs);
+    } finally {
+      spy.mockRestore();
+    }
   });
 
   it("refuses a session belonging to somebody else", async () => {

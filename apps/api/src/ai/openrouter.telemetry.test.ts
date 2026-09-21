@@ -102,6 +102,7 @@ describe("formatTurnLog", () => {
         firstAudioMs: 1400,
         totalMs: 2600,
         transcriptionMs: 900,
+        transcriptionWaitMs: 200,
       }),
     ).toEqual({
       attempts: 2,
@@ -114,19 +115,45 @@ describe("formatTurnLog", () => {
       sessionId: "s1",
       totalMs: 2600,
       transcriptionMs: 900,
+      transcriptionWaitMs: 200,
       waitedMs: 1700,
     });
   });
 
-  it("exposes backoff as its own number: it is what we can act on", () => {
+  it("keeps the time outside the call non-negative, whatever the clocks did", () => {
     const log = formatTurnLog("interview.turn", "s1", telemetry, {
       firstAudioMs: 900,
       totalMs: 900,
       transcriptionMs: null,
+      transcriptionWaitMs: null,
     });
 
-    // Never negative, whatever the clocks did.
     expect(log.waitedMs).toBe(0);
+  });
+
+  it("reports the transcription's own duration, not the turn's", () => {
+    // The first version subtracted the turn's start instead of the call's, so
+    // this number always equalled totalMs and answered nothing.
+    const log = formatTurnLog("interview.turn", "s1", telemetry, {
+      firstAudioMs: 400,
+      totalMs: 2600,
+      transcriptionMs: 700,
+      transcriptionWaitMs: 0,
+    });
+
+    expect(log.transcriptionMs).toBe(700);
+    expect(log.transcriptionMs).not.toBe(log.totalMs);
+  });
+
+  it("says a transcription running beside the voice cost the turn nothing", () => {
+    const log = formatTurnLog("interview.turn", "s1", telemetry, {
+      firstAudioMs: 400,
+      totalMs: 2600,
+      transcriptionMs: 1900,
+      transcriptionWaitMs: 0,
+    });
+
+    expect(log.transcriptionWaitMs).toBe(0);
   });
 
   it("keeps a turn that produced no audio loggable", () => {
@@ -134,6 +161,7 @@ describe("formatTurnLog", () => {
       firstAudioMs: null,
       totalMs: 40,
       transcriptionMs: null,
+      transcriptionWaitMs: null,
     });
 
     expect(log.firstAudioMs).toBeNull();

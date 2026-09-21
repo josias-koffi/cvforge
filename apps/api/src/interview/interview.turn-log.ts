@@ -12,8 +12,11 @@ export interface TurnLog {
   /** Called on every audio frame; only the first one counts. */
   markFirstAudio: () => void;
   onTelemetry: (telemetry: ChainTelemetry) => void;
-  /** Writes the line. `transcriptionMs` is null when nothing was transcribed. */
-  write: (transcriptionMs: number | null) => void;
+  /** Writes the line. Both timings are null when nothing was transcribed. */
+  write: (transcription?: {
+    durationMs: number | null;
+    waitedMs: number | null;
+  }) => void;
 }
 
 /**
@@ -41,7 +44,7 @@ export function createTurnLog(
     onTelemetry: (next) => {
       telemetry = next;
     },
-    write: (transcriptionMs) => {
+    write: (transcription) => {
       // No telemetry means the chain was never reached — a replayed chunk, or
       // an opening on a session already under way. Nothing worth a line.
       if (!telemetry) return;
@@ -51,7 +54,8 @@ export function createTurnLog(
           formatTurnLog(scope, sessionId, telemetry, {
             firstAudioMs,
             totalMs: now() - startedAt,
-            transcriptionMs,
+            transcriptionMs: transcription?.durationMs ?? null,
+            transcriptionWaitMs: transcription?.waitedMs ?? null,
           }),
         ),
       );

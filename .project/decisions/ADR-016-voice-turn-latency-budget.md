@@ -40,9 +40,14 @@ be set at all.
 - **`INTERVIEW_VOICE_MAX_ATTEMPTS`**, deliberately not `OPENROUTER_MAX_ATTEMPTS`,
   so the shared text budget cannot reach the voice path again.
 - **One structured JSON log line per turn**: model served, attempts, models
-  tried, whether it fell back, time to first audio, total, transcription, and
-  the gap between total and time-in-calls — that gap is backoff, and it is the
-  number worth alerting on.
+  tried, whether it fell back, time to first audio, total, the transcription
+  timings below, and `waitedMs`, the gap between total and time-in-calls.
+
+  That gap is **not** backoff alone, as this ADR first claimed. It also holds
+  the wait on transcription and the cost of streaming frames out; the first
+  live session logged `attempts: 1`, `fellBack: false` and still showed
+  seconds in it, which is what gave the mislabel away. Read it with `attempts`
+  and `transcriptionWaitMs` beside it.
 - **`firstTokenMs` measures from the end of the answer**, not from the request.
   The clock used to start at `fetch`, which excluded the VAD tail, the WAV
   encode and the upload — all silence the candidate sits through. The number on
@@ -59,8 +64,18 @@ be set at all.
   is the honest one.
 - Cost regressions become visible: a session quietly served by `gpt-audio`
   shows up in the logs as `fellBack: true`.
-- Still unmeasured, deliberately: the candidate's recording is uploaded twice
-  in parallel, once for the voice call and once for transcription. It does not
-  delay the first audio frame, only the end of the turn. The new
-  `transcriptionMs` against `totalMs` answers whether that is free in one
-  session — worth deciding on data rather than blind.
+- The candidate's recording is uploaded twice in parallel, once for the voice
+  call and once for transcription. It does not delay the first audio frame,
+  only the end of the turn, and so the microphone reopening.
+
+  **The first attempt to measure this did not work.** `transcriptionMs` was
+  taken from the *turn's* start rather than the transcription call's, and was
+  read immediately after awaiting it — so it always equalled `totalMs` and
+  answered nothing. Six logged turns showed the two identical, which looked
+  like a finding and was an artefact.
+
+  Two numbers now, both honest: `transcriptionMs`, the call's own duration,
+  and `transcriptionWaitMs`, how long the turn waited on it *after* the voice
+  stream ended. The second is the one that decides: zero means transcription
+  had already settled and the parallel upload costs nothing, and anything
+  above it is delay the candidate sits through with a dead microphone.
