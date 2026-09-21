@@ -9,7 +9,7 @@ import { VoiceOrb } from "@/components/interview/studio/voice-orb"
 import { StudioToolbar } from "@/components/interview/studio/studio-toolbar"
 import { TranscriptPanel } from "@/components/interview/studio/transcript-panel"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { orbAmplitude, orbState } from "@/lib/interview/orb"
+import { orbState, orbVolumes } from "@/lib/interview/orb"
 import {
   elapsedSeconds,
   resolveCountdown,
@@ -171,19 +171,17 @@ export function InterviewStudio({
   }, [autoFinish, finish])
 
   const orb = orbState({ muted: state.muted, phase: state.phase })
+  const volumes = orbVolumes({
+    level: state.level,
+    state: orb,
+    voiceLevel: state.voiceLevel,
+  })
 
   return (
     <div className="flex flex-col gap-4">
       {/* The stage: one thing to look at, the full width of the page. */}
       <section className="flex min-h-72 flex-col items-center justify-center gap-4 rounded-xl border bg-card p-6">
-        <VoiceOrb
-          amplitude={orbAmplitude({
-            level: state.level,
-            state: orb,
-            voiceLevel: state.voiceLevel,
-          })}
-          state={orb}
-        />
+        <VoiceOrb input={volumes.input} output={volumes.output} state={orb} />
         <LatencyStrip firstTokenMs={state.firstTokenMs} />
 
         {countdown.tone === "overtime" && state.phase !== "completed" ? (

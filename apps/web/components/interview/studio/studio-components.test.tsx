@@ -13,37 +13,23 @@ const render = (element: React.ReactElement) =>
 describe("VoiceOrb", () => {
   it("spells out every state, so it is not colour alone", () => {
     for (const state of Object.keys(orbStateLabels) as OrbState[]) {
-      const markup = render(<VoiceOrb amplitude={0.4} state={state} />)
+      const markup = render(<VoiceOrb input={0.4} output={0} state={state} />)
 
       expect(markup).toContain(orbStateLabels[state])
     }
   })
 
   it("announces the state politely for a screen reader", () => {
-    const markup = render(<VoiceOrb amplitude={0} state="speaking" />)
+    const markup = render(<VoiceOrb input={0} output={0.5} state="speaking" />)
 
     expect(markup).toContain('aria-live="polite"')
   })
 
-  it("breathes on the live level and hides the sphere from assistive tech", () => {
-    const loud = renderToStaticMarkup(
-      <VoiceOrb amplitude={0.8} state="speaking" />
-    )
+  it("hides the sphere itself from assistive tech", () => {
+    // It is decoration: the sentence below it carries the meaning.
+    const markup = render(<VoiceOrb input={0} output={0} state="listening" />)
 
-    expect(loud).toContain("--amp:0.8")
-    expect(loud).toContain('aria-hidden="true"')
-  })
-
-  it("colours the recruiter's voice and the candidate's differently", () => {
-    const speaking = renderToStaticMarkup(
-      <VoiceOrb amplitude={0.5} state="speaking" />
-    )
-    const recording = renderToStaticMarkup(
-      <VoiceOrb amplitude={0.5} state="recording" />
-    )
-
-    expect(speaking).toContain("--orb:var(--chart-5)")
-    expect(recording).toContain("--orb:var(--spark)")
+    expect(markup).toContain('aria-hidden="true"')
   })
 })
 
