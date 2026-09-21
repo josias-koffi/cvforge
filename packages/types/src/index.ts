@@ -321,6 +321,13 @@ export interface InterviewSessionStartResponse {
 }
 
 export interface InterviewTranscriptionChunkRequest {
+  /**
+   * The answer as a complete audio file, base64.
+   *
+   * Empty when the studio streamed it up in pieces while it was being spoken
+   * — see `InterviewAnswerPartRequest` — in which case the server assembles
+   * what it buffered instead.
+   */
   chunkBase64: string;
   chunkId: string;
   endedAt: string;
@@ -329,6 +336,27 @@ export interface InterviewTranscriptionChunkRequest {
   mimeType: string;
   sequence: number;
   startedAt: string;
+}
+
+/**
+ * One piece of an answer, sent while the candidate is still talking.
+ *
+ * Raw PCM16, 16 kHz, mono, base64 — no container. A WAV cannot be cut into
+ * readable pieces and neither can WebM, whose header only exists on the first
+ * fragment; raw samples can be cut anywhere and joined back in order.
+ */
+export interface InterviewAnswerPartRequest {
+  /** Raw little-endian 16-bit samples, base64. */
+  audioBase64: string;
+  /** The turn these pieces belong to, matching the eventual turn request. */
+  chunkId: string;
+  /** Position within the answer. Order of arrival is not guaranteed. */
+  part: number;
+}
+
+export interface InterviewAnswerPartResponse {
+  /** How many pieces of this answer the server is holding. */
+  parts: number;
 }
 
 export interface InterviewTranscriptChunk {

@@ -12,6 +12,7 @@ import {
 import {
   INTERVIEW_DEFAULT_DURATION_MINUTES,
   isInterviewDuration,
+  type InterviewAnswerPartRequest,
   type InterviewRecruiterProfile,
   type InterviewSessionStartRequest,
   type InterviewTranscriptionChunkRequest,
@@ -132,6 +133,24 @@ export class InterviewController {
       response,
       this.turnService.streamTurn(session.email, sessionId, body),
     );
+  }
+
+  /**
+   * One piece of an answer, while the candidate is still speaking.
+   *
+   * Four segments, so it cannot be mistaken for the three-segment turn route
+   * above. Ordinary JSON rather than a stream: each piece is a quarter of a
+   * second of audio and the reply is a count.
+   */
+  @Post("sessions/:sessionId/turn/chunk")
+  async appendTurnChunk(
+    @Param("sessionId") sessionId: string,
+    @Body() body: InterviewAnswerPartRequest,
+    @Req() request: RequestLike,
+  ) {
+    const session = this.readSession(request);
+
+    return this.turnService.appendAnswerPart(session.email, sessionId, body);
   }
 
   /**

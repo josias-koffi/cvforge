@@ -17,6 +17,7 @@ import { CreditsService } from "../credits/credits.service";
 import { DATABASE, type Database } from "../database/database.types";
 import { InterviewPurgeService } from "./interview-purge.service";
 import { InterviewProgressService } from "./interview-progress.service";
+import { InterviewAnswerBuffer } from "./interview-answer-buffer";
 import { InterviewTurnService } from "./interview-turn.service";
 import { InterviewReportService } from "./interview-report.service";
 import { InterviewController } from "./interview.controller";
@@ -63,7 +64,13 @@ import { INTERVIEW_STORE, type InterviewStore } from "./interview.types";
         store: InterviewStore,
         voice: OpenRouterVoiceService,
         transcription: OpenRouterTranscriptionService,
-      ) => new InterviewTurnService(store, voice, transcription),
+      ) =>
+        new InterviewTurnService(
+          store,
+          voice,
+          transcription,
+          new InterviewAnswerBuffer(),
+        ),
       inject: [
         INTERVIEW_STORE,
         OPENROUTER_VOICE_SERVICE,

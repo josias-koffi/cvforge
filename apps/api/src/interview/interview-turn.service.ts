@@ -3,10 +3,17 @@ import {
   INTERVIEW_CHUNK_STATUS_TRANSCRIBED,
   INTERVIEW_SESSION_STATUS_ERROR,
   INTERVIEW_SESSION_STATUS_READY,
+  type InterviewAnswerPartRequest,
   type InterviewTranscriptionChunkRequest,
   type InterviewTurnEvent,
 } from "@cvforge/types";
-import { Injectable, Logger, NotFoundException } from "@nestjs/common";
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  NotFoundException,
+  PayloadTooLargeException,
+} from "@nestjs/common";
 import type { OpenRouterTranscriptionService } from "../ai/openrouter-transcription.service";
 import type { OpenRouterVoiceService } from "../ai/openrouter-voice.service";
 import {
@@ -25,8 +32,15 @@ import {
   normalizeTranscript,
   nowIso,
 } from "./interview.stats";
+import {
+  AnswerTooLongError,
+  InterviewAnswerBuffer,
+  TooManyAnswersError,
+  answerKey,
+} from "./interview-answer-buffer";
 import type { InterviewStore, StoredInterviewSession } from "./interview.types";
 import { sortChunks, summarizeInterviewSession } from "./interview.types";
+import { wrapPcm16InWav } from "./wav";
 
 /**
  * Runs one spoken turn: the candidate's answer in, the interviewer's voice out.
@@ -44,7 +58,51 @@ export class InterviewTurnService {
     private readonly store: InterviewStore,
     private readonly voice: OpenRouterVoiceService,
     private readonly transcription: OpenRouterTranscriptionService,
+    private readonly answers: InterviewAnswerBuffer = new InterviewAnswerBuffer(),
   ) {}
+
+  /**
+   * Takes one piece of an answer while the candidate is still speaking.
+   *
+   * The session is loaded rather than assumed: the turn id comes from the
+   * browser, and this is what keeps someone from feeding audio into an
+   * interview that is not theirs.
+   */
+  async appendAnswerPart(
+    userEmail: string,
+    sessionId: string,
+    request: InterviewAnswerPartRequest,
+  ): Promise<{ parts: number }> {
+    const session = await this.store.findByIdForUserEmail(userEmail, sessionId);
+    if (!session) throw new NotFoundException("Session d'interview introuvable.");
+
+    if (!Number.isInteger(request.part) || request.part < 0) {
+      throw new BadRequestException("Position de fragment invalide.");
+    }
+
+    const audio = Buffer.from(request.audioBase64, "base64");
+    if (audio.length === 0) {
+      throw new BadRequestException("Fragment audio vide.");
+    }
+
+    try {
+      const parts = this.answers.append(
+        answerKey(userEmail, sessionId, request.chunkId),
+        request.part,
+        audio,
+      );
+
+      return { parts };
+    } catch (error) {
+      if (error instanceof AnswerTooLongError) {
+        throw new PayloadTooLargeException(error.message);
+      }
+      if (error instanceof TooManyAnswersError) {
+        throw new PayloadTooLargeException(error.message);
+      }
+      throw error;
+    }
+  }
 
   private readonly logger = new Logger(InterviewTurnService.name);
 
@@ -62,15 +120,25 @@ export class InterviewTurnService {
       return;
     }
 
+    const audio = this.resolveAnswerAudio(userEmail, sessionId, request);
+    if (audio === null) {
+      yield { type: "error", message: "Aucun enregistrement à envoyer." };
+      return;
+    }
+
     const turnLog = createTurnLog(this.logger, "interview.turn", sessionId);
-    const transcribing = this.transcribeAside(request, session.language);
+    const transcribing = this.transcribeAside(
+      audio,
+      request.chunkId,
+      session.language,
+    );
     let candidateText: string | null = null;
     let emittedCandidate = false;
     let reply = "";
 
     try {
       for await (const event of this.voice.streamTurn({
-        audio: { base64: request.chunkBase64, format: request.format },
+        audio,
         history: selectPromptMessages(session.messages).map((message) => ({
           content: message.content,
           role: message.role,
@@ -227,12 +295,44 @@ export class InterviewTurnService {
   }
 
   /**
+   * The answer, whether it came in this request or ahead of it.
+   *
+   * A body with audio in it is the whole answer, as it always was. An empty
+   * one means the studio streamed the pieces up while the candidate was
+   * talking, so what is left is to assemble them and write the header the
+   * speech models need. Null when there is neither.
+   */
+  private resolveAnswerAudio(
+    userEmail: string,
+    sessionId: string,
+    request: InterviewTranscriptionChunkRequest,
+  ): { base64: string; format: string } | null {
+    const key = answerKey(userEmail, sessionId, request.chunkId);
+
+    if (request.chunkBase64.length > 0) {
+      // Whatever was buffered under this id is not going to be used now.
+      this.answers.discard(key);
+
+      return { base64: request.chunkBase64, format: request.format };
+    }
+
+    const streamed = this.answers.take(key);
+    if (!streamed || streamed.length === 0) return null;
+
+    return {
+      base64: wrapPcm16InWav(streamed).toString("base64"),
+      format: "wav",
+    };
+  }
+
+  /**
    * Starts transcription immediately and exposes its result both as a promise
    * and as a plain value once settled, so the streaming loop can pick it up
    * without awaiting.
    */
   private transcribeAside(
-    request: InterviewTranscriptionChunkRequest,
+    audio: { base64: string; format: string },
+    chunkId: string,
     language: string,
   ) {
     const state: {
@@ -252,8 +352,8 @@ export class InterviewTurnService {
 
     state.promise = this.transcription
       .transcribe({
-        audioBase64: request.chunkBase64,
-        format: request.format,
+        audioBase64: audio.base64,
+        format: audio.format,
         // The session already knows. Left undefined, the model guessed from
         // the audio — and guessed English on anything that was not clearly
         // speech, which is how a French interview came back as "Thank you."
@@ -268,7 +368,7 @@ export class InterviewTurnService {
         stamp();
         // The turn still works without it; only the report loses detail.
         this.logger.warn(
-          `Interview transcription failed for ${request.chunkId}: ${describe(
+          `Interview transcription failed for ${chunkId}: ${describe(
             error,
             "unknown",
           )}`,
