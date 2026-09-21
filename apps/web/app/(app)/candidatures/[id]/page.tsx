@@ -1,8 +1,9 @@
 import type { Metadata } from "next"
 import Link from "next/link"
-import { AI_CREDIT_COSTS } from "@cvforge/types"
+import { AI_CREDIT_COSTS, type InterviewSessionListItem } from "@cvforge/types"
 import { ExternalLinkIcon, MicIcon, PencilIcon } from "lucide-react"
 
+import { ApplicationInsights } from "@/components/interview/application-insights"
 import { PageHeader } from "@/components/layout/page-header"
 import { OfferDocuments } from "@/components/offers/document-card"
 import { StatusBadge } from "@/components/offers/status-badge"
@@ -21,7 +22,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { api } from "@/lib/api"
 import { formatCredits, formatDate, formatDateTime, statusLabels } from "@/lib/format"
+import { buildInterviewInsights } from "@/lib/interview/insights"
 import { loadOffer } from "@/lib/offers"
 import { loadRegistry } from "@/lib/profile"
 import { pickProfile } from "@/lib/profile-model"
@@ -49,11 +52,23 @@ function BulletList({ items }: { items: string[] }) {
 export default async function OfferPage(props: PageProps<"/candidatures/[id]">) {
   const { id } = await props.params
   const session = await requireSession()
-  const [{ application: offer, offerText }, registry] = await Promise.all([
+  const [{ application: offer, offerText }, registry, sessions] = await Promise.all([
     loadOffer(id),
     loadRegistry(session.email),
+    // Only used to link the last report; a candidature page must not fail
+    // because the interview history happens to be unavailable.
+    api<{ sessions: InterviewSessionListItem[] }>("/interviews/sessions").catch(
+      () => null
+    ),
   ])
   const { extracted } = offer
+  // The reports ride along with the application — every finished session for
+  // this offer appends one — so the insights cost no extra request.
+  const insights = buildInterviewInsights(offer.interviewReports, extracted)
+  const lastSession =
+    sessions?.sessions.find(
+      (item) => item.applicationId === offer.id && item.status === "completed"
+    ) ?? null
   const facts = [
     ["Entreprise", extracted.companyName],
     ["Lieu", extracted.location],
@@ -93,37 +108,46 @@ export default async function OfferPage(props: PageProps<"/candidatures/[id]">) 
         }
       />
       <div className="grid gap-4 px-4 lg:px-6 @5xl/main:grid-cols-[1fr_380px]">
-        <Card>
-          <CardHeader>
-            <CardTitle>Descriptif</CardTitle>
-            <CardDescription>L&apos;essentiel de l&apos;annonce, extrait pour vous</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <p className="text-sm leading-relaxed whitespace-pre-line">
-              {extracted.summary || "Aucun résumé."}
-            </p>
-            <div className="grid gap-6 @3xl/main:grid-cols-2">
-              <div className="space-y-2">
-                <h3 className="text-sm font-semibold">Missions</h3>
-                <BulletList items={extracted.responsibilities} />
+        <div className="flex flex-col gap-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Descriptif</CardTitle>
+              <CardDescription>L&apos;essentiel de l&apos;annonce, extrait pour vous</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <p className="text-sm leading-relaxed whitespace-pre-line">
+                {extracted.summary || "Aucun résumé."}
+              </p>
+              <div className="grid gap-6 @3xl/main:grid-cols-2">
+                <div className="space-y-2">
+                  <h3 className="text-sm font-semibold">Missions</h3>
+                  <BulletList items={extracted.responsibilities} />
+                </div>
+                <div className="space-y-2">
+                  <h3 className="text-sm font-semibold">Profil recherché</h3>
+                  <BulletList items={extracted.requirements} />
+                </div>
               </div>
-              <div className="space-y-2">
-                <h3 className="text-sm font-semibold">Profil recherché</h3>
-                <BulletList items={extracted.requirements} />
-              </div>
-            </div>
-            <Accordion type="single" collapsible className="rounded-lg border px-4">
-              <AccordionItem value="raw" className="border-b-0">
-                <AccordionTrigger>Texte original de l&apos;annonce</AccordionTrigger>
-                <AccordionContent>
-                  <p className="max-h-96 overflow-y-auto text-sm whitespace-pre-line text-muted-foreground">
-                    {offerText}
-                  </p>
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
-          </CardContent>
-        </Card>
+              <Accordion type="single" collapsible className="rounded-lg border px-4">
+                <AccordionItem value="raw" className="border-b-0">
+                  <AccordionTrigger>Texte original de l&apos;annonce</AccordionTrigger>
+                  <AccordionContent>
+                    <p className="max-h-96 overflow-y-auto text-sm whitespace-pre-line text-muted-foreground">
+                      {offerText}
+                    </p>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+            </CardContent>
+          </Card>
+          {insights ? (
+            <ApplicationInsights
+              insights={insights}
+              offerId={offer.id}
+              sessionId={lastSession?.id ?? null}
+            />
+          ) : null}
+        </div>
         <div className="flex flex-col gap-4">
           <Card>
             <CardHeader>
