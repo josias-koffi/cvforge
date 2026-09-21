@@ -281,3 +281,112 @@ describe("InterviewTurnService", () => {
     expect(request.systemPrompt).toContain("recruteur");
   });
 });
+
+describe("InterviewTurnService.streamOpening", () => {
+  async function collectOpening(
+    service: InterviewTurnService,
+    email = "user@example.com",
+  ) {
+    const events: InterviewTurnEvent[] = [];
+    for await (const event of service.streamOpening(email, "s1")) {
+      events.push(event);
+    }
+
+    return events;
+  }
+
+  it("speaks first and records the greeting as the interviewer's", async () => {
+    const { saved, store } = createStore();
+    const voice = voiceYielding([
+      { type: "audio", data: "QUJD" },
+      { type: "transcript", text: "Bonjour, parlez-moi de vous." },
+    ]);
+    const service = new InterviewTurnService(store, voice, transcriberSaying(""));
+
+    const events = await collectOpening(service);
+
+    expect(events).toContainEqual({ type: "audio", data: "QUJD" });
+    expect(events.at(-1)).toEqual({ type: "done" });
+    expect(saved.at(-1)!.messages.map((m) => [m.role, m.content])).toEqual([
+      ["assistant", "Bonjour, parlez-moi de vous."],
+    ]);
+  });
+
+  it("asks for the greeting as text, with no audio to answer", async () => {
+    const { store } = createStore();
+    const voice = voiceYielding([{ type: "transcript", text: "Bonjour." }]);
+    const service = new InterviewTurnService(store, voice, transcriberSaying(""));
+
+    await collectOpening(service);
+
+    const request = (voice.streamTurn as unknown as ReturnType<typeof vi.fn>)
+      .mock.calls[0]![0] as { audio?: unknown; instruction?: string };
+    expect(request.audio).toBeUndefined();
+    expect(request.instruction).toContain("entretien");
+  });
+
+  it("never transcribes: there is no candidate audio yet", async () => {
+    const { store } = createStore();
+    const transcriber = transcriberSaying("bruit");
+    const service = new InterviewTurnService(
+      store,
+      voiceYielding([{ type: "transcript", text: "Bonjour." }]),
+      transcriber,
+    );
+
+    await collectOpening(service);
+
+    expect(transcriber.transcribe).not.toHaveBeenCalled();
+  });
+
+  it("stays silent on a session already under way", async () => {
+    // A page reload must not make the recruiter greet the candidate twice.
+    const { saved, store } = createStore(
+      makeSession({
+        messages: [
+          {
+            content: "Bonjour.",
+            role: "assistant",
+            timestamp: "2026-04-24T13:00:00.000Z",
+          },
+        ],
+      }),
+    );
+    const voice = voiceYielding([{ type: "transcript", text: "Re-bonjour." }]);
+    const service = new InterviewTurnService(store, voice, transcriberSaying(""));
+
+    expect(await collectOpening(service)).toEqual([{ type: "done" }]);
+    expect(voice.streamTurn).not.toHaveBeenCalled();
+    expect(saved).toHaveLength(0);
+  });
+
+  it("reports a recruiter that could not open the interview", async () => {
+    const { store } = createStore();
+    const voice = {
+      // Rejects before yielding anything, as an unreachable model does.
+      streamTurn: vi.fn(() => ({
+        [Symbol.asyncIterator]: () => ({
+          next: () => Promise.reject(new Error("modele indisponible")),
+        }),
+      })),
+    } as unknown as OpenRouterVoiceService;
+    const service = new InterviewTurnService(store, voice, transcriberSaying(""));
+
+    expect(await collectOpening(service)).toEqual([
+      { type: "error", message: "modele indisponible" },
+    ]);
+  });
+
+  it("refuses a session that is not the caller's", async () => {
+    const { store } = createStore();
+    const service = new InterviewTurnService(
+      store,
+      voiceYielding([]),
+      transcriberSaying(""),
+    );
+
+    await expect(
+      collectOpening(service, "someone@else.example"),
+    ).rejects.toBeInstanceOf(NotFoundException);
+  });
+});

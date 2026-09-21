@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import {
   InterviewRequestError,
   fetchSession,
+  openOpeningStream,
   openTurnStream,
   startSession,
   triggerPrefetch,
@@ -134,6 +135,30 @@ describe("interview client", () => {
 
     await expect(
       openTurnStream("s1", CHUNK, new AbortController().signal)
+    ).rejects.toThrow("Le recruteur n'a pas pu répondre.")
+  })
+
+  it("opens the interview with no body: there is no answer yet", async () => {
+    const body = new ReadableStream<Uint8Array>()
+    fetchMock.mockResolvedValue(new Response(body))
+    const controller = new AbortController()
+
+    await expect(
+      openOpeningStream("s1", controller.signal)
+    ).resolves.toBe(body)
+
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit]
+    expect(url).toBe("/api/interviews/sessions/s1/opening")
+    expect(init.method).toBe("POST")
+    expect(init.body).toBeUndefined()
+    expect(init.signal).toBe(controller.signal)
+  })
+
+  it("reports a recruiter that could not open the interview", async () => {
+    fetchMock.mockResolvedValue(new Response("", { status: 503 }))
+
+    await expect(
+      openOpeningStream("s1", new AbortController().signal)
     ).rejects.toThrow("Le recruteur n'a pas pu répondre.")
   })
 
