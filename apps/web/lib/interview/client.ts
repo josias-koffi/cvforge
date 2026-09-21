@@ -92,16 +92,22 @@ export async function uploadChunk(
 }
 
 /**
- * Opens the reply stream. The caller must pass an `AbortSignal` and fire it on
- * unmount: the API streams from a generator that only stops when the
- * connection drops, so an abandoned response keeps a turn running server-side.
+ * Sends the candidate's answer and opens the spoken reply.
+ *
+ * One request for the whole turn: the audio goes up, the interviewer's voice
+ * comes back as it is generated. The caller must pass an `AbortSignal` and
+ * fire it on unmount — the API streams from a generator that only stops when
+ * the connection drops, so an abandoned response keeps a turn running.
  */
-export async function openResponseStream(
+export async function openTurnStream(
   sessionId: string,
+  chunk: InterviewTranscriptionChunkRequest,
   signal: AbortSignal
 ): Promise<ReadableStream<Uint8Array>> {
-  const response = await fetch(`${BASE}/sessions/${sessionId}/respond`, {
-    headers: { accept: "text/event-stream" },
+  const response = await fetch(`${BASE}/sessions/${sessionId}/turn`, {
+    body: JSON.stringify(chunk),
+    headers: { accept: "text/event-stream", "content-type": "application/json" },
+    method: "POST",
     signal,
   })
 

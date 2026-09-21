@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import {
   InterviewRequestError,
   fetchSession,
-  openResponseStream,
+  openTurnStream,
   startSession,
   triggerPrefetch,
   uploadChunk,
@@ -112,14 +112,19 @@ describe("interview client", () => {
     )
   })
 
-  it("returns the reply stream and passes the abort signal on", async () => {
+  it("posts the answer and returns the spoken reply stream", async () => {
     const body = new ReadableStream<Uint8Array>()
     fetchMock.mockResolvedValue(new Response(body))
     const controller = new AbortController()
 
-    await expect(openResponseStream("s1", controller.signal)).resolves.toBe(body)
+    await expect(
+      openTurnStream("s1", CHUNK, controller.signal)
+    ).resolves.toBe(body)
 
-    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit]
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit]
+    expect(url).toBe("/api/interviews/sessions/s1/turn")
+    expect(init.method).toBe("POST")
+    expect(JSON.parse(String(init.body))).toEqual(CHUNK)
     // Without it, an abandoned turn keeps generating server-side.
     expect(init.signal).toBe(controller.signal)
   })
@@ -128,7 +133,7 @@ describe("interview client", () => {
     fetchMock.mockResolvedValue(new Response("", { status: 503 }))
 
     await expect(
-      openResponseStream("s1", new AbortController().signal)
+      openTurnStream("s1", CHUNK, new AbortController().signal)
     ).rejects.toThrow("Le recruteur n'a pas pu répondre.")
   })
 
