@@ -16,6 +16,7 @@ import type {
 } from "@cvforge/types";
 import { Observable } from "rxjs";
 import { AuthService } from "../auth/auth.service";
+import { InterviewProgressService } from "./interview-progress.service";
 import { InterviewService } from "./interview.service";
 
 type RequestLike = {
@@ -27,6 +28,8 @@ export class InterviewController {
   constructor(
     @Inject(InterviewService)
     private readonly interviewService: InterviewService,
+    @Inject(InterviewProgressService)
+    private readonly progressService: InterviewProgressService,
     @Inject(AuthService) private readonly authService: AuthService,
   ) {}
 
@@ -42,6 +45,20 @@ export class InterviewController {
       this.readProfile(body?.profile),
       typeof body?.applicationId === "string" ? body.applicationId.trim() : "",
     );
+  }
+
+  // Literal paths are declared before `sessions/:sessionId`, so a segment
+  // never gets swallowed as a session id.
+  @Get("sessions")
+  listSessions(@Req() request: RequestLike) {
+    const session = this.readSession(request);
+    return this.progressService.list(session.email);
+  }
+
+  @Get("progress")
+  getProgress(@Req() request: RequestLike) {
+    const session = this.readSession(request);
+    return this.progressService.getProgress(session.email);
   }
 
   @Get("sessions/:sessionId")

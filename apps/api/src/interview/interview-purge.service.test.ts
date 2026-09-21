@@ -33,6 +33,7 @@ function makeStore(purgeSpy = vi.fn(async () => 0)): InterviewStore {
     findByIdForUserEmail: vi.fn(),
     save: vi.fn(),
     deleteByUserEmail: async () => 0,
+    listByUserEmail: async () => [],
   purgeCompletedBefore: purgeSpy,
   };
 }

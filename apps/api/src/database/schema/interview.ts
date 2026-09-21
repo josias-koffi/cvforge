@@ -49,7 +49,13 @@ export const interviewSessions = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
   },
   (table) => [
-    index("interview_sessions_user_idx").on(table.userEmail),
+    // History reads by user, newest first. With `user_email` leading, this
+    // also covers every lookup by user alone, so there is no separate
+    // single-column index to pay for on each `save()`.
+    index("interview_sessions_user_created_idx").on(
+      table.userEmail,
+      table.createdAt.desc(),
+    ),
     // The retention purge scans by completion date.
     index("interview_sessions_completed_idx").on(table.completedAt),
   ],
