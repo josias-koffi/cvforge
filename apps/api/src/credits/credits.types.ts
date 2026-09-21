@@ -38,7 +38,14 @@ export type CreditLedgerStore = {
 
 export type ConsumeCreditsInput = {
   action: AiCreditAction;
+  /**
+   * Defaults to `AI_CREDIT_COSTS[action]`. Set it when the price is not fixed
+   * by the action alone — an interview costs one credit per minute.
+   */
+  amount?: number;
   applicationId?: string;
+  /** Interview sessions: recorded so the ledger line says what was paid for. */
+  durationMinutes?: number;
   userEmail: string;
 };
 

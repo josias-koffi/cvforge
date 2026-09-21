@@ -32,7 +32,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { creditCostLabel } from "@/lib/format"
+import { interviewCostLabel } from "@/lib/format"
 import { startSession } from "@/lib/interview/client"
 import {
   durationLabels,
@@ -112,7 +112,8 @@ export function InterviewSetupForm({
           <CardTitle>Préparer la session</CardTitle>
           <CardDescription>
             Le recruteur s&apos;adapte à l&apos;offre choisie et au style que
-            vous voulez travailler. {creditCostLabel("interview_session")}.
+            vous voulez travailler. {interviewCostLabel(durationMinutes)}, soit un
+            crédit par minute.
           </CardDescription>
         </CardHeader>
 
@@ -199,7 +200,8 @@ export function InterviewSetupForm({
               </Select>
               <FieldDescription>
                 Le recruteur répartit ses sujets sur ce temps : plus c&apos;est
-                long, plus il creuse. Rien ne vous coupe à l&apos;échéance.
+                long, plus il creuse. À l&apos;échéance, l&apos;entretien se
+                termine entre deux réponses, jamais au milieu de la vôtre.
               </FieldDescription>
             </Field>
 

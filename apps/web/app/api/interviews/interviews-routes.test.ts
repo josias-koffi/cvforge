@@ -54,12 +54,13 @@ describe("interview route handlers", () => {
   })
 
   describe("POST /sessions", () => {
-    it("forwards the chosen language, profile and application", async () => {
+    it("forwards the chosen language, profile, application and duration", async () => {
       apiRequest.mockResolvedValue(jsonResponse({ sessionId: "s1" }))
 
       const response = await createSession(
         postRequest("/api/interviews/sessions", {
           applicationId: "app-1",
+          durationMinutes: 30,
           language: "en",
           profile: "technical",
         })
@@ -67,23 +68,34 @@ describe("interview route handlers", () => {
 
       expect(response.status).toBe(200)
       expect(apiRequest).toHaveBeenCalledWith("/interviews/sessions", {
-        body: { applicationId: "app-1", language: "en", profile: "technical" },
+        body: {
+          applicationId: "app-1",
+          durationMinutes: 30,
+          language: "en",
+          profile: "technical",
+        },
         method: "POST",
       })
     })
 
-    it("falls back to French and the standard profile on unknown values", async () => {
+    it("falls back to French, the standard profile and ten minutes", async () => {
       apiRequest.mockResolvedValue(jsonResponse({ sessionId: "s1" }))
 
       await createSession(
         postRequest("/api/interviews/sessions", {
+          durationMinutes: 45,
           language: "de",
           profile: "chaotic",
         })
       )
 
       expect(apiRequest).toHaveBeenCalledWith("/interviews/sessions", {
-        body: { applicationId: undefined, language: "fr", profile: "standard" },
+        body: {
+          applicationId: undefined,
+          durationMinutes: 10,
+          language: "fr",
+          profile: "standard",
+        },
         method: "POST",
       })
     })

@@ -33,7 +33,7 @@ export function CreditOfferCard({
           {formatApplications(estimateApplications(offer.credits))}
         </CardTitle>
         <p className="text-sm tabular-nums text-muted-foreground">
-          {offer.credits} crédits · analyse, CV et lettre
+          {offer.credits} crédits · analyse, CV, lettre et entretien
         </p>
         {offer.description.fr ? (
           <p className="text-sm text-muted-foreground">{offer.description.fr}</p>

@@ -63,15 +63,21 @@ on the application. It is never scraped from the open web.
 
 ## Credits
 
-A session costs **2 credits**, charged when it is created — not when it ends.
-The cost is committed as soon as the session runs (one transcription and one
-chat turn per answer), so charging at the end would let an abandoned tab run
-up a bill for free. `finishSession` never touches credits, and nothing is
-refunded: a failed turn leaves the session usable, so the candidate can simply
-speak again.
+A session costs **one credit per minute** — 10, 20 or 30 — charged when it is
+created, not when it ends. Billing by the minute rather than a flat fee follows
+the cost: one speech call and one transcription per answer, and a session fits
+roughly one answer per three-quarters of a minute whatever its length. The
+scored report at the end is inside that price and is never charged separately.
+
+The cost is committed as soon as the session runs, so charging at the end would
+let an abandoned tab run up a bill for free. `finishSession` never touches
+credits, and nothing is refunded: a failed turn leaves the session usable, so
+the candidate can simply speak again.
 
 A second "Démarrer" within thirty minutes hands back the untouched session
-rather than opening — and charging for — a second one.
+rather than opening — and charging for — a second one, but only when it runs
+for the same length: the two do not cost the same, and handing back a shorter
+session would silently ignore the duration just picked.
 
 ## Voice
 

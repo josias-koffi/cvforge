@@ -1,4 +1,10 @@
-import { AI_CREDIT_COSTS, type AiCreditAction, type ApplicationStatus } from "@cvforge/types"
+import {
+  AI_CREDIT_COSTS,
+  interviewSessionCost,
+  type AiCreditAction,
+  type ApplicationStatus,
+  type InterviewDurationMinutes,
+} from "@cvforge/types"
 
 export const statusLabels: Record<ApplicationStatus, string> = {
   draft: "Brouillon",
@@ -69,6 +75,15 @@ export function formatApplications(count: number) {
 /** Cost label of an AI action, e.g. "Coût : 3 crédits". */
 export function creditCostLabel(action: AiCreditAction) {
   return `Coût : ${formatCredits(AI_CREDIT_COSTS[action])}`
+}
+
+/**
+ * An interview is priced by the minute, so its label has to follow the length
+ * the candidate picked — `creditCostLabel` would quote the ten-minute price
+ * above a selector set to thirty.
+ */
+export function interviewCostLabel(minutes: InterviewDurationMinutes) {
+  return `Coût : ${formatCredits(interviewSessionCost(minutes))}`
 }
 
 export function splitLines(value: string) {

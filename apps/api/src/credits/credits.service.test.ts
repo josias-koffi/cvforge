@@ -76,6 +76,60 @@ describe("CreditsService", () => {
     expect(summary.history.map((item) => item.amount)).toEqual([-3, 10]);
   });
 
+  it("debits the amount it is given rather than the action's base price", async () => {
+    await grant(40);
+
+    const entry = await service.consumeCredits({
+      action: "interview_session",
+      amount: 30,
+      durationMinutes: 30,
+      userEmail: USER,
+    });
+
+    expect(entry.amount).toBe(-30);
+    expect(entry.balanceAfter).toBe(10);
+    // A -10 and a -30 line are otherwise indistinguishable in the history.
+    expect(entry.note).toBe("Session d'entretien simule (30 min)");
+    expect(entry.metadata.durationMinutes).toBe(30);
+  });
+
+  it("falls back to the action's base price without an amount", async () => {
+    await grant(10);
+
+    const entry = await service.consumeCredits({
+      action: "interview_session",
+      userEmail: USER,
+    });
+
+    expect(entry.amount).toBe(-10);
+  });
+
+  it.each([0, -5, 2.5])("rejects a variable charge of %s", async (amount) => {
+    await grant(50);
+
+    await expect(
+      service.consumeCredits({
+        action: "interview_session",
+        amount,
+        userEmail: USER,
+      }),
+    ).rejects.toBeInstanceOf(UnprocessableEntityException);
+    await expect(service.getSummaryForUser(USER)).resolves.toMatchObject({
+      balance: 50,
+    });
+  });
+
+  it("checks the amount asked for, not the base price", async () => {
+    await grant(10);
+
+    await expect(
+      service.assertSufficientCredits("interview_session", USER, 30),
+    ).rejects.toBeInstanceOf(InsufficientCreditsException);
+    await expect(
+      service.assertSufficientCredits("interview_session", USER, 10),
+    ).resolves.toBeUndefined();
+  });
+
   it("rejects AI consumption when credits are insufficient", async () => {
     await expect(
       service.consumeCredits({
