@@ -1,7 +1,12 @@
 # ADR-012: Launch pricing sized in applications, with welcome credits
 
 Date: 2026-09-19
-Status: accepted
+Status: superseded in part by ADR-017
+
+> The three prices and the "pay for the applications you send" positioning
+> still hold. The credit sizing below does not: once the voice interview and
+> its report shipped, a complete application became 17 credits rather than 7,
+> and the packs and welcome grant were resized accordingly (ADR-017).
 
 ## Context
 

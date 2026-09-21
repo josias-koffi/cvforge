@@ -808,3 +808,11 @@
 - Welcome credits: `AuthService.onAccountCreated` listener registered by `WelcomeCreditsListener` (credits → auth dependency direction), idempotency key `welcome:<email>`.
 - `CREDITS_PER_APPLICATION` / `estimateApplications` / `WELCOME_CREDITS` live in `@cvforge/types` (built to dist: rebuild the package before app tests).
 - Do NOT run `pnpm format` at the root: it rewrites hundreds of untouched files (api and web are not Prettier-formatted). Format only the touched landing files.
+
+## 2026-09-21 — Retarification de l'entretien à la minute (ADR-017)
+- Une candidature complète vaut désormais **17 crédits** (1 + 3 + 3 + 10) et inclut l'entretien de 10 min et son rapport ; packs 90 / 350 / 870 aux mêmes prix, crédits offerts 16 → 36.
+- **TDZ** : `CREDITS_PER_INTERVIEW_MINUTE` doit être déclarée *juste avant* `AI_CREDIT_COSTS` dans `packages/types/src/index.ts`. Une `const` déclarée après la table est dans sa zone morte temporelle et le module lève un `ReferenceError` à l'import — alors que la fonction `interviewSessionCost`, elle, est hoistée et ne signale rien.
+- **Montant variable** : `assertSufficientCredits(action, email, amount?)` et `ConsumeCreditsInput.amount?` sont des ajouts *optionnels*, donc les `Pick<CreditsService, …>` de `cv-generation.translate.ts` et `CreditsServiceContract` ne bougent pas et les 5 autres appelants non plus. Valider le montant (`resolveCost`) : c'est le seul chemin par lequel un appelant écrirait un nombre arbitraire au grand livre.
+- **Bug trouvé** : `apps/web/app/api/interviews/sessions/route.ts` laissait tomber `durationMinutes`. Le BFF web est un point de perte silencieuse — un champ accepté par l'API et envoyé par le client peut ne jamais transiter. Vérifier le relais quand un champ semble inerte côté produit.
+- Migration `0015` fait un `UPDATE` sur place des offres au lieu d'archiver/réinsérer comme `0012` : le prix ne bougeant pas, `stripe_price_id` reste valide et il n'y a **aucune fenêtre de 503** sur le paiement. Préférer ce motif dès que seuls les crédits ou les textes changent.
+- **Verified**: 853 tests API, 201 web, 25 landing, 17 types ; lint et build monorepo verts. Non vérifié : parcours navigateur réel, achat Stripe de test, resynchronisation Stripe.
