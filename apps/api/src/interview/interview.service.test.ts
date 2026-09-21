@@ -3,6 +3,7 @@ import type { OpenRouterTranscriptionService } from "../ai/openrouter-transcript
 import { InterviewReportService } from "./interview-report.service";
 import type { OpenRouterService } from "../ai/openrouter.service";
 import type { ApplicationsService } from "../applications/applications.service";
+import type { CreditsService } from "../credits/credits.service";
 import type { InterviewStore } from "./interview.types";
 import { InterviewService } from "./interview.service";
 
@@ -63,10 +64,18 @@ function createApplicationsService(): ApplicationsService {
  * transcription. Tests still declare a single bag of doubles; this splits it,
  * and defaults the transcriber to silence so chat-only tests stay terse.
  */
+function createCreditsService(): CreditsService {
+  return {
+    assertSufficientCredits: vi.fn().mockResolvedValue(undefined),
+    consumeCredits: vi.fn().mockResolvedValue({}),
+  } as unknown as CreditsService;
+}
+
 function makeService(
   doubles: Record<string, unknown> = {},
   store: InterviewStore = createStore(),
   applications: ApplicationsService = createApplicationsService(),
+  credits: CreditsService = createCreditsService(),
 ) {
   const { transcribe = vi.fn().mockResolvedValue(""), ...chat } = doubles;
 
@@ -76,6 +85,7 @@ function makeService(
     { transcribe } as unknown as OpenRouterTranscriptionService,
     applications,
     new InterviewReportService(chat as unknown as OpenRouterService),
+    credits,
   );
 }
 

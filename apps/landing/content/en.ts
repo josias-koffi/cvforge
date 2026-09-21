@@ -171,6 +171,7 @@ export const en: LandingDictionary = {
     creditUnit: "credits",
     actions: {
       cv_import: "Importing an existing resume",
+      interview_session: "One mock interview session",
       offer_enrichment: "Offer and company analysis",
       cv_generation: "Tailored resume generation",
       letter_generation: "Cover letter generation",

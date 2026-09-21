@@ -9,6 +9,8 @@ import type { OpenRouterService } from "../ai/openrouter.service";
 import { ApplicationsModule } from "../applications/applications.module";
 import { ApplicationsService } from "../applications/applications.service";
 import { AuthModule } from "../auth/auth.module";
+import { CreditsModule } from "../credits/credits.module";
+import { CreditsService } from "../credits/credits.service";
 import { DATABASE, type Database } from "../database/database.types";
 import { InterviewPurgeService } from "./interview-purge.service";
 import { InterviewProgressService } from "./interview-progress.service";
@@ -19,7 +21,7 @@ import { PgInterviewStore } from "./interview.pg-store";
 import { INTERVIEW_STORE, type InterviewStore } from "./interview.types";
 
 @Module({
-  imports: [AuthModule, OpenRouterModule, ApplicationsModule],
+  imports: [AuthModule, OpenRouterModule, ApplicationsModule, CreditsModule],
   controllers: [InterviewController],
   providers: [
     {
@@ -34,6 +36,7 @@ import { INTERVIEW_STORE, type InterviewStore } from "./interview.types";
         transcription: OpenRouterTranscriptionService,
         applicationsService: ApplicationsService,
         store: InterviewStore,
+        creditsService: CreditsService,
       ) =>
         new InterviewService(
           store,
@@ -41,12 +44,14 @@ import { INTERVIEW_STORE, type InterviewStore } from "./interview.types";
           transcription,
           applicationsService,
           new InterviewReportService(openRouter),
+          creditsService,
         ),
       inject: [
         OPENROUTER_SERVICE,
         OPENROUTER_TRANSCRIPTION_SERVICE,
         ApplicationsService,
         INTERVIEW_STORE,
+        CreditsService,
       ],
     },
     {

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   APPLICATION_STATUS_INTERVIEW_SCHEDULED,
   NOTIFICATION_TYPE_APPLICATION_FOLLOW_UP,
+  AI_CREDIT_COSTS,
   CREDITS_PER_APPLICATION,
   WELCOME_APPLICATIONS,
   WELCOME_CREDITS,
@@ -57,6 +58,14 @@ describe("types package", () => {
   it("should offer a CV import plus two applications on sign-up", () => {
     expect(WELCOME_CREDITS).toBe(16);
     expect(WELCOME_APPLICATIONS).toBe(2);
+  });
+
+  it("should price an interview session without moving what an application costs", () => {
+    // An interview is not a step of a candidature, so it must stay out of
+    // CREDITS_PER_APPLICATION — and therefore out of the welcome grant.
+    expect(AI_CREDIT_COSTS.interview_session).toBe(2);
+    expect(CREDITS_PER_APPLICATION).toBe(7);
+    expect(WELCOME_CREDITS).toBe(16);
   });
 
   it("should allow the supported locales", () => {
