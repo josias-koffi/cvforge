@@ -12,27 +12,27 @@ import type { PublicCreditOffer } from "@cvforge/types"
 
 const offers: PublicCreditOffer[] = [
   {
-    credits: 550,
+    credits: 90,
     currency: "eur",
     description: { en: "Get going", fr: "Pour démarrer" },
     features: { en: ["VAT included"], fr: ["TVA incluse"] },
-    id: "o-starter",
+    id: "o-essentiel",
     isFeatured: false,
-    name: { en: "Starter", fr: "Starter" },
-    priceCents: 999,
-    slug: "starter",
+    name: { en: "Essential", fr: "Essentiel" },
+    priceCents: 590,
+    slug: "essentiel",
     sortOrder: 10,
   },
   {
-    credits: 1400,
+    credits: 350,
     currency: "eur",
     description: { en: "", fr: "" },
     features: { en: ["Every feature included"], fr: ["Tout inclus"] },
-    id: "o-pro",
+    id: "o-recherche-active",
     isFeatured: true,
-    name: { en: "Pro", fr: "Pro" },
-    priceCents: 1999,
-    slug: "pro",
+    name: { en: "Active search", fr: "Recherche active" },
+    priceCents: 1490,
+    slug: "recherche-active",
     sortOrder: 20,
   },
 ]
@@ -51,10 +51,10 @@ describe("HomePage", () => {
 
     expect(html).toContain(dict.hero.titleAccent)
     expect(html).toContain('id="pricing"')
-    expect(html).toContain("Starter")
+    expect(html).toContain(locale === "fr" ? "Essentiel" : "Essential")
     expect(html).toContain(escapeHtml(dict.pricing.welcome))
     expect(html).toContain(
-      locale === "fr" ? "78 candidatures" : "78 applications"
+      locale === "fr" ? "20 candidatures" : "20 applications"
     )
     expect(html).toContain(dict.pricing.popular)
     expect(html).toContain(locale === "fr" ? "TVA incluse" : "VAT included")
