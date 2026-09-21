@@ -41,12 +41,17 @@ describe("interview client", () => {
   it("posts the session options and returns the created session", async () => {
     fetchMock.mockResolvedValue(jsonResponse({ sessionId: "s1", session: {} }))
 
-    const result = await startSession({ language: "fr", profile: "technical" })
+    const result = await startSession({
+      durationMinutes: 20,
+      language: "fr",
+      profile: "technical",
+    })
 
     expect(result.sessionId).toBe("s1")
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit]
     expect(url).toBe("/api/interviews/sessions")
     expect(JSON.parse(String(init.body))).toEqual({
+      durationMinutes: 20,
       language: "fr",
       profile: "technical",
     })
@@ -56,7 +61,7 @@ describe("interview client", () => {
     fetchMock.mockResolvedValue(new Response("", { status: 402 }))
 
     await expect(
-      startSession({ language: "fr", profile: "standard" })
+      startSession({ durationMinutes: 10, language: "fr", profile: "standard" })
     ).rejects.toThrow(/Crédits insuffisants/)
   })
 
@@ -66,7 +71,7 @@ describe("interview client", () => {
     )
 
     await expect(
-      startSession({ language: "fr", profile: "standard" })
+      startSession({ durationMinutes: 10, language: "fr", profile: "standard" })
     ).rejects.toThrow("Candidature introuvable.")
   })
 
@@ -74,7 +79,7 @@ describe("interview client", () => {
     fetchMock.mockResolvedValue(new Response("", { status: 402 }))
 
     await expect(
-      startSession({ language: "fr", profile: "standard" })
+      startSession({ durationMinutes: 10, language: "fr", profile: "standard" })
     ).rejects.toMatchObject({ status: 402 })
   })
 

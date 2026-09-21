@@ -1,4 +1,5 @@
 import type {
+  InterviewDurationMinutes,
   InterviewRecruiterProfile,
   InterviewReportMetricKey,
   InterviewSessionStatus,
@@ -21,6 +22,16 @@ export const profileHints: Record<InterviewRecruiterProfile, string> = {
   passive: "Ton sobre, silences implicites et relances vagues.",
   technical: "Hard skills, architecture et mises en situation.",
   behavioral: "Questions STAR sur des situations vécues.",
+}
+
+/**
+ * Named by what the interview is, not just by its length: the duration is
+ * what decides how much ground the recruiter covers.
+ */
+export const durationLabels: Record<InterviewDurationMinutes, string> = {
+  10: "10 minutes — entretien de filtrage",
+  20: "20 minutes — entretien RH complet",
+  30: "30 minutes — entretien approfondi",
 }
 
 export const sessionStatusLabels: Record<InterviewSessionStatus, string> = {

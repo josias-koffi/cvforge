@@ -1,9 +1,12 @@
 "use client"
 
 import {
+  INTERVIEW_DEFAULT_DURATION_MINUTES,
+  INTERVIEW_DURATION_CHOICES,
   interviewRecruiterProfiles,
   supportedLocales,
   type DraftApplication,
+  type InterviewDurationMinutes,
   type InterviewRecruiterProfile,
   type Locale,
 } from "@cvforge/types"
@@ -32,6 +35,7 @@ import {
 import { creditCostLabel } from "@/lib/format"
 import { startSession } from "@/lib/interview/client"
 import {
+  durationLabels,
   languageLabels,
   profileHints,
   profileLabels,
@@ -71,6 +75,8 @@ export function InterviewSetupForm({
   const [profile, setProfile] =
     React.useState<InterviewRecruiterProfile>("standard")
   const [language, setLanguage] = React.useState<Locale>("fr")
+  const [durationMinutes, setDurationMinutes] =
+    React.useState<InterviewDurationMinutes>(INTERVIEW_DEFAULT_DURATION_MINUTES)
   const [error, setError] = React.useState<string | null>(null)
   const [pending, startTransition] = React.useTransition()
 
@@ -83,6 +89,7 @@ export function InterviewSetupForm({
         const { sessionId } = await startSession({
           applicationId:
             applicationId === FREE_PRACTICE ? undefined : applicationId,
+          durationMinutes,
           language,
           profile,
         })
@@ -168,6 +175,32 @@ export function InterviewSetupForm({
                   </button>
                 ))}
               </div>
+            </Field>
+
+            <Field>
+              <FieldLabel htmlFor="duration">Durée</FieldLabel>
+              <Select
+                onValueChange={(value) =>
+                  setDurationMinutes(Number(value) as InterviewDurationMinutes)
+                }
+                value={String(durationMinutes)}
+                name="duration"
+              >
+                <SelectTrigger id="duration">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {INTERVIEW_DURATION_CHOICES.map((choice) => (
+                    <SelectItem key={choice} value={String(choice)}>
+                      {durationLabels[choice]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FieldDescription>
+                Le recruteur répartit ses sujets sur ce temps : plus c&apos;est
+                long, plus il creuse. Rien ne vous coupe à l&apos;échéance.
+              </FieldDescription>
             </Field>
 
             <Field>

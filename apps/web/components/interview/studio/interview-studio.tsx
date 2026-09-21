@@ -9,6 +9,10 @@ import { MicOrb } from "@/components/interview/studio/mic-orb"
 import { StudioToolbar } from "@/components/interview/studio/studio-toolbar"
 import { TranscriptPanel } from "@/components/interview/studio/transcript-panel"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import {
+  elapsedSeconds,
+  resolveCountdown,
+} from "@/lib/interview/countdown"
 import { useAudioRecorder } from "@/hooks/interview/use-audio-recorder"
 import { useInterviewTurn } from "@/hooks/interview/use-interview-turn"
 import { useMicStream } from "@/hooks/interview/use-mic-stream"
@@ -44,7 +48,7 @@ export function InterviewStudio({
     ...initialStudioState,
     messages: toStudioMessages(session),
   })
-  const [elapsedSeconds, setElapsedSeconds] = React.useState(0)
+  const [nowMs, setNowMs] = React.useState(() => Date.now())
   const [finishing, setFinishing] = React.useState(false)
 
   const micRef = useMicStream({
@@ -103,14 +107,12 @@ export function InterviewStudio({
     void open()
   }, [open, state.phase])
 
-  // The timer runs from the moment the microphone is live.
+  // Ticks a wall clock rather than a counter, so the countdown is derived
+  // from the session's own start and a reload resumes instead of restarting.
   React.useEffect(() => {
     if (state.phase === "booting" || state.phase === "completed") return
 
-    const interval = setInterval(
-      () => setElapsedSeconds((seconds) => seconds + 1),
-      1000
-    )
+    const interval = setInterval(() => setNowMs(Date.now()), 1000)
 
     return () => clearInterval(interval)
   }, [state.phase])
@@ -132,12 +134,25 @@ export function InterviewStudio({
   }
 
   const hasAnswered = state.messages.some((message) => message.role === "user")
+  const countdown = resolveCountdown(
+    elapsedSeconds(session.startedAt, nowMs),
+    session.durationMinutes
+  )
 
   return (
     <div className="grid gap-6 @4xl/main:grid-cols-[280px_1fr]">
       <div className="flex flex-col items-center gap-4 rounded-lg border bg-card p-6">
         <MicOrb level={state.level} status={state.vadStatus} />
         <LatencyStrip firstTokenMs={state.firstTokenMs} />
+        {countdown.tone === "overtime" && state.phase !== "completed" ? (
+          // Nothing stops on its own: cutting a turn short would throw away
+          // the answer and the credit. The recruiter is already wrapping up.
+          <Alert>
+            <AlertDescription>
+              Le temps imparti est écoulé — terminez quand vous le souhaitez.
+            </AlertDescription>
+          </Alert>
+        ) : null}
         {state.phase === "error" ? (
           <Alert variant="destructive">
             <AlertDescription>{state.error}</AlertDescription>
@@ -148,7 +163,7 @@ export function InterviewStudio({
       <div className="flex min-h-[28rem] flex-col gap-4">
         <StudioToolbar
           canFinish={hasAnswered}
-          elapsedSeconds={elapsedSeconds}
+          countdown={countdown}
           finishing={finishing}
           muted={state.muted}
           onFinish={() => void finish()}
