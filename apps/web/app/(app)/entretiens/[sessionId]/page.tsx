@@ -73,7 +73,10 @@ export default async function InterviewSessionPage({
         <InterviewStudio
           onFinish={async () => {
             "use server"
-            await finishInterview(sessionId)
+            // Returned, not swallowed: a success redirects and never comes
+            // back, so anything that does reach the studio is a failure it
+            // has to show.
+            return finishInterview(sessionId)
           }}
           session={session}
         />

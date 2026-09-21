@@ -75,6 +75,8 @@ export type StudioEvent =
   | { type: "AI_FAILED"; message: string }
   | { type: "MUTE_TOGGLED" }
   | { type: "FINISHED" }
+  /** The analysis failed: the interview is not over after all. */
+  | { type: "FINISH_FAILED"; message: string }
 
 export const initialStudioState: StudioState = {
   phase: "booting",
@@ -115,8 +117,13 @@ export function studioReducer(
   state: StudioState,
   event: StudioEvent
 ): StudioState {
-  // Nothing but a fresh start pulls the studio out of a finished session.
-  if (state.phase === "completed" && event.type !== "MIC_READY") {
+  // Nothing but a fresh start — or a failed analysis — pulls the studio out
+  // of a finished session.
+  if (
+    state.phase === "completed" &&
+    event.type !== "MIC_READY" &&
+    event.type !== "FINISH_FAILED"
+  ) {
     return state
   }
 
@@ -293,6 +300,17 @@ export function studioReducer(
         vadStatus: "listening",
         level: 0,
         voiceLevel: 0,
+      }
+
+    case "FINISH_FAILED":
+      // Scoring failed, so the session was never closed server-side and the
+      // credit still stands. The microphone comes back rather than leaving
+      // the candidate on a dead page with no way out.
+      return {
+        ...state,
+        error: event.message,
+        phase: "listening",
+        vadStatus: "listening",
       }
 
     default:

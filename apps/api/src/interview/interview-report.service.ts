@@ -2,7 +2,7 @@ import type {
   InterviewReport,
   InterviewReportMetric,
 } from "@cvforge/types";
-import { Injectable } from "@nestjs/common";
+import { Injectable, ServiceUnavailableException } from "@nestjs/common";
 import { withOpenRouterHttpErrors } from "../ai/openrouter.exception";
 import type { OpenRouterService } from "../ai/openrouter.service";
 import type { StoredApplication } from "../applications/applications.types";
@@ -20,6 +20,15 @@ import type { StoredInterviewSession } from "./interview.types";
 const INTERVIEW_CHAT_PROVIDER = {
   require_parameters: true,
 } as const;
+
+/**
+ * The schema asks for a summary, three improvements and five scored metrics,
+ * each with its own written detail. 500 tokens did not fit them: the answer
+ * was cut mid-string and `JSON.parse` threw, so finishing an interview failed
+ * outright — seven times in one afternoon, always around 2 300 characters.
+ * The candidate had already paid for the session and could not get a report.
+ */
+const REPORT_MAX_TOKENS = 1200;
 
 const METRIC_KEYS = new Set([
   "clarity",
@@ -43,6 +52,31 @@ const SYSTEM_PROMPTS = {
     "Les details doivent rester concis, factuels et actionnables pour le candidat.",
   ].join(" "),
 };
+
+type ParsedReport = {
+  improvements?: unknown;
+  metrics?: InterviewReportMetric[];
+  overallScore?: unknown;
+  summary?: unknown;
+};
+
+/**
+ * A malformed answer is a failed call, not a crash.
+ *
+ * Raw `JSON.parse` surfaced as `SyntaxError: Unterminated string in JSON at
+ * position 2300` — a 500 with no bearing on what the candidate should do. The
+ * session stays unfinished either way, so the credit is not lost and they can
+ * try again; this only says so in words they can act on.
+ */
+function parseReport(raw: string): ParsedReport {
+  try {
+    return JSON.parse(raw) as ParsedReport;
+  } catch {
+    throw new ServiceUnavailableException(
+      "L'analyse de l'entretien n'a pas abouti. Reessayez dans un instant.",
+    );
+  }
+}
 
 function clampScore(value: unknown) {
   return typeof value === "number"
@@ -97,7 +131,7 @@ export class InterviewReportService {
           },
         ],
         {
-          maxTokens: 500,
+          maxTokens: REPORT_MAX_TOKENS,
           provider: INTERVIEW_CHAT_PROVIDER,
           responseFormat: REPORT_RESPONSE_FORMAT,
           temperature: 0.2,
@@ -105,12 +139,7 @@ export class InterviewReportService {
       ),
     );
 
-    const parsed = JSON.parse(raw) as {
-      improvements?: unknown;
-      metrics?: InterviewReportMetric[];
-      overallScore?: unknown;
-      summary?: unknown;
-    };
+    const parsed = parseReport(raw);
 
     return {
       createdAt,
