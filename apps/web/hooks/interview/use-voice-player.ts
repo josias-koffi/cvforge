@@ -5,7 +5,7 @@ import * as React from "react"
 import type { PlaybackStatsRecorder } from "@/lib/interview/playback-stats"
 import {
   VOICE_SAMPLE_RATE,
-  decodeVoiceFrame,
+  createVoiceFrameDecoder,
   frameDurationSeconds,
 } from "@/lib/interview/pcm"
 import { VAD_FFT_SIZE, computeLevel } from "@/lib/interview/vad"
@@ -40,6 +40,7 @@ export function useVoicePlayer({
 }) {
   const contextRef = React.useRef<AudioContext | null>(null)
   const analyserRef = React.useRef<AnalyserNode | null>(null)
+  const decoderRef = React.useRef(createVoiceFrameDecoder())
   const playheadRef = React.useRef(0)
   const idleTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null)
   const frameIdRef = React.useRef(0)
@@ -139,7 +140,9 @@ export function useVoicePlayer({
       // clicked to start the session, so this resolves immediately.
       void context.resume().catch(() => {})
 
-      const samples = decodeVoiceFrame(base64)
+      const samples = decoderRef.current.push(base64)
+      // A frame can complete no whole sample at all — it was a fragment, and
+      // the decoder is holding it until the rest arrives.
       if (samples.length === 0) return null
 
       const buffer = context.createBuffer(1, samples.length, VOICE_SAMPLE_RATE)
@@ -155,9 +158,10 @@ export function useVoicePlayer({
 
       // A playhead of zero is the start of a turn, not a frame that arrived
       // too late; only a playhead the speakers have already overtaken is.
+      const carried = decoderRef.current.pending()
       stats.record({
         leadMs: (startAt - context.currentTime) * 1000,
-        misaligned: base64.length % 4 !== 0,
+        misaligned: carried.chars > 0 || carried.bytes > 0,
         underrun: playheadRef.current > 0 && playheadRef.current < earliest,
       })
 
@@ -191,6 +195,9 @@ export function useVoicePlayer({
 
     stopMeter()
     playheadRef.current = 0
+    // Otherwise the half sample left over from an abandoned reply shifts the
+    // start of the next one by a byte, and it comes out as static.
+    decoderRef.current.reset()
     void contextRef.current?.close().catch(() => {})
     contextRef.current = null
     analyserRef.current = null
