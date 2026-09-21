@@ -33,6 +33,7 @@ describe("studioReducer", () => {
       [
         { type: "SPEECH_START" },
         { type: "SPEECH_END" },
+        { type: "AI_AUDIO", elapsedMs: 800 },
         { type: "TRANSCRIBED", text: "J'ai mené la refonte." },
         { type: "AI_DELTA", text: "Très bien. ", elapsedMs: 800 },
         { type: "AI_DELTA", text: "Quel rôle ?", elapsedMs: 1200 },
@@ -60,7 +61,6 @@ describe("studioReducer", () => {
     // and the candidate could not get a word in.
     const spoken = run(
       [
-        { type: "TRANSCRIBED", text: "ma réponse" },
         { type: "AI_DELTA", text: "Et ensuite ?", elapsedMs: 700 },
         { type: "AI_DONE" },
       ],
@@ -85,7 +85,6 @@ describe("studioReducer", () => {
   it("times the first token, not the last", () => {
     const state = run(
       [
-        { type: "TRANSCRIBED", text: "réponse" },
         { type: "AI_DELTA", text: "a", elapsedMs: 900 },
         { type: "AI_DELTA", text: "b", elapsedMs: 1500 },
       ],
@@ -95,18 +94,58 @@ describe("studioReducer", () => {
     expect(state.firstTokenMs).toBe(900)
   })
 
-  it("reopens the mic on a silent segment without advancing the conversation", () => {
-    const state = run(
+  it("records what the candidate said without touching the phase", () => {
+    // Transcription now runs beside the voice, so it can land mid-reply: the
+    // audio events own the phase, this only appends the message.
+    const speaking = run(
       [
         { type: "SPEECH_START" },
         { type: "SPEECH_END" },
-        { type: "TRANSCRIBED", text: "   " },
+        { type: "AI_AUDIO", elapsedMs: 900 },
+        { type: "TRANSCRIBED", text: "J'ai mené la refonte." },
       ],
       ready
     )
 
-    expect(state.phase).toBe("listening")
-    expect(state.messages).toEqual([])
+    expect(speaking.phase).toBe("speaking")
+    expect(speaking.messages.map((m) => m.content)).toEqual([
+      "J'ai mené la refonte.",
+    ])
+  })
+
+  it("ignores an empty transcription rather than adding a blank bubble", () => {
+    const state = studioReducer(ready, { type: "TRANSCRIBED", text: "   " })
+
+    expect(state).toBe(ready)
+  })
+
+  it("starts speaking on the first audio frame, and times it", () => {
+    const state = run(
+      [
+        { type: "SPEECH_START" },
+        { type: "SPEECH_END" },
+        { type: "AI_AUDIO", elapsedMs: 1100 },
+        { type: "AI_AUDIO", elapsedMs: 1400 },
+      ],
+      ready
+    )
+
+    expect(state.phase).toBe("speaking")
+    expect(state.vadStatus).toBe("processing")
+    // The first frame is what the candidate hears; later ones do not reset it.
+    expect(state.firstTokenMs).toBe(1100)
+  })
+
+  it("clears the previous reply when a new answer begins", () => {
+    const stale = { ...ready, streamingReply: "vieux texte", firstTokenMs: 900 }
+
+    const state = run(
+      [{ type: "SPEECH_START" }, { type: "SPEECH_END" }],
+      stale
+    )
+
+    expect(state.streamingReply).toBe("")
+    expect(state.firstTokenMs).toBeNull()
   })
 
   it("ignores speech while a segment is uploading or the recruiter is talking", () => {
