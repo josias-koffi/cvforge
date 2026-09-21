@@ -110,13 +110,18 @@ export function InterviewStudio({
 
   // Ticks a wall clock rather than a counter, so the countdown is derived
   // from the session's own start and a reload resumes instead of restarting.
+  //
+  // Deliberately mount-scoped. Keying this on the phase — to skip ticking
+  // while booting or finished — tore the interval down and rebuilt it on
+  // every transition, and an interview changes phase (listening, recording,
+  // processing, speaking) far more often than once a second. The timer never
+  // survived long enough to fire, `nowMs` stayed frozen at mount, and the
+  // countdown read the full duration from start to finish.
   React.useEffect(() => {
-    if (state.phase === "booting" || state.phase === "completed") return
-
     const interval = setInterval(() => setNowMs(Date.now()), 1000)
 
     return () => clearInterval(interval)
-  }, [state.phase])
+  }, [])
 
   // Errors are surfaced once, as a toast, rather than accumulating on screen.
   React.useEffect(() => {
