@@ -444,28 +444,56 @@ export interface InterviewProgressSummary {
   weaknesses: InterviewMetricTrend[];
 }
 
+/**
+ * An interview is billed by the minute because its cost is: one speech call and
+ * one transcription per answer, and a session fits roughly one answer per
+ * three-quarters of a minute whatever its length. A flat fee would have made a
+ * thirty-minute session cost what a ten-minute one does.
+ *
+ * Declared here rather than beside `INTERVIEW_DURATION_CHOICES` so that
+ * `AI_CREDIT_COSTS` below can read it: a `const` stays in its temporal dead
+ * zone until its own line runs, and the map would throw on import.
+ */
+export const CREDITS_PER_INTERVIEW_MINUTE = 1;
+
+/** What a session of that length costs, charged when it is created. */
+export function interviewSessionCost(minutes: InterviewDurationMinutes) {
+  return CREDITS_PER_INTERVIEW_MINUTE * minutes;
+}
+
 export const AI_CREDIT_COSTS: Record<AiCreditAction, number> = {
   [AI_CREDIT_ACTION_CV_IMPORT]: 2,
   [AI_CREDIT_ACTION_OFFER_ENRICHMENT]: 1,
   [AI_CREDIT_ACTION_CV_GENERATION]: 3,
   [AI_CREDIT_ACTION_LETTER_GENERATION]: 3,
-  // One flat fee per session, charged up front: the cost is the transcription
-  // and chat turns, and those are committed the moment the session runs.
-  [AI_CREDIT_ACTION_INTERVIEW_SESSION]: 2,
+  // The default duration's price, which is what every surface showing a single
+  // figure per action displays. A longer session costs `interviewSessionCost`.
+  [AI_CREDIT_ACTION_INTERVIEW_SESSION]: interviewSessionCost(
+    INTERVIEW_DEFAULT_DURATION_MINUTES,
+  ),
 };
 
-/** One application = offer analysis + tailored CV + cover letter. */
+/**
+ * One application = offer analysis + tailored CV + cover letter + a ten-minute
+ * mock interview and its scored report. The interview is inside the count
+ * because it is what the packs promise; someone who skips it gets more
+ * applications than advertised, never fewer.
+ */
 export const CREDITS_PER_APPLICATION =
   AI_CREDIT_COSTS[AI_CREDIT_ACTION_OFFER_ENRICHMENT] +
   AI_CREDIT_COSTS[AI_CREDIT_ACTION_CV_GENERATION] +
-  AI_CREDIT_COSTS[AI_CREDIT_ACTION_LETTER_GENERATION];
+  AI_CREDIT_COSTS[AI_CREDIT_ACTION_LETTER_GENERATION] +
+  AI_CREDIT_COSTS[AI_CREDIT_ACTION_INTERVIEW_SESSION];
 
 /** How many complete applications a credit amount pays for. */
 export function estimateApplications(credits: number) {
   return Math.max(0, Math.floor(credits / CREDITS_PER_APPLICATION));
 }
 
-/** Granted once on account creation: a CV import plus two complete applications. */
+/**
+ * Granted once on account creation: a CV import plus two complete applications,
+ * interviews included — the mock interview is the thing to try before paying.
+ */
 export const WELCOME_CREDITS =
   AI_CREDIT_COSTS[AI_CREDIT_ACTION_CV_IMPORT] + 2 * CREDITS_PER_APPLICATION;
 export const WELCOME_APPLICATIONS = estimateApplications(WELCOME_CREDITS);
@@ -482,6 +510,8 @@ export interface CreditLedgerEntry {
   metadata: {
     adminEmail?: string;
     applicationId?: string;
+    /** Interview sessions only: what the per-minute charge was computed from. */
+    durationMinutes?: number;
     offerId?: string;
     orderId?: string;
     packId?: string;

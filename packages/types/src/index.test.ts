@@ -4,9 +4,13 @@ import {
   NOTIFICATION_TYPE_APPLICATION_FOLLOW_UP,
   AI_CREDIT_COSTS,
   CREDITS_PER_APPLICATION,
+  CREDITS_PER_INTERVIEW_MINUTE,
+  INTERVIEW_DEFAULT_DURATION_MINUTES,
+  INTERVIEW_DURATION_CHOICES,
   WELCOME_APPLICATIONS,
   WELCOME_CREDITS,
   estimateApplications,
+  interviewSessionCost,
   APPLICATION_STATUS_DRAFT,
   APPLICATION_STATUS_OFFER_RECEIVED,
   APPLICATION_STATUS_REJECTED,
@@ -49,23 +53,42 @@ import {
 
 describe("types package", () => {
   it("should count complete applications from a credit amount", () => {
-    expect(CREDITS_PER_APPLICATION).toBe(7);
-    expect(estimateApplications(145)).toBe(20);
-    expect(estimateApplications(6)).toBe(0);
+    expect(CREDITS_PER_APPLICATION).toBe(17);
+    expect(estimateApplications(350)).toBe(20);
+    expect(estimateApplications(16)).toBe(0);
     expect(estimateApplications(-3)).toBe(0);
   });
 
   it("should offer a CV import plus two applications on sign-up", () => {
-    expect(WELCOME_CREDITS).toBe(16);
+    expect(WELCOME_CREDITS).toBe(36);
     expect(WELCOME_APPLICATIONS).toBe(2);
   });
 
-  it("should price an interview session without moving what an application costs", () => {
-    // An interview is not a step of a candidature, so it must stay out of
-    // CREDITS_PER_APPLICATION — and therefore out of the welcome grant.
-    expect(AI_CREDIT_COSTS.interview_session).toBe(2);
-    expect(CREDITS_PER_APPLICATION).toBe(7);
-    expect(WELCOME_CREDITS).toBe(16);
+  it("should count the mock interview inside a complete application", () => {
+    // The packs promise applications with their interview and report, so the
+    // interview belongs in CREDITS_PER_APPLICATION — and in the welcome grant.
+    expect(AI_CREDIT_COSTS.interview_session).toBe(10);
+    expect(CREDITS_PER_APPLICATION).toBe(17);
+    expect(WELCOME_CREDITS).toBe(36);
+  });
+
+  it("should price an interview by the minute", () => {
+    expect(CREDITS_PER_INTERVIEW_MINUTE).toBe(1);
+    expect(interviewSessionCost(10)).toBe(10);
+    expect(interviewSessionCost(20)).toBe(20);
+    expect(interviewSessionCost(30)).toBe(30);
+  });
+
+  it("should keep the flat interview cost in step with the per-minute rate", () => {
+    // Two figures for one price drift apart silently; this is the guard.
+    expect(AI_CREDIT_COSTS.interview_session).toBe(
+      interviewSessionCost(INTERVIEW_DEFAULT_DURATION_MINUTES),
+    );
+    expect(
+      INTERVIEW_DURATION_CHOICES.every(
+        (minutes) => interviewSessionCost(minutes) === minutes,
+      ),
+    ).toBe(true);
   });
 
   it("should allow the supported locales", () => {
