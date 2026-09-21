@@ -65,6 +65,12 @@ export function InterviewStudio({
     micRef,
     muted: state.muted,
     onLevel: (level) => dispatch({ level, type: "LEVEL" }),
+    // Too short to be an answer: the floor goes straight back to the
+    // candidate, with nothing sent and no turn spent.
+    onSpeechAbort: () => {
+      dispatch({ type: "SPEECH_ABORTED" })
+      recorder.cancel()
+    },
     onSpeechEnd: () => {
       dispatch({ type: "SPEECH_END" })
       recorder.stop()
@@ -75,6 +81,13 @@ export function InterviewStudio({
     },
     status: state.vadStatus,
   })
+
+  // Muting mid-sentence drops the half-spoken answer. Without this the
+  // recorder stayed alive and the microphone never worked again.
+  const cancelRecording = recorder.cancel
+  React.useEffect(() => {
+    if (state.muted) cancelRecording()
+  }, [cancelRecording, state.muted])
 
   // The recruiter opens the interview, not the candidate. Held until the
   // microphone is live so that the greeting cannot play while the VAD is
