@@ -280,6 +280,22 @@ describe("studioReducer", () => {
     )
   })
 
+  it("takes the interview's start from the server, once", () => {
+    // The countdown is derived from this. It arrives on the first turn, not
+    // at session creation, and a later turn repeating it must not restart it.
+    const started = run(
+      [{ type: "SESSION_STARTED", startedAt: "2026-04-24T13:00:00.000Z" }],
+      ready
+    )
+    expect(started.startedAt).toBe("2026-04-24T13:00:00.000Z")
+
+    const later = studioReducer(started, {
+      startedAt: "2026-04-24T13:05:00.000Z",
+      type: "SESSION_STARTED",
+    })
+    expect(later).toBe(started)
+  })
+
   it("drops an empty reply rather than adding a blank bubble", () => {
     const state = run(
       [

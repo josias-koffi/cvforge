@@ -47,6 +47,7 @@ export function InterviewStudio({
   const [state, dispatch] = React.useReducer(studioReducer, {
     ...initialStudioState,
     messages: toStudioMessages(session),
+    startedAt: session.startedAt,
   })
   const [nowMs, setNowMs] = React.useState(() => Date.now())
   const [finishing, setFinishing] = React.useState(false)
@@ -135,7 +136,9 @@ export function InterviewStudio({
 
   const hasAnswered = state.messages.some((message) => message.role === "user")
   const countdown = resolveCountdown(
-    elapsedSeconds(session.startedAt, nowMs),
+    // From the reducer, not the prop: the prop was fetched before the first
+    // turn existed, and the server stamps the start only when someone speaks.
+    elapsedSeconds(state.startedAt, nowMs),
     session.durationMinutes
   )
 

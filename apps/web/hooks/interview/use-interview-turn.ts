@@ -91,6 +91,15 @@ export function useInterviewTurn({
                   throw new Error(frame.message)
 
                 case "done":
+                  // The interview's start is stamped server-side on the first
+                  // spoken turn, so the summary the studio opened with still
+                  // has it null. Without this the countdown never moves.
+                  if (frame.startedAt) {
+                    dispatch({
+                      startedAt: frame.startedAt,
+                      type: "SESSION_STARTED",
+                    })
+                  }
                   break
               }
             }

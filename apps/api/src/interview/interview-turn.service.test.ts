@@ -115,7 +115,7 @@ describe("InterviewTurnService", () => {
       type: "candidate",
       text: "J'ai mené la refonte.",
     });
-    expect(events.at(-1)).toEqual({ type: "done" });
+    expect(events.at(-1)).toMatchObject({ type: "done" });
 
     const session = saved.at(-1)!;
     expect(session.messages.map((m) => [m.role, m.content])).toEqual([
@@ -175,7 +175,7 @@ describe("InterviewTurnService", () => {
 
     const events = await collect(service);
 
-    expect(events.at(-1)).toEqual({ type: "done" });
+    expect(events.at(-1)).toMatchObject({ type: "done" });
     expect(events).toContainEqual({ type: "candidate", text: "" });
     // The interviewer still spoke, so its reply is kept.
     expect(saved.at(-1)?.messages.map((m) => m.role)).toEqual(["assistant"]);
@@ -237,9 +237,27 @@ describe("InterviewTurnService", () => {
       transcriberSaying("x"),
     );
 
-    await expect(collect(service)).resolves.toEqual([{ type: "done" }]);
+    await expect(collect(service)).resolves.toMatchObject([{ type: "done" }]);
     expect(voice.streamTurn).not.toHaveBeenCalled();
     expect(saved).toHaveLength(0);
+  });
+
+  it("tells the studio when the interview started", async () => {
+    // The studio was opened with a summary whose startedAt was still null —
+    // the server stamps it here, on the first spoken turn. Without it coming
+    // back, the countdown sat at the full duration for the whole interview.
+    const { saved, store } = createStore();
+    const service = new InterviewTurnService(
+      store,
+      voiceYielding([{ type: "transcript", text: "Et ensuite ?" }]),
+      transcriberSaying("Bien sur."),
+    );
+
+    const events = await collect(service);
+    const done = events.at(-1) as { startedAt?: string | null };
+
+    expect(done.startedAt).toBe(saved.at(-1)!.startedAt);
+    expect(done.startedAt).toBeTruthy();
   });
 
   it("refuses a session belonging to somebody else", async () => {
@@ -309,7 +327,7 @@ describe("InterviewTurnService.streamOpening", () => {
     const events = await collectOpening(service);
 
     expect(events).toContainEqual({ type: "audio", data: "QUJD" });
-    expect(events.at(-1)).toEqual({ type: "done" });
+    expect(events.at(-1)).toMatchObject({ type: "done" });
     expect(saved.at(-1)!.messages.map((m) => [m.role, m.content])).toEqual([
       ["assistant", "Bonjour, parlez-moi de vous."],
     ]);
@@ -358,7 +376,7 @@ describe("InterviewTurnService.streamOpening", () => {
     const voice = voiceYielding([{ type: "transcript", text: "Re-bonjour." }]);
     const service = new InterviewTurnService(store, voice, transcriberSaying(""));
 
-    expect(await collectOpening(service)).toEqual([{ type: "done" }]);
+    expect(await collectOpening(service)).toMatchObject([{ type: "done" }]);
     expect(voice.streamTurn).not.toHaveBeenCalled();
     expect(saved).toHaveLength(0);
   });
