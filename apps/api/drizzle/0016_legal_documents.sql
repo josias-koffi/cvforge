@@ -161,7 +161,7 @@ Le détail des packs et de leur prix figure sur la page des tarifs et dans l'app
 
 ## Prix
 
-Les prix sont affichés en euros, toutes taxes comprises, TVA française de 20 % incluse.
+Les prix sont affichés en euros. TVA non applicable, article 293 B du code général des impôts.
 
 Le prix et le nombre de crédits sont figés au moment de l'achat : une modification ultérieure d'un pack ne change rien à une commande déjà passée.
 
@@ -216,7 +216,7 @@ The packs and their prices are listed on the pricing page and in the application
 
 ## Prices
 
-Prices are shown in euros, all taxes included, with French VAT at 20% included.
+Prices are shown in euros. VAT is not applicable, under Article 293 B of the French General Tax Code.
 
 The price and the number of credits are frozen at the time of purchase: editing a pack later changes nothing for an order already placed.
 
@@ -270,7 +270,6 @@ These terms are governed by French law.$en$),
 - Capital social : [CAPITAL]
 - Siège social : [ADRESSE]
 - Immatriculation : [RCS OU SIRET]
-- Numéro de TVA intracommunautaire : [NUMÉRO DE TVA]
 - Courriel : [EMAIL DE CONTACT]
 
 CVSpark est le nom commercial sous lequel le service est exploité.
@@ -306,7 +305,6 @@ Tout contenu manifestement illicite peut être signalé à [EMAIL DE CONTACT].$f
 - Share capital: [SHARE CAPITAL]
 - Registered office: [ADDRESS]
 - Registration: [COMPANY NUMBER]
-- VAT number: [VAT NUMBER]
 - Email: [CONTACT EMAIL]
 
 CVSpark is the trading name under which the service is operated.

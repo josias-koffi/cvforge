@@ -576,7 +576,7 @@ export const creditOfferStatuses = [
 ] as const;
 export type CreditOfferStatus = (typeof creditOfferStatuses)[number];
 
-/** Vision §11: no pack under 5 EUR (VAT included). */
+/** Vision §11: no pack under 5 EUR. */
 export const CREDIT_OFFER_MIN_PRICE_CENTS = 500;
 
 export interface LocalizedText {

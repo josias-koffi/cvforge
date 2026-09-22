@@ -16,7 +16,7 @@ const offers: PublicCreditOffer[] = [
     credits: 90,
     currency: "eur",
     description: { en: "Get going", fr: "Pour démarrer" },
-    features: { en: ["VAT included"], fr: ["TVA incluse"] },
+    features: { en: ["One-time payment, no subscription"], fr: ["Paiement unique, sans abonnement"] },
     id: "o-essentiel",
     isFeatured: false,
     name: { en: "Essential", fr: "Essentiel" },
@@ -58,7 +58,7 @@ describe("HomePage", () => {
       locale === "fr" ? "20 candidatures" : "20 applications"
     )
     expect(html).toContain(dict.pricing.popular)
-    expect(html).toContain(locale === "fr" ? "TVA incluse" : "VAT included")
+    expect(html).toContain(locale === "fr" ? "Paiement unique, sans abonnement" : "One-time payment, no subscription")
     expect(html).toContain(escapeHtml(dict.faq.items[0].question))
     expect(html).toContain('href="/login"')
   })

@@ -11,7 +11,7 @@ const offer: PublicCreditOffer = {
   credits: 350,
   currency: "eur",
   description: { en: "", fr: "Pour une recherche active." },
-  features: { en: [], fr: ["TVA incluse"] },
+  features: { en: [], fr: ["Paiement unique, sans abonnement"] },
   id: "o-active",
   isFeatured: true,
   name: { en: "Active search", fr: "Recherche active" },
@@ -73,7 +73,7 @@ describe("toPackSummaries", () => {
     expect(fr).toMatchObject({
       applications: 20,
       featured: true,
-      features: ["TVA incluse"],
+      features: ["Paiement unique, sans abonnement"],
       label: "Recherche active",
     })
     expect(fr.price).toMatch(/14,90\s€/)

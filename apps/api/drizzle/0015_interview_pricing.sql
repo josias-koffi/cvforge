@@ -11,20 +11,20 @@
 UPDATE "credit_offers"
 SET
   "credits" = 90,
-  "features" = '{"fr": ["5 candidatures complètes (analyse, CV, lettre, entretien simulé et rapport)", "Crédits sans date d''expiration", "Paiement unique, sans abonnement", "TVA incluse"], "en": ["5 complete applications (analysis, CV, letter, mock interview and report)", "Credits never expire", "One-time payment, no subscription", "VAT included"]}',
+  "features" = '{"fr": ["5 candidatures complètes (analyse, CV, lettre, entretien simulé et rapport)", "Crédits sans date d''expiration", "Paiement unique, sans abonnement"], "en": ["5 complete applications (analysis, CV, letter, mock interview and report)", "Credits never expire", "One-time payment, no subscription"]}',
   "updated_at" = now()
 WHERE "slug" = 'essentiel';
 --> statement-breakpoint
 UPDATE "credit_offers"
 SET
   "credits" = 350,
-  "features" = '{"fr": ["20 candidatures complètes (analyse, CV, lettre, entretien simulé et rapport)", "Crédits sans date d''expiration", "Paiement unique, sans abonnement", "TVA incluse"], "en": ["20 complete applications (analysis, CV, letter, mock interview and report)", "Credits never expire", "One-time payment, no subscription", "VAT included"]}',
+  "features" = '{"fr": ["20 candidatures complètes (analyse, CV, lettre, entretien simulé et rapport)", "Crédits sans date d''expiration", "Paiement unique, sans abonnement"], "en": ["20 complete applications (analysis, CV, letter, mock interview and report)", "Credits never expire", "One-time payment, no subscription"]}',
   "updated_at" = now()
 WHERE "slug" = 'recherche-active';
 --> statement-breakpoint
 UPDATE "credit_offers"
 SET
   "credits" = 870,
-  "features" = '{"fr": ["50 candidatures complètes (analyse, CV, lettre, entretien simulé et rapport)", "Crédits sans date d''expiration", "Paiement unique, sans abonnement", "TVA incluse"], "en": ["50 complete applications (analysis, CV, letter, mock interview and report)", "Credits never expire", "One-time payment, no subscription", "VAT included"]}',
+  "features" = '{"fr": ["50 candidatures complètes (analyse, CV, lettre, entretien simulé et rapport)", "Crédits sans date d''expiration", "Paiement unique, sans abonnement"], "en": ["50 complete applications (analysis, CV, letter, mock interview and report)", "Credits never expire", "One-time payment, no subscription"]}',
   "updated_at" = now()
 WHERE "slug" = 'intensif';

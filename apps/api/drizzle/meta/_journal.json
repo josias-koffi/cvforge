@@ -120,6 +120,13 @@
       "when": 1790300000000,
       "tag": "0016_legal_documents",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1790400000000,
+      "tag": "0017_remove_vat_mentions",
+      "breakpoints": true
     }
   ]
 }
