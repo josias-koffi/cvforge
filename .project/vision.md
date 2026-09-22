@@ -1010,15 +1010,20 @@ Le parcours complet d'une candidature (enrichissement entreprise + CV + LM + int
 
 ### 11.3 Structure des frais incompressibles
 
-Pour un pack vendu **€9,99 TTC** :
+Pour un pack vendu **€9,99** :
 
 | Frais                      | Calcul               | Montant            |
 | -------------------------- | -------------------- | ------------------ |
-| TVA 20%                    | €9,99 / 1,2 × 0,2    | **−€1,67**         |
 | Stripe (1,4% + €0,25)      | €9,99 × 1,4% + €0,25 | **−€0,39**         |
-| **Revenu net**             |                      | **€7,93**          |
+| **Revenu net**             |                      | **€9,60**          |
 | Coût API (30 candidatures) | ~€1,20               | **−€1,20**         |
-| **Marge nette**            |                      | **€6,73 (~84,8%)** |
+| **Marge nette**            |                      | **€8,40 (~87,5%)** |
+
+> **TVA** : l'éditeur relève de la franchise en base (article 293 B du code
+> général des impôts). Aucune TVA n'est collectée ni reversée : le prix affiché
+> est intégralement encaissé, sous réserve des frais Stripe. Le jour où le
+> seuil de franchise est franchi, cette section et les mentions de prix du
+> produit sont à reprendre.
 
 > **Note Stripe** : En dessous de €5, le ticket fixe de €0,25 par transaction devient proportionnellement très lourd (26% à €1). Le minimum absolu de ticket est **€5**. €9,99 est le plancher recommandé.
 
@@ -1035,19 +1040,19 @@ Pour un pack vendu **€9,99 TTC** :
 
 ### 11.5 Packs disponibles
 
-| Pack        | Prix TTC   | Crédits       | Candidatures complètes | Revenu net | Coût API | Marge    |
+| Pack        | Prix       | Crédits       | Candidatures complètes | Revenu net | Coût API | Marge    |
 | ----------- | ---------- | ------------- | ---------------------- | ---------- | -------- | -------- |
-| **Starter** | **€9,99**  | 550 crédits   | ~32 candidatures       | €7,93      | ~€1,28   | **~83%** |
-| **Pro**     | **€19,99** | 1 400 crédits | ~82 candidatures       | €15,77     | ~€3,28   | **~79%** |
+| **Starter** | **€9,99**  | 550 crédits   | ~32 candidatures       | €9,60      | ~€1,28   | **~87%** |
+| **Pro**     | **€19,99** | 1 400 crédits | ~82 candidatures       | €19,46     | ~€3,28   | **~83%** |
 
-> Le pack **Starter à €9,99** reste le produit d'entrée recommandé. La marge de ~83% après Stripe, TVA et coûts API dépasse largement l'objectif de 20%. L'intégration de Voxtral TTS a multiplié le coût API par ~4, mais reste négligeable face au prix de vente.
+> Le pack **Starter à €9,99** reste le produit d'entrée recommandé. La marge de ~87% après Stripe et coûts API dépasse largement l'objectif de 20%. L'intégration de Voxtral TTS a multiplié le coût API par ~4, mais reste négligeable face au prix de vente.
 
 ### 11.6 Paiement
 
 - Provider : **Stripe**
 - Paiement one-shot (pas d'abonnement récurrent)
 - Webhooks Stripe pour crédit immédiat après paiement confirmé
-- Devise : EUR (TVA 20% France incluse dans le prix affiché)
+- Devise : EUR (prix affiché = prix encaissé, TVA non applicable — article 293 B du CGI)
 
 ### 11.7 Historique & transparence
 
