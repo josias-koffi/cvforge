@@ -54,11 +54,18 @@ const nextConfig: NextConfig = {
     return [
       { source: "/fr/story", destination: "/fr/histoire", permanent: true },
       { source: "/en/histoire", destination: "/en/story", permanent: true },
+      // Same arrangement for the ATS check: the route folder carries the
+      // English slug, the French address is rewritten onto it.
+      { source: "/fr/ats-check", destination: "/fr/analyse-ats", permanent: true },
+      { source: "/en/analyse-ats", destination: "/en/ats-check", permanent: true },
       ...legalRedirects(),
     ]
   },
   async rewrites() {
-    return [{ source: "/fr/histoire", destination: "/fr/story" }]
+    return [
+      { source: "/fr/histoire", destination: "/fr/story" },
+      { source: "/fr/analyse-ats", destination: "/fr/ats-check" },
+    ]
   },
 }
 

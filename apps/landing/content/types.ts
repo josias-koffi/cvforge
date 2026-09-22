@@ -30,6 +30,8 @@ export interface LandingDictionary {
     pricing: string
     faq: string
     interview: string
+    /** The free ATS check: the top of the acquisition funnel. */
+    ats: string
     story: string
     login: string
     start: string
@@ -128,6 +130,74 @@ export interface LandingDictionary {
     /** Prefix of the publication date, e.g. "Dernière mise à jour le". */
     updated: string
     links: Record<LegalDocumentSlug, string>
+  }
+  /**
+   * The free ATS check. The engine returns codes, never sentences — every word
+   * a visitor reads is written here, in both languages.
+   */
+  ats: {
+    metaTitle: string
+    metaDescription: string
+    eyebrow: string
+    title: string
+    subtitle: string
+    /** Said before the upload, because it is the reason to trust the page. */
+    privacyNote: string
+    upload: {
+      label: string
+      hint: string
+      button: string
+      change: string
+      analyse: string
+      analysing: string
+      /** Client-side refusals, before anything is sent. */
+      tooLarge: string
+      wrongType: string
+    }
+    offer: {
+      label: string
+      hint: string
+      placeholder: string
+      toggle: string
+    }
+    result: {
+      scoreLabel: string
+      outOf: string
+      bands: Record<"weak" | "fair" | "good" | "excellent", string>
+      dimensionsScored: string
+      /** Shown when the file had no text layer: the headline finding. */
+      partialTitle: string
+      partialBody: string
+      lockedTitle: string
+      /** Used when nothing is left to reveal, so the hook is not "0 points". */
+      lockedTitleNone: string
+      lockedBody: string
+      again: string
+    }
+    unlock: {
+      title: string
+      body: string
+      emailLabel: string
+      emailPlaceholder: string
+      consent: string
+      submit: string
+      submitting: string
+      success: string
+      /** Named so the visitor knows the link is how they get back in. */
+      successBody: string
+    }
+    /** Wording for every finding code the engine can emit. */
+    findings: Record<string, string>
+    /** Wording for every dimension key, used once the report is unlocked. */
+    dimensions: Record<string, string>
+    errors: {
+      generic: string
+      tooManyRequests: string
+      unavailable: string
+      expired: string
+      network: string
+    }
+    cta: string
   }
   story: {
     metaTitle: string

@@ -6,6 +6,7 @@ import { MobileNav, type NavLink } from "@/components/mobile-nav"
 import { ThemeToggle } from "@/components/theme"
 import { Button } from "@/components/ui/button"
 import type { LandingDictionary } from "@/content/types"
+import { atsPath } from "@/lib/ats"
 import { homePath, storyPath, type Locale } from "@/lib/i18n"
 import { LOGIN_PATH } from "@/lib/links"
 
@@ -19,6 +20,7 @@ export function buildNavLinks(
     { href: homePath(locale, "interview"), label: nav.interview },
     { href: homePath(locale, "pricing"), label: nav.pricing },
     { href: homePath(locale, "faq"), label: nav.faq },
+    { href: atsPath(locale), label: nav.ats },
     { href: storyPath(locale), label: nav.story },
   ]
 }

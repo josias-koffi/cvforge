@@ -20,13 +20,35 @@ export function storyPath(locale: Locale) {
   return `/${locale}/${storySlugs[locale]}`
 }
 
-/** Maps a landing path to its equivalent in another locale. */
+/** Localised slug of the free ATS check; FR is rewritten to the shared route. */
+export const atsSlugs: Record<Locale, string> = {
+  fr: "analyse-ats",
+  en: "ats-check",
+}
+
+/**
+ * Maps a landing path to its equivalent in another locale.
+ *
+ * Every page with a localised slug has to be listed here: without it the
+ * language switcher keeps the current language's slug and lands on a 404.
+ */
 export function localizedPath(pathname: string, target: Locale) {
   const [, , ...rest] = pathname.split("/")
-  const isStory = Object.values(storySlugs).includes(rest[0] ?? "")
-  const tail = isStory ? [storySlugs[target], ...rest.slice(1)] : rest
+  const head = rest[0] ?? ""
+  const translated = translateSlug(head, target)
+  const tail = translated ? [translated, ...rest.slice(1)] : rest
 
   return ["", target, ...tail].join("/").replace(/\/$/, "")
+}
+
+function translateSlug(segment: string, target: Locale) {
+  for (const slugs of [storySlugs, atsSlugs]) {
+    if (Object.values(slugs).includes(segment)) {
+      return slugs[target]
+    }
+  }
+
+  return null
 }
 
 /**

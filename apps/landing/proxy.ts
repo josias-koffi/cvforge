@@ -20,6 +20,13 @@ export function proxy(request: NextRequest) {
   return NextResponse.redirect(url)
 }
 
+/**
+ * `api` is excluded alongside `_next` and `login`: route handlers have no
+ * locale, and prefixing one turns the browser's POST into a redirect to
+ * `/en/api/…`, which does not exist. That 404 broke the whole ATS funnel while
+ * every unit test still passed — they call the handler directly, never through
+ * this proxy.
+ */
 export const config = {
-  matcher: ["/((?!_next|login|.*\\.[a-z0-9]+$).*)"],
+  matcher: ["/((?!_next|api|login|.*\\.[a-z0-9]+$).*)"],
 }
