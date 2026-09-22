@@ -36,7 +36,11 @@ export default async function CvPage(props: PageProps<"/candidatures/[id]/cv">) 
       {cv?.cvContent ? (
         <CvEditor
           key={latestAiVersionId(cv.versions)}
-          offerId={id} cvContent={cv.cvContent} versions={cv.versions} />
+          atsScore={application.atsScore}
+          offerId={id}
+          cvContent={cv.cvContent}
+          versions={cv.versions}
+        />
       ) : (
         <MissingDocument kind="cv" offerId={id} />
       )}

@@ -5,6 +5,9 @@ import type { DocumentVersionSource } from "@cvforge/types"
 import { DownloadIcon, HistoryIcon, SaveIcon } from "lucide-react"
 
 import { DocumentPreview } from "@/components/documents/document-preview"
+import type { AtsScoreSummary } from "@cvforge/types"
+
+import { AtsScoreBadge } from "@/components/applications/ats-score-badge"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -39,6 +42,8 @@ type EditorLayoutProps<T> = {
   onSave: () => void
   previewHtml: string
   saving: boolean
+  /** The ATS score of the last saved version; absent on letters and unscored CVs. */
+  score?: AtsScoreSummary | null
   toolbar?: React.ReactNode
   versions: VersionEntry<T>[]
 }
@@ -52,6 +57,7 @@ export function EditorLayout<T>({
   onSave,
   previewHtml,
   saving,
+  score,
   toolbar,
   versions,
 }: EditorLayoutProps<T>) {
@@ -68,6 +74,9 @@ export function EditorLayout<T>({
         <span className="text-sm text-muted-foreground">
           {dirty ? "Modifications non enregistrées" : "À jour"}
         </span>
+        {/* Describes the last saved version, so it is dimmed and says so while
+            edits are pending rather than looking like it scores the screen. */}
+        <AtsScoreBadge score={score} stale={dirty} />
         <div className="ml-auto flex flex-wrap gap-2">
           {toolbar}
           {versions.length > 0 ? (

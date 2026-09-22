@@ -1,14 +1,16 @@
-import { and, count, eq, gte, sql, sum } from "drizzle-orm";
+import { and, count, eq, gte, isNotNull, sql, sum } from "drizzle-orm";
 import { union } from "drizzle-orm/pg-core";
 import type { Database } from "../database/database.types";
 import {
+  applicationCvVersions,
   applications,
+  atsScans,
   authAccounts,
   creditLedgerEntries,
   creditOrders,
   interviewSessions,
 } from "../database/schema";
-import type { MetricsStore, ProductCounters } from "./metrics.types";
+import type { AtsCounters, MetricsStore, ProductCounters } from "./metrics.types";
 
 const MS_PER_DAY = 86_400_000;
 
@@ -108,6 +110,52 @@ export class PgMetricsStore implements MetricsStore {
       paidOrderCount: Number(revenue[0]?.paidOrders ?? 0),
       totalAdminCount: Number(accounts[0]?.admins ?? 0),
       totalUserCount: Number(accounts[0]?.total ?? 0),
+    };
+  }
+
+  /**
+   * The ATS funnel and the score averages.
+   *
+   * Averages are grouped by `ats_engine_version` because the scale is
+   * versioned: pooling 1.0.0 and 1.1.0 would measure the rescale rather than
+   * the CVs. Unscored versions are excluded by the `is not null`, so a CV
+   * generated before the feature never counts as a zero.
+   */
+  async readAtsCounters(): Promise<AtsCounters> {
+    const [scoresByEngine, [scanTotals], [converted]] = await Promise.all([
+      this.db
+        .select({
+          averageScore: sql<string>`avg(${applicationCvVersions.atsScore})`,
+          engineVersion: sql<string>`coalesce(${applicationCvVersions.atsEngineVersion}, 'unknown')`,
+          scoredCvCount: count(),
+        })
+        .from(applicationCvVersions)
+        .where(isNotNull(applicationCvVersions.atsScore))
+        .groupBy(applicationCvVersions.atsEngineVersion),
+      this.db
+        .select({
+          publicScanCount: count(),
+          unlockedScanCount: sql<string>`count(${atsScans.unlockedAt})`,
+        })
+        .from(atsScans)
+        .where(eq(atsScans.source, "public")),
+      // A lead counts as converted once its address has an account — the join
+      // is made at read time, so neither side owns the other.
+      this.db
+        .select({ convertedLeadCount: sql<string>`count(distinct ${atsScans.email})` })
+        .from(atsScans)
+        .innerJoin(authAccounts, eq(authAccounts.email, atsScans.email)),
+    ]);
+
+    return {
+      convertedLeadCount: toNumber(converted?.convertedLeadCount ?? 0),
+      publicScanCount: toNumber(scanTotals?.publicScanCount ?? 0),
+      scoresByEngine: scoresByEngine.map((row) => ({
+        averageScore: Math.round(toNumber(row.averageScore)),
+        engineVersion: row.engineVersion,
+        scoredCvCount: toNumber(row.scoredCvCount),
+      })),
+      unlockedScanCount: toNumber(scanTotals?.unlockedScanCount ?? 0),
     };
   }
 }

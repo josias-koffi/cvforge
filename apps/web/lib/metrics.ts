@@ -10,6 +10,23 @@ export type AdminMetrics = {
   interviews: { completedCount: number; totalCount: number }
   users: { activeCount: number; adminCount: number; totalCount: number }
   applications: { totalCount: number }
+  /**
+   * Averages are per engine version, never pooled: the ATS scale is versioned
+   * (ADR-021), so a mean across two of them would measure the rescale.
+   * The rates are null — not 0 — when there is nothing to divide by.
+   */
+  ats: {
+    scoresByEngine: {
+      engineVersion: string
+      scoredCvCount: number
+      averageScore: number
+    }[]
+    publicScanCount: number
+    unlockedScanCount: number
+    convertedLeadCount: number
+    unlockRate: number | null
+    conversionRate: number | null
+  }
   credits: { consumed: number; granted: number; sold: number }
   revenue: { currency: "eur"; grossCents: number; paidOrderCount: number }
   /** Null when OpenRouter supervision is off or the balance is unreadable. */

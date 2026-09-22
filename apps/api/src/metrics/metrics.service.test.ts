@@ -25,12 +25,21 @@ const COUNTERS: ProductCounters = {
   totalUserCount: 9,
 };
 
+const ATS_COUNTERS = {
+  convertedLeadCount: 0,
+  publicScanCount: 0,
+  scoresByEngine: [],
+  unlockedScanCount: 0,
+};
+
 function createService({
+  ats = ATS_COUNTERS,
   counters = COUNTERS,
   isEnabled = true,
   totalUsage = 10 as number | null,
 } = {}) {
   const store: MetricsStore = {
+    readAtsCounters: vi.fn().mockResolvedValue(ats),
     readProductCounters: vi.fn().mockResolvedValue(counters),
   };
   const balanceService = {

@@ -14,8 +14,9 @@ export class MetricsService {
   ) {}
 
   async readAdminMetrics(): Promise<AdminMetrics> {
-    const [counters, balance] = await Promise.all([
+    const [counters, ats, balance] = await Promise.all([
       this.store.readProductCounters(this.config.activeWindowDays),
+      this.store.readAtsCounters(),
       this.balanceService.isEnabled
         ? this.balanceService.getBalance()
         : Promise.resolve(null),
@@ -36,6 +37,13 @@ export class MetricsService {
       activeWindowDays: this.config.activeWindowDays,
       apiCost,
       applications: { totalCount: counters.applicationCount },
+      ats: {
+        ...ats,
+        // Null rather than 0 on an empty funnel: "no scans yet" and "nobody
+        // converted" are different facts, and a 0 % reads as a failure.
+        conversionRate: ratio(ats.convertedLeadCount, ats.unlockedScanCount),
+        unlockRate: ratio(ats.unlockedScanCount, ats.publicScanCount),
+      },
       credits: {
         consumed: counters.creditsConsumed,
         granted: counters.creditsGranted,
@@ -77,4 +85,9 @@ function buildMargin(grossCents: number, costCents: number) {
     netEurCents,
     ratio: grossCents > 0 ? netEurCents / grossCents : null,
   };
+}
+
+/** A percentage, or null when there is nothing to divide by. */
+function ratio(part: number, whole: number): number | null {
+  return whole > 0 ? Math.round((part / whole) * 100) : null;
 }

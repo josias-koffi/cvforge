@@ -43,6 +43,14 @@ function createController({
 const METRICS = {
   activeWindowDays: 30,
   apiCost: null,
+  ats: {
+    conversionRate: null,
+    convertedLeadCount: 0,
+    publicScanCount: 0,
+    scoresByEngine: [],
+    unlockRate: null,
+    unlockedScanCount: 0,
+  },
   applications: { totalCount: 3 },
   credits: { consumed: 9, granted: 0, sold: 550 },
   documents: {

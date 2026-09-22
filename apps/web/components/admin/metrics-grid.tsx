@@ -19,7 +19,8 @@ export function MetricsGrid({
   balance: OpenRouterBalanceResponse
   metrics: AdminMetrics
 }) {
-  const { apiCost, credits, documents, interviews, margin, revenue, users } = metrics
+  const { apiCost, ats, credits, documents, interviews, margin, revenue, users } =
+    metrics
 
   return (
     <div className="grid gap-4 px-4 lg:px-6 @3xl/main:grid-cols-2 @6xl/main:grid-cols-3">
@@ -32,6 +33,40 @@ export function MetricsGrid({
           { label: "CV importés", value: countOf(documents.cvImportCount) },
           { label: "Offres analysées", value: countOf(documents.offerEnrichmentCount) },
         ]}
+      />
+      <MetricCard
+        label="Analyses ATS publiques"
+        value={countOf(ats.publicScanCount)}
+        breakdown={[
+          {
+            label: "Rapports débloqués",
+            // A rate on an empty funnel would read as a failure; there is
+            // simply nothing to divide yet.
+            value: `${countOf(ats.unlockedScanCount)}${
+              ats.unlockRate === null ? "" : ` · ${ats.unlockRate} %`
+            }`,
+          },
+          {
+            label: "Leads devenus comptes",
+            value: `${countOf(ats.convertedLeadCount)}${
+              ats.conversionRate === null ? "" : ` · ${ats.conversionRate} %`
+            }`,
+          },
+        ]}
+      />
+      <MetricCard
+        label="Score ATS moyen"
+        // Per engine version, never pooled: the scale is versioned, and an
+        // average across two of them would measure the rescale (ADR-021).
+        value={
+          ats.scoresByEngine.length > 0
+            ? countOf(ats.scoresByEngine[0]!.averageScore)
+            : "—"
+        }
+        breakdown={ats.scoresByEngine.map((row) => ({
+          label: `Barème ${row.engineVersion} (${countOf(row.scoredCvCount)} CV)`,
+          value: countOf(row.averageScore),
+        }))}
       />
       <MetricCard
         label="Entretiens"

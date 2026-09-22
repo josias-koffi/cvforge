@@ -2,6 +2,7 @@
 
 import { renderCvPdfHtml } from "@cvforge/document-renderer"
 import type {
+  AtsScoreSummary,
   CVDocumentContent,
   CVDocumentVersionEntry,
   CertificationItemProps,
@@ -141,10 +142,12 @@ function Section({
 }
 
 export function CvEditor({
+  atsScore,
   cvContent,
   offerId,
   versions,
 }: {
+  atsScore?: AtsScoreSummary | null
   cvContent: CVDocumentContent
   offerId: string
   versions: CVDocumentVersionEntry[]
@@ -164,6 +167,7 @@ export function CvEditor({
       offerId={offerId}
       dirty={editor.dirty}
       saving={editor.saving}
+      score={atsScore}
       onSave={editor.save}
       onRestore={editor.restore}
       versions={versions}

@@ -705,8 +705,25 @@ export interface NotificationPreferencesResponse {
   provider: string | null;
 }
 
+/**
+ * What a client can rely on about a CV's ATS score.
+ *
+ * Deliberately a subset of `AtsScoreResult` (@cvforge/ats-score) rather than a
+ * re-export: that package already depends on this one, and importing it back
+ * would close a cycle. The full result is what gets stored; this is what the
+ * transport promises.
+ */
+export interface AtsScoreSummary {
+  overallScore: number;
+  band: "weak" | "fair" | "good" | "excellent";
+  /** The scale that produced it — scores from two versions never share an average. */
+  engineVersion: string;
+}
+
 export interface DraftApplication {
   createdAt: string;
+  /** Absent or null when the CV has never been scored; never zero. */
+  atsScore?: AtsScoreSummary | null;
   cvGeneratedAt: string | null;
   cvTemplateId?: string | null;
   id: string;

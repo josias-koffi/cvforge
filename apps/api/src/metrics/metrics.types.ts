@@ -21,8 +21,29 @@ export type ProductCounters = {
   totalUserCount: number;
 };
 
+/**
+ * ATS figures, per engine version.
+ *
+ * Never pooled across versions: the scale is versioned (ADR-021), and a mean
+ * mixing 1.0.0 with 1.1.0 would measure the rescale, not the CVs.
+ */
+export type AtsScoreByEngine = {
+  engineVersion: string;
+  scoredCvCount: number;
+  averageScore: number;
+};
+
+export type AtsCounters = {
+  scoresByEngine: AtsScoreByEngine[];
+  publicScanCount: number;
+  unlockedScanCount: number;
+  /** Leads whose address now has an account — the funnel's actual output. */
+  convertedLeadCount: number;
+};
+
 export type MetricsStore = {
   readProductCounters: (activeWindowDays: number) => Promise<ProductCounters>;
+  readAtsCounters: () => Promise<AtsCounters>;
 };
 
 export type AdminMetrics = {
@@ -37,6 +58,19 @@ export type AdminMetrics = {
   interviews: { completedCount: number; totalCount: number };
   users: { activeCount: number; adminCount: number; totalCount: number };
   applications: { totalCount: number };
+  /**
+   * `unlockRate` and `conversionRate` are null rather than 0 when there is
+   * nothing to divide by: "no scans yet" and "nobody converted" are different
+   * facts, and a 0 % on an empty funnel reads as a failure.
+   */
+  ats: {
+    scoresByEngine: AtsScoreByEngine[];
+    publicScanCount: number;
+    unlockedScanCount: number;
+    convertedLeadCount: number;
+    unlockRate: number | null;
+    conversionRate: number | null;
+  };
   credits: { consumed: number; granted: number; sold: number };
   revenue: { currency: "eur"; grossCents: number; paidOrderCount: number };
   /**
