@@ -134,3 +134,65 @@ describe("normalizeCvJson — chronology", () => {
     expect(order(["2021", "", "2024"])).toEqual(["2024", "2021", ""]);
   });
 });
+
+describe("normalizeCvJson — repetition", () => {
+  const profile = {
+    profileSections: { interests: "" },
+  } as never as Parameters<typeof normalizeCvJson>[2];
+
+  function achievementsOf(description: string, achievements: string[]) {
+    return normalizeCvJson(
+      {
+        experiences: [
+          {
+            achievements,
+            company: "Acme",
+            description,
+            endDate: "2024",
+            position: "Développeur",
+            startDate: "2021",
+          },
+        ],
+      } as never,
+      { email: "a@b.c", lastName: "Dupont", phone: "+33600000000" },
+      profile,
+    ).experiences[0]?.achievements;
+  }
+
+  /**
+   * Description and achievements are both built from the same `results` field,
+   * so the collision is structural. A real generated CV shipped this exact
+   * pair.
+   */
+  it("drops an achievement that only reformulates the role's context", () => {
+    expect(
+      achievementsOf("Développement d'un portail patient utilisé par 40 000 personnes.", [
+        "Migration de l'API monolithique vers des services NestJS",
+        "Développement du portail patient utilisé par 40 000 personnes",
+      ]),
+    ).toEqual(["Migration de l'API monolithique vers des services NestJS"]);
+  });
+
+  it("drops an achievement repeated twice", () => {
+    expect(
+      achievementsOf("", [
+        "Conception et scénographie de pop-up stores en point de vente",
+        "Conception et scénographie de pop-up stores en point de vente",
+      ]),
+    ).toHaveLength(1);
+  });
+
+  it("keeps two achievements that merely share a verb", () => {
+    expect(
+      achievementsOf("", [
+        "Création du département marketing digital du groupe",
+        "Création de la gamme Dynamis et de son positionnement",
+      ]),
+    ).toHaveLength(2);
+  });
+
+  /** Too short for overlap to carry any meaning. */
+  it("keeps short achievements even when they look alike", () => {
+    expect(achievementsOf("", ["Encadrement de deux juniors", "Encadrement des revues"])).toHaveLength(2);
+  });
+});

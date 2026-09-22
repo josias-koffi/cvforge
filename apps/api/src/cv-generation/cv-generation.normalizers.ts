@@ -98,15 +98,76 @@ function normalizeItems<T>(
 
 function normalizeExperiences(raw: unknown[]): ExperienceItemProps[] {
   return sortMostRecentFirst(
-    normalizeItems(raw, (item) => ({
-      achievements: toStrArray(item.achievements),
-      company: toStr(item.company),
-      description: toStr(item.description),
-      endDate: toStr(item.endDate),
-      position: toStr(item.position),
-      startDate: toStr(item.startDate),
-    })),
+    normalizeItems(raw, (item) => {
+      const description = toStr(item.description);
+
+      return {
+        achievements: withoutRepetitions(
+          toStrArray(item.achievements),
+          description,
+        ),
+        company: toStr(item.company),
+        description,
+        endDate: toStr(item.endDate),
+        position: toStr(item.position),
+        startDate: toStr(item.startDate),
+      };
+    }),
   );
+}
+
+/**
+ * Drops an achievement that only restates the role's context sentence, or a
+ * previous achievement.
+ *
+ * Both are built from the same `results` field of the profile, so the collision
+ * is structural rather than accidental: a real generated CV carried
+ * "Développement d'un portail patient utilisé par 40 000 personnes" as its
+ * description *and* as a bullet, and another repeated a line verbatim. The
+ * prompt now forbids it; this makes it impossible, which is the difference
+ * between an instruction and a guarantee.
+ *
+ * Wording is compared, not characters — a reformulation is what the model
+ * produces, and an exact-match check would never fire.
+ */
+function withoutRepetitions(achievements: string[], description: string) {
+  const kept: string[][] = [];
+  const context = meaningfulTokens(description);
+
+  return achievements.filter((achievement) => {
+    const tokens = meaningfulTokens(achievement);
+
+    if (restates(tokens, context)) return false;
+    if (kept.some((previous) => restates(tokens, previous))) return false;
+
+    kept.push(tokens);
+
+    return true;
+  });
+}
+
+/** Share of one line's words the other already contains. */
+const RESTATEMENT_OVERLAP = 0.85;
+/** Below this, two lines are too short for overlap to mean anything. */
+const MIN_COMPARABLE_TOKENS = 4;
+
+function restates(tokens: string[], other: string[]) {
+  if (tokens.length < MIN_COMPARABLE_TOKENS || other.length === 0) return false;
+
+  const haystack = new Set(other);
+  const shared = tokens.filter((token) => haystack.has(token)).length;
+
+  return shared / tokens.length >= RESTATEMENT_OVERLAP;
+}
+
+function meaningfulTokens(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, " ")
+    .split(/\s+/)
+    .filter((token) => token.length > 2);
 }
 
 /**

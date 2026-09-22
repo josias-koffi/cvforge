@@ -21,6 +21,7 @@ PROFIL / ACCROCHE (candidate.summary) :
 - Ne jamais commencer par "Je suis", "Étudiant(e) en" ou "Passionné(e) par".
 - Commencer par le titre métier ou la compétence principale.
 - Structure : profil clé + années d'expérience + spécialité + valeur apportée.
+- Nomme 3 à 5 des compétences principales du profil, choisies parmi celles que l'offre valorise. Une compétence qui n'apparaît que dans la liste des compétences, sans jamais être citée dans l'accroche ni dans une expérience, n'est étayée par rien : un recruteur la lit comme déclarative et l'analyse ATS la signale.
 - 3 lignes maximum, environ 40 mots, sans liste ni formule creuse.
 - Ne mentionne un nombre d'années d'expérience que s'il est déductible des périodes fournies. En cas de doute, ne cite aucun chiffre.
 
