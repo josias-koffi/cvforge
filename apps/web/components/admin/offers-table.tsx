@@ -109,7 +109,7 @@ export function OffersTable({ offers }: { offers: AdminCreditOffer[] }) {
             <TableHead>Offre</TableHead>
             <TableHead>Statut</TableHead>
             <TableHead className="text-right">Crédits</TableHead>
-            <TableHead className="text-right">Prix TTC</TableHead>
+            <TableHead className="text-right">Prix</TableHead>
             <TableHead className="text-right">Ordre</TableHead>
             <TableHead>Stripe</TableHead>
             <TableHead>

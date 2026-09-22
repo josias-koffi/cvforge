@@ -78,7 +78,7 @@ describe("buildOfferInput", () => {
       credits: 1400,
       currency: "eur",
       description: { en: "Active search", fr: "Recherche active" },
-      features: { en: [], fr: ["TVA incluse"] },
+      features: { en: [], fr: ["Paiement unique, sans abonnement"] },
       id: "o1",
       isFeatured: true,
       name: { en: "Pro", fr: "Pro" },

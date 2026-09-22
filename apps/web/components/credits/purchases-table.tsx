@@ -34,7 +34,7 @@ export function PurchasesTable({ orders }: { orders: CreditOrder[] }) {
           <TableHead>Offre</TableHead>
           <TableHead>Statut</TableHead>
           <TableHead className="text-right">Crédits</TableHead>
-          <TableHead className="text-right">Montant TTC</TableHead>
+          <TableHead className="text-right">Montant</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>

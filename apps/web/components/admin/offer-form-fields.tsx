@@ -182,7 +182,7 @@ export function OfferFormFields({ isNew, onChange, values }: FieldsProps & { isN
             />
           </Field>
           <Field>
-            <FieldLabel htmlFor="offer-price">Prix TTC (€)</FieldLabel>
+            <FieldLabel htmlFor="offer-price">Prix (€)</FieldLabel>
             <Input
               id="offer-price"
               inputMode="decimal"

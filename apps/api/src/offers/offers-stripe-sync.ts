@@ -65,7 +65,8 @@ export class OfferStripeSync implements OfferStripeSyncContract {
       currency: offer.currency,
       metadata: { offerId: offer.id },
       product: productId,
-      // Vision §11: prices are shown VAT included.
+      // The publisher is not liable for VAT: the displayed price is the
+      // price charged, so Stripe must never add tax on top of it.
       tax_behavior: "inclusive",
       unit_amount: offer.priceCents,
     });
