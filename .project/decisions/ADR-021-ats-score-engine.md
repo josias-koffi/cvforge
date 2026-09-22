@@ -98,3 +98,64 @@ rééquilibrer **maintenant**.
 Les 116 tests existants sont passés **sans modification** : ils asserent des ordres
 (`score(fort) > score(faible)`) et non des valeurs figées. Un barème se rééquilibre sans réécrire sa
 suite de tests — c'est ce que cette convention achetait.
+
+## Amendement 2026-09-22 — barème 1.2.0 : le barème mesurait la langue, pas le CV
+
+Un CV produit par notre propre générateur — trois postes, douze puces, résultats chiffrés, section
+compétences complète — obtenait **65/100** sur le moteur que nous vendons comme la mesure d'un CV
+prêt pour un ATS. Le même constat en staging. Nous vendons des CV optimisés ATS : notre sortie doit
+survivre à notre propre mesure, ou l'une des deux est fausse.
+
+**C'était le moteur.** Mesuré sur le CV réel, `impact` valait **24/100**, et cinq biais se
+cumulaient — tous du même genre : des heuristiques de *résumé américain* appliquées à un CV français.
+
+1. **Le style nominal était lu comme une absence d'action.** « Réduction du temps de chargement de
+   6 à 1,8 s » n'ouvrait sur aucun verbe reconnu. Ratio de verbes d'action mesuré : **0,00 sur 12
+   puces**, alors que les douze décrivent une action. C'est le registre standard du CV français,
+   celui que recommandent les guides et que produit notre générateur. 30 des 100 points d'`impact`
+   étaient structurellement inatteignables en français. → lexique de **noms d'action** (`ACTION_NOUNS_FR`).
+2. **Une compétence ne pouvait être « prouvée » que dans une puce.** Un CV français nomme sa stack
+   dans l'accroche et ne la répète pas — exiger la preuve en puce, c'est demander la répétition que
+   `keywords` sanctionne comme bourrage. Mesuré : **1 compétence sur 9** validée. → `AtsDocument`
+   porte désormais `evidenceText`, la prose du CV **hors liste de compétences** (la liste ne peut
+   pas se porter garante d'elle-même).
+3. **Les sous-scores d'`impact` exigeaient la perfection.** Ratio linéaire : 50 % de puces chiffrées
+   ne valaient que 15 points sur 30. Or un CV dont *chaque* puce porte un chiffre se lit comme
+   fabriqué. → seuils de **crédit plein** (`FULL_CREDIT`), exactement le raisonnement que `keywords`
+   applique depuis toujours avec son plafond à 60 % de couverture.
+4. **Le plancher de longueur de puce était à 8 mots.** « Encadrement de deux développeurs juniors »
+   en fait 5 et ne manque de rien. Le français est plus dense que l'anglais ; le seuil récompensait
+   le remplissage. → 5 mots.
+5. **`wordCount` ne mesurait pas la même chose selon l'adaptateur.** Le chemin structuré n'aplatissait
+   que la prose — ni nom, ni coordonnées, ni dates, ni langues — là où le chemin fichier compte toute
+   la page. Le même CV valait 172 mots ici et ~250 là, sous un seuil unique de 250. → le rendu
+   structuré rend la page entière, et le test de parité, qui passait à divergence nulle, l'a
+   confirmé en cassant sur **51 points** dès que les seuils ont bougé.
+
+Deux défauts collatéraux trouvés au passage :
+
+- **`KEYWORD_STUFFING` comptait chaque terme deux à trois fois** : le bourrage était mesuré sur un
+  texte concaténant compétences et puces par-dessus un `rawText` qui les contenait déjà. Un CV
+  ordinaire déclenchait l'alerte. → compté sur `rawText` seul.
+- **`MISSING_QUANTIFICATION` plafonnait à 80 dès 25 % de puces chiffrées.** Le plafond a été écrit
+  pour le CV qui liste des tâches et jamais un résultat : il est désormais `critical` **uniquement à
+  zéro chiffre**, `warning` en dessous du seuil. Un quart de puces chiffrées est un CV perfectible,
+  pas un CV disqualifié.
+
+**Contactability rééquilibrée** : email 40, téléphone 30, ville 15, LinkedIn 10, portfolio 5
+(auparavant 30/25/15/20/10). Un ATS route sur l'email et le téléphone ; l'URL de profil est un bonus
+qu'un recruteur clique. Accorder 30 points à LinkedIn + portfolio amputait d'un tiers cette dimension
+tout candidat qui n'est pas un développeur avec un GitHub public.
+
+**Résultat sur le CV réel** (en base, non retouché) : **65 → 93**. Dimension par dimension :
+structure 95, keywords 100, impact 24 → 85, contactability 70 → 85, formatHygiene 75 → 100.
+
+`ATS_SCORE_ENGINE_VERSION` passe à **1.2.0**. Les scores 1.1.0 restent en base et les KPI groupent
+déjà par version ; un score existant se rafraîchit à la prochaine sauvegarde du CV, le volet
+déterministe étant recalculé à chaque `save`.
+
+**Ce que cet épisode dit de la méthode** : les 127 tests passaient, et le barème était faux. Ils
+étaient écrits — correctement — sur des fixtures rédigées par nous, dans le registre que le lexique
+attendait. Un moteur de score ne se valide pas sur ses propres fixtures : `french-style.test.ts`
+part désormais d'un CV **réellement produit par le générateur** et pose un plancher à 90, parce que
+c'est le seul chiffre qui engage le produit.

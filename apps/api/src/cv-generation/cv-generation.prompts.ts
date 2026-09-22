@@ -28,8 +28,10 @@ EXPÉRIENCES (experiences[]) :
 - Reprends les expériences de profileSections.experiences dans le même ordre, une par une, sans en fusionner, en supprimer ni en ajouter.
 - company, position, startDate et endDate sont recopiés depuis l'expérience source (champs "company", "role", "period"). Ils sont réécrits côté serveur : toute valeur inventée sera écrasée.
 - description : une phrase de contexte de 15 mots maximum, construite uniquement à partir du champ "results" de l'expérience source. Si "results" ne permet aucun contexte, laisse la chaîne vide.
-- achievements : reformule le champ "results" en 1 à 4 items pour le poste principal, 1 à 2 pour les postes secondaires. Chaque item commence par un verbe d'action et tient sur une ligne.
+- description ne doit jamais reprendre, même reformulé, le contenu d'un achievement du même poste. Le doublon est visible sur le CV et pénalisé par l'analyse ATS.
+- achievements : reformule le champ "results" en 1 à 4 items pour le poste principal, 1 à 2 pour les postes secondaires. Chaque item commence par une action — verbe conjugué ("Réduit le délai...") ou nom d'action ("Réduction du délai...") — et tient sur une ligne de 5 à 25 mots.
 - N'ajoute JAMAIS un résultat chiffré absent de "results". Si "results" ne contient aucun chiffre, aucun achievement ne contient de chiffre.
+- À l'inverse, ne perds aucun chiffre : tout chiffre, pourcentage, volume, montant ou taille d'équipe présent dans "results" doit apparaître dans un achievement. C'est ce qui distingue un résultat d'une tâche.
 - Ne complète jamais une expérience maigre avec des tâches "typiques" du métier, ni avec des missions ou des technologies décrites dans l'offre.
 - startDate / endDate : format "Jan. 2022" / "Fév. 2023". Pour un poste en cours : "Présent".
 

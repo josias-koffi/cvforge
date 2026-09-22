@@ -30,9 +30,32 @@ const ACTION_VERBS_EN = [
   "structured", "supervised", "tested", "trained",
 ] as const;
 
-const ACTION_VERBS = new Set(
-  [...ACTION_VERBS_FR, ...ACTION_VERBS_EN].map((verb) =>
-    normalizeToken(verb).trim(),
+/**
+ * The other half of French CV writing, and the half a French recruiter expects:
+ * the deverbal noun. "Réduction du temps de build de 40 %" is not a weaker
+ * sentence than "Réduit le temps de build" — it is the standard register, the
+ * one every French CV guide recommends, and the one our own generator produces.
+ *
+ * Judging it as passive cost every French CV the whole `actionVerbs` sub-score,
+ * whatever it had actually achieved. A bullet opening on one of these names an
+ * action just as squarely as a participle does.
+ */
+const ACTION_NOUNS_FR = [
+  "accompagnement", "accélération", "amélioration", "analyse", "animation",
+  "audit", "automatisation", "cadrage", "conception", "construction",
+  "coordination", "création", "définition", "déploiement", "design",
+  "développement", "diminution", "encadrement", "fiabilisation", "formation",
+  "gestion", "implémentation", "industrialisation", "intégration", "lancement",
+  "livraison", "maintenance", "mentorat", "migration", "mise", "modernisation",
+  "négociation", "optimisation", "orchestration", "pilotage", "prise",
+  "priorisation", "recrutement", "refactorisation", "refonte", "réduction",
+  "rédaction", "résolution", "restructuration", "sécurisation", "simplification",
+  "standardisation", "structuration", "supervision", "suivi", "transformation",
+] as const;
+
+const ACTION_OPENERS = new Set(
+  [...ACTION_VERBS_FR, ...ACTION_VERBS_EN, ...ACTION_NOUNS_FR].map((word) =>
+    normalizeToken(word).trim(),
   ),
 );
 
@@ -105,12 +128,24 @@ export function isOfferStopword(token: string) {
   return OFFER_STOPWORDS.has(token);
 }
 
-/** True when the first word of a bullet is a recognised action verb. */
+/**
+ * True when a bullet opens on an action, in either register: a verb
+ * ("Réduit le temps de build", "Reduced build time") or the deverbal noun a
+ * French CV uses just as naturally ("Réduction du temps de build").
+ *
+ * A leading article is skipped so "Refonte" and "La refonte" are one thing.
+ */
 export function startsWithActionVerb(bullet: string) {
-  const firstWord = normalizeToken(bullet).trim().split(/\s+/)[0];
+  const words = normalizeToken(bullet).trim().split(/\s+/).filter(Boolean);
+  const first = words[0];
 
-  return firstWord !== undefined && ACTION_VERBS.has(firstWord);
+  if (first === undefined) return false;
+  if (ACTION_OPENERS.has(first)) return true;
+
+  return LEADING_ARTICLES.has(first) && ACTION_OPENERS.has(words[1] ?? "");
 }
+
+const LEADING_ARTICLES = new Set(["le", "la", "les", "l", "un", "une", "des"]);
 
 /**
  * A number, a percentage, an amount or a duration — the difference between

@@ -32,7 +32,7 @@ describe("critical findings cap the score", () => {
   it("does not cap a CV that is merely short", () => {
     // Between the skeletal floor and the comfortable minimum: a warning, not a
     // disqualification. (A real CV with two roles measures ~200 words.)
-    const result = scoreAts(almostPerfect({ wordCount: 200 }));
+    const result = scoreAts(almostPerfect({ wordCount: 140 }));
 
     expect(result.cappedBy).toBeUndefined();
     expect(result.findings).toContainEqual({

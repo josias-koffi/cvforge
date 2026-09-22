@@ -51,7 +51,11 @@ export function scoreKeywords(doc: AtsDocument, offer: AtsOfferContext) {
     });
   }
 
-  if (isStuffed(haystack, matched)) {
+  // Counted on the document itself, never on the enriched haystack: that one
+  // concatenates the skills and the bullets on top of a `rawText` that already
+  // contains them, so every term was counted two or three times and an ordinary
+  // CV tripped the stuffing threshold.
+  if (isStuffed(normalizeToken(doc.rawText), matched)) {
     findings.push({
       code: "KEYWORD_STUFFING",
       dimension: "keywords",

@@ -8,11 +8,16 @@
  */
 
 /**
- * 1.1.0 — critical findings now cap the overall score (see `CRITICAL_CAPS`).
- * Scores from 1.0.0 are not comparable with these: group by version before
- * averaging or charting anything.
+ * 1.2.0 — the scale stopped punishing correct French CVs. A bullet may open on
+ * a deverbal noun, a skill may be evidenced anywhere in the prose rather than
+ * only inside a bullet, and the `impact` sub-scores reach full credit at a
+ * realistic coverage instead of demanding perfection (same reasoning as
+ * `keywords`, which has always topped out at 60 % coverage).
+ *
+ * Scores from 1.1.0 and 1.0.0 are not comparable with these: group by version
+ * before averaging or charting anything.
  */
-export const ATS_SCORE_ENGINE_VERSION = "1.1.0";
+export const ATS_SCORE_ENGINE_VERSION = "1.2.0";
 
 export const ATS_DIMENSION_KEYS = [
   "machineReadability",
@@ -135,6 +140,16 @@ export type AtsFileSignals = {
 
 export type AtsDocument = {
   rawText: string;
+  /**
+   * The prose of the CV with the skills list removed: summary, titles, roles,
+   * bullets, projects, diplomas.
+   *
+   * It exists so "does the career back up this claimed skill?" can be asked of
+   * the whole document instead of only of the bullets. A French CV names its
+   * stack in the summary and repeats it nowhere else — asking each bullet to
+   * restate it would reward exactly the padding `keywords` penalises.
+   */
+  evidenceText: string;
   sections: AtsSectionPresence;
   contact: AtsContactPresence;
   experiences: AtsExperience[];

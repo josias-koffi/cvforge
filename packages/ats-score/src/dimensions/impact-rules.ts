@@ -1,9 +1,15 @@
 import { isQuantified, startsWithActionVerb } from "../lexicons";
-import { countWords, normalizeToken, toScore } from "../normalize";
+import { clamp, countWords, normalizeToken, toScore } from "../normalize";
 import type { AtsDocument, AtsFinding } from "../types";
 
-/** Below 8 words a bullet states a task; above 30 it buries the result. */
-const MIN_BULLET_WORDS = 8;
+/**
+ * Below 5 words a bullet states a job title; above 30 it buries the result.
+ *
+ * The floor was 8, which is an English-résumé figure: French is denser, and
+ * "Encadrement de deux développeurs juniors" says everything it needs to in
+ * five words. Penalising it rewarded padding.
+ */
+const MIN_BULLET_WORDS = 5;
 const MAX_BULLET_WORDS = 30;
 
 const WEIGHTS = {
@@ -11,6 +17,22 @@ const WEIGHTS = {
   bulletLength: 20,
   quantification: 30,
   skillEvidence: 20,
+} as const;
+
+/**
+ * The coverage at which a sub-score is already worth full marks.
+ *
+ * None of these is a target of 100 %: a CV whose every single bullet carries a
+ * figure reads as manufactured, and one that restates a skill in every line is
+ * stuffing. This is the same reasoning `keywords` has always applied with its
+ * 60 % ceiling — a good CV should be able to reach 100 on this dimension
+ * without being written for the parser.
+ */
+const FULL_CREDIT = {
+  actionVerbs: 0.8,
+  bulletLength: 0.8,
+  quantification: 0.5,
+  skillEvidence: 0.6,
 } as const;
 
 const ACTION_VERB_FLOOR = 0.5;
@@ -48,10 +70,10 @@ export function scoreImpactByRules(doc: AtsDocument) {
   const skillEvidence = skillEvidenceRatio(doc);
 
   const score = toScore(
-    actionVerbs * WEIGHTS.actionVerbs +
-      quantification * WEIGHTS.quantification +
-      bulletLength * WEIGHTS.bulletLength +
-      skillEvidence * WEIGHTS.skillEvidence,
+    credit(actionVerbs, "actionVerbs") +
+      credit(quantification, "quantification") +
+      credit(bulletLength, "bulletLength") +
+      credit(skillEvidence, "skillEvidence"),
   );
 
   const findings: AtsFinding[] = [];
@@ -64,11 +86,18 @@ export function scoreImpactByRules(doc: AtsDocument) {
     });
   }
 
+  /**
+   * Critical only when there is not a single figure in the whole CV — that is
+   * the "duties, no results" document the ceiling was written for. A quarter of
+   * the bullets quantified is a CV with room to improve, not a disqualified
+   * one, and capping it at 80 held good CVs a full band below where they
+   * belong.
+   */
   if (quantification < QUANTIFICATION_FLOOR) {
     findings.push({
       code: "MISSING_QUANTIFICATION",
       dimension: "impact",
-      severity: "critical",
+      severity: quantification === 0 ? "critical" : "warning",
     });
   }
 
@@ -81,6 +110,11 @@ export function scoreImpactByRules(doc: AtsDocument) {
   }
 
   return { findings, score };
+}
+
+/** A sub-score's share of its weight, full marks from its full-credit coverage on. */
+function credit(ratio: number, key: keyof typeof WEIGHTS) {
+  return clamp(ratio / FULL_CREDIT[key], 0, 1) * WEIGHTS[key];
 }
 
 function ratio(bullets: string[], predicate: (bullet: string) => boolean) {
@@ -96,17 +130,16 @@ function isWellSized(bullet: string) {
 /**
  * Skills claimed in the skills section that the experience actually backs up.
  *
- * A list of thirty technologies none of which appears in any bullet is the
- * classic unfalsifiable CV — and the one an interviewer dismantles first.
+ * A list of thirty technologies none of which appears anywhere else in the CV
+ * is the classic unfalsifiable CV — and the one an interviewer dismantles
+ * first. Anywhere else is the point: the summary counts, and so does a project
+ * or a diploma. Requiring the proof inside a bullet was asking the candidate to
+ * repeat their stack line after line.
  */
 function skillEvidenceRatio(doc: AtsDocument) {
   if (doc.skills.length === 0) return 0;
 
-  const evidence = normalizeToken(
-    doc.experiences
-      .flatMap((experience) => [experience.role, ...experience.bullets])
-      .join(" "),
-  );
+  const evidence = normalizeToken(doc.evidenceText);
 
   const backed = doc.skills.filter((skill) => {
     const normalized = normalizeToken(skill).trim();

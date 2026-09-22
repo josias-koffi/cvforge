@@ -46,6 +46,7 @@ export function parseCvText(text: string, file?: AtsFileSignals): AtsDocument {
     bulletCount: lines.filter((line) => BULLET_LINE.test(line)).length,
     contact: detectContact(text),
     educationCount: countEntries(blocks.get("education")),
+    evidenceText: withoutBlock(lines, blocks.get("skills")),
     experiences,
     ...(file ? { file } : {}),
     rawText: text,
@@ -84,6 +85,19 @@ function sectionOf(key: string) {
       (candidates as readonly string[]).includes(key),
     )?.[0] ?? null
   );
+}
+
+/**
+ * The document minus the lines of one section — used to keep the skills list
+ * out of the prose a claimed skill is checked against, so the list cannot
+ * vouch for itself.
+ */
+function withoutBlock(lines: string[], block: string[] | undefined) {
+  if (!block || block.length === 0) return lines.join("\n");
+
+  const excluded = new Set(block);
+
+  return lines.filter((line) => !excluded.has(line)).join("\n");
 }
 
 /** Skills are written as separated lists far more often than as sentences. */

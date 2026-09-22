@@ -4,11 +4,15 @@ import type { AtsDocument, AtsFinding } from "../types";
 /**
  * Below this a CV reads as thin; above it, as an unfiltered career dump.
  *
- * Measured, not guessed: a CV with two roles and eight detailed bullets comes
- * out at ~200 words. An earlier 400-word floor flagged perfectly normal CVs as
- * too short.
+ * Measured, not guessed — twice now. A CV with two roles and eight detailed
+ * bullets comes out at ~200 words; a real generated CV with three roles and
+ * twelve bullets measures 172. An earlier 400-word floor flagged perfectly
+ * normal CVs as too short, and so did the 250 that replaced it.
+ *
+ * The figure to compare against is the flattened content surface, which is
+ * smaller than the page: no headings, no dates, no contact block.
  */
-const MIN_WORDS = 250;
+const MIN_WORDS = 180;
 const MAX_WORDS = 900;
 /**
  * Below this there is no career to read at all — a page of headings with
@@ -16,7 +20,7 @@ const MAX_WORDS = 900;
  * the whole score: a three-line CV must not come out "perfectible" because its
  * contact details happen to be complete.
  */
-const SKELETAL_WORDS = 150;
+const SKELETAL_WORDS = 100;
 /** Share of experiences that must carry bullets for the CV to scan well. */
 const BULLET_COVERAGE = 0.7;
 

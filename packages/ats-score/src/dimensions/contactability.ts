@@ -9,12 +9,19 @@ import type { AtsDocument, AtsFinding } from "../types";
 export function scoreContactability(doc: AtsDocument) {
   const { contact } = doc;
 
+  /**
+   * Weighted by what an ATS actually routes on. Email and phone are the fields
+   * it parses into the candidate record; a profile URL is a bonus a recruiter
+   * may click. Giving LinkedIn and a portfolio 30 points between them docked a
+   * third of this dimension from every candidate who is not a developer with a
+   * public GitHub.
+   */
   const score = awardPoints([
-    { points: 30, passed: contact.email },
-    { points: 25, passed: contact.phone },
-    { points: 20, passed: contact.linkedIn },
+    { points: 40, passed: contact.email },
+    { points: 30, passed: contact.phone },
     { points: 15, passed: contact.city },
-    { points: 10, passed: contact.portfolio },
+    { points: 10, passed: contact.linkedIn },
+    { points: 5, passed: contact.portfolio },
   ]);
 
   const findings: AtsFinding[] = [];

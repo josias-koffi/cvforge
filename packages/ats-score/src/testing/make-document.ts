@@ -26,6 +26,9 @@ export function makeDocument(overrides: Partial<AtsDocument> = {}): AtsDocument 
       portfolio: true,
     },
     educationCount: 1,
+    evidenceText: experiences
+      .flatMap((experience) => [experience.role, ...experience.bullets])
+      .join("\n"),
     experiences,
     rawText: "Un CV parfaitement lisible.",
     sections: {
