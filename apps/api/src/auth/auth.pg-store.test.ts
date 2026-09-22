@@ -4,7 +4,11 @@ import {
   type TestDatabase,
 } from "../database/testing/test-database";
 import { DELETED_ACCOUNT_MARKER, PgAuthAccountStore } from "./auth.pg-store";
-import type { AuthConsentRecord, AuthInvitation } from "./auth.types";
+import type {
+  AuthConsentRecord,
+  AuthInvitation,
+  AuthMagicLink,
+} from "./auth.types";
 
 let testDatabase: TestDatabase;
 let store: PgAuthAccountStore;
@@ -25,6 +29,18 @@ function makeInvitation(
     email: "invitee@example.com",
     expiresAt: "2099-01-01T00:00:00.000Z",
     role: "user",
+    ...overrides,
+  };
+}
+
+/** A fixed "now", after the fixtures' creation dates and before 2099. */
+const NOW = Date.parse("2026-04-23T09:00:00.000Z");
+
+function makeMagicLink(overrides: Partial<AuthMagicLink> = {}): AuthMagicLink {
+  return {
+    consent,
+    email: "candidate@example.com",
+    expiresAt: "2099-01-01T00:00:00.000Z",
     ...overrides,
   };
 }
@@ -175,17 +191,25 @@ describe("PgAuthAccountStore", () => {
       "hash-received",
       makeInvitation({ createdBy: "keeper@example.com", email: "admin@example.com" }),
     );
+    await store.saveMagicLink("hash-link", makeMagicLink({ email: "admin@example.com" }));
+    await store.saveMagicLink("hash-other-link", makeMagicLink({ email: "keeper@example.com" }));
 
     await expect(store.purgeUserData("admin@example.com")).resolves.toEqual({
       accountDeleted: true,
       invitationsRemoved: 1,
       invitationsScrubbed: 1,
+      magicLinksRemoved: 1,
     });
 
     await expect(store.readAccount("admin@example.com")).resolves.toBeNull();
     await expect(store.readInvitation("hash-received")).resolves.toBeNull();
     await expect(store.readInvitation("hash-issued")).resolves.toMatchObject({
       createdBy: DELETED_ACCOUNT_MARKER,
+    });
+    // The purged account's pending link goes; other people's stay.
+    await expect(store.consumeMagicLink("hash-link", NOW)).resolves.toBeNull();
+    await expect(store.consumeMagicLink("hash-other-link", NOW)).resolves.toMatchObject({
+      email: "keeper@example.com",
     });
   });
 
@@ -194,6 +218,41 @@ describe("PgAuthAccountStore", () => {
       accountDeleted: false,
       invitationsRemoved: 0,
       invitationsScrubbed: 0,
+      magicLinksRemoved: 0,
+    });
+  });
+
+  describe("magic links", () => {
+    it("hands back a pending link once, then never again", async () => {
+      await store.saveMagicLink("hash-link", makeMagicLink());
+
+      await expect(store.consumeMagicLink("hash-link", NOW)).resolves.toMatchObject({
+        consent,
+        email: "candidate@example.com",
+      });
+      // Redemption deleted the row: a replay of the same link is refused.
+      await expect(store.consumeMagicLink("hash-link", NOW)).resolves.toBeNull();
+    });
+
+    it("refuses an expired link and an unknown one", async () => {
+      await store.saveMagicLink(
+        "hash-expired",
+        makeMagicLink({ expiresAt: "2026-04-23T08:00:00.000Z" }),
+      );
+
+      await expect(store.consumeMagicLink("hash-expired", NOW)).resolves.toBeNull();
+      await expect(store.consumeMagicLink("hash-unknown", NOW)).resolves.toBeNull();
+    });
+
+    it("purges only the links that have expired", async () => {
+      await store.saveMagicLink(
+        "hash-expired",
+        makeMagicLink({ expiresAt: "2026-04-23T08:00:00.000Z" }),
+      );
+      await store.saveMagicLink("hash-pending", makeMagicLink());
+
+      await expect(store.purgeExpiredMagicLinks(NOW)).resolves.toBe(1);
+      await expect(store.consumeMagicLink("hash-pending", NOW)).resolves.not.toBeNull();
     });
   });
 });

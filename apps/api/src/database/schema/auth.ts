@@ -64,6 +64,36 @@ export const authInvitations = pgTable(
 );
 
 /**
+ * Magic links, pending only.
+ *
+ * They used to live in a `Map` on the service, which meant every deployment —
+ * and every Dokploy redeploy — silently invalidated every link already sitting
+ * in someone's inbox. A row survives the restart.
+ *
+ * There is deliberately no `consumed_at`: a link is *deleted* when it is used
+ * or once it expires. Nothing reads a spent link, and the row carries an email
+ * address, so keeping it would only be personal data with no reader. Deleting
+ * is also what makes redemption single-use without a transaction — see
+ * `PgAuthAccountStore.consumeMagicLink`.
+ */
+export const authMagicLinks = pgTable(
+  "auth_magic_links",
+  {
+    tokenHash: text("token_hash").primaryKey(),
+    email: text("email").notNull(),
+    consent: jsonb("consent").$type<AuthConsentRecord | null>(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("auth_magic_links_email_idx").on(table.email),
+    index("auth_magic_links_expires_at_idx").on(table.expiresAt),
+  ],
+);
+
+/**
  * The "first account becomes admin" latch, one row.
  *
  * Stored rather than derived from `exists(admin)`. The two agree only while
