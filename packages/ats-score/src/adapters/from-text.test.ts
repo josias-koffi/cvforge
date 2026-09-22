@@ -149,3 +149,50 @@ describe("parseCvText — file signals", () => {
     ).toBe("unavailable");
   });
 });
+
+/**
+ * The text layer our own ATS template produced, letter for letter.
+ *
+ * `letter-spacing` on the section headings made the extractor read the gaps
+ * between glyphs as spaces, so not one section was recognised — the CV we sell
+ * as ATS-ready scored 50/100 on our own scanner, capped for having neither an
+ * experience nor a skills section. The template no longer does this; a CV
+ * uploaded from anywhere else still can.
+ */
+describe("headings torn apart by letter-spacing", () => {
+  const SPACED = `Léa Moreau
+Développeuse full-stack TypeScript
++33 6 12 34 56 78 · lea.moreau@example.com · Lyon, France
+PR O F I L
+Développeuse full-stack expérimentée sur applications web à fort trafic.
+CO M P É T E N C E S C L É S
+Langages : TypeScript
+EX P É R I E N C E S
+Développeuse full-stack senior
+Nordwind Studio
+2023 – Présent
+Réduction du temps de chargement de 6 à 1,8 seconde
+FO R M AT I O N
+Master informatique, génie logiciel
+2019
+LA N G U E S
+Anglais B2 / Professionnel`;
+
+  it("recognises every section anyway", () => {
+    const { sections } = parseCvText(SPACED);
+
+    expect(sections).toMatchObject({
+      education: true,
+      experience: true,
+      languages: true,
+      skills: true,
+      summary: true,
+    });
+  });
+
+  it("still refuses to read an ordinary short line as a heading", () => {
+    const { sections } = parseCvText("CV de Léa Moreau\nRien d'autre.");
+
+    expect(sections.experience).toBe(false);
+  });
+});

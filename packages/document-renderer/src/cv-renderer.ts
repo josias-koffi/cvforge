@@ -11,10 +11,16 @@ function renderList(items: string[]) {
     return "";
   }
 
+  // The bullet is written into the text, not left to `list-style`. A CSS list
+  // marker is drawn into the PDF but never lands in its text layer, so an ATS
+  // reading the extracted text saw a wall of undifferentiated lines and our own
+  // CV came back "experiences not detailed in bullet points".
   return `<ul>${items
-    .map((item) => `<li>${escapeHtml(item)}</li>`)
+    .map((item) => `<li>${BULLET}&nbsp;${escapeHtml(item)}</li>`)
     .join("")}</ul>`;
 }
+
+const BULLET = "•";
 
 export function renderCvPdfHtml(cvContent: CVDocumentContent) {
   const candidate = cvContent.candidate;
@@ -191,7 +197,6 @@ export function renderCvPdfHtml(cvContent: CVDocumentContent) {
         font-size: 10pt;
         font-variant: small-caps;
         font-weight: bold;
-        letter-spacing: 0.08em;
         color: #1a1a1a;
         border-bottom: 1px solid #d0cdc8;
         padding-bottom: 0.15rem;
@@ -247,12 +252,15 @@ export function renderCvPdfHtml(cvContent: CVDocumentContent) {
 
       ul {
         margin: 0;
-        padding-left: 1.1rem;
+        padding-left: 0;
+        list-style: none;
       }
 
       li {
         font-size: 9.5pt;
         line-height: 1.1;
+        padding-left: 1.1rem;
+        text-indent: -1.1rem;
       }
 
       li + li {

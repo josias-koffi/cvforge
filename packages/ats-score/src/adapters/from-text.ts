@@ -82,7 +82,7 @@ function sectionBlocks(lines: string[]) {
 function sectionOf(key: string) {
   return (
     Object.entries(SECTION_HEADINGS).find(([, candidates]) =>
-      (candidates as readonly string[]).includes(key),
+      headingMatches(key, candidates as readonly string[]),
     )?.[0] ?? null
   );
 }
@@ -165,7 +165,7 @@ function detectSections(lines: string[]): AtsSectionPresence {
   const headings = lines.filter(isHeadingLike).map(headingKey);
 
   const has = (candidates: readonly string[]) =>
-    headings.some((heading) => candidates.includes(heading));
+    headings.some((heading) => headingMatches(heading, candidates));
 
   return {
     certifications: has(SECTION_HEADINGS.certifications),
@@ -178,12 +178,56 @@ function detectSections(lines: string[]): AtsSectionPresence {
 }
 
 function isHeadingLike(line: string) {
-  return countWords(line) <= MAX_HEADING_WORDS && !BULLET_LINE.test(line);
+  if (BULLET_LINE.test(line)) return false;
+  // A letter-spaced heading blows one word out into a dozen, so the word count
+  // is measured on the squeezed form or "EX P É R I E N C E S" never gets to
+  // be a heading at all.
+  if (isLetterSpaced(headingKey(line))) return true;
+
+  return countWords(line) <= MAX_HEADING_WORDS;
 }
 
 /** Collapses punctuation and accents so "EXPÉRIENCE :" and "experience" are one key. */
 function headingKey(line: string) {
   return normalizeToken(line).replace(/\s+/g, " ").trim();
+}
+
+/**
+ * True when a heading arrived with its letters blown apart.
+ *
+ * A CSS `letter-spacing` on a section title makes the PDF text layer report
+ * "EX P É R I E N C E S": the glyphs sit far enough apart that the extractor
+ * reads the gaps as spaces. Our own template did exactly this, and the engine
+ * then found no experience section in the very CV we sell as ATS-ready — so
+ * third-party CVs styled the same way were being failed for a defect that is
+ * one of typography, not of content.
+ *
+ * Requiring most of the words to be single letters is what keeps "CV de Léa
+ * Moreau" out of it.
+ */
+function isLetterSpaced(key: string) {
+  const words = key.split(" ").filter(Boolean);
+
+  return (
+    words.length >= 3 &&
+    words.filter((word) => word.length === 1).length >= words.length / 2
+  );
+}
+
+/**
+ * Compares a heading to a known one, ignoring spacing when the line looks
+ * letter-spaced. Word boundaries are lost in that case ("CO M P É T E N C E S
+ * C L É S"), so both sides are compared with every space removed.
+ */
+function headingMatches(key: string, candidates: readonly string[]) {
+  if (candidates.includes(key)) return true;
+  if (!isLetterSpaced(key)) return false;
+
+  const squeezed = key.replace(/ /g, "");
+
+  return candidates.some(
+    (candidate) => candidate.replace(/ /g, "") === squeezed,
+  );
 }
 
 /**

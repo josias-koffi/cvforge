@@ -75,7 +75,8 @@ export const SECTION_HEADINGS = {
   ],
   languages: ["langue", "langues", "languages"],
   skills: [
-    "competence", "competences", "skills", "technical skills", "savoir faire",
+    "competence", "competences", "competences cles", "competences techniques",
+    "skills", "key skills", "technical skills", "savoir faire",
     "technologies", "stack technique",
   ],
   summary: [

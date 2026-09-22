@@ -159,3 +159,50 @@ déterministe étant recalculé à chaque `save`.
 attendait. Un moteur de score ne se valide pas sur ses propres fixtures : `french-style.test.ts`
 part désormais d'un CV **réellement produit par le générateur** et pose un plancher à 90, parce que
 c'est le seul chiffre qui engage le produit.
+
+## Amendement 2026-09-22 (2) — le PDF que nous produisions était illisible pour un ATS
+
+Parcours joué de bout en bout dans le navigateur, avec le PDF d'un CV réellement généré déposé sur
+la landing : **50/100, « Perfectible »**, plafonné pour « aucune section Expérience identifiée » et
+« aucune section Compétences identifiée ». Sur le CV que nous vendons comme optimisé ATS.
+
+Le moteur avait raison. Voici ce que notre propre extracteur lit dans notre propre PDF :
+
+```
+PR O F I L
+CO M P É T E N C E S  C L É S
+EX P É R I E N C E S
+```
+
+**Un PDF est jugé sur sa couche texte, pas sur son apparence.** Deux choix typographiques du
+template la détruisaient :
+
+1. **`letter-spacing: 0.08em` sur les titres de section** (`h2`, combiné à `font-variant:
+   small-caps`). Les glyphes sont assez écartés pour que l'extraction lise les espacements comme des
+   espaces. Aucun titre ne correspondait plus à quoi que ce soit. Supprimé : un titre de section est
+   un point d'ancrage machine avant d'être un élément de design.
+2. **Les puces étaient des marqueurs `list-style`.** Chrome les dessine dans le PDF mais ne les écrit
+   jamais dans la couche texte : l'ATS voit un mur de lignes indifférenciées, d'où « les expériences
+   ne sont pas détaillées en puces » et un `impact` effondré. Le caractère `•` est désormais écrit
+   dans le texte (`list-style: none` + puce en dur, indentation pendante pour un rendu identique).
+
+Le rendu visuel est inchangé — vérifié par capture avant/après.
+
+Deux corrections côté moteur, tirées du même parcours :
+
+- `SECTION_HEADINGS.skills` ignorait **« Compétences clés »** et **« Key skills »**, qui sont
+  précisément les intitulés que notre propre renderer produit (`labels.ts`). Ajoutés.
+- L'adaptateur texte **tolère désormais un titre éclaté par du letter-spacing** : une ligne dont la
+  moitié des mots sont des lettres isolées est recollée avant comparaison. Notre template ne le fait
+  plus, mais un CV déposé depuis ailleurs le fera, et l'échec serait alors un défaut de typographie
+  imputé au contenu du candidat.
+
+**Étalonnage final du même CV, PDF déposé sur la landing : 50 → 92 « Excellent ».** Chemin in-app :
+93. Les deux surfaces sont à un point l'une de l'autre, sous la tolérance de parité de 3.
+
+Findings restants, tous justes : aucun profil LinkedIn dans le profil de démo, et des compétences
+déclarées que le parcours n'étaye pas.
+
+**La leçon** : le score ATS ne vaut que ce que vaut le fichier livré. Tester le moteur sur des
+structures de données ne dit rien de ce qu'un ATS lira — seul le passage par un vrai PDF le dit, et
+c'est ce passage qui manquait à la vérification de l'US-104.
