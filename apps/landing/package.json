@@ -8,7 +8,8 @@
     "start": "next start --port 3001",
     "lint": "eslint . --max-warnings=0",
     "typecheck": "next typegen && tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "capture": "node scripts/capture-screenshots.mjs"
   },
   "dependencies": {
     "@cvforge/types": "workspace:*",
@@ -31,8 +32,11 @@
     "@types/react-dom": "^19",
     "eslint": "^9.39.1",
     "eslint-config-next": "16.3.4",
+    "pg": "8.23.0",
+    "playwright": "^1.57.0",
     "prettier": "^3.9.6",
     "prettier-plugin-tailwindcss": "^0.8.1",
+    "sharp": "^0.34.5",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^3.2.4"
