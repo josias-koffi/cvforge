@@ -26,6 +26,7 @@
 | E15 | V2.1 | UX Redesign desktop-first + refonte interview et éditeur | App desktop-first shadcn-minimal; tables candidatures/documents; interview VAD auto sans bouton; continuité agent via messages[] Redis; Puck admin full-screen uniquement; écrans intermédiaires; dashboard épuré | 016–019 | vision `§2.5`, `§2.6`, `§6`, `§8`, `§10`, feedback 2026-04-26 |
 | E16 ✅ | 022 | Supervision solde IA & pilotage revenus admin | L'admin surveille le solde OpenRouter, est alerté avant rupture, ne vend pas de crédits qu'il ne peut pas honorer, et dispose d'un dashboard de métriques produit + revenus | 022 | Hors vision v0.7, hors ADR existante — décision produit du 2026-09-17 |
 | E17 ✅ | 023 | Gestion utilisateurs avancée (admin) | Recherche/filtres/pagination serveur, fiche utilisateur complète, suspension, suppression RGPD vérifiée, rétrogradation admin→user uniquement, journal d'audit, révocation de session | 023 | Complète vision `§13.2`/`§15.1` ; US-093 contraint par vision `§3.2` |
+| E18 ✅ | 024 | Score ATS (produit d'appel + in-app) | Un visiteur non authentifié scanne son CV sur la landing, obtient un score et 3 points gratuitement, et déverrouille le rapport contre son email — ce qui lui crée un compte ; en in-app, chaque CV généré porte un badge de score gratuit | 024 | Complète vision `§7.1`, `§7.4`, `§12.2`, `§12.3`, `§8.1` ; **la page publique est hors vision** — décision produit du 2026-09-22 |
 
 ## Estimate Scale
 
@@ -126,6 +127,17 @@ Référence de gate: le spec impose des branches courtes et des PRs <= 400 ligne
 | US-094 | Journal d'audit /admin/audit-log (qui/quand/quoi/sur qui/note) pour suspension, réactivation, suppression, rétrogradation, octroi crédits | E17 | M | P1 | 023 | vision `§13.2` |
 | US-095 | Déconnexion forcée / révocation de session depuis la fiche utilisateur | E17 | S | P2 | 023 | vision `§13.2` |
 | US-096 | Hotfix §3.2 : rendre la promotion user→admin impossible par toute action admin | E17 | S | P0 | 022 | vision `§3.2` — ajout hors énoncé, validé le 2026-09-17 |
+| US-097 | Moteur de score ATS : package pur, modèle normalisé, noyau déterministe, renormalisation des dimensions non observables, barème versionné | E18 | M | P0 | 024 | vision `§7.1`, `§7.4`, `§12.2`, `§12.3` |
+| US-098 | Adaptateurs texte brut / `CVDocumentContent` + dimensions `keywords` (note max à 60 % de couverture) et `impact` en mode règles | E18 | M | P0 | 024 | vision `§8.1` |
+| US-099 | Signaux de lisibilité machine à l'extraction PDF (couche texte, pages, colonnes, mojibake) et extraction de `extractText` en module réutilisable | E18 | M | P0 | 024 | vision `§6.4` |
+| US-100 | `AtsImpactService` : volet LLM borné à la seule dimension `impact`, 4 sous-notes 0..10, clamp ±25 autour du score par règles, jamais bloquant | E18 | M | P0 | 024 | vision `§8.1`, `§15.3` |
+| US-101 | Rate limiting applicatif sur les routes publiques : fenêtre glissante par IP, budget global quotidien, store derrière une interface | E18 | M | P0 | 024 | `engineering-standards.md` §7 — aucun rate limiting n'existe dans l'API |
+| US-102 | `POST /public/ats-scan` : module ATS, table `ats_scans`, sniff des magic bytes, OCR désactivé, réponse gratuite sans `dimensions[]`, aucun texte de CV persisté | E18 | L | P0 | 024 | vision `§15.3` |
+| US-103 | Déverrouillage par email : rapport complet immédiat + magic link en parallèle, consentement explicite, purge 30 jours | E18 | M | P0 | 024 | vision `§15.1`, `§15.3` |
+| US-104 | Page publique d'analyse ATS sur la landing (FR/EN) : route BFF, dictionnaires, dropzone, jauge, rapport verrouillé, formulaire email | E18 | L | P0 | 024 | Hors vision — décision produit du 2026-09-22 |
+| US-105 | Score in-app : persistance sur `applications` et `application_cv_versions`, calcul à la génération et à la sauvegarde, 0 crédit | E18 | M | P0 | 024 | vision `§7.4`, `§12.3` |
+| US-106 | Badge de score ATS dans `apps/web` (colonne de liste, entête éditeur CV), WCAG 2.1 AA | E18 | S | P1 | 024 | vision `§7.1` |
+| US-107 | KPI admin : score ATS moyen groupé par version de moteur, scans publics, taux de déverrouillage, conversion en compte | E18 | S | P2 | 024 | vision `§12.2` |
 
 ## Critères d'acceptation détaillés — E16
 
@@ -143,6 +155,54 @@ Référence de gate: le spec impose des branches courtes et des PRs <= 400 ligne
 
 - **US-088** : ordre strict — obligatoire avant toute autre story E17 ; certaines (US-089 à US-095) peuvent être partiellement déjà livrées
 - **US-096** : `PATCH /admin/users/:email` avec `{role:"admin"}` renvoie 400 ; aucun select de rôle dans l'UI d'édition ; test de non-régression prouvant qu'aucun chemin de service ne promeut
+
+## Critères d'acceptation détaillés — E18
+
+> ⚠️ **RÈGLE DE COÛT NON NÉGOCIABLE** : `POST /public/ats-scan` est la première surface IA publique
+> non authentifiée du produit, sur une API sans aucun rate limiting. **US-101 est obligatoire avant
+> la mise en ligne d'US-104.** L'OCR reste désactivé sur cette route tant qu'il n'y a pas de worker.
+
+> ⚠️ **RÈGLE RGPD** : aucun texte de CV n'est jamais persisté — ni fichier, ni texte extrait, ni
+> texte pseudonymisé. Seuls des scores et des codes. Contrepartie assumée : pas de préremplissage
+> du profil à l'inscription.
+
+- **Invariant du barème (toutes stories)** : une dimension non observable est **exclue et les poids
+  renormalisés**, jamais notée 0. Corollaire : une règle d'absence de défaut ne crédite que s'il
+  existe de la matière où ce défaut pourrait apparaître (sinon un document vide marque des points).
+- **US-097** : `scoreAts` pure et déterministe ; somme des poids = 100 assertée ;
+  `ATS_SCORE_ENGINE_VERSION` sur chaque résultat et persisté avec lui — sans quoi la courbe §12.3
+  compare des mesures prises avec deux règles différentes. ADR-021.
+- **US-098** : un CV équivalent passé par les deux adaptateurs score à **±3 points** (c'est le test
+  qui verrouille la cohérence des deux surfaces) ; fixtures **synthétiques** uniquement.
+- **US-099** : le comportement de l'import CV existant reste inchangé, prouvé par ses tests actuels.
+- **US-100** : le modèle ne renvoie **jamais** le score global, seulement 4 sous-notes 0..10 ; le
+  scoring ne peut jamais faire échouer une génération de CV ; aucun test n'appelle le réseau.
+- **US-101** : middleware maison, pas `@nestjs/throttler` (le repo n'utilise pas de Guards Nest) ;
+  tests à timers simulés, aucun `sleep`. ADR-022.
+- **US-102** : la réponse gratuite ne contient **jamais** `dimensions[]` — le gating est serveur, pas
+  un flou CSS ; test explicite que la ligne écrite ne contient aucun texte de CV ; `ip_hash` jamais
+  l'IP brute.
+- **US-103** : réponse identique qu'il existe ou non un compte pour cet email (pas d'énumération) ;
+  consentement explicite, l'envoi du lien valant création de compte.
+- **US-104** : zéro texte en dur (tout dans `content/{fr,en}.ts`) ; axe-core propre ; dropzone
+  opérable au clavier, `aria-live` sur le résultat, jauge avec équivalent textuel, la couleur n'est
+  jamais seul porteur de sens.
+- **US-105** : `cv-generation.service.ts` est à **417 lignes**, au-delà du seuil bloquant de 400 —
+  cette story doit en **extraire** du code, pas en ajouter ; OpenRouter coupé ⇒ la génération
+  réussit quand même, score rendu en mode règles.
+
+## Statut E18
+
+**Livré le 2026-09-22**, US-097 à US-107 incluses. Barème en version **1.1.0** (les plafonds de
+défauts rédhibitoires, voir l'amendement d'ADR-021).
+
+Restes hors code avant mise en ligne :
+- **`ENABLE_ZDR_CHAT=true` en production** — la vision `§15.3` l'exige, il est à `false` en dev.
+- Renseigner `ATS_IP_HASH_SECRET` (sinon le sel est régénéré à chaque redémarrage : les hachages
+  cessent d'être comparables, ce qui n'expose rien mais rend la forensique inutile).
+- Décider du timeout global au reverse proxy (écart assumé d'US-102).
+- Le barème n'est étalonné sur **aucun CV réel d'utilisateur** : à réviser sur retours terrain, en
+  bumpant la version.
 
 ## Statut E16/E17
 
@@ -215,6 +275,7 @@ Contexte persistance : la migration ADR-011 est **terminée** — tous les modul
 | `E15` | `E2`, `E12`, `E13` | La refonte UX s'appuie sur le design system, le pipeline interview et les écrans documentaires existants |
 | `E16` | `E8`, `E9` | La supervision du solde et les métriques de revenus s'appuient sur le ledger crédits, les commandes Stripe et le panel admin |
 | `E17` | `E3`, `E9` | La gestion utilisateurs avancée prolonge l'auth/les rôles et le panel admin utilisateurs |
+| `E18` | `E3`, `E7`, `E10` | Le score réutilise l'extraction de texte de l'import CV (`E10`), le pipeline documentaire pour le badge in-app (`E7`), et l'auth magic link (`E3`) pour convertir un visiteur en compte |
 
 ## Technical Gates
 
@@ -231,10 +292,17 @@ Contexte persistance : la migration ADR-011 est **terminée** — tous les modul
 | `014` | Gate purge audio et conservation RGPD | `tech-lead` |
 | `017` | Gate continuité agent interview (messages[] Redis) + VAD auto | `tech-lead` + `qa-reviewer` |
 | `018` | Gate cohérence Puck admin-only: aucune surface Puck côté user | `tech-lead` + `qa-reviewer` |
+| `024` | Gate coût surface IA publique : rate limit par IP **et** budget global quotidien vérifiés en conditions réelles avant mise en ligne ; OCR désactivé sur la route publique | `tech-lead` |
+| `024` | Gate RGPD scan anonyme : aucune ligne `ats_scans` ne contient de texte de CV (test d'intégration) | `tech-lead` + `qa-reviewer` |
+| `024` | Gate résilience scoring : OpenRouter coupé ⇒ la génération de CV réussit, score rendu en mode règles | `tech-lead` |
 
 ## ADR Watchlist
 
 - Direction visuelle "Papier & Crayon raffiné" vs mobile-first (vision `§2.5`/`§2.6`) : décision produit desktop-first actée depuis 2026-04-26 (sprint 016) mais jamais formalisée en ADR — à écrire avant le prochain freeze de vision.
+- **Page publique d'analyse ATS (E18)** : fonctionnalité **absente de la vision**, qui ne prévoit le score qu'en in-app. Décidée avec le propriétaire le 2026-09-22 — à reporter dans `.project/vision.md` par le `product-owner` (hard rule : jamais d'auto-édition de la vision).
+- **ADR-021** ✅ écrit — moteur ATS : package pur, barème versionné, LLM borné à une dimension.
+- **ADR-022** ✅ écrit — surface IA publique : rate limiting sans Redis ni throttler, budget global, OCR désactivé, rétention zéro.
+- **Rate limit en mémoire = mono-instance.** Valide tant que l'API tourne en une instance ; le jour du scale-out, le `RateLimitStore` bascule sur Redis (déjà provisionné dans `docker-compose.yml`, lu nulle part aujourd'hui) — ADR à ce moment-là.
 - ~~Puck Editor comme couche WYSIWYG~~ → **ADR-003 acceptée** (2026-04-20)
 - Provider email pour magic links / notifications
 - Librairie DOCX pour `V1.1`
