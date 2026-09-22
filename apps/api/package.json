@@ -17,6 +17,7 @@
     "drizzle-kit": "0.31.10"
   },
   "dependencies": {
+    "@cvforge/ats-score": "workspace:*",
     "@cvforge/document-renderer": "workspace:*",
     "@cvforge/types": "workspace:*",
     "@napi-rs/canvas": "0.1.100",

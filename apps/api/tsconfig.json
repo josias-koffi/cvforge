@@ -7,6 +7,7 @@
     "experimentalDecorators": true,
     "outDir": "dist",
     "paths": {
+      "@cvforge/ats-score": ["../../packages/ats-score/src/index.ts"],
       "@cvforge/document-renderer": ["../../packages/document-renderer/src/index.ts"],
       "@cvforge/types": ["../../packages/types/src/index.ts"]
     }
