@@ -5,9 +5,13 @@ import type { ReactNode } from "react"
 import type { ScreenshotName } from "@/content/types"
 import { cn } from "@/lib/utils"
 
-/** Capture size used for every apps/web screenshot (1440×900 viewport). */
-export const SCREENSHOT_WIDTH = 1440
-export const SCREENSHOT_HEIGHT = 900
+/**
+ * Intrinsic size of every apps/web screenshot: a 1440×900 viewport shot at
+ * `deviceScaleFactor: 2`, so the widest slot on the page (1152 CSS px) still
+ * has a 1:1 source on a retina screen.
+ */
+export const SCREENSHOT_WIDTH = 2880
+export const SCREENSHOT_HEIGHT = 1800
 
 /** Renders the light and dark captures; CSS shows the one matching the theme. */
 export function Screenshot({
