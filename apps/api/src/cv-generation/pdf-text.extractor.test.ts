@@ -1,7 +1,7 @@
 import { deflateSync } from "node:zlib";
 import { UnprocessableEntityException } from "@nestjs/common";
 import { describe, expect, it } from "vitest";
-import { extractPdfText, renderPdfPages } from "./pdf-text.extractor";
+import { extractPdfContent, renderPdfPages } from "./pdf-text.extractor";
 
 /** Minimal single-page PDF whose content stream is Flate-compressed, like real-world exports. */
 function buildCompressedPdf(text: string) {
@@ -42,23 +42,49 @@ function buildCompressedPdf(text: string) {
   return Buffer.concat(chunks);
 }
 
-describe("extractPdfText", () => {
-  it("reads the text layer of a compressed PDF", async () => {
-    const text = await extractPdfText(buildCompressedPdf("Senior Product Engineer chez Acme"));
-
-    expect(text).toContain("Senior Product Engineer chez Acme");
-  });
-
-  it("rejects buffers that are not PDFs", async () => {
-    await expect(extractPdfText(Buffer.from("not a pdf"))).rejects.toBeInstanceOf(
-      UnprocessableEntityException,
-    );
-  });
-
+describe("renderPdfPages", () => {
   it("rasterises pages to PNG for OCR, up to the page cap", async () => {
     const images = await renderPdfPages(buildCompressedPdf("Scanned page"), 4);
 
     expect(images).toHaveLength(1);
     expect(images[0].subarray(1, 4).toString("latin1")).toBe("PNG");
+  });
+});
+
+describe("extractPdfContent", () => {
+  it("reports a text layer, the page count and clean glyphs", async () => {
+    const content = await extractPdfContent(
+      buildCompressedPdf("Senior Product Engineer chez Acme"),
+    );
+
+    expect(content.text).toContain("Senior Product Engineer chez Acme");
+    expect(content.hasTextLayer).toBe(true);
+    expect(content.pageCount).toBe(1);
+    expect(content.mojibakeRatio).toBe(0);
+  });
+
+  /**
+   * A single line of prose must not read as columns, or every ordinary CV
+   * would be told to fix a layout that is fine.
+   */
+  it("does not mistake ordinary prose for a column layout", async () => {
+    const content = await extractPdfContent(
+      buildCompressedPdf("Senior Product Engineer chez Acme"),
+    );
+
+    expect(content.columnSuspicion).toBe(0);
+  });
+
+  it("reports no text layer for a page that carries none", async () => {
+    const content = await extractPdfContent(buildCompressedPdf(""));
+
+    expect(content.hasTextLayer).toBe(false);
+    expect(content.text).toBe("");
+  });
+
+  it("rejects buffers that are not PDFs", async () => {
+    await expect(
+      extractPdfContent(Buffer.from("not a pdf")),
+    ).rejects.toBeInstanceOf(UnprocessableEntityException);
   });
 });

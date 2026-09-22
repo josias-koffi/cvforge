@@ -4,27 +4,22 @@ import {
   type ImportedCvProfilePatch,
 } from "@cvforge/types";
 import { BadRequestException, Injectable, UnprocessableEntityException } from "@nestjs/common";
-import mammoth from "mammoth";
 import { withOpenRouterHttpErrors } from "../ai/openrouter.exception";
 import type { OpenRouterService } from "../ai/openrouter.service";
 import type { CreditsService } from "../credits/credits.service";
 import { pseudonymizeCvText } from "./cv-pseudonymizer";
-import { recognizeImages } from "./ocr.extractor";
-import { extractPdfText, renderPdfPages } from "./pdf-text.extractor";
+import {
+  extractCvText,
+  MIN_EXTRACTED_TEXT_LENGTH,
+  type CvSourceFile,
+} from "./cv-text-extraction";
 
-export type CvImportFile = {
-  buffer: Buffer;
-  mimetype: string;
-  originalname: string;
-  size: number;
-};
+/** Kept as the module's own name for the upload shape the controller passes in. */
+export type CvImportFile = CvSourceFile;
 
 type RawImportedProfile = Partial<ImportedCvProfilePatch>;
 
-const MAX_CV_IMPORT_BYTES = 5 * 1024 * 1024;
-const MIN_EXTRACTED_TEXT_LENGTH = 120;
-// A CV rarely exceeds a few pages; the cap bounds OCR time (a few seconds per page).
-const MAX_OCR_PAGES = 4;
+export const MAX_CV_IMPORT_BYTES = 5 * 1024 * 1024;
 const CV_IMPORT_OMITTED_FIELDS = [
   "identity.lastName",
   "identity.phone",
@@ -199,7 +194,7 @@ export class CvImportService {
       throw new BadRequestException("Le fichier CV doit peser moins de 5 Mo.");
     }
 
-    const text = await this.extractText(file);
+    const { text } = await extractCvText(file);
 
     if (text.length < MIN_EXTRACTED_TEXT_LENGTH) {
       throw new UnprocessableEntityException(
@@ -259,26 +254,4 @@ export class CvImportService {
     };
   }
 
-  private async extractText(file: CvImportFile) {
-    const filename = file.originalname.toLowerCase();
-
-    if (
-      file.mimetype === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
-      filename.endsWith(".docx")
-    ) {
-      const result = await mammoth.extractRawText({ buffer: file.buffer });
-
-      return result.value.trim();
-    }
-
-    if (file.mimetype === "application/pdf" || filename.endsWith(".pdf")) {
-      const text = await extractPdfText(file.buffer);
-
-      return text.length >= MIN_EXTRACTED_TEXT_LENGTH
-        ? text
-        : recognizeImages(await renderPdfPages(file.buffer, MAX_OCR_PAGES));
-    }
-
-    throw new BadRequestException("Seuls les fichiers PDF et DOCX sont acceptes.");
-  }
 }

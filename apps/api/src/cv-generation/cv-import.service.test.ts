@@ -6,10 +6,24 @@ import {
 } from "../credits/credits.service";
 import { CvImportService, type CvImportFile } from "./cv-import.service";
 import { recognizeImages } from "./ocr.extractor";
-import { extractPdfText, renderPdfPages } from "./pdf-text.extractor";
+import { extractPdfContent, renderPdfPages } from "./pdf-text.extractor";
 
-vi.mock("./pdf-text.extractor", () => ({ extractPdfText: vi.fn(), renderPdfPages: vi.fn() }));
+vi.mock("./pdf-text.extractor", () => ({
+  extractPdfContent: vi.fn(),
+  renderPdfPages: vi.fn(),
+}));
 vi.mock("./ocr.extractor", () => ({ recognizeImages: vi.fn() }));
+
+/** The extractor now returns layout signals alongside the text (US-099). */
+function pdfContent(text: string) {
+  return {
+    columnSuspicion: 0,
+    hasTextLayer: text.trim().length > 0,
+    mojibakeRatio: 0,
+    pageCount: 1,
+    text,
+  };
+}
 
 const RAW_CV_TEXT = `
 Jean Dupont
@@ -82,7 +96,9 @@ describe("CvImportService", () => {
       assertSufficientCredits: vi.fn().mockResolvedValue(undefined),
       consumeCredits: vi.fn().mockResolvedValue(undefined),
     } as unknown as CreditsService;
-    vi.mocked(extractPdfText).mockImplementation(async (buffer) => buffer.toString("latin1").trim());
+    vi.mocked(extractPdfContent).mockImplementation(async (buffer) =>
+      pdfContent(buffer.toString("latin1").trim()),
+    );
     vi.mocked(renderPdfPages).mockResolvedValue([]);
     vi.mocked(recognizeImages).mockResolvedValue("");
     service = new CvImportService(openRouter as never, creditsService);
@@ -143,7 +159,7 @@ describe("CvImportService", () => {
     const file = makeFile();
     await service.extractProfileFromCv("user@example.com", file);
 
-    expect(extractPdfText).toHaveBeenCalledWith(file.buffer);
+    expect(extractPdfContent).toHaveBeenCalledWith(file.buffer);
   });
 
   it("does not run OCR when the PDF has a text layer", async () => {
@@ -155,7 +171,7 @@ describe("CvImportService", () => {
 
   it("falls back to local OCR for scanned PDFs, then pseudonymises the OCR text", async () => {
     const pageImage = Buffer.from("png");
-    vi.mocked(extractPdfText).mockResolvedValue("");
+    vi.mocked(extractPdfContent).mockResolvedValue(pdfContent(""));
     vi.mocked(renderPdfPages).mockResolvedValue([pageImage]);
     vi.mocked(recognizeImages).mockResolvedValue(RAW_CV_TEXT);
     const file = makeFile();
@@ -172,7 +188,7 @@ describe("CvImportService", () => {
   });
 
   it("rejects scanned PDFs whose OCR yields too little text", async () => {
-    vi.mocked(extractPdfText).mockResolvedValue("");
+    vi.mocked(extractPdfContent).mockResolvedValue(pdfContent(""));
     vi.mocked(renderPdfPages).mockResolvedValue([Buffer.from("png")]);
     vi.mocked(recognizeImages).mockResolvedValue("illisible");
 
