@@ -52,6 +52,8 @@ resource "dokploy_compose" "cvspark" {
     "OPENROUTER_MANAGEMENT_API_KEY=${var.openrouter_management_api_key}",
     "OPENROUTER_BALANCE_ALERT_THRESHOLD=${var.openrouter_balance_alert_threshold}",
     "OPENROUTER_BALANCE_CRITICAL_THRESHOLD=${var.openrouter_balance_critical_threshold}",
+    "ENABLE_ZDR_CHAT=${var.enable_zdr_chat}",
+    "ENABLE_ZDR_STT=${var.enable_zdr_stt}",
     "OPENROUTER_MODEL=${var.openrouter_model}",
     "OPENROUTER_FALLBACK_MODELS=${var.openrouter_fallback_models}",
     "OPENROUTER_MAX_ATTEMPTS=${var.openrouter_max_attempts}",
@@ -71,5 +73,9 @@ resource "dokploy_compose" "cvspark" {
     "SMTP_PASSWORD=${var.smtp_password}",
     "EMAIL_FROM=${local.email_from}",
     "NEXT_SERVER_ACTIONS_ENCRYPTION_KEY=${var.next_server_actions_encryption_key}",
+    "ATS_IP_HASH_SECRET=${var.ats_ip_hash_secret}",
+    "ATS_PUBLIC_HOURLY_LIMIT=${var.ats_public_hourly_limit}",
+    "ATS_PUBLIC_DAILY_LIMIT=${var.ats_public_daily_limit}",
+    "ATS_PUBLIC_DAILY_BUDGET=${var.ats_public_daily_budget}",
   ])
 }

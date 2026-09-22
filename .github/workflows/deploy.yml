@@ -314,6 +314,10 @@ jobs:
       TF_VAR_smtp_user: ${{ secrets.SMTP_USER }}
       TF_VAR_smtp_password: ${{ secrets.SMTP_PASSWORD }}
       TF_VAR_next_server_actions_encryption_key: ${{ secrets.NEXT_SERVER_ACTIONS_ENCRYPTION_KEY }}
+      # Optional, like the OpenRouter management key: an absent secret means an
+      # empty salt, which the API replaces with a per-process random one rather
+      # than failing the deploy.
+      TF_VAR_ats_ip_hash_secret: ${{ secrets.ATS_IP_HASH_SECRET }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4

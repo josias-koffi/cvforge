@@ -283,3 +283,58 @@ variable "next_server_actions_encryption_key" {
   description = "Next.js server-actions encryption key. Must stay fixed: a new value invalidates every in-flight server action on redeploy."
   sensitive   = true
 }
+
+variable "ats_ip_hash_secret" {
+  type        = string
+  description = <<-EOT
+    Salt for the hashed visitor address kept on a public ATS scan. Optional:
+    an empty value makes the API mint a random salt per process, which leaks
+    nothing but stops hashes being comparable across restarts, so abuse
+    forensics become useless. Never the raw address, either way.
+  EOT
+  sensitive   = true
+  default     = ""
+}
+
+variable "ats_public_hourly_limit" {
+  type        = number
+  description = "Public ATS scans allowed per IP and per hour."
+  default     = 3
+}
+
+variable "ats_public_daily_limit" {
+  type        = number
+  description = "Public ATS scans allowed per IP and per rolling day."
+  default     = 10
+}
+
+variable "ats_public_daily_budget" {
+  type        = number
+  description = <<-EOT
+    Public ATS scans allowed across every visitor per rolling day — the cost
+    stop-loss. Per-IP limits alone do not survive a botnet and every scan
+    spends a model call; past this the route answers 503 until the window
+    slides. Counters live in the API process: a restart resets the day.
+  EOT
+  default     = 300
+}
+
+variable "enable_zdr_chat" {
+  type        = bool
+  description = <<-EOT
+    Sends `data_collection: "deny"` on every chat completion, which the vision
+    (§15.3) requires of production.
+
+    It is a routing filter, not a header: OpenRouter then only considers
+    providers advertising zero data retention. If none of them serves the
+    configured model, generation fails outright — so a change here must be
+    watched on staging before it reaches production.
+  EOT
+  default     = true
+}
+
+variable "enable_zdr_stt" {
+  type        = bool
+  description = "Same filter for speech-to-text. See enable_zdr_chat."
+  default     = true
+}
