@@ -3,6 +3,7 @@ import type {
   AuthAccount,
   AuthAccountStore,
   AuthInvitation,
+  AuthMagicLink,
   AuthRole,
 } from "../auth.types";
 
@@ -15,6 +16,7 @@ import type {
 export function createInMemoryAccountStore(): AuthAccountStore {
   const accounts = new Map<string, AuthAccount>();
   const invitations = new Map<string, AuthInvitation>();
+  const magicLinks = new Map<string, AuthMagicLink>();
   let bootstrapConsumed = false;
 
   return {
@@ -151,6 +153,30 @@ export function createInMemoryAccountStore(): AuthAccountStore {
 
       return updatedInvitation;
     },
+    async saveMagicLink(tokenHash, link) {
+      magicLinks.set(tokenHash, link);
+    },
+    async consumeMagicLink(tokenHash, now) {
+      const link = magicLinks.get(tokenHash);
+
+      if (!link || new Date(link.expiresAt).getTime() <= now) {
+        return null;
+      }
+
+      // Delete and hand back, mirroring the store's single `DELETE ... RETURNING`.
+      magicLinks.delete(tokenHash);
+
+      return link;
+    },
+    async purgeExpiredMagicLinks(now) {
+      const expired = [...magicLinks.entries()].filter(
+        ([, link]) => new Date(link.expiresAt).getTime() <= now,
+      );
+
+      expired.forEach(([tokenHash]) => magicLinks.delete(tokenHash));
+
+      return expired.length;
+    },
     async exportUserData(email) {
       const account = accounts.get(email);
       const withTokenHash = ([tokenHash, invitation]: [
@@ -176,6 +202,12 @@ export function createInMemoryAccountStore(): AuthAccountStore {
 
       received.forEach(([tokenHash]) => invitations.delete(tokenHash));
 
+      const pendingLinks = [...magicLinks.entries()].filter(
+        ([, link]) => link.email === email,
+      );
+
+      pendingLinks.forEach(([tokenHash]) => magicLinks.delete(tokenHash));
+
       // Losing the last admin re-opens the bootstrap, as on disk.
       if (![...accounts.values()].some(({ role }) => role === "admin")) {
         bootstrapConsumed = false;
@@ -185,6 +217,7 @@ export function createInMemoryAccountStore(): AuthAccountStore {
         accountDeleted,
         invitationsRemoved: received.length,
         invitationsScrubbed: 0,
+        magicLinksRemoved: pendingLinks.length,
       };
     },
   };

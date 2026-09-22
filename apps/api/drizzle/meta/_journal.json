@@ -127,6 +127,13 @@
       "when": 1790400000000,
       "tag": "0017_remove_vat_mentions",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1790500000000,
+      "tag": "0018_auth_magic_links",
+      "breakpoints": true
     }
   ]
 }

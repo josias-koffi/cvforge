@@ -1,11 +1,17 @@
-import { asc, eq, sql } from "drizzle-orm";
+import { asc, eq, lte, sql } from "drizzle-orm";
 import type { Database } from "../database/database.types";
-import { authAccounts, authInvitations, authSettings } from "../database/schema";
+import {
+  authAccounts,
+  authInvitations,
+  authMagicLinks,
+  authSettings,
+} from "../database/schema";
 import type { AccountStatus } from "@cvforge/types";
 import type {
   AuthAccountStore,
   AuthConsentRecord,
   AuthInvitation,
+  AuthMagicLink,
   AuthRole,
 } from "./auth.types";
 
@@ -15,6 +21,15 @@ const SETTINGS_ID = "singleton";
 
 type AccountRow = typeof authAccounts.$inferSelect;
 type InvitationRow = typeof authInvitations.$inferSelect;
+type MagicLinkRow = typeof authMagicLinks.$inferSelect;
+
+function toMagicLink(row: MagicLinkRow): AuthMagicLink {
+  return {
+    consent: row.consent ?? null,
+    email: row.email,
+    expiresAt: row.expiresAt.toISOString(),
+  };
+}
 
 function toInvitation(row: InvitationRow): AuthInvitation {
   return {
@@ -224,6 +239,47 @@ export class PgAuthAccountStore implements AuthAccountStore {
     return row ? toInvitation(row) : null;
   }
 
+  async saveMagicLink(tokenHash: string, link: AuthMagicLink) {
+    const values = {
+      consent: link.consent,
+      email: link.email,
+      expiresAt: new Date(link.expiresAt),
+      tokenHash,
+    };
+
+    await this.db
+      .insert(authMagicLinks)
+      .values(values)
+      .onConflictDoUpdate({ target: authMagicLinks.tokenHash, set: values });
+  }
+
+  /**
+   * Single-use without a transaction: the delete matches at most one row, and
+   * only the caller whose delete actually removed it gets the link back, so
+   * two simultaneous clicks cannot both open a session. An expired row is left
+   * for `purgeExpiredMagicLinks` rather than handed back.
+   */
+  async consumeMagicLink(tokenHash: string, now: number) {
+    const [row] = await this.db
+      .delete(authMagicLinks)
+      .where(
+        sql`${authMagicLinks.tokenHash} = ${tokenHash}
+          and ${authMagicLinks.expiresAt} > ${new Date(now)}`,
+      )
+      .returning();
+
+    return row ? toMagicLink(row) : null;
+  }
+
+  async purgeExpiredMagicLinks(now: number) {
+    const removed = await this.db
+      .delete(authMagicLinks)
+      .where(lte(authMagicLinks.expiresAt, new Date(now)))
+      .returning({ tokenHash: authMagicLinks.tokenHash });
+
+    return removed.length;
+  }
+
   async exportUserData(email: string) {
     const account = await this.readAccount(email);
     const rows = await this.db.select().from(authInvitations);
@@ -246,8 +302,9 @@ export class PgAuthAccountStore implements AuthAccountStore {
   /**
    * Account purge. Invitations addressed to the account go; invitations it
    * issued to other people stay, with the issuer scrubbed — they are still
-   * other people's access. Purging the last admin clears the bootstrap latch,
-   * which is the documented way back in.
+   * other people's access. Pending magic links go too: they are addressed to
+   * the account and carry its address. Purging the last admin clears the
+   * bootstrap latch, which is the documented way back in.
    */
   purgeUserData(email: string) {
     return this.db.transaction(async (tx) => {
@@ -266,6 +323,11 @@ export class PgAuthAccountStore implements AuthAccountStore {
         .set({ createdBy: DELETED_ACCOUNT_MARKER })
         .where(eq(authInvitations.createdBy, email))
         .returning({ tokenHash: authInvitations.tokenHash });
+
+      const removedLinks = await tx
+        .delete(authMagicLinks)
+        .where(eq(authMagicLinks.email, email))
+        .returning({ tokenHash: authMagicLinks.tokenHash });
 
       if (deletedAccount?.role === "admin") {
         const [remainingAdmin] = await tx
@@ -289,6 +351,7 @@ export class PgAuthAccountStore implements AuthAccountStore {
         accountDeleted: Boolean(deletedAccount),
         invitationsRemoved: removed.length,
         invitationsScrubbed: scrubbed.length,
+        magicLinksRemoved: removedLinks.length,
       };
     });
   }

@@ -11,16 +11,21 @@ import {
   ACCOUNT_STATUS_ACTIVE,
   ACCOUNT_STATUS_SUSPENDED,
 } from "@cvforge/types";
-import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
+import { randomBytes } from "node:crypto";
 import { SUSPENDED_ACCOUNT_MESSAGE } from "./session-messages";
+import { SessionCookieCodec } from "./session-cookie";
+import { InvitationFlow } from "./invitations";
+import {
+  createConsentRecord,
+  hashToken,
+  isValidEmail,
+  normalizeEmail,
+} from "./auth.helpers";
+import type { SerializedSessionCookie } from "./session-cookie";
 import type {
-  AuthConsentRecord,
   AuthAccountRecord,
   AuthAccountStore,
   AuthConfig,
-  AuthInvitation,
-  AuthRole,
-  AuthSession,
   InvitationResponse,
   MagicLinkResponse,
 } from "./auth.types";
@@ -28,51 +33,36 @@ import type {
 /** Runs once an account exists for the first time; failures never block sign-in. */
 export type AccountCreatedListener = (email: string) => Promise<unknown> | unknown;
 
-type MagicLinkRecord = {
-  consent: AuthConsentRecord | null;
-  email: string;
-  expiresAt: number;
-  consumedAt: number | null;
-};
-
-type SerializedSessionCookie = {
-  name: string;
-  value: string;
-  options: CookieOptions;
-};
-
-type SessionPayload = {
-  email: string;
-  role: AuthRole;
-  issuedAt: string;
-  expiresAt: string;
-};
-
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const INVITATION_TTL_MS = 48 * 60 * 60 * 1000;
-const CONSENT_VERSION = "2026-04-mvp";
-
 @Injectable()
 export class AuthService {
-  private readonly magicLinks = new Map<string, MagicLinkRecord>();
   private readonly accountCreatedListeners: AccountCreatedListener[] = [];
   private readonly logger = new Logger(AuthService.name);
+  private readonly sessionCookies: SessionCookieCodec;
+  private readonly invitations: InvitationFlow;
 
   constructor(
     private readonly config: AuthConfig,
     private readonly accountStore: AuthAccountStore,
-  ) {}
+  ) {
+    this.sessionCookies = new SessionCookieCodec(config);
+    this.invitations = new InvitationFlow(
+      config,
+      accountStore,
+      this.sessionCookies,
+      (email) => this.notifyAccountCreated(email),
+    );
+  }
 
   async requestMagicLink(
     rawEmail: string,
     consentAccepted = false,
   ): Promise<MagicLinkResponse> {
-    this.pruneExpiredMagicLinks();
+    await this.pruneExpiredMagicLinks();
 
     const email = rawEmail.trim().toLowerCase();
     const existingAccount = await this.accountStore.readAccount(email);
 
-    if (!EMAIL_PATTERN.test(email)) {
+    if (!isValidEmail(email)) {
       throw new BadRequestException("A valid email address is required.");
     }
 
@@ -88,11 +78,10 @@ export class AuthService {
     const token = randomBytes(24).toString("base64url");
     const expiresAt = Date.now() + this.config.magicLinkTtlMinutes * 60_000;
 
-    this.magicLinks.set(this.hashToken(token), {
-      consent: existingAccount?.consent ?? this.createConsentRecord("passwordless"),
+    await this.accountStore.saveMagicLink(hashToken(token), {
+      consent: existingAccount?.consent ?? createConsentRecord("passwordless"),
       email,
-      expiresAt,
-      consumedAt: null,
+      expiresAt: new Date(expiresAt).toISOString(),
     });
 
     return {
@@ -124,97 +113,24 @@ export class AuthService {
     }
   }
 
-  async createInvitation(
+  createInvitation(
     cookieHeader: string | undefined,
     rawEmail: string,
     rawRole: string | undefined,
   ): Promise<InvitationResponse> {
-    const session = this.readSessionFromCookieHeader(cookieHeader);
-
-    if (!session) {
-      throw new UnauthorizedException("A valid session is required.");
-    }
-
-    if (session.role !== "admin") {
-      throw new ForbiddenException("Only admins can create invitations.");
-    }
-
-    const email = this.normalizeEmail(rawEmail);
-    const role = this.normalizeRole(rawRole);
-    const createdAt = new Date();
-    const expiresAt = new Date(createdAt.getTime() + INVITATION_TTL_MS).toISOString();
-    const token = randomBytes(24).toString("base64url");
-
-    await this.accountStore.saveInvitation(this.hashToken(token), {
-      consumedAt: null,
-      createdAt: createdAt.toISOString(),
-      createdBy: session.email,
-      email,
-      expiresAt,
-      role,
-    });
-
-    return {
-      email,
-      role,
-      invitationUrl: this.buildInvitationUrl(token),
-      expiresAt,
-    };
+    return this.invitations.create(cookieHeader, rawEmail, rawRole);
   }
 
-  async previewInvitation(rawToken: string) {
-    const invitation = await this.requireInvitation(rawToken);
-
-    return {
-      email: invitation.email,
-      expiresAt: invitation.expiresAt,
-      role: invitation.role,
-    };
+  previewInvitation(rawToken: string) {
+    return this.invitations.preview(rawToken);
   }
 
-  async consumeInvitation(rawToken: string, consentAccepted = false) {
-    const token = rawToken.trim();
-
-    if (!token) {
-      throw new BadRequestException("An invitation token is required.");
-    }
-
-    if (!consentAccepted) {
-      throw new BadRequestException("Consent is required before accepting an invitation.");
-    }
-
-    const consumedAt = new Date().toISOString();
-    const invitation = await this.accountStore.consumeInvitation(
-      this.hashToken(token),
-      consumedAt,
-      Date.now(),
-    );
-
-    if (!invitation) {
-      throw new UnauthorizedException("This invitation is invalid or expired.");
-    }
-
-    const isNewAccount = !(await this.accountStore.readAccount(invitation.email));
-    const role = await this.accountStore.assignInvitedRole(
-      invitation.email,
-      invitation.role,
-      this.createConsentRecord("invitation"),
-    );
-
-    if (isNewAccount) {
-      await this.notifyAccountCreated(invitation.email);
-    }
-
-    const session = this.createSession(invitation.email, role);
-
-    return {
-      session,
-      cookie: this.serializeSessionCookie(session),
-    };
+  consumeInvitation(rawToken: string, consentAccepted = false) {
+    return this.invitations.consume(rawToken, consentAccepted);
   }
 
   async consumeMagicLink(rawToken: string, redirectTo?: string) {
-    this.pruneExpiredMagicLinks();
+    await this.pruneExpiredMagicLinks();
 
     const token = rawToken.trim();
 
@@ -222,53 +138,39 @@ export class AuthService {
       throw new BadRequestException("A magic-link token is required.");
     }
 
-    const record = this.magicLinks.get(this.hashToken(token));
+    // Redeeming deletes the link in the same write, so a double click cannot
+    // open two sessions.
+    const link = await this.accountStore.consumeMagicLink(
+      hashToken(token),
+      Date.now(),
+    );
 
-    if (!record || record.consumedAt !== null || record.expiresAt <= Date.now()) {
+    if (!link) {
       throw new UnauthorizedException("This magic link is invalid or expired.");
     }
 
-    record.consumedAt = Date.now();
-
-    const isNewAccount = !(await this.accountStore.readAccount(record.email));
-    const role = await this.accountStore.resolveRole(record.email, record.consent);
+    const isNewAccount = !(await this.accountStore.readAccount(link.email));
+    const role = await this.accountStore.resolveRole(link.email, link.consent);
 
     if (isNewAccount) {
-      await this.notifyAccountCreated(record.email);
+      await this.notifyAccountCreated(link.email);
     }
 
-    const session = this.createSession(record.email, role);
+    const session = this.sessionCookies.createSession(link.email, role);
 
     return {
       redirectUrl: this.normalizeRedirectTarget(redirectTo),
       session,
-      cookie: this.serializeSessionCookie(session),
+      cookie: this.sessionCookies.serialize(session),
     };
   }
 
   readSessionFromCookieHeader(cookieHeader?: string) {
-    const cookieValue = this.extractCookie(cookieHeader, this.config.cookieName);
-
-    if (!cookieValue) {
-      return null;
-    }
-
-    return this.verifySessionCookie(cookieValue);
+    return this.sessionCookies.read(cookieHeader);
   }
 
   clearSessionCookie(): SerializedSessionCookie {
-    return {
-      name: this.config.cookieName,
-      value: "",
-      options: {
-        httpOnly: true,
-        maxAge: 0,
-        path: "/",
-        sameSite: "lax",
-        secure: this.config.secureCookies,
-        ...(this.config.cookieDomain ? { domain: this.config.cookieDomain } : {}),
-      },
-    };
+    return this.sessionCookies.clear();
   }
 
   listAccounts(): Promise<AuthAccountRecord[]> {
@@ -276,7 +178,7 @@ export class AuthService {
   }
 
   readAccountState(email: string) {
-    return this.accountStore.readAccountState(this.normalizeEmail(email));
+    return this.accountStore.readAccountState(normalizeEmail(email));
   }
 
   /**
@@ -285,7 +187,7 @@ export class AuthService {
    * by moving `sessionsValidFrom`, checked by `SessionStateMiddleware`).
    */
   async suspendAccount(rawEmail: string) {
-    const email = this.normalizeEmail(rawEmail);
+    const email = normalizeEmail(rawEmail);
     const accounts = await this.accountStore.listAccounts();
     const target = accounts.find((account) => account.email === email);
 
@@ -315,7 +217,7 @@ export class AuthService {
 
   /** Reactivation restores access but does not resurrect revoked cookies. */
   async reactivateAccount(rawEmail: string) {
-    const email = this.normalizeEmail(rawEmail);
+    const email = normalizeEmail(rawEmail);
     const account = await this.accountStore.readAccount(email);
 
     if (!account) {
@@ -331,7 +233,7 @@ export class AuthService {
 
   /** Force logout: every session issued before now is refused. */
   async revokeSessions(rawEmail: string) {
-    const email = this.normalizeEmail(rawEmail);
+    const email = normalizeEmail(rawEmail);
     const account = await this.accountStore.readAccount(email);
 
     if (!account) {
@@ -356,7 +258,7 @@ export class AuthService {
       );
     }
 
-    const email = this.normalizeEmail(rawEmail);
+    const email = normalizeEmail(rawEmail);
     const accounts = await this.accountStore.listAccounts();
     const target = accounts.find((account) => account.email === email);
 
@@ -387,80 +289,6 @@ export class AuthService {
     return consumeUrl.toString();
   }
 
-  private buildInvitationUrl(token: string) {
-    const invitationUrl = new URL("/register/invitation", this.config.appUrl);
-
-    invitationUrl.searchParams.set("token", token);
-
-    return invitationUrl.toString();
-  }
-
-  private createConsentRecord(source: AuthConsentRecord["source"]): AuthConsentRecord {
-    return {
-      acceptedAt: new Date().toISOString(),
-      source,
-      version: CONSENT_VERSION,
-    };
-  }
-
-  private createSession(email: string, role: AuthRole): AuthSession {
-    const issuedAt = new Date();
-    const expiresAt = new Date(
-      issuedAt.getTime() + this.config.sessionTtlDays * 24 * 60 * 60 * 1000,
-    );
-
-    return {
-      email,
-      role,
-      issuedAt: issuedAt.toISOString(),
-      expiresAt: expiresAt.toISOString(),
-    };
-  }
-
-  private serializeSessionCookie(session: AuthSession): SerializedSessionCookie {
-    const payload = Buffer.from(JSON.stringify(session)).toString("base64url");
-    const signature = this.sign(payload);
-
-    return {
-      name: this.config.cookieName,
-      value: `${payload}.${signature}`,
-      options: {
-        httpOnly: true,
-        maxAge: this.config.sessionTtlDays * 24 * 60 * 60 * 1000,
-        path: "/",
-        sameSite: "lax",
-        secure: this.config.secureCookies,
-        ...(this.config.cookieDomain ? { domain: this.config.cookieDomain } : {}),
-      },
-    };
-  }
-
-  private verifySessionCookie(value: string) {
-    const [payload, signature] = value.split(".");
-
-    if (!payload || !signature || !this.signaturesMatch(payload, signature)) {
-      return null;
-    }
-
-    let session: SessionPayload;
-
-    try {
-      session = JSON.parse(Buffer.from(payload, "base64url").toString("utf8"));
-    } catch {
-      return null;
-    }
-
-    if (!session.email || !session.expiresAt || !session.issuedAt) {
-      return null;
-    }
-
-    if (new Date(session.expiresAt).getTime() <= Date.now()) {
-      return null;
-    }
-
-    return session satisfies AuthSession;
-  }
-
   private normalizeRedirectTarget(redirectTo?: string) {
     if (!redirectTo) {
       return new URL("/login/success", this.config.appUrl).toString();
@@ -481,95 +309,18 @@ export class AuthService {
     }
   }
 
-  private extractCookie(cookieHeader: string | undefined, cookieName: string) {
-    if (!cookieHeader) {
-      return null;
-    }
-
-    const cookies = cookieHeader.split(";");
-
-    for (const cookie of cookies) {
-      const [name, ...rest] = cookie.trim().split("=");
-
-      if (name === cookieName) {
-        return rest.join("=");
-      }
-    }
-
-    return null;
-  }
-
-  private hashToken(token: string) {
-    return createHash("sha256").update(token).digest("hex");
-  }
-
-  private normalizeEmail(rawEmail: string) {
-    const email = rawEmail.trim().toLowerCase();
-
-    if (!EMAIL_PATTERN.test(email)) {
-      throw new BadRequestException("A valid email address is required.");
-    }
-
-    return email;
-  }
-
-  private normalizeRole(rawRole: string | undefined): AuthRole {
-    if (rawRole === "admin" || rawRole === "user") {
-      return rawRole;
-    }
-
-    throw new BadRequestException("Invitation role must be admin or user.");
-  }
-
-  private async requireInvitation(rawToken: string): Promise<AuthInvitation> {
-    const token = rawToken.trim();
-
-    if (!token) {
-      throw new BadRequestException("An invitation token is required.");
-    }
-
-    const invitation = await this.accountStore.readInvitation(
-      this.hashToken(token),
-    );
-
-    if (
-      !invitation ||
-      invitation.consumedAt !== null ||
-      new Date(invitation.expiresAt).getTime() <= Date.now()
-    ) {
-      throw new UnauthorizedException("This invitation is invalid or expired.");
-    }
-
-    return invitation;
-  }
-
-  private sign(payload: string) {
-    return createHmac("sha256", this.config.sessionSecret)
-      .update(payload)
-      .digest("base64url");
-  }
-
-  private signaturesMatch(payload: string, signature: string) {
-    const expected = Buffer.from(this.sign(payload));
-    const actual = Buffer.from(signature);
-
-    return expected.length === actual.length && timingSafeEqual(expected, actual);
-  }
-
-  private pruneExpiredMagicLinks() {
-    const now = Date.now();
-
-    for (const [tokenHash, record] of this.magicLinks.entries()) {
-      if (record.expiresAt <= now || record.consumedAt !== null) {
-        this.magicLinks.delete(tokenHash);
-      }
+  /**
+   * Spent links are deleted on redemption; this only clears the ones nobody
+   * ever clicked, so expired addresses do not linger in the table.
+   */
+  private async pruneExpiredMagicLinks() {
+    try {
+      await this.accountStore.purgeExpiredMagicLinks(Date.now());
+    } catch (error) {
+      // Housekeeping must never block a sign-in.
+      this.logger.warn(
+        `Could not purge expired magic links: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
   }
 }
-type CookieOptions = {
-  httpOnly?: boolean;
-  maxAge?: number;
-  path?: string;
-  sameSite?: "lax" | "strict" | "none";
-  secure?: boolean;
-};
