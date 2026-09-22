@@ -19,6 +19,7 @@ services:
     restart: unless-stopped
     environment:
       NODE_ENV: production
+      APP_VERSION: ${APP_VERSION:-}
       # NOT `http://api:3333`. Dokploy puts every stack on the shared
       # `dokploy-network` and registers each compose service name as an alias
       # there, so production and staging both publish the alias `api` on one
@@ -82,6 +83,7 @@ services:
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
       PUPPETEER_URL: ${PUPPETEER_URL:-http://puppeteer:3000}
+      APP_VERSION: ${APP_VERSION:-}
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
       # Management key: balance supervision only, inert when empty.
       OPENROUTER_MANAGEMENT_API_KEY: ${OPENROUTER_MANAGEMENT_API_KEY:-}

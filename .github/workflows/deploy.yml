@@ -140,9 +140,88 @@ jobs:
           cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.OWNER }}/${{ matrix.service }}:cache
           cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.OWNER }}/${{ matrix.service }}:cache,mode=max
 
+  # The image is deployed without anyone ever having started it: a crash at
+  # boot only surfaces in the smoke test, which runs after `tofu apply` — so
+  # the environment is already broken by the time it fails. That is exactly how
+  # a circular import between a middleware and its service took staging's API
+  # down: it passed 593 unit tests, because Vitest's ESM graph resolves the
+  # cycle that the compiled CommonJS build does not.
+  verify-image:
+    name: Boot the API image
+    needs: [resolve, build]
+    if: ${{ !failure() && !cancelled() }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: verify
+          POSTGRES_PASSWORD: verify
+          POSTGRES_DB: verify
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U verify"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    steps:
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Migrations run first in the image's own CMD, so this also proves the
+      # new migration applies to a real PostgreSQL 16 — not just to the PGlite
+      # the test suite uses.
+      - name: Start the image against a disposable PostgreSQL
+        env:
+          IMAGE: ${{ env.REGISTRY }}/${{ env.OWNER }}/cvspark-api:${{ needs.resolve.outputs.image_tag }}
+        run: |
+          set -euo pipefail
+          docker run -d --name api-verify --network host \
+            -e NODE_ENV=production \
+            -e PORT=3333 \
+            -e DATABASE_URL=postgres://verify:verify@127.0.0.1:5432/verify \
+            -e AUTH_SESSION_SECRET=verify-only-not-a-real-secret \
+            -e OPENROUTER_API_KEY=verify-only-not-a-real-key \
+            -e APP_VERSION=${{ needs.resolve.outputs.image_tag }} \
+            "${IMAGE}"
+
+      - name: Wait for /health and /ready
+        run: |
+          set -euo pipefail
+          for attempt in $(seq 1 30); do
+            if curl -fsS -o /dev/null http://127.0.0.1:3333/health; then
+              echo "api answered after ${attempt} attempt(s)"
+              curl -fsS http://127.0.0.1:3333/health
+              echo
+              # /ready queries the database, so it also covers the migration.
+              curl -fsS -o /dev/null http://127.0.0.1:3333/ready
+              echo "ready: ok"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "::error::The API image never became healthy. Container logs follow."
+          exit 1
+
+      - name: Container logs
+        if: always()
+        run: docker logs api-verify 2>&1 | tail -80
+
+      - name: Stop the container
+        if: always()
+        run: docker rm -f api-verify
+
   tofu:
     name: OpenTofu (DNS)
-    needs: [resolve, build]
+    needs: [resolve, build, verify-image]
     if: ${{ !failure() && !cancelled() }}
     runs-on: ubuntu-latest
     concurrency:
@@ -293,6 +372,37 @@ jobs:
             "https://${LANDING_DOMAIN}/"; do
             echo "checking ${url}"
             curl -fsS --retry 5 --retry-delay 10 --retry-all-errors -o /dev/null "${url}"
+          done
+
+      # Reaching a 200 only proves something is up. The previous image answers
+      # those checks just as well, which is how staging once served a build
+      # five deploys old with every run reported successful. So ask each
+      # container which build it is, and fail when it is not this one.
+      - name: Assert the deployed version
+        env:
+          WEB_DOMAIN: ${{ needs.resolve.outputs.web_domain }}
+          API_DOMAIN: ${{ needs.resolve.outputs.api_domain }}
+          IMAGE_TAG: ${{ needs.resolve.outputs.image_tag }}
+        run: |
+          set -euo pipefail
+          for target in "api https://${API_DOMAIN}/health" "web https://${WEB_DOMAIN}/version"; do
+            set -- ${target}
+            service="$1"
+            url="$2"
+            # The container may still be rolling over; retry before judging.
+            for attempt in $(seq 1 10); do
+              running=$(curl -fsS --retry 3 --retry-delay 5 --retry-all-errors "${url}" \
+                | python3 -c 'import json,sys; print(json.load(sys.stdin).get("version",""))')
+              [ "${running}" = "${IMAGE_TAG}" ] && break
+              echo "${service}: serving '${running}', waiting for '${IMAGE_TAG}' (${attempt}/10)"
+              sleep 10
+            done
+            if [ "${running}" != "${IMAGE_TAG}" ]; then
+              echo "::error::${service} still serves '${running}' instead of '${IMAGE_TAG}'." \
+                   "The stack reported success but the container was never replaced."
+              exit 1
+            fi
+            echo "${service}: running ${running}"
           done
 
       - name: Summary

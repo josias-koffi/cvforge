@@ -1,13 +1,32 @@
-import { describe, expect, it } from "vitest";
-import { AppController } from "./app.controller";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 describe("AppController", () => {
-  it("returns an ok health payload", () => {
-    const controller = new AppController();
+  const original = process.env;
 
-    expect(controller.health()).toEqual({
+  beforeEach(() => {
+    process.env = { ...original };
+    vi.resetModules();
+  });
+
+  afterEach(() => {
+    process.env = original;
+  });
+
+  it("returns an ok health payload carrying the running version", async () => {
+    process.env.APP_VERSION = "abc1234";
+    const { AppController } = await import("./app.controller");
+
+    expect(new AppController().health()).toEqual({
       status: "ok",
       service: "api",
+      version: "abc1234",
     });
+  });
+
+  it("reports an empty version when the build is not stamped", async () => {
+    delete process.env.APP_VERSION;
+    const { AppController } = await import("./app.controller");
+
+    expect(new AppController().health().version).toBe("");
   });
 });

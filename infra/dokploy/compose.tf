@@ -24,6 +24,9 @@ resource "dokploy_compose" "cvspark" {
   # ${...} references in dokploy-stack.yml resolve against.
   env = join("\n", [
     "IMAGE_TAG=${var.image_tag}",
+    # Served back by /health (api) and /version (web), so a deploy can assert
+    # the containers really run the tag it just published.
+    "APP_VERSION=${var.image_tag}",
     "VOLUME_PREFIX=${local.volume_prefix}",
     "LANDING_DOMAIN=${local.domains.landing}",
     "WEB_DOMAIN=${local.domains.web}",

@@ -143,6 +143,8 @@ export const applicationStatusTransitions = {
 export interface ServiceHealth {
   status: "ok";
   service: string;
+  /** Image tag actually serving the request; empty outside a deployment. */
+  version: string;
 }
 
 
