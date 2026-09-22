@@ -121,12 +121,40 @@ describe("HomePage", () => {
 })
 
 describe("SiteHeader", () => {
-  it("links to sections, the localized story and the language switch", () => {
+  /**
+   * Two destinations stay in the open because they are what a visitor comes to
+   * decide on — the price and the free check, which is the top of the funnel.
+   */
+  it("keeps pricing and the free ATS check one click away", () => {
     const html = renderToStaticMarkup(<SiteHeader locale="fr" nav={fr.nav} />)
 
     expect(html).toContain('href="/fr#pricing"')
-    expect(html).toContain('href="/fr/histoire"')
+    expect(html).toContain('href="/fr/analyse-ats"')
     expect(html).toContain('href="/en"')
+  })
+
+  it("groups the rest behind a labelled trigger", () => {
+    const html = renderToStaticMarkup(<SiteHeader locale="fr" nav={fr.nav} />)
+
+    expect(html).toContain(fr.nav.product)
+    // Radix renders the menu in a portal, so its items are absent until it is
+    // opened — which is exactly why the footer keeps the full list.
+    expect(html).not.toContain('href="/fr#features"')
+  })
+
+  it("does not crowd the bar: at most three navigation entries", () => {
+    const html = renderToStaticMarkup(<SiteHeader locale="fr" nav={fr.nav} />)
+    const nav = html.slice(html.indexOf('aria-label="Main"'))
+    const entries = nav.slice(0, nav.indexOf("</nav>")).split("<li").length - 1
+
+    expect(entries).toBeLessThanOrEqual(3)
+  })
+
+  it("translates the grouping label", () => {
+    const html = renderToStaticMarkup(<SiteHeader locale="en" nav={en.nav} />)
+
+    expect(html).toContain(en.nav.product)
+    expect(html).toContain('href="/en/ats-check"')
   })
 })
 

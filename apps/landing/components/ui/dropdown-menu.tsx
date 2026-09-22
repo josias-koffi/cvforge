@@ -1,0 +1,81 @@
+"use client"
+
+import * as React from "react"
+import { cn } from "cn"
+import { DropdownMenu as DropdownMenuPrimitive } from "radix-ui"
+
+/**
+ * `modal` defaults to false: a navigation menu is not a dialog.
+ *
+ * Radix's modal mode marks the rest of the document `aria-hidden` while the
+ * menu is open, which leaves the header, main and footer links focusable yet
+ * hidden from assistive technology — an `aria-hidden-focus` violation axe
+ * catches, and a genuine one. It also locks page scrolling, which a site nav
+ * has no business doing.
+ */
+function DropdownMenu({
+  modal = false,
+  ...props
+}: React.ComponentProps<typeof DropdownMenuPrimitive.Root>) {
+  return (
+    <DropdownMenuPrimitive.Root
+      data-slot="dropdown-menu"
+      modal={modal}
+      {...props}
+    />
+  )
+}
+
+function DropdownMenuTrigger({
+  ...props
+}: React.ComponentProps<typeof DropdownMenuPrimitive.Trigger>) {
+  return (
+    <DropdownMenuPrimitive.Trigger data-slot="dropdown-menu-trigger" {...props} />
+  )
+}
+
+function DropdownMenuContent({
+  className,
+  sideOffset = 6,
+  ...props
+}: React.ComponentProps<typeof DropdownMenuPrimitive.Content>) {
+  return (
+    <DropdownMenuPrimitive.Portal>
+      <DropdownMenuPrimitive.Content
+        data-slot="dropdown-menu-content"
+        sideOffset={sideOffset}
+        className={cn(
+          "z-50 min-w-48 overflow-hidden rounded-lg border bg-popover p-1 text-popover-foreground shadow-overlay",
+          "data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95",
+          "data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+          className
+        )}
+        {...props}
+      />
+    </DropdownMenuPrimitive.Portal>
+  )
+}
+
+function DropdownMenuItem({
+  className,
+  ...props
+}: React.ComponentProps<typeof DropdownMenuPrimitive.Item>) {
+  return (
+    <DropdownMenuPrimitive.Item
+      data-slot="dropdown-menu-item"
+      className={cn(
+        "relative flex cursor-pointer items-center rounded-md px-3 py-2 text-sm outline-hidden select-none",
+        "focus:bg-muted focus:text-foreground data-highlighted:bg-muted",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+export {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+}

@@ -25,6 +25,8 @@ interface SectionHeading {
 export interface LandingDictionary {
   meta: { title: string; description: string; ogAlt: string }
   nav: {
+    /** Label of the header dropdown grouping everything one reads before deciding. */
+    product: string
     features: string
     howItWorks: string
     pricing: string

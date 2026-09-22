@@ -11,6 +11,7 @@ export const fr: LandingDictionary = {
     ogAlt: "CVSpark, l'étincelle entre votre profil et l'offre",
   },
   nav: {
+    product: "Produit",
     features: "Fonctionnalités",
     howItWorks: "Comment ça marche",
     pricing: "Tarifs",

@@ -11,6 +11,7 @@ export const en: LandingDictionary = {
     ogAlt: "CVSpark, the spark between your profile and the job",
   },
   nav: {
+    product: "Product",
     features: "Features",
     howItWorks: "How it works",
     pricing: "Pricing",
