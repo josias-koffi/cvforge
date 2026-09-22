@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  normalizeCvJson,
   normalizeSkillCategories,
   normalizeUpdatedCvContent,
 } from "./cv-generation.normalizers";
@@ -86,5 +87,50 @@ describe("CV generation normalizers", () => {
         { label: "Backend", items: ["NestJS"] },
       ],
     });
+  });
+});
+
+describe("normalizeCvJson — chronology", () => {
+  const profile = {
+    profileSections: { interests: "" },
+  } as never as Parameters<typeof normalizeCvJson>[2];
+
+  function order(endDates: string[]) {
+    const raw = {
+      experiences: endDates.map((endDate, index) => ({
+        achievements: [],
+        company: `C${index}`,
+        endDate,
+        position: `P${index}`,
+        startDate: "2019",
+      })),
+    };
+
+    return normalizeCvJson(
+      raw as never,
+      { email: "a@b.c", lastName: "Dupont", phone: "+33600000000" },
+      profile,
+    ).experiences.map((experience) => experience.endDate);
+  }
+
+  /**
+   * The score docks a CV that is not in reverse chronology, so the generator
+   * has to produce it — a real CV listed a finished role above one still
+   * running and lost the points for it.
+   */
+  it("puts the most recent experience first", () => {
+    expect(order(["2021", "Fév. 2026", "2024"])).toEqual([
+      "Fév. 2026",
+      "2024",
+      "2021",
+    ]);
+  });
+
+  it("puts an ongoing role above every dated one", () => {
+    expect(order(["2026", "Présent"])).toEqual(["Présent", "2026"]);
+  });
+
+  it("leaves undated entries where they were rather than shuffling a career", () => {
+    expect(order(["2021", "", "2024"])).toEqual(["2024", "2021", ""]);
   });
 });

@@ -97,15 +97,55 @@ function normalizeItems<T>(
 }
 
 function normalizeExperiences(raw: unknown[]): ExperienceItemProps[] {
-  return normalizeItems(raw, (item) => ({
-    achievements: toStrArray(item.achievements),
-    company: toStr(item.company),
-    description: toStr(item.description),
-    endDate: toStr(item.endDate),
-    position: toStr(item.position),
-    startDate: toStr(item.startDate),
-  }));
+  return sortMostRecentFirst(
+    normalizeItems(raw, (item) => ({
+      achievements: toStrArray(item.achievements),
+      company: toStr(item.company),
+      description: toStr(item.description),
+      endDate: toStr(item.endDate),
+      position: toStr(item.position),
+      startDate: toStr(item.startDate),
+    })),
+  );
 }
+
+/**
+ * Most recent experience first, whatever order the profile was captured in.
+ *
+ * Reverse chronology is the convention every ATS and every recruiter reads a
+ * career by, and our own score docks a CV that lacks it — so producing it is
+ * not a liberty, it is consistency. A real generated CV listed a 2021-2024 role
+ * above a role still running, and lost the points for it.
+ *
+ * Sorted server-side rather than asked of the model: ordering is arithmetic, and
+ * the model reorders nothing it was told to copy. Ties and undated entries keep
+ * their original position, so an unparsable date never shuffles a career.
+ */
+function sortMostRecentFirst(
+  experiences: ExperienceItemProps[],
+): ExperienceItemProps[] {
+  return experiences
+    .map((experience, index) => ({ experience, index }))
+    .sort((a, b) => {
+      const delta = endsAt(b.experience) - endsAt(a.experience);
+
+      return delta !== 0 ? delta : a.index - b.index;
+    })
+    .map(({ experience }) => experience);
+}
+
+/** An ongoing role outranks every dated one; an undated one sorts last. */
+function endsAt(experience: ExperienceItemProps) {
+  const value = `${experience.endDate}`.trim();
+
+  if (ONGOING.test(value)) return Number.MAX_SAFE_INTEGER;
+
+  const year = /(19|20)\d{2}/.exec(value);
+
+  return year ? Number(year[0]) : Number.MIN_SAFE_INTEGER;
+}
+
+const ONGOING = /^(present|présent|aujourd|current|now|en cours)/i;
 
 function normalizeEducation(raw: unknown[]): EducationItemProps[] {
   return normalizeItems(raw, (item) => ({

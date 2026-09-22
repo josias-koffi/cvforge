@@ -196,3 +196,66 @@ Anglais B2 / Professionnel`;
     expect(sections.experience).toBe(false);
   });
 });
+
+/**
+ * The shape of a real CV our generator produced, as its PDF text layer hands it
+ * over. Anonymised, but structurally faithful: month-name end dates, no bullet
+ * characters, a "FORMATION" section whose diplomas are dated in bare years.
+ *
+ * It scored 76 in production. Three separate reading failures, all ours: the
+ * two real jobs were invisible because "Oct. 2024" matched no date pattern, the
+ * three diplomas were read as jobs instead, and no achievement was attached to
+ * anything because the bullet characters never reached the text layer.
+ */
+describe("a CV whose dates carry month names", () => {
+  const CV = `Prénom Nom
+Assistant Chef de Projet CRM
+0600000000 · nom@example.com · Paris · linkedin.com/in/profil
+PROFIL
+Assistant chef de projet CRM avec expérience en marketing digital.
+COMPÉTENCES CLÉS
+Outils : Power BI · Excel avancé
+EXPÉRIENCES
+Responsable Marketing Digital
+Société A
+2021 – Oct. 2024
+Création du département marketing digital et lancement de la gamme.
+Pilotage de la communication interne et externe du groupe.
+Consultante Marketing Freelance
+Société B
+2024 – Fév. 2026
+Conception et scénographie de pop-up stores en point de vente.
+FORMATION
+Mastère Communication et Marketing Stratégique
+École
+2025 - 2027
+Stratégie de marque, communication événementielle, branding.
+Bachelor Marketing Digital
+Autre école
+2020 - 2023
+Communication produit, marketing digital, gestion de projet.
+CENTRES D'INTÉRÊT
+Mode et univers du luxe · Photographie · Voyages culturels`;
+
+  it("reads the two jobs and neither diploma as experience", () => {
+    const { experiences } = parseCvText(CV);
+
+    expect(experiences).toHaveLength(2);
+    expect(experiences[0]?.endDate).toBe("Oct. 2024");
+    expect(experiences[1]?.endDate).toBe("Fév. 2026");
+  });
+
+  it("attaches the achievements even without a bullet character", () => {
+    const [first, second] = parseCvText(CV).experiences;
+
+    expect(first?.bullets).toHaveLength(2);
+    expect(second?.bullets).toHaveLength(1);
+  });
+
+  /** Hobbies under a heading we do not score must not become the last job's work. */
+  it("stops at the interests section", () => {
+    const bullets = parseCvText(CV).experiences.flatMap((e) => e.bullets);
+
+    expect(bullets.join(" ")).not.toContain("Photographie");
+  });
+});

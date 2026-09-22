@@ -19,11 +19,27 @@ const PORTFOLIO = /github\.com|gitlab\.com|behance\.net|dribbble\.com|\bportfoli
 const BULLET_LINE = /^\s*[-–—•*·]\s+/;
 
 /**
+ * Month names, French and English, abbreviated or not.
+ *
+ * "Oct. 2024" is the shape our own generator is instructed to produce, and the
+ * shape most CVs use. Reading only "10/2024" meant the experiences of a CV we
+ * had written ourselves were invisible, while its diplomas — dated in bare
+ * years — were read as jobs.
+ */
+const MONTH =
+  "(?:janv|f[ée]vr?|mars|avr|mai|juin|juil|ao[uû]t|sept?|oct|nov|d[ée]c|jan|feb|mar|apr|may|jun|jul|aug|dec)[a-zà-ÿ]*\\.?";
+const YEAR = `(?:${MONTH}\\s+)?(?:19|20)\\d{2}`;
+const DATE = `(?:(?:0?[1-9]|1[0-2])[/-](?:19|20)\\d{2}|${YEAR}(?:-(?:0?[1-9]|1[0-2]))?)`;
+const PRESENT = "présent|present|aujourd'hui|current|now|en cours";
+
+/**
  * Date ranges as a CV writes them, which is how an experience is recognised
  * without any structure to rely on.
  */
-const DATE_RANGE =
-  /((?:0?[1-9]|1[0-2])[/-](?:19|20)\d{2}|(?:19|20)\d{2}(?:-(?:0?[1-9]|1[0-2]))?)\s*(?:[-–—]|à|to|au)\s*((?:0?[1-9]|1[0-2])[/-](?:19|20)\d{2}|(?:19|20)\d{2}(?:-(?:0?[1-9]|1[0-2]))?|présent|present|aujourd'hui|current|now|en cours)/i;
+const DATE_RANGE = new RegExp(
+  `(${DATE})\\s*(?:[-–—]|à|to|au)\\s*(${DATE}|${PRESENT})`,
+  "i",
+);
 
 /**
  * The landing path: a CV as extracted from a PDF or DOCX, with no structure
@@ -240,8 +256,27 @@ function headingMatches(key: string, candidates: readonly string[]) {
  */
 function extractExperiences(lines: string[]): AtsExperience[] {
   const experiences: AtsExperience[] = [];
+  let open = false;
+  // `null` until the first heading: a CV that uses none at all must still have
+  // its dated lines read as jobs.
+  let section: string | null = null;
 
   for (const line of lines) {
+    if (isHeadingLike(line)) {
+      const heading = sectionOf(headingKey(line));
+
+      if (heading) {
+        section = heading;
+        open = false;
+        continue;
+      }
+    }
+
+    // Only the experience section holds jobs. Without this, three diplomas —
+    // dated in bare years, right under "FORMATION" — were read as three jobs,
+    // and the career then looked out of chronological order.
+    if (section !== null && section !== "experience") continue;
+
     const match = DATE_RANGE.exec(line);
 
     if (match) {
@@ -252,16 +287,40 @@ function extractExperiences(lines: string[]): AtsExperience[] {
         role: line.replace(DATE_RANGE, "").trim(),
         startDate: match[1] ?? "",
       });
+      open = true;
 
       continue;
     }
 
     const current = experiences.at(-1);
 
-    if (current && BULLET_LINE.test(line)) {
+    if (!open || !current) continue;
+
+    if (BULLET_LINE.test(line)) {
       current.bullets.push(line.replace(BULLET_LINE, "").trim());
+      continue;
+    }
+
+    if (isAchievementLine(line)) {
+      current.bullets.push(line.trim());
     }
   }
 
   return experiences;
+}
+
+/** An achievement is at least this long; shorter lines are company names. */
+const MIN_ACHIEVEMENT_WORDS = 4;
+
+/**
+ * A line of an experience that carries content, bullet character or not.
+ *
+ * Requiring the marker meant a CV whose bullets did not survive PDF extraction
+ * was read as having no achievements at all — and then told its bullets opened
+ * on no action verb, when the truth is we never found them. Real CVs lose their
+ * markers routinely: a CSS `list-style` bullet is drawn into the page but never
+ * written into its text layer, which is exactly what our own template did.
+ */
+function isAchievementLine(line: string) {
+  return countWords(line) >= MIN_ACHIEVEMENT_WORDS;
 }

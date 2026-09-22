@@ -206,3 +206,41 @@ déclarées que le parcours n'étaye pas.
 **La leçon** : le score ATS ne vaut que ce que vaut le fichier livré. Tester le moteur sur des
 structures de données ne dit rien de ce qu'un ATS lira — seul le passage par un vrai PDF le dit, et
 c'est ce passage qui manquait à la vérification de l'US-104.
+
+## Amendement 2026-09-22 (3) — un vrai CV de production : le lecteur ignorait le format du producteur
+
+Un CV réel généré en production, PDF déposé sur la landing : **76**. Trois défauts de lecture, tous
+de notre côté, et tous de la même famille que les précédents — **notre lecteur ne connaissait pas
+ce que notre producteur écrit**.
+
+1. **Les dates à nom de mois n'étaient pas reconnues.** `DATE_RANGE` n'acceptait que `MM/AAAA`,
+   `AAAA-MM` et `AAAA`. Or le prompt de génération impose explicitement le format `« Jan. 2022 »`.
+   Conséquence : les deux vraies expériences, datées « 2021 – Oct. 2024 » et « 2024 – Fév. 2026»,
+   étaient **invisibles**, tandis que les trois diplômes — datés en années nues sous « FORMATION » —
+   étaient lus comme des postes. Le parcours paraissait en désordre chronologique par-dessus le
+   marché.
+2. **Aucune réalisation n'était rattachée.** L'adaptateur n'acceptait comme puce qu'une ligne
+   commençant par un marqueur, et les marqueurs `list-style` n'atteignent jamais la couche texte
+   (amendement 2). `impact` valait **0**, et le rapport annonçait « les puces ne commencent pas par
+   un verbe d'action » alors que nous n'avions trouvé aucune puce. Une ligne de contenu sous une
+   expérience compte désormais comme réalisation, marqueur ou pas.
+3. **La détection d'expérience n'était pas bornée à sa section.** Ajouté : un poste ne peut naître
+   que dans la section expérience, et « CENTRES D'INTÉRÊT » / « PROJETS » ferment le bloc en cours —
+   sans quoi une liste de loisirs devenait le travail du dernier poste.
+
+**Côté générateur** : les expériences sont désormais triées **antéchronologiquement côté serveur**
+(`sortMostRecentFirst`), et non demandées au modèle — l'ordre est de l'arithmétique. Nous pénalisions
+l'absence d'antéchronologie sans jamais la produire : le CV réel plaçait un poste terminé au-dessus
+d'un poste en cours et perdait les points correspondants. Les ex æquo et les entrées non datées
+gardent leur position, pour qu'une date illisible ne mélange jamais une carrière.
+
+**Résultat sur ce CV** : 76 → **80**, `impact` 0 → 59, les deux postes et leurs neuf réalisations
+enfin lus. Les points restants sont des faiblesses réelles du document, pas des erreurs de mesure :
+aucun chiffre nulle part (plafond `MISSING_QUANTIFICATION` à 80), aucune certification, des
+compétences que le parcours n'étaye pas.
+
+**Ce que la série de trois amendements établit** : chaque défaut venait d'un désaccord entre ce que
+CVForge *écrit* et ce que CVForge *lit* — le registre des puces, le lexique des titres, la
+typographie du PDF, le format des dates, l'ordre des expériences. Le moteur et le générateur doivent
+être tenus comme **deux moitiés d'un même contrat**, et toute évolution de l'un se teste sur la
+sortie réelle de l'autre.

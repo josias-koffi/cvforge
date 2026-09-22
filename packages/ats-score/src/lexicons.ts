@@ -73,7 +73,17 @@ export const SECTION_HEADINGS = {
     "experiences professionnelles", "parcours professionnel", "work experience",
     "employment history", "professional experience",
   ],
+  /**
+   * Not scored, but named so that reaching one closes the experience being
+   * read: without it, a list of hobbies was filed as the achievements of the
+   * last job.
+   */
+  interests: [
+    "centres d interet", "centre d interet", "interets", "loisirs",
+    "interests", "hobbies",
+  ],
   languages: ["langue", "langues", "languages"],
+  projects: ["projet", "projets", "projects", "realisations"],
   skills: [
     "competence", "competences", "competences cles", "competences techniques",
     "skills", "key skills", "technical skills", "savoir faire",
