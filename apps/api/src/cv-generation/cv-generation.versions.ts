@@ -1,3 +1,4 @@
+import type { AtsScoreResult } from "@cvforge/ats-score";
 import type {
   CVDocumentContent,
   CVDocumentVersionEntry,
@@ -36,6 +37,31 @@ export function appendCvVersion(
       source,
       templateId,
       versionNumber,
+    },
+  ];
+}
+
+/**
+ * Stamps the score on the version that was just appended.
+ *
+ * Only the number and the scale are kept per version: the full result lives on
+ * the application, and the chart of progression (vision §12.3) reads a column.
+ * A failed scoring leaves the version unstamped rather than recording a zero.
+ */
+export function withScore(
+  versions: CVDocumentVersionEntry[],
+  score: AtsScoreResult | null,
+): CVDocumentVersionEntry[] {
+  if (!score || versions.length === 0) return versions;
+
+  const last = versions[versions.length - 1]!;
+
+  return [
+    ...versions.slice(0, -1),
+    {
+      ...last,
+      atsEngineVersion: score.engineVersion,
+      atsScore: score.overallScore,
     },
   ];
 }

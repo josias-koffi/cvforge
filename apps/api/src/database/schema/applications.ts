@@ -1,3 +1,4 @@
+import type { AtsScoreResult } from "@cvforge/ats-score";
 import type {
   ApplicationStatus,
   ApplicationStatusHistoryEntry,
@@ -52,6 +53,11 @@ export const applications = pgTable(
     letterContent: jsonb("letter_content").$type<LetterDocumentContent | null>(),
     letterGeneratedAt: timestamp("letter_generated_at", { withTimezone: true }),
     letterTemplateId: text("letter_template_id"),
+    /**
+     * The current CV's ATS score, denormalised from the latest version: the
+     * list screen reads it per row and never queries inside it (vision §7.1).
+     */
+    atsScore: jsonb("ats_score").$type<AtsScoreResult | null>(),
     interviewReports: jsonb("interview_reports")
       .$type<InterviewReport[]>()
       .notNull()
@@ -101,6 +107,13 @@ export const applicationCvVersions = pgTable(
   {
     ...versionColumns(),
     content: jsonb("content").$type<CVDocumentContent>().notNull(),
+    /**
+     * Kept per version so the progression chart (vision §12.3) reads a column
+     * instead of re-scoring every historical document. `ats_engine_version`
+     * travels with it: scores from two scales must never share an average.
+     */
+    atsScore: integer("ats_score"),
+    atsEngineVersion: text("ats_engine_version"),
   },
   (table) => [
     index("application_cv_versions_app_idx").on(

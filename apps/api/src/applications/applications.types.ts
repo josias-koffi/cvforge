@@ -1,3 +1,4 @@
+import type { AtsScoreResult } from "@cvforge/ats-score";
 import type {
   ApplicationStatus,
   ApplicationsKpiSummary,
@@ -13,6 +14,12 @@ import type {
 export type StoredApplication = DraftApplication & {
   cvContent: CVDocumentContent | null;
   cvVersions?: CVDocumentVersionEntry[];
+  /**
+   * The score of the CV as it currently stands. Denormalised from the latest
+   * version for the same reason `cvContent` is: the list screen reads it for
+   * every row and never queries inside it (vision §7.1).
+   */
+  atsScore?: AtsScoreResult | null;
   interviewReports?: InterviewReport[];
   letterContent?: LetterDocumentContent | null;
   letterVersions?: LetterDocumentVersionEntry[];

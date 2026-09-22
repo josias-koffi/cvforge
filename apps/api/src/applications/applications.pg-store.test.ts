@@ -19,6 +19,7 @@ function makeApplication(
   overrides: Partial<StoredApplication> = {},
 ): StoredApplication {
   return {
+    atsScore: null,
     companyContext: null,
     companyContextGeneratedAt: null,
     createdAt: "2026-04-20T12:00:00.000Z",
@@ -85,6 +86,72 @@ describe("PgApplicationsStore", () => {
       makeApplication("app-1"),
     );
   });
+
+  /**
+   * The score columns added in US-105: the full result on the application, the
+   * number and its scale per version. A missing score must read back as absent,
+   * never as zero.
+   */
+  it("round-trips the ATS score and the scale that produced it", async () => {
+    const score = {
+      band: "good" as const,
+      dimensions: [
+        { key: "structure" as const, score: 80, status: "scored" as const },
+      ],
+      engineVersion: "1.1.0",
+      findings: [],
+      llmApplied: false,
+      overallScore: 72,
+    };
+
+    await store.createDraft(
+      makeApplication("app-score", {
+        atsScore: score,
+        cvVersions: [
+          {
+            atsEngineVersion: "1.1.0",
+            atsScore: 72,
+            content: {} as never,
+            createdAt: "2026-09-22T12:00:00.000Z",
+            id: "app-score-cv-v1",
+            source: "generation",
+            templateId: null,
+            versionNumber: 1,
+          },
+        ],
+      }),
+    );
+
+    const read = await store.findById("app-score");
+
+    expect(read?.atsScore).toEqual(score);
+    expect(read?.cvVersions?.[0]?.atsScore).toBe(72);
+    expect(read?.cvVersions?.[0]?.atsEngineVersion).toBe("1.1.0");
+  });
+
+  it("reads an unscored version back as absent, not zero", async () => {
+    await store.createDraft(
+      makeApplication("app-unscored", {
+        cvVersions: [
+          {
+            content: {} as never,
+            createdAt: "2026-09-22T12:00:00.000Z",
+            id: "app-unscored-cv-v1",
+            source: "generation",
+            templateId: null,
+            versionNumber: 1,
+          },
+        ],
+      }),
+    );
+
+    const read = await store.findById("app-unscored");
+
+    expect(read?.atsScore).toBeNull();
+    expect(read?.cvVersions?.[0]?.atsScore).toBeUndefined();
+    expect(read?.cvVersions?.[0]).not.toHaveProperty("atsEngineVersion");
+  });
+
 
   it("keeps applications scoped to their owner", async () => {
     await store.createDraft(makeApplication("app-1"));

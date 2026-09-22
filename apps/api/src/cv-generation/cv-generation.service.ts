@@ -1,11 +1,9 @@
 import {
   type CVDocumentContent,
-  type CVDocumentVersionEntry,
   type CvContentUpdateRequest,
   type CvGenerationRequest,
   type LetterContentUpdateRequest,
   type LetterDocumentContent,
-  type LetterDocumentVersionEntry,
   type LetterGenerationRequest,
   type Locale,
   AI_CREDIT_ACTION_CV_GENERATION,
@@ -28,8 +26,17 @@ import {
   assertTargetLanguage,
 } from "./cv-generation.guards";
 import {
+  loadApplication,
+  readCvContent,
+  readCvVersions,
+  readLetterContent,
+  readLetterVersions,
+} from "./cv-generation.reads";
+import { scoreGeneratedCvSafely } from "./cv-generation.scoring";
+import {
   appendCvVersion,
   appendLetterVersion,
+  withScore,
 } from "./cv-generation.versions";
 
 import {
@@ -72,7 +79,7 @@ export class CvGenerationService {
   ): Promise<CVDocumentContent> {
     assertProfileIsGroundable(request.promptProfile);
     assertLocalFieldsProvided(request.localFields);
-    const application = await this.getApplicationForUser(
+    const application = await loadApplication(this.store, 
       userEmail,
       applicationId,
     );
@@ -117,17 +124,24 @@ export class CvGenerationService {
 
     const timestamp = new Date().toISOString();
     const resolvedTemplateId = cvTemplateId ?? application.cvTemplateId ?? null;
+    // Free: no credit, no model call. Never throws, so a scoring bug cannot
+    // cost the candidate a CV they have already paid for.
+    const atsScore = scoreGeneratedCvSafely(cvContent, application.extracted);
     await this.store.save({
       ...application,
+      atsScore,
       cvContent,
       cvGeneratedAt: timestamp,
       cvTemplateId: resolvedTemplateId,
-      cvVersions: appendCvVersion(
-        application,
-        cvContent,
-        timestamp,
-        "generation",
-        resolvedTemplateId,
+      cvVersions: withScore(
+        appendCvVersion(
+          application,
+          cvContent,
+          timestamp,
+          "generation",
+          resolvedTemplateId,
+        ),
+        atsScore,
       ),
       updatedAt: timestamp,
     });
@@ -142,7 +156,7 @@ export class CvGenerationService {
   ): Promise<LetterDocumentContent> {
     assertProfileIsGroundable(request.promptProfile);
     assertLocalFieldsProvided(request.localFields);
-    const application = await this.getApplicationForUser(
+    const application = await loadApplication(this.store, 
       userEmail,
       applicationId,
     );
@@ -220,7 +234,7 @@ export class CvGenerationService {
     targetLanguage: unknown,
   ): Promise<CVDocumentContent> {
     const language = assertTargetLanguage(targetLanguage);
-    const application = await this.getApplicationForUser(
+    const application = await loadApplication(this.store, 
       userEmail,
       applicationId,
     );
@@ -234,7 +248,7 @@ export class CvGenerationService {
     targetLanguage: unknown,
   ): Promise<LetterDocumentContent> {
     const language = assertTargetLanguage(targetLanguage);
-    const application = await this.getApplicationForUser(
+    const application = await loadApplication(this.store, 
       userEmail,
       applicationId,
     );
@@ -275,17 +289,24 @@ export class CvGenerationService {
       application.cvTemplateId ??
       (await this.resolveDefaultTemplateId(TEMPLATE_KIND_CV));
 
+    // Recomputed on every save, which is affordable precisely because the
+    // deterministic rules need no model call.
+    const atsScore = scoreGeneratedCvSafely(cvContent, application.extracted);
     await this.store.save({
       ...application,
+      atsScore,
       cvContent,
       cvGeneratedAt: application.cvGeneratedAt ?? timestamp,
       cvTemplateId,
-      cvVersions: appendCvVersion(
-        application,
-        cvContent,
-        timestamp,
-        "manual_save",
-        cvTemplateId ?? null,
+      cvVersions: withScore(
+        appendCvVersion(
+          application,
+          cvContent,
+          timestamp,
+          "manual_save",
+          cvTemplateId ?? null,
+        ),
+        atsScore,
       ),
       updatedAt: timestamp,
     });
@@ -293,28 +314,12 @@ export class CvGenerationService {
     return cvContent;
   }
 
-  async getCvContent(
-    userEmail: string,
-    applicationId: string,
-  ): Promise<CVDocumentContent | null> {
-    const application = await this.getApplicationForUser(
-      userEmail,
-      applicationId,
-    );
-    return application.cvContent ?? null;
+  getCvContent(userEmail: string, applicationId: string) {
+    return readCvContent(this.store, userEmail, applicationId);
   }
 
-  async listCvVersions(
-    userEmail: string,
-    applicationId: string,
-  ): Promise<CVDocumentVersionEntry[]> {
-    const application = await this.getApplicationForUser(
-      userEmail,
-      applicationId,
-    );
-    return [...(application.cvVersions ?? [])].sort(
-      (left, right) => right.versionNumber - left.versionNumber,
-    );
+  listCvVersions(userEmail: string, applicationId: string) {
+    return readCvVersions(this.store, userEmail, applicationId);
   }
 
   async updateLetterContent(
@@ -322,7 +327,7 @@ export class CvGenerationService {
     applicationId: string,
     request: LetterContentUpdateRequest,
   ): Promise<LetterDocumentContent> {
-    const application = await this.getApplicationForUser(
+    const application = await loadApplication(this.store, 
       userEmail,
       applicationId,
     );
@@ -350,42 +355,14 @@ export class CvGenerationService {
     return letterContent;
   }
 
-  async getLetterContent(
-    userEmail: string,
-    applicationId: string,
-  ): Promise<LetterDocumentContent | null> {
-    const application = await this.getApplicationForUser(
-      userEmail,
-      applicationId,
-    );
-    return application.letterContent ?? null;
+  getLetterContent(userEmail: string, applicationId: string) {
+    return readLetterContent(this.store, userEmail, applicationId);
   }
 
-  async listLetterVersions(
-    userEmail: string,
-    applicationId: string,
-  ): Promise<LetterDocumentVersionEntry[]> {
-    const application = await this.getApplicationForUser(
-      userEmail,
-      applicationId,
-    );
-    return [...(application.letterVersions ?? [])].sort(
-      (left, right) => right.versionNumber - left.versionNumber,
-    );
+  listLetterVersions(userEmail: string, applicationId: string) {
+    return readLetterVersions(this.store, userEmail, applicationId);
   }
 
-  private async getApplicationForUser(userEmail: string, applicationId: string) {
-    const application = await this.store.findByIdForUserEmail(
-      userEmail,
-      applicationId,
-    );
-
-    if (!application) {
-      throw new NotFoundException("La candidature est introuvable.");
-    }
-
-    return application;
-  }
 
   private buildOfferContext(
     application: NonNullable<
