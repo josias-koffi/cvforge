@@ -7,6 +7,7 @@ import { AuthModule } from "./auth/auth.module";
 import { SmtpModule } from "./smtp/smtp.module";
 import { OpenRouterModule } from "./ai/openrouter.module";
 import { ApplicationsModule } from "./applications/applications.module";
+import { AtsModule } from "./ats/ats.module";
 import { BillingModule } from "./billing/billing.module";
 import { CvGenerationModule } from "./cv-generation/cv-generation.module";
 import { CreditsModule } from "./credits/credits.module";
@@ -19,6 +20,7 @@ import { ProfilesModule } from "./profiles/profiles.module";
 import { TemplatesModule } from "./templates/templates.module";
 import { InterviewModule } from "./interview/interview.module";
 import { MetricsModule } from "./metrics/metrics.module";
+import { RateLimitModule } from "./shared/rate-limit/rate-limit.module";
 
 describe("AppModule", () => {
   it("should register all core modules including CvGenerationModule", () => {
@@ -32,6 +34,7 @@ describe("AppModule", () => {
       SmtpModule,
       OpenRouterModule,
       ApplicationsModule,
+      AtsModule,
       BillingModule,
       CvGenerationModule,
       CreditsModule,
@@ -44,6 +47,7 @@ describe("AppModule", () => {
       TemplatesModule,
       InterviewModule,
       MetricsModule,
+      RateLimitModule,
     ]);
   });
 

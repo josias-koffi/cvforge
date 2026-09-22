@@ -8,6 +8,7 @@ function createAppMock() {
     enableCors: vi.fn(),
     get: getMock,
     listen: vi.fn().mockResolvedValue(undefined),
+    set: vi.fn(),
     useBodyParser: vi.fn(),
   };
 }
@@ -53,6 +54,9 @@ describe("bootstrap", () => {
       credentials: true,
       origin: "http://localhost:3000",
     });
+    // Without it Express reports the proxy's address for every visitor, and
+    // the public scan's per-IP limit would bucket them all together (US-101).
+    expect(app.set).toHaveBeenCalledWith("trust proxy", 1);
     expect(getMock).toHaveBeenCalledTimes(1);
     expect(app.listen).toHaveBeenCalledWith(3333);
     expect(result).toBe(app);

@@ -6,6 +6,7 @@ import { SessionStateMiddleware } from "./auth/session-state.middleware";
 import { SmtpModule } from "./smtp/smtp.module";
 import { OpenRouterModule } from "./ai/openrouter.module";
 import { ApplicationsModule } from "./applications/applications.module";
+import { AtsModule } from "./ats/ats.module";
 import { BillingModule } from "./billing/billing.module";
 import { CvGenerationModule } from "./cv-generation/cv-generation.module";
 import { CreditsModule } from "./credits/credits.module";
@@ -18,6 +19,8 @@ import { ProfilesModule } from "./profiles/profiles.module";
 import { TemplatesModule } from "./templates/templates.module";
 import { InterviewModule } from "./interview/interview.module";
 import { MetricsModule } from "./metrics/metrics.module";
+import { RateLimitModule } from "./shared/rate-limit/rate-limit.module";
+import { RateLimitMiddleware } from "./shared/rate-limit/rate-limit.middleware";
 
 @Module({
   imports: [
@@ -26,6 +29,7 @@ import { MetricsModule } from "./metrics/metrics.module";
     SmtpModule,
     OpenRouterModule,
     ApplicationsModule,
+    AtsModule,
     BillingModule,
     CvGenerationModule,
     CreditsModule,
@@ -38,6 +42,7 @@ import { MetricsModule } from "./metrics/metrics.module";
     TemplatesModule,
     InterviewModule,
     MetricsModule,
+    RateLimitModule,
   ],
   controllers: [AppController],
 })
@@ -56,5 +61,12 @@ export class AppModule implements NestModule {
       .apply(SessionStateMiddleware)
       .exclude("auth/{*splat}", "health", "ready", "billing/stripe/webhook")
       .forRoutes("{*splat}");
+
+    // Scoped to the public scan alone: it is the only unauthenticated route
+    // that spends CPU and model credits, and every other public route is a
+    // cheap read (US-101, ADR-022).
+    consumer
+      .apply(RateLimitMiddleware)
+      .forRoutes("public/ats-scan", "public/ats-scan/{*splat}");
   }
 }

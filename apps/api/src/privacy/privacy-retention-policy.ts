@@ -1,6 +1,7 @@
 import type { PrivacyRetentionPolicy } from "./privacy.types";
 
 export const AUDIO_RETENTION_DAYS = 30;
+export const ATS_SCAN_RETENTION_DAYS = 30;
 
 export const PRIVACY_RETENTION_POLICY: PrivacyRetentionPolicy = {
   audioPurgePlan: {
@@ -40,6 +41,13 @@ export const PRIVACY_RETENTION_POLICY: PrivacyRetentionPolicy = {
       automation: "Planned before the interview-audio sprint lands in production.",
       dataType: "Interview audio files and transcripts",
       retention: `${AUDIO_RETENTION_DAYS} days.`,
+    },
+    {
+      action: `Delete automatically after ${ATS_SCAN_RETENTION_DAYS} days.`,
+      automation: "Implemented in AtsPurgeService, which runs at module init and every 24h.",
+      dataType:
+        "Public ATS scans: the computed scores and finding codes, the hashed visitor address, and the email address once the detailed report is unlocked. The uploaded CV is never stored — neither the file, nor the extracted text, nor a pseudonymised copy; it exists only in memory for the duration of the request.",
+      retention: `${ATS_SCAN_RETENTION_DAYS} days.`,
     },
   ],
 };

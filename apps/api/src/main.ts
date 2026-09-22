@@ -35,6 +35,10 @@ export async function bootstrap() {
     credentials: true,
     origin: process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
   });
+  // One hop: the reverse proxy in front of the API. Without this Express
+  // reports the proxy's own address as `request.ip`, and the public scan's
+  // per-IP rate limit would bucket every visitor together (US-101).
+  app.set("trust proxy", 1);
 
   try {
     app.get(AuthMailerService).assertDeliveryReady();
