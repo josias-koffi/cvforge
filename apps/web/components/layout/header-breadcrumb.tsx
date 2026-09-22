@@ -26,11 +26,13 @@ const pathLabels: Record<string, string> = {
 const segmentLabels: Record<string, string> = {
   admin: "Administration",
   candidatures: "Candidatures",
+  compte: "Mon compte",
   credits: "Crédits",
   cv: "CV",
   dashboard: "Tableau de bord",
   edit: "Modifier",
   entretiens: "Entretiens",
+  legal: "Documents légaux",
   letter: "Lettre de motivation",
   new: "Nouveau",
   notifications: "Notifications",

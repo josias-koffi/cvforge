@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest"
 
+import { emptyPlaybackStats } from "@/lib/interview/playback-stats"
 import {
   initialStudioState,
   studioReducer,
@@ -189,6 +190,61 @@ describe("studioReducer", () => {
     expect(state.firstTokenMs).toBe(1100)
   })
 
+  it("records how a turn played without moving the studio", () => {
+    // Pure measurement: it must not pull the mic open mid-sentence.
+    const speaking = run(
+      [
+        { type: "SPEECH_START" },
+        { type: "SPEECH_END", atMs: 1000 },
+        { type: "AI_AUDIO", atMs: 2100 },
+      ],
+      ready
+    )
+    const stats = { ...emptyPlaybackStats, frames: 40, underruns: 2 }
+
+    const state = studioReducer(speaking, { stats, type: "PLAYBACK_STATS" })
+
+    expect(state.playback).toEqual(stats)
+    expect(state.phase).toBe("speaking")
+    expect(state.vadStatus).toBe("processing")
+  })
+
+  it("gives the floor back the moment the candidate cuts in", () => {
+    const speaking = run(
+      [
+        { type: "SPEECH_START" },
+        { type: "SPEECH_END", atMs: 1000 },
+        { type: "AI_AUDIO", atMs: 2100 },
+        { type: "AI_DELTA", text: "Et pouvez-vous me dire", atMs: 2100 },
+        { level: 0.7, rms: 0.3, type: "VOICE_LEVEL" },
+      ],
+      ready
+    )
+
+    const state = studioReducer(speaking, { type: "BARGE_IN" })
+
+    // Straight to recording: no processing step, no echo tail — the candidate
+    // is already mid-word.
+    expect(state.phase).toBe("recording")
+    expect(state.vadStatus).toBe("recording")
+    expect(state.voiceLevel).toBe(0)
+    expect(state.voiceRms).toBe(0)
+    // The half-spoken question is kept: it is what the answer answers, and
+    // the final report is scored against the transcript.
+    expect(state.streamingReply).toBe("")
+    expect(state.messages.map((message) => message.content)).toEqual([
+      "Et pouvez-vous me dire",
+    ])
+  })
+
+  it("cannot cut in on a recruiter that is not talking", () => {
+    for (const phase of ["listening", "recording", "processing"] as const) {
+      const from = { ...ready, phase }
+
+      expect(studioReducer(from, { type: "BARGE_IN" })).toBe(from)
+    }
+  })
+
   it("clears the previous reply when a new answer begins", () => {
     const stale = { ...ready, streamingReply: "vieux texte", firstTokenMs: 900 }
 
@@ -276,7 +332,7 @@ describe("studioReducer", () => {
         { type: "SPEECH_START" },
         { type: "SPEECH_END", atMs: 1000 },
         { atMs: 1200, type: "AI_AUDIO" },
-        { level: 0.7, type: "VOICE_LEVEL" },
+        { level: 0.7, rms: 0.2, type: "VOICE_LEVEL" },
       ],
       ready
     )
@@ -284,7 +340,7 @@ describe("studioReducer", () => {
     expect(speaking.voiceLevel).toBe(0.7)
     // Same deduplication as the microphone meter: sixty frames a second.
     expect(
-      studioReducer(speaking, { level: 0.7, type: "VOICE_LEVEL" })
+      studioReducer(speaking, { level: 0.7, rms: 0.2, type: "VOICE_LEVEL" })
     ).toBe(speaking)
 
     const done = studioReducer(speaking, { type: "VOICE_DONE" })
@@ -345,5 +401,34 @@ describe("studioReducer", () => {
     )
 
     expect(state.messages).toHaveLength(1)
+  })
+})
+
+describe("the recruiter running out of things to ask", () => {
+  it("records it without ending the turn that carried it", () => {
+    // The goodbye is still playing; scoring waits for VOICE_DONE.
+    const speaking = run(
+      [
+        { type: "SPEECH_START" },
+        { type: "SPEECH_END", atMs: 1000 },
+        { type: "AI_AUDIO", atMs: 2100 },
+      ],
+      ready
+    )
+
+    const state = studioReducer(speaking, { type: "CONCLUDED" })
+
+    expect(state.concluded).toBe(true)
+    expect(state.phase).toBe("speaking")
+  })
+
+  it("is not set until the server says so", () => {
+    expect(ready.concluded).toBe(false)
+  })
+
+  it("stays set once it is", () => {
+    const concluded = studioReducer(ready, { type: "CONCLUDED" })
+
+    expect(studioReducer(concluded, { type: "CONCLUDED" })).toBe(concluded)
   })
 })

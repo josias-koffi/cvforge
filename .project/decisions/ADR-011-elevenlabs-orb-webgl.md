@@ -65,6 +65,21 @@ Nouvelles dépendances dans `apps/web` :
    un changement de palette dans `globals.css` doit y être reporté à la main.
    Les tokens bruts (`--primary` saturé) donnaient un moulin à vent cobalt ; ce
    sont leurs versions claires qui donnent l'aspect nuageux.
+5. **Résolution plafonnée, antialiasing coupé** (`dpr={[1, 1.5]}`,
+   `antialias: false`). Aux valeurs d'amont, une sphère de 224 px est rendue au
+   device pixel ratio complet — 3× sur un écran retina, soit neuf fois le
+   travail de fragment — avec un tampon multi-échantillonné par-dessus, soixante
+   fois par seconde. Sur un GPU modeste la page entière tombait avec, et le
+   micro devenait sourd : le VAD échantillonnait alors quelques millisecondes
+   d'audio tous les cinquièmes de seconde. La sphère est masquée en cercle et
+   ne montre jamais d'arête franche, donc l'antialiasing n'achetait rien.
+
+   **La cause profonde n'était pas l'orbe.** Elle était que la détection de
+   parole lisait le micro dans `requestAnimationFrame`, avec une fenêtre
+   d'analyse de 5,3 ms : une horloge de rendu pilotait ce que le micro
+   entendait. Corrigé côté VAD (minuterie de 25 ms, fenêtre de 43 ms), et ce
+   plafond reste parce qu'aucune interface n'a besoin de neuf fois les pixels
+   qu'elle affiche.
 
 ### Accessibilité
 

@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest"
 import {
   creditCostLabel,
   formatApplications,
+  formatFileSize,
   interviewCostLabel,
   formatCredits,
   formatDate,
@@ -48,5 +49,19 @@ describe("formatTime", () => {
 
   it("degrades to a placeholder rather than rendering NaN", () => {
     expect(formatTime("nonsense")).toBe("--:--")
+  })
+})
+
+describe("formatFileSize", () => {
+  it("stays in kilobytes for a small file", () => {
+    expect(formatFileSize(862208)).toBe("842 Ko")
+  })
+
+  it("switches to megabytes past a thousand kilobytes", () => {
+    expect(formatFileSize(1887437)).toBe("1,8 Mo")
+  })
+
+  it("never shows a 0 Ko file", () => {
+    expect(formatFileSize(120)).toBe("1 Ko")
   })
 })

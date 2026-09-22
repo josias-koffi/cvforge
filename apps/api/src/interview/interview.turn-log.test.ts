@@ -5,6 +5,7 @@ import { createTurnLog } from "./interview.turn-log";
 const TELEMETRY: ChainTelemetry = {
   attempts: 2,
   callMs: 900,
+  failures: [],
   fellBack: true,
   model: "openai/gpt-audio",
   modelsTried: ["openai/gpt-audio-mini", "openai/gpt-audio"],
@@ -46,7 +47,7 @@ describe("createTurnLog", () => {
     clock.advance(1400);
     log.markFirstAudio();
     clock.advance(600);
-    log.write(800);
+    log.write({ durationMs: 800, waitedMs: 150 });
 
     expect(written(sink)).toMatchObject({
       attempts: 2,
@@ -57,6 +58,7 @@ describe("createTurnLog", () => {
       sessionId: "s1",
       totalMs: 2000,
       transcriptionMs: 800,
+      transcriptionWaitMs: 150,
     });
   });
 
@@ -68,18 +70,19 @@ describe("createTurnLog", () => {
     log.markFirstAudio();
     clock.advance(3000);
     log.markFirstAudio();
-    log.write(null);
+    log.write();
 
     expect(written(sink).firstAudioMs).toBe(900);
   });
 
-  it("separates time asleep in backoff from time spent calling", () => {
-    // The number worth alerting on: it is ours to fix, the call time is not.
+  it("separates the time outside the voice call from the time spent in it", () => {
+    // Backoff lives in here, but so does the wait on transcription: read it
+    // with `attempts` and `transcriptionWaitMs` beside it.
     const { clock, log, sink } = setup();
 
     log.onTelemetry(TELEMETRY);
     clock.advance(2500);
-    log.write(null);
+    log.write();
 
     expect(written(sink).waitedMs).toBe(1600);
   });
@@ -88,7 +91,7 @@ describe("createTurnLog", () => {
     // A replayed chunk, or an opening on a session already under way.
     const { log, sink } = setup();
 
-    log.write(null);
+    log.write();
 
     expect(sink.log).not.toHaveBeenCalled();
   });
@@ -98,7 +101,7 @@ describe("createTurnLog", () => {
 
     log.onTelemetry({ ...TELEMETRY, model: null });
     clock.advance(400);
-    log.write(null);
+    log.write();
 
     expect(written(sink)).toMatchObject({
       firstAudioMs: null,
@@ -111,7 +114,7 @@ describe("createTurnLog", () => {
     const { log, sink } = setup("interview.opening");
 
     log.onTelemetry(TELEMETRY);
-    log.write(null);
+    log.write();
 
     expect(written(sink).event).toBe("interview.opening");
   });
@@ -121,7 +124,7 @@ describe("createTurnLog", () => {
 
     log.onTelemetry(TELEMETRY);
     log.markFirstAudio();
-    log.write(10);
+    log.write({ durationMs: 10, waitedMs: 0 });
 
     expect(sink.log).toHaveBeenCalledTimes(1);
   });

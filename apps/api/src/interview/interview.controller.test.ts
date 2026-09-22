@@ -62,20 +62,25 @@ function makeController(sessionOverride: unknown = { email: "user@test.example" 
   } as unknown as AuthService;
 
   const turnService = {
+    appendAnswerPart: vi.fn().mockResolvedValue({ parts: 3 }),
     streamTurn: vi.fn(),
   } as unknown as InterviewTurnService;
 
-  return new InterviewController(
+  const controller = new InterviewController(
     interviewService,
     progressService,
     turnService,
     authService,
   );
+
+  // The mocks come back too: a test that asserts what the controller passed on
+  // needs the service it passed it to.
+  return { authService, controller, interviewService, turnService };
 }
 
 describe("InterviewController", () => {
   it("starts a session for an authenticated user", () => {
-    const controller = makeController();
+    const { controller } = makeController();
     const result = controller.startSession(
       { applicationId: "app-001", language: "fr", profile: "technical" },
       {
@@ -90,7 +95,7 @@ describe("InterviewController", () => {
   });
 
   it("reads a stored session for an authenticated user", () => {
-    const controller = makeController();
+    const { controller } = makeController();
     const result = controller.getSession("session-001", {
       headers: { cookie: "cvforge_session=abc" },
     });
@@ -99,7 +104,7 @@ describe("InterviewController", () => {
   });
 
   it("finishes a stored session for an authenticated user", async () => {
-    const controller = makeController();
+    const { controller } = makeController();
     const result = await controller.finishSession("session-001", {
       headers: { cookie: "cvforge_session=abc" },
     });
@@ -109,7 +114,7 @@ describe("InterviewController", () => {
   });
 
   it("throws UnauthorizedException when no session is present", () => {
-    const controller = makeController(null);
+    const { controller } = makeController(null);
 
     expect(() =>
       controller.startSession(undefined, { headers: {} }),
@@ -139,5 +144,36 @@ describe("InterviewController", () => {
     expect(() =>
       controller.getSession("missing", { headers: { cookie: "x=y" } }),
     ).toThrow(NotFoundException);
+  });
+});
+
+describe("streamed answer pieces", () => {
+  const PART = { audioBase64: "AAAA", chunkId: "c1", part: 2 };
+  const COOKIE = { headers: { cookie: "cvforge_session=abc" } };
+
+  it("passes the piece on under the signed-in candidate's own email", async () => {
+    // The turn id comes from the browser; who it belongs to does not.
+    const { controller, turnService } = makeController();
+
+    const result = await controller.appendTurnChunk(
+      "session-001",
+      PART,
+      COOKIE,
+    );
+
+    expect(result).toEqual({ parts: 3 });
+    expect(turnService.appendAnswerPart).toHaveBeenCalledWith(
+      "user@test.example",
+      "session-001",
+      PART,
+    );
+  });
+
+  it("refuses a piece from nobody", async () => {
+    const { controller } = makeController(null);
+
+    await expect(
+      controller.appendTurnChunk("session-001", PART, COOKIE),
+    ).rejects.toThrow(UnauthorizedException);
   });
 });

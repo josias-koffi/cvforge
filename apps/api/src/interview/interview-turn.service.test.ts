@@ -1,11 +1,16 @@
 import type { InterviewTurnEvent } from "@cvforge/types";
-import { NotFoundException } from "@nestjs/common";
+import {
+  BadRequestException,
+  Logger,
+  NotFoundException,
+} from "@nestjs/common";
 import { describe, expect, it, vi } from "vitest";
 import type { OpenRouterTranscriptionService } from "../ai/openrouter-transcription.service";
 import type {
   OpenRouterVoiceService,
   VoiceTurnEvent,
 } from "../ai/openrouter-voice.service";
+import { InterviewAnswerBuffer } from "./interview-answer-buffer";
 import { InterviewTurnService } from "./interview-turn.service";
 import type { InterviewStore, StoredInterviewSession } from "./interview.types";
 
@@ -73,6 +78,25 @@ function voiceYielding(events: VoiceTurnEvent[]): OpenRouterVoiceService {
   return {
     streamTurn: vi.fn(async function* () {
       for (const event of events) yield event;
+    }),
+  } as unknown as OpenRouterVoiceService;
+}
+
+/** Like `voiceYielding`, but reporting telemetry the way the real chain does. */
+function voiceReportingTelemetry(events: VoiceTurnEvent[]): OpenRouterVoiceService {
+  return {
+    streamTurn: vi.fn(async function* (request: {
+      onTelemetry?: (telemetry: unknown) => void;
+    }) {
+      for (const event of events) yield event;
+      request.onTelemetry?.({
+        attempts: 1,
+        callMs: 900,
+        failures: [],
+        fellBack: false,
+        model: "openai/gpt-audio-mini",
+        modelsTried: ["openai/gpt-audio-mini"],
+      });
     }),
   } as unknown as OpenRouterVoiceService;
 }
@@ -258,6 +282,64 @@ describe("InterviewTurnService", () => {
 
     expect(done.startedAt).toBe(saved.at(-1)!.startedAt);
     expect(done.startedAt).toBeTruthy();
+  });
+
+  it("times the transcription call, not the whole turn", async () => {
+    // The first version subtracted the turn's start rather than the call's,
+    // so `transcriptionMs` always came out equal to `totalMs` and could not
+    // say whether running transcription beside the voice was free. Every
+    // logged turn showed the two identical, which is what gave it away.
+    const lines: string[] = [];
+    const spy = vi
+      .spyOn(Logger.prototype, "log")
+      .mockImplementation((message: unknown) => {
+        lines.push(String(message));
+      });
+
+    try {
+      const { store } = createStore();
+      const service = new InterviewTurnService(
+        store,
+        voiceReportingTelemetry([
+          { type: "audio", data: "QUJD" },
+          { type: "transcript", text: "Et ensuite ?" },
+        ]),
+        transcriberSaying("J'ai mene la refonte."),
+      );
+
+      await collect(service);
+
+      const line = JSON.parse(lines.at(-1)!) as {
+        totalMs: number;
+        transcriptionMs: number | null;
+        transcriptionWaitMs: number | null;
+      };
+
+      // Settled while the voice was still streaming, so it cost the turn
+      // nothing — which is the entire reason it runs alongside.
+      expect(line.transcriptionWaitMs).toBe(0);
+      expect(line.transcriptionMs).not.toBeNull();
+      expect(line.transcriptionMs).toBeLessThanOrEqual(line.totalMs);
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
+  it("tells the transcriber which language the interview is in", async () => {
+    // Left to guess, the model read a French answer as English and returned
+    // Whisper's canonical hallucination on non-speech: "Thank you."
+    const transcriber = transcriberSaying("J'ai mene la refonte.");
+    const service = new InterviewTurnService(
+      createStore().store,
+      voiceYielding([{ type: "transcript", text: "Et ensuite ?" }]),
+      transcriber,
+    );
+
+    await collect(service);
+
+    expect(transcriber.transcribe).toHaveBeenCalledWith(
+      expect.objectContaining({ language: "fr" }),
+    );
   });
 
   it("refuses a session belonging to somebody else", async () => {
@@ -492,5 +574,164 @@ describe("the interview agenda reaches the model", () => {
     await collect(service);
 
     expect(saved.at(-1)!.startedAt).toBe(started);
+  });
+});
+
+describe("answers streamed up while they are spoken", () => {
+  /** The turn body the studio sends once it has uploaded the pieces. */
+  const STREAMED = { ...CHUNK, chunkBase64: "", format: "", mimeType: "" };
+
+  function makeService(buffer: InterviewAnswerBuffer, session = makeSession()) {
+    const { saved, store } = createStore(session);
+    const service = new InterviewTurnService(
+      store,
+      voiceYielding([{ type: "transcript", text: "Très bien." }]),
+      transcriberSaying("bonjour"),
+      buffer,
+    );
+
+    return { saved, service };
+  }
+
+  it("takes a piece of an answer and says how many it holds", async () => {
+    const buffer = new InterviewAnswerBuffer();
+    const { service } = makeService(buffer);
+
+    const first = await service.appendAnswerPart("user@example.com", "s1", {
+      audioBase64: Buffer.from("aa").toString("base64"),
+      chunkId: "c1",
+      part: 0,
+    });
+    const second = await service.appendAnswerPart("user@example.com", "s1", {
+      audioBase64: Buffer.from("bb").toString("base64"),
+      chunkId: "c1",
+      part: 1,
+    });
+
+    expect(first).toEqual({ parts: 1 });
+    expect(second).toEqual({ parts: 2 });
+  });
+
+  it("refuses pieces for a session that is not the candidate's", async () => {
+    const { service } = makeService(new InterviewAnswerBuffer());
+
+    await expect(
+      service.appendAnswerPart("someone@example.com", "s1", {
+        audioBase64: Buffer.from("aa").toString("base64"),
+        chunkId: "c1",
+        part: 0,
+      }),
+    ).rejects.toThrow(NotFoundException);
+  });
+
+  it("refuses a piece with no audio in it", async () => {
+    const { service } = makeService(new InterviewAnswerBuffer());
+
+    await expect(
+      service.appendAnswerPart("user@example.com", "s1", {
+        audioBase64: "",
+        chunkId: "c1",
+        part: 0,
+      }),
+    ).rejects.toThrow(BadRequestException);
+  });
+
+  it("refuses a position that is not one", async () => {
+    const { service } = makeService(new InterviewAnswerBuffer());
+
+    await expect(
+      service.appendAnswerPart("user@example.com", "s1", {
+        audioBase64: Buffer.from("aa").toString("base64"),
+        chunkId: "c1",
+        part: -1,
+      }),
+    ).rejects.toThrow(BadRequestException);
+  });
+
+  it("assembles the buffered pieces into the WAV the models are sent", async () => {
+    const buffer = new InterviewAnswerBuffer();
+    const { store } = createStore();
+    const voice = voiceYielding([{ type: "transcript", text: "Très bien." }]);
+    const service = new InterviewTurnService(
+      store,
+      voice,
+      transcriberSaying("bonjour"),
+      buffer,
+    );
+
+    const samples = Buffer.from([0x01, 0x00, 0xff, 0x7f]);
+    await service.appendAnswerPart("user@example.com", "s1", {
+      audioBase64: samples.toString("base64"),
+      chunkId: "c1",
+      part: 0,
+    });
+
+    const events: InterviewTurnEvent[] = [];
+    for await (const event of service.streamTurn(
+      "user@example.com",
+      "s1",
+      STREAMED,
+    )) {
+      events.push(event);
+    }
+
+    const sent = vi.mocked(voice.streamTurn).mock.calls[0]?.[0] as {
+      audio: { base64: string; format: string };
+    };
+    const file = Buffer.from(sent.audio.base64, "base64");
+
+    expect(sent.audio.format).toBe("wav");
+    expect(file.subarray(0, 4).toString("ascii")).toBe("RIFF");
+    expect(file.subarray(44)).toEqual(samples);
+    expect(events.some((event) => event.type === "error")).toBe(false);
+  });
+
+  it("fails the turn rather than sending an empty file", async () => {
+    // Nothing was buffered and nothing came in the body: every piece was lost,
+    // or the answer never happened.
+    const { service } = makeService(new InterviewAnswerBuffer());
+
+    const events: InterviewTurnEvent[] = [];
+    for await (const event of service.streamTurn(
+      "user@example.com",
+      "s1",
+      STREAMED,
+    )) {
+      events.push(event);
+    }
+
+    expect(events).toEqual([
+      { type: "error", message: "Aucun enregistrement à envoyer." },
+    ]);
+  });
+
+  it("prefers the body, and drops what was buffered under the same id", async () => {
+    // A retry that carries its own audio must not be joined to a half answer
+    // left over from the attempt before it.
+    const buffer = new InterviewAnswerBuffer();
+    const { store } = createStore();
+    const voice = voiceYielding([{ type: "transcript", text: "Très bien." }]);
+    const service = new InterviewTurnService(
+      store,
+      voice,
+      transcriberSaying("bonjour"),
+      buffer,
+    );
+
+    await service.appendAnswerPart("user@example.com", "s1", {
+      audioBase64: Buffer.from("stale").toString("base64"),
+      chunkId: "c1",
+      part: 0,
+    });
+    for await (const _ of service.streamTurn("user@example.com", "s1", CHUNK)) {
+      // drained
+    }
+
+    const sent = vi.mocked(voice.streamTurn).mock.calls[0]?.[0] as {
+      audio: { base64: string; format: string };
+    };
+
+    expect(sent.audio).toEqual({ base64: CHUNK.chunkBase64, format: "wav" });
+    expect(buffer.size()).toBe(0);
   });
 });

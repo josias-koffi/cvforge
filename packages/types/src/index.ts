@@ -44,6 +44,8 @@ export const ADMIN_AUDIT_ACCOUNT_DELETED = "account_deleted" as const;
 export const ADMIN_AUDIT_ROLE_DEMOTED = "role_demoted" as const;
 export const ADMIN_AUDIT_CREDITS_GRANTED = "credits_granted" as const;
 export const ADMIN_AUDIT_SESSIONS_REVOKED = "sessions_revoked" as const;
+/** Publishing a legal document is an opposable decision; it is logged too. */
+export const ADMIN_AUDIT_LEGAL_PUBLISHED = "legal_published" as const;
 
 export const adminAuditActions = [
   ADMIN_AUDIT_ACCOUNT_SUSPENDED,
@@ -52,6 +54,7 @@ export const adminAuditActions = [
   ADMIN_AUDIT_ROLE_DEMOTED,
   ADMIN_AUDIT_CREDITS_GRANTED,
   ADMIN_AUDIT_SESSIONS_REVOKED,
+  ADMIN_AUDIT_LEGAL_PUBLISHED,
 ] as const;
 export type AdminAuditAction = (typeof adminAuditActions)[number];
 
@@ -63,7 +66,13 @@ export interface AdminAuditEntry {
   /** Null for an action that targets no single account. */
   targetEmail: string | null;
   note: string | null;
-  metadata: { credits?: number; previousRole?: "admin" | "user" };
+  metadata: {
+    credits?: number;
+    previousRole?: "admin" | "user";
+    /** Which legal document was published, and at which version. */
+    legalSlug?: LegalDocumentSlug;
+    legalVersion?: number;
+  };
   createdAt: string;
 }
 
@@ -312,6 +321,13 @@ export interface InterviewSessionStartResponse {
 }
 
 export interface InterviewTranscriptionChunkRequest {
+  /**
+   * The answer as a complete audio file, base64.
+   *
+   * Empty when the studio streamed it up in pieces while it was being spoken
+   * — see `InterviewAnswerPartRequest` — in which case the server assembles
+   * what it buffered instead.
+   */
   chunkBase64: string;
   chunkId: string;
   endedAt: string;
@@ -320,6 +336,27 @@ export interface InterviewTranscriptionChunkRequest {
   mimeType: string;
   sequence: number;
   startedAt: string;
+}
+
+/**
+ * One piece of an answer, sent while the candidate is still talking.
+ *
+ * Raw PCM16, 16 kHz, mono, base64 — no container. A WAV cannot be cut into
+ * readable pieces and neither can WebM, whose header only exists on the first
+ * fragment; raw samples can be cut anywhere and joined back in order.
+ */
+export interface InterviewAnswerPartRequest {
+  /** Raw little-endian 16-bit samples, base64. */
+  audioBase64: string;
+  /** The turn these pieces belong to, matching the eventual turn request. */
+  chunkId: string;
+  /** Position within the answer. Order of arrival is not guaranteed. */
+  part: number;
+}
+
+export interface InterviewAnswerPartResponse {
+  /** How many pieces of this answer the server is holding. */
+  parts: number;
 }
 
 export interface InterviewTranscriptChunk {
@@ -389,7 +426,16 @@ export type InterviewTurnEvent =
    * it on the first spoken turn, long after the session was created, so it is
    * not in the summary the studio was opened with.
    */
-  | { type: "done"; startedAt?: string | null }
+  | {
+      type: "done";
+      startedAt?: string | null;
+      /**
+       * The interview is over: every phase has had its exchanges and the
+       * recruiter has said goodbye. The studio scores it without waiting for
+       * the clock to run out.
+       */
+      closed?: boolean;
+    }
   | { type: "error"; message: string };
 
 /**
@@ -740,3 +786,127 @@ export type TemplateUpsertInput = {
   locale?: Locale;
   name?: string;
 };
+
+/**
+ * The four legal documents CVSpark publishes. The slug is the stable key:
+ * the URL each locale serves them under is the landing's business, not this
+ * contract's.
+ */
+export const LEGAL_DOCUMENT_TERMS = "terms" as const;
+export const LEGAL_DOCUMENT_SALES_TERMS = "sales-terms" as const;
+export const LEGAL_DOCUMENT_LEGAL_NOTICE = "legal-notice" as const;
+export const LEGAL_DOCUMENT_PRIVACY = "privacy" as const;
+
+export const legalDocumentSlugs = [
+  LEGAL_DOCUMENT_TERMS,
+  LEGAL_DOCUMENT_SALES_TERMS,
+  LEGAL_DOCUMENT_LEGAL_NOTICE,
+  LEGAL_DOCUMENT_PRIVACY,
+] as const;
+export type LegalDocumentSlug = (typeof legalDocumentSlugs)[number];
+
+export function isLegalDocumentSlug(value: unknown): value is LegalDocumentSlug {
+  return legalDocumentSlugs.some((slug) => slug === value);
+}
+
+/**
+ * A published document, as the landing renders it. `body` is plain text in the
+ * convention `parseLegalBody` reads: "## " opens a sub-heading, "- " a list
+ * item, blank lines separate blocks. Never HTML — nothing renders it as markup.
+ */
+export interface PublicLegalDocument {
+  slug: LegalDocumentSlug;
+  title: LocalizedText;
+  body: LocalizedText;
+  version: number;
+  publishedAt: string;
+}
+
+/** The same document in the back-office, where a draft has no publication. */
+export interface AdminLegalDocument extends Omit<PublicLegalDocument, "publishedAt"> {
+  id: string;
+  /** Null while the document has never been published. */
+  publishedAt: string | null;
+  updatedAt: string;
+}
+
+export type LegalDocumentInput = {
+  title: LocalizedText;
+  body: LocalizedText;
+};
+
+/**
+ * A legal document is plain text, and it is rendered as React elements — never
+ * as HTML. That is the whole point of parsing it ourselves rather than pulling
+ * in a markdown engine: a document edited from the back-office can never put
+ * markup on the page.
+ *
+ * The convention, deliberately small:
+ * - a line starting with "## " opens a sub-heading;
+ * - a line starting with "- " is a list item;
+ * - anything else is a paragraph, blocks being separated by blank lines.
+ */
+export type LegalBlock =
+  | { type: "heading"; text: string }
+  | { type: "paragraph"; text: string }
+  | { type: "list"; items: string[] }
+
+const HEADING_PREFIX = "## "
+const LIST_PREFIX = "- "
+
+export function parseLegalBody(body: string): LegalBlock[] {
+  const blocks: LegalBlock[] = []
+  let paragraph: string[] = []
+  let list: string[] = []
+
+  const flush = () => {
+    if (paragraph.length > 0) {
+      blocks.push({ type: "paragraph", text: paragraph.join(" ") })
+      paragraph = []
+    }
+
+    if (list.length > 0) {
+      blocks.push({ type: "list", items: list })
+      list = []
+    }
+  }
+
+  for (const rawLine of body.split("\n")) {
+    const line = rawLine.trim()
+
+    if (!line) {
+      flush()
+      continue
+    }
+
+    if (line.startsWith(HEADING_PREFIX)) {
+      flush()
+      const text = line.slice(HEADING_PREFIX.length).trim()
+      if (text) {
+        blocks.push({ type: "heading", text })
+      }
+      continue
+    }
+
+    if (line.startsWith(LIST_PREFIX)) {
+      if (paragraph.length > 0) {
+        flush()
+      }
+      const item = line.slice(LIST_PREFIX.length).trim()
+      if (item) {
+        list.push(item)
+      }
+      continue
+    }
+
+    if (list.length > 0) {
+      flush()
+    }
+
+    paragraph.push(line)
+  }
+
+  flush()
+
+  return blocks
+}

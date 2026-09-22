@@ -1,7 +1,11 @@
 import { buildChain, runModelChain } from "./openrouter.chain";
 import type { OpenRouterVoiceConfig } from "./openrouter-voice.config";
-import { buildOpenRouterError } from "./openrouter.error";
+import { OpenRouterRequestError, buildOpenRouterError } from "./openrouter.error";
 import { VOICE_RETRY_POLICY, type RetryHooks } from "./openrouter.retry";
+import {
+  VOICE_OPEN_TIMEOUT_MS,
+  fetchWithOpenTimeout,
+} from "./openrouter.timeout";
 import {
   summarizeAttempts,
   type ChainAttempt,
@@ -115,6 +119,12 @@ export class OpenRouterVoiceService {
         let attempt: Response;
         try {
           attempt = await this.callModel(model, request);
+        } catch (error) {
+          // Kept so the turn log can name what went wrong. `withRetry` swallows
+          // a retried failure whole, which is why a 34-second dead connection
+          // showed up as nothing but `attempts: 2`.
+          if (error instanceof OpenRouterRequestError) record.status = error.status;
+          throw error;
         } finally {
           // Timed in a finally so a socket failure is measured too: a call
           // that dies after four seconds is the one worth seeing in the log.
@@ -141,28 +151,33 @@ export class OpenRouterVoiceService {
   }
 
   private callModel(model: string, request: VoiceTurnRequest) {
-    return fetch(`${this.config.baseUrl}/chat/completions`, {
-      body: JSON.stringify({
-        model,
-        // Audio output is only served over SSE, never in one payload.
-        stream: true,
-        modalities: ["text", "audio"],
-        audio: { voice: this.config.voice, format: "pcm16" },
-        max_completion_tokens: this.config.maxTokens,
-        messages: [
-          { role: "system", content: request.systemPrompt },
-          ...request.history,
-          userMessage(request),
-        ],
-      }),
-      headers: {
-        Authorization: `Bearer ${this.config.apiKey}`,
-        "Content-Type": "application/json",
-        "HTTP-Referer": "https://cvforge.app",
-        "X-Title": "CVforge",
+    return fetchWithOpenTimeout(
+      `${this.config.baseUrl}/chat/completions`,
+      {
+        body: JSON.stringify({
+          model,
+          // Audio output is only served over SSE, never in one payload.
+          stream: true,
+          modalities: ["text", "audio"],
+          audio: { voice: this.config.voice, format: "pcm16" },
+          max_completion_tokens: this.config.maxTokens,
+          messages: [
+            { role: "system", content: request.systemPrompt },
+            ...request.history,
+            userMessage(request),
+          ],
+        }),
+        headers: {
+          Authorization: `Bearer ${this.config.apiKey}`,
+          "Content-Type": "application/json",
+          "HTTP-Referer": "https://cvforge.app",
+          "X-Title": "CVforge",
+        },
+        method: "POST",
       },
-      method: "POST",
-    });
+      VOICE_OPEN_TIMEOUT_MS,
+      model,
+    );
   }
 }
 

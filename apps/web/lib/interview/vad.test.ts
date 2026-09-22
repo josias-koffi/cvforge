@@ -1,17 +1,23 @@
 import { describe, expect, it } from "vitest"
 
 import {
+  BARGE_IN_SPEECH_MS,
+  LONG_PAUSE_MS,
   MAX_ANSWER_MS,
+  MAX_SILENCE_BUDGET_MS,
+  PAUSE_GRANT_MS,
   MIN_SPEECH_MS,
   SETTLED_SPEECH_MS,
+  VAD_INTERVAL_MS,
   SILENCE_MS_TO_STOP,
   SILENCE_MS_WHILE_SEARCHING,
   SPEECH_START_RMS,
-  computeAmplitudeRms,
   initialVadAccumulator,
   nextNoiseFloor,
   nextVadDecision,
+  resolveSilenceBudget,
   resolveStartThreshold,
+  shouldBargeIn,
   type VadAccumulator,
   type VadDecision,
   type VadStatus,
@@ -48,7 +54,7 @@ function decide(
   status: VadStatus,
   frame: Uint8Array,
   accumulator: Partial<VadAccumulator> = {},
-  options: { deltaMs?: number; muted?: boolean } = {}
+  options: { deltaMs?: number; muted?: boolean; voiceRms?: number } = {}
 ): VadDecision {
   return nextVadDecision({
     ...initialVadAccumulator,
@@ -57,6 +63,8 @@ function decide(
     frame,
     muted: options.muted ?? false,
     status,
+    // Silent speakers by default: most cases have nothing playing.
+    voiceRms: options.voiceRms ?? 0,
   })
 }
 
@@ -77,25 +85,6 @@ function feed(
 
   return state
 }
-
-describe("computeAmplitudeRms", () => {
-  it("is zero on the centre line and one at full swing", () => {
-    expect(computeAmplitudeRms(SILENT)).toBe(0)
-    expect(computeAmplitudeRms(frameAt(1))).toBe(1)
-  })
-
-  it("is zero on an empty frame rather than NaN", () => {
-    expect(computeAmplitudeRms(new Uint8Array(0))).toBe(0)
-  })
-
-  it("reads a dip below the centre line as loudness, not as silence", () => {
-    // Half a waveform sits under 128; treating those bytes as quiet would
-    // halve every measurement.
-    const belowOnly = new Uint8Array(FRAME_SIZE).fill(128 - 19)
-
-    expect(computeAmplitudeRms(belowOnly)).toBeCloseTo(0.148, 2)
-  })
-})
 
 describe("nextVadDecision", () => {
   it("starts recording as soon as the candidate speaks", () => {
@@ -220,18 +209,114 @@ describe("nextVadDecision", () => {
     })
   })
 
-  it("does nothing while the interviewer is answering", () => {
-    // Reacting here would record the recruiter's own voice.
+  it("sits through the interviewer's answer rather than recording it", () => {
+    // A normal speaking level here is the recruiter, or its echo. Only a
+    // sustained run well above the onset takes the floor back.
     expect(decide("processing", SPEECH).action).toBe("none")
-    expect(decide("processing", SILENT, { silenceMs: 99 }).silenceMs).toBe(99)
+    expect(decide("processing", SILENT).action).toBe("none")
+    expect(decide("processing", ROOM, { speechMs: 5_000 }).action).toBe("none")
+  })
+})
+
+describe("barge-in", () => {
+  /** Clearly over the onset threshold once the 1.6 margin is applied. */
+  const LOUD = frameAt(0.2)
+
+  /** Feeds `ms` of the same frame while the interviewer is talking. */
+  function talkOver(
+    frame: Uint8Array,
+    ms: number,
+    voiceRms: number
+  ): VadDecision {
+    let decision = decide("processing", frame, {}, { deltaMs: 0, voiceRms })
+
+    for (let elapsed = 0; elapsed < ms; elapsed += VAD_INTERVAL_MS) {
+      decision = decide(
+        "processing",
+        frame,
+        {
+          noiseFloor: decision.noiseFloor,
+          silenceMs: decision.silenceMs,
+          speechMs: decision.speechMs,
+        },
+        { deltaMs: VAD_INTERVAL_MS, voiceRms }
+      )
+      if (decision.action === "barge-in") break
+    }
+
+    return decision
+  }
+
+  it("hands the floor back when the candidate talks over the recruiter", () => {
+    const decision = talkOver(LOUD, BARGE_IN_SPEECH_MS + VAD_INTERVAL_MS, 0.02)
+
+    expect(decision.action).toBe("barge-in")
+    expect(decision.status).toBe("recording")
+    // The run that earned the floor is not carried into the answer itself.
+    expect(decision.speechMs).toBe(0)
+  })
+
+  it("does not cut in on the recruiter's own voice coming back", () => {
+    // The echo guard, and the reason this feature is usable at all: without
+    // it the interviewer interrupts itself on its own first word.
+    const decision = talkOver(LOUD, 2_000, 0.5)
+
+    expect(decision.action).toBe("none")
+  })
+
+  it("ignores a burst too short to be a word", () => {
+    expect(talkOver(LOUD, BARGE_IN_SPEECH_MS / 2, 0.02).action).toBe("none")
+  })
+
+  it("tells the candidate from the echo by the speakers, not by the level", () => {
+    // The same voice at the microphone either way. What separates them is
+    // whether the speakers were loud enough to account for it.
+    expect(talkOver(SPEECH, 2_000, 0.02).action).toBe("barge-in")
+    expect(talkOver(SPEECH, 2_000, 0.4).action).toBe("none")
+  })
+
+  it("ignores a sound that is loud for the room but not deliberate", () => {
+    // Over the onset threshold, under the margin talking over someone takes.
+    expect(talkOver(frameAt(0.04), 2_000, 0).action).toBe("none")
+  })
+
+  it("needs the run to be continuous, not merely cumulative", () => {
+    // A syllable, a gap, a syllable is the room, not someone cutting in.
+    let decision = talkOver(LOUD, BARGE_IN_SPEECH_MS / 2, 0.02)
+    decision = decide(
+      "processing",
+      SILENT,
+      { noiseFloor: decision.noiseFloor, speechMs: decision.speechMs },
+      { deltaMs: VAD_INTERVAL_MS, voiceRms: 0.02 }
+    )
+
+    expect(decision.speechMs).toBe(0)
+  })
+})
+
+describe("shouldBargeIn", () => {
+  const base = { noiseFloor: 0.005, rms: 0.2, speechMs: 500, voiceRms: 0.02 }
+
+  it("requires all three conditions at once", () => {
+    expect(shouldBargeIn(base)).toBe(true)
+    expect(shouldBargeIn({ ...base, speechMs: 100 })).toBe(false)
+    expect(shouldBargeIn({ ...base, rms: 0.04 })).toBe(false)
+    expect(shouldBargeIn({ ...base, voiceRms: 0.9 })).toBe(false)
+  })
+
+  it("scales its threshold with the room, like the onset does", () => {
+    // A noisy room needs more, not the same fixed number.
+    expect(shouldBargeIn({ ...base, noiseFloor: 0.05 })).toBe(false)
   })
 })
 
 describe("the adaptive noise floor", () => {
   it("raises the bar in a noisy room", () => {
-    const noisy = nextNoiseFloor(0.03, 0.04, false)
+    // Within a band that can never reach a speaking level: the cap is what
+    // stops the bar running away from the voice it is listening for.
+    const noisy = nextNoiseFloor(0.018, 0.02, false)
 
-    expect(noisy).toBeGreaterThan(0.03)
+    expect(noisy).toBeGreaterThan(0.018)
     expect(resolveStartThreshold(noisy)).toBeGreaterThan(SPEECH_START_RMS)
   })
 
@@ -260,5 +345,148 @@ describe("the adaptive noise floor", () => {
   it("keeps a sustained room tone from ever starting a recording", () => {
     // The end-to-end proof: 300 frames of room noise, no recording.
     expect(feed("listening", ROOM, 300, 16).action).toBe("none")
+  })
+})
+
+describe("the turn budget", () => {
+  it("is more patient while the answer is still being searched for", () => {
+    // The hesitation at the start of a considered answer is not the end of it.
+    expect(SILENCE_MS_WHILE_SEARCHING).toBeGreaterThan(SILENCE_MS_TO_STOP)
+  })
+
+  it("waits longer than a candidate pauses between clauses", () => {
+    // The 900 ms this once was came from casual conversation, where turns
+    // swap on 600 to 800 ms. An interview answer is not that: someone
+    // building an example pauses for over a second, and at 900 ms they were
+    // cut off mid-sentence and answered.
+    expect(SILENCE_MS_TO_STOP).toBeGreaterThanOrEqual(1500)
+  })
+
+  it("still waits longer than the burst it refuses to treat as an answer", () => {
+    // Otherwise a real answer could end before it was even allowed to count.
+    expect(SILENCE_MS_TO_STOP).toBeGreaterThan(MIN_SPEECH_MS)
+  })
+
+  it("lets an answer settle before the short budget applies", () => {
+    expect(SETTLED_SPEECH_MS).toBeGreaterThan(MIN_SPEECH_MS)
+    expect(resolveSilenceBudget(SETTLED_SPEECH_MS - 1)).toBe(
+      SILENCE_MS_WHILE_SEARCHING
+    )
+    expect(resolveSilenceBudget(SETTLED_SPEECH_MS)).toBe(SILENCE_MS_TO_STOP)
+  })
+})
+
+describe("patience earned by pausing", () => {
+  it("starts an answer with none of it", () => {
+    expect(resolveSilenceBudget(SETTLED_SPEECH_MS)).toBe(SILENCE_MS_TO_STOP)
+  })
+
+  it("adds what the answer has earned", () => {
+    expect(resolveSilenceBudget(SETTLED_SPEECH_MS, PAUSE_GRANT_MS)).toBe(
+      SILENCE_MS_TO_STOP + PAUSE_GRANT_MS
+    )
+  })
+
+  it("never waits longer than anyone could tell a pause from an ending", () => {
+    expect(resolveSilenceBudget(SETTLED_SPEECH_MS, 99_999)).toBe(
+      MAX_SILENCE_BUDGET_MS
+    )
+    expect(resolveSilenceBudget(0, 99_999)).toBe(MAX_SILENCE_BUDGET_MS)
+  })
+
+  it("credits an answer once speech picks up after a long gap", () => {
+    const paused = decide(
+      "recording",
+      SPEECH,
+      { silenceMs: LONG_PAUSE_MS, speechMs: 3_000 },
+      { deltaMs: 25 }
+    )
+
+    expect(paused.grantedMs).toBe(PAUSE_GRANT_MS)
+  })
+
+  it("credits nothing for a gap short enough to be a breath", () => {
+    const breathed = decide(
+      "recording",
+      SPEECH,
+      { silenceMs: LONG_PAUSE_MS - 100, speechMs: 3_000 },
+      { deltaMs: 25 }
+    )
+
+    expect(breathed.grantedMs).toBe(0)
+  })
+
+  it("keeps the credit to the end of the answer", () => {
+    // The whole point: someone who pauses once will pause again, and the
+    // second pause must not be the one that cuts them off.
+    const held = decide(
+      "recording",
+      SILENT,
+      { grantedMs: PAUSE_GRANT_MS, silenceMs: SILENCE_MS_TO_STOP, speechMs: 3_000 },
+      { deltaMs: 25 }
+    )
+
+    expect(held.action).toBe("none")
+    expect(held.grantedMs).toBe(PAUSE_GRANT_MS)
+  })
+
+  it("still ends the answer once even the earned budget is spent", () => {
+    const ended = decide(
+      "recording",
+      SILENT,
+      {
+        grantedMs: PAUSE_GRANT_MS,
+        silenceMs: SILENCE_MS_TO_STOP + PAUSE_GRANT_MS,
+        speechMs: 3_000,
+      },
+      { deltaMs: 25 }
+    )
+
+    expect(ended.action).toBe("stop")
+  })
+
+  it("hands the next answer a clean slate", () => {
+    expect(decide("listening", SPEECH).grantedMs).toBe(0)
+  })
+})
+
+describe("the onset threshold", () => {
+  it("does not climb towards the voice it is listening for", () => {
+    // The bug: the room tone was updated with the candidate's own voice and
+    // the bar computed from the result, so someone speaking just under it
+    // pushed it further out of reach the longer they tried.
+    const quiet = frameAt(SPEECH_START_RMS - 0.005)
+    let decision = decide("listening", quiet)
+
+    for (let index = 0; index < 400; index += 1) {
+      decision = decide("listening", quiet, decision, { deltaMs: 25 })
+    }
+
+    expect(resolveStartThreshold(decision.noiseFloor)).toBe(SPEECH_START_RMS)
+  })
+
+  it("still rises for a room that is genuinely noisy", () => {
+    const noisy = frameAt(0.015)
+    let decision = decide("listening", noisy)
+
+    for (let index = 0; index < 400; index += 1) {
+      decision = decide("listening", noisy, decision, { deltaMs: 25 })
+    }
+
+    expect(decision.action).toBe("none")
+    expect(resolveStartThreshold(decision.noiseFloor)).toBeGreaterThan(
+      SPEECH_START_RMS
+    )
+  })
+
+  it("never rises past a shout, whatever the room", () => {
+    const loud = frameAt(0.5)
+    let decision = decide("listening", loud)
+
+    for (let index = 0; index < 400; index += 1) {
+      decision = decide("listening", loud, decision, { deltaMs: 25 })
+    }
+
+    expect(resolveStartThreshold(decision.noiseFloor)).toBeLessThanOrEqual(0.05)
   })
 })

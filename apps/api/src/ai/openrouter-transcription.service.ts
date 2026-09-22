@@ -2,6 +2,10 @@ import { buildChain, runModelChain } from "./openrouter.chain";
 import type { OpenRouterTranscriptionConfig } from "./openrouter-transcription.config";
 import { buildOpenRouterError } from "./openrouter.error";
 import { DEFAULT_RETRY_POLICY, type RetryHooks } from "./openrouter.retry";
+import {
+  TRANSCRIPTION_OPEN_TIMEOUT_MS,
+  fetchWithOpenTimeout,
+} from "./openrouter.timeout";
 
 export interface TranscribeRequest {
   audioBase64: string;
@@ -52,7 +56,7 @@ export class OpenRouterTranscriptionService {
     const response = await runModelChain(
       chain,
       async (model) => {
-        const attempt = await fetch(
+        const attempt = await fetchWithOpenTimeout(
           `${this.config.baseUrl}/audio/transcriptions`,
           {
             body: JSON.stringify({
@@ -71,6 +75,8 @@ export class OpenRouterTranscriptionService {
             },
             method: "POST",
           },
+          TRANSCRIPTION_OPEN_TIMEOUT_MS,
+          model,
         );
 
         if (!attempt.ok) {

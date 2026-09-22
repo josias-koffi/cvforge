@@ -2,10 +2,12 @@ import { describe, expect, it } from "vitest"
 
 import {
   TARGET_SAMPLE_RATE,
-  encodeSegment,
-  encodeWav,
+  bytesToBase64,
+  encodePcm16,
   resampleMonoPcm,
+  resolveTargetRate,
   toBase64,
+  wrapPcm16InWav,
   writeWavHeader,
 } from "@/lib/interview/wav"
 
@@ -63,15 +65,17 @@ describe("resampleMonoPcm", () => {
   })
 })
 
-describe("encodeWav", () => {
-  it("sizes the file from the sample count", () => {
-    const buffer = encodeWav(new Float32Array(10), 16000)
+describe("encodePcm16 into wrapPcm16InWav", () => {
+  const file = (pcm: Float32Array) =>
+    new DataView(wrapPcm16InWav(encodePcm16(pcm), 16000))
 
-    expect(buffer.byteLength).toBe(44 + 20)
+  it("sizes the file from the sample count", () => {
+    expect(wrapPcm16InWav(encodePcm16(new Float32Array(10)), 16000).byteLength)
+      .toBe(44 + 20)
   })
 
   it("maps the full-scale range to signed 16-bit", () => {
-    const view = new DataView(encodeWav(new Float32Array([0, 1, -1]), 16000))
+    const view = file(new Float32Array([0, 1, -1]))
 
     expect(view.getInt16(44, true)).toBe(0)
     expect(view.getInt16(46, true)).toBe(32767)
@@ -79,7 +83,7 @@ describe("encodeWav", () => {
   })
 
   it("clamps out-of-range samples instead of letting them wrap into a click", () => {
-    const view = new DataView(encodeWav(new Float32Array([4, -4]), 16000))
+    const view = file(new Float32Array([4, -4]))
 
     expect(view.getInt16(44, true)).toBe(32767)
     expect(view.getInt16(46, true)).toBe(-32768)
@@ -100,14 +104,62 @@ describe("toBase64", () => {
   })
 })
 
-describe("encodeSegment", () => {
-  it("produces a base64 WAV that starts with a RIFF header", () => {
-    const base64 = encodeSegment(new Float32Array(48000).fill(0.2), 48000)
-    const decoded = atob(base64)
+describe("encodePcm16", () => {
+  it("writes little-endian samples with no container around them", () => {
+    const bytes = encodePcm16(Float32Array.from([0, 0.5, -0.5]))
+    const view = new DataView(bytes.buffer)
 
-    expect(decoded.slice(0, 4)).toBe("RIFF")
-    expect(decoded.slice(8, 12)).toBe("WAVE")
-    // One second at 48 kHz becomes one second at 16 kHz.
-    expect(decoded.length).toBe(44 + TARGET_SAMPLE_RATE * 2)
+    expect(bytes).toHaveLength(6)
+    expect(view.getInt16(0, true)).toBe(0)
+    // Truncated, not rounded: `setInt16` drops the fraction.
+    expect(view.getInt16(2, true)).toBe(Math.trunc(0.5 * 0x7fff))
+    expect(view.getInt16(4, true)).toBe(-0x4000)
+  })
+
+  it("clamps rather than wrapping, which would be a loud click", () => {
+    const view = new DataView(encodePcm16(Float32Array.from([2, -2])).buffer)
+
+    expect(view.getInt16(0, true)).toBe(0x7fff)
+    expect(view.getInt16(2, true)).toBe(-0x8000)
+  })
+})
+
+describe("wrapPcm16InWav", () => {
+  it("counts the samples, not the bytes, in the header", () => {
+    const view = new DataView(wrapPcm16InWav(new Uint8Array(200), 16000))
+
+    expect(view.getUint32(40, true)).toBe(200)
+  })
+})
+
+describe("resolveTargetRate", () => {
+  it("is the target for any device above it", () => {
+    expect(resolveTargetRate(48000)).toBe(TARGET_SAMPLE_RATE)
+    expect(resolveTargetRate(44100)).toBe(TARGET_SAMPLE_RATE)
+  })
+
+  it("leaves a device already below it alone", () => {
+    // The header has to say what came out, not what was asked for.
+    expect(resolveTargetRate(8000)).toBe(8000)
+  })
+
+  it("agrees with what the resampler actually returns", () => {
+    for (const rate of [8000, 16000, 44100, 48000]) {
+      expect(resampleMonoPcm(new Float32Array(64), rate).sampleRate).toBe(
+        resolveTargetRate(rate)
+      )
+    }
+  })
+})
+
+describe("bytesToBase64", () => {
+  it("encodes the pieces an answer is sent in", () => {
+    expect(bytesToBase64(new Uint8Array([72, 105]))).toBe(btoa("Hi"))
+  })
+
+  it("handles a run larger than one chunk", () => {
+    expect(atob(bytesToBase64(new Uint8Array(0x8000 * 2 + 7)))).toHaveLength(
+      0x8000 * 2 + 7
+    )
   })
 })

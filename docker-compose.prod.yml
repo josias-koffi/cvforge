@@ -24,6 +24,9 @@ services:
     environment:
       API_INTERNAL_URL: http://api:3333
       COOKIE_DOMAIN: ${COOKIE_DOMAIN:-}
+      # Where the legal documents are published; /legal/<document> redirects
+      # there, reading this per request.
+      LANDING_URL: https://${LANDING_DOMAIN}
       NODE_ENV: production
     networks:
       - default

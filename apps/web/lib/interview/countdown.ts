@@ -50,6 +50,12 @@ export const AUTO_FINISH_GRACE_SECONDS = 20
  * Only ever in a gap. `listening` is the one phase where nobody is talking:
  * the candidate is not mid-answer and the recruiter is not mid-sentence.
  * Ending anywhere else throws away an answer and the credit that paid for it.
+ *
+ * Two things end an interview. The recruiter running out of things to ask is
+ * the ordinary one, and it does not wait for the clock: leaving the candidate
+ * sitting in front of a recruiter that has already said goodbye is the
+ * interview's worst moment. The deadline is the backstop for a session that
+ * never reached its closing.
  */
 export function shouldAutoFinish(input: {
   elapsed: number
@@ -59,9 +65,12 @@ export function shouldAutoFinish(input: {
   /** An interview nobody answered is not worth a report. */
   hasAnswered: boolean
   finishing: boolean
+  /** The recruiter has said goodbye and has nothing left to ask. */
+  concluded: boolean
 }): boolean {
   if (input.finishing || !input.hasAnswered) return false
   if (input.phase !== "listening") return false
+  if (input.concluded) return true
 
   return (
     input.elapsed >= input.durationMinutes * 60 + AUTO_FINISH_GRACE_SECONDS

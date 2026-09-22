@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest"
 vi.mock("next/navigation", () => ({ usePathname: () => "/fr" }))
 
 import { HomePage } from "@/components/home-page"
+import { SiteFooter } from "@/components/site-footer"
 import { SiteHeader } from "@/components/site-header"
 import { StoryPage } from "@/components/story-page"
 import { en } from "@/content/en"
@@ -62,6 +63,31 @@ describe("HomePage", () => {
     expect(html).toContain('href="/login"')
   })
 
+  it.each([
+    ["fr", fr],
+    ["en", en],
+  ] as const)("sells the mock interview in %s", (locale, dict) => {
+    const html = renderToStaticMarkup(
+      <HomePage locale={locale} offers={offers} withTestimonials={false} />
+    )
+
+    expect(html).toContain('id="interview"')
+    expect(html).toContain(escapeHtml(dict.interview.title))
+
+    // The five recruiter styles and the five scored dimensions are the
+    // substance of the section; a half-filled dictionary would show neither.
+    for (const profile of dict.interview.profiles) {
+      expect(html).toContain(profile.title)
+    }
+    for (const metric of dict.interview.report.metrics) {
+      expect(html).toContain(metric)
+    }
+
+    // Audio retention is a promise, not decoration: it must reach the page.
+    expect(html).toContain(escapeHtml(dict.interview.privacyNote))
+    expect(html).toContain("%2Fscreenshots%2Flight%2Finterview-studio.webp")
+  })
+
   it("shows no price when the offers cannot be loaded", () => {
     const html = renderToStaticMarkup(
       <HomePage locale="fr" offers={null} withTestimonials={false} />
@@ -101,6 +127,25 @@ describe("SiteHeader", () => {
     expect(html).toContain('href="/fr#pricing"')
     expect(html).toContain('href="/fr/histoire"')
     expect(html).toContain('href="/en"')
+  })
+})
+
+describe("SiteFooter", () => {
+  it("links to the four legal documents, in the page's language", () => {
+    const html = renderToStaticMarkup(<SiteFooter locale="fr" dict={fr} />)
+
+    expect(html).toContain('href="/fr/legal/cgu"')
+    expect(html).toContain('href="/fr/legal/cgv"')
+    expect(html).toContain('href="/fr/legal/mentions-legales"')
+    expect(html).toContain('href="/fr/legal/confidentialite"')
+    expect(html).toContain(fr.footer.legal)
+  })
+
+  it("serves the English addresses on the English site", () => {
+    const html = renderToStaticMarkup(<SiteFooter locale="en" dict={en} />)
+
+    expect(html).toContain('href="/en/legal/terms"')
+    expect(html).toContain('href="/en/legal/privacy"')
   })
 })
 

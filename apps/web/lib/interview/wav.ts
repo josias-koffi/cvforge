@@ -42,6 +42,16 @@ export function writeWavHeader(
 }
 
 /**
+ * What comes out of the resampler for a given device.
+ *
+ * A device already at or below the target is left alone, so the WAV header
+ * has to be written against this rather than against the target.
+ */
+export function resolveTargetRate(inputSampleRate: number) {
+  return Math.min(inputSampleRate, TARGET_SAMPLE_RATE)
+}
+
+/**
  * Averages each source window into one output sample. Cruder than a windowed
  * filter, and enough for speech at this ratio; the alternative was shipping a
  * resampling library for one call site.
@@ -72,29 +82,49 @@ export function resampleMonoPcm(input: Float32Array, inputSampleRate: number) {
   return { pcm: output, sampleRate: TARGET_SAMPLE_RATE }
 }
 
-/** Float samples in [-1, 1] to a complete WAV file. */
-export function encodeWav(pcm: Float32Array, sampleRate: number): ArrayBuffer {
-  const buffer = new ArrayBuffer(HEADER_BYTES + pcm.length * BYTES_PER_SAMPLE)
-  const view = new DataView(buffer)
-
-  writeWavHeader(view, pcm.length, sampleRate)
+/**
+ * Float samples in [-1, 1] to little-endian 16-bit, with no container.
+ *
+ * On its own because an answer now goes up in pieces while it is being
+ * spoken: each piece is encoded as it comes, and the header is written once
+ * over the assembled whole.
+ */
+export function encodePcm16(pcm: Float32Array): Uint8Array<ArrayBuffer> {
+  const bytes = new Uint8Array(pcm.length * BYTES_PER_SAMPLE)
+  const view = new DataView(bytes.buffer)
 
   for (let index = 0; index < pcm.length; index += 1) {
     // Clamped first: a sample past 1 wraps to a loud click once truncated.
     const sample = Math.max(-1, Math.min(1, pcm[index] ?? 0))
     view.setInt16(
-      HEADER_BYTES + index * BYTES_PER_SAMPLE,
+      index * BYTES_PER_SAMPLE,
       sample < 0 ? sample * 0x8000 : sample * 0x7fff,
       true
     )
   }
 
+  return bytes
+}
+
+/** Already-encoded samples to a complete WAV file. */
+export function wrapPcm16InWav(
+  samples: Uint8Array,
+  sampleRate: number
+): ArrayBuffer {
+  const buffer = new ArrayBuffer(HEADER_BYTES + samples.length)
+
+  writeWavHeader(
+    new DataView(buffer),
+    samples.length / BYTES_PER_SAMPLE,
+    sampleRate
+  )
+  new Uint8Array(buffer).set(samples, HEADER_BYTES)
+
   return buffer
 }
 
 /** Chunked so a long answer does not blow the argument limit of `apply`. */
-export function toBase64(buffer: ArrayBuffer): string {
-  const bytes = new Uint8Array(buffer)
+export function bytesToBase64(bytes: Uint8Array): string {
   const CHUNK = 0x8000
   let binary = ""
 
@@ -105,9 +135,6 @@ export function toBase64(buffer: ArrayBuffer): string {
   return btoa(binary)
 }
 
-/** Downsamples to 16 kHz and returns the base64 WAV the API expects. */
-export function encodeSegment(pcm: Float32Array, sampleRate: number) {
-  const resampled = resampleMonoPcm(pcm, sampleRate)
-
-  return toBase64(encodeWav(resampled.pcm, resampled.sampleRate))
+export function toBase64(buffer: ArrayBuffer): string {
+  return bytesToBase64(new Uint8Array(buffer))
 }

@@ -27,6 +27,14 @@ export interface ChainTelemetry {
   fellBack: boolean;
   /** Time spent inside the calls; the gap to `totalMs` is backoff. */
   callMs: number;
+  /**
+   * Every attempt that did not serve, as `model:status`.
+   *
+   * Empty on a healthy turn. Without it a retried failure left no trace at all:
+   * the only sign of a 34-second dead connection was `attempts: 2` beside a
+   * `callMs` nobody could explain.
+   */
+  failures: string[];
 }
 
 export function summarizeAttempts(attempts: ChainAttempt[]): ChainTelemetry {
@@ -36,6 +44,10 @@ export function summarizeAttempts(attempts: ChainAttempt[]): ChainTelemetry {
   return {
     attempts: attempts.length,
     callMs: attempts.reduce((total, attempt) => total + attempt.durationMs, 0),
+    failures: attempts
+      .filter((attempt) => attempt.failed)
+      // `no-reply` rather than a status: the call never got one back at all.
+      .map((attempt) => `${attempt.model}:${attempt.status ?? "no-reply"}`),
     fellBack: modelsTried.length > 1,
     model: served && !served.failed ? served.model : null,
     modelsTried,
@@ -47,7 +59,21 @@ export interface TurnTimings {
   /** Request start to the first byte of audio — what the candidate waits for. */
   firstAudioMs: number | null;
   totalMs: number;
+  /**
+   * How long the transcription call itself took. Null when none ran.
+   *
+   * Measured from its own start, not the turn's: the first version subtracted
+   * the turn's start and so always equalled `totalMs`, which said nothing.
+   */
   transcriptionMs: number | null;
+  /**
+   * How long the turn waited on transcription *after* the voice stream ended.
+   *
+   * This is the number that answers whether running it beside the voice is
+   * free: zero means it had already settled and cost the turn nothing, and
+   * anything above that delays `done`, and so the microphone reopening.
+   */
+  transcriptionWaitMs: number | null;
 }
 
 /**
@@ -64,6 +90,9 @@ export function formatTurnLog(
     attempts: telemetry.attempts,
     callMs: telemetry.callMs,
     event: scope,
+    // Empty string on a healthy turn: the field is always present so a log
+    // search can filter on it without knowing which turns have one.
+    failures: telemetry.failures.join(","),
     fellBack: telemetry.fellBack,
     firstAudioMs: timings.firstAudioMs,
     model: telemetry.model,
@@ -71,8 +100,12 @@ export function formatTurnLog(
     sessionId,
     totalMs: timings.totalMs,
     transcriptionMs: timings.transcriptionMs,
-    // The gap between the two is time spent asleep in backoff, which is the
-    // number worth alerting on.
+    transcriptionWaitMs: timings.transcriptionWaitMs,
+    // Everything outside the voice call: backoff between attempts, the wait on
+    // transcription, and the cost of streaming frames out. Not backoff alone —
+    // it was labelled that at first, and turns logging `attempts: 1` with no
+    // fallback still showed seconds here, which is what gave the lie away.
+    // Read it with `attempts` and `transcriptionWaitMs` beside it.
     waitedMs: Math.max(0, timings.totalMs - telemetry.callMs),
   };
 }

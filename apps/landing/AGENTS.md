@@ -18,6 +18,7 @@ Public showcase site. Same stack as `apps/web` (Next 16, Tailwind v4, shadcn `ra
 - **Wording and identity come from `.project/marketing/`**: CVSpark is never written CVSPARK, no gradient on the wordmark, no font weight 700, sentence case, amber (`--spark`) only for the primary "generate" call to action.
 - **Prices are never hard-coded**: packs come from the API (`GET /public/credit-offers`, managed in the back-office) through `lib/offers-api.ts`; action costs come from `AI_CREDIT_COSTS` in `@cvforge/types`. When the API is unreachable the section shows no price at all.
 - **Links to the product** go through `/login` (a route handler reading `APP_URL` at request time), never a build-time `NEXT_PUBLIC_APP_URL`.
+- **Legal documents are not copy**: CGU, CGV, legal notice and privacy policy come from the API (`GET /public/legal/:slug`, edited in the back-office at `/admin/legal`) through `lib/legal-api.ts`. Only their navigation labels live in the dictionaries. When the API cannot serve one, the page answers 404 — never an empty contract. Their bodies are plain text parsed by `parseLegalBody` (`@cvforge/types`), never HTML.
 - **Theme tokens** in `app/globals.css` mirror `apps/web/app/globals.css`; copy changes across when they should be shared.
 - Testimonials are placeholders behind `NEXT_PUBLIC_SHOW_TESTIMONIALS`; do not enable it until real reviews replace them.
 - Animations use `motion` and must stay behind `prefers-reduced-motion` (`components/reveal.tsx`).
@@ -25,6 +26,8 @@ Public showcase site. Same stack as `apps/web` (Next 16, Tailwind v4, shadcn `ra
 ## Screenshots
 
 `public/screenshots/{light,dark}/<name>.webp`, captured from `apps/web` at 1440×900, named after `ScreenshotName` in `content/types.ts`. They must never contain real personal data — capture them from a demo account.
+
+The interview captures (`interview-studio`, `interview-report`, `interview-progress`) were taken from `cvspark-demo@yopmail.com` against a fictional interview history seeded locally: the studio needs a spoken session, which cannot be replayed. Re-shoot them the same way, and crop the sidebar footer out — it carries the demo address, and in `next dev` the issue badge sits there too.
 
 ## Commands
 

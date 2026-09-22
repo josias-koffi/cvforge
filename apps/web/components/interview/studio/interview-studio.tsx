@@ -26,8 +26,15 @@ import {
   type StudioMessage,
 } from "@/lib/interview/studio-machine"
 
-/** Phases where a new answer may begin. */
-const LISTENING_PHASES = new Set(["listening", "recording"])
+/**
+ * Phases where the detector runs.
+ *
+ * `speaking` is in the set so the candidate can cut the interviewer off, which
+ * is what the detector's barge-in branch is for. `processing` is not: nothing
+ * is coming out of the speakers yet, so there is nothing to interrupt, and a
+ * door slamming while the model thinks would throw the turn away.
+ */
+const DETECTING_PHASES = new Set(["listening", "recording", "speaking"])
 
 function toStudioMessages(session: InterviewSessionSummary): StudioMessage[] {
   return session.messages.map((message) => ({ ...message }))
@@ -45,7 +52,17 @@ export function InterviewStudio({
   onFinish,
 }: {
   session: InterviewSessionSummary
-  onFinish: () => Promise<ActionResult | void>
+  /**
+   * The server action itself, not a wrapper around it.
+   *
+   * The page used to pass an inline `"use server"` closure that captured
+   * `sessionId`. Next.js gives such a closure its own encrypted server
+   * reference, and staging rejected it: `Server Reference ID did not match the
+   * expected format. Received "x"` — so finishing did nothing at all. The id
+   * travels as an argument instead, and what crosses the boundary is the
+   * top-level action's own 42-character reference.
+   */
+  onFinish: (sessionId: string) => Promise<ActionResult | void>
 }) {
   const [state, dispatch] = React.useReducer(studioReducer, {
     ...initialStudioState,
@@ -65,18 +82,29 @@ export function InterviewStudio({
     onReady: () => dispatch({ type: "MIC_READY" }),
   })
 
-  const { open, submit } = useInterviewTurn({ dispatch, sessionId: session.id })
+  const { beginAnswer, interrupt, open, submit, uploadPart } =
+    useInterviewTurn({ dispatch, sessionId: session.id })
 
   const recorder = useAudioRecorder({
     micRef,
+    ready: state.phase !== "booting" && state.phase !== "error",
     onError: (message) => dispatch({ message, type: "TRANSCRIBE_FAILED" }),
+    onPart: uploadPart,
     onSegment: (segment) => void submit(segment),
   })
 
   useVad({
-    active: LISTENING_PHASES.has(state.phase),
+    active: DETECTING_PHASES.has(state.phase),
     micRef,
     muted: state.muted,
+    // Cutting in: the reply stops where it is and the answer starts recording
+    // immediately, with no echo tail — the candidate is already mid-word.
+    onBargeIn: () => {
+      dispatch({ type: "BARGE_IN" })
+      interrupt()
+      beginAnswer()
+      recorder.start()
+    },
     onLevel: (level) => dispatch({ level, type: "LEVEL" }),
     // Too short to be an answer: the floor goes straight back to the
     // candidate, with nothing sent and no turn spent.
@@ -93,9 +121,13 @@ export function InterviewStudio({
     },
     onSpeechStart: () => {
       dispatch({ type: "SPEECH_START" })
+      // The id comes first: the pieces start going up a quarter of a second
+      // later, long before anyone knows how the answer ends.
+      beginAnswer()
       recorder.start()
     },
     status: state.vadStatus,
+    voiceRms: state.voiceRms,
   })
 
   // Muting mid-sentence drops the half-spoken answer. Without this the
@@ -143,7 +175,7 @@ export function InterviewStudio({
     dispatch({ type: "FINISHED" })
 
     try {
-      const result = await onFinish()
+      const result = await onFinish(session.id)
 
       // Scoring the session redirects to the report and never returns, so
       // reaching here at all means it failed. Saying nothing left the
@@ -154,7 +186,7 @@ export function InterviewStudio({
     } finally {
       setFinishing(false)
     }
-  }, [onFinish])
+  }, [onFinish, session.id])
 
   const hasAnswered = state.messages.some((message) => message.role === "user")
   // From the reducer, not the prop: the prop was fetched before the first
@@ -166,6 +198,7 @@ export function InterviewStudio({
   // in `finishInterview` carries the candidate to their report. Waits for a
   // gap: `shouldAutoFinish` will not stop a turn in progress.
   const autoFinish = shouldAutoFinish({
+    concluded: state.concluded,
     durationMinutes: session.durationMinutes,
     elapsed,
     finishing,
@@ -192,7 +225,10 @@ export function InterviewStudio({
       {/* The stage: one thing to look at, the full width of the page. */}
       <section className="flex min-h-72 flex-col items-center justify-center gap-4 rounded-xl border bg-card p-6">
         <VoiceOrb input={volumes.input} output={volumes.output} state={orb} />
-        <LatencyStrip firstTokenMs={state.firstTokenMs} />
+        <LatencyStrip
+          firstTokenMs={state.firstTokenMs}
+          playback={state.playback}
+        />
 
         {countdown.tone === "overtime" && state.phase !== "completed" ? (
           // Nothing is cut off mid-turn: the studio waits for a gap before

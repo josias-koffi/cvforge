@@ -6,6 +6,7 @@ import {
   openOpeningStream,
   openTurnStream,
   startSession,
+  uploadAnswerPart,
 } from "@/lib/interview/client"
 
 const CHUNK = {
@@ -149,4 +150,36 @@ describe("interview client", () => {
     ).rejects.toThrow("Le recruteur n'a pas pu répondre.")
   })
 
+})
+
+describe("uploadAnswerPart", () => {
+  const PART = { audioBase64: "AAAA", chunkId: "c1", part: 2 }
+
+  beforeEach(() => {
+    fetchMock.mockReset()
+    vi.stubGlobal("fetch", fetchMock)
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it("posts one piece to the session's own chunk route", async () => {
+    fetchMock.mockResolvedValue(jsonResponse({ parts: 3 }))
+
+    await uploadAnswerPart("s1", PART)
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/interviews/sessions/s1/turn/chunk",
+      expect.objectContaining({ body: JSON.stringify(PART), method: "POST" })
+    )
+  })
+
+  it("throws so the turn knows to send the answer whole instead", async () => {
+    fetchMock.mockResolvedValue(jsonResponse({ message: "trop long" }, 413))
+
+    await expect(uploadAnswerPart("s1", PART)).rejects.toBeInstanceOf(
+      InterviewRequestError
+    )
+  })
 })

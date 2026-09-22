@@ -23,16 +23,38 @@ export function resolveNextDistDir(value: string | undefined) {
 
 const nextDistDir = resolveNextDistDir(process.env.NEXT_DIST_DIR)
 
+/**
+ * Each legal document has one address per language. Kept in step with
+ * `legalSlugs` in lib/legal.ts, which a test enforces — this config cannot
+ * import it, Next loads it outside the app's path aliases.
+ */
+const LEGAL_SLUGS: [fr: string, en: string][] = [
+  ["cgu", "terms"],
+  ["cgv", "sales-terms"],
+  ["mentions-legales", "legal-notice"],
+  ["confidentialite", "privacy"],
+]
+
+export function legalRedirects() {
+  return LEGAL_SLUGS.flatMap(([fr, en]) => [
+    { source: `/fr/legal/${en}`, destination: `/fr/legal/${fr}`, permanent: true },
+    { source: `/en/legal/${fr}`, destination: `/en/legal/${en}`, permanent: true },
+  ])
+}
+
 const nextConfig: NextConfig = {
   output: "standalone",
   outputFileTracingRoot: new URL("../../", import.meta.url).pathname,
   transpilePackages: ["@cvforge/types"],
   ...(nextDistDir ? { distDir: nextDistDir } : {}),
   // The story page has one route; each locale exposes it under its own slug.
+  // The legal documents work the same way, so a link shared in one language
+  // lands on the reader's own wording rather than on a 404.
   async redirects() {
     return [
       { source: "/fr/story", destination: "/fr/histoire", permanent: true },
       { source: "/en/histoire", destination: "/en/story", permanent: true },
+      ...legalRedirects(),
     ]
   },
   async rewrites() {

@@ -1,5 +1,6 @@
 import type { InterviewMessage } from "@cvforge/types"
 
+import type { PlaybackStats } from "@/lib/interview/playback-stats"
 import type { VadStatus } from "@/lib/interview/vad"
 
 /**
@@ -30,6 +31,12 @@ export type StudioState = {
   level: number
   /** Latest level of the interviewer's own voice, 0-1, on the same scale. */
   voiceLevel: number
+  /**
+   * The same output as an amplitude RMS, which is the scale the detector
+   * measures the room on. It is what tells the candidate cutting in apart from
+   * the speakers echoing back into the microphone.
+   */
+  voiceRms: number
   messages: StudioMessage[]
   /** The reply being streamed, before it is committed to `messages`. */
   streamingReply: string
@@ -48,6 +55,15 @@ export type StudioState = {
    * anyone reaches the studio, and the countdown must not run on that gap.
    */
   startedAt: string | null
+  /** How the last reply actually played. Null until one has. */
+  playback: PlaybackStats | null
+  /**
+   * The recruiter has nothing left to ask and has said goodbye.
+   *
+   * Set by the server, which owns the agenda. The studio scores the session
+   * on it rather than waiting out the clock.
+   */
+  concluded: boolean
 }
 
 export type StudioEvent =
@@ -55,7 +71,9 @@ export type StudioEvent =
   | { type: "MIC_FAILED"; message: string }
   | { type: "LEVEL"; level: number }
   /** A frame of the reply as it plays, so the orb breathes with the voice. */
-  | { type: "VOICE_LEVEL"; level: number }
+  | { type: "VOICE_LEVEL"; level: number; rms: number }
+  /** The candidate talked over the interviewer and took the floor back. */
+  | { type: "BARGE_IN" }
   | { type: "SPEECH_START" }
   | { type: "SPEECH_END"; atMs: number }
   /** The noise that opened the microphone was not an answer. */
@@ -68,8 +86,12 @@ export type StudioEvent =
   | { type: "AI_AUDIO"; atMs: number }
   | { type: "AI_DELTA"; text: string; atMs: number }
   | { type: "AI_DONE" }
+  /** What the turn cost, measured where the server's log cannot reach. */
+  | { type: "PLAYBACK_STATS"; stats: PlaybackStats }
   /** The server stamped the interview's start; the countdown can run. */
   | { type: "SESSION_STARTED"; startedAt: string }
+  /** The recruiter has said goodbye: there is nothing left to ask. */
+  | { type: "CONCLUDED" }
   /** The spoken reply has finished playing — only now is the mic safe. */
   | { type: "VOICE_DONE" }
   | { type: "AI_FAILED"; message: string }
@@ -84,12 +106,15 @@ export const initialStudioState: StudioState = {
   muted: false,
   level: 0,
   voiceLevel: 0,
+  voiceRms: 0,
   messages: [],
   streamingReply: "",
   error: null,
   firstTokenMs: null,
   answerEndedAtMs: null,
   startedAt: null,
+  playback: null,
+  concluded: false,
 }
 
 /**
@@ -140,9 +165,36 @@ export function studioReducer(
         : { ...state, level: event.level }
 
     case "VOICE_LEVEL":
-      return state.voiceLevel === event.level
+      return state.voiceLevel === event.level && state.voiceRms === event.rms
         ? state
-        : { ...state, voiceLevel: event.level }
+        : { ...state, voiceLevel: event.level, voiceRms: event.rms }
+
+    case "BARGE_IN": {
+      // Only ever from under the interviewer's own voice.
+      if (state.phase !== "speaking") return state
+
+      const reply = state.streamingReply.trim()
+
+      return {
+        ...state,
+        phase: "recording",
+        vadStatus: "recording",
+        voiceLevel: 0,
+        voiceRms: 0,
+        streamingReply: "",
+        // Committed even though it was cut short: the candidate answered what
+        // they heard, and a transcript missing the question they answered is
+        // what the final report would be scored against.
+        messages:
+          reply.length === 0
+            ? state.messages
+            : withMessage(state, {
+                role: "assistant",
+                content: reply,
+                timestamp: new Date().toISOString(),
+              }),
+      }
+    }
 
     case "SPEECH_START":
       // Ignored unless the studio is actually waiting for an answer, so a
@@ -251,6 +303,16 @@ export function studioReducer(
       }
     }
 
+    case "PLAYBACK_STATS":
+      // Pure measurement: it says how the last reply sounded and moves
+      // nothing, so the phase is left exactly where the audio events put it.
+      return { ...state, playback: event.stats }
+
+    case "CONCLUDED":
+      // Only ever recorded here. Scoring waits for `VOICE_DONE`, so the
+      // goodbye is heard in full before the report takes the screen.
+      return state.concluded ? state : { ...state, concluded: true }
+
     case "SESSION_STARTED":
       // First stamp wins: later turns report the same instant, and a stale
       // one arriving out of order must not move the clock.
@@ -266,6 +328,7 @@ export function studioReducer(
             phase: "listening",
             vadStatus: "listening",
             voiceLevel: 0,
+            voiceRms: 0,
           }
         : state
 
@@ -277,6 +340,7 @@ export function studioReducer(
         vadStatus: "listening",
         streamingReply: "",
         voiceLevel: 0,
+        voiceRms: 0,
         error: event.message,
       }
 
@@ -300,6 +364,7 @@ export function studioReducer(
         vadStatus: "listening",
         level: 0,
         voiceLevel: 0,
+        voiceRms: 0,
       }
 
     case "FINISH_FAILED":

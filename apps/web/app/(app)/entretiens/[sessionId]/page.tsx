@@ -70,16 +70,15 @@ export default async function InterviewSessionPage({
         title="Entretien en cours"
       />
       <div className="px-4 lg:px-6">
-        <InterviewStudio
-          onFinish={async () => {
-            "use server"
-            // Returned, not swallowed: a success redirects and never comes
-            // back, so anything that does reach the studio is a failure it
-            // has to show.
-            return finishInterview(sessionId)
-          }}
-          session={session}
-        />
+        {/*
+          The action is handed over as-is. Wrapping it in an inline
+          `"use server"` closure to capture `sessionId` made Next.js mint a
+          second, encrypted server reference that staging then refused —
+          `Server Reference ID did not match the expected format` — and
+          finishing an interview silently did nothing. The studio already knows
+          the id and passes it as an argument.
+        */}
+        <InterviewStudio onFinish={finishInterview} session={session} />
       </div>
     </>
   )

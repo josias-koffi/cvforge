@@ -234,3 +234,43 @@ describe("elapsedSince", () => {
     expect(elapsedSince(started, now)).toBe(0);
   });
 });
+
+describe("an interview with nothing left to ask", () => {
+  const agenda = buildAgenda("standard", 20, WITH_OFFER);
+  const total = agenda.slots.reduce(
+    (sum, slot) => sum + slot.minExchanges,
+    0,
+  );
+
+  it("is not complete while there is still ground to cover", () => {
+    expect(at(agenda, 5, 3).isComplete).toBe(false);
+    expect(at(agenda, 19, total - 1).isComplete).toBe(false);
+  });
+
+  it("is complete once the closing has had its exchange", () => {
+    const state = at(agenda, 19.5, total);
+
+    expect(state.current).toBe("closing");
+    expect(state.isComplete).toBe(true);
+  });
+
+  it("does not call a brisk candidate's interview over early", () => {
+    // `resolveIndex` can pull the phase forward on someone terse. Scoring
+    // there would charge for ground the session never covered.
+    const brisk = at(agenda, 4, total + 20);
+
+    expect(brisk.isComplete).toBe(false);
+  });
+
+  it("stays complete past the deadline", () => {
+    expect(at(agenda, 25, total).isComplete).toBe(true);
+  });
+
+  it("is never complete before anyone has spoken", () => {
+    for (const duration of INTERVIEW_DURATION_CHOICES) {
+      const fresh = buildAgenda("standard", duration, WITH_OFFER);
+
+      expect(at(fresh, 0, 0).isComplete).toBe(false);
+    }
+  });
+});

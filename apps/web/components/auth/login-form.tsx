@@ -22,6 +22,7 @@ import {
   FieldLabel,
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
+import { ConsentLabel } from "@/components/auth/consent-label"
 import { Spinner } from "@/components/ui/spinner"
 
 export function LoginForm({ notice }: { notice?: string }) {
@@ -53,8 +54,7 @@ export function LoginForm({ notice }: { notice?: string }) {
             <Field orientation="horizontal">
               <Checkbox id="consent" name="consent" required />
               <FieldLabel htmlFor="consent" className="font-normal">
-                J&apos;accepte que mes données soient traitées pour générer mes
-                candidatures.
+                <ConsentLabel />
               </FieldLabel>
             </Field>
             {error ? <FieldError>{error}</FieldError> : null}

@@ -53,11 +53,19 @@ export function Orb({
 }: OrbProps) {
   return (
     <div className={className ?? "relative h-full w-full"}>
+      {/* Deviation from upstream: the resolution is capped and antialiasing is
+          off. Left at the defaults this renders a 224px sphere at the full
+          device pixel ratio — 3x on a retina panel, so nine times the fragment
+          work — with a multisampled buffer on top, sixty times a second. On a
+          modest GPU that took the whole page down with it. The sphere is
+          masked into a circle and never shows a hard edge, so antialiasing
+          buys nothing here. */}
       <Canvas
+        dpr={[1, 1.5]}
         resize={{ debounce: resizeDebounce }}
         gl={{
           alpha: true,
-          antialias: true,
+          antialias: false,
           premultipliedAlpha: true,
         }}
       >

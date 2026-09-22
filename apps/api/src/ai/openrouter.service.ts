@@ -2,6 +2,7 @@ import { buildChain, runModelChain } from './openrouter.chain';
 import { OpenRouterConfig } from './openrouter.config';
 import { buildOpenRouterError } from './openrouter.error';
 import { DEFAULT_RETRY_POLICY, RetryHooks } from './openrouter.retry';
+import { CHAT_OPEN_TIMEOUT_MS, fetchWithOpenTimeout } from './openrouter.timeout';
 
 export interface ChatMessage {
   role: 'system' | 'user' | 'assistant';
@@ -104,11 +105,16 @@ export class OpenRouterService {
     return runModelChain(
       this.buildModelChain(options),
       async (model) => {
-        const attempt = await fetch(`${this.config.baseUrl}/chat/completions`, {
-          body: this.buildRequestBody(messages, { ...options, model }, enableZdr, extra),
-          headers: this.buildHeaders(),
-          method: 'POST',
-        });
+        const attempt = await fetchWithOpenTimeout(
+          `${this.config.baseUrl}/chat/completions`,
+          {
+            body: this.buildRequestBody(messages, { ...options, model }, enableZdr, extra),
+            headers: this.buildHeaders(),
+            method: 'POST',
+          },
+          CHAT_OPEN_TIMEOUT_MS,
+          model,
+        );
 
         if (!attempt.ok) throw await buildOpenRouterError(attempt, operation, model);
         return attempt;

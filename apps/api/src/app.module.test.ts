@@ -12,6 +12,7 @@ import { CvGenerationModule } from "./cv-generation/cv-generation.module";
 import { CreditsModule } from "./credits/credits.module";
 import { DatabaseModule } from "./database/database.module";
 import { NotificationsModule } from "./notifications/notifications.module";
+import { LegalDocumentsModule } from "./legal/legal.module";
 import { CreditOffersModule } from "./offers/offers.module";
 import { PrivacyModule } from "./privacy/privacy.module";
 import { ProfilesModule } from "./profiles/profiles.module";
@@ -37,6 +38,7 @@ describe("AppModule", () => {
       DatabaseModule,
       NotificationsModule,
       CreditOffersModule,
+      LegalDocumentsModule,
       PrivacyModule,
       ProfilesModule,
       TemplatesModule,

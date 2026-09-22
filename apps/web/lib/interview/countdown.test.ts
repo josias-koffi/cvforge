@@ -96,6 +96,7 @@ describe("shouldAutoFinish", () => {
   /** A ten-minute interview, past its deadline, in a gap between turns. */
   function ready(overrides: Partial<Parameters<typeof shouldAutoFinish>[0]> = {}) {
     return shouldAutoFinish({
+      concluded: false,
       durationMinutes: 10,
       elapsed: spent,
       finishing: false,
@@ -131,5 +132,40 @@ describe("shouldAutoFinish", () => {
 
   it("stays quiet before the clock has even started", () => {
     expect(ready({ elapsed: 0 })).toBe(false)
+  })
+})
+
+describe("an interview the recruiter has finished", () => {
+  /** Well inside the deadline: the clock is not what ends this one. */
+  function early(overrides: Partial<Parameters<typeof shouldAutoFinish>[0]> = {}) {
+    return shouldAutoFinish({
+      concluded: true,
+      durationMinutes: 10,
+      elapsed: 120,
+      finishing: false,
+      hasAnswered: true,
+      phase: "listening",
+      ...overrides,
+    })
+  }
+
+  it("scores it without waiting out the clock", () => {
+    // The recruiter has said goodbye. Leaving the candidate sitting in front
+    // of it until the timer runs down is the interview's worst moment.
+    expect(early()).toBe(true)
+  })
+
+  it("still waits for the goodbye to finish playing", () => {
+    expect(early({ phase: "speaking" })).toBe(false)
+    expect(early({ phase: "processing" })).toBe(false)
+    expect(early({ phase: "recording" })).toBe(false)
+  })
+
+  it("does not score a session nobody answered", () => {
+    expect(early({ hasAnswered: false })).toBe(false)
+  })
+
+  it("does not score one twice", () => {
+    expect(early({ finishing: true })).toBe(false)
   })
 })

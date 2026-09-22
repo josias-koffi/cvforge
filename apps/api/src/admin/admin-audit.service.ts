@@ -4,10 +4,13 @@ import {
   ADMIN_AUDIT_ACCOUNT_REACTIVATED,
   ADMIN_AUDIT_ACCOUNT_SUSPENDED,
   ADMIN_AUDIT_CREDITS_GRANTED,
+  ADMIN_AUDIT_LEGAL_PUBLISHED,
   ADMIN_AUDIT_ROLE_DEMOTED,
   ADMIN_AUDIT_SESSIONS_REVOKED,
   adminAuditActions,
   type AdminAuditAction,
+  type AdminAuditEntry,
+  type LegalDocumentSlug,
 } from "@cvforge/types";
 import type {
   AdminAuditPage,
@@ -111,6 +114,19 @@ export class AdminAuditService {
     });
   }
 
+  /** Publishing a legal document puts a contract online; it targets no account. */
+  recordLegalPublication(input: {
+    actorEmail: string;
+    slug: LegalDocumentSlug;
+    version: number;
+  }) {
+    return this.record(ADMIN_AUDIT_LEGAL_PUBLISHED, {
+      actorEmail: input.actorEmail,
+      metadata: { legalSlug: input.slug, legalVersion: input.version },
+      targetEmail: null,
+    });
+  }
+
   /** Called by the RGPD purge: the action stays, the person's email goes. */
   scrubTarget(targetEmail: string) {
     return this.store.scrubTarget(targetEmail);
@@ -120,7 +136,7 @@ export class AdminAuditService {
     action: AdminAuditAction,
     input: {
       actorEmail: string;
-      metadata?: { credits?: number; previousRole?: "admin" | "user" };
+      metadata?: AdminAuditEntry["metadata"];
       note?: string | null;
       targetEmail: string | null;
     },
