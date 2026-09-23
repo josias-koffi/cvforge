@@ -13,7 +13,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { Checkbox } from "@/components/ui/checkbox"
 import {
   Field,
   FieldDescription,
@@ -22,7 +21,7 @@ import {
   FieldLabel,
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
-import { ConsentLabel } from "@/components/auth/consent-label"
+import { ConsentField } from "@/components/auth/consent-field"
 import { Spinner } from "@/components/ui/spinner"
 
 export function LoginForm({ notice }: { notice?: string }) {
@@ -51,12 +50,7 @@ export function LoginForm({ notice }: { notice?: string }) {
                 required
               />
             </Field>
-            <Field orientation="horizontal">
-              <Checkbox id="consent" name="consent" required />
-              <FieldLabel htmlFor="consent" className="font-normal">
-                <ConsentLabel />
-              </FieldLabel>
-            </Field>
+            <ConsentField />
             {error ? <FieldError>{error}</FieldError> : null}
             <Field>
               <Button type="submit" disabled={pending}>

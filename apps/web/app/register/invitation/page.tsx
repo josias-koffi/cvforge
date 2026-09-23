@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 
 import { AuthLayout } from "@/components/auth/auth-layout"
-import { ConsentLabel } from "@/components/auth/consent-label"
+import { ConsentField } from "@/components/auth/consent-field"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -10,8 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field"
+import { FieldError, FieldGroup } from "@/components/ui/field"
 import { getServerApiUrl } from "@/lib/config"
 import { formatDateTime } from "@/lib/format"
 
@@ -61,12 +60,7 @@ export default async function InvitationPage(
             <form action="/register/invitation/accept" method="post">
               <input type="hidden" name="token" value={tokenValue} />
               <FieldGroup>
-                <Field orientation="horizontal">
-                  <Checkbox id="consent" name="consent" required />
-                  <FieldLabel htmlFor="consent" className="font-normal">
-                    <ConsentLabel />
-                  </FieldLabel>
-                </Field>
+                <ConsentField />
                 {errorMessage ? <FieldError>{errorMessage}</FieldError> : null}
                 <Button type="submit">Accepter l&apos;invitation</Button>
               </FieldGroup>
