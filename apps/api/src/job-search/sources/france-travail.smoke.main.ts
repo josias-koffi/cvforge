@@ -1,3 +1,4 @@
+import type { JobSourceQuery } from "../job-search.types";
 import { loadEnvironmentFiles } from "../../shared/env";
 import { resolveFranceTravailConfig } from "./france-travail.config";
 import { FranceTravailSource } from "./france-travail.source";
@@ -45,6 +46,42 @@ async function main() {
     publishedSinceDays: 7,
   });
 
+  // A wrong reference code returns an empty page rather than an error, so the
+  // filtered searches are run too: a filter that silently matches nothing is
+  // the failure this script exists to catch.
+  await reportFilter(source, "contrat (CDI)", {
+    contractTypes: ["cdi"],
+    department,
+    experienceLevel: null,
+    keywords,
+    nafDivisions: [],
+    publishedSinceDays: 31,
+  });
+  await reportFilter(source, "alternance (natures E2/FS)", {
+    contractTypes: ["alternance"],
+    department: "",
+    experienceLevel: null,
+    keywords,
+    nafDivisions: [],
+    publishedSinceDays: 31,
+  });
+  await reportFilter(source, "secteur numérique (NAF 62/63)", {
+    contractTypes: [],
+    department,
+    experienceLevel: null,
+    keywords,
+    nafDivisions: ["62", "63"],
+    publishedSinceDays: 31,
+  });
+  await reportFilter(source, "débutant accepté", {
+    contractTypes: [],
+    department: "",
+    experienceLevel: "debutant",
+    keywords,
+    nafDivisions: [],
+    publishedSinceDays: 31,
+  });
+
   console.log(
     `${listings.length} offre(s) pour « ${keywords} »${department ? ` (${department})` : ""}`,
   );
@@ -83,6 +120,19 @@ async function main() {
       ].join(", ")}`,
     );
   }
+}
+
+/** A filtered search, reported by its count: zero means a code to check. */
+async function reportFilter(
+  source: FranceTravailSource,
+  label: string,
+  query: JobSourceQuery,
+): Promise<void> {
+  const found = await source.search(query);
+
+  console.log(
+    `${found.length === 0 ? "⚠️ " : "   "}${String(found.length).padStart(4)} offre(s) — filtre ${label}`,
+  );
 }
 
 void main();

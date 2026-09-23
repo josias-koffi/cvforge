@@ -5,14 +5,27 @@ import type { JobSourceQuery } from "../job-search.types";
 /**
  * Translating a search project into France Travail's own vocabulary.
  *
- * ⚠️ The codes below come from the API's published reference lists. They are
- * the one part of the adapter that cannot be proven by a unit test — a wrong
- * code silently returns zero offers rather than failing. They must be checked
- * against the live reference endpoints once credentials exist (sprint 025,
- * "To Clarify" #1).
+ * Every code below was checked against the live API on 2026-09-23, through the
+ * `referentiel/typesContrats`, `referentiel/naturesContrats` and
+ * `referentiel/secteursActivites` endpoints and through counted searches. A
+ * unit test cannot prove them: a wrong code returns an empty page, not an
+ * error. Comma-separated lists are supported everywhere, and the API answers
+ * 400 on an unknown code — except for `experience`, whose values are bounded.
+ *
+ * `typeContrat` and `natureContrat` are ORed, not ANDed: on "developpeur",
+ * CDI gives 878 offers, the alternance natures 67, and both together 940 —
+ * the union, minus the five apprenticeships already published as a CDI.
  */
 
-/** `typeContrat` reference list. */
+/**
+ * `typeContrat` reference list.
+ *
+ * **There is no code for an internship.** Among 129 adverts whose title
+ * announces a "stage", 56 are published as a CDI, 24 as a CDD, 6 as an
+ * interim mission — France Travail types the employment, not the studies. A
+ * candidate looking only for an internship is therefore searched without any
+ * contract filter, and `classifyContract` sorts the results out locally.
+ */
 const CONTRACT_CODES: Partial<Record<SearchContractType, string>> = {
   cdd: "CDD",
   cdi: "CDI",
@@ -27,11 +40,24 @@ const CONTRACT_CODES: Partial<Record<SearchContractType, string>> = {
  */
 const APPRENTICESHIP_NATURES = ["E2", "FS"] as const;
 
-/** `experience`: 1 = under a year, 2 = one to three years, 3 = over three. */
+/**
+ * `experience`, read off the live API rather than guessed (2026-09-23): each
+ * offer falls in exactly one bucket, and the five add up to the total.
+ *
+ *   0 = experience required, no duration given
+ *   1 = under a year          2 = one to three years
+ *   3 = over three years      4 = beginners welcome
+ *
+ * A beginner therefore belongs in **4**, not in 1: on "developpeur" over the
+ * whole country, code 1 offers 43 adverts that all demand a few months on the
+ * job, while code 4 offers 678 that explicitly take beginners. Each level also
+ * gets the neighbouring bucket it plausibly fits; the local score refines the
+ * order afterwards, so the filter only has to avoid throwing away good offers.
+ */
 const EXPERIENCE_CODES: Record<string, string> = {
-  confirme: "3",
-  debutant: "1",
-  junior: "2",
+  confirme: "2,3",
+  debutant: "4",
+  junior: "2,4",
   senior: "3",
 };
 

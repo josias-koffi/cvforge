@@ -87,9 +87,19 @@ Cible front : `apps/web`. `apps/app` est gelée, non touchée.
     - [x] Variables documentées dans `.env.example` ; script `pnpm --filter @cvforge/api ft:smoke`
           pour vérifier les codes de référence sur la vraie API.
     - [x] 51 tests, `pnpm lint` et `pnpm test` verts.
-  - ⚠️ **Non vérifié** : aucun appel réel n'a encore été fait (pas d'identifiants). Les codes de
-        référence (`typeContrat`, `natureContrat`, `secteurActivite`, `experience`) et le quota
-        réel restent à confirmer avec `ft:smoke`.
+    - [x] **Vérifié sur la vraie API le 2026-09-23**, identifiants en place : `ft:smoke` ramène des
+          offres, la vérification en direct d'une offre répond `true`, et les quatre filtres
+          rapportent des volumes non nuls (CDI 39, alternance 67, NAF 62/63 4, débutant 678).
+          Codes confirmés par les référentiels : `typeContrat` (CDI, CDD, MIS, LIB),
+          `natureContrat` (E2 apprentissage, FS professionnalisation), `secteurActivite` (divisions
+          NAF à 2 chiffres). `typeContrat` et `natureContrat` sont bien **unis** et non croisés
+          (878 + 67 = 940, moins 5 alternances déjà publiées en CDI).
+    - [x] `experience` **corrigé** : les valeurs vont de 0 à 4 et un débutant relève du code 4
+          (« débutant accepté », 678 offres) et non du 1 (« moins d'un an **exigé** », 43 offres).
+    - [x] Le stage **n'a aucun code de contrat** chez France Travail : sur 129 annonces dont le
+          titre annonce un stage, 56 sont publiées en CDI, 24 en CDD, 6 en intérim. Un candidat
+          qui ne cherche qu'un stage est donc interrogé sans filtre de contrat, et
+          `classifyContract` tranche chez nous.
 - [x] **[US-110]** Sources « logiciels de recrutement » + registre d'entreprises
   - Agent: `developer`
   - Critères d'acceptation :
@@ -288,9 +298,13 @@ Cible front : `apps/web`. `apps/app` est gelée, non touchée.
    documentation officielle : **4 appels par seconde par application** (100 pour l'API entière),
    429 avec `Retry-After` au-delà, augmentation possible sur demande justifiée. Valeur par défaut
    corrigée dans le code.
-2. Nom exact des champs de liens partenaires dans les offres France Travail — ils servent à la fois
+2. ~~Codes de référence France Travail~~ → **vérifiés le 2026-09-23** sur la vraie API
+   (référentiels `typesContrats`, `naturesContrats`, `secteursActivites` et recherches comptées).
+   Seul `experience` était faux et a été corrigé. `ft:smoke` exerce désormais chaque filtre : un
+   volume nul y signale un code à revoir.
+3. Nom exact des champs de liens partenaires dans les offres France Travail — ils servent à la fois
    au dédoublonnage et à la découverte d'entreprises.
-3. Partenariat JobTeaser : à demander si le propriétaire le souhaite (pas d'API publique).
+4. Partenariat JobTeaser : à demander si le propriétaire le souhaite (pas d'API publique).
 
 ## 🔁 Workflow Runs
 

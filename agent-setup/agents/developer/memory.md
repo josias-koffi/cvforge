@@ -1078,3 +1078,23 @@
 - **Leçon** : `pnpm run` transmet le séparateur `--` comme un argument réel. Une commande documentée avec `--` faisait chercher « -- » comme mots-clés. Les scripts filtrent l'argument et la documentation ne l'utilise plus.
 - **Leçon** : une erreur d'authentification sans le corps de la réponse ne se diagnostique pas. `invalid_client` (identifiant refusé) et `invalid_scope` (API non souscrite) donnent le même 400. Le corps est désormais repris dans le message.
 - **Verified** : 1 403 tests API, lint et build verts ; appel réel à France Travail qui atteint bien leur serveur et renvoie `invalid_client` — mêmes identifiants refusés par un `curl` direct, donc l'implémentation est conforme à la doc (endpoint, corps, scope vérifiés sur francetravail.io).
+
+### 2026-09-23 — Les codes France Travail vérifiés sur la vraie API
+- **Constat** : avec les identifiants en place, l'API est accessible. Les référentiels
+  `typesContrats`, `naturesContrats` et `secteursActivites` donnent la vérité, et une recherche
+  comptée (en-tête `Content-Range`) prouve chaque filtre.
+- **Confirmé** : CDI/CDD/MIS/LIB, natures E2 (apprentissage) et FS (professionnalisation),
+  `secteurActivite` = divisions NAF à 2 chiffres, listes séparées par virgule partout, 400 sur un
+  code inconnu. `typeContrat` et `natureContrat` sont **unis** (878 + 67 = 940, moins 5 recoupées).
+- **Corrigé** : `experience` va de 0 à 4. Un débutant relève du **4** (« débutant accepté », 678
+  offres) et non du 1 (« moins d'un an **exigé** », 43 offres) — la plus grosse réserve d'offres
+  était donc cachée aux débutants. Mapping élargi : junior `2,4`, confirmé `2,3`, senior `3`.
+- **Leçon** : le stage n'a aucun code de contrat chez France Travail. Sur 129 annonces dont le titre
+  annonce un stage, 56 sont publiées en CDI. Ne jamais mapper stage → CDD : c'est `classifyContract`
+  qui tranche chez nous.
+- **Leçon** : un code faux ne lève pas d'erreur, il renvoie une page vide. `ft:smoke` exerce
+  maintenant chaque filtre et signale (⚠️) tout volume nul.
+- **Leçon (sur moi)** : j'avais « prouvé » la veille avec un `curl` que nos identifiants étaient
+  refusés — mais `. ./.env` sous zsh n'avait rien chargé et j'envoyais des champs vides. Pour lire
+  le `.env` dans une sonde, passer par Node et `process.loadEnvFile`, jamais par le sourcing shell.
+- **Verified** : `ft:smoke` réel — 25 offres, vérification en direct `true`, filtres 39/67/4/678.

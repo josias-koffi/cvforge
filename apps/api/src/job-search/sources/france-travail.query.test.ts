@@ -115,7 +115,7 @@ describe("toFranceTravailParams", () => {
 
     expect(toFranceTravailParams(query!, "0-149")).toEqual({
       departement: "44",
-      experience: "2",
+      experience: "2,4",
       motsCles: "Développeur Full Stack",
       publieeDepuis: "1",
       range: "0-149",
@@ -135,6 +135,30 @@ describe("toFranceTravailParams", () => {
     // Neither stage nor alternance maps to a typeContrat code, so sending one
     // would wrongly narrow the search.
     expect(params.typeContrat).toBeUndefined();
+  });
+
+  it("sends a beginner to the offers that take beginners", () => {
+    // Code 1 means "under a year of experience *required*" — the opposite of
+    // what a beginner needs. Beginners welcome is code 4.
+    const [query] = buildSourceQueries(
+      [makeProject({ experienceLevel: "debutant" })],
+      1,
+    );
+
+    expect(toFranceTravailParams(query!, "0-149").experience).toBe("4");
+  });
+
+  it("does not narrow the contract for an internship, which has no code", () => {
+    const [query] = buildSourceQueries(
+      [makeProject({ contractTypes: ["stage"] })],
+      1,
+    );
+    const params = toFranceTravailParams(query!, "0-149");
+
+    // France Travail publishes internships as a CDI, a CDD or an interim
+    // mission alike; filtering on any of them would lose most of them.
+    expect(params.typeContrat).toBeUndefined();
+    expect(params.natureContrat).toBeUndefined();
   });
 
   it("leaves the filters out when the candidate is open to anything", () => {
