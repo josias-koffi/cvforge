@@ -1,0 +1,271 @@
+<!-- generated-by: plan « Offres du jour » (demande propriétaire 2026-09-22) -->
+
+# Sprint 025
+
+## 🎯 Sprint Goal
+
+Épic **E19 — Offres du jour**. À l'issue du sprint, un candidat décrit ce qu'il cherche dans un
+onglet « Ma recherche » attaché à son profil, et reçoit chaque matin une sélection d'offres qui
+correspondent, dans l'app et par e-mail. Un clic sur « Postuler avec CVForge » crée la candidature
+et enchaîne sur la génération de CV existante — c'est ce qui fait tourner les crédits.
+
+Cible front : `apps/web`. `apps/app` est gelée, non touchée.
+
+> ⚠️ **Absent de la vision** (`.project/vision.md` ne mentionne ni recherche d'offres ni veille).
+> Ajouté sur demande explicite du propriétaire le 2026-09-22. À reporter dans la vision par le
+> Product Owner — jamais en auto-édition (hard rule).
+
+> ⚠️ **RÈGLE DE SOURCES** : seules des sources gratuites et dont les conditions autorisent l'usage.
+> France Travail (licence de réutilisation : citer la source, renvoyer vers l'offre), La bonne
+> alternance, et les endpoints publics des logiciels de recrutement. **Adzuna reste désactivé**
+> (`ADZUNA_ENABLED=false`) : ses CGU limitent l'usage commercial à 14 jours d'essai, au-delà il faut
+> un accord écrit. Aucun scraping de LinkedIn, Welcome to the Jungle, Indeed ou JobTeaser. Voir
+> l'ADR `decisions/`.
+
+> ⚠️ **RÈGLE DE FRAÎCHEUR** : aucune offre de plus de 30 jours n'est proposée, et une offre est
+> vérifiée en direct avant d'être montrée puis au clic sur « Postuler ». Une entreprise qui oublie
+> de retirer son annonce ne doit pas faire perdre une candidature.
+
+> ⚠️ **RÈGLE DE DÉBIT** : toutes les requêtes sortantes passent par un limiteur par source. La
+> collecte est quotidienne et mutualisée entre candidats — jamais un appel par affichage de page.
+
+## 📅 Period
+
+- Start: 2026-09-22
+- End: 2026-09-23
+
+## ✅ Tasks (3–8 max)
+
+> **Ordre strict** : US-108 d'abord — tout le matching lit le projet de recherche. Puis les sources
+> (US-109, US-110), le dédoublonnage (US-111), la tâche du matin (US-112), et enfin les surfaces
+> (US-113, US-114). Les stories au-delà sont suivies dans le backlog (E19).
+
+- [x] **[US-108]** Module « Projet de recherche » attaché au profil
+  - Agent: `developer`
+  - Critères d'acceptation :
+    - [x] Table `search_projects` (1 pour 1 avec un profil), **sans clé étrangère** vers `profiles` :
+          `PgProfilesStore.save` réécrit toutes les lignes du registre, une cascade effacerait la
+          recherche à chaque sauvegarde de profil. Couvert par un test dédié.
+    - [x] Types partagés dans `packages/types/src/search-project.ts` : contrats, niveaux, télétravail,
+          tailles, valeurs RSE, et les ~21 secteurs avec leur correspondance NAF, définie une seule fois.
+    - [x] Contrats en choix multiple, dont la paire **Stage + Alternance**, avec les champs propres
+          au stage (début, durée, niveau) et à l'alternance (début, rythme, diplôme).
+    - [x] `normalizeSearchProject` : toute valeur inconnue est écartée, listes bornées, textes tronqués.
+    - [x] `prefillSearchProject` : intitulés depuis `headline` et la dernière expérience, ville depuis
+          l'identité, contrats depuis l'ancien texte libre (`parseLegacyContractTypes`, FR et EN).
+    - [x] `GET/PUT /profiles/:profileId/search-project` et `POST …/prefill`, propriété du profil vérifiée.
+    - [x] Onglet « Ma recherche » dans l'éditeur de profil ; l'ancien champ texte « Contrats
+          recherchés » est retiré du formulaire.
+    - [x] La génération de lettre cite les contrats structurés, avec l'ancien texte libre en secours.
+    - [x] Purge RGPD : les projets de recherche partent avec le compte (test de résidu vert).
+    - [x] `pnpm lint` et `pnpm test` verts (API et web).
+- [x] **[US-109]** Source France Travail + limiteur de débit par source
+  - Agent: `developer`
+  - Critères d'acceptation :
+    - [x] `SourceRateLimiter` : seau à jetons par source, rafale puis débit soutenu, `pauseUntil`
+          après un 429 (en-tête `Retry-After` lu, y compris au format date HTTP), file d'attente
+          qui survit à une tâche en échec. Horloge et `sleep` injectés : les tests mesurent le
+          rythme au lieu de l'attendre.
+    - [x] `buildSourceQueries` : une requête par (intitulé × département), **mutualisée entre
+          candidats**. Une requête partagée élargit aux contrats des deux, retire le filtre
+          d'expérience en cas de désaccord, et retire le filtre de secteur dès qu'un candidat
+          n'en veut pas. Un candidat mobile ou 100 % télétravail est cherché sur toute la France.
+    - [x] `toFranceTravailParams` : `typeContrat`, `natureContrat` (E2/FS pour l'alternance),
+          `secteurActivite` (NAF), `experience`, `publieeDepuis`, `range`.
+    - [x] `FranceTravailSource` : jeton OAuth mis en cache et rafraîchi une minute avant
+          expiration, pagination par 150 jusqu'au plafond de 1 150 (journalisé pour redécoupage),
+          204 lu comme « aucune offre », 206 comme une page normale, un 429 met la source en
+          pause puis réessaie une fois, une page en échec conserve ce qui a été collecté.
+    - [x] `isStillOpen` renvoie `null` (« on ne sait pas ») sur erreur réseau ou 429, jamais
+          `false` : une offre vivante ne doit pas disparaître de la sélection sur un incident.
+    - [x] Mapper : l'alternance est lue sur `natureContrat`/`alternance` et non sur `typeContrat`,
+          un code inconnu vaut `unknown` (jamais CDI par défaut), `dateCreation` et non
+          `dateActualisation`, entreprise anonyme détectée, département lu du libellé puis du code
+          postal (Corse et outre-mer compris), liens partenaires collectés.
+    - [x] Sans identifiants, la source est inerte : aucun appel, aucune erreur au démarrage.
+    - [x] Variables documentées dans `.env.example` ; script `pnpm --filter @cvforge/api ft:smoke`
+          pour vérifier les codes de référence sur la vraie API.
+    - [x] 51 tests, `pnpm lint` et `pnpm test` verts.
+  - ⚠️ **Non vérifié** : aucun appel réel n'a encore été fait (pas d'identifiants). Les codes de
+        référence (`typeContrat`, `natureContrat`, `secteurActivite`, `experience`) et le quota
+        réel restent à confirmer avec `ft:smoke`.
+- [x] **[US-110]** Sources « logiciels de recrutement » + registre d'entreprises
+  - Agent: `developer`
+  - Critères d'acceptation :
+    - [x] `detectAtsBoard(url)` reconnaît les **huit** logiciels et en extrait l'identifiant
+          d'entreprise, y compris ceux qui n'ont pas encore d'adaptateur : une entreprise trouvée
+          aujourd'hui sera collectée le jour où son adaptateur arrive.
+    - [x] Adaptateurs **Greenhouse, Lever, Ashby, SmartRecruiters**, écrits sur les **formats réels**
+          relevés en direct le 2026-09-23 (doctolib, swile, ledger, Sodexo), et testés sur ces
+          charges utiles.
+    - [x] `classifyContract` : stage, alternance, CDD, CDI, freelance, VIE, en français et en
+          anglais ; `unknown` plutôt qu'une supposition. Le titre l'emporte sur une description qui
+          ne fait que mentionner un autre contrat.
+    - [x] `normalizeLocation` : ne garde que la France ou le télétravail, et nomme le département.
+    - [x] `htmlToText` décode les entités **avant** de retirer les balises : Greenhouse sert son
+          contenu doublement échappé.
+    - [x] Table `job_boards` + registre : `register` n'écrase jamais une décision admin, une
+          entreprise disparue (404) est retirée aussitôt, cinq échecs d'affilée la désactivent, et
+          une collecte réussie ne réactive jamais un tableau désactivé.
+    - [x] Le registre se remplit tout seul : les candidatures importées le nourrissent via
+          `ApplicationsService.onOfferImported` — **le job-search dépend des candidatures, jamais
+          l'inverse**, comme `AuthService.onAccountCreated`.
+    - [x] Écran admin : `GET/POST /admin/job-boards` et `PATCH /admin/job-boards/:provider/:token`.
+    - [x] Découverte Common Crawl : lecture du flux d'index, jetons invraisemblables écartés,
+          **vérification sur l'API du fournisseur avant enregistrement**. Script
+          `pnpm --filter @cvforge/api boards:discover`.
+    - [x] Refactoring au passage : `fold` et `departmentFromPostcode` étaient dupliqués dans trois
+          fichiers, désormais partagés.
+    - [x] `pnpm lint` et `pnpm test` verts (1273 tests API).
+  - ⚠️ **Reporté, avec raison** : **Workable** (tous les comptes sondés renvoient une liste vide —
+        format non vérifiable), **Recruitee** (404 sur tous les sous-domaines essayés), **Personio**
+        (flux XML, il faudrait un parseur — nouvelle dépendance, donc ADR), **Welcome Kit**
+        (l'endpoint répond mais il faut une `organization_reference` réelle pour en connaître le
+        format). Les quatre sont **détectés et enregistrés**, pas collectés.
+  - ⚠️ **Non vérifié** : la découverte Common Crawl n'a jamais été lancée en vrai, et les liens
+        partenaires France Travail ne peuvent pas encore alimenter le registre (il faut les
+        identifiants de l'API).
+- [x] **[US-111]** Dédoublonnage et agrégation des liens (une offre, plusieurs annonces)
+  - Agent: `developer`
+  - Critères d'acceptation :
+    - [x] Deux niveaux en base : `job_listings` (une annonce par source) et `jobs` (l'offre unique
+          montrée au candidat), plus `job_links` — la moitié certaine du dédoublonnage, un simple
+          index sur les liens normalisés.
+    - [x] Rattachement en trois étapes : **lien partagé** (certain), **clé stricte**
+          (entreprise + intitulé + département normalisés), puis **similarité** intitulé *et*
+          description, au sein d'une même entreprise et d'un même département.
+    - [x] **Seuils mesurés, pas devinés** (2026-09-23) : pied de page ajouté = 4 bits, annonce
+          tronquée à 60 % = 8 bits, annonces sans rapport = 14 bits ; « Développeur/Développeuse »
+          = 0,74, « Data Analyst » vs « Data Analyst Senior » = 0,65, « Back-end » vs « Front-end »
+          = 0,54. D'où 10 bits quand un intitulé doit aussi concorder, 3 bits quand la description
+          est la seule preuve (entreprise anonyme).
+    - [x] Les formes masculines et féminines d'un même métier se rejoignent (0,67 à 0,71 entre
+          elles, 0,27 au plus pour des mots réellement différents).
+    - [x] **Back-end et front-end de la même entreprise ne fusionnent pas**, malgré un texte
+          d'annonce quasi identique.
+    - [x] Une annonce déjà connue garde son offre : la décision n'est pas rejouée chaque matin.
+    - [x] La source la plus fiable donne le texte affiché (page carrière de l'entreprise >
+          France Travail > Adzuna) et `primaryUrl` pointe vers la candidature directe.
+    - [x] La date de publication la plus ancienne l'emporte : une republication ne paraît pas neuve.
+    - [x] Une offre n'est fermée que **quand toutes ses annonces le sont** ; une annonce qui
+          réapparaît rouvre l'offre.
+    - [x] Filet admin : `GET /admin/job-boards/merges` liste les fusions approximatives récentes,
+          `POST …/merges/:listingId/detach` en défait une (l'annonce et ses liens repartent dans
+          une offre à part, sinon la collecte suivante la refusionnerait).
+    - [x] Tout est calculé dans l'application : **aucune extension Postgres, aucune dépendance**.
+    - [x] 47 tests (fonctions pures + intégration sur vraie base), `pnpm lint` et `pnpm test`
+          verts (1320 tests API).
+  - ⚠️ **Limite connue et testée** : une même offre publiée en français d'un côté et en anglais de
+        l'autre ne partage ni mots ni description ; elle n'est fusionnée que par un lien commun —
+        le cas courant, puisqu'une offre France Travail porte le lien de l'entreprise.
+- [x] **[US-112]** Tâche du matin : collecte, score déterministe, option IA payante
+  - Agent: `developer`
+  - Critères d'acceptation :
+    - [x] `JobDigestService` : collecte (France Travail + pages carrières), dédoublonnage,
+          sélection par candidat, vérification en direct, écriture des propositions.
+    - [x] **Verrou par ligne en base** (`job_digest_runs.run_date` en clé primaire) : deux
+          instances qui démarrent le même matin s'insèrent, une seule passe. Pas de file de jobs,
+          conformément au reste du dépôt.
+    - [x] **Filtres stricts d'abord** : contrat, entreprise exclue, lieu ou télétravail, 30 jours,
+          offre fermée, offre déjà proposée. Un contrat illisible n'est proposé qu'à qui accepte
+          un CDI.
+    - [x] Score sur 100 : intitulé 30, compétences 25, lieu 15, fraîcheur 15, expérience 10,
+          salaire 5. Secteur et valeurs d'entreprise sont **absents** tant que la fiche entreprise
+          n'existe pas — les ajouter à zéro plafonnerait tous les scores à 85.
+    - [x] Lecture des salaires : décimales, séparateurs de milliers, taux horaire, et surtout
+          « sur 12 mois » qui **termine un libellé annuel** (le lire comme mensuel transformait
+          55 000 € en 660 000 €).
+    - [x] Vérification en direct avant proposition : une offre que la source déclare disparue est
+          retirée ; une vérification qui échoue laisse l'offre (« on ne sait pas » ≠ « elle n'est
+          plus là »).
+    - [x] Option IA payante : un appel par sélection, profil pseudonymisé (pas de nom, pas de
+          coordonnées), entreprise anonyme jamais nommée. **Crédits débités après la réponse** :
+          un modèle en panne ne coûte rien et la sélection part quand même dans l'ordre
+          déterministe. Une offre inventée par le modèle est écartée, une offre oubliée est
+          conservée en fin de liste.
+    - [x] Nouvelle action `job_digest_rerank` dans `AI_CREDIT_COSTS` (1 crédit).
+    - [x] Un candidat dont la sélection échoue perd un matin, pas la fonctionnalité.
+    - [x] Purge RGPD : les propositions partent avec le compte.
+    - [x] Script `pnpm --filter @cvforge/api job-digest:run` pour une exécution manuelle.
+    - [x] 48 tests, `pnpm lint`, `pnpm build` et `pnpm test` verts (1368 tests API).
+  - ⚠️ **Bug trouvé par les tests** : `Intl` en français écrit l'heure « 08 h », donc
+        `Number("08 h")` valait `NaN` et la comparaison « est-il 6 h ? » passait toujours — la
+        tâche aurait pu tourner à n'importe quelle heure. Corrigé en lisant les *parties*
+        formatées, avec un test dédié.
+  - ⚠️ **Non vérifié** : aucune exécution réelle (identifiants France Travail manquants), donc ni
+        collecte ni appel IA en conditions réelles.
+- [x] **[US-113]** Page « Offres du jour » et action « Postuler avec CVForge »
+  - Agent: `developer`
+  - Critères d'acceptation :
+    - [x] `GET /job-search/digest`, `GET /job-search/history`,
+          `PATCH /job-search/matches/:id`, `POST /job-search/matches/:id/apply`.
+    - [x] Une carte par offre unique : score, contrat, télétravail, salaire, compétences
+          communes, explication IA si elle existe, et **« Disponible sur »** avec un lien par
+          source encore ouverte (exigence des licences : citer la source, renvoyer à l'annonce).
+    - [x] Actions : *Postuler avec CVForge*, *Voir l'offre*, *Garder*, *Pas pour moi*.
+    - [x] **Vérification en direct avant de créer la candidature** : si l'offre a disparu, 410 et
+          message « Aucun crédit n'a été consommé » — vérifié à l'écran, solde inchangé.
+    - [x] La candidature est créée depuis le **texte de l'annonce déjà collecté** (l'URL ne sert
+          de repli que si le texte est trop court), puis l'utilisateur est envoyé sur le flux de
+          génération existant.
+    - [x] Le statut `applied` ne peut pas être posé par le client : il vient de la candidature.
+    - [x] Entrée « Offres du jour » dans la navigation, état vide qui renvoie vers « Ma recherche ».
+    - [x] 8 tests de service + gates verts (1376 tests API, 322 web).
+  - ✅ **Vérifié dans le navigateur** avec des offres de test en base : affichage des trois
+        cartes, « Disponible sur » à deux sources, action *Garder*, et refus d'une offre fermée.
+        Les données de test ont été retirées de la base de développement.
+  - ⚠️ **Non vérifié** : le chemin « Postuler » complet (création de candidature + analyse IA)
+        n'a pas été exécuté en vrai — il consomme un crédit sur le compte réel du propriétaire.
+- [x] **[US-114]** Notification et e-mail du matin, désactivables
+  - Agent: `developer`
+  - Critères d'acceptation :
+    - [x] Nouveau type de notification `job_digest`, créé via `createOncePerDay` : une seule
+          annonce par matin, même si la tâche repasse.
+    - [x] Nouvelle préférence e-mail `jobDigest` (activée par défaut), réglable depuis
+          `/notifications` — désactivée, les offres restent visibles dans l'application.
+    - [x] E-mail du matin : les 5 premières offres nommées, leur score, l'explication IA si elle
+          existe, le nombre restant, un lien vers la page et **le lien de désinscription dans le
+          corps du message**.
+    - [x] **Rien n'est annoncé si rien de nouveau n'a été écrit** : un matin sans offre ne
+          déclenche ni notification ni e-mail.
+    - [x] Un envoi qui échoue n'enlève pas la sélection : elle attend sur la page, l'erreur est
+          consignée dans les stats du run.
+    - [x] Rendu de l'e-mail relu en vrai (texte et HTML), pas seulement supposé.
+    - [x] 10 tests ajoutés, gates verts (1386 tests API, 322 web).
+  - 🔒 **Faille corrigée au passage** : les e-mails existants (relance de candidature, achat de
+        crédits) interpolaient sans échappement des titres d'offres et noms d'entreprises venus
+        de sources tierces, directement dans le HTML du message. Échappement ajouté, couvert par
+        un test.
+  - ⚠️ **Non vérifié** : aucun e-mail réellement envoyé (SMTP non configuré ici).
+
+## 📊 Sprint DoD
+
+- [x] All tasks ticked
+- [ ] All acceptance criteria verified
+- [x] `run-tests` green (1386 API, 322 web, 97 landing)
+- [ ] Coverage ≥ spec threshold sur le nouveau code
+- [ ] QA review
+- [x] Gate sources : aucune source payante ni scrapée activée (Adzuna codé, désactivé)
+- [x] Gate fraîcheur : filtre strict à 30 jours, testé
+- [x] ADR sources d'offres rédigé et accepté (ADR-023)
+
+## 🚧 Risks
+
+- **Adzuna** : inutilisable sans accord écrit. La V1 doit tenir sans lui.
+- **Lever** interdit le robot de Common Crawl : ses entreprises ne seront trouvées que par les
+  liens des offres France Travail et par les candidatures des utilisateurs.
+- **Le planificateur** reste un `setInterval` avec verrou en base, comme le reste du dépôt. Correct
+  en multi-instance grâce au verrou, mais à revoir si le produit passe à une vraie file de jobs.
+- **Volume** : `job_listings` grossit vite. La purge (60 jours) et les index conditionnent le coût.
+
+## ⚠️ To Clarify
+
+1. Quota France Travail réel de notre application (3 ou 10 appels par seconde) : à lire sur l'espace
+   francetravail.io une fois les identifiants créés.
+2. Nom exact des champs de liens partenaires dans les offres France Travail — ils servent à la fois
+   au dédoublonnage et à la découverte d'entreprises.
+3. Partenariat JobTeaser : à demander si le propriétaire le souhaite (pas d'API publique).
+
+## 🔁 Workflow Runs
+
+_(à compléter à l'exécution)_
