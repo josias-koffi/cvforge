@@ -240,6 +240,7 @@ export const en: LandingDictionary = {
       offer_enrichment: "Offer and company analysis",
       cv_generation: "Tailored resume generation",
       letter_generation: "Cover letter generation",
+      job_digest_rerank: "AI ranking of your daily job matches",
     },
   },
   testimonials: {

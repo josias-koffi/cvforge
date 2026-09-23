@@ -4,6 +4,7 @@ export * from "./documents";
 export * from "./grounding";
 export * from "./locale";
 export * from "./profile";
+export * from "./search-project";
 
 export const TEMPLATE_KIND_CV = "cv" as const;
 export const TEMPLATE_KIND_LETTER = "letter" as const;
@@ -26,6 +27,8 @@ export const AI_CREDIT_ACTION_CV_GENERATION = "cv_generation" as const;
 export const AI_CREDIT_ACTION_LETTER_GENERATION = "letter_generation" as const;
 export const AI_CREDIT_ACTION_CV_IMPORT = "cv_import" as const;
 export const AI_CREDIT_ACTION_INTERVIEW_SESSION = "interview_session" as const;
+/** The optional AI pass over a morning selection of job offers (E19). */
+export const AI_CREDIT_ACTION_JOB_DIGEST_RERANK = "job_digest_rerank" as const;
 export const CREDIT_EVENT_AI_USAGE = "ai_usage" as const;
 export const CREDIT_EVENT_ADMIN_GRANT = "admin_grant" as const;
 export const CREDIT_EVENT_STRIPE_PURCHASE = "stripe_purchase" as const;
@@ -34,6 +37,8 @@ export const NOTIFICATION_TYPE_APPLICATION_FOLLOW_UP =
   "application_follow_up" as const;
 export const NOTIFICATION_TYPE_CREDIT_PURCHASE_CONFIRMED =
   "credit_purchase_confirmed" as const;
+/** The morning selection of job offers is ready (E19). */
+export const NOTIFICATION_TYPE_JOB_DIGEST = "job_digest" as const;
 /** Admin-only: the OpenRouter account balance fell under the alert threshold. */
 export const NOTIFICATION_TYPE_OPENROUTER_LOW_BALANCE =
   "openrouter_low_balance" as const;
@@ -100,6 +105,7 @@ export const aiCreditActions = [
   AI_CREDIT_ACTION_LETTER_GENERATION,
   AI_CREDIT_ACTION_CV_IMPORT,
   AI_CREDIT_ACTION_INTERVIEW_SESSION,
+  AI_CREDIT_ACTION_JOB_DIGEST_RERANK,
 ] as const;
 export type AiCreditAction = (typeof aiCreditActions)[number];
 export const creditEventTypes = [
@@ -112,6 +118,7 @@ export type CreditEventType = (typeof creditEventTypes)[number];
 export const notificationTypes = [
   NOTIFICATION_TYPE_APPLICATION_FOLLOW_UP,
   NOTIFICATION_TYPE_CREDIT_PURCHASE_CONFIRMED,
+  NOTIFICATION_TYPE_JOB_DIGEST,
   NOTIFICATION_TYPE_OPENROUTER_LOW_BALANCE,
 ] as const;
 export type NotificationType = (typeof notificationTypes)[number];
@@ -519,6 +526,10 @@ export const AI_CREDIT_COSTS: Record<AiCreditAction, number> = {
   [AI_CREDIT_ACTION_INTERVIEW_SESSION]: interviewSessionCost(
     INTERVIEW_DEFAULT_DURATION_MINUTES,
   ),
+  // One model call re-ranks a whole morning selection and writes a line per
+  // offer. Charged once a day, to the candidates who asked for it — and only
+  // when the call succeeds.
+  [AI_CREDIT_ACTION_JOB_DIGEST_RERANK]: 1,
 };
 
 /**
@@ -683,6 +694,9 @@ export interface InAppNotification {
   metadata: {
     applicationId?: string;
     packId?: string;
+    /** The day of the selection this notification announces. */
+    digestDate?: string;
+    matchCount?: number;
   };
 }
 
@@ -693,6 +707,8 @@ export interface NotificationSummary {
 export interface NotificationEmailPreferences {
   applicationFollowUp: boolean;
   creditPurchaseConfirmed: boolean;
+  /** The morning e-mail of job offers. Off here means in-app only. */
+  jobDigest: boolean;
 }
 
 export interface NotificationPreferences {

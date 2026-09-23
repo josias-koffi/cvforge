@@ -62,6 +62,12 @@ export interface PromptSafeProfile {
 export interface CvGenerationRequest {
   localFields: CvLocalFields;
   promptProfile: PromptSafeProfile;
+  /**
+   * Which profile the document is generated from. The server reads the search
+   * project attached to it — the contracts the candidate is looking for — and
+   * checks the profile belongs to the caller.
+   */
+  profileId?: string;
 }
 
 export interface LetterGenerationRequest extends CvGenerationRequest {

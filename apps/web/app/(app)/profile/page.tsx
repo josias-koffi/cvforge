@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/layout/page-header"
 import { ProfileWorkspace } from "@/components/profile/profile-workspace"
 import { loadRegistry } from "@/lib/profile"
 import { pickProfile } from "@/lib/profile-model"
+import { loadSearchProject } from "@/lib/search-project"
 import { requireSession } from "@/lib/session"
 
 export const metadata: Metadata = { title: "Mes profils" }
@@ -13,6 +14,7 @@ export default async function ProfilePage(props: PageProps<"/profile">) {
   const { id } = await props.searchParams
   const registry = await loadRegistry(session.email)
   const selected = pickProfile(registry, typeof id === "string" ? id : undefined)
+  const searchProject = await loadSearchProject(selected.id)
 
   return (
     <>
@@ -23,6 +25,7 @@ export default async function ProfilePage(props: PageProps<"/profile">) {
       <ProfileWorkspace
         activeProfileId={registry.activeProfileId}
         profiles={registry.profiles}
+        searchProject={searchProject}
         selected={selected}
       />
     </>

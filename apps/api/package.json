@@ -8,7 +8,10 @@
     "test": "vitest run",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx src/database/migrate.main.ts",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "ft:smoke": "tsx src/job-search/sources/france-travail.smoke.main.ts",
+    "boards:discover": "tsx src/job-search/sources/boards/crawl-discovery.main.ts",
+    "job-digest:run": "tsx src/job-search/job-digest.main.ts"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.8",

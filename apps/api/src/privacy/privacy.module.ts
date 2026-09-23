@@ -27,6 +27,16 @@ import {
 } from "../notifications/notifications.types";
 import { ProfilesModule } from "../profiles/profiles.module";
 import { PROFILES_STORE, type ProfilesStore } from "../profiles/profiles.types";
+import { JobSearchModule } from "../job-search/job-search.module";
+import {
+  JOB_MATCHES_STORE,
+  type JobMatchesStore,
+} from "../job-search/matches.types";
+import { SearchProjectsModule } from "../search-projects/search-projects.module";
+import {
+  SEARCH_PROJECTS_STORE,
+  type SearchProjectsStore,
+} from "../search-projects/search-projects.types";
 import { PrivacyController } from "./privacy.controller";
 import { PrivacyService } from "./privacy.service";
 
@@ -40,6 +50,8 @@ import { PrivacyService } from "./privacy.service";
     InterviewModule,
     NotificationsModule,
     ProfilesModule,
+    JobSearchModule,
+    SearchProjectsModule,
   ],
   controllers: [PrivacyController],
   providers: [
@@ -51,6 +63,8 @@ import { PrivacyService } from "./privacy.service";
         PgCreditLedgerStore,
         NOTIFICATIONS_STORE,
         PROFILES_STORE,
+        SEARCH_PROJECTS_STORE,
+        JOB_MATCHES_STORE,
         INTERVIEW_STORE,
         PgCreditOrdersStore,
         ADMIN_AUDIT_STORE,
@@ -61,6 +75,8 @@ import { PrivacyService } from "./privacy.service";
         creditsStore: PgCreditLedgerStore,
         notificationsStore: NotificationsStore,
         profilesStore: ProfilesStore,
+        searchProjectsStore: SearchProjectsStore,
+        jobMatchesStore: JobMatchesStore,
         interviewStore: InterviewStore,
         creditOrdersStore: PgCreditOrdersStore,
         auditStore: AdminAuditStore,
@@ -71,6 +87,8 @@ import { PrivacyService } from "./privacy.service";
           creditsStore,
           notificationsStore,
           profilesStore,
+          searchProjectsStore,
+          jobMatchesStore,
           interviewStore,
           creditOrdersStore,
           auditStore,

@@ -148,6 +148,34 @@
       "when": 1790700000000,
       "tag": "0020_application_ats_score",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1790800000000,
+      "tag": "0021_search_projects",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1790900000000,
+      "tag": "0022_job_boards",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1791000000000,
+      "tag": "0023_jobs",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1791100000000,
+      "tag": "0024_job_matches",
+      "breakpoints": true
     }
   ]
 }

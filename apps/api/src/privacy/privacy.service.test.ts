@@ -11,6 +11,8 @@ import {
 } from "../database/testing/test-database";
 import { PgNotificationsStore } from "../notifications/notifications.pg-store";
 import { PgProfilesStore } from "../profiles/profiles.pg-store";
+import { PgJobMatchesStore } from "../job-search/matches.pg-store";
+import { PgSearchProjectsStore } from "../search-projects/search-projects.pg-store";
 import { createSellableOffer } from "../billing/testing/billing-fixtures";
 import { interviewChunks } from "../database/schema";
 import { eq, sql } from "drizzle-orm";
@@ -66,6 +68,8 @@ async function createService() {
   const creditsStore = new PgCreditLedgerStore(testDatabase.db);
   const notificationsStore = new PgNotificationsStore(testDatabase.db);
   const profilesStore = new PgProfilesStore(testDatabase.db);
+  const searchProjectsStore = new PgSearchProjectsStore(testDatabase.db);
+  const jobMatchesStore = new PgJobMatchesStore(testDatabase.db);
   // Real stores, not mocks: US-092 asks for proof that nothing is left behind,
   // which a stubbed purge cannot give.
   const interviewStore = new PgInterviewStore(testDatabase.db);
@@ -181,6 +185,8 @@ async function createService() {
       creditsStore,
       notificationsStore,
       profilesStore,
+      searchProjectsStore,
+      jobMatchesStore,
       interviewStore,
       creditOrdersStore,
       auditStore,

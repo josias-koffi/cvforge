@@ -14,6 +14,7 @@ import {
   SettingsIcon,
   ScrollTextIcon,
   PlusIcon,
+  SparklesIcon,
   UserRoundIcon,
   UsersIcon,
 } from "lucide-react"
@@ -44,6 +45,7 @@ const adminItems = [
 
 const mainItems = [
   { href: "/dashboard", icon: LayoutDashboardIcon, title: "Tableau de bord" },
+  { href: "/offres-du-jour", icon: SparklesIcon, title: "Offres du jour" },
   { href: "/candidatures", icon: BriefcaseBusinessIcon, title: "Candidatures" },
   { href: "/entretiens", icon: MicIcon, title: "Entretiens" },
   { href: "/profile", icon: UserRoundIcon, title: "Mes profils" },

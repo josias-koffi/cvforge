@@ -5,15 +5,18 @@ import { useState } from "react"
 import { ProfileForm } from "@/components/profile/profile-form"
 import { ProfileList } from "@/components/profile/profile-list"
 import type { BaseProfile } from "@/lib/profile-model"
+import type { SearchProject } from "@cvforge/types"
 
 /** Profile list and editor side by side; the list asks before dropping unsaved edits. */
 export function ProfileWorkspace({
   activeProfileId,
   profiles,
+  searchProject,
   selected,
 }: {
   activeProfileId: string
   profiles: BaseProfile[]
+  searchProject: SearchProject
   selected: BaseProfile
 }) {
   const [dirty, setDirty] = useState(false)
@@ -26,7 +29,12 @@ export function ProfileWorkspace({
         profiles={profiles}
         selectedId={selected.id}
       />
-      <ProfileForm key={selected.id} initialProfile={selected} onDirtyChange={setDirty} />
+      <ProfileForm
+        key={selected.id}
+        initialProfile={selected}
+        onDirtyChange={setDirty}
+        searchProject={searchProject}
+      />
     </div>
   )
 }

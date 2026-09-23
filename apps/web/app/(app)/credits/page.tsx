@@ -42,6 +42,7 @@ const actionLabels: Record<CreditLedgerEntry["action"], string> = {
   cv_generation: "Génération de CV",
   cv_import: "Import de CV",
   interview_session: "Entretien simulé",
+  job_digest_rerank: "Classement IA des offres du jour",
   letter_generation: "Génération de lettre",
   offer_enrichment: "Analyse d'offre",
   stripe_purchase: "Achat de crédits",

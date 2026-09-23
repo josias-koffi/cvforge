@@ -3,6 +3,7 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
+  Logger,
   NotFoundException,
   UnprocessableEntityException,
 } from "@nestjs/common";
@@ -252,8 +253,13 @@ function normalizeExtractedFields(
   };
 }
 
+/** Notified with the URL of an offer a candidate just imported. */
+export type OfferImportedListener = (offerUrl: string) => Promise<void>;
+
 @Injectable()
 export class ApplicationsService {
+  private readonly logger = new Logger(ApplicationsService.name);
+
   constructor(
     private readonly store: ApplicationsStore,
     private readonly openRouterService: OpenRouterService,
@@ -262,6 +268,33 @@ export class ApplicationsService {
       | ((userEmail: string) => Promise<string[]>)
       | null = null,
   ) {}
+
+  private readonly offerImportedListeners: OfferImportedListener[] = [];
+
+  /**
+   * Lets a module that depends on applications react to an imported offer
+   * without applications depending on it back — the same arrangement as
+   * `AuthService.onAccountCreated`.
+   *
+   * The job search uses it to register the company behind the offer URL when
+   * it sits on a public job board (US-110). A listener that throws is logged
+   * and ignored: growing a registry must never make an import fail.
+   */
+  onOfferImported(listener: OfferImportedListener) {
+    this.offerImportedListeners.push(listener);
+  }
+
+  private async notifyOfferImported(offerUrl: string) {
+    for (const listener of this.offerImportedListeners) {
+      try {
+        await listener(offerUrl);
+      } catch (error) {
+        this.logger.warn(
+          `Offer-imported listener failed: ${error instanceof Error ? error.message : String(error)}`,
+        );
+      }
+    }
+  }
 
   async listApplications(userEmail: string): Promise<DraftApplication[]> {
     const applications = await this.store.listByUserEmail(userEmail);
@@ -546,7 +579,15 @@ export class ApplicationsService {
       extracted: extraction.extracted,
     };
 
-    return stripRawOfferText(await this.store.createDraft(storedApplication));
+    const draft = stripRawOfferText(
+      await this.store.createDraft(storedApplication),
+    );
+
+    if (extraction.offerUrl) {
+      await this.notifyOfferImported(extraction.offerUrl);
+    }
+
+    return draft;
   }
 
   private async extractOffer(

@@ -14,8 +14,12 @@ import {
 import { CvDropzone } from "@/components/profile/cv-dropzone"
 import { ProfileIdentityCard } from "@/components/profile/profile-identity-card"
 import { ProfileSaveBar } from "@/components/profile/profile-save-bar"
+import { SearchProjectForm } from "@/components/profile/search-project-form"
 import { Card, CardContent } from "@/components/ui/card"
+import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import type { SearchProject } from "@cvforge/types"
+
 import type {
   BaseProfile,
   CertificationEntry,
@@ -78,9 +82,11 @@ function normalizeProfile(profile: BaseProfile): BaseProfile {
 export function ProfileForm({
   initialProfile,
   onDirtyChange,
+  searchProject,
 }: {
   initialProfile: BaseProfile
   onDirtyChange: (dirty: boolean) => void
+  searchProject: SearchProject
 }) {
   const [profile, setProfile] = useState(initialProfile)
   const [savedProfile, setSavedProfile] = useState(initialProfile)
@@ -90,10 +96,6 @@ export function ProfileForm({
     key: K,
     value: BaseProfile["sections"][K]
   ) => setProfile({ ...profile, sections: { ...profile.sections, [key]: value } })
-  const setPreferences = <K extends keyof BaseProfile["preferences"]>(
-    key: K,
-    value: BaseProfile["preferences"][K]
-  ) => setProfile({ ...profile, preferences: { ...profile.preferences, [key]: value } })
 
   useEffect(() => onDirtyChange(dirty), [dirty, onDirtyChange])
 
@@ -133,7 +135,7 @@ export function ProfileForm({
               <TabsTrigger value="projects">
                 Projets ({profile.sections.personalProjects.length})
               </TabsTrigger>
-              <TabsTrigger value="search">Recherche</TabsTrigger>
+              <TabsTrigger value="search">Ma recherche</TabsTrigger>
               <TabsTrigger value="languages">
                 Langues ({profile.sections.languages.length})
               </TabsTrigger>
@@ -205,10 +207,6 @@ export function ProfileForm({
               />
             </TabsContent>
             <TabsContent value="search" className="flex flex-col gap-4">
-              <p className="text-muted-foreground text-sm">
-                Utilisé uniquement dans la lettre de motivation. Laissez vide pour
-                ne pas aborder le sujet.
-              </p>
               <FieldGrid>
                 <SpecField
                   id="preferences"
@@ -224,12 +222,6 @@ export function ProfileForm({
                       },
                     })
                   }
-                />
-                <SpecField
-                  id="preferences"
-                  spec={{ key: "contractTypes", label: "Contrats recherchés (ex. CDI, freelance)" }}
-                  value={profile.preferences.contractTypes}
-                  onChange={(value) => setPreferences("contractTypes", value as string)}
                 />
               </FieldGrid>
               <label className="flex items-center gap-2 text-sm">
@@ -251,6 +243,8 @@ export function ProfileForm({
                 />
                 Disponible immédiatement
               </label>
+              <Separator />
+              <SearchProjectForm initialProject={searchProject} />
             </TabsContent>
             <TabsContent value="languages">
               <ListEditor

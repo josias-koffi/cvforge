@@ -2,6 +2,7 @@ import {
   AI_CREDIT_ACTION_CV_GENERATION,
   AI_CREDIT_ACTION_CV_IMPORT,
   AI_CREDIT_ACTION_INTERVIEW_SESSION,
+  AI_CREDIT_ACTION_JOB_DIGEST_RERANK,
   AI_CREDIT_ACTION_LETTER_GENERATION,
   AI_CREDIT_ACTION_OFFER_ENRICHMENT,
   AI_CREDIT_COSTS,
@@ -49,6 +50,8 @@ function buildAiUsageNote(
       return "Generation lettre de motivation";
     case AI_CREDIT_ACTION_INTERVIEW_SESSION:
       return "Session d'entretien simule";
+    case AI_CREDIT_ACTION_JOB_DIGEST_RERANK:
+      return "Classement IA des offres du jour";
   }
 }
 

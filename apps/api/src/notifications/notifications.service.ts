@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from "@nestjs/common";
 import {
   APPLICATION_STATUS_SENT,
   NOTIFICATION_TYPE_APPLICATION_FOLLOW_UP,
+  NOTIFICATION_TYPE_JOB_DIGEST,
   type ApplicationStatusHistoryEntry,
   type InAppNotification,
   type NotificationPreferences,
@@ -74,6 +75,7 @@ function createDefaultPreferences(): NotificationPreferences {
     email: {
       applicationFollowUp: true,
       creditPurchaseConfirmed: true,
+      jobDigest: true,
     },
   };
 }
@@ -222,6 +224,59 @@ export class NotificationsService {
       offerName: input.offerName,
       to: input.userEmail,
     });
+  }
+
+  /**
+   * Announces the morning selection: one in-app notification, and the e-mail
+   * unless the candidate turned it off.
+   *
+   * `createOncePerDay` is what keeps a second run of the digest from
+   * announcing the same morning twice.
+   */
+  async sendJobDigestNotification(input: {
+    userEmail: string;
+    digestDate: string;
+    offers: Array<{
+      title: string;
+      companyName: string;
+      locationLabel: string;
+      score: number;
+      reason: string;
+    }>;
+    totalCount: number;
+    emailEnabled: boolean;
+    digestUrl: string;
+    preferencesUrl: string;
+  }) {
+    const notification = await this.createOncePerDay({
+      linkHref: "/offres-du-jour",
+      message: `${input.totalCount} offre(s) correspondent a votre recherche ce matin.`,
+      metadata: {
+        digestDate: input.digestDate,
+        matchCount: input.totalCount,
+      },
+      title: "Vos offres du jour",
+      type: NOTIFICATION_TYPE_JOB_DIGEST,
+      userEmail: input.userEmail,
+    });
+
+    // Already announced today: the e-mail must not go out a second time
+    // either.
+    if (!notification) return null;
+
+    const preferences = await this.readPreferences(input.userEmail);
+
+    if (input.emailEnabled && preferences.email.jobDigest) {
+      await this.notificationsMailer.sendJobDigestEmail({
+        digestUrl: input.digestUrl,
+        offers: input.offers,
+        preferencesUrl: input.preferencesUrl,
+        to: input.userEmail,
+        totalCount: input.totalCount,
+      });
+    }
+
+    return notification;
   }
 
   private async readPreferences(userEmail: string) {

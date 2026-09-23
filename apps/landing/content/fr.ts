@@ -241,6 +241,7 @@ export const fr: LandingDictionary = {
       offer_enrichment: "Analyse de l'offre et de l'entreprise",
       cv_generation: "Génération d'un CV adapté",
       letter_generation: "Génération d'une lettre",
+      job_digest_rerank: "Classement IA de vos offres du jour",
     },
   },
   testimonials: {

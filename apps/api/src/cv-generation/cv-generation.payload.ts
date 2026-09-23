@@ -23,7 +23,10 @@ export const MAX_RAW_OFFER_CHARS = 2000;
  * Empty fields are dropped rather than sent as "", so the model cannot read a
  * blank availability as "available immediately".
  */
-function statedPreferences(profile: PromptSafeProfile) {
+function statedPreferences(
+  profile: PromptSafeProfile,
+  contractSearch: string,
+) {
   const preferences = profile.preferences;
   if (!preferences) return null;
 
@@ -33,7 +36,9 @@ function statedPreferences(profile: PromptSafeProfile) {
       : preferences.availabilityMode === "date"
         ? preferences.availabilityDate.trim()
         : "";
-  const contractTypes = preferences.contractTypes.trim();
+  // The search project when the candidate filled one in; the legacy free-text
+  // field otherwise, until every profile has been migrated.
+  const contractTypes = contractSearch.trim() || preferences.contractTypes.trim();
 
   if (!availability && !contractTypes) return null;
 
@@ -62,14 +67,18 @@ function inventory(profile: PromptSafeProfile) {
 export function buildGroundedUserMessage(
   profile: PromptSafeProfile,
   offer: OfferContext,
-  extra: { includePreferences?: boolean; refinement?: string } = {},
+  extra: {
+    contractSearch?: string;
+    includePreferences?: boolean;
+    refinement?: string;
+  } = {},
 ): string {
   const { rawOfferText, ...offerFields } = offer;
   const refinement = extra.refinement?.trim();
   // Only the letter has a use for them; the CV is not the place to announce a
   // notice period, so they are kept out of that prompt entirely.
   const preferences = extra.includePreferences
-    ? statedPreferences(profile)
+    ? statedPreferences(profile, extra.contractSearch ?? "")
     : null;
 
   return [

@@ -96,24 +96,24 @@ describe("PgNotificationsStore", () => {
     ).resolves.toBeNull();
 
     await store.savePreferences("user@example.com", {
-      email: { applicationFollowUp: false, creditPurchaseConfirmed: true },
+      email: { applicationFollowUp: false, creditPurchaseConfirmed: true, jobDigest: true },
     });
 
     await expect(store.readPreferences("user@example.com")).resolves.toEqual({
-      email: { applicationFollowUp: false, creditPurchaseConfirmed: true },
+      email: { applicationFollowUp: false, creditPurchaseConfirmed: true, jobDigest: true },
     });
   });
 
   it("overwrites preferences on a second save", async () => {
     await store.savePreferences("user@example.com", {
-      email: { applicationFollowUp: false, creditPurchaseConfirmed: true },
+      email: { applicationFollowUp: false, creditPurchaseConfirmed: true, jobDigest: true },
     });
     await store.savePreferences("user@example.com", {
-      email: { applicationFollowUp: true, creditPurchaseConfirmed: false },
+      email: { applicationFollowUp: true, creditPurchaseConfirmed: false, jobDigest: true },
     });
 
     await expect(store.readPreferences("user@example.com")).resolves.toEqual({
-      email: { applicationFollowUp: true, creditPurchaseConfirmed: false },
+      email: { applicationFollowUp: true, creditPurchaseConfirmed: false, jobDigest: true },
     });
   });
 
@@ -124,7 +124,7 @@ describe("PgNotificationsStore", () => {
       makeNotification("other", { userEmail: "other@example.com" }),
     );
     await store.savePreferences("user@example.com", {
-      email: { applicationFollowUp: false, creditPurchaseConfirmed: false },
+      email: { applicationFollowUp: false, creditPurchaseConfirmed: false, jobDigest: true },
     });
 
     await expect(store.deleteByUserEmail("user@example.com")).resolves.toBe(2);

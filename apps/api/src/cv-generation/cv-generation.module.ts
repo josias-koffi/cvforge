@@ -8,6 +8,11 @@ import {
 } from "../applications/applications.types";
 import { CreditsModule } from "../credits/credits.module";
 import { CreditsService } from "../credits/credits.service";
+import { SearchProjectsModule } from "../search-projects/search-projects.module";
+import {
+  SEARCH_PROJECTS_STORE,
+  type SearchProjectsStore,
+} from "../search-projects/search-projects.types";
 import { TemplatesModule } from "../templates/templates.module";
 import {
   TEMPLATES_STORE,
@@ -24,6 +29,7 @@ import { CvPdfExportService } from "./cv-pdf-export.service";
     AuthModule,
     CreditsModule,
     OpenRouterModule,
+    SearchProjectsModule,
     TemplatesModule,
   ],
   controllers: [CvGenerationController],
@@ -35,18 +41,21 @@ import { CvPdfExportService } from "./cv-pdf-export.service";
         OPENROUTER_SERVICE,
         CreditsService,
         TEMPLATES_STORE,
+        SEARCH_PROJECTS_STORE,
       ],
       useFactory: (
         applicationsStore: ApplicationsStore,
         openRouterService: ConstructorParameters<typeof CvGenerationService>[1],
         creditsService: ConstructorParameters<typeof CvGenerationService>[2],
         templatesStore: TemplatesStore,
+        searchProjectsStore: SearchProjectsStore,
       ) =>
         new CvGenerationService(
           applicationsStore,
           openRouterService,
           creditsService,
           templatesStore,
+          searchProjectsStore,
         ),
     },
     {

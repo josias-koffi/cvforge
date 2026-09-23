@@ -92,6 +92,38 @@ describe("buildGroundedUserMessage", () => {
     expect(message).toContain("CDI");
   });
 
+  it("prefers the structured search over the legacy free-text contracts", () => {
+    const message = buildGroundedUserMessage(
+      makeProfile({
+        availabilityDate: "",
+        availabilityMode: "immediate",
+        contractTypes: "CDI",
+      }),
+      OFFER,
+      {
+        contractSearch: "Stage ou alternance (rythme 3j/2j)",
+        includePreferences: true,
+      },
+    );
+
+    expect(message).toContain("Stage ou alternance (rythme 3j/2j)");
+    expect(message).not.toContain("\"contratsRecherches\":\"CDI\"");
+  });
+
+  it("keeps the legacy free-text contracts while a profile has no search project", () => {
+    const message = buildGroundedUserMessage(
+      makeProfile({
+        availabilityDate: "",
+        availabilityMode: "immediate",
+        contractTypes: "CDI",
+      }),
+      OFFER,
+      { contractSearch: "", includePreferences: true },
+    );
+
+    expect(message).toContain("CDI");
+  });
+
   it("spells out an immediate availability rather than sending a code", () => {
     const message = buildGroundedUserMessage(
       makeProfile({

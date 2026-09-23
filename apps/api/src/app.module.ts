@@ -15,7 +15,9 @@ import { NotificationsModule } from "./notifications/notifications.module";
 import { LegalDocumentsModule } from "./legal/legal.module";
 import { CreditOffersModule } from "./offers/offers.module";
 import { PrivacyModule } from "./privacy/privacy.module";
+import { JobSearchModule } from "./job-search/job-search.module";
 import { ProfilesModule } from "./profiles/profiles.module";
+import { SearchProjectsModule } from "./search-projects/search-projects.module";
 import { TemplatesModule } from "./templates/templates.module";
 import { InterviewModule } from "./interview/interview.module";
 import { MetricsModule } from "./metrics/metrics.module";
@@ -39,8 +41,10 @@ import { RateLimitMiddleware } from "./shared/rate-limit/rate-limit.middleware";
     LegalDocumentsModule,
     PrivacyModule,
     ProfilesModule,
+    SearchProjectsModule,
     TemplatesModule,
     InterviewModule,
+    JobSearchModule,
     MetricsModule,
     RateLimitModule,
   ],

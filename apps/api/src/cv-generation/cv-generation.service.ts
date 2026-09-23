@@ -16,6 +16,8 @@ import { withOpenRouterHttpErrors } from "../ai/openrouter.exception";
 import type { OpenRouterService } from "../ai/openrouter.service";
 import type { ApplicationsStore } from "../applications/applications.types";
 import type { CreditsService } from "../credits/credits.service";
+import { formatContractSearch } from "../search-projects/search-projects.format";
+import type { SearchProjectsStore } from "../search-projects/search-projects.types";
 import type { TemplatesStore } from "../templates/templates.types";
 
 import { groundCvContent } from "./grounding";
@@ -70,6 +72,10 @@ export class CvGenerationService {
     private readonly openRouterService: OpenRouterService,
     private readonly creditsService: CreditsService,
     private readonly templatesStore?: Pick<TemplatesStore, "list">,
+    private readonly searchProjectsStore?: Pick<
+      SearchProjectsStore,
+      "findByProfileId"
+    >,
   ) {}
 
   async generateCv(
@@ -149,6 +155,25 @@ export class CvGenerationService {
     return cvContent;
   }
 
+  /**
+   * The contracts the candidate is looking for, read from their own search
+   * project. The lookup is keyed on the session's email, so a `profileId`
+   * belonging to somebody else simply finds nothing.
+   */
+  private async readContractSearch(
+    userEmail: string,
+    profileId: string | undefined,
+  ): Promise<string> {
+    if (!profileId || !this.searchProjectsStore) return "";
+
+    const project = await this.searchProjectsStore.findByProfileId(
+      userEmail,
+      profileId,
+    );
+
+    return project ? formatContractSearch(project) : "";
+  }
+
   async generateLetter(
     userEmail: string,
     applicationId: string,
@@ -166,6 +191,10 @@ export class CvGenerationService {
       userEmail,
     );
 
+    const contractSearch = await this.readContractSearch(
+      userEmail,
+      request.profileId,
+    );
     const rawResponse = await withOpenRouterHttpErrors(() =>
       this.openRouterService.chat(
         [
@@ -175,7 +204,11 @@ export class CvGenerationService {
             content: buildGroundedUserMessage(
               request.promptProfile,
               offerContext,
-              { includePreferences: true, refinement: request.refinement },
+              {
+                contractSearch,
+                includePreferences: true,
+                refinement: request.refinement,
+              },
             ),
           },
         ],

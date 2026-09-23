@@ -218,6 +218,7 @@ describe("NotificationsService", () => {
       email: {
         applicationFollowUp: false,
         creditPurchaseConfirmed: true,
+        jobDigest: true,
       },
     });
     const service = new NotificationsService(
