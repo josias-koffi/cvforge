@@ -461,10 +461,34 @@ lu sur leur **description OpenAPI en direct** (`/api/documentation/json`), pas d
 - **Coordonnées lues en GeoJSON** (longitude d'abord) : les *exemples* de leur schéma ont les deux
   inversés (48,85 annoncé comme longitude), ses descriptions de champs non.
 - **Pas de salaire inventé** : l'API n'en publie pas, le champ reste vide.
-- **Vérifié contre l'API réelle** avec une clé volontairement invalide : l'URL et l'en-tête portent
-  jusqu'au serveur, qui répond « Impossible de déchiffrer la clé d'API » — la source journalise et
-  rend une liste vide. Le reste est couvert par 37 tests sur une charge utile construite champ par
-  champ d'après leur schéma ; **aucune réponse réelle n'a pu être capturée**, faute de clé.
+#### Mesuré sur l'API réelle (clé sandbox, 2026-09-23)
+
+590 offres lues sur deux départements — 279 en Loire-Atlantique, 311 à Paris. Le mapper tient : 0
+offre sans département, sans description, sans date ni sans coordonnées. Les coordonnées tombent au
+bon endroit (Nantes 47,21 / −1,56 ; Paris 48,87 / 2,31), ce qui confirme l'ordre GeoJSON contre les
+exemples de leur schéma. `isStillOpen` interrogé sur une vraie offre répond `true`.
+
+Quatre constats que seuls de vrais appels pouvaient donner :
+
+- **266 offres sur 311 sont relayées de France Travail**, et leur `apply.url` est *exactement*
+  l'URL que notre source France Travail construit. Le dédoublonnage les fusionne donc par lien —
+  vérifié : `urlKey()` rend la même clé des deux côtés. L'apport propre de cette source est la
+  quarantaine d'offres restantes (les siennes, Meteojob, PASS, RH Alternance) et les alternances
+  France Travail que nos requêtes par mots-clés ne demandaient pas.
+- **`identifier.id` est toujours présent**, y compris sur les offres relayées : la branche
+  `partner:` d'`isStillOpen` ne se déclenche jamais en pratique. Elle reste, leur schéma déclarant
+  ce champ nullable, mais **elle n'a pas été exercée en réel**.
+- **`contract.remote` vaut `null` sur 308 offres sur 311** : le télétravail est une information
+  qu'ils n'ont presque jamais. 21 % des offres n'ont aucune entreprise nommée (`workplace` entier à
+  `null`), affichées « Entreprise non communiquée ».
+- **Leur filtre par département suit le point GPS, pas l'adresse** : sur 311 offres demandées en 75,
+  deux portent une adresse à Saint-Étienne et à Cayenne avec un géopoint parisien. Nous gardons le
+  département de l'adresse — c'est ce que la carte affiche — donc ces deux-là sont plus justes chez
+  nous que chez eux, mais leurs coordonnées, elles, restent fausses.
+
+⚠️ **Une clé sandbox interroge leur environnement de recette.** Onze offres sur 311 portent un lien
+`labonnealternance-recette.*`, qui n'est pas public. Elle prouve le branchement ; elle ne doit pas
+alimenter une base que des candidats lisent.
 
 ## ⚠️ To Clarify
 

@@ -79,6 +79,11 @@ only called for searches that ask for an alternance. A *sandbox* key is granted
 the route automatically; a production key is requested from their support. Left
 unset, that source stays inert like the one above.
 
+> A **sandbox** key queries their *recette* environment: roughly one offer in
+> thirty then carries a `labonnealternance-recette.*` link, which is not
+> public. It proves the wiring, and must not feed a database candidates read —
+> those links would stay in it until the offers expire.
+
 > Setting them in the Dokploy UI does **not** work, and worse, looks like it
 > does: Terraform rewrites the stack's environment file on every deploy, and a
 > compose service only receives the variables its own `environment:` block

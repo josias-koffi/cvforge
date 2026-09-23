@@ -1272,3 +1272,18 @@
   annulées ; c'est le champ `status` qui tranche.
 - **Verified** : appel réel avec une clé invalide — 401 « Impossible de déchiffrer la clé d'API »,
   donc l'URL et l'en-tête sont bons. Aucune réponse réelle capturée : il n'y a pas encore de clé.
+
+### 2026-09-23 — Une clé de bac à sable ne renvoie pas les mêmes données qu'une vraie
+- **Constat** : la clé sandbox de La bonne alternance interroge leur **environnement de recette**.
+  Onze offres sur 311 portaient un lien `labonnealternance-recette.*`, non public. Une collecte
+  réelle lancée avec elle aurait planté ces liens dans la base des candidats jusqu'à expiration.
+- **Leçon** : une clé d'essai sert à prouver le branchement, jamais à remplir une table que des
+  utilisateurs vont lire. Le dire dans `.env.example` et `docs/deploy.md`, pas seulement le savoir.
+- **Leçon** : 590 appels réels ont appris ce qu'aucun test sur schéma ne pouvait dire — 266 offres
+  sur 311 sont relayées de France Travail avec *exactement* l'URL que notre propre source construit
+  (le dédoublonnage les fusionne, vérifié par `urlKey()`), `contract.remote` est `null` 99 fois sur
+  100, et `identifier.id` est toujours présent, donc la branche défensive `partner:` n'a jamais été
+  exercée en vrai. Il faut le dire plutôt que de laisser croire qu'elle l'a été.
+- **Leçon** : leur filtre par département suit le **point GPS**, pas l'adresse. Deux offres demandées
+  en 75 avaient une adresse à Saint-Étienne et à Cayenne. Quand deux champs d'un tiers se
+  contredisent, choisir celui que l'écran affiche — ici l'adresse — et consigner l'écart.
