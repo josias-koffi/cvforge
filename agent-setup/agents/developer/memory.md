@@ -1049,3 +1049,9 @@
 - **Filtrer les chaînes vides d'un tableau de lignes casse la mise en page** d'un e-mail texte : les lignes vides *sont* la mise en page. Seule la ligne conditionnelle doit être conditionnelle. Vu en affichant le rendu réel, pas en relisant le code.
 - **Rendre l'e-mail pour de vrai vaut mieux que l'imaginer** : un script jetable qui appelle le mailer avec un transport factice montre le sujet, le texte et le HTML en quelques secondes.
 - **Verified** : 10 tests ajoutés, `turbo lint build test` vert (1386 API, 322 web). **Non vérifié** : aucun e-mail réellement envoyé (SMTP non configuré en local).
+
+## 2026-09-23 — E19 : où se règle une recherche d'emploi
+- **Retour du propriétaire sur staging** : depuis « Offres du jour », le bouton « Configurer ma recherche » envoyait dans l'éditeur de profil, où la recherche était un onglet parmi sept. Il s'y est perdu. Une configuration qui alimente une autre page mérite **sa propre page**, atteignable depuis celle qu'elle alimente — pas un onglet dans un écran qu'on ouvre pour une autre raison.
+- **Découper un formulaire long en questions** (le poste, où, les secteurs, les entreprises, les alertes) plutôt qu'en une colonne de champs : c'est un écran qu'on remplit une fois et qu'on rouvre rarement.
+- La recherche reste **attachée à un profil** : quand l'utilisateur en a plusieurs, la page doit dire lequel, sinon il règle la recherche d'un profil en croyant régler l'autre.
+- **Les types de routes de Next sont générés** : une nouvelle route fait échouer `tsc` tant que `next build` (ou `next dev`) n'a pas régénéré `AppRoutes`. Ce n'est pas une erreur de code.

@@ -54,8 +54,9 @@ Cible front : `apps/web`. `apps/app` est gelée, non touchée.
     - [x] `prefillSearchProject` : intitulés depuis `headline` et la dernière expérience, ville depuis
           l'identité, contrats depuis l'ancien texte libre (`parseLegacyContractTypes`, FR et EN).
     - [x] `GET/PUT /profiles/:profileId/search-project` et `POST …/prefill`, propriété du profil vérifiée.
-    - [x] Onglet « Ma recherche » dans l'éditeur de profil ; l'ancien champ texte « Contrats
-          recherchés » est retiré du formulaire.
+    - [x] Page dédiée `/ma-recherche` (d'abord un onglet du profil, déplacée après retour du
+          propriétaire sur staging : on s'y perdait). L'ancien champ texte « Contrats recherchés »
+          est retiré du formulaire de profil, qui garde un renvoi vers la page.
     - [x] La génération de lettre cite les contrats structurés, avec l'ancien texte libre en secours.
     - [x] Purge RGPD : les projets de recherche partent avec le compte (test de résidu vert).
     - [x] `pnpm lint` et `pnpm test` verts (API et web).
