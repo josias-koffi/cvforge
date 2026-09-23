@@ -1,6 +1,8 @@
 "use client"
 
+import Link from "next/link"
 import { useEffect, useState, useTransition } from "react"
+import { SearchIcon } from "lucide-react"
 import { toast } from "sonner"
 
 import { saveProfile } from "@/app/(app)/profile/actions"
@@ -14,12 +16,10 @@ import {
 import { CvDropzone } from "@/components/profile/cv-dropzone"
 import { ProfileIdentityCard } from "@/components/profile/profile-identity-card"
 import { ProfileSaveBar } from "@/components/profile/profile-save-bar"
-import { SearchProjectForm } from "@/components/profile/search-project-form"
+import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import type { SearchProject } from "@cvforge/types"
-
 import type {
   BaseProfile,
   CertificationEntry,
@@ -82,11 +82,9 @@ function normalizeProfile(profile: BaseProfile): BaseProfile {
 export function ProfileForm({
   initialProfile,
   onDirtyChange,
-  searchProject,
 }: {
   initialProfile: BaseProfile
   onDirtyChange: (dirty: boolean) => void
-  searchProject: SearchProject
 }) {
   const [profile, setProfile] = useState(initialProfile)
   const [savedProfile, setSavedProfile] = useState(initialProfile)
@@ -244,7 +242,18 @@ export function ProfileForm({
                 Disponible immédiatement
               </label>
               <Separator />
-              <SearchProjectForm initialProject={searchProject} />
+              <div className="flex flex-col items-start gap-2">
+                <p className="text-muted-foreground text-sm">
+                  Les postes, contrats, secteurs et lieux que vous visez se règlent
+                  sur leur propre page — c&apos;est ce qui alimente vos offres du jour.
+                </p>
+                <Button asChild variant="outline">
+                  <Link href="/ma-recherche">
+                    <SearchIcon />
+                    Ouvrir ma recherche
+                  </Link>
+                </Button>
+              </div>
             </TabsContent>
             <TabsContent value="languages">
               <ListEditor

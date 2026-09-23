@@ -45,7 +45,7 @@ export default async function DailyJobsPage() {
         }
         actions={
           <Button asChild variant="outline">
-            <Link href="/profile?tab=search">Ma recherche</Link>
+            <Link href="/ma-recherche">Ma recherche</Link>
           </Button>
         }
       />
@@ -64,7 +64,7 @@ export default async function DailyJobsPage() {
             </EmptyHeader>
             <EmptyContent>
               <Button asChild>
-                <Link href="/profile">Configurer ma recherche</Link>
+                <Link href="/ma-recherche">Configurer ma recherche</Link>
               </Button>
             </EmptyContent>
           </Empty>

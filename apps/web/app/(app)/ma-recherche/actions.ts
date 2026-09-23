@@ -12,7 +12,7 @@ export async function saveSearchProject(project: SearchProject): Promise<ActionR
     "Recherche enregistrée."
   )
 
-  revalidatePath("/profile")
+  revalidatePath("/ma-recherche")
   return result
 }
 
