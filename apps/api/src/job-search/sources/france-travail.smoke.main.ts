@@ -10,6 +10,8 @@ import { FranceTravailSource } from "./france-travail.source";
  * are the right ones (sprint 025, "To Clarify").
  *
  *   pnpm --filter @cvforge/api ft:smoke "développeur" 44
+ *   node apps/api/dist/apps/api/src/job-search/sources/france-travail.smoke.main.js \
+ *     "développeur" 44                           (container: it has no tsx)
  *
  * Reads nothing, writes nothing: one search and one detail lookup.
  */

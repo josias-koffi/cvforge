@@ -79,6 +79,32 @@ describe("InterviewPurgeService", () => {
     clearSpy.mockRestore();
   });
 
+  it("waits for the purge started at boot before shutting down", async () => {
+    // A script closes the database right after onModuleDestroy; a purge still
+    // running would then fail on a dead pool and look like the script broke.
+    let release = () => {};
+    let finished = false;
+    const store = makeStore(
+      vi.fn(async () => {
+        await new Promise<void>((resolve) => {
+          release = resolve;
+        });
+        finished = true;
+
+        return 0;
+      }),
+    );
+    const service = new InterviewPurgeService(store);
+
+    service.onModuleInit();
+    const destroyed = service.onModuleDestroy();
+    expect(finished).toBe(false);
+
+    release();
+    await destroyed;
+    expect(finished).toBe(true);
+  });
+
   it("does not schedule a second interval if already destroyed", () => {
     const store = makeStore();
     const service = new InterviewPurgeService(store);

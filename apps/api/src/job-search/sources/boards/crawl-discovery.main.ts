@@ -20,6 +20,8 @@ import type { BoardProvider } from "./detect-board";
  * Fills the company registry from the Common Crawl index.
  *
  *   pnpm --filter @cvforge/api boards:discover CC-MAIN-2026-33 greenhouse
+ *   node apps/api/dist/apps/api/src/job-search/sources/boards/crawl-discovery.main.js \
+ *     CC-MAIN-2026-33 greenhouse                 (container: it has no tsx)
  *
  * Meant to run monthly, by hand for now. Two rules make it safe to run against
  * production data: every candidate is **verified on the provider's live API**

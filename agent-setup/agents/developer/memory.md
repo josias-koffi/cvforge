@@ -1098,3 +1098,14 @@
   refusés — mais `. ./.env` sous zsh n'avait rien chargé et j'envoyais des champs vides. Pour lire
   le `.env` dans une sonde, passer par Node et `process.loadEnvFile`, jamais par le sourcing shell.
 - **Verified** : `ft:smoke` réel — 25 offres, vérification en direct `true`, filtres 39/67/4/678.
+
+### 2026-09-23 — L'image de production n'a pas `tsx`
+- **Constat** : `pnpm --filter @cvforge/api job-digest:run` échoue en staging avec `tsx: not found`.
+  L'image installe `--prod` : les scripts en TypeScript ne peuvent pas y tourner.
+- **Leçon** : tout script d'exploitation destiné au conteneur doit viser le code compilé —
+  `node apps/api/dist/apps/api/src/<chemin>.main.js` depuis `/workspace` (c'est ce que fait déjà
+  le `CMD` du Dockerfile). Variantes `*:built` ajoutées dans `apps/api/package.json`.
+- **Leçon** : trois services lancent une tâche de fond dès `onModuleInit` (purge entretiens, purge
+  ATS, alerte de solde OpenRouter). Un script qui ferme la base juste après voyait cette tâche
+  échouer sur un pool mort et afficher une trace qui ressemblait à un échec du script.
+  `onModuleDestroy` attend désormais le travail lancé au démarrage ; test dédié.

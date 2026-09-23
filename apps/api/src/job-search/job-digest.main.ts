@@ -6,7 +6,9 @@ import { JobDigestService } from "./job-digest.service";
 /**
  * Runs the morning collection once, now, whatever the hour.
  *
- *   pnpm --filter @cvforge/api job-digest:run
+ *   pnpm --filter @cvforge/api job-digest:run    (repository, through tsx)
+ *   node apps/api/dist/apps/api/src/job-search/job-digest.main.js
+ *                                                (container: it has no tsx)
  *
  * The scheduled run happens by itself at 6:00 Paris time; this is for seeing
  * it work end to end — with real credentials, against the real database.
