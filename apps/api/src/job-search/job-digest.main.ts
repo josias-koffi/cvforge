@@ -1,5 +1,6 @@
 import { NestFactory } from "@nestjs/core";
 import { AppModule } from "../app.module";
+import { loadEnvironmentFiles } from "../shared/env";
 import { JobDigestService } from "./job-digest.service";
 
 /**
@@ -15,6 +16,8 @@ import { JobDigestService } from "./job-digest.service";
  * not a failure.
  */
 async function main() {
+  loadEnvironmentFiles();
+
   const app = await NestFactory.createApplicationContext(AppModule, {
     logger: ["error", "warn", "log"],
   });

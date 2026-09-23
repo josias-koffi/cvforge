@@ -1071,3 +1071,10 @@
 - **Parcours d'obtention** (officiel) : bouton « Utiliser l'API » sur la page de l'API → compte francetravail.io → associer l'API à une application (ou en créer une) → identifiant client + clé secrète. L'accès est libre, sous licence de réutilisation.
 - Leur doc rappelle aussi la règle qu'on applique déjà : clé secrète côté serveur uniquement, jamais dans le code source.
 - **Lire la doc officielle dans le navigateur quand elle est en JavaScript** : `WebFetch` ne rend que le squelette, la page ne dit rien. Le texte extrait par le navigateur a répondu en deux minutes à une question laissée ouverte depuis trois jours de travail.
+
+### 2026-09-23 — Un script `tsx` ne lit pas `.env` tout seul
+- **Constat** : `ft:smoke` échouait sur « identifiants requis » alors que `.env` était renseigné. Seuls `main.ts` et `migrate.main.ts` chargeaient l'environnement, chacun avec sa propre copie du code ; les trois scripts du sprint 025 n'en avaient aucune.
+- **Leçon** : tout nouvel entrypoint doit appeler `loadEnvironmentFiles()` (`src/shared/env.ts`, extrait des deux copies existantes). Un script lancé par `tsx` part d'un environnement vide.
+- **Leçon** : `pnpm run` transmet le séparateur `--` comme un argument réel. Une commande documentée avec `--` faisait chercher « -- » comme mots-clés. Les scripts filtrent l'argument et la documentation ne l'utilise plus.
+- **Leçon** : une erreur d'authentification sans le corps de la réponse ne se diagnostique pas. `invalid_client` (identifiant refusé) et `invalid_scope` (API non souscrite) donnent le même 400. Le corps est désormais repris dans le message.
+- **Verified** : 1 403 tests API, lint et build verts ; appel réel à France Travail qui atteint bien leur serveur et renvoie `invalid_client` — mêmes identifiants refusés par un `curl` direct, donc l'implémentation est conforme à la doc (endpoint, corps, scope vérifiés sur francetravail.io).

@@ -1,25 +1,10 @@
 import { NestFactory } from "@nestjs/core";
 import type { NestExpressApplication } from "@nestjs/platform-express";
-import { existsSync } from "node:fs";
-import { resolve } from "node:path";
 import { AppModule } from "./app.module";
 import { AuthMailerService } from "./auth/auth-mailer.service";
+import { loadEnvironmentFiles } from "./shared/env";
 
 const INTERVIEW_AUDIO_BODY_LIMIT = "16mb";
-
-function loadEnvironmentFiles() {
-  const candidates = [
-    resolve(process.cwd(), ".env"),
-    resolve(process.cwd(), "../../.env"),
-  ];
-
-  for (const candidate of candidates) {
-    if (existsSync(candidate)) {
-      process.loadEnvFile(candidate);
-      return;
-    }
-  }
-}
 
 export async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {

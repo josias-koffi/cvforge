@@ -199,8 +199,12 @@ export class FranceTravailSource implements JobSourceAdapter {
     );
 
     if (!response.ok) {
+      // Their body names the cause (invalid_client, invalid_scope…); without
+      // it a bad secret and an unsubscribed API look exactly the same.
+      const detail = (await response.text().catch(() => "")).slice(0, 200);
+
       throw new Error(
-        `France Travail refused the credentials (${response.status}).`,
+        `France Travail refused the credentials (${response.status}). ${detail}`.trim(),
       );
     }
 

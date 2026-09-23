@@ -1,3 +1,4 @@
+import { loadEnvironmentFiles } from "../../../shared/env";
 import { createDatabaseClient } from "../../../database/database.client";
 import { resolveDatabaseConfig } from "../../../database/database.config";
 import { PgJobBoardsStore } from "../../boards.pg-store";
@@ -18,7 +19,7 @@ import type { BoardProvider } from "./detect-board";
 /**
  * Fills the company registry from the Common Crawl index.
  *
- *   pnpm --filter @cvforge/api boards:discover -- CC-MAIN-2026-33 greenhouse
+ *   pnpm --filter @cvforge/api boards:discover CC-MAIN-2026-33 greenhouse
  *
  * Meant to run monthly, by hand for now. Two rules make it safe to run against
  * production data: every candidate is **verified on the provider's live API**
@@ -31,7 +32,12 @@ const COLLECTION_FALLBACK = "CC-MAIN-2026-33";
 const MAX_CANDIDATES_PER_PATTERN = 400;
 
 async function main() {
-  const [collection = COLLECTION_FALLBACK, onlyProvider] = process.argv.slice(2);
+  loadEnvironmentFiles();
+
+  // `pnpm run` forwards a `--` separator as a real argument; it is not a value.
+  const [collection = COLLECTION_FALLBACK, onlyProvider] = process.argv
+    .slice(2)
+    .filter((argument) => argument !== "--");
   const database = createDatabaseClient(resolveDatabaseConfig(process.env));
   const store = new PgJobBoardsStore(database.db);
   const boards = new BoardsService(store);

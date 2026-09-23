@@ -1,3 +1,4 @@
+import { loadEnvironmentFiles } from "../../shared/env";
 import { resolveFranceTravailConfig } from "./france-travail.config";
 import { FranceTravailSource } from "./france-travail.source";
 
@@ -7,17 +8,28 @@ import { FranceTravailSource } from "./france-travail.source";
  * tested on fixtures; what fixtures cannot prove is that the reference codes
  * are the right ones (sprint 025, "To Clarify").
  *
- *   pnpm --filter @cvforge/api ft:smoke -- "développeur" 44
+ *   pnpm --filter @cvforge/api ft:smoke "développeur" 44
  *
  * Reads nothing, writes nothing: one search and one detail lookup.
  */
 async function main() {
-  const [keywords = "développeur", department = ""] = process.argv.slice(2);
+  loadEnvironmentFiles();
+
+  // `pnpm run` forwards a `--` separator as a real argument, so it is dropped
+  // here rather than read as the keywords to search for.
+  const [keywords = "développeur", department = ""] = process.argv
+    .slice(2)
+    .filter((argument) => argument !== "--");
   const config = resolveFranceTravailConfig();
 
   if (!config.enabled) {
     console.error(
-      "FRANCE_TRAVAIL_CLIENT_ID et FRANCE_TRAVAIL_CLIENT_SECRET sont requis.",
+      [
+        "FRANCE_TRAVAIL_CLIENT_ID et FRANCE_TRAVAIL_CLIENT_SECRET sont requis.",
+        "Créez une application sur https://francetravail.io, souscrivez à",
+        "« Offres d'emploi v2 », puis reportez l'identifiant client et la clé",
+        "secrète dans apps/api/.env (voir .env.example).",
+      ].join("\n"),
     );
     process.exitCode = 1;
     return;
