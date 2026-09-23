@@ -17,6 +17,7 @@ import { LegalDocumentsModule } from "./legal/legal.module";
 import { CreditOffersModule } from "./offers/offers.module";
 import { PrivacyModule } from "./privacy/privacy.module";
 import { JobSearchModule } from "./job-search/job-search.module";
+import { RomeModule } from "./rome/rome.module";
 import { ProfilesModule } from "./profiles/profiles.module";
 import { SearchProjectsModule } from "./search-projects/search-projects.module";
 import { TemplatesModule } from "./templates/templates.module";
@@ -50,6 +51,7 @@ describe("AppModule", () => {
       TemplatesModule,
       InterviewModule,
       JobSearchModule,
+      RomeModule,
       MetricsModule,
       RateLimitModule,
     ]);

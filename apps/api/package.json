@@ -16,13 +16,15 @@
     "boards:probe": "tsx src/job-search/sources/boards/boards-probe.main.ts",
     "job-digest:run": "tsx src/job-search/job-digest.main.ts",
     "job-digest:status": "tsx src/job-search/job-digest-status.main.ts",
+    "rome:sync": "tsx src/rome/rome-sync.main.ts",
     "ft:smoke:built": "node dist/apps/api/src/france-travail/ft-smoke.main.js",
     "ft:smoke:offres:built": "node dist/apps/api/src/job-search/sources/france-travail.smoke.main.js",
     "boards:discover:built": "node dist/apps/api/src/job-search/sources/boards/crawl-discovery.main.js",
     "boards:seed:built": "node dist/apps/api/src/job-search/sources/boards/boards-seed.main.js",
     "boards:probe:built": "node dist/apps/api/src/job-search/sources/boards/boards-probe.main.js",
     "job-digest:run:built": "node dist/apps/api/src/job-search/job-digest.main.js",
-    "job-digest:status:built": "node dist/apps/api/src/job-search/job-digest-status.main.js"
+    "job-digest:status:built": "node dist/apps/api/src/job-search/job-digest-status.main.js",
+    "rome:sync:built": "node dist/apps/api/src/rome/rome-sync.main.js"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.8",

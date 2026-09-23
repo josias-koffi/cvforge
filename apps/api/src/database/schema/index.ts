@@ -15,3 +15,4 @@ export * from "./notifications";
 export * from "./profiles";
 export * from "./search-projects";
 export * from "./templates";
+export * from "./rome";

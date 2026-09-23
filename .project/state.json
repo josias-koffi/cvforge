@@ -12,7 +12,7 @@
   "specialized_workflows": [],
   "specialized_skills": [],
   "clarifications_pending": [],
-  "last_updated": "2026-09-23T23:12:00+02:00",
+  "last_updated": "2026-09-23T23:35:00+02:00",
   "last_workflow_run": "developer",
   "last_workflow_stage": "developer",
   "last_workflow_result": "passed",
@@ -574,6 +574,13 @@
       "run_id": "developer-20260923225823",
       "sprint": "026",
       "task": "US-122",
+      "workflow": "developer",
+      "result": "passed"
+    },
+    {
+      "run_id": "developer-20260923232118",
+      "sprint": "026",
+      "task": "US-123",
       "workflow": "developer",
       "result": "passed"
     }

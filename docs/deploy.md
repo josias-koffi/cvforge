@@ -80,6 +80,11 @@ the container) before adding it: an `invalid_scope` there means it is not
 subscribed, or its scope differs from the catalogue and needs
 `FRANCE_TRAVAIL_<ID>_SCOPE`.
 
+With `rome-metiers`, `rome-competences` and `rome-fiches-metiers` enabled (the
+Terraform default), the API copies the ROME 4.0 referential into `rome_*` once
+a week by itself, in three calls. The first copy can be forced right after a
+deploy with `rome:sync:built`; a failed sync keeps the previous copy.
+
 Optional too: `LA_BONNE_ALTERNANCE_API_KEY`, a key created on
 <https://api.apprentissage.beta.gouv.fr>. It adds apprenticeship offers, and is
 only called for searches that ask for an alternance. A *sandbox* key is granted

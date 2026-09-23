@@ -261,11 +261,13 @@ variable "france_travail_client_secret" {
 }
 
 # The France Travail APIs the key is subscribed to (ADR-024). One is added here
-# only after `ft:smoke <api>` succeeded; an API left out is never called.
+# only after `ft:smoke <api>` succeeded; an API left out is never called. The
+# three ROME ones feed the weekly `rome:sync`. La Bonne Boîte is left out: it
+# answers 403 until France Travail grants it by hand.
 variable "france_travail_apis" {
   type        = string
   description = "Comma-separated France Travail APIs to call (offres, romeo, rome-metiers...)"
-  default     = "offres"
+  default     = "offres,romeo,rome-metiers,rome-competences,rome-fiches-metiers"
 }
 
 # La bonne alternance. Same rule: an empty key leaves the source inert.

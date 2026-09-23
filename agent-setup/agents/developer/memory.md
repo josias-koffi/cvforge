@@ -1313,3 +1313,12 @@
 - **Leçon** : La Bonne Boîte **délivre le jeton** puis répond 403 « Invalid scope » à chaque appel. Un `invalid_scope` ne se voit donc pas toujours au jeton ; le client traite le 403 comme une API non accordée et l'éteint jusqu'au redémarrage.
 - **Leçon** : deux `buildJobSources()` dans le module, c'étaient deux jetons et deux limiteurs pour le même quota. Une liste d'adaptateurs partagée corrige les deux.
 - **Open** : quotas ROME et ROMEO inconnus (1/s par défaut) ; accès La Bonne Boîte à demander à France Travail.
+
+### 2026-09-23 — US-123 : le référentiel ROME en trois appels, et une API qui dit oui au jeton puis non (stage 01 · [[workflows/runs/developer-20260923232118]])
+- **Context** : [[sprints/sprint-026#^us-123]] · [[workflows/runs/developer-20260923232118/01-developer]]
+- **Did** : `apps/api/src/rome/`, migration 0028, `rome:sync`. Synchro réelle rejouée trois fois.
+- **Leçon** : sonder avant de concevoir a divisé le coût par 600. Le plan naturel (une fiche par métier, 1 911 appels à 1/s) prenait 30 minutes ; le paramètre `champs` sur les listes donne tout en trois appels et 10 s. Tous les attributs ne sont pas sélectionnables (`type`, `obsolete` : 400 SELECTOR), donc les compétences viennent de leur propre liste.
+- **Leçon** : les listes ne contiennent que les codes vivants. Un code absent du téléchargement est un code retiré ; on le signale, on ne le supprime jamais chez l'utilisateur sur une supposition.
+- **Leçon** : sur la passerelle France Travail, 401 « TypeAuth invalide » veut dire « produit inconnu à ce chemin », 403 vide « produit connu, accès non accordé ». C'est ce qui a permis de dire que Substitutions attend un droit, et non qu'on se trompe de chemin.
+- **Leçon** : le point médian (·) est un diacritique pour Unicode : « ingénieur·e » devient « ingenieure », ce qui arrange la recherche.
+- **Open** : adaptateur Substitutions à écrire quand l'accès sera ouvert ; `ROME_CODE_HOLDERS` vide jusqu'à US-118.

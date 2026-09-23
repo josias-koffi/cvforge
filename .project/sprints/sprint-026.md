@@ -134,16 +134,31 @@ Deux stories fondatrices passent donc **avant** le backlog ci-dessous. Elles son
 - [ ] **[US-123]** Référentiel ROME 4.0 local et substitutions — `apps/api/src/rome/`
   - Agent: `developer`
   - Critères d'acceptation :
-    - [ ] Migration `0028` : tables `rome_metiers`, `rome_appellations` (avec un libellé sans
+    - [x] Migration `0028` : tables `rome_metiers`, `rome_appellations` (avec un libellé sans
           accents pour l'autocomplétion), `rome_competences` (savoir, savoir-faire, savoir-être),
           `rome_metier_competences`, `rome_substitutions` et `rome_sync_runs`.
-    - [ ] `rome:sync` (plus sa variante `:built`) copie Métiers, Appellations et Compétences. On
+    - [x] `rome:sync` (plus sa variante `:built`) copie Métiers, Appellations et Compétences. On
           peut le relancer sans effet de bord. Le verrou est en base, sur le modèle de
           `job_digest_runs`. Un échec laisse le référentiel précédent intact. Rythme : une fois par
           semaine.
     - [ ] L'API Substitutions d'entités réécrit chaque code périmé partout où il est stocké, supprime
           les doublons que cela crée et journalise ce qu'elle a fait.
-    - [ ] Source ROME citée : ROME 4.0 est une donnée France Travail.
+    - [x] Source ROME citée : ROME 4.0 est une donnée France Travail.
+  - **État au 2026-09-23** ([[workflows/runs/developer-20260923232118]]) : trois critères sur quatre
+    tenus, la story reste ouverte pour les substitutions.
+    - Synchro réelle : 1 911 métiers, 14 301 appellations, 35 595 compétences et 106 792 liens, en
+      **trois appels** (paramètre `champs`) et environ 10 s. Rejouée trois fois : même contenu,
+      une ligne de plus dans `rome_sync_runs`. Refus si le téléchargement perd plus d'un dixième.
+    - Source citée : `romeAttribution()` (« Source : ROME 4.0, France Travail (version 61) »), et
+      la version est gardée dans les statistiques de chaque synchro. L'affichage viendra avec US-118.
+    - Substitutions : la table, le moteur de réécriture (réécrit, supprime les doublons,
+      journalise dans `applied_stats`) et le relevé des codes disparus sont faits et testés.
+      **Reste bloqué** : l'API elle-même. Le jeton `api_rome-substitutionsv1 nomenclatureRome`
+      est délivré, mais `/partenaire/rome-substitutions/v1/*` répond 403, comme La Bonne Boîte.
+      L'adaptateur ne sera écrit qu'une fois la réponse réelle lue. D'ici là, un code retiré est
+      signalé dans `retired`, jamais supprimé chez l'utilisateur.
+    - Aucune table utilisateur ne stocke encore de code ROME : `ROME_CODE_HOLDERS` est vide, et
+      US-118 y déclarera `search_project_rome`.
 
 ## 📋 Backlog
 
@@ -203,3 +218,4 @@ Deux stories fondatrices passent donc **avant** le backlog ci-dessous. Elles son
 ## 🔁 Workflow Runs
 
 - 2026-09-23 — [[workflows/runs/developer-20260923225823|developer]] (US-122) — passed
+- 2026-09-23 — [[workflows/runs/developer-20260923232118|developer]] (US-123) — passed, story ouverte (API Substitutions en 403)
