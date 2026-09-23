@@ -70,6 +70,15 @@ export class PgSearchProjectsStore implements SearchProjectsStore {
     }));
   }
 
+  async listAll() {
+    const rows = await this.db.select().from(searchProjects);
+
+    return rows.map((row) => ({
+      project: toProject(row),
+      userEmail: row.userEmail,
+    }));
+  }
+
   async save(userEmail: string, project: SearchProject) {
     const values = {
       aiRerankEnabled: project.aiRerankEnabled,

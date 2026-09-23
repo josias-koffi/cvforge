@@ -404,12 +404,16 @@ export class PgJobsStore implements JobsStore {
       .filter((word) => word.length > 1)
       .slice(0, MAX_SEARCH_WORDS);
     const departments = [...new Set(filters.departments.filter(Boolean))];
-    const conditions = [
+    // What the base holds at all: still open, and recent enough to show.
+    const available = [
       isNull(jobs.closedAt),
       gte(
         jobs.firstSeenAt,
         new Date(Date.now() - filters.maxAgeDays * MS_PER_DAY),
       ),
+    ];
+    const conditions = [
+      ...available,
       // Every word has to appear somewhere: two words narrow, they do not widen.
       ...words.map((word) => {
         const needle = `%${foldWord(word)}%`;
@@ -446,8 +450,16 @@ export class PgJobsStore implements JobsStore {
       .select({ total: count() })
       .from(jobs)
       .where(and(...conditions));
+    const [held] = await this.db
+      .select({ total: count() })
+      .from(jobs)
+      .where(and(...available));
 
-    return { jobs: rows.map(toJob), total: Number(counted?.total ?? 0) };
+    return {
+      available: Number(held?.total ?? 0),
+      jobs: rows.map(toJob),
+      total: Number(counted?.total ?? 0),
+    };
   }
 
   async closeListing(source: JobSource, externalId: string, at: string) {

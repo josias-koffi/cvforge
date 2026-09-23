@@ -93,4 +93,10 @@ export type JobDigestRunsStore = {
     outcome: { status: "done" | "failed"; stats: Record<string, unknown> },
   ): Promise<void>;
   find(runDate: string): Promise<DigestRun | null>;
+  /**
+   * Gives the day back, so a run can be asked for again. Only the `--force`
+   * flag of the manual script uses it: a search configured after the morning
+   * run would otherwise wait until tomorrow to be collected for.
+   */
+  release(runDate: string): Promise<boolean>;
 };

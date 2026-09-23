@@ -104,6 +104,12 @@ export type JobsStore = {
   searchJobs(filters: JobSearchFilters): Promise<{
     jobs: StoredJob[];
     total: number;
+    /**
+     * How many offers the base holds at all, criteria aside. It tells "your
+     * search matched nothing" apart from "we have nothing yet" — two very
+     * different things to say to a candidate.
+     */
+    available: number;
   }>;
   /** Closes the advert, and the job once its last advert is closed. */
   closeListing(source: JobSource, externalId: string, at: string): Promise<void>;

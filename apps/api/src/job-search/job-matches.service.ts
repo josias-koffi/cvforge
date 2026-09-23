@@ -79,7 +79,7 @@ export class JobMatchesService {
   async searchOffers(
     userEmail: string,
     filters: JobSearchFilters,
-  ): Promise<{ offers: OfferSearchResult[]; total: number }> {
+  ): Promise<{ offers: OfferSearchResult[]; total: number; available: number }> {
     const found = await this.jobs.searchJobs(filters);
     const statuses = await this.matches.listStatusesByJobIds(
       userEmail,
@@ -102,7 +102,7 @@ export class JobMatchesService {
       });
     }
 
-    return { offers, total: found.total };
+    return { available: found.available, offers, total: found.total };
   }
 
   /**

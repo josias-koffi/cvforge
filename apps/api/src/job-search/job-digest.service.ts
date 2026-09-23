@@ -54,7 +54,10 @@ const MS_PER_DAY = 86_400_000;
 const EMAIL_PREVIEW_SIZE = 5;
 
 export interface DigestStats {
+  /** Searches the collection worked from. */
   projects: number;
+  /** Among them, those that also asked for the morning selection. */
+  digestProjects: number;
   listingsCollected: number;
   jobsCreated: number;
   boardsRead: number;
@@ -71,7 +74,10 @@ export class JobDigestService implements OnModuleInit {
   private timer: NodeJS.Timeout | null = null;
 
   constructor(
-    private readonly searchProjects: Pick<SearchProjectsStore, "listDigestEnabled">,
+    private readonly searchProjects: Pick<
+      SearchProjectsStore,
+      "listAll" | "listDigestEnabled"
+    >,
     private readonly profiles: ProfilesStore,
     private readonly jobs: JobsStore,
     private readonly matches: JobMatchesStore,
@@ -108,8 +114,15 @@ export class JobDigestService implements OnModuleInit {
   /**
    * One pass. Returns null when another instance already owns today's run.
    */
-  async run(): Promise<DigestStats | null> {
+  async run(options: { force?: boolean } = {}): Promise<DigestStats | null> {
     const runDate = dateInParis(this.now());
+
+    // Forcing gives the day back before claiming it again, so the manual run
+    // works for a search configured after the morning pass. Nothing is sent
+    // twice: a match is unique per candidate and offer, and the notification
+    // is created once per day.
+    if (options.force) await this.runs.release(runDate);
+
     const claimed = await this.runs.claim(runDate);
     if (!claimed) return null;
 
@@ -117,6 +130,7 @@ export class JobDigestService implements OnModuleInit {
       aiReranks: 0,
       boardsRead: 0,
       candidatesWithoutOffers: 0,
+      digestProjects: 0,
       errors: [],
       jobsCreated: 0,
       listingsCollected: 0,
@@ -126,11 +140,14 @@ export class JobDigestService implements OnModuleInit {
     };
 
     try {
-      const projects = await this.searchProjects.listDigestEnabled();
-      stats.projects = projects.length;
+      // Collected for everyone who configured a search, then selected only for
+      // those who asked for the morning mail: the offers of a candidate who
+      // turned the digest off still fill the database their search page reads.
+      const allProjects = await this.searchProjects.listAll();
+      stats.projects = allProjects.length;
 
       const listings = await this.collect(
-        projects.map((entry) => entry.project),
+        allProjects.map((entry) => entry.project),
         stats,
       );
       stats.listingsCollected = listings.length;
@@ -138,7 +155,10 @@ export class JobDigestService implements OnModuleInit {
       const attached = await this.deduplicator.attachAll(listings);
       stats.jobsCreated = attached.jobsCreated;
 
-      for (const entry of projects) {
+      const digestProjects = await this.searchProjects.listDigestEnabled();
+      stats.digestProjects = digestProjects.length;
+
+      for (const entry of digestProjects) {
         await this.buildSelection(entry, runDate, stats);
       }
 

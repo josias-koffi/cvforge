@@ -8,6 +8,7 @@ import { PageHeader } from "@/components/layout/page-header"
 import { Button } from "@/components/ui/button"
 import {
   Empty,
+  EmptyContent,
   EmptyDescription,
   EmptyHeader,
   EmptyMedia,
@@ -34,7 +35,7 @@ export default async function OfferSearchPage(props: PageProps<"/offres">) {
     q: readParam(params.q),
     teletravail: readParam(params.teletravail),
   }
-  const { offers, page, pageSize, total } = await searchOffers(filters)
+  const { available, offers, page, pageSize, total } = await searchOffers(filters)
   const visible = offers.filter((offer) => offer.status !== "dismissed")
   const lastPage = Math.max(1, Math.ceil(total / pageSize))
 
@@ -58,7 +59,7 @@ export default async function OfferSearchPage(props: PageProps<"/offres">) {
         <p className="text-muted-foreground text-sm">
           {total === 0
             ? "Aucune offre ne correspond."
-            : `${total} offre(s) — page ${page} sur ${lastPage}.`}
+            : `${total} offre(s) sur ${available} en base — page ${page} sur ${lastPage}.`}
         </p>
 
         {visible.length === 0 ? (
@@ -67,13 +68,22 @@ export default async function OfferSearchPage(props: PageProps<"/offres">) {
               <EmptyMedia variant="icon">
                 <SearchIcon />
               </EmptyMedia>
-              <EmptyTitle>Rien trouvé</EmptyTitle>
+              <EmptyTitle>
+                {available === 0 ? "Notre base est encore vide" : "Rien trouvé"}
+              </EmptyTitle>
               <EmptyDescription>
-                Essayez moins de mots, ou élargissez le département. Notre base ne
-                contient que les offres collectées ces 30 derniers jours pour les
-                recherches des candidats.
+                {available === 0
+                  ? "Les offres sont collectées chaque matin à partir des recherches configurées. Décrivez la vôtre dans « Ma recherche » : dès la collecte suivante, elles apparaîtront ici."
+                  : "Essayez moins de mots, ou élargissez le département. Notre base ne contient que les offres collectées ces 30 derniers jours."}
               </EmptyDescription>
             </EmptyHeader>
+            {available === 0 ? (
+              <EmptyContent>
+                <Button asChild>
+                  <Link href="/ma-recherche">Configurer ma recherche</Link>
+                </Button>
+              </EmptyContent>
+            ) : null}
           </Empty>
         ) : (
           visible.map((offer) => <JobMatchCard key={offer.job.id} match={offer} />)

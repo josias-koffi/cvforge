@@ -292,6 +292,24 @@ Cible front : `apps/web`. `apps/app` est gelée, non touchée.
   en multi-instance grâce au verrou, mais à revoir si le produit passe à une vraie file de jobs.
 - **Volume** : `job_listings` grossit vite. La purge (60 jours) et les index conditionnent le coût.
 
+## 🐛 Corrigé après la mise en staging (2026-09-23)
+
+- **La base d'offres restait vide.** La collecte ne construisait ses requêtes qu'à partir des
+  recherches dont le digest du matin est activé. Sans aucune recherche configurée, zéro requête,
+  zéro offre — et la journée était tout de même verrouillée, donc le script répondait « la collecte
+  a déjà été faite ». Elle part désormais de **toutes** les recherches configurées ; seule la
+  sélection et l'e-mail restent réservés à celles qui ont demandé le digest.
+- **La page de recherche mentait.** « Rien trouvé, essayez moins de mots » s'affichait alors que la
+  base ne contenait rien. Le nombre d'offres détenues remonte maintenant avec les résultats, et
+  l'état vide renvoie vers « Ma recherche ».
+- **`job-digest:run --force`** rend la journée avant de la reprendre : une recherche configurée
+  après le passage du matin n'attend plus le lendemain. Rien n'est envoyé deux fois (unicité
+  candidat × offre, notification une fois par jour).
+- **`job-digest:status`** dit ce que chaque collecte a réellement fait et ce que les tables
+  contiennent — « la collecte a tourné » et « la collecte a trouvé » sont deux choses différentes.
+- **Les scripts ne tournaient pas dans le conteneur** (`tsx` absent de l'image de production) :
+  variantes `*:built` sur le code compilé.
+
 ## ⚠️ To Clarify
 
 1. ~~Quota France Travail réel de notre application~~ → **tranché le 2026-09-23** en lisant la

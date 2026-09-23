@@ -231,6 +231,15 @@ export class PgJobDigestRunsStore implements JobDigestRunsStore {
       .where(eq(jobDigestRuns.runDate, runDate));
   }
 
+  async release(runDate: string): Promise<boolean> {
+    const rows = await this.db
+      .delete(jobDigestRuns)
+      .where(eq(jobDigestRuns.runDate, runDate))
+      .returning({ runDate: jobDigestRuns.runDate });
+
+    return rows.length > 0;
+  }
+
   async find(runDate: string) {
     const [row] = await this.db
       .select()

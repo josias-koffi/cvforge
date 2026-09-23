@@ -166,6 +166,15 @@ describe("PgJobsStore.searchJobs", () => {
     expect(firstPage.jobs[0]?.id).not.toBe(secondPage.jobs[0]?.id);
   });
 
+  it("says how many offers the base holds, criteria aside", async () => {
+    // "Your search matched nothing" and "we have nothing" read the same to a
+    // candidate; only this number tells them apart.
+    const found = await store.searchJobs({ ...BASE, query: "introuvable" });
+
+    expect(found.total).toBe(0);
+    expect(found.available).toBe(4);
+  });
+
   it("ignores an offer older than the window asked for", async () => {
     expect((await store.searchJobs({ ...BASE, maxAgeDays: 0 })).total).toBe(0);
   });

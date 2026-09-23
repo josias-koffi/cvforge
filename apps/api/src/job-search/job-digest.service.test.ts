@@ -123,6 +123,7 @@ interface Harness {
   announced: Array<{ emailEnabled: boolean; totalCount: number }>;
   written: NewJobMatch[];
   claims: string[];
+  released: string[];
   finished: Array<{ status: string }>;
   consumed: string[];
   chat: ReturnType<typeof vi.fn>;
@@ -132,6 +133,8 @@ interface Harness {
 
 function createService(options: {
   projects?: Array<{ userEmail: string; project: SearchProject }>;
+  /** Searches the collection works from, when they differ from the digest ones. */
+  allProjects?: Array<{ userEmail: string; project: SearchProject }>;
   jobs?: StoredJob[];
   listings?: StoredJobListing[];
   alreadyClaimed?: boolean;
@@ -156,7 +159,15 @@ function createService(options: {
           '{"classement":[{"id":"job-1","raison":"Même stack que la vôtre."}]}'),
   );
 
-  const searchProjects: Pick<SearchProjectsStore, "listDigestEnabled"> = {
+  const searchProjects: Pick<
+    SearchProjectsStore,
+    "listAll" | "listDigestEnabled"
+  > = {
+    listAll: async () =>
+      options.allProjects ??
+      options.projects ?? [
+        { project: makeProject(), userEmail: "user@example.com" },
+      ],
     listDigestEnabled: async () =>
       options.projects ?? [{ project: makeProject(), userEmail: "user@example.com" }],
   };
@@ -204,7 +215,12 @@ function createService(options: {
     listProposedJobIds: async () => [],
   } as unknown as JobMatchesStore;
 
+  const released: string[] = [];
   const runs: JobDigestRunsStore = {
+    release: async (runDate) => {
+      released.push(runDate);
+      return true;
+    },
     claim: async (runDate) => {
       claims.push(runDate);
       return options.alreadyClaimed
@@ -278,6 +294,7 @@ function createService(options: {
     consumed,
     finished,
     isStillOpen,
+    released,
     service: new JobDigestService(
       searchProjects,
       profiles,
@@ -333,11 +350,42 @@ describe("JobDigestService", () => {
     expect(harness.finished).toEqual([{ status: "done" }]);
   });
 
+  it("collects for a search even when its owner declined the morning mail", async () => {
+    // Otherwise the offer database only ever holds what the digest users
+    // asked for, and the search page is empty for everybody else.
+    const harness = createService({
+      allProjects: [
+        { project: makeProject(), userEmail: "chercheur@example.com" },
+      ],
+      projects: [],
+    });
+
+    const stats = await harness.service.run();
+
+    expect(stats).toMatchObject({
+      digestProjects: 0,
+      listingsCollected: 2,
+      matchesWritten: 0,
+      projects: 1,
+    });
+    expect(harness.written).toEqual([]);
+  });
+
   it("does nothing when another instance already owns the day", async () => {
     const harness = createService({ alreadyClaimed: true });
 
     expect(await harness.service.run()).toBeNull();
     expect(harness.written).toEqual([]);
+    expect(harness.released).toEqual([]);
+  });
+
+  it("gives the day back when the run is forced", async () => {
+    // A search configured after the morning pass would otherwise wait a day.
+    const harness = createService();
+
+    await harness.service.run({ force: true });
+
+    expect(harness.released).toEqual(["2026-09-23"]);
   });
 
   it("waits for the morning before running", async () => {

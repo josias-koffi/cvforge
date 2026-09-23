@@ -15,7 +15,8 @@ import { JobDigestService } from "./job-digest.service";
  *
  * It claims the day like the scheduled run does, so a second run on the same
  * day answers "already claimed" and writes nothing. That is the lock working,
- * not a failure.
+ * not a failure. Pass `--force` to collect again anyway — needed when a search
+ * was configured after the morning pass.
  */
 async function main() {
   loadEnvironmentFiles();
@@ -25,7 +26,10 @@ async function main() {
   });
 
   try {
-    const stats = await app.get(JobDigestService).run();
+    // `pnpm run` forwards a `--` separator as a real argument; only the flag
+    // matters here.
+    const force = process.argv.slice(2).includes("--force");
+    const stats = await app.get(JobDigestService).run({ force });
 
     if (!stats) {
       console.log("La collecte du jour a déjà été faite (ou tourne ailleurs).");

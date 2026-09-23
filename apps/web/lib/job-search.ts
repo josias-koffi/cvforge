@@ -77,6 +77,8 @@ export async function searchOffers(filters: OfferSearchFilters) {
   return api<{
     offers: OfferSearchResult[]
     total: number
+    /** Offers held in the base, criteria aside: an empty base is not a failed search. */
+    available: number
     page: number
     pageSize: number
   }>("/job-search/offers", {

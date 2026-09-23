@@ -12,9 +12,11 @@
     "ft:smoke": "tsx src/job-search/sources/france-travail.smoke.main.ts",
     "boards:discover": "tsx src/job-search/sources/boards/crawl-discovery.main.ts",
     "job-digest:run": "tsx src/job-search/job-digest.main.ts",
+    "job-digest:status": "tsx src/job-search/job-digest-status.main.ts",
     "ft:smoke:built": "node dist/apps/api/src/job-search/sources/france-travail.smoke.main.js",
     "boards:discover:built": "node dist/apps/api/src/job-search/sources/boards/crawl-discovery.main.js",
-    "job-digest:run:built": "node dist/apps/api/src/job-search/job-digest.main.js"
+    "job-digest:run:built": "node dist/apps/api/src/job-search/job-digest.main.js",
+    "job-digest:status:built": "node dist/apps/api/src/job-search/job-digest-status.main.js"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.8",

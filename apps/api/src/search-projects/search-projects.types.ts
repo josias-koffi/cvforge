@@ -13,6 +13,13 @@ export type SearchProjectsStore = {
   listDigestEnabled(): Promise<
     Array<{ userEmail: string; project: SearchProject }>
   >;
+  /**
+   * Every search, morning selection or not. The collection reads this one:
+   * a candidate who turned the daily email off still configured what they are
+   * looking for, and the offers they want belong in the database all the same
+   * — that is what the search page serves.
+   */
+  listAll(): Promise<Array<{ userEmail: string; project: SearchProject }>>;
   save(userEmail: string, project: SearchProject): Promise<SearchProject>;
   deleteByUserEmail(userEmail: string): Promise<number>;
 };

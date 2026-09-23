@@ -1109,3 +1109,20 @@
   ATS, alerte de solde OpenRouter). Un script qui ferme la base juste après voyait cette tâche
   échouer sur un pool mort et afficher une trace qui ressemblait à un échec du script.
   `onModuleDestroy` attend désormais le travail lancé au démarrage ; test dédié.
+
+### 2026-09-23 — « La collecte a tourné » n'est pas « la collecte a trouvé »
+- **Constat** : en staging, `/offres` était vide et le script répondait « la collecte du jour a déjà
+  été faite ». Les deux étaient vrais : la journée est verrouillée **avant** d'appeler la moindre
+  source, donc un passage qui ne collecte rien la garde quand même.
+- **Cause** : la collecte ne construisait ses requêtes qu'à partir des recherches dont le digest est
+  activé (`listDigestEnabled`). Aucune recherche configurée ⇒ aucune requête ⇒ aucune offre, quelles
+  que soient les sources. Corrigé : on collecte pour **toutes** les recherches (`listAll`), la
+  sélection et l'e-mail restent réservés au digest.
+- **Leçon** : une fonctionnalité qui sert à tous ne doit pas dépendre d'un réglage individuel. La
+  page « chercher dans notre base » n'avait de contenu que si quelqu'un avait activé l'e-mail.
+- **Leçon** : un état vide doit distinguer « ta recherche ne donne rien » de « nous n'avons rien ».
+  `searchJobs` renvoie désormais `available`, le volume détenu hors critères.
+- **Leçon** : sans observabilité, ce diagnostic était de la devinette. `job-digest:status` affiche
+  les compteurs et les `stats` des dernières collectes ; c'est lui qui a tranché en une commande.
+- **Leçon (sur moi)** : `vitest` ne typecheck pas. Un double de test complété sans mettre à jour son
+  interface passe les tests et casse `pnpm build`. Lancer `tsc --noEmit` avant de conclure.
