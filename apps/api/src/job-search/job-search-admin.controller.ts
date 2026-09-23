@@ -5,6 +5,8 @@ import {
   Get,
   HttpCode,
   Inject,
+  Param,
+  Patch,
   Post,
   Query,
   Req,
@@ -13,10 +15,17 @@ import { AuthService } from "../auth/auth.service";
 import { requireAdminSession } from "../auth/request-session";
 import { BoardsService } from "./boards.service";
 import { JobDigestService } from "./job-digest.service";
+import { jobSources, type JobSource } from "./job-search.types";
+import {
+  JOB_SOURCES_STORE,
+  type JobSourcesStore,
+  type JobSourceState,
+} from "./job-sources.types";
 import {
   JOB_DIGEST_RUNS_STORE,
   type JobDigestRunsStore,
 } from "./matches.types";
+import { resolveFranceTravailConfig } from "./sources/france-travail.config";
 import { importSeededBoards } from "./sources/boards/boards-seed";
 
 type RequestLike = {
@@ -42,7 +51,61 @@ export class JobSearchAdminController {
     @Inject(JobDigestService) private readonly digest: JobDigestService,
     @Inject(BoardsService) private readonly boards: BoardsService,
     @Inject(JOB_DIGEST_RUNS_STORE) private readonly runs: JobDigestRunsStore,
+    @Inject(JOB_SOURCES_STORE) private readonly sources: JobSourcesStore,
   ) {}
+
+  /**
+   * Every source the code knows, with what is stored about it.
+   *
+   * The list comes from the code, not from the table: a source is described
+   * once, and one added later shows up without a migration. Availability and
+   * activation are reported apart — a source with no credentials is inert
+   * whatever the switch says, and the screen must not conflate the two.
+   */
+  @Get("sources")
+  async listSources(@Req() request: RequestLike) {
+    requireAdminSession(this.authService, request);
+
+    const stored = new Map(
+      (await this.sources.list()).map((state) => [state.source, state]),
+    );
+    const collectable = new Set<string>([
+      ...this.boards.supportedProviders(),
+      "france_travail",
+    ]);
+
+    return {
+      sources: jobSources.map((source) => ({
+        ...defaultState(source),
+        ...stored.get(source),
+        /** Has an adapter at all — unwritten sources are shown as such. */
+        implemented: collectable.has(source),
+        /** Configured to be able to answer, credentials included. */
+        available: isAvailable(source),
+      })),
+    };
+  }
+
+  @Patch("sources/:source")
+  async setSourceEnabled(
+    @Param("source") source: string,
+    @Body() body: { enabled?: boolean },
+    @Req() request: RequestLike,
+  ) {
+    requireAdminSession(this.authService, request);
+
+    if (typeof body.enabled !== "boolean") {
+      throw new BadRequestException("Le champ `enabled` est requis.");
+    }
+
+    if (!(jobSources as readonly string[]).includes(source)) {
+      throw new BadRequestException("Source inconnue.");
+    }
+
+    return {
+      source: await this.sources.setEnabled(source as JobSource, body.enabled),
+    };
+  }
 
   @Get("runs")
   async listRuns(
@@ -93,4 +156,30 @@ export class JobSearchAdminController {
 
     return importSeededBoards(this.boards);
   }
+}
+
+function defaultState(source: JobSource): JobSourceState {
+  return {
+    consecutiveFailures: 0,
+    enabled: true,
+    lastListingCount: 0,
+    lastRunAt: null,
+    lastStatus: null,
+    source,
+  };
+}
+
+/**
+ * Whether the source could answer at all today.
+ *
+ * Only France Travail needs credentials so far; the recruiting software boards
+ * are public, and a source with no adapter is never available whatever the
+ * environment says.
+ */
+function isAvailable(source: JobSource): boolean {
+  if (source === "france_travail") {
+    return resolveFranceTravailConfig().enabled;
+  }
+
+  return !["adzuna", "la_bonne_alternance"].includes(source);
 }

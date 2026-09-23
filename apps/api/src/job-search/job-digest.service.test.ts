@@ -8,10 +8,12 @@ import type { BoardsService } from "./boards.service";
 import type { JobDeduplicator } from "./dedup/job-deduplicator";
 import { dateInParis, hourInParis, JobDigestService } from "./job-digest.service";
 import type {
+  JobSource,
   JobSourceAdapter,
   JobSourceQuery,
   NormalizedJobListing,
 } from "./job-search.types";
+import type { JobSourcesStore } from "./job-sources.types";
 import type { JobsStore, StoredJob, StoredJobListing } from "./jobs.types";
 import type {
   JobDigestRunsStore,
@@ -132,6 +134,7 @@ interface Harness {
   claims: string[];
   released: string[];
   recovered: number[];
+  sourceRuns: Array<{ source: string; listingCount: number }>;
   registered: string[][];
   searched: JobSourceQuery[];
   finished: Array<{ status: string }>;
@@ -143,6 +146,8 @@ interface Harness {
 
 function createService(options: {
   projects?: Array<{ userEmail: string; project: SearchProject }>;
+  /** Sources an admin switched off. */
+  disabledSources?: JobSource[];
   /** Original links carried by the collected adverts. */
   partnerUrls?: string[];
   /** Searches the collection works from, when they differ from the digest ones. */
@@ -259,6 +264,16 @@ function createService(options: {
     },
   };
 
+  const sourceRuns: Array<{ source: string; listingCount: number }> = [];
+  const sourceStates: JobSourcesStore = {
+    list: async () => [],
+    listDisabled: async () => new Set(options.disabledSources ?? []),
+    recordRun: async (source, outcome) => {
+      sourceRuns.push({ listingCount: outcome.listingCount, source });
+    },
+    setEnabled: async () => null,
+  };
+
   const registered: string[][] = [];
   const boards = {
     collect: async () => ({
@@ -326,6 +341,7 @@ function createService(options: {
     finished,
     recovered,
     registered,
+    sourceRuns,
     searched,
     isStillOpen,
     released,
@@ -335,6 +351,7 @@ function createService(options: {
       jobs,
       matches,
       runs,
+      sourceStates,
       boards,
       deduplicator,
       [source],
@@ -452,6 +469,27 @@ describe("JobDigestService", () => {
     await harness.service.run();
 
     expect(harness.searched.at(-1)?.publishedSinceDays).toBe(1);
+  });
+
+  it("does not call a source an admin switched off", async () => {
+    const harness = createService({ disabledSources: ["france_travail"] });
+
+    const stats = await harness.service.run();
+
+    // The board listing still arrives; only the switched-off source is silent.
+    expect(harness.searched).toEqual([]);
+    expect(stats?.sourcesSkipped).toEqual(["france_travail"]);
+    expect(stats?.listingsCollected).toBe(1);
+  });
+
+  it("records what each source gave, for the admin screen", async () => {
+    const harness = createService();
+
+    await harness.service.run();
+
+    expect(harness.sourceRuns).toEqual([
+      { listingCount: 1, source: "france_travail" },
+    ]);
   });
 
   it("collects without selecting or notifying anybody", async () => {

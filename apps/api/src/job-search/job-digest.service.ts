@@ -21,6 +21,7 @@ import type {
   JobMatchesStore,
   NewJobMatch,
 } from "./matches.types";
+import type { JobSourcesStore } from "./job-sources.types";
 import { buildSourceQueries } from "./sources/france-travail.query";
 import {
   DEFAULT_SELECTION_SIZE,
@@ -72,6 +73,8 @@ export interface DigestStats {
   projects: number;
   /** Companies added to the registry from the adverts' original links. */
   boardsDiscovered: number;
+  /** Sources an admin switched off, named rather than silently missing. */
+  sourcesSkipped: string[];
   /** Among them, those that also asked for the morning selection. */
   digestProjects: number;
   listingsCollected: number;
@@ -98,6 +101,7 @@ export class JobDigestService implements OnModuleInit {
     private readonly jobs: JobsStore,
     private readonly matches: JobMatchesStore,
     private readonly runs: JobDigestRunsStore,
+    private readonly sourceStates: JobSourcesStore,
     private readonly boards: BoardsService,
     private readonly deduplicator: JobDeduplicator,
     private readonly sources: JobSourceAdapter[],
@@ -199,6 +203,7 @@ export class JobDigestService implements OnModuleInit {
       digestProjects: 0,
       errors: [],
       jobsCreated: 0,
+      sourcesSkipped: [],
       listingsCollected: 0,
       matchesWritten: 0,
       notificationsSent: 0,
@@ -252,22 +257,51 @@ export class JobDigestService implements OnModuleInit {
   ): Promise<NormalizedJobListing[]> {
     const listings: NormalizedJobListing[] = [];
     const queries = buildSourceQueries(projects, sinceDays);
+    // Read at every run, not at boot: the adapters are built once when the
+    // module is constructed, so a switch flipped in the admin would otherwise
+    // stay invisible until the next deployment.
+    const disabled = await this.sourceStates.listDisabled();
 
     for (const source of this.sources) {
+      if (disabled.has(source.source)) {
+        stats.sourcesSkipped.push(source.source);
+        continue;
+      }
+
+      let collected = 0;
+      let failure = "";
+
       for (const query of queries) {
         try {
-          listings.push(...(await source.search(query)));
+          const found = await source.search(query);
+          collected += found.length;
+          listings.push(...found);
         } catch (error) {
           // One failed query costs its offers, never the whole morning.
-          stats.errors.push(`${source.source}: ${String(error)}`);
+          failure = String(error);
+          stats.errors.push(`${source.source}: ${failure}`);
         }
       }
+
+      await this.sourceStates.recordRun(source.source, {
+        failed: Boolean(failure),
+        listingCount: collected,
+        status: failure ? failure : "ok",
+      });
     }
 
     try {
-      const boards = await this.boards.collect();
+      const boards = await this.boards.collect(disabled);
       stats.boardsRead = boards.boardsRead;
       listings.push(...boards.listings);
+
+      for (const [provider, tally] of boards.byProvider) {
+        await this.sourceStates.recordRun(provider, {
+          failed: tally.failures > 0,
+          listingCount: tally.listingCount,
+          status: tally.failures > 0 ? `${tally.failures} échec(s)` : "ok",
+        });
+      }
     } catch (error) {
       stats.errors.push(`boards: ${String(error)}`);
     }

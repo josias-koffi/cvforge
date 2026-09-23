@@ -145,6 +145,26 @@ describe("BoardsService.collect", () => {
       { boardToken: "doctolib", failed: false, gone: undefined },
       { boardToken: "swile", failed: false, gone: undefined },
     ]);
+    // Reported per provider: the admin screen says what each one gave, rather
+    // than "never called" about a software that was just read.
+    expect(report.byProvider.get("greenhouse")).toEqual({
+      failures: 0,
+      listingCount: 1,
+    });
+  });
+
+  it("skips a provider an admin switched off, without counting it", async () => {
+    const { store } = createStore([
+      makeBoard({ boardToken: "doctolib", provider: "greenhouse" }),
+    ]);
+    const http = createHttp(() => jsonResponse([]));
+
+    const report = await new BoardsService(store, http).collect(
+      new Set(["greenhouse"]),
+    );
+
+    expect(report.boardsRead).toBe(0);
+    expect(report.byProvider.size).toBe(0);
   });
 
   it("counts a failure against one company and carries on with the rest", async () => {

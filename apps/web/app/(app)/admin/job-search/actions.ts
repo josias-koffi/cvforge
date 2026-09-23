@@ -78,6 +78,19 @@ export async function importSeedBoards() {
   }
 }
 
+export async function setSourceEnabled(source: string, enabled: boolean) {
+  return mutate(
+    () =>
+      api(`/admin/job-search/sources/${encodeURIComponent(source)}`, {
+        body: { enabled },
+        method: "PATCH",
+      }),
+    enabled
+      ? "Source réactivée. Elle sera interrogée à la prochaine collecte."
+      : "Source coupée. Elle ne sera plus appelée, même pour vérifier une offre."
+  )
+}
+
 /** Adds a company from the URL of one of its adverts. */
 export async function addBoard(url: string, companyName: string) {
   return mutate(

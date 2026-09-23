@@ -1215,3 +1215,22 @@
   statement ». Et ne jamais découper ce fichier en coupant sur « ; » : un commentaire en contient.
 - **Verified** : 6 tests du verrou sur une vraie base, et dans le navigateur une collecte lancée,
   suivie jusqu'à « Terminée », sans toucher aux chiffres de la passe du matin.
+
+### 2026-09-23 — Une table de référence ne doit pas redire ce que le code sait
+- **Constat** : j'avais pré-rempli `job_sources` par migration avec les onze sources connues. Les
+  tests l'ont révélé (le `reset()` des tests tronque tout), mais le vrai problème était ailleurs :
+  la liste des sources existait alors à deux endroits, SQL et TypeScript, à tenir en phase à la main.
+- **Solution** : le code porte la liste (`jobSources`), la table ne stocke que les **dérogations** et
+  le dernier résultat. Le contrôleur compose les deux. `setEnabled` et `recordRun` font un upsert.
+- **Leçon** : pour un réglage qui doit « échouer ouvert », exposer le **négatif**. `listDisabled()`
+  permet qu'une source sans ligne soit active ; un `listEnabled()` aurait silencieusement ignoré
+  toute source ajoutée plus tard.
+- **Leçon** : un interrupteur en base est invisible si les adaptateurs sont construits une fois au
+  démarrage du module. Le filtrage doit se faire **à l'exécution**, et dans *tous* les chemins —
+  la collecte, mais aussi `isStillOpen`, qui est appelé juste avant de débiter un crédit.
+- **Leçon** : si un écran affiche une colonne, quelque chose doit la remplir. Les fournisseurs ATS
+  seraient restés « jamais appelés » parce que seul le tour des sources globales appelait
+  `recordRun` ; `BoardsService` rapporte maintenant par fournisseur.
+- **Verified** : Greenhouse coupé depuis l'admin, collecte relancée — 22 → 18 entreprises lues,
+  414 → 283 annonces. Une erreur d'hydratation observée au passage vient d'une extension du
+  navigateur (`cz-shortcut-listen` sur `<body>`), pas du code.

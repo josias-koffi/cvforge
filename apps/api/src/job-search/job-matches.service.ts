@@ -2,6 +2,7 @@ import { Injectable, Logger } from "@nestjs/common";
 import type { ApplicationsService } from "../applications/applications.service";
 import { dateInParis } from "./job-digest.service";
 import type { JobSourceAdapter } from "./job-search.types";
+import type { JobSourcesStore } from "./job-sources.types";
 import type {
   JobSearchFilters,
   JobsStore,
@@ -52,6 +53,7 @@ export class JobMatchesService {
     private readonly jobs: JobsStore,
     private readonly applications: ApplicationsService,
     private readonly sources: JobSourceAdapter[],
+    private readonly sourceStates: JobSourcesStore,
     private readonly now: () => number = Date.now,
   ) {}
 
@@ -188,18 +190,22 @@ export class JobMatchesService {
   /**
    * Asks the sources that can answer. Silence is not a closure: only an
    * explicit "gone" from every open advert closes the offer.
+   *
+   * A source an admin switched off is not asked at all — switching it off has
+   * to stop every call to it, not only the collection.
    */
   private async isStillOpen(listings: StoredJobListing[]): Promise<boolean> {
     const open = listings.filter((listing) => !listing.closedAt);
     if (open.length === 0) return false;
 
+    const disabled = await this.sourceStates.listDisabled();
     let closedCount = 0;
 
     for (const listing of open) {
       const source = this.sources.find(
         (candidate) => candidate.source === listing.source,
       );
-      if (!source) continue;
+      if (!source || disabled.has(listing.source)) continue;
 
       if ((await source.isStillOpen(listing.externalId)) === false) {
         closedCount += 1;

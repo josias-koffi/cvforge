@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 
 import { BoardsTable } from "@/components/admin/job-search/boards-table"
 import { RunsPanel } from "@/components/admin/job-search/runs-panel"
+import { SourcesTable } from "@/components/admin/job-search/sources-table"
 import { JobSearchTabs } from "@/components/admin/job-search/job-search-tabs"
 import { MergesTable } from "@/components/admin/job-search/merges-table"
 import { PageHeader } from "@/components/layout/page-header"
@@ -10,6 +11,7 @@ import type {
   BoardProvider,
   DigestRun,
   FuzzyMerge,
+  JobSourceState,
   RegisteredBoard,
 } from "@/lib/job-boards"
 import { requireAdminSession } from "@/lib/session"
@@ -19,8 +21,8 @@ export const metadata: Metadata = { title: "Collecte d'offres" }
 /**
  * Where the offer collection is watched and overruled.
  *
- * Both tabs read endpoints that already existed and had no interface: seeing
- * the registry required a shell in the container.
+ * Everything here used to need a shell in the container: seeing the registry,
+ * launching a collection, cutting a source off.
  */
 export default async function AdminJobSearchPage(
   props: PageProps<"/admin/job-search">
@@ -29,18 +31,20 @@ export default async function AdminJobSearchPage(
 
   const params = await props.searchParams
   const provider = typeof params.provider === "string" ? params.provider : ""
-  const [{ boards, supportedProviders }, { merges }, { runs }] = await Promise.all([
-    api<{ boards: RegisteredBoard[]; supportedProviders: BoardProvider[] }>(
-      "/admin/job-boards",
-      { query: { provider: provider || undefined } }
-    ),
-    api<{ merges: FuzzyMerge[] }>("/admin/job-boards/merges", {
-      query: { limit: 50 },
-    }),
-    api<{ runs: DigestRun[] }>("/admin/job-search/runs", {
-      query: { limit: 20 },
-    }),
-  ])
+  const [{ boards, supportedProviders }, { merges }, { runs }, { sources }] =
+    await Promise.all([
+      api<{ boards: RegisteredBoard[]; supportedProviders: BoardProvider[] }>(
+        "/admin/job-boards",
+        { query: { provider: provider || undefined } }
+      ),
+      api<{ merges: FuzzyMerge[] }>("/admin/job-boards/merges", {
+        query: { limit: 50 },
+      }),
+      api<{ runs: DigestRun[] }>("/admin/job-search/runs", {
+        query: { limit: 20 },
+      }),
+      api<{ sources: JobSourceState[] }>("/admin/job-search/sources"),
+    ])
 
   return (
     <>
@@ -59,6 +63,7 @@ export default async function AdminJobSearchPage(
           }
           merges={<MergesTable merges={merges} />}
           runs={<RunsPanel runs={runs} />}
+          sources={<SourcesTable sources={sources} />}
         />
       </div>
     </>

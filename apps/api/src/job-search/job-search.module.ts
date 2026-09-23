@@ -31,6 +31,8 @@ import {
   type JobDigestRunsStore,
   type JobMatchesStore,
 } from "./matches.types";
+import { PgJobSourcesStore } from "./job-sources.pg-store";
+import { JOB_SOURCES_STORE, type JobSourcesStore } from "./job-sources.types";
 import { PgJobsStore } from "./jobs.pg-store";
 import { JOBS_STORE, type JobsStore } from "./jobs.types";
 import { PgJobBoardsStore } from "./boards.pg-store";
@@ -94,14 +96,31 @@ import { JobMatchesService } from "./job-matches.service";
       useFactory: (db: Database) => new PgJobDigestRunsStore(db),
     },
     {
+      provide: JOB_SOURCES_STORE,
+      inject: [DATABASE],
+      useFactory: (db: Database) => new PgJobSourcesStore(db),
+    },
+    {
       provide: JobMatchesService,
-      inject: [JOB_MATCHES_STORE, JOBS_STORE, ApplicationsService],
+      inject: [
+        JOB_MATCHES_STORE,
+        JOBS_STORE,
+        ApplicationsService,
+        JOB_SOURCES_STORE,
+      ],
       useFactory: (
         matches: JobMatchesStore,
         jobsStore: JobsStore,
         applications: ApplicationsService,
+        sourceStates: JobSourcesStore,
       ) =>
-        new JobMatchesService(matches, jobsStore, applications, buildJobSources()),
+        new JobMatchesService(
+          matches,
+          jobsStore,
+          applications,
+          buildJobSources(),
+          sourceStates,
+        ),
     },
     {
       provide: JobDigestService,
@@ -111,6 +130,7 @@ import { JobMatchesService } from "./job-matches.service";
         JOBS_STORE,
         JOB_MATCHES_STORE,
         JOB_DIGEST_RUNS_STORE,
+        JOB_SOURCES_STORE,
         BoardsService,
         JobDeduplicator,
         CreditsService,
@@ -123,6 +143,7 @@ import { JobMatchesService } from "./job-matches.service";
         jobsStore: JobsStore,
         matches: JobMatchesStore,
         runs: JobDigestRunsStore,
+        sourceStates: JobSourcesStore,
         boards: BoardsService,
         deduplicator: JobDeduplicator,
         credits: CreditsService,
@@ -135,6 +156,7 @@ import { JobMatchesService } from "./job-matches.service";
           jobsStore,
           matches,
           runs,
+          sourceStates,
           boards,
           deduplicator,
           buildJobSources(),
@@ -152,6 +174,7 @@ import { JobMatchesService } from "./job-matches.service";
     JobDigestService,
     JOB_BOARDS_STORE,
     JOB_MATCHES_STORE,
+    JOB_SOURCES_STORE,
     JOBS_STORE,
   ],
 })

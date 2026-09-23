@@ -115,3 +115,17 @@ export const RUN_STAT_LABELS: Record<string, string> = {
   notificationsSent: "notifications",
   projects: "recherches",
 }
+
+/** A source as the admin sees it: what it is, and what it last did. */
+export interface JobSourceState {
+  source: string
+  enabled: boolean
+  /** Has an adapter at all. */
+  implemented: boolean
+  /** Configured to be able to answer, credentials included. */
+  available: boolean
+  lastRunAt: string | null
+  lastStatus: string | null
+  lastListingCount: number
+  consecutiveFailures: number
+}

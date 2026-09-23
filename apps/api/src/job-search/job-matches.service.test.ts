@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type { ApplicationsService } from "../applications/applications.service";
 import { JobMatchesService } from "./job-matches.service";
-import type { JobSourceAdapter } from "./job-search.types";
+import type { JobSource, JobSourceAdapter } from "./job-search.types";
 import type { JobsStore, StoredJob, StoredJobListing } from "./jobs.types";
 import type { JobMatchWithJob, JobMatchesStore } from "./matches.types";
 
@@ -82,6 +82,8 @@ function createService(options: {
   searchResults?: StoredJob[];
   knownStatuses?: Map<string, JobMatchWithJob>;
   missingJob?: boolean;
+  /** Sources an admin switched off: never called, not even to check an offer. */
+  disabledSources?: JobSource[];
 } = {}) {
   const created: unknown[] = [];
   const statuses: Array<{ status: string; applicationId?: string }> = [];
@@ -152,6 +154,12 @@ function createService(options: {
       jobs,
       applications,
       [source],
+      {
+        list: async () => [],
+        listDisabled: async () => new Set(options.disabledSources ?? []),
+        recordRun: async () => {},
+        setEnabled: async () => null,
+      },
       () => NOW,
     ),
     statuses,
@@ -284,6 +292,21 @@ describe("JobMatchesService", () => {
       expect(harness.importFromUrl).not.toHaveBeenCalled();
       // The advert is marked closed, so tomorrow's selection skips it.
       expect(harness.closed).toEqual(["1"]);
+    });
+
+    it("never calls a source an admin switched off, even to check", async () => {
+      // Switching a source off has to stop every call to it, not only the
+      // collection — otherwise the candidate pays for a check nobody wanted.
+      const harness = createService({
+        disabledSources: ["france_travail"],
+        isStillOpen: false,
+      });
+
+      // Unasked, so the offer is not declared closed, and the candidate applies.
+      expect(
+        (await harness.service.applyToJob("user@example.com", "job-1")).outcome,
+      ).toBe("applied");
+      expect(harness.closed).toEqual([]);
     });
 
     it("goes ahead when the check could not answer", async () => {

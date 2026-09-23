@@ -19,6 +19,12 @@ export interface BoardCollectionReport {
   boardsFailed: number;
   boardsRetired: number;
   listings: NormalizedJobListing[];
+  /**
+   * What each recruiting software gave, so the admin screen can report a
+   * provider the same way it reports France Travail — rather than showing
+   * "never called" about one that was just read.
+   */
+  byProvider: Map<BoardProvider, { listingCount: number; failures: number }>;
 }
 
 /**
@@ -103,26 +109,40 @@ export class BoardsService {
   /**
    * One pass over the whole registry. A company that fails is counted against
    * itself and skipped; it never stops the others.
+   *
+   * `disabledProviders` silences a whole recruiting software at once, without
+   * touching the setting of each company it hosts.
    */
-  async collect(): Promise<BoardCollectionReport> {
+  async collect(
+    disabledProviders: ReadonlySet<string> = new Set(),
+  ): Promise<BoardCollectionReport> {
     const boards = await this.store.listEnabled();
     const report: BoardCollectionReport = {
       boardsFailed: 0,
       boardsRead: 0,
       boardsRetired: 0,
+      byProvider: new Map(),
       listings: [],
     };
 
     for (const board of boards) {
       const adapter = this.adapters.get(board.provider);
       // A provider with no adapter yet stays registered and untouched: no
-      // fetch, no failure counted against it.
-      if (!adapter) continue;
+      // fetch, no failure counted against it. A provider an admin switched
+      // off is skipped the same way — its companies keep their own setting.
+      if (!adapter || disabledProviders.has(board.provider)) continue;
+
+      const tally = report.byProvider.get(board.provider) ?? {
+        failures: 0,
+        listingCount: 0,
+      };
+      report.byProvider.set(board.provider, tally);
 
       try {
         const listings = await adapter.fetchBoard(board.boardToken);
         report.listings.push(...listings);
         report.boardsRead += 1;
+        tally.listingCount += listings.length;
         await this.store.recordFetch(board.provider, board.boardToken, {
           failed: false,
           jobCount: listings.length,
@@ -130,6 +150,7 @@ export class BoardsService {
         });
       } catch (error) {
         report.boardsFailed += 1;
+        tally.failures += 1;
         const gone = error instanceof BoardNotFoundError;
         if (gone) report.boardsRetired += 1;
 

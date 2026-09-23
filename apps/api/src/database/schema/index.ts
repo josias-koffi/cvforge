@@ -7,6 +7,7 @@ export * from "./credits";
 export * from "./offers";
 export * from "./interview";
 export * from "./job-boards";
+export * from "./job-sources";
 export * from "./jobs";
 export * from "./job-matches";
 export * from "./legal";

@@ -384,6 +384,29 @@ instances. Une ligne `running` de plus de deux heures est déclarée échouée a
 - **Vérifié dans le navigateur** : collecte lancée, ligne « En cours » puis « Terminée — 22
   entreprises lues · 413 annonces », bouton réactivé tout seul, et **les chiffres du matin intacts**.
 
+### Couper une source sans redéployer (2026-09-23, lot 4)
+
+Table `job_sources` (migration `0026`), calquée sur `job_boards`. Deux questions étaient confondues
+et restent désormais séparées à l'écran :
+
+- **l'environnement décide de la disponibilité** — une source sans identifiants est muette quoi
+  qu'il arrive ;
+- **la table décide de l'activation** — couper une source configurée, sans toucher au déploiement.
+
+- **La table ne pré-remplit pas la liste des sources** : le code la porte déjà (`jobSources`), et
+  l'écrire deux fois obligerait à tenir deux listes en phase. Une source sans ligne est active et
+  n'a jamais tourné ; le contrôleur compose la liste du code avec l'état stocké.
+- `listDisabled()` et non `listEnabled()` : seul le négatif permet qu'une source ajoutée plus tard
+  soit collectée dès que son adaptateur arrive, au lieu d'être ignorée faute de ligne.
+- **Lu à chaque exécution**, pas au démarrage : les adaptateurs sont construits une fois à la
+  construction du module, un interrupteur en base serait donc resté invisible jusqu'au déploiement
+  suivant. `JobMatchesService` l'honore aussi — couper une source doit arrêter **tous** les appels,
+  y compris la vérification qui précède un débit de crédit.
+- Chaque source rapporte ce qu'elle a donné, **y compris les logiciels de recrutement** : sans cela
+  l'écran aurait affiché « jamais appelée » pour un fournisseur lu à l'instant.
+- **Vérifié de bout en bout** : Greenhouse coupé depuis l'écran, collecte relancée — 22 entreprises
+  lues deviennent 18, et 414 annonces deviennent 283. Source réactivée ensuite.
+
 ## ⚠️ To Clarify
 
 1. ~~Quota France Travail réel de notre application~~ → **tranché le 2026-09-23** en lisant la
