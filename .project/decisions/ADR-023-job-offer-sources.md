@@ -38,8 +38,8 @@ aux nouveaux clients et s'arrête le 1er janvier 2027.
 Une collecte quotidienne, groupée par requête et non par candidat, écrit dans `job_listings`. Les
 raisons, dans l'ordre d'importance :
 
-1. **Les quotas.** France Travail plafonne autour de 3 appels par seconde et 1 150 résultats par
-   recherche. Un appel par ouverture de page épuiserait ces limites dès que le produit aurait des
+1. **Les quotas.** France Travail documente **4 appels par seconde et par application**, et
+   1 150 résultats par recherche. Un appel par ouverture de page épuiserait ces limites dès que le produit aurait des
    utilisateurs.
 2. **Les logiciels de recrutement ne se cherchent pas.** Ils exposent la liste d'une entreprise, sans
    filtre : il faut de toute façon tout récupérer et filtrer chez nous.

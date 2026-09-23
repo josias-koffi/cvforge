@@ -90,6 +90,23 @@ describe("FranceTravailSource", () => {
     expect(String(tokenCalls[0]?.[1]?.body)).toContain("grant_type=client_credentials");
   });
 
+  it("still caches a token whose lifetime the server left out", async () => {
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse({ access_token: "token-1" }))
+      .mockImplementation(async () => jsonResponse({ resultats: [] }));
+    const source = createSource(fetchImpl);
+
+    await source.search(QUERY);
+    await source.search(QUERY);
+
+    // Without a documented fallback the token expires on arrival, and every
+    // call re-authenticates.
+    expect(
+      fetchImpl.mock.calls.filter(([url]) => String(url).includes("access_token")),
+    ).toHaveLength(1);
+  });
+
   it("sends the translated search parameters", async () => {
     const fetchImpl = vi
       .fn()

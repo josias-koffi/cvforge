@@ -12,7 +12,7 @@ describe("resolveFranceTravailConfig", () => {
       clientId: "id",
       clientSecret: "secret",
       enabled: true,
-      requestsPerSecond: 3,
+      requestsPerSecond: 4,
     });
   });
 
@@ -33,7 +33,7 @@ describe("resolveFranceTravailConfig", () => {
     ).toBe(10);
   });
 
-  it("falls back on the safe pace, never on an unbounded one", () => {
+  it("falls back on the documented quota, never on an unbounded pace", () => {
     for (const value of ["0", "-2", "beaucoup", ""]) {
       expect(
         resolveFranceTravailConfig({
@@ -41,7 +41,7 @@ describe("resolveFranceTravailConfig", () => {
           FRANCE_TRAVAIL_CLIENT_SECRET: "secret",
           FRANCE_TRAVAIL_REQUESTS_PER_SECOND: value,
         }).requestsPerSecond,
-      ).toBe(3);
+      ).toBe(4);
     }
   });
 });

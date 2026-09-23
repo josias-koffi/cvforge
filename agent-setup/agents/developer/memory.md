@@ -1063,3 +1063,11 @@
 - **Une offre trouvée à la main n'a pas de score** : la ligne de suivi est créée à la première action avec 0, et la carte n'affiche simplement pas le badge. Afficher « 0/100 » prétendrait qu'on l'a classée et jugée mauvaise.
 - **Les actions passent par l'identifiant de l'offre, pas celui de la proposition** : une seule carte sert alors la sélection du matin et la recherche, et la ligne de suivi se crée à la volée si elle n'existe pas.
 - Le bandeau « 1 Issue » de Next en dev venait d'une **extension du navigateur** qui ajoute un attribut au `<body>` (`cz-shortcut-listen`), pas de notre rendu. Vérifier la console avant d'accuser son propre code.
+
+## 2026-09-23 — France Travail : la doc officielle tranche ce que les guides devinent
+- **Quota réel : 4 appels par seconde et par application** (100 pour l'API entière, partagés). Les guides tiers annonçaient « 3 à 10 » ; la documentation de francetravail.io le dit noir sur blanc, avec `Retry-After` sur 429 et augmentation possible sur demande justifiée. Valeur par défaut corrigée (3 → 4).
+- **Un access token vit 25 minutes.** Une réponse sans `expires_in` faisait expirer le jeton à l'instant même et réauthentifiait à chaque appel : repli sur la durée documentée.
+- **Scope confirmé** : `api_offresdemploiv2 o2dsoffre`.
+- **Parcours d'obtention** (officiel) : bouton « Utiliser l'API » sur la page de l'API → compte francetravail.io → associer l'API à une application (ou en créer une) → identifiant client + clé secrète. L'accès est libre, sous licence de réutilisation.
+- Leur doc rappelle aussi la règle qu'on applique déjà : clé secrète côté serveur uniquement, jamais dans le code source.
+- **Lire la doc officielle dans le navigateur quand elle est en JavaScript** : `WebFetch` ne rend que le squelette, la page ne dit rien. Le texte extrait par le navigateur a répondu en deux minutes à une question laissée ouverte depuis trois jours de travail.

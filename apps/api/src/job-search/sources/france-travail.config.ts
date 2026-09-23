@@ -8,12 +8,14 @@ export type FranceTravailConfig = {
 };
 
 /**
- * Documented as 3 to 10 calls a second depending on the source consulted. We
- * hold 3 until the real quota of our own application is read on francetravail.io
- * (sprint 025, "To Clarify" #1): being slower than allowed costs a few minutes
- * of collection, being faster costs a ban.
+ * The quota France Travail documents: **4 calls per second per application**
+ * (the API itself takes 100, shared between every application).
+ *
+ * Read from the official documentation rather than from third-party guides,
+ * which quote anything between 3 and 10. Past the quota the API answers 429
+ * with a `Retry-After`, which the limiter already honours.
  */
-const DEFAULT_REQUESTS_PER_SECOND = 3;
+const DEFAULT_REQUESTS_PER_SECOND = 4;
 const DEFAULT_TIMEOUT_MS = 15_000;
 
 export const FRANCE_TRAVAIL_TOKEN_URL =
@@ -21,6 +23,9 @@ export const FRANCE_TRAVAIL_TOKEN_URL =
 export const FRANCE_TRAVAIL_API_URL =
   "https://api.francetravail.io/partenaire/offresdemploi/v2/offres";
 export const FRANCE_TRAVAIL_SCOPE = "api_offresdemploiv2 o2dsoffre";
+
+/** An access token lives 25 minutes; it is refreshed a minute early. */
+export const FRANCE_TRAVAIL_TOKEN_TTL_MS = 25 * 60_000;
 
 /** At most 150 offers per call, and the window cannot start past 1000. */
 export const FRANCE_TRAVAIL_PAGE_SIZE = 150;

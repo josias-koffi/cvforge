@@ -9,6 +9,7 @@ import {
   FRANCE_TRAVAIL_MAX_RANGE_START,
   FRANCE_TRAVAIL_PAGE_SIZE,
   FRANCE_TRAVAIL_SCOPE,
+  FRANCE_TRAVAIL_TOKEN_TTL_MS,
   FRANCE_TRAVAIL_TOKEN_URL,
   type FranceTravailConfig,
 } from "./france-travail.config";
@@ -212,7 +213,11 @@ export class FranceTravailSource implements JobSourceAdapter {
       throw new Error("France Travail returned no access token.");
     }
 
-    const lifetimeMs = (payload.expires_in ?? 0) * 1000;
+    // A response without `expires_in` would otherwise expire the token on the
+    // spot and re-authenticate before every single call.
+    const lifetimeMs = payload.expires_in
+      ? payload.expires_in * 1000
+      : FRANCE_TRAVAIL_TOKEN_TTL_MS;
     this.token = {
       expiresAt: this.now() + Math.max(0, lifetimeMs - TOKEN_SAFETY_MARGIN_MS),
       value: payload.access_token,

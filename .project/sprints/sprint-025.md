@@ -284,8 +284,10 @@ Cible front : `apps/web`. `apps/app` est gelée, non touchée.
 
 ## ⚠️ To Clarify
 
-1. Quota France Travail réel de notre application (3 ou 10 appels par seconde) : à lire sur l'espace
-   francetravail.io une fois les identifiants créés.
+1. ~~Quota France Travail réel de notre application~~ → **tranché le 2026-09-23** en lisant la
+   documentation officielle : **4 appels par seconde par application** (100 pour l'API entière),
+   429 avec `Retry-After` au-delà, augmentation possible sur demande justifiée. Valeur par défaut
+   corrigée dans le code.
 2. Nom exact des champs de liens partenaires dans les offres France Travail — ils servent à la fois
    au dédoublonnage et à la découverte d'entreprises.
 3. Partenariat JobTeaser : à demander si le propriétaire le souhaite (pas d'API publique).
