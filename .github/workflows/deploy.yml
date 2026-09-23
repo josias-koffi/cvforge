@@ -308,6 +308,9 @@ jobs:
       # Optional: absent secret means an empty string, which simply leaves
       # balance supervision off rather than failing the deploy.
       TF_VAR_openrouter_management_api_key: ${{ secrets.OPENROUTER_MANAGEMENT_API_KEY }}
+      # Optional too: without them the offer collection simply calls no source.
+      TF_VAR_france_travail_client_id: ${{ secrets.FRANCE_TRAVAIL_CLIENT_ID }}
+      TF_VAR_france_travail_client_secret: ${{ secrets.FRANCE_TRAVAIL_CLIENT_SECRET }}
       TF_VAR_stripe_secret_key: ${{ secrets.STRIPE_SECRET_KEY }}
       TF_VAR_stripe_webhook_secret: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
       TF_VAR_auth_session_secret: ${{ secrets.AUTH_SESSION_SECRET }}

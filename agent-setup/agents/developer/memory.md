@@ -1126,3 +1126,19 @@
   les compteurs et les `stats` des dernières collectes ; c'est lui qui a tranché en une commande.
 - **Leçon (sur moi)** : `vitest` ne typecheck pas. Un double de test complété sans mettre à jour son
   interface passe les tests et casse `pnpm build`. Lancer `tsc --noEmit` avant de conclure.
+
+### 2026-09-23 — Une variable saisie dans l'UI Dokploy n'arrive pas au conteneur
+- **Constat** : `FRANCE_TRAVAIL_CLIENT_ID` renseignée dans l'interface Dokploy, et le script dans le
+  conteneur la voyait absente.
+- **Deux causes cumulées** : (1) un service compose ne reçoit **que** les variables que son propre
+  bloc `environment:` nomme — `dokploy-stack.yml` les énumère une par une ; (2) le fichier
+  d'environnement de la stack est **écrit par Terraform** (`infra/dokploy/compose.tf`), donc toute
+  saisie manuelle est effacée au déploiement suivant.
+- **Chaîne complète à compléter pour une nouvelle variable** : `variables.tf` → `compose.tf` (env) →
+  bloc `environment:` du service dans `dokploy-stack.yml` → `TF_VAR_*` dans
+  `.github/workflows/deploy.yml` → secret GitHub par environnement → `docs/deploy.md`.
+- **Leçon** : `process.loadEnvFile` **n'écrase pas** une variable déjà définie (vérifié). Un `.env`
+  resté dans une image ne peut donc pas masquer la configuration du déploiement.
+- **Leçon** : un diagnostic doit nommer ce que le processus voit. `job-digest:status` liste
+  désormais les variables attendues (présente/absente et longueur, jamais la valeur) et le fichier
+  `.env` éventuellement lu — c'est ce qui a rendu le problème visible en une commande.

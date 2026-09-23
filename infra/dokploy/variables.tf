@@ -243,6 +243,23 @@ variable "openrouter_api_key" {
   sensitive   = true
 }
 
+# Offer collection (France Travail "Offres d'emploi v2"). Optional: an empty
+# pair leaves the source inert instead of failing the deploy, exactly like the
+# OpenRouter management key.
+variable "france_travail_client_id" {
+  type        = string
+  description = "France Travail application client id"
+  sensitive   = true
+  default     = ""
+}
+
+variable "france_travail_client_secret" {
+  type        = string
+  description = "France Travail application client secret"
+  sensitive   = true
+  default     = ""
+}
+
 # Stripe is not configured on any environment yet — both values were CHANGE_ME
 # placeholders in the pre-Dokploy stack. They default to empty so the stack
 # deploys without them; the payment features stay inert until they are set.

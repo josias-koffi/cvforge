@@ -67,6 +67,17 @@ inert (no balance shown, no alert, purchases unaffected). The two thresholds,
 once the account is empty), are non-secret defaults in
 `infra/dokploy/variables.tf` and only need overriding to change them.
 
+Optional, per environment: `FRANCE_TRAVAIL_CLIENT_ID` and
+`FRANCE_TRAVAIL_CLIENT_SECRET`, the credentials of an application declared on
+<https://francetravail.io> and subscribed to *Offres d'emploi v2*. They feed the
+daily offer collection. Left unset, the deploy succeeds and the source stays
+inert — the collection then calls nothing and the offer database stays empty.
+
+> Setting them in the Dokploy UI does **not** work, and worse, looks like it
+> does: Terraform rewrites the stack's environment file on every deploy, and a
+> compose service only receives the variables its own `environment:` block
+> names. Both are handled here; the values belong in GitHub secrets.
+
 Generate `DOKPLOY_API_KEY` from the Dokploy UI (*Settings > Profile > API/CLI
 Keys > Generate New Key*) and leave **Enable Rate Limiting off**: a rate-limited
 key answers `401`, not `429`, and the window is 24 hours.

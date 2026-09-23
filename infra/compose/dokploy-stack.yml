@@ -85,6 +85,10 @@ services:
       PUPPETEER_URL: ${PUPPETEER_URL:-http://puppeteer:3000}
       APP_VERSION: ${APP_VERSION:-}
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
+      # Offer collection. A container only receives what this list names: a
+      # value set anywhere else reaches the stack's .env, never the process.
+      FRANCE_TRAVAIL_CLIENT_ID: ${FRANCE_TRAVAIL_CLIENT_ID:-}
+      FRANCE_TRAVAIL_CLIENT_SECRET: ${FRANCE_TRAVAIL_CLIENT_SECRET:-}
       # Management key: balance supervision only, inert when empty.
       OPENROUTER_MANAGEMENT_API_KEY: ${OPENROUTER_MANAGEMENT_API_KEY:-}
       OPENROUTER_BALANCE_ALERT_THRESHOLD: ${OPENROUTER_BALANCE_ALERT_THRESHOLD:-5}

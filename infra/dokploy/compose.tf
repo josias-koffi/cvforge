@@ -49,6 +49,8 @@ resource "dokploy_compose" "cvspark" {
     "MINIO_SECRET_KEY=${var.minio_secret_key}",
     "PUPPETEER_URL=http://puppeteer:3000",
     "OPENROUTER_API_KEY=${var.openrouter_api_key}",
+    "FRANCE_TRAVAIL_CLIENT_ID=${var.france_travail_client_id}",
+    "FRANCE_TRAVAIL_CLIENT_SECRET=${var.france_travail_client_secret}",
     "OPENROUTER_MANAGEMENT_API_KEY=${var.openrouter_management_api_key}",
     "OPENROUTER_BALANCE_ALERT_THRESHOLD=${var.openrouter_balance_alert_threshold}",
     "OPENROUTER_BALANCE_CRITICAL_THRESHOLD=${var.openrouter_balance_critical_threshold}",

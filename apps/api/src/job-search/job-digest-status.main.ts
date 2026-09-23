@@ -27,7 +27,7 @@ import { loadEnvironmentFiles } from "../shared/env";
  * actually did and what the tables hold, and changes nothing.
  */
 async function main() {
-  loadEnvironmentFiles();
+  const envFile = loadEnvironmentFiles();
 
   const database = createDatabaseClient(resolveDatabaseConfig(process.env));
 
@@ -73,11 +73,29 @@ async function main() {
       console.log(`    ${JSON.stringify(run.stats)}`);
     }
 
+    // Named, never printed: which variables this process actually sees answers
+    // "I did set them" — they may have been set on another service, or the
+    // container may not have been recreated since.
     console.log(
-      `\nFrance Travail : ${
+      `\nEnvironnement : ${envFile ? `fichier ${envFile}` : "aucun fichier .env, variables fournies par le conteneur"}`,
+    );
+    for (const name of [
+      "DATABASE_URL",
+      "FRANCE_TRAVAIL_CLIENT_ID",
+      "FRANCE_TRAVAIL_CLIENT_SECRET",
+      "NEXT_PUBLIC_APP_URL",
+    ]) {
+      const value = process.env[name]?.trim();
+      console.log(
+        `  ${value ? "présent " : "⚠️ absent"}  ${name}${value ? ` (${value.length} caractères)` : ""}`,
+      );
+    }
+
+    console.log(
+      `France Travail : ${
         resolveFranceTravailConfig().enabled
-          ? "identifiants présents"
-          : "⚠️ identifiants absents, la source est inerte"
+          ? "la source est active"
+          : "⚠️ inerte, elle ne sera pas appelée"
       }`,
     );
 
