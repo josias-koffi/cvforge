@@ -11,7 +11,7 @@ import {
   searchProjects,
 } from "../database/schema";
 import type { Database } from "../database/database.types";
-import { resolveFranceTravailConfig } from "./sources/france-travail.config";
+import { resolveFtConfig } from "../france-travail/ft.config";
 import { resolveLaBonneAlternanceConfig } from "./sources/la-bonne-alternance.config";
 import { loadEnvironmentFiles } from "../shared/env";
 
@@ -86,6 +86,7 @@ async function main() {
       "DATABASE_URL",
       "FRANCE_TRAVAIL_CLIENT_ID",
       "FRANCE_TRAVAIL_CLIENT_SECRET",
+      "FRANCE_TRAVAIL_APIS",
       "LA_BONNE_ALTERNANCE_API_KEY",
       "NEXT_PUBLIC_APP_URL",
     ]) {
@@ -104,7 +105,7 @@ async function main() {
     );
     console.log(
       `France Travail : ${
-        resolveFranceTravailConfig().enabled
+        resolveFtConfig().apis.offres.enabled
           ? "la source est active"
           : "⚠️ inerte, elle ne sera pas appelée"
       }`,

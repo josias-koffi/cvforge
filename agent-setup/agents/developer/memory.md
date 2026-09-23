@@ -1305,3 +1305,11 @@
 - **Leçon de méthode** : sonder 117 employeurs de tous secteurs a montré que les gros employeurs
   français **ne sont pas absents** de ces outils (Eurofins, Accor, Sodexo, Kiabi, Saint-Gobain),
   contrairement à ce que j'aurais répondu de mémoire. Mesurer avant d'affirmer.
+
+### 2026-09-23 — US-122 : une couche France Travail, et un 403 qui veut dire « pas accordé » (stage 01 · [[workflows/runs/developer-20260923225823]])
+- **Context** : [[sprints/sprint-026#^us-122]] · [[workflows/runs/developer-20260923225823/01-developer]] · [[decisions/ADR-024-france-travail-platform-rome]]
+- **Did** : `apps/api/src/france-travail/` (config, jeton par scope, client typé, module, `ft:smoke <api|all>`) ; `FranceTravailSource` migrée ; limiteur déplacé dans `shared/rate-limit/`.
+- **Leçon** : `ft:smoke all` a tranché en deux minutes ce que le catalogue illisible laissait ouvert. Les scopes ROME (`api_rome-<api>v1 nomenclatureRome`) et ROMEO (`api_romeov2`) sont bons. ROMEO exige `options.nomAppelant` et accepte plusieurs textes par appel.
+- **Leçon** : La Bonne Boîte **délivre le jeton** puis répond 403 « Invalid scope » à chaque appel. Un `invalid_scope` ne se voit donc pas toujours au jeton ; le client traite le 403 comme une API non accordée et l'éteint jusqu'au redémarrage.
+- **Leçon** : deux `buildJobSources()` dans le module, c'étaient deux jetons et deux limiteurs pour le même quota. Une liste d'adaptateurs partagée corrige les deux.
+- **Open** : quotas ROME et ROMEO inconnus (1/s par défaut) ; accès La Bonne Boîte à demander à France Travail.

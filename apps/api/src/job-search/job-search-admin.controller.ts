@@ -25,8 +25,8 @@ import {
   JOB_DIGEST_RUNS_STORE,
   type JobDigestRunsStore,
 } from "./matches.types";
-import { resolveFranceTravailConfig } from "./sources/france-travail.config";
 import { resolveLaBonneAlternanceConfig } from "./sources/la-bonne-alternance.config";
+import { FtHttpClient } from "../france-travail/ft-http.client";
 import { importSeededBoards } from "./sources/boards/boards-seed";
 
 type RequestLike = {
@@ -53,6 +53,7 @@ export class JobSearchAdminController {
     @Inject(BoardsService) private readonly boards: BoardsService,
     @Inject(JOB_DIGEST_RUNS_STORE) private readonly runs: JobDigestRunsStore,
     @Inject(JOB_SOURCES_STORE) private readonly sources: JobSourcesStore,
+    @Inject(FtHttpClient) private readonly franceTravail: FtHttpClient,
   ) {}
 
   /**
@@ -83,7 +84,7 @@ export class JobSearchAdminController {
         /** Has an adapter at all — unwritten sources are shown as such. */
         implemented: collectable.has(source),
         /** Configured to be able to answer, credentials included. */
-        available: isAvailable(source),
+        available: isAvailable(source, this.franceTravail),
       })),
     };
   }
@@ -178,9 +179,9 @@ function defaultState(source: JobSource): JobSourceState {
  * and a source with no adapter is never available whatever the environment
  * says.
  */
-function isAvailable(source: JobSource): boolean {
+function isAvailable(source: JobSource, franceTravail: FtHttpClient): boolean {
   if (source === "france_travail") {
-    return resolveFranceTravailConfig().enabled;
+    return franceTravail.isEnabled("offres");
   }
 
   if (source === "la_bonne_alternance") {

@@ -428,3 +428,10 @@
 - **Why**: Le sprint 020 devait couvrir `/notifications`, non traité par les sprints 016-019, sans rouvrir le contrat de notifications déjà livré en US-035/US-041.
 - **Learned**: Les 5 critères d'acceptation sont directement testables sans question produit supplémentaire.
 - **Open**: US-077 (onboarding) est la dernière tâche du sprint 020.
+
+## 2026-09-23 — Plan « API France Travail » (E20 amendé, E21, E22 en brouillon)
+- **Context**: [[sprints/sprint-026]] · [[sprints/sprint-027]] · [[sprints/sprint-028]] · [[decisions/ADR-024-france-travail-platform-rome]]
+- **Did**: Axes retenus par le propriétaire : matching ROME, marché caché (La Bonne Boîte), radar marché et salaires, alternance de bout en bout, salons, fiches entreprises enrichies. Sprint 026 amendé : socle US-122 (couche France Travail) et US-123 (référentiel ROME), US-118 précisée (ROMEO, puis confirmation par le candidat). Sprints 027 et 028 en brouillon.
+- **Why**: Le code ROME est le prérequis commun à La Bonne Boîte, La bonne alternance (qui ne cherche que par ROME ou département), Offres v2 `codeROME` et Marché du travail.
+- **Learned**: L'US-118 d'origine supposait un ROME optionnel dans `targetRoles` ; c'est faux (`string[]`). Vérifier le type avant d'écrire qu'un champ « existe déjà ».
+- **Open**: Le propriétaire doit souscrire ROMEO v2 et ROME 4.0 (puis Marché du travail et Mes évènements emploi). Report dans `vision.md` à faire (E19 à E22). Crédit ou non pour l'envoi de candidature en alternance.

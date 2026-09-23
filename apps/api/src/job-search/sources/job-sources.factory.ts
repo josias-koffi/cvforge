@@ -1,8 +1,14 @@
-import { resolveFranceTravailConfig } from "./france-travail.config";
+import {
+  createFtHttpClient,
+  type FtHttpClient,
+} from "../../france-travail/ft-http.client";
 import { FranceTravailSource } from "./france-travail.source";
 import { resolveLaBonneAlternanceConfig } from "./la-bonne-alternance.config";
 import { LaBonneAlternanceSource } from "./la-bonne-alternance.source";
 import type { JobSourceAdapter } from "../job-search.types";
+
+/** The adapters, built once so every service shares their caches and quotas. */
+export const JOB_SOURCE_ADAPTERS = Symbol("JOB_SOURCE_ADAPTERS");
 
 /**
  * The searchable sources, in the order they are queried.
@@ -13,11 +19,11 @@ import type { JobSourceAdapter } from "../job-search.types";
  */
 export function buildJobSources(
   env: NodeJS.ProcessEnv = process.env,
+  franceTravail: FtHttpClient = createFtHttpClient(env),
 ): JobSourceAdapter[] {
   const sources: JobSourceAdapter[] = [];
-  const franceTravail = resolveFranceTravailConfig(env);
 
-  if (franceTravail.enabled) {
+  if (franceTravail.isEnabled("offres")) {
     sources.push(new FranceTravailSource(franceTravail));
   }
 

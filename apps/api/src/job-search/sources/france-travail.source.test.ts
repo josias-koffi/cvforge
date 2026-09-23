@@ -1,8 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 import type { JobSourceQuery } from "../job-search.types";
-import { resolveFranceTravailConfig } from "./france-travail.config";
+import { FtHttpClient } from "../../france-travail/ft-http.client";
+import { resolveFtConfig } from "../../france-travail/ft.config";
+import { SourceRateLimiter } from "../../shared/rate-limit/source-rate-limiter";
 import { FranceTravailSource } from "./france-travail.source";
-import { SourceRateLimiter } from "./source-rate-limiter";
 
 const QUERY: JobSourceQuery = {
   contractTypes: ["cdi"],
@@ -51,11 +52,11 @@ function createSource(
     FRANCE_TRAVAIL_CLIENT_SECRET: "secret",
   },
 ) {
+  const fetchLike = fetchImpl as unknown as typeof globalThis.fetch;
+  const config = resolveFtConfig(env);
+
   return new FranceTravailSource(
-    resolveFranceTravailConfig(env),
-    fetchImpl as unknown as typeof globalThis.fetch,
-    () => 0,
-    instantLimiter(),
+    new FtHttpClient(config, fetchLike, () => 0, undefined, instantLimiter),
   );
 }
 

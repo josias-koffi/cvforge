@@ -1,6 +1,7 @@
 import type { JobSourceQuery } from "../job-search.types";
 import { loadEnvironmentFiles } from "../../shared/env";
-import { resolveFranceTravailConfig } from "./france-travail.config";
+import { FtHttpClient } from "../../france-travail/ft-http.client";
+import { resolveFtConfig } from "../../france-travail/ft.config";
 import { FranceTravailSource } from "./france-travail.source";
 
 /**
@@ -9,7 +10,7 @@ import { FranceTravailSource } from "./france-travail.source";
  * tested on fixtures; what fixtures cannot prove is that the reference codes
  * are the right ones (sprint 025, "To Clarify").
  *
- *   pnpm --filter @cvforge/api ft:smoke "développeur" 44
+ *   pnpm --filter @cvforge/api ft:smoke:offres "développeur" 44
  *   node apps/api/dist/apps/api/src/job-search/sources/france-travail.smoke.main.js \
  *     "développeur" 44                           (container: it has no tsx)
  *
@@ -23,9 +24,10 @@ async function main() {
   const [keywords = "développeur", department = ""] = process.argv
     .slice(2)
     .filter((argument) => argument !== "--");
-  const config = resolveFranceTravailConfig();
+  // Forced on, whatever FRANCE_TRAVAIL_APIS says: this checks the API itself.
+  const config = resolveFtConfig({ ...process.env, FRANCE_TRAVAIL_APIS: "offres" });
 
-  if (!config.enabled) {
+  if (!config.hasCredentials) {
     console.error(
       [
         "FRANCE_TRAVAIL_CLIENT_ID et FRANCE_TRAVAIL_CLIENT_SECRET sont requis.",
@@ -38,7 +40,7 @@ async function main() {
     return;
   }
 
-  const source = new FranceTravailSource(config);
+  const source = new FranceTravailSource(new FtHttpClient(config));
   const listings = await source.search({
     contractTypes: [],
     department,

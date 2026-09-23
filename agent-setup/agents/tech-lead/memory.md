@@ -478,3 +478,10 @@
 - **Learned**: quand une story annoncée « simple » exige de rendre asynchrone un helper synchrone utilisé partout, chercher le point d'application unique (middleware/guard) avant d'accepter un refactor de 65 fichiers. Le coût réel est une lecture indexée par requête, à surveiller si le trafic monte.
 - **Learned**: préférer réduire un **contrat** (le store) plutôt qu'ajouter une garde, quand l'invariant est de sécurité : la capacité disparaît du code au lieu d'être refusée à l'exécution.
 - **Open**: (1) clé de management OpenRouter à provisionner, sinon supervision inerte ; (2) consolidation `GET /credits/admin/users` ; (3) `apps/app` casse `pnpm build` (panne préexistante) ; (4) aucun axe/test de composant dans `apps/web`.
+
+## 2026-09-23 — ADR-024 plateforme France Travail et ROME (proposé)
+- **Context**: [[decisions/ADR-024-france-travail-platform-rome]] · [[sprints/sprint-026]]
+- **Did**: Proposé un jeton OAuth **par scope** et un limiteur par API dans `apps/api/src/france-travail/`, un référentiel ROME 4.0 copié en local et maintenu par les substitutions, et ROMEO appelé à l'enregistrement, jamais à l'affichage. Aucune dépendance nouvelle.
+- **Why**: France Travail refuse tout le jeton (`invalid_scope`) si un seul scope demandé n'est pas souscrit : un jeton multi-scope ferait tomber toutes les API pour une souscription manquante.
+- **Learned**: Numérotation au 2026-09-23 : migrations jusqu'à `0027`, stories jusqu'à US-121 avant ce plan (US-122 à US-130 réservées), ADR suivant 025.
+- **Open**: Scopes, chemins et quotas de ROMEO, ROME 4.0 et Marché du travail non vérifiés : les confirmer par `ft:smoke` avant tout code.

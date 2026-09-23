@@ -1,59 +1,37 @@
 import { Logger } from "@nestjs/common";
+import type { FtHttpClient } from "../../france-travail/ft-http.client";
 import type {
   JobSourceAdapter,
   JobSourceQuery,
   NormalizedJobListing,
 } from "../job-search.types";
 import {
-  FRANCE_TRAVAIL_API_URL,
-  FRANCE_TRAVAIL_MAX_RANGE_START,
-  FRANCE_TRAVAIL_PAGE_SIZE,
-  FRANCE_TRAVAIL_SCOPE,
-  FRANCE_TRAVAIL_TOKEN_TTL_MS,
-  FRANCE_TRAVAIL_TOKEN_URL,
-  type FranceTravailConfig,
-} from "./france-travail.config";
-import {
   toNormalizedListing,
   type FranceTravailOffer,
 } from "./france-travail.mapper";
 import { toFranceTravailParams } from "./france-travail.query";
-import { readRetryAfterMs, SourceRateLimiter } from "./source-rate-limiter";
-
-type FetchLike = typeof globalThis.fetch;
 
 interface SearchResponse {
   resultats?: FranceTravailOffer[];
 }
 
-/** A token is refreshed a minute early, so a call never starts on a dead one. */
-const TOKEN_SAFETY_MARGIN_MS = 60_000;
-const DEFAULT_PAUSE_MS = 2_000;
-/** A page is retried once; the collection runs again tomorrow either way. */
-const MAX_ATTEMPTS_PER_PAGE = 2;
+/** At most 150 offers per call, and the window cannot start past 1000. */
+export const FRANCE_TRAVAIL_PAGE_SIZE = 150;
+export const FRANCE_TRAVAIL_MAX_RANGE_START = 1000;
 
 /**
  * The France Travail "Offres d'emploi v2" source.
  *
  * Reads offers once a day, per grouped query, and never on a page view: the
- * quota is a few calls a second for the whole product (ADR-023).
+ * quota is a few calls a second for the whole product (ADR-023). Tokens,
+ * pacing and retries belong to the shared client (ADR-024); this class only
+ * paginates and maps.
  */
 export class FranceTravailSource implements JobSourceAdapter {
   readonly source = "france_travail" as const;
   private readonly logger = new Logger(FranceTravailSource.name);
-  private readonly limiter: SourceRateLimiter;
-  private token: { value: string; expiresAt: number } | null = null;
 
-  constructor(
-    private readonly config: FranceTravailConfig,
-    private readonly fetchImpl: FetchLike = globalThis.fetch,
-    private readonly now: () => number = Date.now,
-    limiter?: SourceRateLimiter,
-  ) {
-    this.limiter =
-      limiter ??
-      new SourceRateLimiter({ requestsPerSecond: config.requestsPerSecond });
-  }
+  constructor(private readonly client: FtHttpClient) {}
 
   /**
    * Every offer matching the query, paginated.
@@ -63,7 +41,7 @@ export class FranceTravailSource implements JobSourceAdapter {
    * logged rather than silently truncated.
    */
   async search(query: JobSourceQuery): Promise<NormalizedJobListing[]> {
-    if (!this.config.enabled) return [];
+    if (!this.client.isEnabled("offres")) return [];
 
     const listings: NormalizedJobListing[] = [];
 
@@ -97,21 +75,20 @@ export class FranceTravailSource implements JobSourceAdapter {
    * candidate's selection.
    */
   async isStillOpen(externalId: string): Promise<boolean | null> {
-    if (!this.config.enabled) return null;
+    if (!this.client.isEnabled("offres")) return null;
 
-    try {
-      const response = await this.request(
-        `${FRANCE_TRAVAIL_API_URL}/${encodeURIComponent(externalId)}`,
-      );
+    const result = await this.client.request("offres", {
+      attempts: 1,
+      path: `/offres/${encodeURIComponent(externalId)}`,
+    });
 
-      if (response.status === 204 || response.status === 404) return false;
-      if (response.ok) return true;
+    if (result.kind === "ok") return true;
+    if (result.kind === "empty") return false;
 
-      return null;
-    } catch (error) {
-      this.logger.warn(`Could not check offer ${externalId}: ${String(error)}`);
-      return null;
-    }
+    this.logger.warn(
+      `Could not check offer ${externalId}: ${result.reason} ${result.detail}`,
+    );
+    return null;
   }
 
   /** One page, or `null` when the page could not be read. */
@@ -120,117 +97,22 @@ export class FranceTravailSource implements JobSourceAdapter {
     range: string,
   ): Promise<NormalizedJobListing[] | null> {
     const params = toFranceTravailParams(query, range);
-    const url = new URL(`${FRANCE_TRAVAIL_API_URL}/search`);
-
-    for (const [key, value] of Object.entries(params)) {
-      if (value) url.searchParams.set(key, value);
-    }
-
-    for (let attempt = 1; attempt <= MAX_ATTEMPTS_PER_PAGE; attempt += 1) {
-      try {
-        const response = await this.request(url.toString());
-
-        // 204: no offer at all. 206: a partial page, which is the normal
-        // answer to a range — both are successes.
-        if (response.status === 204) return [];
-
-        if (response.ok || response.status === 206) {
-          const payload = (await response.json()) as SearchResponse;
-
-          return (payload.resultats ?? [])
-            .map(toNormalizedListing)
-            .filter((listing): listing is NormalizedJobListing => listing !== null);
-        }
-
-        if (response.status === 429 || response.status >= 500) {
-          this.pauseFrom(response);
-          continue;
-        }
-
-        // Their body names the rejected parameter; without it every bad query
-        // looks the same and the fix is guesswork.
-        const detail = (await response.text().catch(() => "")).slice(0, 300);
-
-        this.logger.warn(
-          `France Travail answered ${response.status} for range ${range} on ${url.search} — ${detail}`,
-        );
-        return null;
-      } catch (error) {
-        this.logger.warn(`France Travail request failed: ${String(error)}`);
-      }
-    }
-
-    return null;
-  }
-
-  private pauseFrom(response: Response): void {
-    const pauseMs = readRetryAfterMs(
-      response.headers.get("retry-after"),
-      DEFAULT_PAUSE_MS,
-      this.now(),
-    );
-    this.limiter.pauseUntil(this.now() + pauseMs);
-  }
-
-  private async request(url: string): Promise<Response> {
-    const token = await this.accessToken();
-
-    return this.limiter.run(() =>
-      this.fetchImpl(url, {
-        headers: { accept: "application/json", authorization: `Bearer ${token}` },
-        signal: AbortSignal.timeout(this.config.timeoutMs),
-      }),
-    );
-  }
-
-  /** Cached in memory: the token lives an hour and is shared by every query. */
-  private async accessToken(): Promise<string> {
-    if (this.token && this.token.expiresAt > this.now()) return this.token.value;
-
-    const body = new URLSearchParams({
-      client_id: this.config.clientId,
-      client_secret: this.config.clientSecret,
-      grant_type: "client_credentials",
-      scope: FRANCE_TRAVAIL_SCOPE,
+    const result = await this.client.request<SearchResponse>("offres", {
+      path: "/offres/search",
+      query: { ...params },
     });
-    const response = await this.limiter.run(() =>
-      this.fetchImpl(FRANCE_TRAVAIL_TOKEN_URL, {
-        body,
-        headers: { "content-type": "application/x-www-form-urlencoded" },
-        method: "POST",
-        signal: AbortSignal.timeout(this.config.timeoutMs),
-      }),
-    );
 
-    if (!response.ok) {
-      // Their body names the cause (invalid_client, invalid_scope…); without
-      // it a bad secret and an unsubscribed API look exactly the same.
-      const detail = (await response.text().catch(() => "")).slice(0, 200);
+    if (result.kind === "empty") return [];
 
-      throw new Error(
-        `France Travail refused the credentials (${response.status}). ${detail}`.trim(),
+    if (result.kind === "unavailable") {
+      this.logger.warn(
+        `France Travail search failed for range ${range} (${result.reason}, ${result.status ?? "no answer"}) on ${JSON.stringify(params)} — ${result.detail}`,
       );
+      return null;
     }
 
-    const payload = (await response.json()) as {
-      access_token?: string;
-      expires_in?: number;
-    };
-
-    if (!payload.access_token) {
-      throw new Error("France Travail returned no access token.");
-    }
-
-    // A response without `expires_in` would otherwise expire the token on the
-    // spot and re-authenticate before every single call.
-    const lifetimeMs = payload.expires_in
-      ? payload.expires_in * 1000
-      : FRANCE_TRAVAIL_TOKEN_TTL_MS;
-    this.token = {
-      expiresAt: this.now() + Math.max(0, lifetimeMs - TOKEN_SAFETY_MARGIN_MS),
-      value: payload.access_token,
-    };
-
-    return this.token.value;
+    return (result.data.resultats ?? [])
+      .map(toNormalizedListing)
+      .filter((listing): listing is NormalizedJobListing => listing !== null);
   }
 }

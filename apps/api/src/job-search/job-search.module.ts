@@ -20,7 +20,13 @@ import { DATABASE, type Database } from "../database/database.types";
 import { BoardsService } from "./boards.service";
 import { JobDeduplicator } from "./dedup/job-deduplicator";
 import { JobDigestService } from "./job-digest.service";
-import { buildJobSources } from "./sources/job-sources.factory";
+import { FranceTravailModule } from "../france-travail/france-travail.module";
+import { FtHttpClient } from "../france-travail/ft-http.client";
+import {
+  buildJobSources,
+  JOB_SOURCE_ADAPTERS,
+} from "./sources/job-sources.factory";
+import type { JobSourceAdapter } from "./job-search.types";
 import {
   PgJobDigestRunsStore,
   PgJobMatchesStore,
@@ -54,6 +60,7 @@ import { JobMatchesService } from "./job-matches.service";
     ApplicationsModule,
     AuthModule,
     CreditsModule,
+    FranceTravailModule,
     NotificationsModule,
     OpenRouterModule,
     ProfilesModule,
@@ -65,6 +72,12 @@ import { JobMatchesService } from "./job-matches.service";
     JobMatchesController,
   ],
   providers: [
+    {
+      provide: JOB_SOURCE_ADAPTERS,
+      inject: [FtHttpClient],
+      useFactory: (franceTravail: FtHttpClient) =>
+        buildJobSources(process.env, franceTravail),
+    },
     {
       provide: JOB_BOARDS_STORE,
       inject: [DATABASE],
@@ -107,18 +120,20 @@ import { JobMatchesService } from "./job-matches.service";
         JOBS_STORE,
         ApplicationsService,
         JOB_SOURCES_STORE,
+        JOB_SOURCE_ADAPTERS,
       ],
       useFactory: (
         matches: JobMatchesStore,
         jobsStore: JobsStore,
         applications: ApplicationsService,
         sourceStates: JobSourcesStore,
+        adapters: JobSourceAdapter[],
       ) =>
         new JobMatchesService(
           matches,
           jobsStore,
           applications,
-          buildJobSources(),
+          adapters,
           sourceStates,
         ),
     },
@@ -136,6 +151,7 @@ import { JobMatchesService } from "./job-matches.service";
         CreditsService,
         OPENROUTER_SERVICE,
         NotificationsService,
+        JOB_SOURCE_ADAPTERS,
       ],
       useFactory: (
         searchProjects: SearchProjectsStore,
@@ -149,6 +165,7 @@ import { JobMatchesService } from "./job-matches.service";
         credits: CreditsService,
         openRouter: OpenRouterService,
         notifications: NotificationsService,
+        adapters: JobSourceAdapter[],
       ) =>
         new JobDigestService(
           searchProjects,
@@ -159,7 +176,7 @@ import { JobMatchesService } from "./job-matches.service";
           sourceStates,
           boards,
           deduplicator,
-          buildJobSources(),
+          adapters,
           credits,
           openRouter,
           notifications,

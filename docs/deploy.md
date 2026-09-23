@@ -73,6 +73,13 @@ Optional, per environment: `FRANCE_TRAVAIL_CLIENT_ID` and
 daily offer collection. Left unset, the deploy succeeds and the source stays
 inert — the collection then calls nothing and the offer database stays empty.
 
+The same key serves every France Travail API (ADR-024). `FRANCE_TRAVAIL_APIS`
+lists the ones actually subscribed, comma-separated (default: `offres`); an API
+left out is never called. Check one with `ft:smoke <api>` (`ft:smoke:built` in
+the container) before adding it: an `invalid_scope` there means it is not
+subscribed, or its scope differs from the catalogue and needs
+`FRANCE_TRAVAIL_<ID>_SCOPE`.
+
 Optional too: `LA_BONNE_ALTERNANCE_API_KEY`, a key created on
 <https://api.apprentissage.beta.gouv.fr>. It adds apprenticeship offers, and is
 only called for searches that ask for an alternance. A *sandbox* key is granted
