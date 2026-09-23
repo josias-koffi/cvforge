@@ -7,6 +7,8 @@ export const boardOrigins = [
   "france_travail",
   "user",
   "admin",
+  /** Name known, address guessed, board verified live. */
+  "probe",
 ] as const;
 export type BoardOrigin = (typeof boardOrigins)[number];
 

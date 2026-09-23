@@ -51,7 +51,7 @@ export const jobBoards = pgTable(
     index("job_boards_enabled_idx").on(table.enabled, table.lastFetchedAt),
     check(
       "job_boards_origin_valid",
-      sql`${table.origin} in ('seed', 'crawl', 'france_travail', 'user', 'admin')`,
+      sql`${table.origin} in ('seed', 'crawl', 'france_travail', 'user', 'admin', 'probe')`,
     ),
   ],
 );

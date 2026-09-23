@@ -1287,3 +1287,21 @@
 - **Leçon** : leur filtre par département suit le **point GPS**, pas l'adresse. Deux offres demandées
   en 75 avaient une adresse à Saint-Étienne et à Cayenne. Quand deux champs d'un tiers se
   contredisent, choisir celui que l'écran affiche — ici l'adresse — et consigner l'écart.
+
+### 2026-09-23 — Une adresse qui répond n'est pas l'entreprise qu'on cherche
+- **Constat** : pour élargir le registre au-delà de 22 entreprises, j'ai deviné les adresses de
+  tableaux d'emploi à partir des noms. `ashbyhq.com/vinci` répond 200 avec 27 offres — c'est une
+  startup d'IA de Palo Alto, pas le groupe de BTP. `greenhouse.io/air` est une société de Virginie.
+  J'ai failli enregistrer la première sous le nom « Vinci ».
+- **Leçon** : « l'API répond » n'est pas une vérification d'identité. Il faut un signal qui
+  distingue l'homonyme, et ici c'est la **géographie des offres**, mesurée : 0/9 et 2/27 pour les
+  imposteurs, 49/60, 46/60 et 81/83 pour les vraies. Le filtre « France ou télétravail » des
+  adaptateurs ne suffisait pas : le faux Vinci a des postes en télétravail.
+- **Leçon** : un compte seul accepte une entreprise étrangère avec un bureau à Paris ; une part
+  seule accepte un tableau d'une offre. C'est la **conjonction** des deux qui sépare les cas.
+- **Leçon** : quand on ajoute une provenance à des données, l'écran qui l'affiche doit pouvoir dire
+  la vérité. D'où une origine `probe` distincte de `seed`, `crawl` et `admin`, et la migration qui
+  va avec — pas un réemploi approximatif d'une valeur existante.
+- **Leçon de méthode** : sonder 117 employeurs de tous secteurs a montré que les gros employeurs
+  français **ne sont pas absents** de ces outils (Eurofins, Accor, Sodexo, Kiabi, Saint-Gobain),
+  contrairement à ce que j'aurais répondu de mémoire. Mesurer avant d'affirmer.

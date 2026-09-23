@@ -490,6 +490,44 @@ Quatre constats que seuls de vrais appels pouvaient donner :
 `labonnealternance-recette.*`, qui n'est pas public. Elle prouve le branchement ; elle ne doit pas
 alimenter une base que des candidats lisent.
 
+### Trouver le tableau d'une entreprise à partir de son nom (2026-09-23)
+
+22 entreprises, c'était trop peu, et surtout trop tech : le produit s'adresse à tous les secteurs.
+Nouvelle commande `boards:probe`, qui transforme un **nom d'employeur** en adresses candidates et
+les essaie. Sans argument elle lit les employeurs **de nos propres offres** — donc ce que France
+Travail ramène, tous secteurs — et demande pour chacun s'il publie aussi sur un logiciel que l'on
+sait lire, où l'annonce est complète et le lien de candidature direct.
+
+**Le piège, et la règle qui en sort.** Une adresse qui existe n'appartient pas forcément à
+l'entreprise qu'on cherche. Mesuré en direct :
+
+| Adresse | Offres | dont en France | Qui c'est vraiment |
+|---|---|---|---|
+| `greenhouse.io/air` | 9 | **0** | une société de Virginie |
+| `ashbyhq.com/bureau` | 1 | **0** | une société de Bangalore |
+| `ashbyhq.com/vinci` | 27 | **2** | une startup d'IA de Palo Alto, bureau à Paris |
+| `smartrecruiters.com/accor` | 60 | 49 | Accor |
+| `smartrecruiters.com/eurofins` | 60 | 46 | Eurofins |
+| `greenhouse.io/doctolib` | 83 | 81 | Doctolib |
+
+Le filtre « France ou télétravail » des adaptateurs **ne suffit pas** : le faux Vinci a des postes
+en télétravail et deux à Paris, il passait. Un compte seul non plus, ni une part seule. La règle
+retenue est la conjonction : **au moins 3 offres physiquement en France, et au moins un quart du
+tableau**. Elle sépare les six cas ci-dessus, et le seuil de 3 évite qu'une annonce isolée suffise.
+
+Sans cette règle j'aurais enregistré une startup californienne sous le nom « Vinci » — les
+candidats auraient lu le groupe de BTP.
+
+- Nouvelle origine `probe` (migration `0027`, une contrainte de vérification remplacée) : l'écran
+  admin dit d'où vient une ligne, et « nom connu, adresse devinée puis vérifiée » n'est ni une
+  liste livrée, ni une découverte Common Crawl, ni une saisie manuelle.
+- Quelques orthographes par entreprise (compacte, tiretée, premier mot, casse d'origine), les
+  mots de forme juridique retirés (`Sodexo Group France` → `sodexo`), arrêt au premier tableau
+  accepté. Sonder coûte au plus seize requêtes par entreprise.
+- Complémentaire de Common Crawl, pas un remplacement : celle-ci trouve des entreprises auxquelles
+  personne n'a pensé, celle-là répond « cet employeur que nous connaissons déjà, est-il joignable
+  directement ? »
+
 ## ⚠️ To Clarify
 
 1. ~~Quota France Travail réel de notre application~~ → **tranché le 2026-09-23** en lisant la

@@ -25,6 +25,7 @@ export type BoardOrigin =
   | "france_travail"
   | "user"
   | "admin"
+  | "probe"
 
 export interface RegisteredBoard {
   provider: BoardProvider
@@ -74,6 +75,7 @@ export const ORIGIN_LABELS: Record<BoardOrigin, string> = {
   admin: "Ajoutée à la main",
   crawl: "Découverte (Common Crawl)",
   france_travail: "Lien d'une offre France Travail",
+  probe: "Nom d'employeur, adresse vérifiée",
   seed: "Liste de départ",
   user: "Candidature d'un utilisateur",
 }

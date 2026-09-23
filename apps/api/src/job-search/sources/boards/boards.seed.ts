@@ -16,6 +16,19 @@ export interface SeededBoard {
  * applies. None was guessed: two thirds of the plausible candidates answered
  * 404, and three large French groups answered with an empty board.
  *
+ * The nine employers added the same day — hotels, laboratories, engineering,
+ * retail, luxury, real estate, industry — come from `boards:probe` over 117
+ * large French employers of every sector. Only eight passed its identity rule
+ * (a board is believed only when a real share of its offers is physically in
+ * France), which is the honest yield: these tools are the recruiting stack of
+ * scale-ups far more than of the CAC 40.
+ *
+ * Caveat worth knowing rather than hiding: seven of the boards below currently
+ * publish **no offer located in France**, only remote roles — Cursor, Lovable,
+ * Poolside, Resend, Sifflet, Swan and Sodexo, whose board serves Australia.
+ * They stay because a remote role open to France is worth a candidate's time,
+ * and because a board that dies is retired on its own by `recordFetch`.
+ *
  * A company that later closes its board is retired by `recordFetch` like any
  * other, so this list needs no maintenance to stay harmless. It is a starting
  * point, not a catalogue: the registry then grows by itself from the adverts'
@@ -46,5 +59,13 @@ export const SEEDED_BOARDS: readonly SeededBoard[] = [
   { boardToken: "swile", companyName: "Swile", provider: "lever" },
   { boardToken: "vestiairecollective", companyName: "Vestiaire Collective", provider: "lever" },
   { boardToken: "younited", companyName: "Younited", provider: "lever" },
+  { boardToken: "accor", companyName: "Accor", provider: "smartrecruiters" },
+  { boardToken: "assystem", companyName: "Assystem", provider: "smartrecruiters" },
+  { boardToken: "eurofins", companyName: "Eurofins", provider: "smartrecruiters" },
+  { boardToken: "galerieslafayette", companyName: "Galeries Lafayette", provider: "smartrecruiters" },
+  { boardToken: "kiabi", companyName: "Kiabi", provider: "smartrecruiters" },
+  { boardToken: "lvmh", companyName: "LVMH", provider: "smartrecruiters" },
+  { boardToken: "nexity", companyName: "Nexity", provider: "smartrecruiters" },
+  { boardToken: "saintgobain", companyName: "Saint-Gobain", provider: "smartrecruiters" },
   { boardToken: "Sodexo", companyName: "Sodexo", provider: "smartrecruiters" },
 ];
