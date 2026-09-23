@@ -437,6 +437,35 @@ pagination se résumait à deux flèches. Refonte des deux pages sur un seul jeu
   défilement. `/offres-du-jour` n'a pu être vu que dans son état vide — le compte local n'a aucune
   sélection — mais partage les mêmes composants.
 
+### La bonne alternance, une source qui ne cherche pas par mots-clés (2026-09-23, lot 6)
+
+Adaptateur `la-bonne-alternance.{config,query,mapper,source}.ts`, calqué sur France Travail. Contrat
+lu sur leur **description OpenAPI en direct** (`/api/documentation/json`), pas de mémoire.
+
+- **Elle n'a aucun paramètre de mots-clés.** La recherche prend des codes ROME, un code RNCP, un
+  niveau de diplôme, un point et un rayon, ou des numéros de département — rien d'autre. Nos
+  requêtes portent un intitulé tapé par le candidat, pas un code ROME : le seul filtre honnête est
+  donc le département, et le tri fin reste au scoreur, qui lit déjà titres et descriptions.
+- **Conséquence : une réponse par département est réutilisée** pendant dix minutes. Vingt requêtes
+  qui ne diffèrent que par les mots-clés seraient sinon vingt appels identiques, sur un quota de
+  60 par minute.
+- **Appelée seulement quand quelqu'un demande une alternance** : l'API ne renvoie que ça, et
+  interroger pour une recherche de CDI dépenserait du quota pour des offres que personne n'a
+  demandées.
+- **`isStillOpen` répond `null` la plupart du temps, et c'est voulu.** Les offres relayées depuis
+  France Travail ou un partenaire portent l'identifiant du partenaire, que leur endpoint ignore :
+  son 404 lu comme « offre fermée » ferait disparaître une offre vivante d'une sélection. Ces
+  identifiants sont préfixés pour qu'on ne demande jamais.
+- **Le statut prime sur le code HTTP** : une offre pourvue ou annulée est toujours servie en 200.
+  Une offre non `Active` n'est ni collectée ni considérée ouverte.
+- **Coordonnées lues en GeoJSON** (longitude d'abord) : les *exemples* de leur schéma ont les deux
+  inversés (48,85 annoncé comme longitude), ses descriptions de champs non.
+- **Pas de salaire inventé** : l'API n'en publie pas, le champ reste vide.
+- **Vérifié contre l'API réelle** avec une clé volontairement invalide : l'URL et l'en-tête portent
+  jusqu'au serveur, qui répond « Impossible de déchiffrer la clé d'API » — la source journalise et
+  rend une liste vide. Le reste est couvert par 37 tests sur une charge utile construite champ par
+  champ d'après leur schéma ; **aucune réponse réelle n'a pu être capturée**, faute de clé.
+
 ## ⚠️ To Clarify
 
 1. ~~Quota France Travail réel de notre application~~ → **tranché le 2026-09-23** en lisant la

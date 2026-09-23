@@ -311,6 +311,7 @@ jobs:
       # Optional too: without them the offer collection simply calls no source.
       TF_VAR_france_travail_client_id: ${{ secrets.FRANCE_TRAVAIL_CLIENT_ID }}
       TF_VAR_france_travail_client_secret: ${{ secrets.FRANCE_TRAVAIL_CLIENT_SECRET }}
+      TF_VAR_la_bonne_alternance_api_key: ${{ secrets.LA_BONNE_ALTERNANCE_API_KEY }}
       TF_VAR_stripe_secret_key: ${{ secrets.STRIPE_SECRET_KEY }}
       TF_VAR_stripe_webhook_secret: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
       TF_VAR_auth_session_secret: ${{ secrets.AUTH_SESSION_SECRET }}

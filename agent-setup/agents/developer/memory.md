@@ -1254,3 +1254,21 @@
 - **Verified** : en local sur la vraie base (128 offres) — trois colonnes, panneau avec la
   description, pagination numérotée, retour arrière qui referme sans perdre le défilement.
   `/offres-du-jour` seulement dans son état vide : le compte local n'a pas de sélection.
+
+### 2026-09-23 — Lire le contrat d'une API avant d'écrire l'adaptateur, pas après
+- **Constat** : j'allais calquer « La bonne alternance » sur France Travail, avec des mots-clés et
+  une pagination. Sa description OpenAPI en direct dit l'inverse : **aucun paramètre de mots-clés**
+  (ROME, RNCP, diplôme, point et rayon, départements), et une réponse plafonnée à 150 offres par
+  source qu'il est explicitement impossible de dépasser. Un adaptateur écrit de mémoire aurait
+  envoyé un paramètre ignoré et paginé dans le vide.
+- **Leçon** : quand une API ignore une dimension de la requête, plusieurs de nos requêtes deviennent
+  le **même appel**. Il faut alors un cache par clé d'appel réelle, sinon le quota part en doublons.
+- **Leçon** : une source qui ne renvoie qu'un type de contrat ne doit pas être appelée pour les
+  requêtes qui n'en veulent pas — le filtrage se fait avant l'appel, pas sur les résultats.
+- **Leçon** : `isStillOpen` doit répondre `null` pour tout identifiant que l'API ne connaît pas.
+  Ici les offres relayées portent l'identifiant du partenaire ; leur 404 lu comme « fermée » aurait
+  supprimé des offres vivantes. Préfixer ces identifiants à la cartographie évite de demander.
+- **Leçon** : un 200 ne veut pas dire « ouverte ». Leur endpoint sert aussi les offres pourvues et
+  annulées ; c'est le champ `status` qui tranche.
+- **Verified** : appel réel avec une clé invalide — 401 « Impossible de déchiffrer la clé d'API »,
+  donc l'URL et l'en-tête sont bons. Aucune réponse réelle capturée : il n'y a pas encore de clé.

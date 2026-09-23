@@ -26,6 +26,7 @@ import {
   type JobDigestRunsStore,
 } from "./matches.types";
 import { resolveFranceTravailConfig } from "./sources/france-travail.config";
+import { resolveLaBonneAlternanceConfig } from "./sources/la-bonne-alternance.config";
 import { importSeededBoards } from "./sources/boards/boards-seed";
 
 type RequestLike = {
@@ -72,6 +73,7 @@ export class JobSearchAdminController {
     const collectable = new Set<string>([
       ...this.boards.supportedProviders(),
       "france_travail",
+      "la_bonne_alternance",
     ]);
 
     return {
@@ -172,14 +174,18 @@ function defaultState(source: JobSource): JobSourceState {
 /**
  * Whether the source could answer at all today.
  *
- * Only France Travail needs credentials so far; the recruiting software boards
- * are public, and a source with no adapter is never available whatever the
- * environment says.
+ * The two public APIs need a key; the recruiting software boards are public,
+ * and a source with no adapter is never available whatever the environment
+ * says.
  */
 function isAvailable(source: JobSource): boolean {
   if (source === "france_travail") {
     return resolveFranceTravailConfig().enabled;
   }
 
-  return !["adzuna", "la_bonne_alternance"].includes(source);
+  if (source === "la_bonne_alternance") {
+    return resolveLaBonneAlternanceConfig().enabled;
+  }
+
+  return source !== "adzuna";
 }

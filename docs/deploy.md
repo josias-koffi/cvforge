@@ -73,6 +73,12 @@ Optional, per environment: `FRANCE_TRAVAIL_CLIENT_ID` and
 daily offer collection. Left unset, the deploy succeeds and the source stays
 inert — the collection then calls nothing and the offer database stays empty.
 
+Optional too: `LA_BONNE_ALTERNANCE_API_KEY`, a key created on
+<https://api.apprentissage.beta.gouv.fr>. It adds apprenticeship offers, and is
+only called for searches that ask for an alternance. A *sandbox* key is granted
+the route automatically; a production key is requested from their support. Left
+unset, that source stays inert like the one above.
+
 > Setting them in the Dokploy UI does **not** work, and worse, looks like it
 > does: Terraform rewrites the stack's environment file on every deploy, and a
 > compose service only receives the variables its own `environment:` block

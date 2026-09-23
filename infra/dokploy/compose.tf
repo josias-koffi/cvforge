@@ -51,6 +51,7 @@ resource "dokploy_compose" "cvspark" {
     "OPENROUTER_API_KEY=${var.openrouter_api_key}",
     "FRANCE_TRAVAIL_CLIENT_ID=${var.france_travail_client_id}",
     "FRANCE_TRAVAIL_CLIENT_SECRET=${var.france_travail_client_secret}",
+    "LA_BONNE_ALTERNANCE_API_KEY=${var.la_bonne_alternance_api_key}",
     "OPENROUTER_MANAGEMENT_API_KEY=${var.openrouter_management_api_key}",
     "OPENROUTER_BALANCE_ALERT_THRESHOLD=${var.openrouter_balance_alert_threshold}",
     "OPENROUTER_BALANCE_CRITICAL_THRESHOLD=${var.openrouter_balance_critical_threshold}",

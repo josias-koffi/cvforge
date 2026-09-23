@@ -260,6 +260,14 @@ variable "france_travail_client_secret" {
   default     = ""
 }
 
+# La bonne alternance. Same rule: an empty key leaves the source inert.
+variable "la_bonne_alternance_api_key" {
+  type        = string
+  description = "La bonne alternance API key. Empty disables the source."
+  sensitive   = true
+  default     = ""
+}
+
 # Stripe is not configured on any environment yet — both values were CHANGE_ME
 # placeholders in the pre-Dokploy stack. They default to empty so the stack
 # deploys without them; the payment features stay inert until they are set.

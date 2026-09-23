@@ -1,5 +1,7 @@
 import { resolveFranceTravailConfig } from "./france-travail.config";
 import { FranceTravailSource } from "./france-travail.source";
+import { resolveLaBonneAlternanceConfig } from "./la-bonne-alternance.config";
+import { LaBonneAlternanceSource } from "./la-bonne-alternance.source";
 import type { JobSourceAdapter } from "../job-search.types";
 
 /**
@@ -17,6 +19,12 @@ export function buildJobSources(
 
   if (franceTravail.enabled) {
     sources.push(new FranceTravailSource(franceTravail));
+  }
+
+  const laBonneAlternance = resolveLaBonneAlternanceConfig(env);
+
+  if (laBonneAlternance.enabled) {
+    sources.push(new LaBonneAlternanceSource(laBonneAlternance));
   }
 
   return sources;
