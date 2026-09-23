@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation"
 import { useState } from "react"
-import { SearchIcon } from "lucide-react"
+import { RotateCcwIcon, SearchIcon } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -48,6 +48,21 @@ export function OfferSearchForm({ filters }: { filters: OfferSearchFilters }) {
     router.push(suffix ? `/offres?${suffix}` : "/offres")
   }
 
+  const reset = () => {
+    setQuery("")
+    setDepartment("")
+    setContracts([])
+    setRemoteOnly(false)
+    router.push("/offres")
+  }
+
+  /** Whether anything is narrowing the search — what "Réinitialiser" undoes. */
+  const filtering =
+    query.trim() !== "" ||
+    department.trim() !== "" ||
+    contracts.length > 0 ||
+    remoteOnly
+
   const toggleContract = (id: string) =>
     setContracts((current) =>
       current.includes(id)
@@ -79,6 +94,17 @@ export function OfferSearchForm({ filters }: { filters: OfferSearchFilters }) {
         <Button type="submit">
           <SearchIcon />
           Rechercher
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          // Hidden rather than disabled when there is nothing to undo: a
+          // permanently greyed-out button reads as broken.
+          className={filtering ? undefined : "invisible"}
+          onClick={reset}
+        >
+          <RotateCcwIcon />
+          Réinitialiser
         </Button>
       </div>
 

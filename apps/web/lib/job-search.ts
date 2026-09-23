@@ -18,6 +18,9 @@ export interface JobOffer {
   companyAnonymous: boolean
   locationLabel: string
   department: string
+  /** Set when the source gave a geocoded place — France Travail often does. */
+  latitude: number | null
+  longitude: number | null
   remote: boolean
   contractType: SearchContractType | "unknown"
   salaryLabel: string
@@ -29,6 +32,22 @@ export interface JobOffer {
 }
 
 export type JobMatchStatus = "new" | "seen" | "saved" | "dismissed" | "applied"
+
+/**
+ * One offer as the cards and the detail panel need it, wherever it comes from.
+ *
+ * The morning selection carries a score, an explanation and the skills that
+ * matched; an offer found by searching carries none of them, and the interface
+ * leaves them out rather than showing a zero.
+ */
+export interface JobCardOffer {
+  job: JobOffer
+  listings: JobListingSummary[]
+  status: JobMatchStatus | null
+  score: number | null
+  aiReason: string | null
+  matchedSkills?: string[]
+}
 
 export interface JobMatch {
   id: string

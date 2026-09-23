@@ -407,6 +407,36 @@ et restent désormais séparées à l'écran :
 - **Vérifié de bout en bout** : Greenhouse coupé depuis l'écran, collecte relancée — 22 entreprises
   lues deviennent 18, et 414 annonces deviennent 283. Source réactivée ensuite.
 
+### Deux pages d'offres lisibles (2026-09-23, lot 5)
+
+Les cartes tenaient la moitié de l'écran, la description collectée n'était jamais affichée, et la
+pagination se résumait à deux flèches. Refonte des deux pages sur un seul jeu de composants —
+`offer-card`, `offer-sheet`, `offer-grid`, `offer-pagination` — partagés par `/offres` et
+`/offres-du-jour` : deux grilles jumelles auraient divergé dès la première retouche.
+
+- **Grille en requêtes de conteneur** (`@xl/main:grid-cols-2 @5xl/main:grid-cols-3`), comme le
+  reste des pages : le nombre de colonnes suit la largeur du contenu, pas celle de la fenêtre, donc
+  replier la barre latérale en ajoute une.
+- **Le détail est dans un panneau**, pas sur la carte. Une carte que l'on parcourt doit être
+  comparable à ses deux voisines, ce qu'un pavé de texte interdit ; seul « Pas pour moi » reste sur
+  la carte, parce qu'écarter est la seule action qui vaut la peine sans rien ouvrir.
+- **L'offre ouverte vit dans l'URL** (`?offre=<id>`) mais est lue **côté client**. Ces pages sont en
+  `no-store` : une lecture serveur aurait rappelé l'API à chaque ouverture et chaque fermeture. Rien
+  n'est rechargé, tout vient déjà de la charge utile de la page.
+  *Limite assumée* : un lien vers une offre absente de la page n'affiche rien, faute d'endpoint
+  « une offre ».
+- **La flèche inactive est `aria-disabled` + `pointer-events-none`** : `disabled` ne veut rien dire
+  sur un lien, et « Précédente » était cliquable en page 1.
+- **`pageHref` est générique** sur les paramètres présents. Énumérer les filtres connus effacerait
+  en silence ce qui viendrait ensuite ; l'offre ouverte, elle, est volontairement laissée de côté —
+  elle n'est pas sur la page demandée.
+- **Un seul chiffre nouveau, la date de publication** : une offre de ce matin et une de trois
+  semaines ne valent pas le même effort, et rien ne le disait.
+- **Vérifié en local avec la vraie base** (128 offres) : trois colonnes, panneau avec la description
+  complète, pagination `‹ 1 [2] 3 … 7 ›`, retour arrière qui referme le panneau sans perdre le
+  défilement. `/offres-du-jour` n'a pu être vu que dans son état vide — le compte local n'a aucune
+  sélection — mais partage les mêmes composants.
+
 ## ⚠️ To Clarify
 
 1. ~~Quota France Travail réel de notre application~~ → **tranché le 2026-09-23** en lisant la

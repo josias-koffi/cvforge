@@ -1234,3 +1234,23 @@
 - **Verified** : Greenhouse coupé depuis l'admin, collecte relancée — 22 → 18 entreprises lues,
   414 → 283 annonces. Une erreur d'hydratation observée au passage vient d'une extension du
   navigateur (`cz-shortcut-listen` sur `<body>`), pas du code.
+
+### 2026-09-23 — L'état d'une interface partagée appartient à l'URL, pas au composant
+- **Constat** : la refonte des pages d'offres demandait un panneau de détail ouvert au clic. Le
+  mettre dans un `useState` aurait marché, et cassé le bouton Retour du navigateur : sur une page
+  de recherche d'emploi, revenir en arrière est le geste le plus fréquent.
+- **Solution** : l'offre ouverte vit dans `?offre=<id>`, mais lue **côté client** (`useSearchParams`)
+  et jamais côté serveur — ces pages sont en `no-store`, une lecture serveur aurait rappelé l'API à
+  chaque ouverture et chaque fermeture d'un panneau dont tout le contenu était déjà là.
+- **Leçon** : `disabled` sur un `<a>` ne désactive rien. Les deux flèches de pagination étaient
+  cliquables, « Précédente » en page 1 renvoyait à la page 1. C'est `aria-disabled` plus
+  `pointer-events-none`.
+- **Leçon** : un constructeur d'URL qui énumère les paramètres connus en efface d'autres en
+  silence. Rendre `pageHref` générique sur ce qui est présent ; ce qu'il faut retirer se retire
+  alors explicitement, et se lit.
+- **Leçon** : une carte dans une grille doit être **comparable à ses voisines**. Ce qui est
+  variable en hauteur (un lieu qui liste douze villes) se coupe à deux lignes sur la carte et
+  s'affiche en entier dans le panneau.
+- **Verified** : en local sur la vraie base (128 offres) — trois colonnes, panneau avec la
+  description, pagination numérotée, retour arrière qui referme sans perdre le défilement.
+  `/offres-du-jour` seulement dans son état vide : le compte local n'a pas de sélection.

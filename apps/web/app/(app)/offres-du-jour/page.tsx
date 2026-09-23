@@ -2,7 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { SearchIcon } from "lucide-react"
 
-import { JobMatchCard } from "@/components/job-search/job-match-card"
+import { OfferGrid } from "@/components/job-search/offer-grid"
 import { PageHeader } from "@/components/layout/page-header"
 import { Button } from "@/components/ui/button"
 import {
@@ -57,7 +57,7 @@ export default async function DailyJobsPage() {
           </div>
         }
       />
-      <div className="flex flex-col gap-3 px-4 lg:px-6">
+      <div className="flex flex-col gap-4 px-4 lg:px-6">
         {visible.length === 0 ? (
           <Empty>
             <EmptyHeader>
@@ -81,10 +81,8 @@ export default async function DailyJobsPage() {
           </Empty>
         ) : (
           <>
-            {visible.map((match) => (
-              <JobMatchCard key={match.id} match={match} />
-            ))}
-            <p className="text-muted-foreground text-xs">
+            <OfferGrid offers={visible} />
+            <p className="text-muted-foreground pb-4 text-xs">
               Offres issues de France Travail et des sites des entreprises. Chaque
               lien renvoie à l&apos;annonce d&apos;origine.
             </p>

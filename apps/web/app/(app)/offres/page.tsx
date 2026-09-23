@@ -2,7 +2,8 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { SearchIcon, SparklesIcon } from "lucide-react"
 
-import { JobMatchCard } from "@/components/job-search/job-match-card"
+import { OfferGrid } from "@/components/job-search/offer-grid"
+import { OfferPagination } from "@/components/job-search/offer-pagination"
 import { OfferSearchForm } from "@/components/job-search/offer-search-form"
 import { PageHeader } from "@/components/layout/page-header"
 import { Button } from "@/components/ui/button"
@@ -14,6 +15,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty"
+import { Separator } from "@/components/ui/separator"
 import { searchOffers } from "@/lib/job-search"
 
 export const metadata: Metadata = { title: "Rechercher une offre" }
@@ -86,36 +88,23 @@ export default async function OfferSearchPage(props: PageProps<"/offres">) {
             ) : null}
           </Empty>
         ) : (
-          visible.map((offer) => <JobMatchCard key={offer.job.id} match={offer} />)
+          <OfferGrid offers={visible} />
         )}
 
         {lastPage > 1 ? (
-          <div className="flex items-center justify-between gap-2 pb-4">
-            <Button asChild variant="outline" disabled={page <= 1}>
-              <Link href={pageHref(filters, page - 1)}>Page précédente</Link>
-            </Button>
-            <Button asChild variant="outline" disabled={page >= lastPage}>
-              <Link href={pageHref(filters, page + 1)}>Page suivante</Link>
-            </Button>
-          </div>
+          <footer className="flex flex-col gap-4 pb-4">
+            <Separator />
+            <OfferPagination
+              page={page}
+              lastPage={lastPage}
+              path="/offres"
+              // The criteria are carried over, the open offer is not: it is
+              // not on the page being asked for.
+              params={filters}
+            />
+          </footer>
         ) : null}
       </div>
     </>
   )
-}
-
-function pageHref(
-  filters: Record<string, string | undefined>,
-  page: number
-): string {
-  const query = new URLSearchParams()
-
-  for (const [key, value] of Object.entries(filters)) {
-    if (value && key !== "page") query.set(key, value)
-  }
-  if (page > 1) query.set("page", String(page))
-
-  const suffix = query.toString()
-
-  return suffix ? `/offres?${suffix}` : "/offres"
 }
