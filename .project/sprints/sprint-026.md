@@ -166,19 +166,26 @@ Deux stories fondatrices passent donc **avant** le backlog ci-dessous. Elles son
       vérifier »). Livrable : une note dans ce fichier, pas du code.
 - [ ] **[US-117]** Mesurer le rendement de la chaîne SIRET → site → page carrière → ATS sur un
       échantillon de 100 entreprises. Livrable : un chiffre et une décision.
-- [ ] **[US-118]** Le code ROME dans le projet de recherche (saisie et stockage).
+- [x] **[US-118]** Le code ROME dans le projet de recherche (saisie et stockage).
   - *Précisé le 2026-09-23* : la question « comment l'obtenir » est tranchée par ADR-024.
-    - [ ] Enregistrer le projet (et seulement ce moment-là, jamais l'affichage) appelle ROMEO v2
+    - [x] Enregistrer le projet (et seulement ce moment-là, jamais l'affichage) appelle ROMEO v2
           `predictionMetiers` sur `targetRoles` et le titre du CV. Les 5 meilleures appellations
           sont proposées avec leur score.
-    - [ ] Sur `/ma-recherche`, le candidat les confirme ou les retire, sous forme de puces. En
+    - [x] Sur `/ma-recherche`, le candidat les confirme ou les retire, sous forme de puces. En
           repli, il peut en ajouter une par autocomplétion sur `rome_appellations`, en local.
-    - [ ] Stockage dans une table annexe `search_project_rome` (migration `0029`), sans clé
+    - [x] Stockage dans une table annexe `search_project_rome` (migration `0029`), sans clé
           étrangère. Surtout pas dans `profiles` : `PgProfilesStore.save` supprime puis réinsère
           toutes les lignes.
-    - [ ] Si ROMEO est indisponible ou non souscrite, le projet s'enregistre quand même, sans
+    - [x] Si ROMEO est indisponible ou non souscrite, le projet s'enregistre quand même, sans
           suggestion.
-    - [ ] La purge RGPD couvre `search_project_rome`.
+    - [x] La purge RGPD couvre `search_project_rome`.
+  - **Livré le 2026-09-24** ([[workflows/runs/analyze-design-dev-review-20260923233426]]). Vérifié en réel sur le compte local :
+    enregistrer, confirmer, écarter, autocomplétion. Deux corrections trouvées en testant :
+    - les suggestions sont prises tour à tour entre les textes : au seul score, le titre du CV
+      prenait les cinq places ;
+    - le champ « Postes visés » avalait espaces et retours à la ligne pendant la frappe (défaut
+      antérieur).
+    - Reste : exporter les appellations dans l'export RGPD.
 - [ ] **[US-119]** `LaBonneBoiteSource` et la rubrique « Entreprises qui recrutent ».
 - [ ] **[US-120]** Candidature spontanée depuis une entreprise.
 - [ ] **[US-121]** Table `companies`, rattachement au SIREN, fiche entreprise et badges RSE.
@@ -219,3 +226,4 @@ Deux stories fondatrices passent donc **avant** le backlog ci-dessous. Elles son
 
 - 2026-09-23 — [[workflows/runs/developer-20260923225823|developer]] (US-122) — passed
 - 2026-09-23 — [[workflows/runs/developer-20260923232118|developer]] (US-123) — passed, story ouverte (API Substitutions en 403)
+- 2026-09-24 — [[workflows/runs/analyze-design-dev-review-20260923233426|analyze-design-dev-review]] (US-118) — passed

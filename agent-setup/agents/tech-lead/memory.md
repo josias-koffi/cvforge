@@ -485,3 +485,7 @@
 - **Why**: France Travail refuse tout le jeton (`invalid_scope`) si un seul scope demandé n'est pas souscrit : un jeton multi-scope ferait tomber toutes les API pour une souscription manquante.
 - **Learned**: Numérotation au 2026-09-23 : migrations jusqu'à `0027`, stories jusqu'à US-121 avant ce plan (US-122 à US-130 réservées), ADR suivant 025.
 - **Open**: Scopes, chemins et quotas de ROMEO, ROME 4.0 et Marché du travail non vérifiés : les confirmer par `ft:smoke` avant tout code.
+
+### 2026-09-24 — US-118 (tech-lead · [[workflows/runs/analyze-design-dev-review-20260923233426]])
+- **Context** : [[sprints/sprint-026#^us-118]]
+- **Learned** : Les tables où les utilisateurs stockent des codes ROME se déclarent dans ROME_CODE_HOLDERS, et les substitutions les suivent. Défaut Terraform de FRANCE_TRAVAIL_APIS : les API vérifiées.

@@ -435,3 +435,7 @@
 - **Why**: Le code ROME est le prérequis commun à La Bonne Boîte, La bonne alternance (qui ne cherche que par ROME ou département), Offres v2 `codeROME` et Marché du travail.
 - **Learned**: L'US-118 d'origine supposait un ROME optionnel dans `targetRoles` ; c'est faux (`string[]`). Vérifier le type avant d'écrire qu'un champ « existe déjà ».
 - **Open**: Le propriétaire doit souscrire ROMEO v2 et ROME 4.0 (puis Marché du travail et Mes évènements emploi). Report dans `vision.md` à faire (E19 à E22). Crédit ou non pour l'envoi de candidature en alternance.
+
+### 2026-09-24 — US-118 (product-owner · [[workflows/runs/analyze-design-dev-review-20260923233426]])
+- **Context** : [[sprints/sprint-026#^us-118]]
+- **Learned** : Les suggestions sont ce que l'IA propose, les confirmées ce que le candidat retient ; une suggestion écartée reste en base pour ne jamais revenir. Reste à ajouter les appellations à l'export RGPD.

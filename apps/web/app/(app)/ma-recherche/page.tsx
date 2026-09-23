@@ -19,7 +19,9 @@ export const metadata: Metadata = { title: "Ma recherche" }
  * editor to configure it lost them — the two are edited at different moments,
  * for different reasons.
  */
-export default async function SearchProjectPage(props: PageProps<"/ma-recherche">) {
+export default async function SearchProjectPage(
+  props: PageProps<"/ma-recherche">
+) {
   const session = await requireSession()
   const { profileId } = await props.searchParams
   const registry = await loadRegistry(session.email)
@@ -27,7 +29,7 @@ export default async function SearchProjectPage(props: PageProps<"/ma-recherche"
     registry,
     typeof profileId === "string" ? profileId : undefined
   )
-  const searchProject = await loadSearchProject(selected.id)
+  const { searchProject, rome } = await loadSearchProject(selected.id)
 
   return (
     <>
@@ -46,7 +48,7 @@ export default async function SearchProjectPage(props: PageProps<"/ma-recherche"
       <div className="w-full max-w-3xl px-4 lg:px-6">
         {registry.profiles.length > 1 ? (
           <div className="mb-4 flex flex-wrap items-center gap-2">
-            <span className="text-muted-foreground text-sm">
+            <span className="text-sm text-muted-foreground">
               Recherche du profil
             </span>
             {registry.profiles.map((profile) => (
@@ -63,7 +65,11 @@ export default async function SearchProjectPage(props: PageProps<"/ma-recherche"
             ))}
           </div>
         ) : null}
-        <SearchProjectForm key={selected.id} initialProject={searchProject} />
+        <SearchProjectForm
+          key={selected.id}
+          initialProject={searchProject}
+          initialRome={rome}
+        />
       </div>
     </>
   )

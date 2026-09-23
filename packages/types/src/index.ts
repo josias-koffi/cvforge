@@ -4,6 +4,7 @@ export * from "./documents";
 export * from "./grounding";
 export * from "./locale";
 export * from "./profile";
+export * from "./rome";
 export * from "./search-project";
 
 export const TEMPLATE_KIND_CV = "cv" as const;

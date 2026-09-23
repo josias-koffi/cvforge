@@ -404,3 +404,7 @@
 - **Did**: Accepté les deux stories. Points vérifiés au-delà des critères : l'alerte ne part jamais à un compte `user`, le garde-fou ne laisse aucune commande `pending` orpheline, et `GET /billing/purchase-availability` ne renvoie qu'un booléen + motif (aucune fuite du solde fournisseur vers un acheteur).
 - **Learned**: Sur une dépendance optionnelle (`creditSupply` nullable), tester les **trois** états : garde qui bloque, garde qui autorise, et absence de garde — le troisième est celui qu'on oublie et c'est la configuration de production actuelle (pas de clé de management).
 - **Open**: Toujours aucun test de composant/axe dans `apps/web` (vitest n'y couvre que `lib/**`) : le bandeau et l'état désactivé des boutons ne sont pas couverts automatiquement.
+
+### 2026-09-24 — US-118 (qa-reviewer · [[workflows/runs/analyze-design-dev-review-20260923233426]])
+- **Context** : [[sprints/sprint-026#^us-118]]
+- **Learned** : Chaque décision passe par assertProfile ; un code saisi à la main doit exister dans le référentiel local. La purge est testée sur PGlite avec deux comptes.

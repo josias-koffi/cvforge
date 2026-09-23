@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Inject,
   Param,
@@ -31,7 +32,10 @@ export class SearchProjectsController {
   ) {
     const email = this.requireEmail(request);
 
-    return { searchProject: await this.searchProjects.get(email, profileId) };
+    return {
+      rome: await this.searchProjects.listRome(email, profileId),
+      searchProject: await this.searchProjects.get(email, profileId),
+    };
   }
 
   @Put()
@@ -41,13 +45,42 @@ export class SearchProjectsController {
     @Req() request: RequestLike,
   ) {
     const email = this.requireEmail(request);
+    const searchProject = await this.searchProjects.save(
+      email,
+      profileId,
+      body.searchProject,
+    );
 
     return {
-      searchProject: await this.searchProjects.save(
-        email,
-        profileId,
-        body.searchProject,
-      ),
+      rome: await this.searchProjects.listRome(email, profileId),
+      searchProject,
+    };
+  }
+
+  /** Confirms a suggested appellation, or one picked from the autocomplete. */
+  @Put("rome/:code")
+  async confirmRomeAppellation(
+    @Param("profileId") profileId: string,
+    @Param("code") code: string,
+    @Req() request: RequestLike,
+  ) {
+    const email = this.requireEmail(request);
+
+    return {
+      rome: await this.searchProjects.confirmRome(email, profileId, code),
+    };
+  }
+
+  @Delete("rome/:code")
+  async dismissRomeAppellation(
+    @Param("profileId") profileId: string,
+    @Param("code") code: string,
+    @Req() request: RequestLike,
+  ) {
+    const email = this.requireEmail(request);
+
+    return {
+      rome: await this.searchProjects.dismissRome(email, profileId, code),
     };
   }
 
@@ -58,7 +91,9 @@ export class SearchProjectsController {
   ) {
     const email = this.requireEmail(request);
 
-    return { searchProject: await this.searchProjects.prefill(email, profileId) };
+    return {
+      searchProject: await this.searchProjects.prefill(email, profileId),
+    };
   }
 
   private requireEmail(request: RequestLike): string {

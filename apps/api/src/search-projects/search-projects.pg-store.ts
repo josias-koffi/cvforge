@@ -1,7 +1,7 @@
 import type { SearchProject } from "@cvforge/types";
 import { and, eq } from "drizzle-orm";
 import type { Database } from "../database/database.types";
-import { searchProjects } from "../database/schema";
+import { searchProjectRome, searchProjects } from "../database/schema";
 import type { SearchProjectsStore } from "./search-projects.types";
 
 type SearchProjectRow = typeof searchProjects.$inferSelect;
@@ -116,12 +116,21 @@ export class PgSearchProjectsStore implements SearchProjectsStore {
     return toProject(row!);
   }
 
+  /**
+   * The ROME appellations go with the projects: they are the candidate's own
+   * choices, and have no foreign key to cascade from (US-118).
+   */
   async deleteByUserEmail(userEmail: string) {
-    const rows = await this.db
-      .delete(searchProjects)
-      .where(eq(searchProjects.userEmail, userEmail))
-      .returning({ profileId: searchProjects.profileId });
+    return this.db.transaction(async (tx) => {
+      await tx
+        .delete(searchProjectRome)
+        .where(eq(searchProjectRome.userEmail, userEmail));
+      const rows = await tx
+        .delete(searchProjects)
+        .where(eq(searchProjects.userEmail, userEmail))
+        .returning({ profileId: searchProjects.profileId });
 
-    return rows.length;
+      return rows.length;
+    });
   }
 }

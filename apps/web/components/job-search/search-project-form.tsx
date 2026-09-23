@@ -4,25 +4,35 @@ import { useState, useTransition } from "react"
 import {
   searchExperienceLevels,
   searchRemoteModes,
-  searchSectors,
-  type SearchCompanySize,
-  type SearchCompanyValue,
-  type SearchContractType,
   type SearchProject,
-  type SearchSectorId,
+  type SearchProjectRomeAppellation,
 } from "@cvforge/types"
 import { SparklesIcon, WandSparklesIcon } from "lucide-react"
 import { toast } from "sonner"
 
-import { prefillSearchProject, saveSearchProject } from "@/app/(app)/ma-recherche/actions"
+import {
+  prefillSearchProject,
+  saveSearchProject,
+} from "@/app/(app)/ma-recherche/actions"
 import {
   ApprenticeshipFields,
   InternshipFields,
 } from "@/components/job-search/search-project-contract-fields"
+import { SearchProjectAlerts } from "@/components/job-search/search-project-alerts"
 import {
   ChipGroup,
+  LinesTextarea,
   LocationPicker,
 } from "@/components/job-search/search-project-fields"
+import {
+  CONTRACT_OPTIONS,
+  EXPERIENCE_LABELS,
+  REMOTE_LABELS,
+  SECTOR_OPTIONS,
+  SIZE_OPTIONS,
+  VALUE_OPTIONS,
+} from "@/components/job-search/search-project-options"
+import { SearchProjectRome } from "@/components/job-search/search-project-rome"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -35,61 +45,6 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Spinner } from "@/components/ui/spinner"
 import { Switch } from "@/components/ui/switch"
-import { Textarea } from "@/components/ui/textarea"
-
-const CONTRACT_OPTIONS: ReadonlyArray<{ id: SearchContractType; label: string }> = [
-  { id: "cdi", label: "CDI" },
-  { id: "cdd", label: "CDD" },
-  { id: "interim", label: "Intérim" },
-  { id: "freelance", label: "Freelance" },
-  { id: "stage", label: "Stage" },
-  { id: "alternance", label: "Alternance" },
-  { id: "vie", label: "VIE" },
-]
-
-const EXPERIENCE_LABELS: Record<(typeof searchExperienceLevels)[number], string> = {
-  confirme: "Confirmé (3 à 5 ans)",
-  debutant: "Débutant",
-  junior: "Junior (1 à 3 ans)",
-  senior: "Senior (plus de 5 ans)",
-}
-
-const REMOTE_LABELS: Record<(typeof searchRemoteModes)[number], string> = {
-  any: "Peu importe",
-  full_remote: "100 % télétravail",
-  hybrid: "Hybride",
-  onsite: "Sur site",
-}
-
-const SIZE_OPTIONS: ReadonlyArray<{ id: SearchCompanySize; label: string }> = [
-  { id: "tpe", label: "TPE (moins de 10)" },
-  { id: "pme", label: "PME (10 à 250)" },
-  { id: "eti", label: "ETI (250 à 5000)" },
-  { id: "ge", label: "Grand groupe" },
-]
-
-const VALUE_OPTIONS: ReadonlyArray<{ id: SearchCompanyValue; label: string }> = [
-  { id: "societe_mission", label: "Société à mission" },
-  { id: "ess", label: "Économie sociale et solidaire" },
-  { id: "egapro_75plus", label: "Index égalité ≥ 75" },
-  { id: "bilan_ges", label: "Bilan carbone publié" },
-]
-
-const SECTOR_OPTIONS = searchSectors.map((sector) => ({
-  id: sector.id as SearchSectorId,
-  label: sector.label,
-}))
-
-function toLines(values: string[]) {
-  return values.join("\n")
-}
-
-function fromLines(value: string) {
-  return value
-    .split("\n")
-    .map((line) => line.trim())
-    .filter(Boolean)
-}
 
 /**
  * "Ma recherche": what the candidate is looking for.
@@ -100,21 +55,38 @@ function fromLines(value: string) {
  */
 export function SearchProjectForm({
   initialProject,
+  initialRome,
 }: {
   initialProject: SearchProject
+  initialRome: SearchProjectRomeAppellation[]
 }) {
   const [project, setProject] = useState(initialProject)
+  const [rome, setRome] = useState(initialRome)
   const [saving, startSaving] = useTransition()
   const [prefilling, startPrefilling] = useTransition()
-  const set = <K extends keyof SearchProject>(key: K, value: SearchProject[K]) =>
-    setProject((current) => ({ ...current, [key]: value }))
+  const set = <K extends keyof SearchProject>(
+    key: K,
+    value: SearchProject[K]
+  ) => setProject((current) => ({ ...current, [key]: value }))
 
   const save = () =>
     startSaving(async () => {
       const result = await saveSearchProject(project)
 
-      if (result.ok) toast.success(result.message)
-      else toast.error(result.message)
+      if (!result.ok) {
+        toast.error(result.message)
+        return
+      }
+
+      setRome(result.rome)
+      const suggested = result.rome.filter(
+        (entry) => entry.status === "suggested"
+      ).length
+      toast.success(
+        suggested > 0
+          ? `${result.message} ${suggested} métier${suggested > 1 ? "s" : ""} à confirmer.`
+          : result.message
+      )
     })
 
   const prefill = () =>
@@ -134,7 +106,9 @@ export function SearchProjectForm({
         digestEnabled: current.digestEnabled,
         emailEnabled: current.emailEnabled,
       }))
-      toast.success("Recherche pré-remplie depuis votre profil. Vérifiez puis enregistrez.")
+      toast.success(
+        "Recherche pré-remplie depuis votre profil. Vérifiez puis enregistrez."
+      )
     })
 
   return (
@@ -149,14 +123,13 @@ export function SearchProjectForm({
         <CardContent className="flex flex-col gap-6">
           <div className="flex flex-col gap-2">
             <Label htmlFor="target-roles">Postes visés</Label>
-            <Textarea
+            <LinesTextarea
               id="target-roles"
-              rows={3}
               placeholder={"Développeur Full Stack\nIngénieur logiciel"}
-              value={toLines(project.targetRoles)}
-              onChange={(event) => set("targetRoles", fromLines(event.target.value))}
+              values={project.targetRoles}
+              onChange={(next) => set("targetRoles", next)}
             />
-            <p className="text-muted-foreground text-xs">
+            <p className="text-xs text-muted-foreground">
               Un intitulé par ligne. Ce sont eux qui servent à chercher.
             </p>
           </div>
@@ -199,11 +172,18 @@ export function SearchProjectForm({
         </CardContent>
       </Card>
 
+      <SearchProjectRome
+        profileId={project.profileId}
+        appellations={rome}
+        onChange={setRome}
+      />
+
       <Card>
         <CardHeader>
           <CardTitle>Où</CardTitle>
           <CardDescription>
-            Les villes que vous acceptez, et jusqu&apos;où vous êtes prêt à aller.
+            Les villes que vous acceptez, et jusqu&apos;où vous êtes prêt à
+            aller.
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-6">
@@ -220,7 +200,10 @@ export function SearchProjectForm({
             }))}
             selected={[project.remote]}
             onChange={(next) =>
-              set("remote", next.find((mode) => mode !== project.remote) ?? "any")
+              set(
+                "remote",
+                next.find((mode) => mode !== project.remote) ?? "any"
+              )
             }
           />
 
@@ -246,7 +229,7 @@ export function SearchProjectForm({
                 set("salaryMinYearly", Number(event.target.value) || null)
               }
             />
-            <p className="text-muted-foreground text-xs">
+            <p className="text-xs text-muted-foreground">
               Facultatif. La plupart des annonces taisent le salaire : il fait
               monter une offre, il n&apos;en écarte jamais.
             </p>
@@ -257,9 +240,7 @@ export function SearchProjectForm({
       <Card>
         <CardHeader>
           <CardTitle>Les secteurs</CardTitle>
-          <CardDescription>
-            Laissez vide pour ne rien exclure.
-          </CardDescription>
+          <CardDescription>Laissez vide pour ne rien exclure.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-6">
           <ChipGroup
@@ -281,7 +262,8 @@ export function SearchProjectForm({
         <CardHeader>
           <CardTitle>Les entreprises</CardTitle>
           <CardDescription>
-            Leur taille, leurs engagements, et celles que vous ne voulez pas voir.
+            Leur taille, leurs engagements, et celles que vous ne voulez pas
+            voir.
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-6">
@@ -299,62 +281,22 @@ export function SearchProjectForm({
           />
           <div className="flex flex-col gap-2">
             <Label htmlFor="excluded-companies">Entreprises à exclure</Label>
-            <Textarea
+            <LinesTextarea
               id="excluded-companies"
-              rows={3}
-              placeholder={"Mon employeur actuel\nUne entreprise déjà contactée"}
-              value={toLines(project.excludedCompanies)}
-              onChange={(event) =>
-                set("excludedCompanies", fromLines(event.target.value))
+              placeholder={
+                "Mon employeur actuel\nUne entreprise déjà contactée"
               }
+              values={project.excludedCompanies}
+              onChange={(next) => set("excludedCompanies", next)}
             />
-            <p className="text-muted-foreground text-xs">Une par ligne.</p>
+            <p className="text-xs text-muted-foreground">Une par ligne.</p>
           </div>
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Vos offres du jour</CardTitle>
-          <CardDescription>
-            Une sélection chaque matin, d&apos;après tout ce qui précède.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-4">
-          <label className="flex items-center gap-3 text-sm">
-            <Switch
-              checked={project.digestEnabled}
-              onCheckedChange={(checked) => set("digestEnabled", checked)}
-            />
-            Me proposer des offres chaque matin
-          </label>
-          <label className="flex items-center gap-3 text-sm">
-            <Switch
-              checked={project.emailEnabled}
-              disabled={!project.digestEnabled}
-              onCheckedChange={(checked) => set("emailEnabled", checked)}
-            />
-            Recevoir la sélection par e-mail
-          </label>
-          <label className="flex items-start gap-3 text-sm">
-            <Switch
-              className="mt-0.5"
-              checked={project.aiRerankEnabled}
-              disabled={!project.digestEnabled}
-              onCheckedChange={(checked) => set("aiRerankEnabled", checked)}
-            />
-            <span className="block">
-              Classement par l&apos;IA, avec une phrase par offre expliquant
-              pourquoi elle vous correspond
-              <span className="text-muted-foreground block text-xs">
-                1 crédit par sélection, débité seulement si le classement aboutit.
-              </span>
-            </span>
-          </label>
-        </CardContent>
-      </Card>
+      <SearchProjectAlerts project={project} onChange={set} />
 
-      <div className="bg-background/95 sticky bottom-0 z-10 -mx-4 border-t px-4 py-3 backdrop-blur lg:-mx-6 lg:px-6">
+      <div className="sticky bottom-0 z-10 -mx-4 border-t bg-background/95 px-4 py-3 backdrop-blur lg:-mx-6 lg:px-6">
         <div className="flex flex-wrap items-center justify-end gap-2">
           <Button
             type="button"

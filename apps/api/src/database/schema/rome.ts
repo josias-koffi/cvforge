@@ -5,6 +5,7 @@ import {
   jsonb,
   pgTable,
   primaryKey,
+  real,
   text,
   timestamp,
   uniqueIndex,
@@ -118,3 +119,44 @@ export const romeSyncRuns = pgTable(
   ],
 );
 
+/**
+ * The appellations attached to a search project (US-118). Keyed like
+ * `search_projects`, by `(user_email, profile_id)`, and **without a foreign
+ * key**: `PgProfilesStore.save` deletes and re-inserts every profile row, and a
+ * code France Travail retires must be rewritten, not cascade-deleted.
+ *
+ * The labels are a snapshot, read only when the referential no longer knows
+ * the code — a sync not run yet, or a code retired since.
+ */
+export const searchProjectRome = pgTable(
+  "search_project_rome",
+  {
+    userEmail: text("user_email").notNull(),
+    profileId: text("profile_id").notNull(),
+    appellationCode: text("appellation_code").notNull(),
+    libelle: text("libelle").notNull(),
+    metierCode: text("metier_code").notNull(),
+    metierLibelle: text("metier_libelle").notNull(),
+    /** `suggested` by ROMEO, `confirmed` or `dismissed` by the candidate. */
+    status: text("status").notNull(),
+    score: real("score"),
+    /** `romeo` or `manual` (picked from the autocomplete). */
+    source: text("source").notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    primaryKey({
+      columns: [table.userEmail, table.profileId, table.appellationCode],
+    }),
+    check(
+      "search_project_rome_status_check",
+      sql`${table.status} in ('suggested', 'confirmed', 'dismissed')`,
+    ),
+    check(
+      "search_project_rome_source_check",
+      sql`${table.source} in ('romeo', 'manual')`,
+    ),
+  ],
+);

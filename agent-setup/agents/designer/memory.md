@@ -398,3 +398,7 @@
 - **Why**: Nouvelle identité CVSpark (`.project/marketing/`) ; l'ancien thème gris neutre produisait du ton sur ton.
 - **Learned**: `--accent` shadcn sert au hover des menus : l'amber de marque doit vivre dans un token séparé (`--spark`), sinon tous les menus deviennent orange. En dark, `primary-foreground` doit être foncé (blanc sur #5B82FF = 3,45:1).
 - **Open**: Pages connectées non vérifiées visuellement (API arrêtée pendant la session) ; messages d'erreur API NestJS non réécrits.
+
+### 2026-09-24 — US-118 (designer · [[workflows/runs/analyze-design-dev-review-20260923233426]])
+- **Context** : [[sprints/sprint-026#^us-118]]
+- **Learned** : Une puce se sauvegarde au clic, sans passer par « Enregistrer » ; le score est affiché en pourcentage, et la source France Travail en pied de carte.

@@ -7,6 +7,54 @@ import { X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+
+/** One entry per line, blank lines and surrounding spaces ignored. */
+export function fromLines(value: string) {
+  return value
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+}
+
+/**
+ * A list typed one entry per line.
+ *
+ * The raw text is kept as typed: rebuilding it from the parsed list on every
+ * keystroke trimmed the space being typed and swallowed Enter, so "Ingénieur
+ * logiciel" could only be pasted, never typed. The list is re-read from the
+ * text; the text is only replaced when the list changes from outside (prefill).
+ */
+export function LinesTextarea({
+  id,
+  placeholder,
+  values,
+  onChange,
+}: {
+  id: string
+  placeholder: string
+  values: string[]
+  onChange: (next: string[]) => void
+}) {
+  const [text, setText] = useState(() => values.join("\n"))
+
+  if (fromLines(text).join("\n") !== values.join("\n")) {
+    setText(values.join("\n"))
+  }
+
+  return (
+    <Textarea
+      id={id}
+      rows={3}
+      placeholder={placeholder}
+      value={text}
+      onChange={(event) => {
+        setText(event.target.value)
+        onChange(fromLines(event.target.value))
+      }}
+    />
+  )
+}
 
 /** A multiple-choice row of chips. Selecting is additive, never exclusive. */
 export function ChipGroup<T extends string>({
@@ -143,17 +191,19 @@ export function LocationPicker({
           }}
         />
         {matches.length > 0 && (
-          <ul className="border-border bg-popover divide-border divide-y rounded-md border text-sm">
+          <ul className="divide-y divide-border rounded-md border border-border bg-popover text-sm">
             {matches.map((commune) => (
               <li key={commune.code}>
                 <button
                   type="button"
-                  className="hover:bg-accent w-full px-3 py-2 text-left"
+                  className="w-full px-3 py-2 text-left hover:bg-accent"
                   onClick={() => add(commune)}
                 >
                   {commune.nom}
                   <span className="text-muted-foreground">
-                    {commune.departement?.code ? ` (${commune.departement.code})` : ""}
+                    {commune.departement?.code
+                      ? ` (${commune.departement.code})`
+                      : ""}
                   </span>
                 </button>
               </li>
@@ -165,7 +215,7 @@ export function LocationPicker({
         {locations.map((location) => (
           <li
             key={location.inseeCode || location.label}
-            className="border-border flex items-center gap-2 rounded-md border px-3 py-2 text-sm"
+            className="flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm"
           >
             <span className="flex-1">
               {location.label}

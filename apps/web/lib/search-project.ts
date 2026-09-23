@@ -1,6 +1,21 @@
-import { emptySearchProject, type SearchProject } from "@cvforge/types"
+import {
+  emptySearchProject,
+  type RomeAppellationOption,
+  type SearchProject,
+  type SearchProjectRomeAppellation,
+} from "@cvforge/types"
 
 import { api } from "@/lib/api"
+
+/** The project, and the ROME jobs attached to it (US-118). */
+export type SearchProjectPage = {
+  searchProject: SearchProject
+  rome: SearchProjectRomeAppellation[]
+}
+
+function searchProjectPath(profileId: string) {
+  return `/profiles/${encodeURIComponent(profileId)}/search-project`
+}
 
 /**
  * The search project attached to a profile: what the candidate is looking for.
@@ -9,30 +24,50 @@ import { api } from "@/lib/api"
  * 404 on an unknown profile id — so an empty one is returned instead of
  * failing the page.
  */
-export async function loadSearchProject(profileId: string): Promise<SearchProject> {
+export async function loadSearchProject(
+  profileId: string
+): Promise<SearchProjectPage> {
   try {
-    const { searchProject } = await api<{ searchProject: SearchProject }>(
-      `/profiles/${encodeURIComponent(profileId)}/search-project`
-    )
-
-    return searchProject
+    return await api<SearchProjectPage>(searchProjectPath(profileId))
   } catch {
-    return emptySearchProject(profileId)
+    return { rome: [], searchProject: emptySearchProject(profileId) }
   }
 }
 
-export async function writeSearchProject(project: SearchProject) {
-  const { searchProject } = await api<{ searchProject: SearchProject }>(
-    `/profiles/${encodeURIComponent(project.profileId)}/search-project`,
-    { body: { searchProject: project }, method: "PUT" }
+/** Saving is what asks ROMEO for suggestions, so the answer carries them. */
+export function writeSearchProject(project: SearchProject) {
+  return api<SearchProjectPage>(searchProjectPath(project.profileId), {
+    body: { searchProject: project },
+    method: "PUT",
+  })
+}
+
+export async function writeRomeDecision(
+  profileId: string,
+  code: string,
+  decision: "confirm" | "dismiss"
+) {
+  const { rome } = await api<{ rome: SearchProjectRomeAppellation[] }>(
+    `${searchProjectPath(profileId)}/rome/${encodeURIComponent(code)}`,
+    { method: decision === "confirm" ? "PUT" : "DELETE" }
   )
 
-  return searchProject
+  return rome
+}
+
+/** Searched in CVForge's own copy of the referential, never at France Travail. */
+export async function searchRomeAppellations(query: string) {
+  const { appellations } = await api<{ appellations: RomeAppellationOption[] }>(
+    "/rome/appellations",
+    { query: { q: query } }
+  )
+
+  return appellations
 }
 
 export async function requestSearchProjectPrefill(profileId: string) {
   const { searchProject } = await api<{ searchProject: SearchProject }>(
-    `/profiles/${encodeURIComponent(profileId)}/search-project/prefill`,
+    `${searchProjectPath(profileId)}/prefill`,
     { method: "POST" }
   )
 

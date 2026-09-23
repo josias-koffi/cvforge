@@ -1322,3 +1322,7 @@
 - **Leçon** : sur la passerelle France Travail, 401 « TypeAuth invalide » veut dire « produit inconnu à ce chemin », 403 vide « produit connu, accès non accordé ». C'est ce qui a permis de dire que Substitutions attend un droit, et non qu'on se trompe de chemin.
 - **Leçon** : le point médian (·) est un diacritique pour Unicode : « ingénieur·e » devient « ingenieure », ce qui arrange la recherche.
 - **Open** : adaptateur Substitutions à écrire quand l'accès sera ouvert ; `ROME_CODE_HOLDERS` vide jusqu'à US-118.
+
+### 2026-09-24 — US-118 (developer · [[workflows/runs/analyze-design-dev-review-20260923233426]])
+- **Context** : [[sprints/sprint-026#^us-118]]
+- **Learned** : Classer au seul score laisse un texte prendre toutes les places : on prend les réponses tour à tour entre les textes. Un textarea contrôlé qui se reconstruit à chaque frappe à partir de lignes nettoyées avale espaces et retours à la ligne : il faut garder le texte brut. En développement, un clic avant l'hydratation ne fait rien ; vérifier la requête POST, pas seulement le toast.

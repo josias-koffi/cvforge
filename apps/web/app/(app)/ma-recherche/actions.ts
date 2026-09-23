@@ -1,19 +1,61 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import type { SearchProject } from "@cvforge/types"
+import type {
+  RomeAppellationOption,
+  SearchProject,
+  SearchProjectRomeAppellation,
+} from "@cvforge/types"
 
-import { runAction, type ActionResult } from "@/lib/api"
-import { requestSearchProjectPrefill, writeSearchProject } from "@/lib/search-project"
+import { runAction } from "@/lib/api"
+import {
+  requestSearchProjectPrefill,
+  searchRomeAppellations,
+  writeRomeDecision,
+  writeSearchProject,
+} from "@/lib/search-project"
 
-export async function saveSearchProject(project: SearchProject): Promise<ActionResult> {
-  const result = await runAction(
-    () => writeSearchProject(project),
-    "Recherche enregistrée."
-  )
+type RomeResult =
+  | { ok: true; message?: string; rome: SearchProjectRomeAppellation[] }
+  | { ok: false; message: string }
+
+/** Saved, then the ROME jobs as they now stand — ROMEO runs on save. */
+export async function saveSearchProject(
+  project: SearchProject
+): Promise<RomeResult> {
+  let rome: SearchProjectRomeAppellation[] = []
+  const result = await runAction(async () => {
+    rome = (await writeSearchProject(project)).rome
+  }, "Recherche enregistrée.")
 
   revalidatePath("/ma-recherche")
-  return result
+  return result.ok ? { ...result, rome } : result
+}
+
+/** Confirming or dismissing a job applies at once: no second "save" to find. */
+export async function decideRomeAppellation(
+  profileId: string,
+  code: string,
+  decision: "confirm" | "dismiss"
+): Promise<RomeResult> {
+  let rome: SearchProjectRomeAppellation[] = []
+  const result = await runAction(async () => {
+    rome = await writeRomeDecision(profileId, code, decision)
+  })
+
+  revalidatePath("/ma-recherche")
+  return result.ok ? { ...result, rome } : result
+}
+
+/** The autocomplete: an empty list rather than an error, the field stays usable. */
+export async function findRomeAppellations(
+  query: string
+): Promise<RomeAppellationOption[]> {
+  try {
+    return await searchRomeAppellations(query)
+  } catch {
+    return []
+  }
 }
 
 /**
@@ -22,9 +64,14 @@ export async function saveSearchProject(project: SearchProject): Promise<ActionR
  */
 export async function prefillSearchProject(
   profileId: string
-): Promise<{ ok: true; searchProject: SearchProject } | { ok: false; message: string }> {
+): Promise<
+  { ok: true; searchProject: SearchProject } | { ok: false; message: string }
+> {
   try {
-    return { ok: true, searchProject: await requestSearchProjectPrefill(profileId) }
+    return {
+      ok: true,
+      searchProject: await requestSearchProjectPrefill(profileId),
+    }
   } catch {
     return {
       ok: false,

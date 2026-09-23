@@ -1,11 +1,12 @@
 import { emptySearchProject, type SearchProject } from "@cvforge/types";
 import { NotFoundException } from "@nestjs/common";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type {
   ProfilesStore,
   StoredProfile,
   StoredProfileRegistry,
 } from "../profiles/profiles.types";
+import type { SearchProjectRomeService } from "./search-project-rome.service";
 import { SearchProjectsService } from "./search-projects.service";
 import type { SearchProjectsStore } from "./search-projects.types";
 
@@ -75,7 +76,22 @@ function createService(profileIds = ["profile-1"]) {
     save: async (_userEmail, value) => value,
   };
 
-  return { saved, service: new SearchProjectsService(store, profiles) };
+  const rome = {
+    confirm: vi.fn(async () => []),
+    dismiss: vi.fn(async () => []),
+    list: vi.fn(async () => []),
+    suggest: vi.fn(async () => undefined),
+  };
+
+  return {
+    rome,
+    saved,
+    service: new SearchProjectsService(
+      store,
+      profiles,
+      rome as unknown as SearchProjectRomeService,
+    ),
+  };
 }
 
 describe("SearchProjectsService", () => {
@@ -120,5 +136,49 @@ describe("SearchProjectsService", () => {
     expect(project.contractTypes).toEqual(["alternance"]);
     expect(project.targetRoles).toEqual(["Développeuse Full Stack"]);
     expect(saved).toEqual([]);
+  });
+
+  it("asks for ROME suggestions after saving, from the roles and the CV headline", async () => {
+    const { rome, saved, service } = createService();
+
+    await service.save("user@example.com", "profile-1", {
+      targetRoles: ["Développeur web", "Intégrateur"],
+    });
+
+    expect(saved).toHaveLength(1);
+    expect(rome.suggest).toHaveBeenCalledWith("user@example.com", "profile-1", [
+      "Développeur web",
+      "Intégrateur",
+      "Développeuse Full Stack",
+    ]);
+  });
+
+  it("checks the profile before any ROME read or decision", async () => {
+    const { rome, service } = createService();
+
+    await service.listRome("user@example.com", "profile-1");
+    await service.confirmRome("user@example.com", "profile-1", "38976");
+    await service.dismissRome("user@example.com", "profile-1", "38976");
+
+    expect(rome.list).toHaveBeenCalledWith("user@example.com", "profile-1");
+    expect(rome.confirm).toHaveBeenCalledWith(
+      "user@example.com",
+      "profile-1",
+      "38976",
+    );
+    expect(rome.dismiss).toHaveBeenCalledWith(
+      "user@example.com",
+      "profile-1",
+      "38976",
+    );
+
+    for (const call of [
+      () => service.listRome("intruder@example.com", "profile-1"),
+      () => service.confirmRome("user@example.com", "profile-2", "38976"),
+      () => service.dismissRome("user@example.com", "profile-2", "38976"),
+    ]) {
+      await expect(call()).rejects.toBeInstanceOf(NotFoundException);
+    }
+    expect(rome.confirm).toHaveBeenCalledTimes(1);
   });
 });
