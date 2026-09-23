@@ -239,6 +239,29 @@ Cible front : `apps/web`. `apps/app` est gelée, non touchée.
         un test.
   - ⚠️ **Non vérifié** : aucun e-mail réellement envoyé (SMTP non configuré ici).
 
+- [x] **[US-115]** Recherche libre dans notre base d'offres (demande propriétaire, après staging)
+  - Agent: `developer`
+  - Critères d'acceptation :
+    - [x] Page `/offres` : mots-clés, département, contrats, télétravail, pagination. Les critères
+          vivent dans l'URL — une recherche se met en favori, se partage, et le bouton « retour »
+          fonctionne.
+    - [x] `GET /job-search/offers` interroge les mêmes offres que la sélection du matin, sans le
+          filtrage par le projet de recherche : ici c'est le candidat qui décide.
+    - [x] **Recherche insensible aux accents** : « developpeur » trouve « Développeur ». Corrigé
+          avec `translate()` en SQL plutôt qu'avec l'extension `unaccent`, qui serait une décision
+          de schéma.
+    - [x] Chaque mot supplémentaire **restreint** la recherche au lieu de l'élargir.
+    - [x] Une offre trouvée à la main peut être gardée, écartée, ou transformée en candidature :
+          la ligne de suivi est créée à la première action, **sans score** — rien ne l'a classée,
+          et afficher un chiffre serait un mensonge sur la carte.
+    - [x] Les routes d'action passent par l'identifiant de l'offre : une seule carte sert la
+          sélection du matin et la recherche.
+    - [x] Entrées : élément de navigation « Rechercher une offre », bouton sur « Offres du jour »,
+          et second bouton dans l'état vide.
+    - [x] 13 tests ajoutés, gates verts (1399 tests API, 322 web).
+  - ✅ **Vérifié dans le navigateur** : recherche sans accent, filtre par contrat, et « Garder »
+        depuis un résultat (ligne créée avec score 0). Données de test retirées de la base.
+
 ## 📊 Sprint DoD
 
 - [x] All tasks ticked

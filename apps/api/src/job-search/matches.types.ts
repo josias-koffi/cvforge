@@ -50,6 +50,13 @@ export type JobMatchesStore = {
   /** Every job already proposed to this user, so none is proposed twice. */
   listProposedJobIds(userEmail: string): Promise<string[]>;
   createMany(matches: readonly NewJobMatch[]): Promise<number>;
+  /** The proposal for this offer, whether it came from a digest or a search. */
+  findByJobId(userEmail: string, jobId: string): Promise<StoredJobMatch | null>;
+  /** Statuses of several offers at once, to mark a page of search results. */
+  listStatusesByJobIds(
+    userEmail: string,
+    jobIds: readonly string[],
+  ): Promise<Map<string, StoredJobMatch>>;
   listByDigestDate(
     userEmail: string,
     digestDate: string,

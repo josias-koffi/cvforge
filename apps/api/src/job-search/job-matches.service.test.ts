@@ -79,7 +79,11 @@ function createService(options: {
   match?: JobMatchWithJob | null;
   listings?: StoredJobListing[];
   isStillOpen?: boolean | null;
+  searchResults?: StoredJob[];
+  knownStatuses?: Map<string, JobMatchWithJob>;
+  missingJob?: boolean;
 } = {}) {
+  const created: unknown[] = [];
   const statuses: Array<{ status: string; applicationId?: string }> = [];
   const closed: string[] = [];
   const importFromText = vi.fn(async () => ({ id: "app-1" }) as never);
@@ -87,8 +91,15 @@ function createService(options: {
   const updateOffer = vi.fn(async () => ({}) as never);
 
   const matches = {
+    createMany: async (entries: readonly unknown[]) => {
+      created.push(...entries);
+      return entries.length;
+    },
+    findByJobId: async () =>
+      options.match === undefined ? makeMatch() : options.match,
     findById: async () =>
       options.match === undefined ? makeMatch() : options.match,
+    listStatusesByJobIds: async () => options.knownStatuses ?? new Map(),
     listByDigestDate: async () => (options.match ? [options.match] : [makeMatch()]),
     listRecent: async () => [makeMatch()],
     setStatus: async (
@@ -106,9 +117,16 @@ function createService(options: {
     closeListing: async (_source: string, externalId: string) => {
       closed.push(externalId);
     },
-    findById: async () => ({
-      job: makeJob(),
-      listings: options.listings ?? [makeListing()],
+    findById: async () =>
+      options.missingJob
+        ? null
+        : {
+            job: makeJob(),
+            listings: options.listings ?? [makeListing()],
+          },
+    searchJobs: async () => ({
+      jobs: options.searchResults ?? [makeJob()],
+      total: (options.searchResults ?? [makeJob()]).length,
     }),
   } as unknown as JobsStore;
 
@@ -126,6 +144,7 @@ function createService(options: {
 
   return {
     closed,
+    created,
     importFromText,
     importFromUrl,
     service: new JobMatchesService(
@@ -139,6 +158,65 @@ function createService(options: {
     updateOffer,
   };
 }
+
+describe("JobMatchesService.searchOffers", () => {
+  it("returns the offers we hold, with what the candidate already did", async () => {
+    const harness = createService({
+      knownStatuses: new Map([["job-1", { ...makeMatch(), status: "saved" }]]),
+    });
+
+    const found = await harness.service.searchOffers("user@example.com", {
+      contractTypes: [],
+      departments: ["44"],
+      limit: 20,
+      maxAgeDays: 30,
+      offset: 0,
+      query: "développeur",
+      remoteOnly: false,
+    });
+
+    expect(found.total).toBe(1);
+    expect(found.offers[0]).toMatchObject({ score: 78, status: "saved" });
+    expect(found.offers[0]?.listings).toHaveLength(1);
+  });
+
+  it("shows no score for an offer nothing ranked", async () => {
+    const harness = createService({ knownStatuses: new Map() });
+
+    const found = await harness.service.searchOffers("user@example.com", {
+      contractTypes: [],
+      departments: [],
+      limit: 20,
+      maxAgeDays: 30,
+      offset: 0,
+      query: "",
+      remoteOnly: false,
+    });
+
+    // Inventing a number would claim a ranking that never happened.
+    expect(found.offers[0]).toMatchObject({ score: null, status: null });
+  });
+});
+
+describe("JobMatchesService.setStatusForJob", () => {
+  it("records what the candidate did with an offer they found themselves", async () => {
+    const harness = createService({ match: null });
+
+    await harness.service.setStatusForJob("user@example.com", "job-1", "saved");
+
+    // A hand-picked offer gets its row on first use, with no score.
+    expect(harness.created).toHaveLength(1);
+    expect(harness.created[0]).toMatchObject({ jobId: "job-1", score: 0 });
+  });
+
+  it("refuses an offer we do not hold", async () => {
+    const harness = createService({ match: null, missingJob: true });
+
+    expect(
+      await harness.service.setStatusForJob("user@example.com", "inconnue", "saved"),
+    ).toBeNull();
+  });
+});
 
 describe("JobMatchesService", () => {
   it("serves a day's selection with every source that publishes each offer", async () => {
@@ -170,7 +248,7 @@ describe("JobMatchesService", () => {
     it("creates the application from the advert text we already hold", async () => {
       const harness = createService();
 
-      const result = await harness.service.applyToMatch("user@example.com", "match-1");
+      const result = await harness.service.applyToJob("user@example.com", "job-1");
 
       expect(result).toEqual({ applicationId: "app-1", outcome: "applied" });
       expect(harness.importFromText).toHaveBeenCalledWith(
@@ -190,7 +268,7 @@ describe("JobMatchesService", () => {
         match: makeMatch(makeJob({ description: "Voir l'annonce." })),
       });
 
-      const result = await harness.service.applyToMatch("user@example.com", "match-1");
+      const result = await harness.service.applyToJob("user@example.com", "job-1");
 
       expect(result).toEqual({ applicationId: "app-2", outcome: "applied" });
       expect(harness.importFromUrl).toHaveBeenCalled();
@@ -199,7 +277,7 @@ describe("JobMatchesService", () => {
     it("refuses, and charges nothing, when the offer is gone", async () => {
       const harness = createService({ isStillOpen: false });
 
-      const result = await harness.service.applyToMatch("user@example.com", "match-1");
+      const result = await harness.service.applyToJob("user@example.com", "job-1");
 
       expect(result).toEqual({ outcome: "closed" });
       expect(harness.importFromText).not.toHaveBeenCalled();
@@ -213,7 +291,7 @@ describe("JobMatchesService", () => {
 
       // "We could not check" must not block a candidate from applying.
       expect(
-        (await harness.service.applyToMatch("user@example.com", "match-1")).outcome,
+        (await harness.service.applyToJob("user@example.com", "job-1")).outcome,
       ).toBe("applied");
     });
 
@@ -228,7 +306,7 @@ describe("JobMatchesService", () => {
 
       // Greenhouse has no live check here, so it still counts as open.
       expect(
-        (await harness.service.applyToMatch("user@example.com", "match-1")).outcome,
+        (await harness.service.applyToJob("user@example.com", "job-1")).outcome,
       ).toBe("applied");
     });
 
@@ -236,7 +314,7 @@ describe("JobMatchesService", () => {
       const harness = createService({ match: null });
 
       expect(
-        await harness.service.applyToMatch("intruder@example.com", "match-1"),
+        await harness.service.applyToJob("intruder@example.com", "job-1"),
       ).toEqual({ outcome: "not_found" });
     });
   });

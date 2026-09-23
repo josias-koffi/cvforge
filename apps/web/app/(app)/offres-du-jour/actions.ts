@@ -6,12 +6,12 @@ import { ApiError, api, runAction, type ActionResult } from "@/lib/api"
 import type { JobMatchStatus } from "@/lib/job-search"
 
 export async function setMatchStatus(
-  matchId: string,
+  jobId: string,
   status: Exclude<JobMatchStatus, "applied">
 ): Promise<ActionResult> {
   const result = await runAction(
     () =>
-      api(`/job-search/matches/${encodeURIComponent(matchId)}`, {
+      api(`/job-search/offers/${encodeURIComponent(jobId)}`, {
         body: { status },
         method: "PATCH",
       }),
@@ -19,6 +19,7 @@ export async function setMatchStatus(
   )
 
   revalidatePath("/offres-du-jour")
+  revalidatePath("/offres")
   return result
 }
 
@@ -29,15 +30,16 @@ export async function setMatchStatus(
  * was spent, and the page says so rather than showing a generic failure.
  */
 export async function applyToMatch(
-  matchId: string
+  jobId: string
 ): Promise<{ ok: true; applicationId: string } | { ok: false; message: string }> {
   try {
     const { applicationId } = await api<{ applicationId: string }>(
-      `/job-search/matches/${encodeURIComponent(matchId)}/apply`,
+      `/job-search/offers/${encodeURIComponent(jobId)}/apply`,
       { method: "POST" }
     )
 
     revalidatePath("/offres-du-jour")
+    revalidatePath("/offres")
     revalidatePath("/candidatures")
     return { applicationId, ok: true }
   } catch (error) {

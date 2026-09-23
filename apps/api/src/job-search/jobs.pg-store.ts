@@ -1,5 +1,16 @@
 import type { SearchContractType } from "@cvforge/types";
-import { and, desc, eq, gte, inArray, isNull, or, sql } from "drizzle-orm";
+import {
+  and,
+  count,
+  desc,
+  eq,
+  gte,
+  inArray,
+  isNull,
+  or,
+  sql,
+  type AnyColumn,
+} from "drizzle-orm";
 import type { Database } from "../database/database.types";
 import { jobLinks, jobListings, jobs } from "../database/schema";
 import {
@@ -12,6 +23,7 @@ import {
 import type { MatchCandidate, MatchMethod } from "./dedup/match-job";
 import type { JobSource, NormalizedJobListing } from "./job-search.types";
 import type {
+  JobSearchFilters,
   JobsStore,
   JobWithListings,
   StoredJob,
@@ -19,6 +31,33 @@ import type {
 } from "./jobs.types";
 
 type JobRow = typeof jobs.$inferSelect;
+
+const MS_PER_DAY = 86_400_000;
+/** More words than this and the query stops narrowing anything useful. */
+const MAX_SEARCH_WORDS = 6;
+
+/**
+ * Accents, folded in SQL.
+ *
+ * `ilike` ignores case but not accents, so a candidate typing "developpeur"
+ * found nothing while the table was full of "Développeur". `unaccent()` would
+ * mean a Postgres extension — a schema decision — where `translate()` is
+ * standard SQL and costs nothing at this volume.
+ */
+const ACCENTED_CHARS = "àáâãäåçèéêëìíîïñòóôõöùúûüýÿœæ";
+const PLAIN_CHARS = "aaaaaaceeeeiiiinooooouuuuyyoa";
+
+function folded(column: AnyColumn) {
+  return sql`translate(lower(${column}), ${ACCENTED_CHARS}, ${PLAIN_CHARS})`;
+}
+
+/** Same folding as the database does, applied to what the candidate typed. */
+function foldWord(word: string): string {
+  return word
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+}
 type ListingRow = typeof jobListings.$inferSelect;
 
 function toJob(row: JobRow): StoredJob {
@@ -348,6 +387,67 @@ export class PgJobsStore implements JobsStore {
       .limit(input.limit);
 
     return rows.map(toJob);
+  }
+
+  /**
+   * The candidate's own search.
+   *
+   * The words are matched with `ilike` on the title and the advert: this table
+   * holds the offers of the last weeks, not a search engine's index, and a
+   * full-text index would be a schema decision to take on real volume rather
+   * than on a guess.
+   */
+  async searchJobs(filters: JobSearchFilters) {
+    const words = filters.query
+      .split(/\s+/)
+      .map((word) => word.trim())
+      .filter((word) => word.length > 1)
+      .slice(0, MAX_SEARCH_WORDS);
+    const departments = [...new Set(filters.departments.filter(Boolean))];
+    const conditions = [
+      isNull(jobs.closedAt),
+      gte(
+        jobs.firstSeenAt,
+        new Date(Date.now() - filters.maxAgeDays * MS_PER_DAY),
+      ),
+      // Every word has to appear somewhere: two words narrow, they do not widen.
+      ...words.map((word) => {
+        const needle = `%${foldWord(word)}%`;
+
+        return or(
+          sql`${folded(jobs.title)} like ${needle}`,
+          sql`${folded(jobs.description)} like ${needle}`,
+          sql`${folded(jobs.companyName)} like ${needle}`,
+        );
+      }),
+      ...(departments.length > 0
+        ? [
+            filters.remoteOnly
+              ? or(inArray(jobs.department, departments), eq(jobs.remote, true))
+              : inArray(jobs.department, departments),
+          ]
+        : []),
+      ...(filters.remoteOnly && departments.length === 0
+        ? [eq(jobs.remote, true)]
+        : []),
+      ...(filters.contractTypes.length > 0
+        ? [inArray(jobs.contractType, [...filters.contractTypes])]
+        : []),
+    ];
+
+    const rows = await this.db
+      .select()
+      .from(jobs)
+      .where(and(...conditions))
+      .orderBy(desc(jobs.firstSeenAt))
+      .limit(filters.limit)
+      .offset(filters.offset);
+    const [counted] = await this.db
+      .select({ total: count() })
+      .from(jobs)
+      .where(and(...conditions));
+
+    return { jobs: rows.map(toJob), total: Number(counted?.total ?? 0) };
   }
 
   async closeListing(source: JobSource, externalId: string, at: string) {

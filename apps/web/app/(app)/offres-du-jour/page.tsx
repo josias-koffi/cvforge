@@ -44,9 +44,17 @@ export default async function DailyJobsPage() {
             : "Les dernières offres qui correspondaient à votre recherche."
         }
         actions={
-          <Button asChild variant="outline">
-            <Link href="/ma-recherche">Ma recherche</Link>
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button asChild variant="outline">
+              <Link href="/offres">
+                <SearchIcon />
+                Rechercher une offre
+              </Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link href="/ma-recherche">Ma recherche</Link>
+            </Button>
+          </div>
         }
       />
       <div className="flex flex-col gap-3 px-4 lg:px-6">
@@ -62,9 +70,12 @@ export default async function DailyJobsPage() {
                 activez les offres du jour. La sélection arrive le lendemain matin.
               </EmptyDescription>
             </EmptyHeader>
-            <EmptyContent>
+            <EmptyContent className="flex-row flex-wrap justify-center gap-2">
               <Button asChild>
                 <Link href="/ma-recherche">Configurer ma recherche</Link>
+              </Button>
+              <Button asChild variant="outline">
+                <Link href="/offres">Chercher par moi-même</Link>
               </Button>
             </EmptyContent>
           </Empty>

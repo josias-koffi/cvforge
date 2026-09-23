@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Spinner } from "@/components/ui/spinner"
-import type { JobMatch } from "@/lib/job-search"
+import type { JobListingSummary, JobMatchStatus, JobOffer } from "@/lib/job-search"
 
 const CONTRACT_LABELS: Record<string, string> = {
   alternance: "Alternance",
@@ -51,17 +51,33 @@ function scoreTone(score: number) {
   return "bg-muted text-muted-foreground"
 }
 
-export function JobMatchCard({ match }: { match: JobMatch }) {
+/**
+ * One offer, wherever it comes from.
+ *
+ * The morning selection carries a score and sometimes an explanation; an offer
+ * the candidate found by searching carries neither, and the card simply does
+ * not show them rather than showing a zero.
+ */
+export interface JobCardOffer {
+  job: JobOffer
+  listings: JobListingSummary[]
+  status: JobMatchStatus | null
+  score: number | null
+  aiReason: string | null
+}
+
+export function JobMatchCard({ match }: { match: JobCardOffer }) {
   const router = useRouter()
   const [dismissed, setDismissed] = useState(match.status === "dismissed")
   const [saved, setSaved] = useState(match.status === "saved")
+  const applied = match.status === "applied"
   const [applying, startApplying] = useTransition()
   const [updating, startUpdating] = useTransition()
   const openListings = match.listings.filter((listing) => !listing.closedAt)
 
   const apply = () =>
     startApplying(async () => {
-      const result = await applyToMatch(match.id)
+      const result = await applyToMatch(match.job.id)
 
       if (!result.ok) {
         toast.error(result.message)
@@ -74,7 +90,7 @@ export function JobMatchCard({ match }: { match: JobMatch }) {
 
   const update = (status: "saved" | "dismissed") =>
     startUpdating(async () => {
-      const result = await setMatchStatus(match.id, status)
+      const result = await setMatchStatus(match.job.id, status)
 
       if (!result.ok) {
         toast.error(result.message)
@@ -101,12 +117,14 @@ export function JobMatchCard({ match }: { match: JobMatch }) {
               {match.job.locationLabel ? ` · ${match.job.locationLabel}` : ""}
             </p>
           </div>
-          <span
-            className={`rounded-md px-2 py-1 text-sm font-medium ${scoreTone(match.score)}`}
-            title="Score de correspondance avec votre recherche"
-          >
-            {match.score}/100
-          </span>
+          {match.score === null ? null : (
+            <span
+              className={`rounded-md px-2 py-1 text-sm font-medium ${scoreTone(match.score)}`}
+              title="Score de correspondance avec votre recherche"
+            >
+              {match.score}/100
+            </span>
+          )}
         </div>
 
         <div className="flex flex-wrap gap-2">
@@ -117,11 +135,7 @@ export function JobMatchCard({ match }: { match: JobMatch }) {
           {match.job.salaryLabel ? (
             <Badge variant="secondary">{match.job.salaryLabel}</Badge>
           ) : null}
-          {match.matchedSkills.slice(0, 4).map((skill) => (
-            <Badge key={skill} variant="outline">
-              {skill}
-            </Badge>
-          ))}
+
         </div>
 
         {match.aiReason ? (
@@ -151,9 +165,9 @@ export function JobMatchCard({ match }: { match: JobMatch }) {
         ) : null}
 
         <div className="flex flex-wrap gap-2">
-          <Button disabled={applying} onClick={apply}>
+          <Button disabled={applying || applied} onClick={apply}>
             {applying ? <Spinner /> : <SparklesIcon />}
-            Postuler avec CVForge
+            {applied ? "Candidature créée" : "Postuler avec CVForge"}
           </Button>
           <Button asChild variant="outline">
             <a href={match.job.primaryUrl} target="_blank" rel="noreferrer">

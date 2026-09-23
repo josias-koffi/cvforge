@@ -2,7 +2,12 @@ import { Injectable, Logger } from "@nestjs/common";
 import type { ApplicationsService } from "../applications/applications.service";
 import { dateInParis } from "./job-digest.service";
 import type { JobSourceAdapter } from "./job-search.types";
-import type { JobsStore, StoredJobListing } from "./jobs.types";
+import type {
+  JobSearchFilters,
+  JobsStore,
+  StoredJob,
+  StoredJobListing,
+} from "./jobs.types";
 import type {
   JobMatchStatus,
   JobMatchWithJob,
@@ -16,6 +21,17 @@ const MIN_OFFER_TEXT_LENGTH = 160;
 export interface DigestView {
   digestDate: string;
   matches: Array<JobMatchWithJob & { listings: StoredJobListing[] }>;
+}
+
+/** One result of a candidate's own search, with what they already did with it. */
+export interface OfferSearchResult {
+  job: StoredJob;
+  listings: StoredJobListing[];
+  status: JobMatchStatus | null;
+  /** Only set when the offer came from a morning selection. */
+  score: number | null;
+  aiReason: string | null;
+  applicationId: string | null;
 }
 
 export type ApplyOutcome =
@@ -53,16 +69,97 @@ export class JobMatchesService {
     };
   }
 
+  /**
+   * The candidate's own search over the offers we hold.
+   *
+   * Same pool as the morning selection, minus the filtering by *their* search
+   * project: here they decide. What they already did with an offer is marked,
+   * so a result they dismissed or applied to is not proposed as new.
+   */
+  async searchOffers(
+    userEmail: string,
+    filters: JobSearchFilters,
+  ): Promise<{ offers: OfferSearchResult[]; total: number }> {
+    const found = await this.jobs.searchJobs(filters);
+    const statuses = await this.matches.listStatusesByJobIds(
+      userEmail,
+      found.jobs.map((job) => job.id),
+    );
+    const offers: OfferSearchResult[] = [];
+
+    for (const job of found.jobs) {
+      const match = statuses.get(job.id) ?? null;
+      const detailed = await this.jobs.findById(job.id);
+
+      offers.push({
+        aiReason: match?.aiReason ?? null,
+        applicationId: match?.applicationId ?? null,
+        job,
+        listings: detailed?.listings ?? [],
+        // A score means "we ranked this for you"; a hand-picked offer has none.
+        score: match && match.score > 0 ? match.score : null,
+        status: match?.status ?? null,
+      });
+    }
+
+    return { offers, total: found.total };
+  }
+
+  /**
+   * The row that records what a candidate did with an offer.
+   *
+   * The morning run writes one per proposal; a candidate who found the offer
+   * by hand gets one on their first action, with no score — nothing ranked it
+   * for them, and inventing a number would be a lie on the card.
+   */
+  async ensureMatch(
+    userEmail: string,
+    jobId: string,
+  ): Promise<JobMatchWithJob | null> {
+    const existing = await this.matches.findByJobId(userEmail, jobId);
+    if (existing) return this.matches.findById(userEmail, existing.id);
+
+    const found = await this.jobs.findById(jobId);
+    if (!found) return null;
+
+    await this.matches.createMany([
+      {
+        digestDate: dateInParis(this.now()),
+        jobId,
+        jobSnapshot: found.job,
+        matchedSkills: [],
+        profileId: "",
+        score: 0,
+        scoreBreakdown: {
+          experience: 0,
+          freshness: 0,
+          location: 0,
+          salary: 0,
+          skills: 0,
+          title: 0,
+        },
+        userEmail,
+      },
+    ]);
+
+    const created = await this.matches.findByJobId(userEmail, jobId);
+
+    return created ? this.matches.findById(userEmail, created.id) : null;
+  }
+
   async listRecent(userEmail: string, limit: number) {
     return this.withListings(await this.matches.listRecent(userEmail, limit));
   }
 
-  async setStatus(
+  async setStatusForJob(
     userEmail: string,
-    matchId: string,
+    jobId: string,
     status: JobMatchStatus,
   ): Promise<StoredJobMatch | null> {
-    return this.matches.setStatus(userEmail, matchId, status);
+    const match = await this.ensureMatch(userEmail, jobId);
+    if (!match) return null;
+
+    return this.matches.setStatus(userEmail, match.id, status);
   }
 
   /**
@@ -73,8 +170,8 @@ export class JobMatchesService {
    * the existing import run — the same one, with the same analysis and the
    * same price as pasting an offer by hand.
    */
-  async applyToMatch(userEmail: string, matchId: string): Promise<ApplyOutcome> {
-    const match = await this.matches.findById(userEmail, matchId);
+  async applyToJob(userEmail: string, jobId: string): Promise<ApplyOutcome> {
+    const match = await this.ensureMatch(userEmail, jobId);
     if (!match) return { outcome: "not_found" };
 
     const found = await this.jobs.findById(match.jobId);
@@ -83,7 +180,7 @@ export class JobMatchesService {
     if (!(await this.isStillOpen(listings))) return { outcome: "closed" };
 
     const application = await this.createApplication(userEmail, match);
-    await this.matches.setStatus(userEmail, matchId, "applied", application.id);
+    await this.matches.setStatus(userEmail, match.id, "applied", application.id);
 
     return { applicationId: application.id, outcome: "applied" };
   }

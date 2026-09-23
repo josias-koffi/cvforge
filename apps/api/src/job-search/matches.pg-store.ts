@@ -1,4 +1,4 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 import type { Database } from "../database/database.types";
 import { jobDigestRuns, jobMatches, jobs } from "../database/schema";
 import type { StoredJob } from "./jobs.types";
@@ -100,6 +100,32 @@ export class PgJobMatchesStore implements JobMatchesStore {
       .returning({ id: jobMatches.id });
 
     return inserted.length;
+  }
+
+  async findByJobId(userEmail: string, jobId: string) {
+    const [row] = await this.db
+      .select()
+      .from(jobMatches)
+      .where(and(eq(jobMatches.userEmail, userEmail), eq(jobMatches.jobId, jobId)))
+      .limit(1);
+
+    return row ? toMatch(row) : null;
+  }
+
+  async listStatusesByJobIds(userEmail: string, jobIds: readonly string[]) {
+    if (jobIds.length === 0) return new Map<string, StoredJobMatch>();
+
+    const rows = await this.db
+      .select()
+      .from(jobMatches)
+      .where(
+        and(
+          eq(jobMatches.userEmail, userEmail),
+          inArray(jobMatches.jobId, [...jobIds]),
+        ),
+      );
+
+    return new Map(rows.map((row) => [row.jobId, toMatch(row)]));
   }
 
   async listByDigestDate(userEmail: string, digestDate: string) {

@@ -55,6 +55,41 @@ export async function loadDigest(date?: string): Promise<JobDigest> {
   })
 }
 
+export interface OfferSearchResult {
+  job: JobOffer
+  listings: JobListingSummary[]
+  status: JobMatchStatus | null
+  /** Only set when the offer came from a morning selection. */
+  score: number | null
+  aiReason: string | null
+  applicationId: string | null
+}
+
+export interface OfferSearchFilters {
+  q?: string
+  departement?: string
+  contrat?: string
+  teletravail?: string
+  page?: string
+}
+
+export async function searchOffers(filters: OfferSearchFilters) {
+  return api<{
+    offers: OfferSearchResult[]
+    total: number
+    page: number
+    pageSize: number
+  }>("/job-search/offers", {
+    query: {
+      contrat: filters.contrat,
+      departement: filters.departement,
+      page: filters.page,
+      q: filters.q,
+      teletravail: filters.teletravail,
+    },
+  })
+}
+
 export async function loadRecentMatches(limit = 60): Promise<JobMatch[]> {
   const { matches } = await api<{ matches: JobMatch[] }>("/job-search/history", {
     query: { limit },

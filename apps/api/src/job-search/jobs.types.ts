@@ -48,6 +48,19 @@ export interface JobWithListings {
   listings: StoredJobListing[];
 }
 
+/** What a candidate can narrow their own search by. */
+export interface JobSearchFilters {
+  /** Words looked for in the title and the advert. */
+  query: string;
+  departments: readonly string[];
+  contractTypes: readonly (SearchContractType | "unknown")[];
+  remoteOnly: boolean;
+  /** Offers first collected in the last N days. */
+  maxAgeDays: number;
+  limit: number;
+  offset: number;
+}
+
 export const JOBS_STORE = Symbol("JOBS_STORE");
 
 export type JobsStore = {
@@ -84,6 +97,14 @@ export type JobsStore = {
     since: string;
     limit: number;
   }): Promise<StoredJob[]>;
+  /**
+   * Free search over the offers we hold, for a candidate looking by hand
+   * rather than waiting for the morning selection.
+   */
+  searchJobs(filters: JobSearchFilters): Promise<{
+    jobs: StoredJob[];
+    total: number;
+  }>;
   /** Closes the advert, and the job once its last advert is closed. */
   closeListing(source: JobSource, externalId: string, at: string): Promise<void>;
   /** Closes every advert of a source not seen in the run that just ended. */

@@ -1055,3 +1055,11 @@
 - **Découper un formulaire long en questions** (le poste, où, les secteurs, les entreprises, les alertes) plutôt qu'en une colonne de champs : c'est un écran qu'on remplit une fois et qu'on rouvre rarement.
 - La recherche reste **attachée à un profil** : quand l'utilisateur en a plusieurs, la page doit dire lequel, sinon il règle la recherche d'un profil en croyant régler l'autre.
 - **Les types de routes de Next sont générés** : une nouvelle route fait échouer `tsc` tant que `next build` (ou `next dev`) n'a pas régénéré `AppRoutes`. Ce n'est pas une erreur de code.
+
+## 2026-09-23 — E19, US-115 : recherche libre dans nos offres
+- **`ilike` ignore la casse, pas les accents.** « developpeur » ne trouvait rien alors que la table était pleine de « Développeur » — personne ne tape les accents dans un champ de recherche. Corrigé avec `translate(lower(col), 'àáâ…', 'aaa…')` des deux côtés, sans l'extension `unaccent` : une extension Postgres est une décision de schéma, `translate` est du SQL standard et suffit à ce volume. **Trouvé en regardant la page, pas en relisant le code.**
+- **Chaque mot doit restreindre, jamais élargir** : les mots sont combinés en ET, chacun cherché dans le titre, l'annonce et le nom de l'entreprise.
+- **Les critères de recherche vivent dans l'URL**, pas dans l'état du composant : on met une recherche d'emploi en favori, on la partage, on y revient avec le bouton « retour ».
+- **Une offre trouvée à la main n'a pas de score** : la ligne de suivi est créée à la première action avec 0, et la carte n'affiche simplement pas le badge. Afficher « 0/100 » prétendrait qu'on l'a classée et jugée mauvaise.
+- **Les actions passent par l'identifiant de l'offre, pas celui de la proposition** : une seule carte sert alors la sélection du matin et la recherche, et la ligne de suivi se crée à la volée si elle n'existe pas.
+- Le bandeau « 1 Issue » de Next en dev venait d'une **extension du navigateur** qui ajoute un attribut au `<body>` (`cz-shortcut-listen`), pas de notre rendu. Vérifier la console avant d'accuser son propre code.

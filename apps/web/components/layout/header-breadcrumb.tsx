@@ -37,6 +37,7 @@ const segmentLabels: Record<string, string> = {
   new: "Nouveau",
   notifications: "Notifications",
   "ma-recherche": "Ma recherche",
+  offres: "Rechercher une offre",
   "offres-du-jour": "Offres du jour",
   profile: "Mes profils",
   progression: "Progression",
