@@ -343,6 +343,23 @@ Cible front : `apps/web`. `apps/app` est gelée, non touchée.
 - Un fichier **TypeScript** plutôt que JSON : un fournisseur mal orthographié casse la compilation,
   et aucune donnée n'a à être copiée dans l'image.
 
+### Administration de la collecte — `/admin/job-search` (2026-09-23, lot 2)
+
+- Le contrôleur `admin/job-boards` servait déjà quatre routes **sans aucune interface** : voir le
+  registre supposait un shell dans le conteneur. Deux onglets les exposent enfin, sans une ligne
+  d'API nouvelle.
+  - **Entreprises** : filtre par logiciel, ajout par l'URL d'une offre, activation et désactivation,
+    origine de chaque entreprise, dernier statut, nombre d'offres et compteur d'échecs. Un
+    fournisseur sans adaptateur est signalé « adaptateur à venir » plutôt que de paraître en panne.
+  - **Doublons** : les rapprochements faits **par ressemblance** — les seuls qui puissent être faux
+    — avec le bouton « Séparer ». Les rapprochements par lien ou par clé exacte n'y figurent pas :
+    ils ne demandent pas d'avis.
+- **Vérifié dans le navigateur** : les 22 entreprises s'affichent avec leurs compteurs réels, la
+  désactivation puis la réactivation fonctionnent, et l'onglet Doublons annonce correctement qu'il
+  n'y a rien à trancher (les 17 fusions locales l'ont été par lien, pas par ressemblance).
+- Refactoring au passage : les libellés de contrats et de sources vivaient dans la carte d'offre et
+  sont maintenant partagés (`lib/job-labels.ts`), l'admin nommant les mêmes sources.
+
 ## ⚠️ To Clarify
 
 1. ~~Quota France Travail réel de notre application~~ → **tranché le 2026-09-23** en lisant la

@@ -1179,3 +1179,16 @@
   `include` ne couvre que `src/**/*.ts`, un JSON ne serait pas copié dans `dist` et le script
   compilé planterait dans le conteneur. En prime, un fournisseur mal orthographié casse le build.
 - **Verified** : 412 annonces, 395 offres uniques collectées en local depuis 22 entreprises.
+
+### 2026-09-23 — Un module partagé ne doit pas traîner le client d'API dans le navigateur
+- **Constat** : avoir déplacé `SOURCE_LABELS` dans `lib/job-search.ts` pour le partager avec l'admin
+  a cassé `next build`. Ce fichier importe `@/lib/api`, réservé au serveur ; un composant client qui
+  y prend une simple constante embarque tout le client d'API.
+- **Leçon** : séparer le **vocabulaire** (`lib/job-labels.ts`, aucun import) des **accès données**.
+  Un `import type` est effacé à la compilation et ne pose pas ce problème ; une constante, si.
+- **Leçon** : dans ce dépôt, une page appelle `api<T>()` elle-même. Mes fonctions `loadX()` dans un
+  module partagé recréaient exactement le même piège — supprimées.
+- **Leçon** : `next build` est le seul garde-fou pour cette classe d'erreur. `vitest` et
+  `tsc --noEmit` passaient tous les deux.
+- **Verified** : `/admin/job-search` dans le navigateur — 22 entreprises avec leurs compteurs réels,
+  désactivation et réactivation effectives, onglet Doublons correct.

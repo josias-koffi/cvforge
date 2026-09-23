@@ -10,39 +10,8 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Spinner } from "@/components/ui/spinner"
+import { CONTRACT_LABELS, SOURCE_LABELS } from "@/lib/job-labels"
 import type { JobListingSummary, JobMatchStatus, JobOffer } from "@/lib/job-search"
-
-const CONTRACT_LABELS: Record<string, string> = {
-  alternance: "Alternance",
-  cdd: "CDD",
-  cdi: "CDI",
-  freelance: "Freelance",
-  interim: "Intérim",
-  stage: "Stage",
-  unknown: "Contrat non précisé",
-  vie: "VIE",
-}
-
-/**
- * Where the offer can be read, in the wording the licences require.
- *
- * France Travail's reuse licence asks for the source to be named and the
- * original advert to be linked; a company's own board is named after the
- * employer, because that is what the candidate recognises.
- */
-const SOURCE_LABELS: Record<string, string> = {
-  adzuna: "Adzuna",
-  ashby: "Site de l'entreprise",
-  france_travail: "France Travail",
-  greenhouse: "Site de l'entreprise",
-  la_bonne_alternance: "La bonne alternance",
-  lever: "Site de l'entreprise",
-  personio: "Site de l'entreprise",
-  recruitee: "Site de l'entreprise",
-  smartrecruiters: "Site de l'entreprise",
-  welcomekit: "Welcome to the Jungle",
-  workable: "Site de l'entreprise",
-}
 
 function scoreTone(score: number) {
   if (score >= 75) return "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
