@@ -2,10 +2,11 @@
 
 import { useState } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
-import { PlusIcon } from "lucide-react"
+import { DownloadIcon, PlusIcon } from "lucide-react"
 
 import {
   addBoard,
+  importSeedBoards,
   setBoardEnabled,
 } from "@/app/(app)/admin/job-search/actions"
 import { TableFrame } from "@/components/data-table/table-frame"
@@ -129,6 +130,7 @@ export function BoardsTable({
             ))}
           </SelectContent>
         </Select>
+        <SeedButton />
         <span className="text-sm text-muted-foreground sm:ml-auto">
           {boards.length} entreprise{boards.length > 1 ? "s" : ""}
         </span>
@@ -171,6 +173,25 @@ export function BoardsTable({
         </TableBody>
       </TableFrame>
     </div>
+  )
+}
+
+/**
+ * The companies shipped with the code. Replaying the import is harmless: it
+ * upserts, and never re-enables one an admin switched off.
+ */
+function SeedButton() {
+  const { pending, run } = useActionMutation(() => {})
+
+  return (
+    <Button
+      variant="outline"
+      disabled={pending}
+      onClick={() => run(() => importSeedBoards())}
+    >
+      {pending ? <Spinner /> : <DownloadIcon />}
+      Importer la liste de départ
+    </Button>
   )
 }
 

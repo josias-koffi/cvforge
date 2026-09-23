@@ -36,6 +36,7 @@ import { JOBS_STORE, type JobsStore } from "./jobs.types";
 import { PgJobBoardsStore } from "./boards.pg-store";
 import { JOB_BOARDS_STORE, type JobBoardsStore } from "./boards.types";
 import { JobBoardsController } from "./job-boards.controller";
+import { JobSearchAdminController } from "./job-search-admin.controller";
 import { JobMatchesController } from "./job-matches.controller";
 import { JobMatchesService } from "./job-matches.service";
 
@@ -56,7 +57,11 @@ import { JobMatchesService } from "./job-matches.service";
     ProfilesModule,
     SearchProjectsModule,
   ],
-  controllers: [JobBoardsController, JobMatchesController],
+  controllers: [
+    JobBoardsController,
+    JobSearchAdminController,
+    JobMatchesController,
+  ],
   providers: [
     {
       provide: JOB_BOARDS_STORE,

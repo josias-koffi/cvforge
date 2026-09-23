@@ -63,13 +63,15 @@ async function main() {
     const runs = await db
       .select()
       .from(jobDigestRuns)
-      .orderBy(desc(jobDigestRuns.runDate))
+      .orderBy(desc(jobDigestRuns.startedAt))
       .limit(7);
 
     console.log("\nDernières collectes");
     if (runs.length === 0) console.log("  aucune — elle n'a jamais tourné.");
     for (const run of runs) {
-      console.log(`  ${run.runDate} — ${run.status}`);
+      console.log(
+        `  ${run.startedAt.toISOString()} — ${run.kind} — ${run.status}`,
+      );
       console.log(`    ${JSON.stringify(run.stats)}`);
     }
 

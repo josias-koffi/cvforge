@@ -360,6 +360,30 @@ Cible front : `apps/web`. `apps/app` est gelée, non touchée.
 - Refactoring au passage : les libellés de contrats et de sources vivaient dans la carte d'offre et
   sont maintenant partagés (`lib/job-labels.ts`), l'admin nommant les mêmes sources.
 
+### Lancer une collecte depuis l'admin (2026-09-23, lot 3)
+
+Trois défauts rendaient un bouton « Lancer » dangereux, et le troisième existait déjà :
+
+- **La date était la clé primaire d'une exécution** : une seule ligne par jour, donc aucun
+  historique, et une collecte manuelle **écrasait les chiffres de la passe du matin**.
+- **`--force` libérait la journée avant de la reprendre** : deux clics lançaient deux collectes
+  concurrentes.
+- **Une exécution interrompue restait `running` pour toujours** et bloquait la collecte du jour.
+
+Corrigé par la migration `0025` : identité propre (uuid), et deux index uniques partiels qui
+portent ce que la clé primaire portait — **une sélection du matin par jour**, et **une collecte à la
+fois**. Le verrou est dans la base, pas dans une variable, parce que l'API peut avoir plusieurs
+instances. Une ligne `running` de plus de deux heures est déclarée échouée au moment de réclamer.
+
+- **Collecter n'est pas notifier.** `run({ kind: "collect" })` s'arrête une fois les offres
+  enregistrées. Le bouton admin ne demande que ça : un bouton qui écrit à tous les candidats parce
+  qu'on voulait tester une source est un incident en puissance.
+- `POST /admin/job-search/runs` répond **202** immédiatement ; le démarrage en arrière-plan vit dans
+  le service, jamais dans le contrôleur (`no-unresolved-promises.test.ts` l'interdit, et une
+  promesse rejetée non gérée tue le processus). La page se rafraîchit tant qu'une exécution tourne.
+- **Vérifié dans le navigateur** : collecte lancée, ligne « En cours » puis « Terminée — 22
+  entreprises lues · 413 annonces », bouton réactivé tout seul, et **les chiffres du matin intacts**.
+
 ## ⚠️ To Clarify
 
 1. ~~Quota France Travail réel de notre application~~ → **tranché le 2026-09-23** en lisant la

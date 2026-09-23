@@ -72,8 +72,13 @@ export type JobMatchesStore = {
   deleteByUserEmail(userEmail: string): Promise<number>;
 };
 
+/** What a run did: `digest` selects and notifies afterwards, `collect` stops. */
+export type DigestRunKind = "digest" | "collect";
+
 export interface DigestRun {
+  id: string;
   runDate: string;
+  kind: DigestRunKind;
   status: "running" | "done" | "failed";
   stats: Record<string, unknown> | null;
   startedAt: string;
@@ -84,14 +89,23 @@ export const JOB_DIGEST_RUNS_STORE = Symbol("JOB_DIGEST_RUNS_STORE");
 
 export type JobDigestRunsStore = {
   /**
-   * Claims the day, or returns null because somebody else already has it.
-   * This is the lock: the unique primary key decides, not a timer.
+   * Starts a run, or returns null because the database refused it: the day's
+   * selection was already made, or a collection is already running. Two
+   * partial unique indexes decide, not a timer and not a flag in memory.
    */
-  claim(runDate: string): Promise<DigestRun | null>;
+  claim(runDate: string, kind: DigestRunKind): Promise<DigestRun | null>;
   finish(
-    runDate: string,
+    runId: string,
     outcome: { status: "done" | "failed"; stats: Record<string, unknown> },
   ): Promise<void>;
+  /**
+   * Fails the runs left `running` by a process that is gone, so a restart
+   * mid-collection does not block every later one. Returns how many.
+   */
+  recoverStale(olderThanMs: number): Promise<number>;
+  /** The history the admin screen reads, newest first. */
+  list(limit: number): Promise<DigestRun[]>;
+  /** The day's morning selection, whatever else ran that day. */
   find(runDate: string): Promise<DigestRun | null>;
   /**
    * Gives the day back, so a run can be asked for again. Only the `--force`

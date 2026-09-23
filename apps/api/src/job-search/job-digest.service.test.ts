@@ -131,6 +131,7 @@ interface Harness {
   written: NewJobMatch[];
   claims: string[];
   released: string[];
+  recovered: number[];
   registered: string[][];
   searched: JobSourceQuery[];
   finished: Array<{ status: string }>;
@@ -227,17 +228,25 @@ function createService(options: {
   } as unknown as JobMatchesStore;
 
   const released: string[] = [];
+  const recovered: number[] = [];
   const runs: JobDigestRunsStore = {
     release: async (runDate) => {
       released.push(runDate);
       return true;
     },
-    claim: async (runDate) => {
+    recoverStale: async (olderThanMs) => {
+      recovered.push(olderThanMs);
+      return 0;
+    },
+    list: async () => [],
+    claim: async (runDate, kind) => {
       claims.push(runDate);
       return options.alreadyClaimed
         ? null
         : {
             finishedAt: null,
+            id: "run-1",
+            kind,
             runDate,
             startedAt: new Date(NOW).toISOString(),
             stats: null,
@@ -315,6 +324,7 @@ function createService(options: {
     claims,
     consumed,
     finished,
+    recovered,
     registered,
     searched,
     isStillOpen,
@@ -442,6 +452,38 @@ describe("JobDigestService", () => {
     await harness.service.run();
 
     expect(harness.searched.at(-1)?.publishedSinceDays).toBe(1);
+  });
+
+  it("collects without selecting or notifying anybody", async () => {
+    // What the admin button asks for. A button that writes to every candidate
+    // because somebody wanted to test a source is an incident waiting to happen.
+    const harness = createService();
+
+    const stats = await harness.service.run({ kind: "collect" });
+
+    expect(stats).toMatchObject({ digestProjects: 0, listingsCollected: 2 });
+    expect(harness.written).toEqual([]);
+    expect(harness.announced).toEqual([]);
+  });
+
+  it("frees a run left behind by a restart before claiming", async () => {
+    // Otherwise the row stays `running` for ever and the unique index refuses
+    // every later collection.
+    const harness = createService();
+
+    await harness.service.run();
+
+    expect(harness.recovered).toEqual([2 * 60 * 60_000]);
+  });
+
+  it("does not give the day back for a collection-only run", async () => {
+    // `force` is about redoing the morning selection; a collection never
+    // conflicts with the day.
+    const harness = createService();
+
+    await harness.service.run({ force: true, kind: "collect" });
+
+    expect(harness.released).toEqual([]);
   });
 
   it("gives the day back when the run is forced", async () => {

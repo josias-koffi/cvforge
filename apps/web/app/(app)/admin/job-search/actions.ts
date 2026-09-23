@@ -27,6 +27,57 @@ async function mutate(
   }
 }
 
+/**
+ * Asks for a collection and returns at once: it takes minutes, so the page
+ * polls the run rather than holding the request open. The API answers 202 and
+ * `started: false` when one is already running — the lock working, not an
+ * error, so the message says so plainly.
+ */
+export async function startCollection(sinceDays: number) {
+  await requireAdminSession()
+
+  try {
+    const { started } = await api<{ started: boolean }>(
+      "/admin/job-search/runs",
+      { body: { sinceDays }, method: "POST" }
+    )
+
+    return {
+      ok: true,
+      message: started
+        ? "Collecte lancée. Son avancement s'affiche ci-dessous."
+        : "Une collecte est déjà en cours. Attendez qu'elle finisse.",
+    } satisfies ActionResult
+  } catch (error) {
+    if (error instanceof ApiError) return { ok: false, message: error.message }
+    throw error
+  } finally {
+    revalidatePath(PAGE_PATH)
+  }
+}
+
+/** Registers the companies shipped with the code. Replaying it is harmless. */
+export async function importSeedBoards() {
+  await requireAdminSession()
+
+  try {
+    const report = await api<{ registered: number; skipped: number }>(
+      "/admin/job-search/boards/seed",
+      { method: "POST" }
+    )
+
+    return {
+      ok: true,
+      message: `${report.registered} entreprise(s) enregistrée(s). Elles seront lues à la prochaine collecte.`,
+    } satisfies ActionResult
+  } catch (error) {
+    if (error instanceof ApiError) return { ok: false, message: error.message }
+    throw error
+  } finally {
+    revalidatePath(PAGE_PATH)
+  }
+}
+
 /** Adds a company from the URL of one of its adverts. */
 export async function addBoard(url: string, companyName: string) {
   return mutate(

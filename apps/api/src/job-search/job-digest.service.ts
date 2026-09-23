@@ -15,6 +15,8 @@ import { JobDeduplicator } from "./dedup/job-deduplicator";
 import type { JobSourceAdapter, NormalizedJobListing } from "./job-search.types";
 import type { JobsStore, StoredJob } from "./jobs.types";
 import type {
+  DigestRun,
+  DigestRunKind,
   JobDigestRunsStore,
   JobMatchesStore,
   NewJobMatch,
@@ -50,6 +52,13 @@ const PARIS_TIME_ZONE = "Europe/Paris";
  * the whole retention window instead — `job-digest:run --since=31`.
  */
 const COLLECTION_WINDOW_DAYS = 1;
+
+/**
+ * Past this, a run still marked `running` is a run whose process is gone: no
+ * collection takes two hours, and the row would otherwise block every later
+ * one.
+ */
+const STALE_RUN_MS = 2 * 60 * 60_000;
 /** How far back a candidate's pool reaches. Past 30 days nothing is proposed. */
 const CANDIDATE_WINDOW_DAYS = 31;
 const CANDIDATE_POOL_SIZE = 500;
@@ -119,22 +128,69 @@ export class JobDigestService implements OnModuleInit {
   }
 
   /**
-   * One pass. Returns null when another instance already owns today's run.
+   * Starts a collection in the background and returns its identity at once.
+   *
+   * The fire-and-forget lives here rather than in the controller: a captured
+   * promise in a controller is exactly what `no-unresolved-promises.test.ts`
+   * forbids, and an unhandled rejection would take the process down. The
+   * caller polls the run instead — a collection takes minutes, an HTTP
+   * request must not.
+   */
+  async startBackgroundRun(options: {
+    sinceDays?: number;
+  }): Promise<{ started: boolean }> {
+    await this.runs.recoverStale(STALE_RUN_MS);
+
+    const claimed = await this.runs.claim(dateInParis(this.now()), "collect");
+    if (!claimed) return { started: false };
+
+    void this.executeRun(claimed, options.sinceDays).catch((error: unknown) => {
+      this.logger.error(`Background collection failed: ${String(error)}`);
+    });
+
+    return { started: true };
+  }
+
+  /**
+   * One pass. Returns null when the database refused the run: the day already
+   * has its morning selection, or a collection is already under way.
+   *
+   * `kind: "collect"` stops once the offers are stored — no selection, no
+   * notification, no e-mail. That is what the admin button asks for: a button
+   * that writes to every candidate because somebody wanted to test a source
+   * is an incident waiting to happen.
    */
   async run(
-    options: { force?: boolean; sinceDays?: number } = {},
+    options: {
+      force?: boolean;
+      sinceDays?: number;
+      kind?: DigestRunKind;
+    } = {},
   ): Promise<DigestStats | null> {
     const runDate = dateInParis(this.now());
+    const kind = options.kind ?? "digest";
+
+    // A run left behind by a restart would hold the lock for ever.
+    await this.runs.recoverStale(STALE_RUN_MS);
 
     // Forcing gives the day back before claiming it again, so the manual run
     // works for a search configured after the morning pass. Nothing is sent
     // twice: a match is unique per candidate and offer, and the notification
     // is created once per day.
-    if (options.force) await this.runs.release(runDate);
+    if (options.force && kind === "digest") await this.runs.release(runDate);
 
-    const claimed = await this.runs.claim(runDate);
+    const claimed = await this.runs.claim(runDate, kind);
     if (!claimed) return null;
 
+    return this.executeRun(claimed, options.sinceDays);
+  }
+
+  /** The work itself, once a run has been claimed. */
+  private async executeRun(
+    claimed: DigestRun,
+    sinceDays?: number,
+  ): Promise<DigestStats> {
+    const { kind, runDate } = claimed;
     const stats: DigestStats = {
       aiReranks: 0,
       boardsDiscovered: 0,
@@ -159,24 +215,29 @@ export class JobDigestService implements OnModuleInit {
       const listings = await this.collect(
         allProjects.map((entry) => entry.project),
         stats,
-        options.sinceDays ?? COLLECTION_WINDOW_DAYS,
+        sinceDays ?? COLLECTION_WINDOW_DAYS,
       );
       stats.listingsCollected = listings.length;
 
       const attached = await this.deduplicator.attachAll(listings);
       stats.jobsCreated = attached.jobsCreated;
 
-      const digestProjects = await this.searchProjects.listDigestEnabled();
-      stats.digestProjects = digestProjects.length;
+      if (kind === "digest") {
+        const digestProjects = await this.searchProjects.listDigestEnabled();
+        stats.digestProjects = digestProjects.length;
 
-      for (const entry of digestProjects) {
-        await this.buildSelection(entry, runDate, stats);
+        for (const entry of digestProjects) {
+          await this.buildSelection(entry, runDate, stats);
+        }
       }
 
-      await this.runs.finish(runDate, { stats: { ...stats }, status: "done" });
+      await this.runs.finish(claimed.id, { stats: { ...stats }, status: "done" });
     } catch (error) {
       stats.errors.push(String(error));
-      await this.runs.finish(runDate, { stats: { ...stats }, status: "failed" });
+      await this.runs.finish(claimed.id, {
+        stats: { ...stats },
+        status: "failed",
+      });
       this.logger.error(`Digest ${runDate} failed: ${String(error)}`);
     }
 

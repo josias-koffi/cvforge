@@ -1,9 +1,10 @@
-import { and, desc, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, inArray, lt } from "drizzle-orm";
 import type { Database } from "../database/database.types";
 import { jobDigestRuns, jobMatches, jobs } from "../database/schema";
 import type { StoredJob } from "./jobs.types";
 import type {
   DigestRun,
+  DigestRunKind,
   JobDigestRunsStore,
   JobMatchStatus,
   JobMatchWithJob,
@@ -204,21 +205,56 @@ export class PgJobDigestRunsStore implements JobDigestRunsStore {
   constructor(private readonly db: Database) {}
 
   /**
-   * The day's lock. Two instances waking at the same minute both insert; the
-   * primary key lets exactly one through, and the other gets nothing back.
+   * The lock. Two instances waking at the same minute both insert, and the
+   * database lets exactly one through: either the day already has its morning
+   * selection, or a collection is already running. The loser gets nothing
+   * back — that is the answer "somebody else has it", not a failure.
+   *
+   * `onConflictDoNothing` without a target covers both indexes at once.
    */
-  async claim(runDate: string): Promise<DigestRun | null> {
+  async claim(runDate: string, kind: DigestRunKind): Promise<DigestRun | null> {
     const [row] = await this.db
       .insert(jobDigestRuns)
-      .values({ runDate, status: "running" })
-      .onConflictDoNothing({ target: jobDigestRuns.runDate })
+      .values({ kind, runDate, status: "running" })
+      .onConflictDoNothing()
       .returning();
 
     return row ? toRun(row) : null;
   }
 
+  /**
+   * A container restarted mid-collection leaves a row `running` for ever,
+   * which would block every later run: the unique index would refuse them.
+   * Anything older than the window is declared failed — no collection
+   * survives that long without finishing.
+   */
+  async recoverStale(olderThanMs: number): Promise<number> {
+    const rows = await this.db
+      .update(jobDigestRuns)
+      .set({ finishedAt: new Date(), status: "failed" })
+      .where(
+        and(
+          eq(jobDigestRuns.status, "running"),
+          lt(jobDigestRuns.startedAt, new Date(Date.now() - olderThanMs)),
+        ),
+      )
+      .returning({ id: jobDigestRuns.id });
+
+    return rows.length;
+  }
+
+  async list(limit: number): Promise<DigestRun[]> {
+    const rows = await this.db
+      .select()
+      .from(jobDigestRuns)
+      .orderBy(desc(jobDigestRuns.startedAt))
+      .limit(limit);
+
+    return rows.map(toRun);
+  }
+
   async finish(
-    runDate: string,
+    runId: string,
     outcome: { status: "done" | "failed"; stats: Record<string, unknown> },
   ) {
     await this.db
@@ -228,14 +264,20 @@ export class PgJobDigestRunsStore implements JobDigestRunsStore {
         stats: outcome.stats,
         status: outcome.status,
       })
-      .where(eq(jobDigestRuns.runDate, runDate));
+      .where(eq(jobDigestRuns.id, runId));
   }
 
+  /** Gives the day's morning selection back, so it can be asked for again. */
   async release(runDate: string): Promise<boolean> {
     const rows = await this.db
       .delete(jobDigestRuns)
-      .where(eq(jobDigestRuns.runDate, runDate))
-      .returning({ runDate: jobDigestRuns.runDate });
+      .where(
+        and(
+          eq(jobDigestRuns.runDate, runDate),
+          eq(jobDigestRuns.kind, "digest"),
+        ),
+      )
+      .returning({ id: jobDigestRuns.id });
 
     return rows.length > 0;
   }
@@ -244,7 +286,12 @@ export class PgJobDigestRunsStore implements JobDigestRunsStore {
     const [row] = await this.db
       .select()
       .from(jobDigestRuns)
-      .where(eq(jobDigestRuns.runDate, runDate))
+      .where(
+        and(
+          eq(jobDigestRuns.runDate, runDate),
+          eq(jobDigestRuns.kind, "digest"),
+        ),
+      )
       .limit(1);
 
     return row ? toRun(row) : null;
@@ -254,6 +301,8 @@ export class PgJobDigestRunsStore implements JobDigestRunsStore {
 function toRun(row: typeof jobDigestRuns.$inferSelect): DigestRun {
   return {
     finishedAt: row.finishedAt?.toISOString() ?? null,
+    id: row.id,
+    kind: row.kind as DigestRun["kind"],
     runDate: row.runDate,
     startedAt: row.startedAt.toISOString(),
     stats: (row.stats as Record<string, unknown> | null) ?? null,

@@ -63,16 +63,42 @@ export const jobMatches = pgTable(
 );
 
 /**
- * One run of the morning collection, and the lock that makes it happen once.
+ * One run of the collection, and the two locks that keep it sane.
  *
- * `run_date` is unique, so two API instances starting the same morning race on
- * the insert and exactly one wins — the same trick the repo already uses to
- * keep daily work idempotent, without a job queue.
+ * A run has its own identity, so the table is a history: a collection asked
+ * for by hand no longer overwrites the morning's figures. Two partial unique
+ * indexes carry what the primary key used to:
+ *
+ * - **one morning selection per day**, whatever else ran that day;
+ * - **one collection running at a time** — every running row carries the same
+ *   status value, so uniqueness on it allows exactly one.
+ *
+ * Both are enforced by the database rather than by a variable in memory,
+ * because the API can run several instances. No job queue, as everywhere else
+ * in this repo.
  */
-export const jobDigestRuns = pgTable("job_digest_runs", {
-  runDate: date("run_date").primaryKey(),
-  status: text("status").notNull().default("running"),
-  stats: jsonb("stats"),
-  startedAt: timestamp("started_at", { withTimezone: true }).notNull().defaultNow(),
-  finishedAt: timestamp("finished_at", { withTimezone: true }),
-});
+export const jobDigestRuns = pgTable(
+  "job_digest_runs",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    runDate: date("run_date").notNull(),
+    /** `digest` selects and notifies afterwards; `collect` stops at storing. */
+    kind: text("kind").notNull().default("digest"),
+    status: text("status").notNull().default("running"),
+    stats: jsonb("stats"),
+    startedAt: timestamp("started_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    finishedAt: timestamp("finished_at", { withTimezone: true }),
+  },
+  (table) => [
+    uniqueIndex("job_digest_runs_day_idx")
+      .on(table.runDate)
+      .where(sql`${table.kind} = 'digest'`),
+    uniqueIndex("job_digest_runs_running_idx")
+      .on(table.status)
+      .where(sql`${table.status} = 'running'`),
+    index("job_digest_runs_recent_idx").on(sql`${table.startedAt} desc`),
+    check("job_digest_runs_kind_check", sql`${table.kind} in ('digest', 'collect')`),
+  ],
+);

@@ -1192,3 +1192,26 @@
   `tsc --noEmit` passaient tous les deux.
 - **Verified** : `/admin/job-search` dans le navigateur — 22 entreprises avec leurs compteurs réels,
   désactivation et réactivation effectives, onglet Doublons correct.
+
+### 2026-09-23 — Un verrou journalier n'est pas un verrou d'exécution
+- **Constat** : `job_digest_runs.run_date` en clé primaire servait de verrou *et* d'historique. Les
+  deux rôles sont incompatibles : une seule ligne par jour interdit tout historique, et une collecte
+  manuelle écrasait les statistiques du matin. Pire, `--force` supprimait la ligne avant de la
+  recréer — deux exécutions pouvaient donc tourner ensemble.
+- **Solution** : identité propre (uuid) + **deux index uniques partiels**. `(run_date) where kind =
+  'digest'` garantit une sélection par jour ; `(status) where status = 'running'` garantit une
+  exécution à la fois — toutes les lignes en cours partagent la même valeur, donc l'unicité n'en
+  laisse qu'une. Le verrou reste dans la base, comme il doit l'être avec plusieurs instances.
+- **Leçon** : un verrou pris avant tout travail doit prévoir le processus qui meurt. Une ligne
+  `running` orpheline bloquait la collecte pour toujours ; elle est désormais déclarée échouée
+  au-delà de deux heures.
+- **Leçon** : séparer ce qui collecte de ce qui notifie **avant** d'exposer un bouton. Sinon un test
+  de source envoie des e-mails à tous les utilisateurs.
+- **Leçon** : le « fire-and-forget » d'une tâche longue appartient au service, pas au contrôleur —
+  `no-unresolved-promises.test.ts` refuse une promesse capturée dans un contrôleur, et une promesse
+  rejetée non gérée tue le processus Node.
+- **Leçon** : une migration Drizzle écrite à la main a besoin de `--> statement-breakpoint` entre
+  chaque instruction, sinon PGlite répond « cannot insert multiple commands into a prepared
+  statement ». Et ne jamais découper ce fichier en coupant sur « ; » : un commentaire en contient.
+- **Verified** : 6 tests du verrou sur une vraie base, et dans le navigateur une collecte lancée,
+  suivie jusqu'à « Terminée », sans toucher aux chiffres de la passe du matin.
