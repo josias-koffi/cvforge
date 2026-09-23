@@ -1,6 +1,11 @@
 import { Injectable, Logger } from "@nestjs/common";
 import type { NormalizedJobListing } from "./job-search.types";
-import type { BoardOrigin, JobBoardsStore, RegisteredBoard } from "./boards.types";
+import type {
+  BoardOrigin,
+  BoardRegistration,
+  JobBoardsStore,
+  RegisteredBoard,
+} from "./boards.types";
 import { BoardHttpClient } from "./sources/boards/board-http";
 import { BoardNotFoundError, type CompanyBoardAdapter } from "./sources/boards/board.types";
 import { AshbyBoard } from "./sources/boards/ashby.board";
@@ -62,6 +67,22 @@ export class BoardsService {
       // Registering is a side effect of somebody else's action — importing an
       // application, collecting an offer. It must never fail that action.
       this.logger.warn(`Could not register ${url}: ${String(error)}`);
+      return null;
+    }
+  }
+
+  /**
+   * Registers a company already identified by its provider and token — what
+   * the shipped seed list carries, where there is no URL to read.
+   */
+  async register(board: BoardRegistration): Promise<RegisteredBoard | null> {
+    try {
+      return await this.store.register(board);
+    } catch (error) {
+      this.logger.warn(
+        `Could not register ${board.provider}/${board.boardToken}: ${String(error)}`,
+      );
+
       return null;
     }
   }

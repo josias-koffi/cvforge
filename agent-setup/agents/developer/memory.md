@@ -1161,3 +1161,21 @@
   comme `ageInDays` le faisait déjà côté score — une règle métier ne doit exister qu'à un endroit.
 - **Verified** : la requête exacte qui échouait (5 divisions NAF) ramène 1 offre sur la veille et 10
   sur 30 jours, via l'adaptateur compilé contre la vraie API.
+
+### 2026-09-23 — Un registre vide ne lève aucune erreur
+- **Constat** : les adaptateurs Greenhouse/Lever/Ashby/SmartRecruiters étaient écrits, testés, et ne
+  produisaient rien depuis le début : `BoardsService.collect()` lit `job_boards`, restée vide.
+  Aucune erreur, aucun signal — seul le compteur `boardsRead: 0` le disait.
+- **Leçon** : une fonctionnalité qui dépend d'un référentiel à remplir doit livrer de quoi le
+  remplir, sinon elle est inerte le jour de la mise en production. Ici : une liste de départ dans
+  le code, plus une alimentation automatique par les liens d'origine des offres France Travail.
+- **Leçon** : vérifier avant d'écrire. Sur ~60 jetons d'entreprises plausibles, **deux tiers
+  répondaient 404** et trois grands groupes français servaient un tableau vide. Une liste écrite de
+  mémoire aurait été fausse aux deux tiers. Le filtre retenu est celui de la découverte : garder
+  seulement si le tableau publie au moins une offre en France ou en télétravail.
+- **Leçon** : enregistrer une entreprise **après** la lecture des tableaux, pas avant. Un jeton non
+  encore vérifié interrogé dans la foulée renvoie 404, et `recordFetch(gone)` le retire aussitôt.
+- **Leçon** : préférer un fichier TypeScript à un JSON pour une donnée livrée avec le code —
+  `include` ne couvre que `src/**/*.ts`, un JSON ne serait pas copié dans `dist` et le script
+  compilé planterait dans le conteneur. En prime, un fournisseur mal orthographié casse le build.
+- **Verified** : 412 annonces, 395 offres uniques collectées en local depuis 22 entreprises.

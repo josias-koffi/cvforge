@@ -61,6 +61,8 @@ const EMAIL_PREVIEW_SIZE = 5;
 export interface DigestStats {
   /** Searches the collection worked from. */
   projects: number;
+  /** Companies added to the registry from the adverts' original links. */
+  boardsDiscovered: number;
   /** Among them, those that also asked for the morning selection. */
   digestProjects: number;
   listingsCollected: number;
@@ -135,6 +137,7 @@ export class JobDigestService implements OnModuleInit {
 
     const stats: DigestStats = {
       aiReranks: 0,
+      boardsDiscovered: 0,
       boardsRead: 0,
       candidatesWithoutOffers: 0,
       digestProjects: 0,
@@ -208,7 +211,39 @@ export class JobDigestService implements OnModuleInit {
       stats.errors.push(`boards: ${String(error)}`);
     }
 
+    stats.boardsDiscovered = await this.discoverBoards(listings, stats);
+
     return listings;
+  }
+
+  /**
+   * France Travail publishes the advert's original link, which often points at
+   * the employer's own recruiting software. Those links cost nothing and grow
+   * the registry by themselves — without them it stays empty until an admin
+   * fills it by hand.
+   *
+   * Run after the boards were read, on purpose: a company registered a second
+   * ago would be fetched on an unverified token, and a 404 retires it on the
+   * spot. It is collected on the next run instead.
+   */
+  private async discoverBoards(
+    listings: readonly NormalizedJobListing[],
+    stats: DigestStats,
+  ): Promise<number> {
+    // A 31-day backfill carries thousands of links, most of them repeated.
+    const urls = new Set<string>();
+
+    for (const listing of listings) {
+      for (const url of listing.partnerUrls) urls.add(url);
+    }
+
+    try {
+      return await this.boards.registerManyFromUrls([...urls], "france_travail");
+    } catch (error) {
+      stats.errors.push(`board discovery: ${String(error)}`);
+
+      return 0;
+    }
   }
 
   private async buildSelection(

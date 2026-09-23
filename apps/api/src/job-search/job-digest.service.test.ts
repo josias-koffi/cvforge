@@ -100,7 +100,10 @@ function makeProfile(): StoredProfile {
   };
 }
 
-function makeListing(source: JobSourceAdapter["source"]): NormalizedJobListing {
+function makeListing(
+  source: JobSourceAdapter["source"],
+  partnerUrls: string[] = [],
+): NormalizedJobListing {
   return {
     applyUrl: "",
     companyAnonymous: false,
@@ -112,7 +115,7 @@ function makeListing(source: JobSourceAdapter["source"]): NormalizedJobListing {
     latitude: null,
     locationLabel: "Nantes",
     longitude: null,
-    partnerUrls: [],
+    partnerUrls,
     publishedAt: new Date(NOW).toISOString(),
     raw: {},
     remote: false,
@@ -128,6 +131,7 @@ interface Harness {
   written: NewJobMatch[];
   claims: string[];
   released: string[];
+  registered: string[][];
   searched: JobSourceQuery[];
   finished: Array<{ status: string }>;
   consumed: string[];
@@ -138,6 +142,8 @@ interface Harness {
 
 function createService(options: {
   projects?: Array<{ userEmail: string; project: SearchProject }>;
+  /** Original links carried by the collected adverts. */
+  partnerUrls?: string[];
   /** Searches the collection works from, when they differ from the digest ones. */
   allProjects?: Array<{ userEmail: string; project: SearchProject }>;
   jobs?: StoredJob[];
@@ -244,6 +250,7 @@ function createService(options: {
     },
   };
 
+  const registered: string[][] = [];
   const boards = {
     collect: async () => ({
       boardsFailed: 0,
@@ -251,6 +258,11 @@ function createService(options: {
       boardsRetired: 0,
       listings: [makeListing("greenhouse")],
     }),
+    registerManyFromUrls: async (urls: readonly string[]) => {
+      registered.push([...urls]);
+
+      return urls.length;
+    },
   } as unknown as BoardsService;
 
   const deduplicator = {
@@ -267,7 +279,7 @@ function createService(options: {
     search: async (query) => {
       searched.push(query);
 
-      return [makeListing("france_travail")];
+      return [makeListing("france_travail", options.partnerUrls ?? [])];
     },
     source: "france_travail",
   };
@@ -303,6 +315,7 @@ function createService(options: {
     claims,
     consumed,
     finished,
+    registered,
     searched,
     isStillOpen,
     released,
@@ -380,6 +393,29 @@ describe("JobDigestService", () => {
       projects: 1,
     });
     expect(harness.written).toEqual([]);
+  });
+
+  it("grows the company registry from the adverts' original links", async () => {
+    // These links cost nothing and are the only self-maintaining way to fill
+    // a registry that is otherwise empty until an admin types URLs by hand.
+    const harness = createService({
+      partnerUrls: [
+        "https://job-boards.greenhouse.io/doctolib/jobs/1",
+        "https://job-boards.greenhouse.io/doctolib/jobs/1",
+        "https://candidat.francetravail.fr/offres/recherche/detail/1",
+      ],
+    });
+
+    const stats = await harness.service.run();
+
+    // Repeated links are collapsed: a month-long backfill carries thousands.
+    expect(harness.registered).toEqual([
+      [
+        "https://job-boards.greenhouse.io/doctolib/jobs/1",
+        "https://candidat.francetravail.fr/offres/recherche/detail/1",
+      ],
+    ]);
+    expect(stats?.boardsDiscovered).toBe(2);
   });
 
   it("does nothing when another instance already owns the day", async () => {

@@ -22,9 +22,9 @@ stockées), et **combien de temps** les garder valables.
 | Source | Statut | Raison |
 |---|---|---|
 | **France Travail — Offres d'emploi v2** | Activée, source principale | API officielle gratuite, environ 300 000 offres, partenaires inclus. Licence de réutilisation : citer la source et renvoyer vers l'offre d'origine. |
-| **La bonne alternance** | Activée pour les recherches en alternance | API de service public, gratuite, jeton personnel. |
+| **La bonne alternance** | **Retenue, pas encore écrite** (2026-09-23) | API de service public, gratuite, jeton personnel. Seuls l'identifiant de source et sa priorité de dédoublonnage existent dans le code ; l'adaptateur reste à écrire. |
 | **Logiciels de recrutement** (Greenhouse, Lever, Ashby, SmartRecruiters, Workable, Recruitee, Personio, Welcome Kit) | Activés | Endpoints publics, sans clé, prévus pour diffuser les offres d'une entreprise. Descriptions complètes et lien de candidature direct. |
-| **Adzuna** | **Codée mais désactivée** (`ADZUNA_ENABLED=false`) | Ses CGU limitent l'usage commercial à 14 jours d'essai ; au-delà, un accord écrit est exigé. Quotas très bas (250 appels par jour). À activer seulement après accord. |
+| **Adzuna** | **Écartée tant qu'il n'y a pas d'accord écrit** — rien n'est codé | Ses CGU limitent l'usage commercial à 14 jours d'essai ; au-delà, un accord écrit est exigé. Quotas très bas (250 appels par jour). La décision est confirmée : pas de code actif avant l'accord. *(Cette ligne annonçait « codée mais désactivée » ; aucun fichier n'existait. Corrigé le 2026-09-23.)* |
 | LinkedIn, Welcome to the Jungle, Indeed, JobTeaser | Exclus | Pas d'API publique d'offres, et CGU contre le scraping. |
 | TheirStack, Mantiks, acteurs Apify | Exclus | Payants, et ils revendent du contenu scrapé : le risque juridique est seulement déplacé. |
 
@@ -73,8 +73,15 @@ une ligne en base et évite de redécouvrir ces entreprises plus tard.
 
 ## Consequences
 
-- La V1 fonctionne sans Adzuna. Si le propriétaire obtient un accord écrit, une variable
-  d'environnement suffit à l'activer.
+- La V1 fonctionne sans Adzuna. Le jour où le propriétaire obtient un accord écrit, l'adaptateur
+  reste à écrire — il ne suffit pas d'une variable d'environnement, contrairement à ce que cette
+  décision laissait entendre.
+- **Le registre d'entreprises ne se remplit pas tout seul.** Tant qu'il est vide, les adaptateurs
+  des logiciels de recrutement ne ramènent rien, sans lever d'erreur : c'est ce qui s'est produit en
+  staging. Il est désormais alimenté par (1) une liste de départ livrée avec le code, dont chaque
+  jeton a été vérifié en direct, (2) les liens d'origine portés par les offres France Travail,
+  enregistrés à chaque collecte, (3) les candidatures importées, (4) la découverte Common Crawl,
+  lancée à la main.
 - **Lever interdit le robot de Common Crawl** : ses entreprises n'arriveront que par les liens des
   offres France Travail et par les candidatures des utilisateurs. Couverture plus lente à monter.
 - Les mentions de source sont obligatoires dans l'app et dans l'e-mail, et le lien renvoie toujours

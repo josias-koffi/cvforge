@@ -325,6 +325,24 @@ Cible front : `apps/web`. `apps/app` est gelée, non touchée.
   import rétroactif aurait fait passer un mois d'annonces pour des offres du jour. Il lit désormais
   la plus ancienne des deux dates, comme le score le faisait déjà.
 
+### Les autres sources produisent enfin (2026-09-23, lot 1)
+
+- **Le registre d'entreprises était vide**, donc les quatre adaptateurs de logiciels de recrutement
+  ne ramenaient rien, sans erreur. Deux apports le remplissent désormais :
+  - `boards.seed.ts` : **22 entreprises livrées avec le code**, chaque jeton vérifié en direct sur
+    l'API du fournisseur et retenu **seulement** s'il publiait au moins une offre en France ou en
+    télétravail. Deux tiers des candidats plausibles répondaient 404, et trois grands groupes
+    français servaient un tableau vide : aucun jeton n'a été deviné. Import par
+    `pnpm --filter @cvforge/api boards:seed`, rejouable sans dommage.
+  - Les **liens d'origine portés par les offres France Travail** sont enregistrés à chaque collecte
+    (`registerManyFromUrls`, écrite depuis le début et jamais appelée). Dédoublonnés dans un `Set` :
+    un import sur 31 jours en porte des milliers. Enregistrés **après** la lecture des entreprises,
+    pour qu'un jeton non vérifié ne soit pas interrogé dans la foulée — un 404 le retirerait aussitôt.
+- **Mesuré en local** : 22 entreprises, **412 annonces collectées, 395 offres uniques** (17 doublons
+  fusionnés), sans aucune recherche configurée.
+- Un fichier **TypeScript** plutôt que JSON : un fournisseur mal orthographié casse la compilation,
+  et aucune donnée n'a à être copiée dans l'image.
+
 ## ⚠️ To Clarify
 
 1. ~~Quota France Travail réel de notre application~~ → **tranché le 2026-09-23** en lisant la
