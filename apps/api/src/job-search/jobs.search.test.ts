@@ -175,6 +175,23 @@ describe("PgJobsStore.searchJobs", () => {
     expect(found.available).toBe(4);
   });
 
+  it("dates an offer by its publication, not by the day we imported it", async () => {
+    // A back-fill over a month sees every advert for the first time today;
+    // reading firstSeenAt alone would make them all look published today.
+    await deduplicator.attach(
+      makeListing({
+        externalId: "old",
+        publishedAt: new Date(Date.now() - 40 * 86_400_000).toISOString(),
+        source: "france_travail",
+        title: "Développeur rétroporté",
+      }),
+    );
+
+    const found = await store.searchJobs({ ...BASE, query: "retroporte" });
+
+    expect(found.total).toBe(0);
+  });
+
   it("ignores an offer older than the window asked for", async () => {
     expect((await store.searchJobs({ ...BASE, maxAgeDays: 0 })).total).toBe(0);
   });

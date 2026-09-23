@@ -7,7 +7,11 @@ import type { SearchProjectsStore } from "../search-projects/search-projects.typ
 import type { BoardsService } from "./boards.service";
 import type { JobDeduplicator } from "./dedup/job-deduplicator";
 import { dateInParis, hourInParis, JobDigestService } from "./job-digest.service";
-import type { JobSourceAdapter, NormalizedJobListing } from "./job-search.types";
+import type {
+  JobSourceAdapter,
+  JobSourceQuery,
+  NormalizedJobListing,
+} from "./job-search.types";
 import type { JobsStore, StoredJob, StoredJobListing } from "./jobs.types";
 import type {
   JobDigestRunsStore,
@@ -124,6 +128,7 @@ interface Harness {
   written: NewJobMatch[];
   claims: string[];
   released: string[];
+  searched: JobSourceQuery[];
   finished: Array<{ status: string }>;
   consumed: string[];
   chat: ReturnType<typeof vi.fn>;
@@ -256,9 +261,14 @@ function createService(options: {
     }),
   } as unknown as JobDeduplicator;
 
+  const searched: JobSourceQuery[] = [];
   const source: JobSourceAdapter = {
     isStillOpen,
-    search: async () => [makeListing("france_travail")],
+    search: async (query) => {
+      searched.push(query);
+
+      return [makeListing("france_travail")];
+    },
     source: "france_travail",
   };
 
@@ -293,6 +303,7 @@ function createService(options: {
     claims,
     consumed,
     finished,
+    searched,
     isStillOpen,
     released,
     service: new JobDigestService(
@@ -377,6 +388,24 @@ describe("JobDigestService", () => {
     expect(await harness.service.run()).toBeNull();
     expect(harness.written).toEqual([]);
     expect(harness.released).toEqual([]);
+  });
+
+  it("asks for the whole window when a first import is requested", async () => {
+    // Otherwise a fresh instance collects yesterday only, and the base needs a
+    // month before it holds anything worth searching.
+    const harness = createService();
+
+    await harness.service.run({ sinceDays: 31 });
+
+    expect(harness.searched.at(-1)?.publishedSinceDays).toBe(31);
+  });
+
+  it("collects only the day before on an ordinary run", async () => {
+    const harness = createService();
+
+    await harness.service.run();
+
+    expect(harness.searched.at(-1)?.publishedSinceDays).toBe(1);
   });
 
   it("gives the day back when the run is forced", async () => {

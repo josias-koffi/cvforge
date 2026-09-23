@@ -147,8 +147,12 @@ export class FranceTravailSource implements JobSourceAdapter {
           continue;
         }
 
+        // Their body names the rejected parameter; without it every bad query
+        // looks the same and the fix is guesswork.
+        const detail = (await response.text().catch(() => "")).slice(0, 300);
+
         this.logger.warn(
-          `France Travail answered ${response.status} for range ${range}.`,
+          `France Travail answered ${response.status} for range ${range} on ${url.search} — ${detail}`,
         );
         return null;
       } catch (error) {

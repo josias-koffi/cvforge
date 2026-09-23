@@ -310,6 +310,21 @@ Cible front : `apps/web`. `apps/app` est gelée, non touchée.
 - **Les scripts ne tournaient pas dans le conteneur** (`tsx` absent de l'image de production) :
   variantes `*:built` sur le code compilé.
 
+### Collecte réelle : deux plafonds non documentés (2026-09-23)
+
+- **`secteurActivite` n'accepte que 2 divisions NAF.** Au-delà, l'API répond 400 et la requête ne
+  ramène **rien**. Or la plupart de nos secteurs en comptent déjà 3 (Finance : 64/65/66, Santé :
+  86/87/88), donc le filtre était perdant dès qu'un candidat cochait un secteur un peu large.
+  Choix : au-delà de deux divisions, le filtre est **abandonné** et la collecte élargit. Perdre un
+  peu de quota vaut mieux que perdre toutes les offres de la requête.
+- **`publieeDepuis` n'accepte que 1, 3, 7, 14 ou 31.** Toute autre valeur est un 400. La fenêtre
+  demandée est arrondie à la valeur supérieure autorisée, jamais inférieure.
+- **Amorçage** : la passe quotidienne demande la veille (`publieeDepuis=1`). Pour remplir une base
+  vide, `job-digest:run --force --since=31` collecte toute la fenêtre de rétention en une fois.
+- **Âge d'une offre sur la page de recherche** : le filtre lisait la seule date de collecte, donc un
+  import rétroactif aurait fait passer un mois d'annonces pour des offres du jour. Il lit désormais
+  la plus ancienne des deux dates, comme le score le faisait déjà.
+
 ## ⚠️ To Clarify
 
 1. ~~Quota France Travail réel de notre application~~ → **tranché le 2026-09-23** en lisant la

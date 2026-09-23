@@ -1142,3 +1142,22 @@
 - **Leçon** : un diagnostic doit nommer ce que le processus voit. `job-digest:status` liste
   désormais les variables attendues (présente/absente et longueur, jamais la valeur) et le fichier
   `.env` éventuellement lu — c'est ce qui a rendu le problème visible en une commande.
+
+### 2026-09-23 — Deux plafonds France Travail qui ne se devinent pas
+- **Constat** : en staging, `400 pour la plage 0-149` sur chaque requête, donc zéro offre malgré des
+  identifiants valides. Le message ne portait pas le corps de la réponse : impossible de conclure.
+  Corrigé d'abord (message + requête rejetée), la cause est apparue en une exécution.
+- **`secteurActivite` : 2 divisions NAF au maximum.** Au-delà, 400 et la requête entière est perdue.
+  La plupart de nos secteurs en ont 3 (Finance 64/65/66, Santé 86/87/88), donc le filtre cassait dès
+  qu'un candidat cochait un secteur. Au-delà de 2, on abandonne le filtre et on collecte plus large.
+- **`publieeDepuis` : 1, 3, 7, 14 ou 31 uniquement.** Arrondi à la valeur supérieure autorisée.
+- **Leçon** : tous les paramètres de liste ne se comportent pas pareil. `typeContrat` accepte 4
+  valeurs, `natureContrat` 3, `experience` 3, `departement` 2 (et plus) — seul `secteurActivite` est
+  plafonné. Ne jamais généraliser d'un paramètre à l'autre : mesurer.
+- **Leçon** : un filtre qu'on ne peut pas exprimer doit être abandonné, pas approximé. Envoyer
+  arbitrairement les 2 premières divisions aurait silencieusement amputé la recherche.
+- **Leçon** : `searchJobs` datait une offre à sa date de collecte. Un import rétroactif aurait
+  affiché un mois d'annonces comme publiées le jour même. L'âge lit la plus ancienne des deux dates,
+  comme `ageInDays` le faisait déjà côté score — une règle métier ne doit exister qu'à un endroit.
+- **Verified** : la requête exacte qui échouait (5 divisions NAF) ramène 1 offre sur la veille et 10
+  sur 30 jours, via l'adaptateur compilé contre la vraie API.

@@ -44,6 +44,11 @@ const CHECK_INTERVAL_MS = 15 * 60_000;
 const DIGEST_HOUR = 6;
 const PARIS_TIME_ZONE = "Europe/Paris";
 /** One day back: yesterday's offers are already collected. */
+/**
+ * The daily pass only asks for what was published since yesterday: the rest is
+ * already in the base. A first collection has nothing to build on, and takes
+ * the whole retention window instead — `job-digest:run --since=31`.
+ */
 const COLLECTION_WINDOW_DAYS = 1;
 /** How far back a candidate's pool reaches. Past 30 days nothing is proposed. */
 const CANDIDATE_WINDOW_DAYS = 31;
@@ -114,7 +119,9 @@ export class JobDigestService implements OnModuleInit {
   /**
    * One pass. Returns null when another instance already owns today's run.
    */
-  async run(options: { force?: boolean } = {}): Promise<DigestStats | null> {
+  async run(
+    options: { force?: boolean; sinceDays?: number } = {},
+  ): Promise<DigestStats | null> {
     const runDate = dateInParis(this.now());
 
     // Forcing gives the day back before claiming it again, so the manual run
@@ -149,6 +156,7 @@ export class JobDigestService implements OnModuleInit {
       const listings = await this.collect(
         allProjects.map((entry) => entry.project),
         stats,
+        options.sinceDays ?? COLLECTION_WINDOW_DAYS,
       );
       stats.listingsCollected = listings.length;
 
@@ -176,9 +184,10 @@ export class JobDigestService implements OnModuleInit {
   private async collect(
     projects: readonly SearchProject[],
     stats: DigestStats,
+    sinceDays: number,
   ): Promise<NormalizedJobListing[]> {
     const listings: NormalizedJobListing[] = [];
-    const queries = buildSourceQueries(projects, COLLECTION_WINDOW_DAYS);
+    const queries = buildSourceQueries(projects, sinceDays);
 
     for (const source of this.sources) {
       for (const query of queries) {

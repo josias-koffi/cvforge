@@ -63,6 +63,33 @@ const EXPERIENCE_CODES: Record<string, string> = {
 
 const MAX_KEYWORD_CHARS = 200;
 
+/**
+ * `secteurActivite` takes **two NAF divisions at most** — beyond that the API
+ * answers 400 and the query brings back nothing at all (measured 2026-09-23;
+ * every other list parameter accepts more). A candidate who picks two sectors
+ * already exceeds it, so rather than narrowing to an arbitrary pair, the
+ * filter is dropped: collecting wider costs a little quota, losing the whole
+ * query costs every offer.
+ */
+const MAX_NAF_DIVISIONS = 2;
+
+/**
+ * `publieeDepuis` accepts **1, 3, 7, 14 or 31 only**; anything else is a 400.
+ * A window is rounded up to the next allowed value, never down: collecting a
+ * few days too many is harmless, missing offers is not.
+ */
+const PUBLISHED_SINCE_VALUES = [1, 3, 7, 14, 31] as const;
+
+export function publishedSinceParam(days: number): string | null {
+  if (days <= 0) return null;
+
+  const allowed =
+    PUBLISHED_SINCE_VALUES.find((value) => value >= days) ??
+    PUBLISHED_SINCE_VALUES[PUBLISHED_SINCE_VALUES.length - 1];
+
+  return String(allowed);
+}
+
 export interface FranceTravailParams {
   motsCles?: string;
   departement?: string;
@@ -167,6 +194,7 @@ export function toFranceTravailParams(
     .map((contract) => CONTRACT_CODES[contract])
     .filter((code): code is string => Boolean(code));
   const wantsApprenticeship = query.contractTypes.includes("alternance");
+  const publieeDepuis = publishedSinceParam(query.publishedSinceDays);
 
   return {
     ...(query.keywords ? { motsCles: query.keywords } : {}),
@@ -178,15 +206,14 @@ export function toFranceTravailParams(
     ...(wantsApprenticeship
       ? { natureContrat: APPRENTICESHIP_NATURES.join(",") }
       : {}),
-    ...(query.nafDivisions.length > 0
+    ...(query.nafDivisions.length > 0 &&
+    query.nafDivisions.length <= MAX_NAF_DIVISIONS
       ? { secteurActivite: query.nafDivisions.join(",") }
       : {}),
     ...(query.experienceLevel && EXPERIENCE_CODES[query.experienceLevel]
       ? { experience: EXPERIENCE_CODES[query.experienceLevel] }
       : {}),
-    ...(query.publishedSinceDays > 0
-      ? { publieeDepuis: String(query.publishedSinceDays) }
-      : {}),
+    ...(publieeDepuis ? { publieeDepuis } : {}),
     range,
   };
 }

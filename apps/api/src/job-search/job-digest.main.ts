@@ -17,6 +17,11 @@ import { JobDigestService } from "./job-digest.service";
  * day answers "already claimed" and writes nothing. That is the lock working,
  * not a failure. Pass `--force` to collect again anyway — needed when a search
  * was configured after the morning pass.
+ *
+ * The daily pass collects what was published since yesterday. To fill an empty
+ * base, ask for the whole retention window once:
+ *
+ *   node apps/api/dist/apps/api/src/job-search/job-digest.main.js --force --since=31
  */
 async function main() {
   loadEnvironmentFiles();
@@ -28,8 +33,19 @@ async function main() {
   try {
     // `pnpm run` forwards a `--` separator as a real argument; only the flag
     // matters here.
-    const force = process.argv.slice(2).includes("--force");
-    const stats = await app.get(JobDigestService).run({ force });
+    const args = process.argv.slice(2);
+    const force = args.includes("--force");
+    const since = args.find((argument) => argument.startsWith("--since="));
+    const sinceDays = since ? Number(since.slice("--since=".length)) : undefined;
+
+    if (sinceDays !== undefined && !Number.isFinite(sinceDays)) {
+      console.error("--since attend un nombre de jours, par exemple --since=31.");
+      process.exitCode = 1;
+
+      return;
+    }
+
+    const stats = await app.get(JobDigestService).run({ force, sinceDays });
 
     if (!stats) {
       console.log("La collecte du jour a déjà été faite (ou tourne ailleurs).");

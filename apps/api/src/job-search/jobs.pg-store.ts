@@ -405,12 +405,15 @@ export class PgJobsStore implements JobsStore {
       .slice(0, MAX_SEARCH_WORDS);
     const departments = [...new Set(filters.departments.filter(Boolean))];
     // What the base holds at all: still open, and recent enough to show.
+    //
+    // The age is the oldest of "published at the source" and "first seen by
+    // us", like `ageInDays` in the scoring. Reading `firstSeenAt` alone would
+    // date an offer from the day we imported it: a back-fill over a month
+    // would make every advert of that month look published today.
+    const cutoff = new Date(Date.now() - filters.maxAgeDays * MS_PER_DAY);
     const available = [
       isNull(jobs.closedAt),
-      gte(
-        jobs.firstSeenAt,
-        new Date(Date.now() - filters.maxAgeDays * MS_PER_DAY),
-      ),
+      sql`least(coalesce(${jobs.publishedAt}, ${jobs.firstSeenAt}), ${jobs.firstSeenAt}) >= ${cutoff}`,
     ];
     const conditions = [
       ...available,

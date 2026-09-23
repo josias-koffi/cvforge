@@ -137,6 +137,38 @@ describe("toFranceTravailParams", () => {
     expect(params.typeContrat).toBeUndefined();
   });
 
+  it("drops the sector filter rather than losing the query", () => {
+    // Two sectors are already five NAF divisions: the API answers 400 and the
+    // whole page is lost, so a wider collection beats a query that brings
+    // nothing back.
+    const [narrow] = buildSourceQueries(
+      [makeProject({ sectors: ["numerique"] })],
+      1,
+    );
+    const [wide] = buildSourceQueries(
+      [makeProject({ sectors: ["numerique", "sante_social"] })],
+      1,
+    );
+
+    expect(toFranceTravailParams(narrow!, "0-149").secteurActivite).toBe("62,63");
+    expect(toFranceTravailParams(wide!, "0-149").secteurActivite).toBeUndefined();
+  });
+
+  it("rounds the publication window up to a value the API accepts", () => {
+    // 1, 3, 7, 14 or 31 — anything else is a 400, so 30 days asks for 31.
+    const [query] = buildSourceQueries([makeProject()], 30);
+
+    expect(toFranceTravailParams(query!, "0-149").publieeDepuis).toBe("31");
+    expect(
+      toFranceTravailParams(buildSourceQueries([makeProject()], 2)[0]!, "0-149")
+        .publieeDepuis,
+    ).toBe("3");
+    expect(
+      toFranceTravailParams(buildSourceQueries([makeProject()], 90)[0]!, "0-149")
+        .publieeDepuis,
+    ).toBe("31");
+  });
+
   it("sends a beginner to the offers that take beginners", () => {
     // Code 1 means "under a year of experience *required*" — the opposite of
     // what a beginner needs. Beginners welcome is code 4.
