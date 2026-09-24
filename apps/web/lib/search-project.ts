@@ -28,10 +28,18 @@ export async function loadSearchProject(
   profileId: string
 ): Promise<SearchProjectPage> {
   try {
-    return await api<SearchProjectPage>(searchProjectPath(profileId))
+    return await readSearchProject(profileId)
   } catch {
     return { rome: [], searchProject: emptySearchProject(profileId) }
   }
+}
+
+/**
+ * The stored project, failing when it cannot be read: what a partial save is
+ * merged onto, where an empty stand-in would wipe the rest.
+ */
+export function readSearchProject(profileId: string) {
+  return api<SearchProjectPage>(searchProjectPath(profileId))
 }
 
 /** Saving is what asks ROMEO for suggestions, so the answer carries them. */
@@ -72,4 +80,21 @@ export async function requestSearchProjectPrefill(profileId: string) {
   )
 
   return searchProject
+}
+
+/**
+ * The morning alerts: kept on the search project, but set from their own tab.
+ * Neither tab may write back what the other one owns.
+ */
+export type SearchAlerts = Pick<
+  SearchProject,
+  "aiRerankEnabled" | "digestEnabled" | "emailEnabled"
+>
+
+export function pickAlerts(project: SearchAlerts): SearchAlerts {
+  return {
+    aiRerankEnabled: project.aiRerankEnabled,
+    digestEnabled: project.digestEnabled,
+    emailEnabled: project.emailEnabled,
+  }
 }

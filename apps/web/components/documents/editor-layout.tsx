@@ -66,7 +66,7 @@ export function EditorLayout<T>({
 
   return (
     <div className="flex flex-col gap-4 px-4 lg:px-6">
-      <div className="sticky top-0 z-20 -mx-4 flex flex-wrap items-center gap-2 border-b bg-background/95 px-4 py-2 backdrop-blur lg:-mx-6 lg:px-6">
+      <div className="sticky top-(--page-header-height,0px) z-20 -mx-4 flex flex-wrap items-center gap-2 border-b bg-background/95 px-4 py-2 backdrop-blur lg:-mx-6 lg:px-6">
         <Button onClick={onSave} disabled={saving || !dirty}>
           {saving ? <Spinner /> : <SaveIcon />}
           {saving ? "Enregistrement…" : "Enregistrer"}
@@ -125,7 +125,7 @@ export function EditorLayout<T>({
       ) : null}
       <div className="grid items-start gap-6 @5xl/main:grid-cols-2">
         <div className="@container/editor flex min-w-0 flex-col gap-4">{children}</div>
-        <div className="@5xl/main:sticky @5xl/main:top-16">
+        <div className="@5xl/main:sticky @5xl/main:top-[calc(var(--page-header-height,0px)+4rem)]">
           <DocumentPreview html={previewHtml} title="Aperçu du document" />
         </div>
       </div>

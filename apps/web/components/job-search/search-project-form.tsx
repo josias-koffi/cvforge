@@ -1,73 +1,56 @@
 "use client"
 
 import { useState, useTransition } from "react"
-import {
-  searchExperienceLevels,
-  searchRemoteModes,
-  type SearchProject,
-  type SearchProjectRomeAppellation,
+import { useRouter } from "next/navigation"
+import type {
+  SearchProject,
+  SearchProjectRomeAppellation,
 } from "@cvforge/types"
-import { SparklesIcon, WandSparklesIcon } from "lucide-react"
+import { CheckIcon, SparklesIcon, WandSparklesIcon } from "lucide-react"
 import { toast } from "sonner"
 
 import {
   prefillSearchProject,
   saveSearchProject,
 } from "@/app/(app)/ma-recherche/actions"
+import { CriteriaCompaniesSection } from "@/components/job-search/criteria-companies-section"
+import { CriteriaJobSection } from "@/components/job-search/criteria-job-section"
+import { CriteriaPlaceSection } from "@/components/job-search/criteria-place-section"
 import {
-  ApprenticeshipFields,
-  InternshipFields,
-} from "@/components/job-search/search-project-contract-fields"
-import { SearchProjectAlerts } from "@/components/job-search/search-project-alerts"
-import {
-  ChipGroup,
-  LinesTextarea,
-  LocationPicker,
-} from "@/components/job-search/search-project-fields"
-import {
-  CONTRACT_OPTIONS,
-  EXPERIENCE_LABELS,
-  REMOTE_LABELS,
-  SECTOR_OPTIONS,
-  SIZE_OPTIONS,
-  VALUE_OPTIONS,
-} from "@/components/job-search/search-project-options"
-import { SearchProjectRome } from "@/components/job-search/search-project-rome"
+  companiesSummary,
+  jobSummary,
+  placeSummary,
+  sameCriteria,
+  type SetCriterion,
+} from "@/components/job-search/search-criteria"
+import { searchTabHref } from "@/components/job-search/search-tabs"
+import { SectionOutline } from "@/components/layout/section-outline"
+import { UnsavedChangesGuard } from "@/components/layout/unsaved-changes-guard"
 import { Button } from "@/components/ui/button"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Spinner } from "@/components/ui/spinner"
-import { Switch } from "@/components/ui/switch"
 
 /**
- * "Ma recherche": what the candidate is looking for.
+ * "Critères": what the offers are searched with, saved with one button.
  *
- * Laid out as four questions rather than one long form — the job, the place,
- * the company, the alerts — because this is a page somebody fills in once and
- * revisits rarely, and a wall of fields is what made them give up on it.
+ * The bar at the bottom says whether anything is left to save — the only
+ * thing on this tab that is not applied at once — and the outline on the left
+ * sums up each section, so a candidate coming back sees their search without
+ * scrolling through it.
  */
 export function SearchProjectForm({
   initialProject,
-  initialRome,
 }: {
   initialProject: SearchProject
-  initialRome: SearchProjectRomeAppellation[]
 }) {
+  const router = useRouter()
   const [project, setProject] = useState(initialProject)
-  const [rome, setRome] = useState(initialRome)
+  const [saved, setSaved] = useState(initialProject)
   const [saving, startSaving] = useTransition()
   const [prefilling, startPrefilling] = useTransition()
-  const set = <K extends keyof SearchProject>(
-    key: K,
-    value: SearchProject[K]
-  ) => setProject((current) => ({ ...current, [key]: value }))
+  const dirty = !sameCriteria(project, saved)
+
+  const set: SetCriterion = (key, value) =>
+    setProject((current) => ({ ...current, [key]: value }))
 
   const save = () =>
     startSaving(async () => {
@@ -78,14 +61,9 @@ export function SearchProjectForm({
         return
       }
 
-      setRome(result.rome)
-      const suggested = result.rome.filter(
-        (entry) => entry.status === "suggested"
-      ).length
-      toast.success(
-        suggested > 0
-          ? `${result.message} ${suggested} métier${suggested > 1 ? "s" : ""} à confirmer.`
-          : result.message
+      setSaved(project)
+      notifySaved(result.message, result.rome, () =>
+        router.push(searchTabHref("/ma-recherche/metiers", project.profileId))
       )
     })
 
@@ -98,8 +76,7 @@ export function SearchProjectForm({
         return
       }
 
-      // The alert settings are the candidate's, not the profile's: a prefill
-      // must never switch the morning e-mail on behind their back.
+      // The alerts are not criteria: a prefill never touches them.
       setProject((current) => ({
         ...result.searchProject,
         aiRerankEnabled: current.aiRerankEnabled,
@@ -107,209 +84,136 @@ export function SearchProjectForm({
         emailEnabled: current.emailEnabled,
       }))
       toast.success(
-        "Recherche pré-remplie depuis votre profil. Vérifiez puis enregistrez."
+        "Critères pré-remplis depuis votre profil. Vérifiez puis enregistrez."
       )
     })
 
   return (
-    <div className="flex flex-col gap-4">
-      <Card>
-        <CardHeader>
-          <CardTitle>Le poste</CardTitle>
-          <CardDescription>
-            Ce que vous cherchez, dans les mots des annonces.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-6">
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="target-roles">Postes visés</Label>
-            <LinesTextarea
-              id="target-roles"
-              placeholder={"Développeur Full Stack\nIngénieur logiciel"}
-              values={project.targetRoles}
-              onChange={(next) => set("targetRoles", next)}
-            />
-            <p className="text-xs text-muted-foreground">
-              Un intitulé par ligne. Ce sont eux qui servent à chercher.
-            </p>
-          </div>
+    // On a large screen the outline and the save bar stay put, and only the
+    // cards scroll between them.
+    <div className="grid gap-6 px-4 lg:min-h-0 lg:flex-1 lg:grid-cols-[13rem_minmax(0,1fr)] lg:px-6">
+      <UnsavedChangesGuard dirty={dirty} />
+      <CriteriaOutline project={project} />
 
-          <ChipGroup
-            label="Niveau d'expérience"
-            options={searchExperienceLevels.map((level) => ({
-              id: level,
-              label: EXPERIENCE_LABELS[level],
-            }))}
-            selected={project.experienceLevel ? [project.experienceLevel] : []}
-            onChange={(next) =>
-              set(
-                "experienceLevel",
-                next.find((level) => level !== project.experienceLevel) ?? null
-              )
+      <div className="flex min-w-0 flex-col gap-4 lg:min-h-0">
+        <div className="flex flex-col gap-4 *:shrink-0 lg:-mx-2 lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:px-2 lg:pb-1">
+          <CriteriaJobSection
+            project={project}
+            set={set}
+            action={
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                disabled={prefilling}
+                onClick={prefill}
+              >
+                {prefilling ? <Spinner /> : <WandSparklesIcon />}
+                Pré-remplir depuis mon profil
+              </Button>
             }
           />
+          <CriteriaPlaceSection project={project} set={set} />
+          <CriteriaCompaniesSection project={project} set={set} />
+        </div>
 
-          <ChipGroup
-            label="Types de contrat"
-            options={CONTRACT_OPTIONS}
-            selected={project.contractTypes}
-            onChange={(next) => set("contractTypes", next)}
-          />
+        <SaveBar
+          dirty={dirty}
+          saving={saving}
+          onReset={() => setProject(saved)}
+          onSave={save}
+        />
+      </div>
+    </div>
+  )
+}
 
-          {project.contractTypes.includes("stage") ? (
-            <InternshipFields
-              value={project.internship}
-              onChange={(next) => set("internship", next)}
-            />
-          ) : null}
+/** Found ROME jobs are not applied yet: the toast leads to where they are. */
+function notifySaved(
+  message: string | undefined,
+  rome: SearchProjectRomeAppellation[],
+  openJobs: () => void
+) {
+  const suggested = rome.filter((entry) => entry.status === "suggested").length
 
-          {project.contractTypes.includes("alternance") ? (
-            <ApprenticeshipFields
-              value={project.apprenticeship}
-              onChange={(next) => set("apprenticeship", next)}
-            />
-          ) : null}
-        </CardContent>
-      </Card>
+  if (suggested === 0) {
+    toast.success(message)
+    return
+  }
 
-      <SearchProjectRome
-        profileId={project.profileId}
-        appellations={rome}
-        onChange={setRome}
+  toast.success(message, {
+    action: { label: "Voir les métiers", onClick: openJobs },
+    description: `${suggested} métier${suggested > 1 ? "s" : ""} à confirmer.`,
+  })
+}
+
+function CriteriaOutline({ project }: { project: SearchProject }) {
+  return (
+    <div className="hidden lg:block">
+      <SectionOutline
+        label="Sections des critères"
+        items={[
+          { detail: jobSummary(project), id: "poste", label: "Le poste" },
+          {
+            detail: placeSummary(project),
+            id: "lieu",
+            label: "Lieu et salaire",
+          },
+          {
+            detail: companiesSummary(project),
+            id: "entreprises",
+            label: "Secteurs et entreprises",
+          },
+        ]}
       />
+    </div>
+  )
+}
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Où</CardTitle>
-          <CardDescription>
-            Les villes que vous acceptez, et jusqu&apos;où vous êtes prêt à
-            aller.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-6">
-          <LocationPicker
-            locations={project.locations}
-            onChange={(next) => set("locations", next)}
-          />
-
-          <ChipGroup
-            label="Télétravail"
-            options={searchRemoteModes.map((mode) => ({
-              id: mode,
-              label: REMOTE_LABELS[mode],
-            }))}
-            selected={[project.remote]}
-            onChange={(next) =>
-              set(
-                "remote",
-                next.find((mode) => mode !== project.remote) ?? "any"
-              )
-            }
-          />
-
-          <label className="flex items-center gap-2 text-sm">
-            <Switch
-              checked={project.nationalMobility}
-              onCheckedChange={(checked) => set("nationalMobility", checked)}
-            />
-            Mobile partout en France
-          </label>
-
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="salary-min">Salaire brut annuel minimum</Label>
-            <Input
-              id="salary-min"
-              className="max-w-40"
-              type="number"
-              min={0}
-              step={1000}
-              placeholder="45000"
-              value={project.salaryMinYearly ?? ""}
-              onChange={(event) =>
-                set("salaryMinYearly", Number(event.target.value) || null)
-              }
-            />
-            <p className="text-xs text-muted-foreground">
-              Facultatif. La plupart des annonces taisent le salaire : il fait
-              monter une offre, il n&apos;en écarte jamais.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Les secteurs</CardTitle>
-          <CardDescription>Laissez vide pour ne rien exclure.</CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-6">
-          <ChipGroup
-            label="Secteurs recherchés"
-            options={SECTOR_OPTIONS}
-            selected={project.sectors}
-            onChange={(next) => set("sectors", next)}
-          />
-          <ChipGroup
-            label="Secteurs à éviter"
-            options={SECTOR_OPTIONS}
-            selected={project.excludedSectors}
-            onChange={(next) => set("excludedSectors", next)}
-          />
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Les entreprises</CardTitle>
-          <CardDescription>
-            Leur taille, leurs engagements, et celles que vous ne voulez pas
-            voir.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-6">
-          <ChipGroup
-            label="Taille"
-            options={SIZE_OPTIONS}
-            selected={project.companySizes}
-            onChange={(next) => set("companySizes", next)}
-          />
-          <ChipGroup
-            label="Engagements"
-            options={VALUE_OPTIONS}
-            selected={project.companyValues}
-            onChange={(next) => set("companyValues", next)}
-          />
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="excluded-companies">Entreprises à exclure</Label>
-            <LinesTextarea
-              id="excluded-companies"
-              placeholder={
-                "Mon employeur actuel\nUne entreprise déjà contactée"
-              }
-              values={project.excludedCompanies}
-              onChange={(next) => set("excludedCompanies", next)}
-            />
-            <p className="text-xs text-muted-foreground">Une par ligne.</p>
-          </div>
-        </CardContent>
-      </Card>
-
-      <SearchProjectAlerts project={project} onChange={set} />
-
-      <div className="sticky bottom-0 z-10 -mx-4 border-t bg-background/95 px-4 py-3 backdrop-blur lg:-mx-6 lg:px-6">
-        <div className="flex flex-wrap items-center justify-end gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            disabled={prefilling}
-            onClick={prefill}
-          >
-            {prefilling ? <Spinner /> : <WandSparklesIcon />}
-            Pré-remplir depuis mon profil
-          </Button>
-          <Button type="button" disabled={saving} onClick={save}>
+function SaveBar({
+  dirty,
+  saving,
+  onReset,
+  onSave,
+}: {
+  dirty: boolean
+  saving: boolean
+  onReset: () => void
+  onSave: () => void
+}) {
+  return (
+    <div className="sticky bottom-0 z-10 -mx-4 border-t bg-background/95 px-4 py-3 backdrop-blur lg:static lg:mx-0 lg:rounded-lg lg:border lg:shadow-sm">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p
+          aria-live="polite"
+          className="flex items-center gap-2 text-sm text-muted-foreground"
+        >
+          {dirty ? (
+            <>
+              <span className="size-2 rounded-full bg-warning" />
+              Modifications non enregistrées
+            </>
+          ) : (
+            <>
+              <CheckIcon className="size-4" />
+              Tout est enregistré
+            </>
+          )}
+        </p>
+        <div className="flex gap-2">
+          {dirty ? (
+            <Button
+              type="button"
+              variant="ghost"
+              disabled={saving}
+              onClick={onReset}
+            >
+              Annuler
+            </Button>
+          ) : null}
+          <Button type="button" disabled={!dirty || saving} onClick={onSave}>
             {saving ? <Spinner /> : <SparklesIcon />}
-            Enregistrer ma recherche
+            Enregistrer mes critères
           </Button>
         </div>
       </div>

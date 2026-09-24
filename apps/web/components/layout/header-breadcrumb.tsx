@@ -19,6 +19,10 @@ import {
  * cannot say so.
  */
 const pathLabels: Record<string, string> = {
+  "/ma-recherche/alertes": "Alertes",
+  "/ma-recherche/marche": "Marché",
+  "/ma-recherche/metiers": "Métiers & compétences",
+  "/profile/new": "Nouveau profil",
   "/candidatures/new": "Nouvelle candidature",
   "/entretiens/new": "Nouvel entretien",
 }
@@ -55,6 +59,7 @@ const parentFallbacks: Record<string, string> = {
   candidatures: "Détail de la candidature",
   entreprises: "Fiche entreprise",
   entretiens: "Détail de l'entretien",
+  profile: "Modifier le profil",
   users: "Détail du compte",
 }
 

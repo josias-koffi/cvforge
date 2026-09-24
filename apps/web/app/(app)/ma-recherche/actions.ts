@@ -11,7 +11,10 @@ import type {
 import { runAction } from "@/lib/api"
 import { writeCompetenceDismissal } from "@/lib/profile-competences"
 import {
+  pickAlerts,
+  readSearchProject,
   requestSearchProjectPrefill,
+  type SearchAlerts,
   searchRomeAppellations,
   writeRomeDecision,
   writeSearchProject,
@@ -21,17 +24,48 @@ type RomeResult =
   | { ok: true; message?: string; rome: SearchProjectRomeAppellation[] }
   | { ok: false; message: string }
 
-/** Saved, then the ROME jobs as they now stand — ROMEO runs on save. */
+/** Every tab reads the same project: whichever saves refreshes them all. */
+function revalidateSearch() {
+  revalidatePath("/ma-recherche", "layout")
+}
+
+/**
+ * The criteria, saved, then the ROME jobs as they now stand — ROMEO runs on
+ * save. The alerts are taken from the stored project: they belong to their
+ * own tab, and a criteria form left open must not undo them.
+ */
 export async function saveSearchProject(
   project: SearchProject
 ): Promise<RomeResult> {
   let rome: SearchProjectRomeAppellation[] = []
   const result = await runAction(async () => {
-    rome = (await writeSearchProject(project)).rome
-  }, "Recherche enregistrée.")
+    const { searchProject: stored } = await readSearchProject(project.profileId)
+    rome = (await writeSearchProject({ ...project, ...pickAlerts(stored) }))
+      .rome
+  }, "Critères enregistrés.")
 
-  revalidatePath("/ma-recherche")
+  revalidateSearch()
   return result.ok ? { ...result, rome } : result
+}
+
+/** The alerts alone, on top of the stored criteria. Applies at once. */
+export async function saveSearchAlerts(
+  profileId: string,
+  alerts: SearchAlerts
+): Promise<
+  { ok: true; alerts: SearchAlerts } | { ok: false; message: string }
+> {
+  let saved = alerts
+  const result = await runAction(async () => {
+    const { searchProject: stored } = await readSearchProject(profileId)
+    saved = pickAlerts(
+      (await writeSearchProject({ ...stored, ...pickAlerts(alerts) }))
+        .searchProject
+    )
+  })
+
+  revalidateSearch()
+  return result.ok ? { ok: true, alerts: saved } : result
 }
 
 /** Confirming or dismissing a job applies at once: no second "save" to find. */
@@ -45,7 +79,7 @@ export async function decideRomeAppellation(
     rome = await writeRomeDecision(profileId, code, decision)
   })
 
-  revalidatePath("/ma-recherche")
+  revalidateSearch()
   return result.ok ? { ...result, rome } : result
 }
 
@@ -62,7 +96,7 @@ export async function dismissProfileCompetence(
     competences = await writeCompetenceDismissal(profileId, code)
   })
 
-  revalidatePath("/ma-recherche")
+  revalidateSearch()
   return result.ok ? { ok: true, competences } : result
 }
 

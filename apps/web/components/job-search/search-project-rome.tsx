@@ -1,18 +1,22 @@
 "use client"
 
 import { useEffect, useRef, useState, useTransition } from "react"
+import Link from "next/link"
 import {
   ROME_SOURCE_LABEL,
   type RomeAppellationOption,
   type SearchProjectRomeAppellation,
 } from "@cvforge/types"
-import { CheckIcon, X } from "lucide-react"
+import { BriefcaseBusinessIcon, CheckIcon, X } from "lucide-react"
 import { toast } from "sonner"
 
 import {
   decideRomeAppellation,
   findRomeAppellations,
 } from "@/app/(app)/ma-recherche/actions"
+import { SearchChip } from "@/components/job-search/search-chip"
+import { searchTabHref } from "@/components/job-search/search-tabs"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -22,6 +26,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
@@ -33,41 +45,43 @@ type Decide = (code: string, decision: "confirm" | "dismiss") => void
 /**
  * "Vos métiers": the ROME jobs behind the titles the candidate typed (US-118).
  *
- * ROMEO suggests them when the search is saved; the candidate confirms or
+ * ROMEO suggests them when the criteria are saved; the candidate confirms or
  * dismisses each one, and every click is saved at once — a chip that waits for
  * another button to count is one nobody understands.
  */
 export function SearchProjectRome({
   profileId,
-  appellations,
-  onChange,
+  initialAppellations,
 }: {
   profileId: string
-  appellations: SearchProjectRomeAppellation[]
-  onChange: (next: SearchProjectRomeAppellation[]) => void
+  initialAppellations: SearchProjectRomeAppellation[]
 }) {
+  const [appellations, setAppellations] = useState(initialAppellations)
   const [pending, startDeciding] = useTransition()
 
   const decide: Decide = (code, decision) =>
     startDeciding(async () => {
       const result = await decideRomeAppellation(profileId, code, decision)
 
-      if (result.ok) onChange(result.rome)
+      if (result.ok) setAppellations(result.rome)
       else toast.error(result.message)
     })
 
+  // Visible overflow: the picker's list drops below the card's edge.
   return (
-    <Card>
+    <Card className="overflow-visible">
       <CardHeader>
         <CardTitle>Vos métiers</CardTitle>
         <CardDescription>
           Les métiers du référentiel de France Travail qui correspondent à vos
-          postes. Confirmez ceux qui vous ressemblent.
+          postes. Ce sont eux qui alimentent le marché et les entreprises qui
+          recrutent.
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-6">
         <RomeAppellationLists
           appellations={appellations}
+          criteriaHref={searchTabHref("/ma-recherche", profileId)}
           disabled={pending}
           onDecide={decide}
         />
@@ -84,13 +98,15 @@ export function SearchProjectRome({
   )
 }
 
-/** Confirmed jobs, then ROMEO's suggestions with their confidence. */
+/** ROMEO's suggestions to sort first, then the confirmed jobs. */
 export function RomeAppellationLists({
   appellations,
+  criteriaHref,
   disabled,
   onDecide,
 }: {
   appellations: SearchProjectRomeAppellation[]
+  criteriaHref: string
   disabled: boolean
   onDecide: Decide
 }) {
@@ -99,80 +115,87 @@ export function RomeAppellationLists({
 
   if (appellations.length === 0) {
     return (
-      <p className="text-sm text-muted-foreground">
-        Enregistrez votre recherche : nous vous proposerons les métiers
-        correspondants.
-      </p>
+      <Empty className="border">
+        <EmptyHeader>
+          <EmptyMedia variant="icon">
+            <BriefcaseBusinessIcon />
+          </EmptyMedia>
+          <EmptyTitle>Aucun métier pour l&apos;instant</EmptyTitle>
+          <EmptyDescription>
+            Renseignez vos postes visés et enregistrez vos critères : nous vous
+            proposerons les métiers correspondants.
+          </EmptyDescription>
+        </EmptyHeader>
+        <EmptyContent>
+          <Button asChild variant="outline" size="sm">
+            <Link href={criteriaHref}>Renseigner mes postes</Link>
+          </Button>
+        </EmptyContent>
+      </Empty>
     )
   }
 
   return (
     <>
-      {confirmed.length > 0 ? (
-        <div className="flex flex-col gap-2">
-          <Label>Confirmés</Label>
+      {suggested.length > 0 ? (
+        <div className="flex flex-col gap-3 rounded-lg border border-dashed bg-muted/40 p-4">
+          <div className="flex flex-col gap-0.5">
+            <Label>À trier ({suggested.length})</Label>
+            <p className="text-xs text-muted-foreground">
+              Suggestions tirées de vos postes, avec notre degré de confiance.
+            </p>
+          </div>
           <ul className="flex flex-wrap gap-2">
-            {confirmed.map((entry) => (
-              <li
+            {suggested.map((entry) => (
+              <SearchChip
                 key={entry.code}
-                className="flex items-center gap-1 rounded-md bg-primary py-1 pr-1 pl-3 text-sm text-primary-foreground"
+                disabled={disabled}
+                title={metierTitle(entry)}
+                actions={[
+                  {
+                    icon: CheckIcon,
+                    label: `Confirmer ${entry.libelle}`,
+                    onClick: () => onDecide(entry.code, "confirm"),
+                  },
+                  {
+                    icon: X,
+                    label: `Écarter ${entry.libelle}`,
+                    onClick: () => onDecide(entry.code, "dismiss"),
+                  },
+                ]}
               >
-                <AppellationLabel appellation={entry} />
-                <Button
-                  type="button"
-                  size="icon"
-                  variant="ghost"
-                  className="size-7"
-                  disabled={disabled}
-                  aria-label={`Retirer ${entry.libelle}`}
-                  onClick={() => onDecide(entry.code, "dismiss")}
-                >
-                  <X className="size-4" />
-                </Button>
-              </li>
+                {entry.libelle}
+                {entry.score !== null ? (
+                  <Badge variant="secondary" className="ml-1">
+                    {Math.round(entry.score * 100)} %
+                  </Badge>
+                ) : null}
+              </SearchChip>
             ))}
           </ul>
         </div>
       ) : null}
 
-      {suggested.length > 0 ? (
+      {confirmed.length > 0 ? (
         <div className="flex flex-col gap-2">
-          <Label>Suggestions</Label>
+          <Label>Confirmés</Label>
           <ul className="flex flex-wrap gap-2">
-            {suggested.map((entry) => (
-              <li
+            {confirmed.map((entry) => (
+              <SearchChip
                 key={entry.code}
-                className="flex items-center gap-1 rounded-md border border-border py-1 pr-1 pl-3 text-sm"
+                tone="solid"
+                disabled={disabled}
+                title={metierTitle(entry)}
+                actions={[
+                  {
+                    icon: X,
+                    label: `Retirer ${entry.libelle}`,
+                    onClick: () => onDecide(entry.code, "dismiss"),
+                  },
+                ]}
               >
-                <AppellationLabel appellation={entry} />
-                {entry.score !== null ? (
-                  <span className="text-xs text-muted-foreground">
-                    {Math.round(entry.score * 100)} %
-                  </span>
-                ) : null}
-                <Button
-                  type="button"
-                  size="icon"
-                  variant="ghost"
-                  className="size-7"
-                  disabled={disabled}
-                  aria-label={`Confirmer ${entry.libelle}`}
-                  onClick={() => onDecide(entry.code, "confirm")}
-                >
-                  <CheckIcon className="size-4" />
-                </Button>
-                <Button
-                  type="button"
-                  size="icon"
-                  variant="ghost"
-                  className="size-7"
-                  disabled={disabled}
-                  aria-label={`Écarter ${entry.libelle}`}
-                  onClick={() => onDecide(entry.code, "dismiss")}
-                >
-                  <X className="size-4" />
-                </Button>
-              </li>
+                {entry.libelle}
+              </SearchChip>
             ))}
           </ul>
         </div>
@@ -181,22 +204,10 @@ export function RomeAppellationLists({
   )
 }
 
-function AppellationLabel({
-  appellation,
-}: {
-  appellation: RomeAppellationOption
-}) {
-  return (
-    <span
-      title={
-        appellation.metierLibelle
-          ? `Métier : ${appellation.metierLibelle}`
-          : undefined
-      }
-    >
-      {appellation.libelle}
-    </span>
-  )
+function metierTitle(appellation: RomeAppellationOption) {
+  return appellation.metierLibelle
+    ? `Métier : ${appellation.metierLibelle}`
+    : undefined
 }
 
 /**
@@ -241,40 +252,42 @@ function RomeAppellationPicker({
   return (
     <div className="flex flex-col gap-2">
       <Label htmlFor="search-rome">Ajouter un métier</Label>
-      <Input
-        id="search-rome"
-        autoComplete="off"
-        placeholder="Boulanger, comptable, développeur…"
-        value={query}
-        onChange={(event) => {
-          setQuery(event.target.value)
-          if (event.target.value.trim().length < MIN_QUERY_CHARS) setMatches([])
-        }}
-      />
-      {choices.length > 0 && (
-        <ul className="divide-y divide-border rounded-md border border-border bg-popover text-sm">
-          {choices.map((entry) => (
-            <li key={entry.code}>
-              <button
-                type="button"
-                disabled={disabled}
-                className="w-full px-3 py-2 text-left hover:bg-accent"
-                onClick={() => {
-                  onPick(entry.code)
-                  setQuery("")
-                  setMatches([])
-                }}
-              >
-                {entry.libelle}
-                <span className="text-muted-foreground">
-                  {" "}
-                  — {entry.metierLibelle}
-                </span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
+      <div className="relative">
+        <Input
+          id="search-rome"
+          autoComplete="off"
+          placeholder="Boulanger, comptable, développeur…"
+          value={query}
+          onChange={(event) => {
+            setQuery(event.target.value)
+            if (event.target.value.trim().length < MIN_QUERY_CHARS)
+              setMatches([])
+          }}
+        />
+        {choices.length > 0 && (
+          <ul className="absolute inset-x-0 top-full z-20 mt-1 max-h-72 divide-y divide-border overflow-y-auto rounded-md border border-border bg-popover text-sm shadow-md">
+            {choices.map((entry) => (
+              <li key={entry.code}>
+                <button
+                  type="button"
+                  disabled={disabled}
+                  className="w-full px-3 py-2 text-left hover:bg-accent"
+                  onClick={() => {
+                    onPick(entry.code)
+                    setQuery("")
+                    setMatches([])
+                  }}
+                >
+                  {entry.libelle}
+                  <span className="block text-xs text-muted-foreground">
+                    {entry.metierLibelle}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </div>
   )
 }

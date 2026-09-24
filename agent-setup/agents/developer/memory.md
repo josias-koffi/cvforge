@@ -1391,6 +1391,13 @@
 - **Leçon** : après l'ajout d'une constante dans `@cvforge/types`, reconstruire le paquet avant les tests de l'API : sinon la constante vaut `undefined` à l'exécution, et les tests échouent sans erreur de type.
 - **Leçon** : quand une autre session travaille en parallèle dans le dépôt, n'ajouter au commit que ses propres fichiers, un par un (`git add <fichiers>`), jamais `git add -A`.
 
+### 2026-09-24 — Refonte UI/UX de /ma-recherche (ad hoc, hors sprint)
+- **Context** : la page empilait critères, métiers ROME, compétences, marché et alertes dans une colonne, avec deux façons d'enregistrer. Elle est découpée en quatre sous-pages (Critères · Métiers & compétences · Marché · Alertes) sous un layout commun, avec une seule façon d'enregistrer par onglet.
+- **Leçon** : un composant serveur ne peut pas appeler une fonction exportée par un module `"use client"`, même une fonction pure (`searchTabHref`) : la page plante au rendu, et ni tsc ni les tests (`renderToStaticMarkup`) ne le voient. Les helpers partagés vont dans un module sans directive (`search-tabs.ts`).
+- **Leçon** : un layout ne reçoit pas les `searchParams`. Le sélecteur de profil et les onglets lisent `?profileId` avec `useSearchParams`, sous `<Suspense>`.
+- **Leçon** : quand deux onglets écrivent le même objet (les critères et les alertes dans `SearchProject`), chaque action serveur relit l'objet stocké et n'écrit que sa part (`pickAlerts`), avec une lecture qui échoue (`readSearchProject`). Un projet vide de repli écraserait le reste.
+- **Leçon** : `Card` a `overflow-hidden` : une liste déroulante en position absolue à l'intérieur est coupée, il faut `overflow-visible` sur cette carte.
+
 ### 2026-09-24 — US-121 fiche entreprise et badges RSE (sprint-026)
 - **Context** : table `companies` indexée par SIREN, lue chaque mois depuis l'Annuaire des entreprises et Egapro. Les cartes affichent des badges, et la page `/entreprises/[siret]` donne la fiche.
 - **Leçon** : l'API Recherche d'entreprises ne donne pas l'index Egapro, seulement `egapro_renseignee`. La note vient de `egapro.travail.gouv.fr/api/search?q=<siren>` (`notes.<année>`, parfois null) : n'appeler Egapro que si l'index est déclaré.
@@ -1403,11 +1410,21 @@
 - **Leçon** : `detectAtsBoard` renvoie le jeton générique `company` sur certaines URL SmartRecruiters. C'est à corriger au prochain passage dans ce fichier.
 - **Leçon** : `tsx` sur un script `.ts` hors du paquet compile en CommonJS, donc sans await au premier niveau. Nommer le script `.mts` et importer le module TS avec `import * as`.
 
+### 2026-09-24 — Refonte UI/UX de /profile, et en-tête fixe dans toute l'app (ad hoc, hors sprint)
+- **Context** : même découpage que `/ma-recherche`. À gauche, en colonne fixe : les profils, le sommaire des sections et l'import de CV. À droite : une carte par section au lieu de 7 onglets, un seul enregistrement, et une barre d'enregistrement fixe. Le shell ne fait défiler que le contenu, et `PageHeader` reste collé en haut sur toutes les pages.
+- **Leçon** : `SectionCard` et `SectionOutline` (`components/layout/`) servent au sommaire et aux cartes de tout formulaire long. Réutiliser ces deux composants au lieu d'en écrire un par page.
+- **Leçon** : dans une colonne flex de hauteur bornée (`min-h-0`), une `Card` (qui a `overflow-hidden`) rétrécit et coupe son contenu. Mettre `*:shrink-0` sur le conteneur qui défile.
+- **Leçon** : `sticky top-0` se cale sous le padding du conteneur qui défile. Pour coller au bord, décaler de ce padding (`-top-4 md:-top-6`). Ce qui colle sous l'en-tête lit `--page-header-height`, que `StickyPageHeader` publie déjà sans le padding.
+- **Leçon** : le badge « n/N sections » de la liste et le sommaire lisent tous deux `profileOutline` : deux comptes séparés se contredisaient (5/6 contre 8 sections).
+- **Suite (même jour)** : `/profile` est devenue une liste de cartes (`ProfileCard`, avec le menu `ProfileActionsMenu`). L'édition a sa page, `/profile/[id]`. La création passe par `/profile/new`, qui ouvre l'éditeur sur un brouillon enregistré seulement au premier « Enregistrer », puis `router.replace` vers `/profile/[id]`. Les anciens liens `/profile?id=` redirigent. `createProfile`, `ProfileList` et `ProfileWorkspace` sont supprimés.
+- **Leçon** : `overflow-hidden` n'empêche pas un lien d'ancre, ou un focus, de faire défiler la boîte : le shell entier glissait sous le header. Le shell est en `overflow-clip`, qui ne crée pas de conteneur défilable.
+
 ### 2026-09-24 — US-116 contrat Pages employeurs (sprint-026)
 - **Context** : le support a donné les scopes et le chemin. Contrat consigné dans sprint-026, et l'API ajoutée au catalogue `FT_APIS`.
 - **Leçon** : chez France Travail, un 403 `insufficient_scope` sur tous les chemins peut venir d'un **second scope manquant**, même si le premier délivre bien un jeton : ce fut le cas pour La Bonne Boîte, ROME Substitutions, puis Pages employeurs. Demander au support la liste complète des scopes dès le premier 403.
 - **Leçon** : ne pas se fier à l'exemple du support. Son champ `siret` était ignoré, et seul `what` (nom) + `where` (département), vérifié par le SIREN, retrouve une entreprise.
 - **Leçon** : l'URL publique d'une page employeur est `recrute.francetravail.fr/page-employeur/<urlPath>`. `pro.francetravail.fr` est une application JavaScript qui répond 200 puis redirige vers `not-found` : un code HTTP ne prouve pas qu'une page d'application JavaScript existe.
+- **Suite** : `UnsavedChangesGuard` (`components/layout/`) protège tout formulaire avec des modifications non enregistrées : une boîte de dialogue sur les liens internes, l'alerte du navigateur à la fermeture. Il est utilisé par l'éditeur de profil et par les critères de `/ma-recherche`. **Leçon** : un écouteur `click` sur `document`, en phase de capture, passe avant le `Link` de Next. Il couvre ainsi la sidebar et le fil d'Ariane sans toucher à ces composants. Les ancres de la même page (`#section`) doivent passer, sinon le sommaire devient inutilisable.
 
 ### 2026-09-24 — US-116 suite : page employeur sur la fiche entreprise (sprint-026)
 - **Context** : Pages employeurs est lue pendant la relecture mensuelle des entreprises. La fiche affiche le lien vers `recrute.francetravail.fr`, et 29 % des entreprises en ont une.

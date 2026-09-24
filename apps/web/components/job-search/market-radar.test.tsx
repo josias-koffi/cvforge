@@ -36,10 +36,9 @@ const ENTRY: MarketRadarEntry = {
 
 /** Intl writes thousands with a narrow no-break space; compare on plain text. */
 function render(entries: MarketRadarEntry[]) {
-  return renderToStaticMarkup(<MarketRadar entries={entries} />).replace(
-    / | /g,
-    " "
-  )
+  return renderToStaticMarkup(
+    <MarketRadar entries={entries} profileId="p1" />
+  ).replace(/ | /g, " ")
 }
 
 describe("MarketRadar", () => {
@@ -49,7 +48,8 @@ describe("MarketRadar", () => {
     expect(html).toContain("Métier en tension dans votre département")
     expect(html).toContain("très élevée")
     expect(html).toContain("ANNEE 2025")
-    expect(html).toContain("870 sur le trimestre, 2 910 sur douze mois")
+    expect(html).toContain("870 sur le trimestre")
+    expect(html).toContain("2 910 sur douze mois")
     expect(html).toContain("1er trimestre 2026")
     expect(html).toContain("Salaire médian observé")
     expect(html).toContain("42 000 € par an")
@@ -57,8 +57,12 @@ describe("MarketRadar", () => {
   })
 
   it("names the region's most promising department", () => {
-    expect(render([ENTRY])).toContain(
-      "Vendée</span>, 3 200 offres sur douze mois, difficulté à recruter moyenne"
+    const html = render([ENTRY])
+
+    expect(html).toContain("Plus porteur dans votre région")
+    expect(html).toContain("Vendée")
+    expect(html).toContain(
+      "3 200 offres sur douze mois, difficulté à recruter moyenne"
     )
   })
 
@@ -90,10 +94,32 @@ describe("MarketRadar", () => {
     expect(html).not.toContain("Plus porteur")
   })
 
+  it("gives one card per job, its departments inside", () => {
+    const html = render([
+      ENTRY,
+      {
+        ...ENTRY,
+        bestNeighbour: null,
+        local: {
+          ...NANTES,
+          department: "49",
+          departmentLabel: "Maine-et-Loire",
+        },
+      },
+    ])
+
+    expect(html.split("Développeur / Développeuse informatique")).toHaveLength(
+      2
+    )
+    expect(html).toContain("Loire-Atlantique")
+    expect(html).toContain("Maine-et-Loire")
+  })
+
   it("explains what to do before the first figures", () => {
     const html = render([])
 
     expect(html).toContain("Confirmez un métier")
+    expect(html).toContain('href="/ma-recherche/metiers?profileId=p1"')
     expect(html).not.toContain("Source :")
   })
 })

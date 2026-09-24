@@ -1,71 +1,40 @@
 "use client"
 
-import Link from "next/link"
 import { useEffect, useState, useTransition } from "react"
-import { SearchIcon } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { UploadIcon } from "lucide-react"
 import { toast } from "sonner"
 
 import { saveProfile } from "@/app/(app)/profile/actions"
-import {
-  cleanLines,
-  FieldGrid,
-  ListEditor,
-  SpecField,
-  type FieldSpec,
-} from "@/components/documents/list-editor"
+import { cleanLines } from "@/components/documents/list-editor"
+import { SectionOutline } from "@/components/layout/section-outline"
+import { UnsavedChangesGuard } from "@/components/layout/unsaved-changes-guard"
 import { CvDropzone } from "@/components/profile/cv-dropzone"
+import { ProfileAvailabilityCard } from "@/components/profile/profile-availability-card"
+import { useProfileEditState } from "@/components/profile/profile-edit-state"
 import { ProfileIdentityCard } from "@/components/profile/profile-identity-card"
+import { ProfileListCards } from "@/components/profile/profile-list-cards"
 import { ProfileSaveBar } from "@/components/profile/profile-save-bar"
+import { profileOutline } from "@/components/profile/profile-sections"
+import { ProfileSummaryCard } from "@/components/profile/profile-summary-card"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Separator } from "@/components/ui/separator"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import type {
-  BaseProfile,
-  CertificationEntry,
-  EducationEntry,
-  ExperienceEntry,
-  LanguageEntry,
-  ProjectEntry,
-} from "@/lib/profile-model"
-
-const experienceFields: FieldSpec<ExperienceEntry>[] = [
-  { key: "role", label: "Poste" },
-  { key: "company", label: "Entreprise" },
-  { key: "period", label: "Période", wide: true },
-  { key: "results", label: "Missions et résultats", type: "multiline" },
-]
-
-const educationFields: FieldSpec<EducationEntry>[] = [
-  { key: "degree", label: "Diplôme" },
-  { key: "institution", label: "Établissement" },
-  { key: "year", label: "Année" },
-  { key: "honors", label: "Mention" },
-  { key: "description", label: "Description", type: "multiline" },
-]
-
-const projectFields: FieldSpec<ProjectEntry>[] = [
-  { key: "title", label: "Projet" },
-  { key: "link", label: "Lien" },
-  { key: "description", label: "Description", type: "multiline" },
-]
-
-const languageFields: FieldSpec<LanguageEntry>[] = [
-  { key: "language", label: "Langue" },
-  { key: "level", label: "Niveau (ex. C1 / Courant)" },
-]
-
-const certificationFields: FieldSpec<CertificationEntry>[] = [
-  { key: "title", label: "Certification" },
-  { key: "issuer", label: "Organisme" },
-  { key: "year", label: "Année" },
-]
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import type { BaseProfile } from "@/lib/profile-model"
 
 /** A profile with substance no longer needs the import zone to sit centre stage. */
 function hasContent(profile: BaseProfile) {
   const { experiences, summary, technicalSkills } = profile.sections
 
-  return Boolean(summary.trim() || experiences.length > 0 || technicalSkills.length > 0)
+  return Boolean(
+    summary.trim() || experiences.length > 0 || technicalSkills.length > 0
+  )
 }
 
 function normalizeProfile(profile: BaseProfile): BaseProfile {
@@ -79,23 +48,39 @@ function normalizeProfile(profile: BaseProfile): BaseProfile {
   }
 }
 
+/**
+ * One profile, edited as a single document and saved with one button.
+ *
+ * On a large screen the outline, the CV import and the save bar stay put;
+ * only the section cards scroll between them. A section is a card rather than
+ * a tab, so the whole profile can be read through, and the outline says which
+ * ones are still empty. A new profile gets its own address at its first save.
+ */
 export function ProfileForm({
   initialProfile,
-  onDirtyChange,
+  isNew = false,
 }: {
   initialProfile: BaseProfile
-  onDirtyChange: (dirty: boolean) => void
+  /** Not stored yet: a draft that only exists once saved. */
+  isNew?: boolean
 }) {
+  const router = useRouter()
   const [profile, setProfile] = useState(initialProfile)
   const [savedProfile, setSavedProfile] = useState(initialProfile)
   const [saving, startSaving] = useTransition()
   const dirty = JSON.stringify(profile) !== JSON.stringify(savedProfile)
-  const setSections = <K extends keyof BaseProfile["sections"]>(
+  const { setDirty } = useProfileEditState()
+
+  useEffect(() => setDirty(dirty), [dirty, setDirty])
+  const filled = hasContent(profile)
+  const setSection = <K extends keyof BaseProfile["sections"]>(
     key: K,
     value: BaseProfile["sections"][K]
-  ) => setProfile({ ...profile, sections: { ...profile.sections, [key]: value } })
-
-  useEffect(() => onDirtyChange(dirty), [dirty, onDirtyChange])
+  ) =>
+    setProfile((current) => ({
+      ...current,
+      sections: { ...current.sections, [key]: value },
+    }))
 
   const save = () =>
     startSaving(async () => {
@@ -110,183 +95,86 @@ export function ProfileForm({
         setProfile(saved)
         setSavedProfile(saved)
         toast.success(result.message)
+        if (isNew) router.replace(`/profile/${saved.id}`)
       } else {
         toast.error(result.message)
       }
     })
 
   return (
-    <div className="@container/editor flex min-w-0 flex-col gap-4">
-      <CvDropzone compact={hasContent(profile)} onImported={setProfile} />
-      <ProfileIdentityCard profile={profile} onChange={setProfile} />
-      <Card>
-        <CardContent>
-          <Tabs defaultValue="summary" className="gap-4">
-            <TabsList className="flex-wrap">
-              <TabsTrigger value="summary">Résumé et compétences</TabsTrigger>
-              <TabsTrigger value="experiences">
-                Expériences ({profile.sections.experiences.length})
-              </TabsTrigger>
-              <TabsTrigger value="education">
-                Formation ({profile.sections.education.length})
-              </TabsTrigger>
-              <TabsTrigger value="projects">
-                Projets ({profile.sections.personalProjects.length})
-              </TabsTrigger>
-              <TabsTrigger value="search">Ma recherche</TabsTrigger>
-              <TabsTrigger value="languages">
-                Langues ({profile.sections.languages.length})
-              </TabsTrigger>
-              <TabsTrigger value="certifications">
-                Certifications ({profile.sections.certifications.length})
-              </TabsTrigger>
-            </TabsList>
-            <TabsContent value="summary" className="flex flex-col gap-4">
-              <SpecField
-                id="sections"
-                spec={{ key: "summary", label: "Résumé", type: "multiline" }}
-                value={profile.sections.summary}
-                onChange={(value) => setSections("summary", value as string)}
-              />
-              <FieldGrid>
-                <SpecField
-                  id="sections"
-                  spec={{ key: "technicalSkills", label: "Compétences techniques (une par ligne)", type: "lines" }}
-                  value={profile.sections.technicalSkills}
-                  onChange={(value) => setSections("technicalSkills", value as string[])}
-                />
-                <SpecField
-                  id="sections"
-                  spec={{ key: "softSkills", label: "Savoir-être (un par ligne)", type: "lines" }}
-                  value={profile.sections.softSkills}
-                  onChange={(value) => setSections("softSkills", value as string[])}
-                />
-              </FieldGrid>
-              <SpecField
-                id="sections"
-                spec={{ key: "interests", label: "Centres d'intérêt", type: "multiline" }}
-                value={profile.sections.interests}
-                onChange={(value) => setSections("interests", value as string)}
-              />
-            </TabsContent>
-            <TabsContent value="experiences">
-              <ListEditor
-                id="experience"
-                items={profile.sections.experiences}
-                fields={experienceFields}
-                onChange={(items) => setSections("experiences", items)}
-                itemTitle={(item, index) =>
-                  [item.role, item.company].filter(Boolean).join(" · ") || `Expérience ${index + 1}`
-                }
-                addLabel="Ajouter une expérience"
-                createItem={() => ({ company: "", period: "", results: "", role: "" })}
-              />
-            </TabsContent>
-            <TabsContent value="education">
-              <ListEditor
-                id="education"
-                items={profile.sections.education}
-                fields={educationFields}
-                onChange={(items) => setSections("education", items)}
-                itemTitle={(item, index) => item.degree || `Formation ${index + 1}`}
-                addLabel="Ajouter une formation"
-                createItem={() => ({ degree: "", description: "", honors: "", institution: "", year: "" })}
-              />
-            </TabsContent>
-            <TabsContent value="projects">
-              <ListEditor
-                id="project"
-                items={profile.sections.personalProjects}
-                fields={projectFields}
-                onChange={(items) => setSections("personalProjects", items)}
-                itemTitle={(item, index) => item.title || `Projet ${index + 1}`}
-                addLabel="Ajouter un projet"
-                createItem={() => ({ description: "", link: "", title: "" })}
-              />
-            </TabsContent>
-            <TabsContent value="search" className="flex flex-col gap-4">
-              <FieldGrid>
-                <SpecField
-                  id="preferences"
-                  spec={{ key: "availabilityDate", label: "Disponible à partir du" }}
-                  value={profile.preferences.availabilityDate}
-                  onChange={(value) =>
-                    setProfile({
-                      ...profile,
-                      preferences: {
-                        ...profile.preferences,
-                        availabilityDate: value as string,
-                        availabilityMode: (value as string).trim() ? "date" : "",
-                      },
-                    })
-                  }
-                />
-              </FieldGrid>
-              <label className="flex items-center gap-2 text-sm">
-                <input
-                  checked={profile.preferences.availabilityMode === "immediate"}
-                  onChange={(event) =>
-                    setProfile({
-                      ...profile,
-                      preferences: {
-                        ...profile.preferences,
-                        availabilityDate: event.target.checked
-                          ? ""
-                          : profile.preferences.availabilityDate,
-                        availabilityMode: event.target.checked ? "immediate" : "",
-                      },
-                    })
-                  }
-                  type="checkbox"
-                />
-                Disponible immédiatement
-              </label>
-              <Separator />
-              <div className="flex flex-col items-start gap-2">
-                <p className="text-muted-foreground text-sm">
-                  Les postes, contrats, secteurs et lieux que vous visez se règlent
-                  sur leur propre page — c&apos;est ce qui alimente vos offres du jour.
-                </p>
-                <Button asChild variant="outline">
-                  <Link href="/ma-recherche">
-                    <SearchIcon />
-                    Ouvrir ma recherche
-                  </Link>
-                </Button>
-              </div>
-            </TabsContent>
-            <TabsContent value="languages">
-              <ListEditor
-                id="language"
-                items={profile.sections.languages}
-                fields={languageFields}
-                onChange={(items) => setSections("languages", items)}
-                itemTitle={(item, index) => item.language || `Langue ${index + 1}`}
-                addLabel="Ajouter une langue"
-                createItem={() => ({ language: "", level: "" })}
-              />
-            </TabsContent>
-            <TabsContent value="certifications">
-              <ListEditor
-                id="certification"
-                items={profile.sections.certifications}
-                fields={certificationFields}
-                onChange={(items) => setSections("certifications", items)}
-                itemTitle={(item, index) => item.title || `Certification ${index + 1}`}
-                addLabel="Ajouter une certification"
-                createItem={() => ({ issuer: "", title: "", year: "" })}
-              />
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
-      <ProfileSaveBar
-        dirty={dirty}
-        lastSavedAt={savedProfile.meta.lastSavedAt}
-        saving={saving}
-        onReset={() => setProfile(savedProfile)}
-        onSave={save}
-      />
+    <div className="grid gap-6 px-4 lg:min-h-0 lg:flex-1 lg:grid-cols-[16rem_minmax(0,1fr)] lg:px-6">
+      <UnsavedChangesGuard dirty={dirty} />
+      <aside className="flex flex-col gap-6 lg:-mx-1 lg:min-h-0 lg:overflow-y-auto lg:px-1 lg:pb-1">
+        <div className="hidden flex-col gap-2 lg:flex">
+          <p className="px-2 text-xs font-medium text-muted-foreground uppercase">
+            Sections du profil
+          </p>
+          <SectionOutline
+            label="Sections du profil"
+            items={profileOutline(profile)}
+          />
+        </div>
+        {filled ? <ImportCvDialog onImported={setProfile} /> : null}
+      </aside>
+
+      <div className="@container/editor flex min-w-0 flex-col gap-4 lg:min-h-0">
+        <div className="flex flex-col gap-4 *:shrink-0 lg:-mx-2 lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:px-2 lg:pb-1">
+          {filled ? null : (
+            <CvDropzone compact={false} onImported={setProfile} />
+          )}
+          <ProfileIdentityCard profile={profile} onChange={setProfile} />
+          <ProfileSummaryCard
+            sections={profile.sections}
+            setSection={setSection}
+          />
+          <ProfileListCards
+            sections={profile.sections}
+            setSection={setSection}
+          />
+          <ProfileAvailabilityCard
+            preferences={profile.preferences}
+            onChange={(preferences) =>
+              setProfile((current) => ({ ...current, preferences }))
+            }
+          />
+        </div>
+        <ProfileSaveBar
+          dirty={dirty}
+          lastSavedAt={savedProfile.meta.lastSavedAt}
+          saving={saving}
+          onReset={() => setProfile(savedProfile)}
+          onSave={save}
+        />
+      </div>
     </div>
+  )
+}
+
+/** Once the profile is filled, importing another CV is a side action. */
+function ImportCvDialog({
+  onImported,
+}: {
+  onImported: (update: (profile: BaseProfile) => BaseProfile) => void
+}) {
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button variant="outline" className="w-full">
+          <UploadIcon />
+          Importer un CV
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-xl">
+        <DialogHeader>
+          <DialogTitle>Importer un CV</DialogTitle>
+          <DialogDescription>
+            Chaque section trouvée dans le CV remplace la vôtre, les autres
+            restent telles quelles. Rien n&apos;est enregistré avant que vous ne
+            cliquiez sur « Enregistrer ».
+          </DialogDescription>
+        </DialogHeader>
+        <CvDropzone compact={false} onImported={onImported} />
+      </DialogContent>
+    </Dialog>
   )
 }

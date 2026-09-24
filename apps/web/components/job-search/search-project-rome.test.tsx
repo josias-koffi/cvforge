@@ -30,6 +30,7 @@ function renderLists(appellations: SearchProjectRomeAppellation[]) {
   return renderToStaticMarkup(
     <RomeAppellationLists
       appellations={appellations}
+      criteriaHref="/ma-recherche?profileId=p1"
       disabled={false}
       onDecide={() => {}}
     />
@@ -37,15 +38,24 @@ function renderLists(appellations: SearchProjectRomeAppellation[]) {
 }
 
 describe("RomeAppellationLists", () => {
-  it("invites a first save while nothing was suggested", () => {
-    expect(renderLists([])).toContain("Enregistrez votre recherche")
+  it("sends to the criteria while nothing was suggested", () => {
+    const html = renderLists([])
+
+    expect(html).toContain("Aucun métier")
+    expect(html).toContain('href="/ma-recherche?profileId=p1"')
+  })
+
+  it("puts the suggestions to sort before the confirmed jobs", () => {
+    const html = renderLists([WEB, BACK])
+
+    expect(html.indexOf("À trier (1)")).toBeLessThan(html.indexOf("Confirmés"))
   })
 
   it("shows confirmed jobs apart from suggestions, with their confidence", () => {
     const html = renderLists([WEB, BACK])
 
     expect(html).toContain("Confirmés")
-    expect(html).toContain("Suggestions")
+    expect(html).toContain("À trier")
     expect(html).toContain("67 %")
     expect(html).toContain(
       'aria-label="Retirer Développeur / Développeuse full-stack"'
@@ -61,18 +71,14 @@ describe("RomeAppellationLists", () => {
 
   it("leaves out a section that has nothing in it", () => {
     expect(renderLists([BACK])).not.toContain("Confirmés")
-    expect(renderLists([WEB])).not.toContain("Suggestions")
+    expect(renderLists([WEB])).not.toContain("À trier")
   })
 })
 
 describe("SearchProjectRome", () => {
   it("cites France Travail, as the licence asks", () => {
     const html = renderToStaticMarkup(
-      <SearchProjectRome
-        profileId="p1"
-        appellations={[WEB]}
-        onChange={() => {}}
-      />
+      <SearchProjectRome profileId="p1" initialAppellations={[WEB]} />
     )
 
     expect(html).toContain("Vos métiers")

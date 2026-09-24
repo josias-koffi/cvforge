@@ -3,15 +3,17 @@
 import { useState, useTransition } from "react"
 import Link from "next/link"
 import { ROME_SOURCE_LABEL, type ProfileRomeCompetence } from "@cvforge/types"
-import { X } from "lucide-react"
+import { PencilIcon, X } from "lucide-react"
 import { toast } from "sonner"
 
 import { dismissProfileCompetence } from "@/app/(app)/ma-recherche/actions"
+import { SearchChip } from "@/components/job-search/search-chip"
 import { Button } from "@/components/ui/button"
 import {
   Card,
   CardContent,
   CardDescription,
+  CardAction,
   CardFooter,
   CardHeader,
   CardTitle,
@@ -32,7 +34,7 @@ const KNOWLEDGE = "Connaissances"
  * "Vos compétences": what ROMEO read in the CV when the profile was saved
  * (US-125). They are inferred, not typed, so the candidate removes the wrong
  * ones — "Docker" was once read as "Doctorat" — and a removed one never comes
- * back. Each click applies at once, like the job chips above.
+ * back. Each click applies at once, like the job chips.
  */
 export function ProfileCompetences({
   profileId,
@@ -60,6 +62,14 @@ export function ProfileCompetences({
           Repérées dans votre CV à chaque enregistrement du profil. Retirez
           celles qui ne vous correspondent pas : elles ne reviendront plus.
         </CardDescription>
+        <CardAction>
+          <Button asChild size="sm" variant="ghost">
+            <Link href="/profile">
+              <PencilIcon />
+              Modifier mon profil
+            </Link>
+          </Button>
+        </CardAction>
       </CardHeader>
       <CardContent>
         <CompetenceGroups
@@ -104,23 +114,19 @@ export function CompetenceGroups({
           <Label>{label}</Label>
           <ul className="flex flex-wrap gap-2">
             {entries.map((entry) => (
-              <li
+              <SearchChip
                 key={entry.code}
-                className="flex items-center gap-1 rounded-md border border-border py-1 pr-1 pl-3 text-sm"
+                disabled={disabled}
+                actions={[
+                  {
+                    icon: X,
+                    label: `Retirer ${entry.libelle}`,
+                    onClick: () => onRemove(entry.code),
+                  },
+                ]}
               >
                 {entry.libelle}
-                <Button
-                  type="button"
-                  size="icon"
-                  variant="ghost"
-                  className="size-7"
-                  disabled={disabled}
-                  aria-label={`Retirer ${entry.libelle}`}
-                  onClick={() => onRemove(entry.code)}
-                >
-                  <X className="size-4" />
-                </Button>
-              </li>
+              </SearchChip>
             ))}
           </ul>
         </div>

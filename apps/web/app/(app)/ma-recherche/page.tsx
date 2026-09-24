@@ -1,94 +1,20 @@
 import type { Metadata } from "next"
-import Link from "next/link"
-import { SparklesIcon } from "lucide-react"
 
-import { MarketRadar } from "@/components/job-search/market-radar"
-import { ProfileCompetences } from "@/components/job-search/profile-competences"
 import { SearchProjectForm } from "@/components/job-search/search-project-form"
-import { PageHeader } from "@/components/layout/page-header"
-import { Button } from "@/components/ui/button"
-import { loadMarketRadar } from "@/lib/market"
-import { loadRegistry } from "@/lib/profile"
-import { loadProfileCompetences } from "@/lib/profile-competences"
-import { pickProfile } from "@/lib/profile-model"
 import { loadSearchProject } from "@/lib/search-project"
-import { requireSession } from "@/lib/session"
+import { loadSelectedProfile } from "@/lib/selected-profile"
 
-export const metadata: Metadata = { title: "Ma recherche" }
+export const metadata: Metadata = { title: "Ma recherche · Critères" }
 
 /**
- * A page of its own, not a tab inside the profile editor.
- *
- * The search is what feeds the daily offers, and sending somebody into the CV
- * editor to configure it lost them — the two are edited at different moments,
- * for different reasons.
+ * A page of its own, not a tab inside the profile editor: the search feeds the
+ * daily offers, and it is edited at other moments, for other reasons.
  */
-export default async function SearchProjectPage(
+export default async function SearchCriteriaPage(
   props: PageProps<"/ma-recherche">
 ) {
-  const session = await requireSession()
-  const { profileId } = await props.searchParams
-  const registry = await loadRegistry(session.email)
-  const selected = pickProfile(
-    registry,
-    typeof profileId === "string" ? profileId : undefined
-  )
-  const [{ searchProject, rome }, competences, market] = await Promise.all([
-    loadSearchProject(selected.id),
-    loadProfileCompetences(selected.id),
-    loadMarketRadar(selected.id),
-  ])
+  const { selected } = await loadSelectedProfile(props.searchParams)
+  const { searchProject } = await loadSearchProject(selected.id)
 
-  return (
-    <>
-      <PageHeader
-        title="Ma recherche"
-        description="Ce que vous cherchez. C'est d'ici que viennent vos offres du jour."
-        actions={
-          <Button asChild variant="outline">
-            <Link href="/offres-du-jour">
-              <SparklesIcon />
-              Mes offres du jour
-            </Link>
-          </Button>
-        }
-      />
-      <div className="w-full max-w-3xl px-4 lg:px-6">
-        {registry.profiles.length > 1 ? (
-          <div className="mb-4 flex flex-wrap items-center gap-2">
-            <span className="text-sm text-muted-foreground">
-              Recherche du profil
-            </span>
-            {registry.profiles.map((profile) => (
-              <Button
-                key={profile.id}
-                asChild
-                size="sm"
-                variant={profile.id === selected.id ? "default" : "outline"}
-              >
-                <Link href={`/ma-recherche?profileId=${profile.id}`}>
-                  {profile.label}
-                </Link>
-              </Button>
-            ))}
-          </div>
-        ) : null}
-        <SearchProjectForm
-          key={selected.id}
-          initialProject={searchProject}
-          initialRome={rome}
-        />
-        <div className="mt-6">
-          <ProfileCompetences
-            key={selected.id}
-            profileId={selected.id}
-            initialCompetences={competences}
-          />
-        </div>
-        <div className="mt-6">
-          <MarketRadar entries={market} />
-        </div>
-      </div>
-    </>
-  )
+  return <SearchProjectForm key={selected.id} initialProject={searchProject} />
 }
