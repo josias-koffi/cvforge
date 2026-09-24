@@ -8,6 +8,7 @@ import { en } from "@/content/en"
 import { fr } from "@/content/fr"
 import { localizedPath, locales } from "@/lib/i18n"
 import {
+  companyCheckPath,
   freeTools,
   jobMarketPath,
   keywordMatchPath,
@@ -45,6 +46,19 @@ describe("jobMarketPath", () => {
     expect(jobMarketPath("fr")).toBe("/fr/metier-recrute")
     expect(jobMarketPath("en")).toBe("/en/job-market")
     expect(localizedPath("/fr/metier-recrute", "en")).toBe("/en/job-market")
+  })
+})
+
+describe("companyCheckPath", () => {
+  it("gives the employer check an address per language, both switchable", () => {
+    expect(companyCheckPath("fr")).toBe("/fr/verifier-employeur")
+    expect(companyCheckPath("en")).toBe("/en/employer-check")
+    expect(localizedPath("/fr/verifier-employeur", "en")).toBe(
+      "/en/employer-check"
+    )
+    expect(localizedPath("/en/employer-check", "fr")).toBe(
+      "/fr/verifier-employeur"
+    )
   })
 })
 

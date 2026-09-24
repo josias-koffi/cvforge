@@ -1,5 +1,7 @@
 import type { AiCreditAction, LegalDocumentSlug } from "@cvforge/types"
 
+import type { CompanyCheckDictionary } from "./company-check/types"
+
 /** Screens captured from apps/web and stored under public/screenshots/{light,dark}. */
 export type ScreenshotName =
   | "dashboard"
@@ -12,7 +14,7 @@ export type ScreenshotName =
   | "interview-progress"
 
 /** The free tools that are live on the landing (US-135). */
-export type FreeToolKey = "ats" | "keyword_match" | "job_market"
+export type FreeToolKey = "ats" | "keyword_match" | "job_market" | "company_check"
 
 interface TitledText {
   title: string
@@ -254,6 +256,9 @@ export interface LandingDictionary {
       /** The job market tool's own refusals (US-137). */
       appellationUnknown: string
       departmentUnknown: string
+      /** The employer check's own refusals (US-139). */
+      companyQueryInvalid: string
+      companySourceUnavailable: string
     }
     cta: string
   }
@@ -273,6 +278,8 @@ export interface LandingDictionary {
     /** One entry per tool that is live. A tool is added the day its page ships. */
     items: Record<FreeToolKey, { name: string; description: string; tags: string[] }>
   }
+  /** The free "check an employer" tool (US-139). */
+  companyCheck: CompanyCheckDictionary
   /**
    * The free "does this job hire near me?" tool (US-137). Its refusals are
    * worded in `ats.errors`, with every other tool's.

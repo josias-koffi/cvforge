@@ -80,6 +80,11 @@ export function jobMarketEndpoint(env: NodeJS.ProcessEnv = process.env) {
   return `${apiUrl(env)}/public/job-market`
 }
 
+/** The employer check (US-139): its search, its records, its lead. */
+export function companyCheckEndpoint(env: NodeJS.ProcessEnv = process.env) {
+  return `${apiUrl(env)}/public/company-check`
+}
+
 export function unlockEndpoint(
   scanId: string,
   env: NodeJS.ProcessEnv = process.env

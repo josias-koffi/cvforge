@@ -45,6 +45,8 @@ function codeMessage(
     OFFER_TEXT_REQUIRED: dictionary.errors.offerRequired,
     ROME_APPELLATION_UNKNOWN: dictionary.errors.appellationUnknown,
     DEPARTMENT_UNKNOWN: dictionary.errors.departmentUnknown,
+    COMPANY_QUERY_INVALID: dictionary.errors.companyQueryInvalid,
+    COMPANY_SOURCE_UNAVAILABLE: dictionary.errors.companySourceUnavailable,
     RATE_LIMITED: dictionary.errors.tooManyRequests,
     SCAN_EXPIRED: dictionary.errors.expired,
     SCAN_NOT_FOUND: dictionary.errors.notFound,

@@ -70,6 +70,9 @@ const nextConfig: NextConfig = {
       // Its job × department pages (US-138), under the same slugs.
       { source: "/fr/job-market/:path+", destination: "/fr/metier-recrute/:path+", permanent: true },
       { source: "/en/metier-recrute/:path+", destination: "/en/job-market/:path+", permanent: true },
+      // And for the employer check (US-139).
+      { source: "/fr/employer-check", destination: "/fr/verifier-employeur", permanent: true },
+      { source: "/en/verifier-employeur", destination: "/en/employer-check", permanent: true },
       ...legalRedirects(),
     ]
   },
@@ -81,6 +84,7 @@ const nextConfig: NextConfig = {
       { source: "/fr/comparateur-cv-offre", destination: "/fr/cv-job-match" },
       { source: "/fr/metier-recrute", destination: "/fr/job-market" },
       { source: "/fr/metier-recrute/:path+", destination: "/fr/job-market/:path+" },
+      { source: "/fr/verifier-employeur", destination: "/fr/employer-check" },
     ]
   },
 }

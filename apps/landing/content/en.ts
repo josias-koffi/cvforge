@@ -1,5 +1,6 @@
 import { WELCOME_APPLICATIONS } from "@cvforge/types"
 
+import { companyCheckEn } from "./company-check/en"
 import type { LandingDictionary } from "./types"
 
 /** Copy source: .project/marketing/cvspark-storytelling.md (English adaptation) */
@@ -477,6 +478,10 @@ export const en: LandingDictionary = {
       offerRequired: "Paste the full text of the offer: 200 characters at least.",
       appellationUnknown: "Pick a job from the list.",
       departmentUnknown: "Pick a département from the list.",
+      companyQueryInvalid:
+        "Enter at least 3 characters of the company name, or its SIREN.",
+      companySourceUnavailable:
+        "The French company directory is not answering right now. Try again in a moment.",
       offerNotUsable:
         "This offer does not have enough specific terms to compare. Paste the full ad.",
     },
@@ -521,8 +526,15 @@ export const en: LandingDictionary = {
           "For a job and a French département: hiring difficulty, openings, job seekers and median salary.",
         tags: ["No account", "France Travail data"],
       },
+      company_check: {
+        name: "Check an employer",
+        description:
+          "A French company's headcount, activity, gender equality index, social economy status and carbon report.",
+        tags: ["No account", "Government open data"],
+      },
     },
   },
+  companyCheck: companyCheckEn,
   jobMarket: {
     metaTitle: "Is this job hiring near me? Demand, openings, salary",
     metaDescription:

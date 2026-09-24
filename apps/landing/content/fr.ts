@@ -1,5 +1,6 @@
 import { WELCOME_APPLICATIONS } from "@cvforge/types"
 
+import { companyCheckFr } from "./company-check/fr"
 import type { LandingDictionary } from "./types"
 
 /** Copy source: .project/marketing/cvspark-storytelling.md */
@@ -485,6 +486,10 @@ export const fr: LandingDictionary = {
         "Collez le texte complet de l'offre : 200 caractères au minimum.",
       appellationUnknown: "Choisissez un métier dans la liste proposée.",
       departmentUnknown: "Choisissez un département dans la liste.",
+      companyQueryInvalid:
+        "Saisissez au moins 3 caractères du nom de l'entreprise, ou son SIREN.",
+      companySourceUnavailable:
+        "L'Annuaire des entreprises ne répond pas pour le moment. Réessayez dans un instant.",
       offerNotUsable:
         "Cette offre ne contient pas assez de termes précis pour être comparée. Collez l'annonce complète.",
     },
@@ -529,8 +534,15 @@ export const fr: LandingDictionary = {
           "Pour un métier et un département : difficulté de recruter, offres, demandeurs d'emploi et salaire médian.",
         tags: ["Sans compte", "Données France Travail"],
       },
+      company_check: {
+        name: "Vérifier un employeur",
+        description:
+          "Effectif, activité, égalité femmes-hommes, ESS, société à mission et bilan carbone d'une entreprise.",
+        tags: ["Sans compte", "Données publiques"],
+      },
     },
   },
+  companyCheck: companyCheckFr,
   jobMarket: {
     metaTitle: "Ce métier recrute-t-il près de chez moi ? Tension, offres, salaire",
     metaDescription:

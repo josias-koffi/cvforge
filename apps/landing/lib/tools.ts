@@ -1,4 +1,5 @@
 import {
+  Building2Icon,
   FileSearchIcon,
   ListChecksIcon,
   MapPinnedIcon,
@@ -8,6 +9,7 @@ import {
 import type { FreeToolKey } from "@/content/types"
 import { atsPath } from "@/lib/ats"
 import {
+  companyCheckSlugs,
   jobMarketSlugs,
   keywordMatchSlugs,
   toolsSlugs,
@@ -31,6 +33,7 @@ export const freeTools: FreeTool[] = [
   { key: "ats", path: atsPath, icon: FileSearchIcon },
   { key: "keyword_match", path: keywordMatchPath, icon: ListChecksIcon },
   { key: "job_market", path: jobMarketPath, icon: MapPinnedIcon },
+  { key: "company_check", path: companyCheckPath, icon: Building2Icon },
 ]
 
 export function keywordMatchPath(locale: Locale) {
@@ -39,6 +42,10 @@ export function keywordMatchPath(locale: Locale) {
 
 export function jobMarketPath(locale: Locale) {
   return `/${locale}/${jobMarketSlugs[locale]}`
+}
+
+export function companyCheckPath(locale: Locale) {
+  return `/${locale}/${companyCheckSlugs[locale]}`
 }
 
 export function toolsPath(locale: Locale) {
