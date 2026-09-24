@@ -91,99 +91,103 @@ export function AppellationCombobox({
   const expanded = open && searchable && options.length > 0
 
   return (
-    <div className="relative">
+    <div>
       <label className="block font-medium" htmlFor={inputId}>
         {labels.jobLabel}
       </label>
-      <p className="mt-1 text-sm text-muted-foreground" id={hintId}>
+      <div className="relative">
+        <input
+          aria-activedescendant={
+            expanded && active >= 0 ? optionId(active) : undefined
+          }
+          aria-autocomplete="list"
+          aria-controls={listId}
+          aria-describedby={`${hintId} ${statusId}`}
+          aria-expanded={expanded}
+          autoComplete="off"
+          className="mt-2 h-11 w-full rounded-lg border bg-background px-3 text-base transition-shadow focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+          disabled={disabled}
+          id={inputId}
+          onBlur={() => {
+            // Late enough for a click on an option to land first.
+            blurTimer.current = setTimeout(() => setOpen(false), 150)
+          }}
+          onChange={(event) => {
+            setQuery(event.target.value)
+            if (selected) onSelect(null)
+          }}
+          onFocus={() => {
+            if (blurTimer.current) clearTimeout(blurTimer.current)
+            if (options.length > 0 && searchable) setOpen(true)
+          }}
+          onKeyDown={(event) => {
+            const action = comboboxAction(
+              event.key,
+              active,
+              options.length,
+              expanded
+            )
+            if (!action) return
+
+            event.preventDefault()
+            if (action.type === "move") {
+              setOpen(true)
+              setActive(action.index)
+            } else if (action.type === "pick") {
+              pick(options[action.index]!)
+            } else {
+              setOpen(false)
+            }
+          }}
+          placeholder={labels.jobPlaceholder}
+          role="combobox"
+          type="text"
+          value={query}
+        />
+        <ul
+          className={cn(
+            "absolute top-full z-20 mt-1.5 max-h-80 w-full scroll-smooth overflow-auto overscroll-contain rounded-xl border bg-popover p-1 text-popover-foreground shadow-overlay motion-reduce:scroll-auto",
+            !expanded && "hidden"
+          )}
+          id={listId}
+          role="listbox"
+        >
+          {options.map((option, index) => (
+            <li
+              aria-selected={index === active}
+              className={cn(
+                "flex min-h-11 cursor-pointer flex-col justify-center rounded-lg px-3 py-1.5 text-sm",
+                index === active && "bg-accent text-accent-foreground"
+              )}
+              id={optionId(index)}
+              key={option.code}
+              onMouseDown={(event) => {
+                // Keeps the focus in the field: the pick lands before any blur.
+                event.preventDefault()
+                pick(option)
+              }}
+              onMouseEnter={() => setActive(index)}
+              role="option"
+            >
+              <span>{option.libelle}</span>
+              <span className="text-xs text-muted-foreground">
+                {option.metierCode} · {option.metierLibelle}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </div>
+      {/* Under the field, not above it: the job and department fields then
+          line up, whatever the hint's length. */}
+      <p className="mt-1.5 text-sm text-muted-foreground" id={hintId}>
         {labels.jobHint}
       </p>
-      <input
-        aria-activedescendant={
-          expanded && active >= 0 ? optionId(active) : undefined
-        }
-        aria-autocomplete="list"
-        aria-controls={listId}
-        aria-describedby={`${hintId} ${statusId}`}
-        aria-expanded={expanded}
-        autoComplete="off"
-        className="mt-2 h-11 w-full rounded-lg border bg-background px-3 text-base transition-shadow focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-        disabled={disabled}
-        id={inputId}
-        onBlur={() => {
-          // Late enough for a click on an option to land first.
-          blurTimer.current = setTimeout(() => setOpen(false), 150)
-        }}
-        onChange={(event) => {
-          setQuery(event.target.value)
-          if (selected) onSelect(null)
-        }}
-        onFocus={() => {
-          if (blurTimer.current) clearTimeout(blurTimer.current)
-          if (options.length > 0 && searchable) setOpen(true)
-        }}
-        onKeyDown={(event) => {
-          const action = comboboxAction(
-            event.key,
-            active,
-            options.length,
-            expanded
-          )
-          if (!action) return
-
-          event.preventDefault()
-          if (action.type === "move") {
-            setOpen(true)
-            setActive(action.index)
-          } else if (action.type === "pick") {
-            pick(options[action.index]!)
-          } else {
-            setOpen(false)
-          }
-        }}
-        placeholder={labels.jobPlaceholder}
-        role="combobox"
-        type="text"
-        value={query}
-      />
       <p aria-live="polite" className="sr-only" id={statusId} role="status">
         {status}
       </p>
       {open && searchable && options.length === 0 && !searching ? (
         <p className="mt-2 text-sm text-muted-foreground">{labels.noMatch}</p>
       ) : null}
-      <ul
-        className={cn(
-          "absolute z-20 mt-1 max-h-72 w-full overflow-auto rounded-lg border bg-popover p-1 shadow-raised",
-          !expanded && "hidden"
-        )}
-        id={listId}
-        role="listbox"
-      >
-        {options.map((option, index) => (
-          <li
-            aria-selected={index === active}
-            className={cn(
-              "flex min-h-11 cursor-pointer flex-col justify-center rounded-md px-3 py-1.5",
-              index === active && "bg-accent text-accent-foreground"
-            )}
-            id={optionId(index)}
-            key={option.code}
-            onMouseDown={(event) => {
-              // Keeps the focus in the field: the pick lands before any blur.
-              event.preventDefault()
-              pick(option)
-            }}
-            onMouseEnter={() => setActive(index)}
-            role="option"
-          >
-            <span>{option.libelle}</span>
-            <span className="text-xs text-muted-foreground">
-              {option.metierCode} · {option.metierLibelle}
-            </span>
-          </li>
-        ))}
-      </ul>
     </div>
   )
 }

@@ -15,6 +15,13 @@ import {
 import { AppellationCombobox } from "@/components/job-market/appellation-combobox"
 import { JobMarketResult } from "@/components/job-market/job-market-result"
 import { Button } from "@/components/ui/button"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import type { LandingDictionary } from "@/content/types"
 import { scanErrorMessage } from "@/lib/ats-client"
 import { toolFunnel } from "@/lib/ats-funnel"
@@ -105,7 +112,7 @@ export function JobMarketTool({
         void read()
       }}
     >
-      <div className="grid gap-6 md:grid-cols-[1fr_16rem]">
+      <div className="grid gap-6 md:grid-cols-[1fr_18rem]">
         <AppellationCombobox
           disabled={reading}
           labels={dictionary.form}
@@ -119,27 +126,30 @@ export function JobMarketTool({
           <label className="block font-medium" htmlFor={departmentId}>
             {dictionary.form.departmentLabel}
           </label>
-          {/* Aligns the select with the job field, which has a hint line. */}
-          <p aria-hidden="true" className="mt-1 hidden text-sm md:block">
-            &nbsp;
-          </p>
-          <select
-            className="mt-2 h-11 w-full rounded-lg border bg-background px-3 text-base transition-shadow focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+          <Select
             disabled={reading}
-            id={departmentId}
-            onChange={(event) => {
+            onValueChange={(value) => {
               setError(null)
-              setDepartment(event.target.value)
+              setDepartment(value)
             }}
             value={department}
           >
-            <option value="">{dictionary.form.departmentPlaceholder}</option>
-            {frenchDepartments.map(({ code, label }) => (
-              <option key={code} value={code}>
-                {code} — {label}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger className="mt-2" id={departmentId}>
+              <SelectValue placeholder={dictionary.form.departmentPlaceholder} />
+            </SelectTrigger>
+            <SelectContent>
+              {frenchDepartments.map(({ code, label }) => (
+                <SelectItem key={code} textValue={label} value={code}>
+                  <span className="flex items-baseline gap-3">
+                    <span className="w-7 shrink-0 text-muted-foreground tabular-nums">
+                      {code}
+                    </span>
+                    <span className="truncate">{label}</span>
+                  </span>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 

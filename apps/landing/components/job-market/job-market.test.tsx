@@ -57,8 +57,14 @@ describe("JobMarketTool", () => {
     expect(html).toContain(escapeHtml(dict.jobMarket.form.jobLabel))
     expect(html).toContain(escapeHtml(dict.jobMarket.form.departmentLabel))
     expect(html).toContain(escapeHtml(dict.jobMarket.form.privacyNote))
-    expect(html).toContain("44 — Loire-Atlantique")
-    expect(html).toContain("2A — Corse-du-Sud")
+    // The department list renders when opened; closed, the field shows its
+    // placeholder and is named by its label.
+    const label = html.match(
+      new RegExp(`<label[^>]*for="([^"]+)"[^>]*>${escapeHtml(dict.jobMarket.form.departmentLabel)}<`)
+    )
+    expect(label).not.toBeNull()
+    expect(html).toMatch(new RegExp(`<button[^>]*id="${label![1]}"[^>]*role="combobox"|<button[^>]*role="combobox"[^>]*id="${label![1]}"`))
+    expect(html).toContain(escapeHtml(dict.jobMarket.form.departmentPlaceholder))
     // Nothing picked yet: the button waits.
     expect(html).toMatch(/<button[^>]*disabled=""[^>]*type="submit"|<button[^>]*type="submit"[^>]*disabled=""/)
   })
