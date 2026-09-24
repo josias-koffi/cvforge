@@ -231,6 +231,19 @@ describe("PgRomeStore — substitutions", () => {
     expect(await store.pendingSubstitutions()).toEqual([]);
   });
 
+  it("lists the codes users hold for an entity, once each", async () => {
+    await testDatabase.db.execute(sql`
+      insert into test_rome_holder values
+        ('ana@x.fr', 'p1', 'OLD'),
+        ('bob@x.fr', 'p1', 'OLD'),
+        ('bob@x.fr', 'p1', 'OTHER')`);
+
+    expect(await store.heldCodes("appellation", [HOLDER])).toEqual(
+      new Set(["OLD", "OTHER"]),
+    );
+    expect(await store.heldCodes("metier", [HOLDER])).toEqual(new Set());
+  });
+
   it("refuses a holder whose name could inject SQL", async () => {
     await store.recordSubstitutions([
       { entity: "appellation", newCode: "B", oldCode: "A" },

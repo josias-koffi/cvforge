@@ -131,7 +131,7 @@ Deux stories fondatrices passent donc **avant** le backlog ci-dessous. Elles son
       partagée par la collecte et les vérifications : avant, chaque service construisait la sienne
       et avait son propre jeton ;
     - l'ancien contrôle détaillé des offres s'appelle désormais `ft:smoke:offres`.
-- [ ] **[US-123]** Référentiel ROME 4.0 local et substitutions — `apps/api/src/rome/`
+- [x] **[US-123]** Référentiel ROME 4.0 local et substitutions — `apps/api/src/rome/`
   - Agent: `developer`
   - Critères d'acceptation :
     - [x] Migration `0028` : tables `rome_metiers`, `rome_appellations` (avec un libellé sans
@@ -141,7 +141,7 @@ Deux stories fondatrices passent donc **avant** le backlog ci-dessous. Elles son
           peut le relancer sans effet de bord. Le verrou est en base, sur le modèle de
           `job_digest_runs`. Un échec laisse le référentiel précédent intact. Rythme : une fois par
           semaine.
-    - [ ] L'API Substitutions d'entités réécrit chaque code périmé partout où il est stocké, supprime
+    - [x] L'API Substitutions d'entités réécrit chaque code périmé partout où il est stocké, supprime
           les doublons que cela crée et journalise ce qu'elle a fait.
     - [x] Source ROME citée : ROME 4.0 est une donnée France Travail.
   - **État au 2026-09-23** ([[workflows/runs/developer-20260923232118]]) : trois critères sur quatre
@@ -159,6 +159,10 @@ Deux stories fondatrices passent donc **avant** le backlog ci-dessous. Elles son
       signalé dans `retired`, jamais supprimé chez l'utilisateur.
     - Aucune table utilisateur ne stocke encore de code ROME : `ROME_CODE_HOLDERS` est vide, et
       US-118 y déclarera `search_project_rome`.
+  - **Clos le 2026-09-24** ([[workflows/runs/developer-20260924124500]]) : le 403 venait des chemins.
+    `GET /substitution/{TYPE}/{code}` (un appel par code, 404 = pas de successeur). Chaque
+    `rome:sync` demande un successeur pour chaque code encore stocké chez un utilisateur et absent du
+    nouveau référentiel. Vérifié en direct : 500015 → 507259, une ligne réécrite.
 
 ## 📋 Backlog
 
@@ -226,4 +230,5 @@ Deux stories fondatrices passent donc **avant** le backlog ci-dessous. Elles son
 
 - 2026-09-23 — [[workflows/runs/developer-20260923225823|developer]] (US-122) — passed
 - 2026-09-23 — [[workflows/runs/developer-20260923232118|developer]] (US-123) — passed, story ouverte (API Substitutions en 403)
+- 2026-09-24 — [[workflows/runs/developer-20260924124500|developer]] (US-123) — passed, story close
 - 2026-09-24 — [[workflows/runs/analyze-design-dev-review-20260923233426|analyze-design-dev-review]] (US-118) — passed

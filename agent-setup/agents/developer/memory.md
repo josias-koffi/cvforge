@@ -1373,3 +1373,8 @@
 - **Leçon** : « pas de donnée » arrive en 500 « n'a pas pu trouver la liste » ou en 200 sans `listeValeursParPeriode` : ce n'est pas une panne ; une vraie panne garde les chiffres du mois d'avant.
 - **Leçon** : pas de salaire par ROME dans cette API (FAP seulement, sans table ROME→FAP accessible) ; médiane sur nos offres, avec sa propre source.
 - **Leçon** : en zsh, `set -- $var` ne découpe pas les mots ; utiliser `${=var}`, sinon les sondes envoient des corps faux et on accuse l'API.
+
+### 2026-09-24 — US-123 : substitutions ROME (stage 01 · [[workflows/runs/developer-20260924124500]])
+- **Context** : [[sprints/sprint-026#US-123]] · [[workflows/runs/developer-20260924124500/01-developer]]
+- **Leçon** : un 403 France Travail peut venir d'un chemin faux, pas seulement d'un droit manquant (La Bonne Boîte et Substitutions, INC2741452). Demander au support les chemins exacts avant de conclure à une habilitation.
+- **Leçon** : sans liste de substitutions, ne demander que les codes qui comptent : ceux qu'un utilisateur stocke encore et que le nouveau référentiel a perdus.

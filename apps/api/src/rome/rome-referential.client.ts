@@ -7,7 +7,7 @@ import {
   type RawFicheMetier,
   type RawMetier,
 } from "./rome-referential";
-import type { RomeVersions } from "./rome.types";
+import type { RomeEntity, RomeVersions } from "./rome.types";
 
 /** The three APIs a sync reads; all of them must be enabled. */
 export const ROME_SYNC_APIS: readonly FtApiId[] = [
@@ -27,6 +27,13 @@ const METIER_FIELDS =
 const FICHE_FIELDS =
   "code,groupesCompetencesMobilisees(competences(code)),groupesSavoirs(savoirs(code))";
 
+/** How the Substitutions API names each entity in its path. */
+const SUBSTITUTION_TYPES: Record<RomeEntity, string> = {
+  appellation: "APPELLATION",
+  competence: "COMPETENCE",
+  metier: "METIER",
+};
+
 export class RomeFetchError extends Error {
   constructor(message: string) {
     super(message);
@@ -43,6 +50,35 @@ export class RomeReferentialClient {
 
   isAvailable(): boolean {
     return ROME_SYNC_APIS.every((api) => this.franceTravail.isEnabled(api));
+  }
+
+  substitutionsAvailable(): boolean {
+    return this.franceTravail.isEnabled("rome-substitutions");
+  }
+
+  /**
+   * The code France Travail put in place of a retired one. The API has no
+   * list: one call per code, `{ code, codeSubstitution, typeEntite }`, and a
+   * 404 when it names no successor (read live on 2026-09-24).
+   *
+   * Null when there is none, undefined when it could not be asked — the code
+   * is then asked again at the next sync.
+   */
+  async findSubstitution(
+    entity: RomeEntity,
+    code: string,
+  ): Promise<string | null | undefined> {
+    const result = await this.franceTravail.request<{
+      codeSubstitution?: unknown;
+    }>("rome-substitutions", {
+      path: `/substitution/${SUBSTITUTION_TYPES[entity]}/${encodeURIComponent(code)}`,
+    });
+
+    if (result.kind === "empty") return null;
+    if (result.kind === "unavailable") return undefined;
+
+    const next = result.data?.codeSubstitution;
+    return typeof next === "string" && next !== "" ? next : null;
   }
 
   async fetch(): Promise<MappedReferential> {

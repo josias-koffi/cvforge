@@ -117,3 +117,32 @@ describe("RomeReferentialClient", () => {
     ).toBe(false);
   });
 });
+
+describe("RomeReferentialClient.findSubstitution", () => {
+  it("asks one code at a time and reads its successor", async () => {
+    const { client, request } = fakeFranceTravail({
+      "/substitution/COMPETENCE/500015": ok({
+        code: "500015",
+        codeSubstitution: "507259",
+        typeEntite: "COMPETENCE",
+      }),
+      "/substitution/METIER/M1805": { kind: "empty", status: 404 },
+      "/substitution/APPELLATION/A1": {
+        detail: "socket hang up",
+        kind: "unavailable",
+        reason: "network",
+        status: null,
+      },
+    });
+    const rome = new RomeReferentialClient(client);
+
+    expect(await rome.findSubstitution("competence", "500015")).toBe("507259");
+    // 404: France Travail names no successor.
+    expect(await rome.findSubstitution("metier", "M1805")).toBeNull();
+    // Not asked: tried again at the next sync.
+    expect(await rome.findSubstitution("appellation", "A1")).toBeUndefined();
+    expect(request).toHaveBeenCalledWith("rome-substitutions", {
+      path: "/substitution/COMPETENCE/500015",
+    });
+  });
+});

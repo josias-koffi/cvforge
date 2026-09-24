@@ -16,6 +16,7 @@ import type {
   RomeHolderOutcome,
   RomeReferential,
   RomeStore,
+  RomeSubstitution,
 } from "./rome.types";
 
 const HOUR_MS = 60 * 60_000;
@@ -29,6 +30,11 @@ const CHECK_INTERVAL_MS = HOUR_MS;
 const STALE_RUN_MS = 2 * HOUR_MS;
 /** Enough to recognise what France Travail retired, not a whole dump in a row. */
 const RETIRED_SAMPLE = 20;
+/**
+ * Substitutions are asked one code at a time, at one call a second: a cap
+ * keeps a sync short. Codes left over are asked at the next sync.
+ */
+const MAX_SUBSTITUTION_LOOKUPS = 200;
 
 export type RomeSyncOutcome =
   | { status: "skipped"; reason: "unavailable" | "locked" | "not-due" }
@@ -131,11 +137,13 @@ export class RomeSyncService implements OnModuleInit, OnModuleDestroy {
 
     const retired = await this.retired(referential);
     await this.store.replace(referential);
+    const lookups = await this.lookUpSubstitutions(referential);
     const substitutions = await this.applyPendingSubstitutions();
 
     return {
       counts: next,
       dropped,
+      lookups,
       retired,
       source: romeAttribution(referential.versions),
       substitutions,
@@ -144,16 +152,11 @@ export class RomeSyncService implements OnModuleInit, OnModuleDestroy {
   }
 
   /**
-   * Codes that vanished without a substitution are only reported: a user's
-   * saved code is never deleted on a guess. The Substitutions API is what
-   * rewrites them, once France Travail grants it.
+   * Codes that vanished are only reported here: a user's saved code is never
+   * deleted on a guess. The Substitutions API is what rewrites them.
    */
   private async retired(referential: RomeReferential) {
-    const lists: Record<RomeEntity, readonly { code: string }[]> = {
-      appellation: referential.appellations,
-      competence: referential.competences,
-      metier: referential.metiers,
-    };
+    const lists = listsOf(referential);
     const report: Partial<
       Record<RomeEntity, { count: number; sample: string[] }>
     > = {};
@@ -169,6 +172,39 @@ export class RomeSyncService implements OnModuleInit, OnModuleDestroy {
       }
     }
 
+    return report;
+  }
+
+  /**
+   * Asks France Travail for the successor of every code a user still holds
+   * that the new referential no longer lists, and records those it names.
+   * Retired codes nobody holds are not asked: there is nothing to rewrite.
+   */
+  private async lookUpSubstitutions(referential: RomeReferential) {
+    if (!this.client.substitutionsAvailable()) return { skipped: "unavailable" };
+
+    const lists = listsOf(referential);
+    const found: Array<Omit<RomeSubstitution, "id">> = [];
+    const report = { asked: 0, failed: 0, recorded: 0, withoutSuccessor: 0 };
+
+    for (const entity of Object.keys(lists) as RomeEntity[]) {
+      const known = new Set(lists[entity].map((entry) => entry.code));
+      const stale = [...(await this.store.heldCodes(entity, this.holders))]
+        .filter((code) => !known.has(code))
+        .sort();
+
+      for (const oldCode of stale) {
+        if (report.asked >= MAX_SUBSTITUTION_LOOKUPS) break;
+        report.asked += 1;
+
+        const newCode = await this.client.findSubstitution(entity, oldCode);
+        if (newCode === undefined) report.failed += 1;
+        else if (newCode === null) report.withoutSuccessor += 1;
+        else found.push({ entity, newCode, oldCode });
+      }
+    }
+
+    report.recorded = await this.store.recordSubstitutions(found);
     return report;
   }
 
@@ -198,4 +234,14 @@ export class RomeSyncService implements OnModuleInit, OnModuleDestroy {
 
     return applied;
   }
+}
+
+function listsOf(
+  referential: RomeReferential,
+): Record<RomeEntity, readonly { code: string }[]> {
+  return {
+    appellation: referential.appellations,
+    competence: referential.competences,
+    metier: referential.metiers,
+  };
 }

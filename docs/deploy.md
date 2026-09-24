@@ -83,7 +83,10 @@ subscribed, or its scope differs from the catalogue and needs
 With `rome-metiers`, `rome-competences` and `rome-fiches-metiers` enabled (the
 Terraform default), the API copies the ROME 4.0 referential into `rome_*` once
 a week by itself, in three calls. The first copy can be forced right after a
-deploy with `rome:sync:built`; a failed sync keeps the previous copy.
+deploy with `rome:sync:built`; a failed sync keeps the previous copy. With
+`rome-substitutions` enabled too, each sync asks France Travail for the
+successor of every code a user still holds that the referential dropped, and
+rewrites it (`lookups` and `substitutions` in `rome_sync_runs.stats`).
 
 With `marche-travail` enabled, the API reads the labour market figures of every
 confirmed ROME job in each department of the searches (and the other

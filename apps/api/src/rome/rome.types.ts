@@ -97,6 +97,11 @@ export interface RomeStore {
   lastRun(status?: "done"): Promise<RomeSyncRun | null>;
   counts(): Promise<RomeCounts>;
   codes(entity: RomeEntity): Promise<Set<string>>;
+  /** Every code of this entity some user table stores. */
+  heldCodes(
+    entity: RomeEntity,
+    holders: readonly RomeCodeHolder[],
+  ): Promise<Set<string>>;
   /** Replaces the whole referential in one transaction, or changes nothing. */
   replace(referential: RomeReferential): Promise<void>;
   recordSubstitutions(

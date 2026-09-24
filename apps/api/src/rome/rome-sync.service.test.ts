@@ -67,6 +67,11 @@ class FakeStore implements RomeStore {
     competence: [],
     metier: [],
   };
+  held: Record<RomeEntity, string[]> = {
+    appellation: [],
+    competence: [],
+    metier: [],
+  };
   locked = false;
   runs: RomeSyncRun[] = [];
   finished: Array<{
@@ -105,8 +110,16 @@ class FakeStore implements RomeStore {
   async replace(referential: RomeReferential) {
     this.replaced.push(referential);
   }
-  async recordSubstitutions() {
-    return 0;
+  async heldCodes(entity: RomeEntity) {
+    return new Set(this.held[entity]);
+  }
+  async recordSubstitutions(
+    substitutions: Array<Omit<RomeSubstitution, "id">>,
+  ) {
+    this.pending.push(
+      ...substitutions.map((entry, index) => ({ ...entry, id: `new-${index}` })),
+    );
+    return substitutions.length;
   }
   async pendingSubstitutions() {
     return this.pending;
@@ -121,16 +134,31 @@ class FakeStore implements RomeStore {
 }
 
 function fakeClient(
-  options: { available?: boolean; result?: MappedReferential | Error } = {},
+  options: {
+    available?: boolean;
+    result?: MappedReferential | Error;
+    /** Successors France Travail names, by old code; `undefined` fails. */
+    successors?: Record<string, string | null | undefined>;
+  } = {},
 ) {
   return {
+    findSubstitution: vi.fn(
+      async (_entity: RomeEntity, code: string) =>
+        options.successors && code in options.successors
+          ? options.successors[code]
+          : null,
+    ),
+    substitutionsAvailable: () => options.successors !== undefined,
     fetch: vi.fn(async () => {
       const result = options.result ?? download(["M1", "M2"]);
       if (result instanceof Error) throw result;
       return result;
     }),
     isAvailable: () => options.available ?? true,
-  } as unknown as RomeReferentialClient & { fetch: ReturnType<typeof vi.fn> };
+  } as unknown as RomeReferentialClient & {
+    fetch: ReturnType<typeof vi.fn>;
+    findSubstitution: ReturnType<typeof vi.fn>;
+  };
 }
 
 const HOLDERS: RomeCodeHolder[] = [
@@ -181,6 +209,52 @@ describe("RomeSyncService.run", () => {
         source: "Source : ROME 4.0, France Travail (version 61)",
       },
       status: "done",
+    });
+  });
+
+  it("asks a successor for each held code the new referential dropped, and rewrites it", async () => {
+    // A-M1 is still listed; A-OLD and A-GONE are held by users but retired.
+    store.held.appellation = ["A-M1", "A-OLD", "A-GONE", "A-DOWN"];
+    const client = fakeClient({
+      successors: { "A-DOWN": undefined, "A-GONE": null, "A-OLD": "A-M2" },
+    });
+
+    const outcome = await new RomeSyncService(
+      store,
+      client,
+      HOLDERS,
+      () => NOW,
+    ).run();
+
+    expect(client.findSubstitution.mock.calls.map((call) => call[1])).toEqual([
+      "A-DOWN",
+      "A-GONE",
+      "A-OLD",
+    ]);
+    expect(store.applied.map((entry) => entry.substitution)).toEqual([
+      { entity: "appellation", id: "new-0", newCode: "A-M2", oldCode: "A-OLD" },
+    ]);
+    expect(outcome).toMatchObject({
+      stats: {
+        lookups: { asked: 3, failed: 1, recorded: 1, withoutSuccessor: 1 },
+      },
+    });
+  });
+
+  it("asks nothing while the Substitutions API is not enabled", async () => {
+    store.held.appellation = ["A-OLD"];
+    const client = fakeClient();
+
+    const outcome = await new RomeSyncService(
+      store,
+      client,
+      HOLDERS,
+      () => NOW,
+    ).run();
+
+    expect(client.findSubstitution).not.toHaveBeenCalled();
+    expect(outcome).toMatchObject({
+      stats: { lookups: { skipped: "unavailable" } },
     });
   });
 

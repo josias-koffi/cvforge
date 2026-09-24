@@ -108,6 +108,26 @@ export class PgRomeStore implements RomeStore {
     return new Set(rows.map((row) => row.code));
   }
 
+  async heldCodes(
+    entity: RomeEntity,
+    holders: readonly RomeCodeHolder[],
+  ): Promise<Set<string>> {
+    const held = new Set<string>();
+
+    for (const holder of holders.filter((entry) => entry.entity === entity)) {
+      const { table, column } = identifiers(holder);
+      const result = await this.db.execute(
+        sql`select distinct ${column} as code from ${table}`,
+      );
+
+      for (const row of rowsOf(result)) {
+        if (typeof row.code === "string") held.add(row.code);
+      }
+    }
+
+    return held;
+  }
+
   /**
    * Children first on the way out, parents first on the way in, all in one
    * transaction: a failure anywhere rolls back to the previous referential.
@@ -237,6 +257,11 @@ function identifiers(holder: RomeCodeHolder) {
     sameScope,
     table: sql.raw(holder.table),
   };
+}
+
+/** Both drivers answer `{ rows }` to a raw select. */
+function rowsOf(result: unknown): Array<Record<string, unknown>> {
+  return (result as { rows?: Array<Record<string, unknown>> }).rows ?? [];
 }
 
 /** node-postgres reports `rowCount`, PGlite `affectedRows`. */
