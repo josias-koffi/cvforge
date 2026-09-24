@@ -3,7 +3,8 @@
  *
  * Each API has its own OAuth scope and its own quota. `verified: true` means
  * `ft:smoke <api>` got a real answer with this scope, path and payload
- * (2026-09-23 for all but La Bonne Boîte and ROME Substitutions). Quotas outside Offres d'emploi are
+ * (2026-09-23, 2026-09-24 for La Bonne Boîte and ROME Substitutions). Quotas
+ * outside Offres d'emploi are
  * still unknown. A wrong scope is not an exception here, it is `invalid_scope`
  * at token time — which is why each one can be overridden from the
  * environment without a release.
@@ -106,32 +107,26 @@ export const FT_APIS: Record<FtApiId, FtApiDefinition> = {
     verified: true,
     smoke: { method: "GET", path: "/fiches-rome/fiche-metier/M1805" },
   },
-  // Scopes given by the France Travail support (INC2741452, 2026-09-24). With
-  // them the token is issued, yet every call still answers 403
-  // `insufficient_scope`: the grant is pending on their side.
+  // Scopes and paths given by the France Travail support (INC2741452,
+  // 2026-09-24). Substitutions has no list: one call per entity and code.
   "rome-substitutions": {
     label: "ROME 4.0 — Substitutions",
     baseUrl: `${FT_API_ROOT}/rome-substitutions/v1`,
     scope: "api_rome-substitutionsv1 nomenclatureRomeSubstitutions",
     requestsPerSecond: UNKNOWN_QUOTA_RPS,
-    verified: false,
-    smoke: { method: "GET", path: "/substitutions" },
+    verified: true,
+    smoke: { method: "GET", path: "/substitution/COMPETENCE/500015" },
   },
   "la-bonne-boite": {
     label: "La Bonne Boîte v2",
     baseUrl: `${FT_API_ROOT}/labonneboite/v2`,
     scope: "api_labonneboitev2 search office",
     requestsPerSecond: UNKNOWN_QUOTA_RPS,
-    verified: false,
+    verified: true,
     smoke: {
       method: "GET",
-      path: "/search",
-      query: {
-        distance: "10",
-        latitude: "47.2184",
-        longitude: "-1.5536",
-        rome_codes: "M1805",
-      },
+      path: "/recherche",
+      query: { rome: "M1805", citycode: "44109" },
     },
   },
 };

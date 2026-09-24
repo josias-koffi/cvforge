@@ -130,7 +130,7 @@ export class FtHttpClient {
       if (response.ok || response.status === 206) return readJson<T>(response);
 
       // 403 is how an API that issued a token but is not granted to this
-      // application answers (La Bonne Boîte v2, 2026-09-23: "Invalid scope").
+      // application answers: a scope missing from the token, or a wrong path.
       if (response.status === 403) {
         return this.markUnsubscribed(id, 403, await readDetail(response));
       }

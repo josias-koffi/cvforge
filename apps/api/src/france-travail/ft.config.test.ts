@@ -18,10 +18,11 @@ describe("FT_APIS", () => {
     );
   });
 
-  it("does not claim La Bonne Boîte or ROME Substitutions work: their calls are refused until granted", () => {
-    expect(FT_APIS["la-bonne-boite"].verified).toBe(false);
-    expect(FT_APIS["rome-substitutions"].verified).toBe(false);
-    expect(FT_APIS.offres.verified).toBe(true);
+  it("calls La Bonne Boîte and ROME Substitutions on the paths the support gave", () => {
+    expect(FT_APIS["la-bonne-boite"].smoke.path).toBe("/recherche");
+    expect(FT_APIS["rome-substitutions"].smoke.path).toBe(
+      "/substitution/COMPETENCE/500015",
+    );
   });
 
   it("sends ROMEO the caller name it requires", () => {
