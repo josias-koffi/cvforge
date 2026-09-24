@@ -1,6 +1,5 @@
 import { and, count, eq, gte, isNotNull, sql, sum } from "drizzle-orm";
 import { union } from "drizzle-orm/pg-core";
-import { LEAD_OFFER_SOURCE_LABEL } from "../applications/applications.types";
 import type { Database } from "../database/database.types";
 import {
   acquisitionEvents,
@@ -200,16 +199,20 @@ export class PgMetricsStore implements MetricsStore {
   }
 
   /**
-   * The comparator keeps no address of its own: an account counts as
-   * activated once its link created the offered application (US-136).
+   * The comparator and the interview questions keep no address of their own:
+   * an account counts as activated once its link created the offered
+   * application, labelled with the tool (US-136, US-141).
    */
-  async readKeywordMatchActivations(since: Date): Promise<number> {
+  async readOfferLeadActivations(
+    sourceLabel: string,
+    since: Date,
+  ): Promise<number> {
     const [row] = await this.db
       .select({ activated: sql<string>`count(distinct ${applications.userEmail})` })
       .from(applications)
       .where(
         and(
-          eq(applications.sourceLabel, LEAD_OFFER_SOURCE_LABEL),
+          eq(applications.sourceLabel, sourceLabel),
           gte(applications.createdAt, since),
         ),
       );

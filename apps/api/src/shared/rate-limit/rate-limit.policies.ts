@@ -23,6 +23,8 @@ export const KEYWORD_MATCH_UNAVAILABLE_MESSAGE =
   "Le comparateur gratuit est momentanement indisponible. Reessayez demain.";
 export const COMPANY_CHECK_UNAVAILABLE_MESSAGE =
   "La verification d'employeur est momentanement indisponible. Reessayez demain.";
+export const INTERVIEW_QUESTIONS_UNAVAILABLE_MESSAGE =
+  "Les questions d'entretien gratuites sont momentanement indisponibles. Reessayez demain.";
 
 /** The lead routes send a magic link: 5 an hour and 20 a day per address. */
 const LEAD_LIMITS = { daily: 20, hourly: 5 };
@@ -106,6 +108,15 @@ export function resolveRateLimitPolicies(
       message: COMPANY_CHECK_UNAVAILABLE_MESSAGE,
       name: "company-check",
       reads: /\/public\/company-check(\/\d{9})?\/?$/i,
+    }),
+    // The one free tool that calls a model (US-141): per-address limits as
+    // strict as the ATS scan's, and a budget that caps the day's bill.
+    ...freeToolPolicies(env, {
+      envPrefix: "PUBLIC_INTERVIEW_QUESTIONS",
+      limits: { budget: 300, daily: 10, hourly: 3 },
+      message: INTERVIEW_QUESTIONS_UNAVAILABLE_MESSAGE,
+      name: "interview-questions",
+      reads: /\/public\/interview-questions\/?$/i,
     }),
     {
       budgetMessage: BUDGET_EXHAUSTED_MESSAGE,

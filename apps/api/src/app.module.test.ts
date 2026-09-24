@@ -29,6 +29,7 @@ import { ProfilesModule } from "./profiles/profiles.module";
 import { SearchProjectsModule } from "./search-projects/search-projects.module";
 import { TemplatesModule } from "./templates/templates.module";
 import { InterviewModule } from "./interview/interview.module";
+import { InterviewQuestionsModule } from "./interview-questions/interview-questions.module";
 import { MetricsModule } from "./metrics/metrics.module";
 import { RateLimitModule } from "./shared/rate-limit/rate-limit.module";
 import { RedisModule } from "./shared/redis/redis.module";
@@ -62,6 +63,7 @@ describe("AppModule", () => {
       SearchProjectsModule,
       TemplatesModule,
       InterviewModule,
+      InterviewQuestionsModule,
       JobSearchModule,
       MarketModule,
       HiringCompaniesModule,

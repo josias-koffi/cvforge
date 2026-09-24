@@ -10,6 +10,7 @@ export const acquisitionTools = [
   "keyword_match",
   "job_market",
   "company_check",
+  "interview_questions",
 ] as const;
 export type AcquisitionTool = (typeof acquisitionTools)[number];
 
@@ -41,4 +42,25 @@ export type PublicKeywordMatchResponse = {
   missingCount: number;
   matched: string[];
   missing: string[];
+};
+
+/** One likely question and what the recruiter is after with it (US-141). */
+export type InterviewQuestion = {
+  question: string;
+  intent: string;
+  kind: InterviewQuestionKind;
+};
+
+export const interviewQuestionKinds = [
+  "motivation",
+  "experience",
+  "technical",
+  "behavioral",
+  "situational",
+] as const;
+export type InterviewQuestionKind = (typeof interviewQuestionKinds)[number];
+
+/** What the free likely-interview-questions tool returns: always five. */
+export type PublicInterviewQuestionsResponse = {
+  questions: InterviewQuestion[];
 };

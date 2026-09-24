@@ -73,10 +73,14 @@ export type MetricsStore = {
   /** Addresses that unlocked a public scan since then and now have an account. */
   readAtsActivations: (since: Date) => Promise<number>;
   /**
-   * Accounts that redeemed a comparator link since then: one application
-   * carrying the comparator's source label each (US-136).
+   * Accounts that redeemed a comparator (US-136) or interview questions
+   * (US-141) link since then: one application carrying the tool's source
+   * label each.
    */
-  readKeywordMatchActivations: (since: Date) => Promise<number>;
+  readOfferLeadActivations: (
+    sourceLabel: string,
+    since: Date,
+  ) => Promise<number>;
   /**
    * Accounts that redeemed a job market (US-137) or employer check (US-139)
    * link: the search it wrote or opened carries the tool's origin.

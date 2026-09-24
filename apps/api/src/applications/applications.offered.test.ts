@@ -7,6 +7,7 @@ import type { KeywordMatchService } from "../keyword-match/keyword-match.service
 import { LeadCaptureService } from "../leads/lead-capture.service";
 import { ApplicationsService } from "./applications.service";
 import {
+  LEAD_INTERVIEW_SOURCE_LABEL,
   LEAD_OFFER_SOURCE_LABEL,
   type ApplicationsStore,
   type StoredApplication,
@@ -122,6 +123,19 @@ describe("LeadOfferListener", () => {
     expect(applications.importOfferedText).toHaveBeenCalledWith(
       "lead@example.com",
       OFFER,
+      LEAD_OFFER_SOURCE_LABEL,
+    );
+  });
+
+  it("labels the application with the interview questions tool (US-141)", async () => {
+    const { applications, redeem } = listen();
+
+    await redeem("lead@example.com", { kind: "interview", offerText: OFFER });
+
+    expect(applications.importOfferedText).toHaveBeenCalledWith(
+      "lead@example.com",
+      OFFER,
+      LEAD_INTERVIEW_SOURCE_LABEL,
     );
   });
 

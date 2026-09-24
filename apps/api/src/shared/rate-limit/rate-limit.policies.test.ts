@@ -92,6 +92,25 @@ describe("resolveRateLimitPolicies", () => {
     expect(lead.globalBudget).toBeNull();
   });
 
+  /** The one free tool that calls a model: as strict as the ATS scan. */
+  it("meters the likely interview questions and their lead route apart (US-141)", () => {
+    const questions = policy("interview-questions", {
+      PUBLIC_INTERVIEW_QUESTIONS_DAILY_BUDGET: "120",
+    });
+    const lead = policy("interview-questions-lead");
+
+    expect(questions.perIp).toEqual([
+      { limit: 3, windowMs: HOUR_MS },
+      { limit: 10, windowMs: DAY_MS },
+    ]);
+    expect(questions.globalBudget).toEqual({
+      key: "global:interview-questions",
+      rule: { limit: 120, windowMs: DAY_MS },
+    });
+    expect(lead.perIp.map((rule) => rule.limit)).toEqual([5, 20]);
+    expect(lead.globalBudget).toBeNull();
+  });
+
   it("falls back to the default for an unusable event limit", () => {
     expect(
       policy("events", { PUBLIC_EVENTS_HOURLY_LIMIT: "-1" }).perIp[0]?.limit,
@@ -114,6 +133,10 @@ describe("resolveRateLimitPolicies", () => {
     ["/public/company-check/381983568", "company-check"],
     ["/public/company-check/lead", "company-check-lead"],
     ["/public/company-check/unknown/path", "scan"],
+    ["/public/interview-questions", "interview-questions"],
+    ["/Public/Interview-Questions/", "interview-questions"],
+    ["/public/interview-questions/lead", "interview-questions-lead"],
+    ["/public/interview-questions/other", "scan"],
   ])("sends %s to the %s policy", (path, name) => {
     const matched = resolveRateLimitPolicies({}).find((entry) =>
       entry.matches(path),
@@ -142,6 +165,8 @@ describe("rateLimitedRoutes", () => {
       "public/job-market",
       "public/company-check/{*splat}",
       "public/company-check",
+      "public/interview-questions/{*splat}",
+      "public/interview-questions",
       "public/ats-scan/{*splat}",
       "public/ats-scan",
     ]);

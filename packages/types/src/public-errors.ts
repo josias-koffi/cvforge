@@ -20,6 +20,7 @@ export const publicErrorCodes = [
   "DEPARTMENT_UNKNOWN",
   "COMPANY_QUERY_INVALID",
   "COMPANY_SOURCE_UNAVAILABLE",
+  "QUESTIONS_UNAVAILABLE",
 ] as const;
 export type PublicErrorCode = (typeof publicErrorCodes)[number];
 

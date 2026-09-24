@@ -14,6 +14,10 @@ describe("parseLeadIntent", () => {
       { kind: "offer", offerText: "Développeur" },
     ],
     [
+      { kind: "interview", offerText: " Chef de projet " },
+      { kind: "interview", offerText: "Chef de projet" },
+    ],
+    [
       { appellationCode: " 38874 ", department: "2a", kind: "job_search" },
       { appellationCode: "38874", department: "2A", kind: "job_search" },
     ],
@@ -31,6 +35,7 @@ describe("parseLeadIntent", () => {
     ["an unknown kind", { kind: "cv", text: "..." }],
     ["a scan id that is not a uuid", { kind: "ats_scan", scanId: "1" }],
     ["an empty offer", { kind: "offer", offerText: "   " }],
+    ["an interview without offer", { kind: "interview" }],
     [
       "an oversized offer",
       { kind: "offer", offerText: "x".repeat(LEAD_OFFER_TEXT_MAX + 1) },
@@ -73,6 +78,12 @@ describe("leadIntentPath", () => {
   it("opens the applications, where the offer's one now sits", () => {
     expect(leadIntentPath({ kind: "offer", offerText: "Un poste" })).toBe(
       "/candidatures",
+    );
+  });
+
+  it("opens the interview setup on the application just created", () => {
+    expect(leadIntentPath({ kind: "interview", offerText: "Un poste" })).toBe(
+      "/entretiens/new?candidature=recente",
     );
   });
 

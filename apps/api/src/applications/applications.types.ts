@@ -35,6 +35,9 @@ export type StoredApplication = DraftApplication & {
  */
 export const LEAD_OFFER_SOURCE_LABEL = "Comparateur gratuit CV / offre";
 
+/** Same, for the likely interview questions tool's lead (US-141). */
+export const LEAD_INTERVIEW_SOURCE_LABEL = "Questions d'entretien gratuites";
+
 /** DI token for the applications store, shared by every module that reads them. */
 export const APPLICATIONS_STORE = Symbol("APPLICATIONS_STORE");
 

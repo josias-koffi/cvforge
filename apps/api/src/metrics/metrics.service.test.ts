@@ -1,4 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  LEAD_INTERVIEW_SOURCE_LABEL,
+  LEAD_OFFER_SOURCE_LABEL,
+} from "../applications/applications.types";
 import type { OpenRouterBalanceService } from "../ai/openrouter-balance.service";
 import { buildMetricsCsv, buildMetricsCsvFilename } from "./metrics-csv";
 import type { MetricsConfig } from "./metrics.config";
@@ -47,6 +51,7 @@ function createService({
   keywordMatchActivations = 1,
   jobMarketActivations = 3,
   companyCheckActivations = 4,
+  interviewQuestionsActivations = 5,
   counters = COUNTERS,
   isEnabled = true,
   totalUsage = 10 as number | null,
@@ -58,9 +63,11 @@ function createService({
     readSearchLeadActivations: vi.fn(async (tool: string) =>
       tool === "job_market" ? jobMarketActivations : companyCheckActivations,
     ),
-    readKeywordMatchActivations: vi
-      .fn()
-      .mockResolvedValue(keywordMatchActivations),
+    readOfferLeadActivations: vi.fn(async (sourceLabel: string) =>
+      sourceLabel === LEAD_OFFER_SOURCE_LABEL
+        ? keywordMatchActivations
+        : interviewQuestionsActivations,
+    ),
     readProductCounters: vi.fn().mockResolvedValue(counters),
   };
   const balanceService = {
@@ -118,7 +125,12 @@ describe("MetricsService", () => {
     expect(store.readAtsActivations).toHaveBeenCalledWith(
       new Date("2026-08-18T00:00:00.000Z"),
     );
-    expect(store.readKeywordMatchActivations).toHaveBeenCalledWith(
+    expect(store.readOfferLeadActivations).toHaveBeenCalledWith(
+      LEAD_OFFER_SOURCE_LABEL,
+      new Date("2026-08-18T00:00:00.000Z"),
+    );
+    expect(store.readOfferLeadActivations).toHaveBeenCalledWith(
+      LEAD_INTERVIEW_SOURCE_LABEL,
       new Date("2026-08-18T00:00:00.000Z"),
     );
     expect(store.readSearchLeadActivations).toHaveBeenCalledWith(
@@ -160,12 +172,21 @@ describe("MetricsService", () => {
         results: 0,
         tool: "job_market",
         visitors: 0,
-      },      {
+      },
+      {
         accountsActivated: 4,
         ctaClicks: 0,
         emailsSubmitted: 0,
         results: 0,
         tool: "company_check",
+        visitors: 0,
+      },
+      {
+        accountsActivated: 5,
+        ctaClicks: 0,
+        emailsSubmitted: 0,
+        results: 0,
+        tool: "interview_questions",
         visitors: 0,
       },
     ]);
@@ -178,6 +199,7 @@ describe("MetricsService", () => {
       keywordMatchActivations: 0,
       jobMarketActivations: 0,
       companyCheckActivations: 0,
+      interviewQuestionsActivations: 0,
     });
 
     const { acquisition } = await service.readAdminMetrics();
@@ -206,12 +228,21 @@ describe("MetricsService", () => {
         results: 0,
         tool: "job_market",
         visitors: 0,
-      },      {
+      },
+      {
         accountsActivated: 0,
         ctaClicks: 0,
         emailsSubmitted: 0,
         results: 0,
         tool: "company_check",
+        visitors: 0,
+      },
+      {
+        accountsActivated: 0,
+        ctaClicks: 0,
+        emailsSubmitted: 0,
+        results: 0,
+        tool: "interview_questions",
         visitors: 0,
       },
     ]);

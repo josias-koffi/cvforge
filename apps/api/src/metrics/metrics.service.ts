@@ -1,6 +1,10 @@
 import { acquisitionTools, type AcquisitionTool } from "@cvforge/types";
 import { Injectable } from "@nestjs/common";
 import type { OpenRouterBalanceService } from "../ai/openrouter-balance.service";
+import {
+  LEAD_INTERVIEW_SOURCE_LABEL,
+  LEAD_OFFER_SOURCE_LABEL,
+} from "../applications/applications.types";
 import type { MetricsConfig } from "./metrics.config";
 import type {
   AcquisitionFunnel,
@@ -37,15 +41,23 @@ export class MetricsService {
       keywordMatchActivations,
       jobMarketActivations,
       companyCheckActivations,
+      interviewQuestionsActivations,
       balance,
     ] = await Promise.all([
       this.store.readProductCounters(this.config.activeWindowDays),
       this.store.readAtsCounters(),
       this.store.readAcquisitionSteps(sinceDay),
       this.store.readAtsActivations(new Date(sinceDay)),
-      this.store.readKeywordMatchActivations(new Date(sinceDay)),
+      this.store.readOfferLeadActivations(
+        LEAD_OFFER_SOURCE_LABEL,
+        new Date(sinceDay),
+      ),
       this.store.readSearchLeadActivations("job_market", new Date(sinceDay)),
       this.store.readSearchLeadActivations("company_check", new Date(sinceDay)),
+      this.store.readOfferLeadActivations(
+        LEAD_INTERVIEW_SOURCE_LABEL,
+        new Date(sinceDay),
+      ),
       this.balanceService.isEnabled
         ? this.balanceService.getBalance()
         : Promise.resolve(null),
@@ -66,6 +78,7 @@ export class MetricsService {
       acquisition: buildFunnels(acquisitionSteps, {
         ats: atsActivations,
         company_check: companyCheckActivations,
+        interview_questions: interviewQuestionsActivations,
         job_market: jobMarketActivations,
         keyword_match: keywordMatchActivations,
       }),

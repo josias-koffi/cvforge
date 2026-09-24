@@ -1,6 +1,9 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { emptySearchProject } from "@cvforge/types";
-import { LEAD_OFFER_SOURCE_LABEL } from "../applications/applications.types";
+import {
+  LEAD_INTERVIEW_SOURCE_LABEL,
+  LEAD_OFFER_SOURCE_LABEL,
+} from "../applications/applications.types";
 import {
   acquisitionEvents,
   applications,
@@ -160,9 +163,13 @@ describe("PgMetricsStore — acquisition funnels", () => {
       inWindow,
     );
 
-    await expect(store.readKeywordMatchActivations(WINDOW_START)).resolves.toBe(
-      1,
-    );
+    await expect(
+      store.readOfferLeadActivations(LEAD_OFFER_SOURCE_LABEL, WINDOW_START),
+    ).resolves.toBe(1);
+    // The interview questions' lead is counted apart, by its own label.
+    await expect(
+      store.readOfferLeadActivations(LEAD_INTERVIEW_SOURCE_LABEL, WINDOW_START),
+    ).resolves.toBe(0);
   });
 
   /** The tool keeps no address: the search it wrote is the proof (US-137). */

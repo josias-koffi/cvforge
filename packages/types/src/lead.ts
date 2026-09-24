@@ -8,8 +8,15 @@
 export type LeadIntent =
   | { kind: "ats_scan"; scanId: string }
   | { kind: "offer"; offerText: string }
+  | { kind: "interview"; offerText: string }
   | { kind: "job_search"; appellationCode: string; department: string }
   | { kind: "company"; siren: string };
+
+/**
+ * Stands for "the application just created" in the interview setup's
+ * `?candidature=`, since its id does not exist yet when the link is built.
+ */
+export const LATEST_APPLICATION = "recente";
 
 /** Same cap as the offer pasted into the public ATS scan. */
 export const LEAD_OFFER_TEXT_MAX = 8000;
@@ -40,11 +47,12 @@ export function parseLeadIntent(raw: unknown): LeadIntent | null {
 
       return UUID.test(scanId) ? { kind: "ats_scan", scanId } : null;
     }
-    case "offer": {
+    case "offer":
+    case "interview": {
       const offerText = text(value.offerText);
 
       return offerText && offerText.length <= LEAD_OFFER_TEXT_MAX
-        ? { kind: "offer", offerText }
+        ? { kind: value.kind, offerText }
         : null;
     }
     case "job_search": {
@@ -78,6 +86,10 @@ export function leadIntentPath(intent: LeadIntent): string | null {
     // so the list is the screen that is sure to show it (US-136).
     case "offer":
       return "/candidatures";
+    // The application is created on redemption as well: the setup screen
+    // resolves "recente" to the newest one, which is it (US-141).
+    case "interview":
+      return `/entretiens/new?candidature=${LATEST_APPLICATION}`;
     // The search is written on redemption too; its tab shows the job and the
     // department the visitor picked (US-137).
     case "job_search":
