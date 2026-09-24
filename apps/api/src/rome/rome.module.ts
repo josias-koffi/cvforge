@@ -25,6 +25,12 @@ export const ROME_CODE_HOLDERS: readonly RomeCodeHolder[] = [
     scope: ["user_email", "profile_id"],
     table: "search_project_rome",
   },
+  {
+    column: "competence_code",
+    entity: "competence",
+    scope: ["user_email", "profile_id"],
+    table: "profile_rome_competences",
+  },
 ];
 
 /** The local ROME 4.0 referential, its weekly sync, and ROMEO (ADR-024). */

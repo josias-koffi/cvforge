@@ -1333,3 +1333,10 @@
 - **Leçon** : pour comparer deux recherches, il faut paginer jusqu'au bout. À 150 résultats par page, un « +50 » peut n'être qu'un effet de page.
 - **Leçon** : le sprint listait le SIRET et le code d'appellation « quand ils sont présents » ; ils ne le sont jamais. Mesurer avant de créer une colonne.
 - **Leçon** : toucher un fichier au-delà de 400 lignes oblige à le découper. Garder le constructeur public intact (le digest crée son collecteur en interne) a épargné les 30 tests du digest.
+
+### 2026-09-24 — US-125 : les compétences du CV par ROMEO (stage 01 · [[workflows/runs/developer-20260924085500]])
+- **Context** : [[sprints/sprint-027#^us-125]] · [[workflows/runs/developer-20260924085500/01-developer]]
+- **Leçon** : aucun seuil de score ne sépare le bruit de ROMEO du juste (« Doctorat » à 0,83, au-dessus de vraies compétences). Un retrait humain définitif vaut mieux qu'un seuil.
+- **Leçon** : une empreinte n'est enregistrée que si ROMEO a répondu ; sinon une panne passagère figerait un profil sans compétences jusqu'à sa prochaine modification.
+- **Leçon** : ne jamais envoyer à une API externe le contenu de profils réels de la base locale pour mesurer, même en dev ; utiliser des textes fictifs.
+- **Leçon** : `prettier` lancé depuis `apps/api` sur `packages/types` applique la mauvaise config ; relancer depuis le paquet ou vérifier le diff.

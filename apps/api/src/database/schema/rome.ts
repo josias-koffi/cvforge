@@ -160,3 +160,44 @@ export const searchProjectRome = pgTable(
     ),
   ],
 );
+
+/** The ROME competences ROMEO read in a candidate's CV (US-125). */
+export const profileRomeCompetences = pgTable(
+  "profile_rome_competences",
+  {
+    userEmail: text("user_email").notNull(),
+    profileId: text("profile_id").notNull(),
+    competenceCode: text("competence_code").notNull(),
+    libelle: text("libelle").notNull(),
+    type: text("type").notNull(),
+    /** `inferred` by ROMEO, `dismissed` by the candidate — never inferred again. */
+    status: text("status").notNull(),
+    score: real("score").notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    primaryKey({
+      columns: [table.userEmail, table.profileId, table.competenceCode],
+    }),
+    check(
+      "profile_rome_competences_status_check",
+      sql`${table.status} in ('inferred', 'dismissed')`,
+    ),
+  ],
+);
+
+/** What ROMEO last read for a profile, so an unchanged CV is not sent again. */
+export const profileRomeInferences = pgTable(
+  "profile_rome_inferences",
+  {
+    userEmail: text("user_email").notNull(),
+    profileId: text("profile_id").notNull(),
+    fingerprint: text("fingerprint").notNull(),
+    inferredAt: timestamp("inferred_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [primaryKey({ columns: [table.userEmail, table.profileId] })],
+);

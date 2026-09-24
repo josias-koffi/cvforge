@@ -2,12 +2,14 @@
 
 import { revalidatePath } from "next/cache"
 import type {
+  ProfileRomeCompetence,
   RomeAppellationOption,
   SearchProject,
   SearchProjectRomeAppellation,
 } from "@cvforge/types"
 
 import { runAction } from "@/lib/api"
+import { writeCompetenceDismissal } from "@/lib/profile-competences"
 import {
   requestSearchProjectPrefill,
   searchRomeAppellations,
@@ -45,6 +47,23 @@ export async function decideRomeAppellation(
 
   revalidatePath("/ma-recherche")
   return result.ok ? { ...result, rome } : result
+}
+
+/** Removed for good: the next reading of the CV will not bring it back. */
+export async function dismissProfileCompetence(
+  profileId: string,
+  code: string
+): Promise<
+  | { ok: true; competences: ProfileRomeCompetence[] }
+  | { ok: false; message: string }
+> {
+  let competences: ProfileRomeCompetence[] = []
+  const result = await runAction(async () => {
+    competences = await writeCompetenceDismissal(profileId, code)
+  })
+
+  revalidatePath("/ma-recherche")
+  return result.ok ? { ok: true, competences } : result
 }
 
 /** The autocomplete: an empty list rather than an error, the field stays usable. */

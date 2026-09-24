@@ -47,15 +47,24 @@ seulement de ses mots-clés. Chaque offre lui dit ce qu'il a déjà et ce qu'il 
       ni sur le détail) et 0 % un code d'appellation. Donc pas de colonne SIRET, et le libellé
       à la place du code. Migration **0031**, la 0030 étant prise par une autre session.
 
-- [ ] **[US-125]** Compétences du candidat, déduites du CV
+- [x] **[US-125]** Compétences du candidat, déduites du CV
   - Agent: `developer`
   - Critères d'acceptation :
-    - [ ] ROMEO `predictionCompetences` est appelé sur les sections du CV. Il n'est rappelé que si
+    - [x] ROMEO `predictionCompetences` est appelé sur les sections du CV. Il n'est rappelé que si
           l'empreinte du texte a changé.
-    - [ ] Stockage dans `profile_rome_competences`, table annexe sans clé étrangère, couverte par la
+    - [x] Stockage dans `profile_rome_competences`, table annexe sans clé étrangère, couverte par la
           purge RGPD.
-    - [ ] Le candidat peut retirer une compétence déduite. Elle n'est alors plus jamais reproposée
+    - [x] Le candidat peut retirer une compétence déduite. Elle n'est alors plus jamais reproposée
           pour ce texte.
+  - **Livré le 2026-09-24** ([[workflows/runs/developer-20260924085500]]) :
+    - lu à l'enregistrement du profil : compétences, lignes de résultats, projets et certifications
+      (résumé et diplômes exclus, trop génériques en direct) ;
+    - les codes ROMEO sont ceux des offres et du référentiel local, donc US-126 peut croiser par code ;
+    - bruit mesuré : « Docker » lu « Doctorat » à 0,83. Aucun seuil ne le filtre, d'où le retrait
+      par le candidat, définitif pour le profil ;
+    - migration **0032** (`profile_rome_competences` et `profile_rome_inferences`) ; carte « Vos
+      compétences » sur `/ma-recherche`.
+
 - [ ] **[US-126]** Score par compétences ROME et « pourquoi cette offre »
   - Agent: `developer`
   - Critères d'acceptation :
@@ -109,3 +118,4 @@ seulement de ses mots-clés. Chaque offre lui dit ce qu'il a déjà et ce qu'il 
 ## 🔁 Workflow Runs
 
 - 2026-09-24 — [[workflows/runs/developer-20260924080225|developer]] (US-124) — passed
+- 2026-09-24 — [[workflows/runs/developer-20260924085500|developer]] (US-125) — passed

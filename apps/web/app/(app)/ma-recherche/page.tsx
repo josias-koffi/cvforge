@@ -2,10 +2,12 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { SparklesIcon } from "lucide-react"
 
+import { ProfileCompetences } from "@/components/job-search/profile-competences"
 import { SearchProjectForm } from "@/components/job-search/search-project-form"
 import { PageHeader } from "@/components/layout/page-header"
 import { Button } from "@/components/ui/button"
 import { loadRegistry } from "@/lib/profile"
+import { loadProfileCompetences } from "@/lib/profile-competences"
 import { pickProfile } from "@/lib/profile-model"
 import { loadSearchProject } from "@/lib/search-project"
 import { requireSession } from "@/lib/session"
@@ -29,7 +31,10 @@ export default async function SearchProjectPage(
     registry,
     typeof profileId === "string" ? profileId : undefined
   )
-  const { searchProject, rome } = await loadSearchProject(selected.id)
+  const [{ searchProject, rome }, competences] = await Promise.all([
+    loadSearchProject(selected.id),
+    loadProfileCompetences(selected.id),
+  ])
 
   return (
     <>
@@ -70,6 +75,13 @@ export default async function SearchProjectPage(
           initialProject={searchProject}
           initialRome={rome}
         />
+        <div className="mt-6">
+          <ProfileCompetences
+            key={selected.id}
+            profileId={selected.id}
+            initialCompetences={competences}
+          />
+        </div>
       </div>
     </>
   )

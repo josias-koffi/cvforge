@@ -23,5 +23,18 @@ export interface SearchProjectRomeAppellation extends RomeAppellationOption {
   score: number | null;
 }
 
+/**
+ * A ROME competence ROMEO read in the candidate's CV (US-125). Only the ones
+ * the candidate kept are returned: a removed one is never shown again.
+ */
+export interface ProfileRomeCompetence {
+  code: string;
+  libelle: string;
+  /** `SAVOIR`, `COMPETENCE-DETAILLEE`, `MACRO-SAVOIR-ETRE-PROFESSIONNEL`… */
+  type: string;
+  /** ROMEO's confidence, 0 to 1. */
+  score: number;
+}
+
 /** The attribution the licence asks for wherever ROME data is shown. */
 export const ROME_SOURCE_LABEL = "Source : ROME 4.0, France Travail";

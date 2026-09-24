@@ -1,6 +1,11 @@
 import { asc, eq } from "drizzle-orm";
 import type { Database } from "../database/database.types";
-import { profileRegistries, profiles } from "../database/schema";
+import {
+  profileRegistries,
+  profileRomeCompetences,
+  profileRomeInferences,
+  profiles,
+} from "../database/schema";
 import type {
   ProfilesStore,
   StoredProfile,
@@ -40,13 +45,10 @@ export class PgProfilesStore implements ProfilesStore {
         version: 2,
       };
 
-      await tx
-        .insert(profileRegistries)
-        .values(values)
-        .onConflictDoUpdate({
-          target: profileRegistries.userEmail,
-          set: values,
-        });
+      await tx.insert(profileRegistries).values(values).onConflictDoUpdate({
+        target: profileRegistries.userEmail,
+        set: values,
+      });
 
       await tx.delete(profiles).where(eq(profiles.userEmail, userEmail));
 
@@ -107,14 +109,24 @@ export class PgProfilesStore implements ProfilesStore {
     } satisfies StoredProfileRegistry;
   }
 
-  /** Returns the number of registries removed — 1 or 0, as before. */
+  /**
+   * Returns the number of registries removed — 1 or 0, as before. The ROME
+   * competences read in the CVs go with them: they have no foreign key to
+   * cascade from (US-125).
+   */
   async deleteByUserEmail(userEmail: string) {
-    // `profiles.user_email` cascades, so the registry row is enough.
-    const deleted = await this.db
-      .delete(profileRegistries)
-      .where(eq(profileRegistries.userEmail, userEmail))
-      .returning({ userEmail: profileRegistries.userEmail });
+    return this.db.transaction(async (tx) => {
+      for (const table of [profileRomeCompetences, profileRomeInferences]) {
+        await tx.delete(table).where(eq(table.userEmail, userEmail));
+      }
 
-    return deleted.length;
+      // `profiles.user_email` cascades, so the registry row is enough.
+      const deleted = await tx
+        .delete(profileRegistries)
+        .where(eq(profileRegistries.userEmail, userEmail))
+        .returning({ userEmail: profileRegistries.userEmail });
+
+      return deleted.length;
+    });
   }
 }

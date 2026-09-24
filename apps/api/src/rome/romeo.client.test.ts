@@ -148,6 +148,109 @@ describe("RomeoClient.predict", () => {
   });
 });
 
+describe("RomeoClient.predictCompetences", () => {
+  it("reads every text of the CV in one call, three answers each", async () => {
+    const { client, request } = fakeFranceTravail({
+      data: [
+        {
+          competencesRome: [
+            {
+              codeCompetence: "113277",
+              libelleCompetence: "Méthode AGILE",
+              scorePrediction: 0.84,
+              typeCompetence: "SAVOIR",
+            },
+            { codeCompetence: "incomplet" },
+          ],
+          identifiant: "0",
+        },
+        {
+          competencesRome: [
+            {
+              codeCompetence: "120246",
+              libelleCompetence: "Gestion de projet",
+            },
+          ],
+          identifiant: "1",
+        },
+      ],
+      kind: "ok",
+      status: 200,
+    });
+
+    const competences = await new RomeoClient(client).predictCompetences([
+      "Scrum",
+      "Gestion de projet",
+      "Scrum",
+    ]);
+
+    expect(request).toHaveBeenCalledWith("romeo", {
+      body: {
+        competences: [
+          { identifiant: "0", intitule: "Scrum" },
+          { identifiant: "1", intitule: "Gestion de projet" },
+        ],
+        options: { nbResultats: 3, nomAppelant: "cvforge" },
+      },
+      method: "POST",
+      path: "/predictionCompetences",
+    });
+    expect(competences).toEqual([
+      {
+        code: "113277",
+        libelle: "Méthode AGILE",
+        score: 0.84,
+        textIndex: 0,
+        type: "SAVOIR",
+      },
+      {
+        code: "120246",
+        libelle: "Gestion de projet",
+        score: 0,
+        textIndex: 1,
+        type: "",
+      },
+    ]);
+  });
+
+  it("sends up to sixty texts, and nothing without any", async () => {
+    const { client, request } = fakeFranceTravail({
+      data: [],
+      kind: "ok",
+      status: 200,
+    });
+    const romeo = new RomeoClient(client);
+
+    expect(await romeo.predictCompetences([" "])).toEqual([]);
+    expect(request).not.toHaveBeenCalled();
+
+    await romeo.predictCompetences(
+      Array.from({ length: 70 }, (_, index) => `compétence ${index}`),
+    );
+    expect(
+      (
+        request.mock.calls[0] as unknown as [
+          string,
+          { body: { competences: unknown[] } },
+        ]
+      )[1].body.competences,
+    ).toHaveLength(60);
+  });
+
+  it("answers null when ROMEO could not answer", async () => {
+    const down = fakeFranceTravail({
+      detail: "",
+      kind: "unavailable",
+      reason: "unsubscribed",
+      status: 403,
+    });
+
+    expect(
+      await new RomeoClient(down.client).predictCompetences(["x"]),
+    ).toBeNull();
+  });
+});
+
 describe("bestAppellations", () => {
   const prediction = (
     code: string,
