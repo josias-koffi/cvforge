@@ -1493,3 +1493,20 @@
 - **Why**: Réutiliser sans dupliquer (proxy, formulaire, constructeur de PDF de test).
 - **Learned**: Focaliser un panneau monté après un await : useEffect sur l'état, pas requestAnimationFrame. Modifier offerTerms change le score ATS, donc demande de monter la version du moteur.
 - **Open**: Le checker ATS a probablement le même défaut de focus.
+
+## 2026-09-24 — US-137 implement (stage 03 · [[workflows/runs/analyze-design-dev-review-20260924211657]])
+- **Context**: [[sprints/sprint-030#US-137]] · [[workflows/runs/analyze-design-dev-review-20260924211657/03-implement]]
+- **Did**:
+  - module `job-market` ;
+  - file `market_demand` lue par le radar ;
+  - `SearchProjectLeadService` (profil vide créé au besoin) ;
+  - `departments` déplacé dans `packages/types` ;
+  - relais BFF GET ;
+  - page landing avec combobox.
+- **Why**: Aucun appel France Travail à la requête ; pré-remplir le projet sans ROMEO.
+- **Learned**:
+  - `drizzle-kit generate` régénère tout le schéma (instantanés périmés) : écrire la migration à la main et mettre `when` après la dernière entrée du journal, sinon elle est ignorée.
+  - Nest applique le middleware une fois par route déclarée qui correspond : `x/{*splat}` et `x` comptaient deux fois `/x/lead`. Il faut marquer la requête.
+  - Un onglet Chrome en arrière-plan ne joue pas `Reveal` : piloter la page en JS.
+  - Ne pas lancer `pkill -f` avec un motif présent dans sa propre ligne de commande.
+- **Open**: none

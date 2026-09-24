@@ -456,3 +456,10 @@
 - **Why**: La gate demandait une preuve sur la vraie base, pas seulement sur des stores en mémoire.
 - **Learned**: Vérifier une gate par mutation. Une première mutation échouait sur le contrôle « le test n'est pas vide », pas sur la recherche : il faut viser l'assertion elle-même.
 - **Open**: none
+
+## 2026-09-24 — US-137 review (stage 04 · [[workflows/runs/analyze-design-dev-review-20260924211657]])
+- **Context**: [[sprints/sprint-030#US-137]] · [[workflows/runs/analyze-design-dev-review-20260924211657/04-review]]
+- **Did**: Critères vérifiés par les tests (dont un test PGlite de bout en bout) et par l'API lancée. axe-core passé en happy-dom, avec un contrôle par mutation.
+- **Why**: Le critère commun demande un axe propre ; les stories précédentes ne l'avaient pas exécuté.
+- **Learned**: Relancer les limites sur l'API lancée : c'est là qu'est apparu le double comptage, invisible aux tests unitaires du middleware.
+- **Open**: La promesse « chiffres sous 24 h » dépend du débit du radar (40 lectures par heure).

@@ -444,3 +444,10 @@
 - **Why**: Promesse SEO distincte et tunnel mesuré à part.
 - **Learned**: Une offre longue donne un taux bas par nature : trier par fréquence et nommer le verdict.
 - **Open**: none
+
+## 2026-09-24 — US-137 design (stage 02 · [[workflows/runs/analyze-design-dev-review-20260924211657]])
+- **Context**: [[sprints/sprint-030#US-137]] · [[workflows/runs/analyze-design-dev-review-20260924211657/02-design]]
+- **Did**: Combobox ARIA pour le métier, `<select>` natif pour le département. Tension en 5 segments, avec la phrase qui porte le sens. État « en cours de collecte ».
+- **Why**: Seule une appellation du référentiel est acceptée ; un département se choisit mieux qu'il ne se tape.
+- **Learned**: Nommer le métier ROME sous l'appellation : les chiffres sont ceux du métier, plus large.
+- **Open**: none

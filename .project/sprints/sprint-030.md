@@ -15,15 +15,16 @@ outil d'entretien qui mène vers l'entretien vocal.
 
 ## ✅ Tasks
 
-- [ ] **[US-137]** « Ce métier recrute-t-il près de chez moi ? »
+- [x] **[US-137]** « Ce métier recrute-t-il près de chez moi ? »
   - Agent: `developer`
+  - Workflow: `analyze-design-dev-review`
   - Critères d'acceptation :
-    - [ ] Autocomplete ROME public, lu dans la copie locale (`rome-appellations.pg-reader.ts`).
-    - [ ] Pour un métier et un département : tension 1 à 5, volume d'offres, demandeurs
+    - [x] Autocomplete ROME public, lu dans la copie locale (`rome-appellations.pg-reader.ts`).
+    - [x] Pour un métier et un département : tension 1 à 5, volume d'offres, demandeurs
           (`market-stats.service.ts`), salaire médian avec taille d'échantillon.
-    - [ ] 0 appel France Travail à la requête ; source France Travail citée (ADR-024).
-    - [ ] Salaire masqué sous une taille d'échantillon minimale, avec message explicite.
-    - [ ] CTA « Recevoir chaque matin les offres de ce métier » → service lead ; après
+    - [x] 0 appel France Travail à la requête ; source France Travail citée (ADR-024).
+    - [x] Salaire masqué sous une taille d'échantillon minimale, avec message explicite.
+    - [x] CTA « Recevoir chaque matin les offres de ce métier » → service lead ; après
           inscription, le projet de recherche est pré-rempli (ROME + lieu) et le digest E19 part.
   - Découpage obligatoire (story `L`) : API d'abord, page ensuite.
 - [ ] **[US-138]** Pages SEO métier × département
@@ -66,3 +67,6 @@ Critères communs aux outils : voir `backlog.md`, « Critères d'acceptation dé
 - [ ] QA review
 - [ ] Gate coût : budget global et limite par IP vérifiés sur la route LLM d'US-141 avant mise en
       ligne
+
+## 🔁 Workflow Runs
+- 2026-09-24 — [[workflows/runs/analyze-design-dev-review-20260924211657|analyze-design-dev-review]] (US-137) — passed

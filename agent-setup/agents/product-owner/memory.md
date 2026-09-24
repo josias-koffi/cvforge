@@ -488,3 +488,10 @@
 - **Why**: Le critère « sans crédit consommé » interdisait d'appeler importFromText, qui débite.
 - **Learned**: L'activation d'un outil sans email stocké se mesure par une trace métier (l'étiquette de source de la candidature).
 - **Open**: La gate RGPD du sprint demande encore un test d'intégration sur Postgres.
+
+## 2026-09-24 — US-137 analyze (stage 01 · [[workflows/runs/analyze-design-dev-review-20260924211657]])
+- **Context**: [[sprints/sprint-030#US-137]] · [[workflows/runs/analyze-design-dev-review-20260924211657/01-analyze]]
+- **Did**: Outil cadré en deux tranches. Un couple jamais lu est mis en file (`market_demand`) pour le radar, sans appel à la requête.
+- **Why**: `market_stats` ne couvre que les couples des projets de candidats (25 lignes en dev) ; le critère interdit d'appeler France Travail.
+- **Learned**: L'intention `job_search` doit porter l'appellation, pas le code métier : c'est l'appellation que le projet confirme.
+- **Open**: none

@@ -133,3 +133,18 @@ Constat sur la staging après le déploiement du sprint 029. Les enregistrements
 
 Le défaut est désormais vide : la landing lit le `X-Forwarded-For` réécrit par Traefik. `cf-connecting-ip` ne s'active qu'avec la variable d'environnement GitHub `CLIENT_IP_HEADER` (puis `TF_VAR_client_ip_header`), à poser **uniquement** quand `cloudflare_proxied = true` **et** que l'origine n'accepte que les plages Cloudflare.
 
+
+## Amendement 2026-09-24 (quater) — outil « Ce métier recrute-t-il ? » (US-137), et une requête comptée une fois
+
+Deux politiques de plus, ajoutées par configuration :
+- **`job-market`** (`GET public/job-market` et `GET public/job-market/appellations`) :
+  - 120 requêtes par heure et 600 par jour, par IP, parce que l'autocomplétion interroge à chaque pause de frappe ;
+  - budget global de 50 000 requêtes par jour ;
+  - aucun appel à France Travail ni à un modèle : le budget plafonne les lectures en base et les couples (métier, département) que la foule peut mettre en file pour le rafraîchissement mensuel (`market_demand`).
+
+  Variables facultatives : `PUBLIC_JOB_MARKET_HOURLY_LIMIT`, `PUBLIC_JOB_MARKET_DAILY_LIMIT` et `PUBLIC_JOB_MARKET_DAILY_BUDGET`.
+- **`job-market-lead`** (`POST public/job-market/lead`) : 5 requêtes par heure et 20 par jour, par IP, sans budget global. Variables facultatives : `PUBLIC_JOB_MARKET_LEAD_HOURLY_LIMIT` et `PUBLIC_JOB_MARKET_LEAD_DAILY_LIMIT`.
+
+**Correctif — une requête n'est comptée qu'une fois.** Nest applique le middleware une fois par route déclarée qui correspond au chemin. Or `public/x/{*splat}` et `public/x` correspondent tous deux à `/public/x/lead`. Chaque lien de connexion et chaque déverrouillage ATS consommait donc **deux** unités de l'allocation de l'appelant : la limite réelle était environ la moitié de celle annoncée. Constaté sur l'API lancée : un 429 dès le 3ᵉ appel lead au lieu du 6ᵉ.
+
+Le middleware marque désormais la requête qu'il a comptée et laisse passer le second passage. Vérifié sur l'API lancée : 5 appels passent, le 6ᵉ reçoit un 429.
