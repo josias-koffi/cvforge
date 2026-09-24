@@ -1396,3 +1396,9 @@
 - **Leçon** : l'API Recherche d'entreprises ne donne pas l'index Egapro, seulement `egapro_renseignee`. La note vient de `egapro.travail.gouv.fr/api/search?q=<siren>` (`notes.<année>`, parfois null) : n'appeler Egapro que si l'index est déclaré.
 - **Leçon** : pour tirer une file de travail d'une autre table, une requête `selectDistinct` avec `left join`, `refreshed_at < cutoff` et `limit` suffit. Pas besoin de liste intermédiaire.
 - **Leçon** : en dev, `notFound()` dans une page Next répond 200 en streaming. Vérifier `NEXT_HTTP_ERROR_FALLBACK;404` dans le HTML, pas le code HTTP.
+
+### 2026-09-24 — US-117 mesure SIRET → ATS (sprint-026)
+- **Context** : mesure sur 100 entreprises. Résultat : 6 % de tableaux collectables, donc la chaîne n'est pas industrialisée ([[spikes/SPIKE-005-siret-ats-yield]]).
+- **Leçon** : SmartRecruiters répond 200 avec `totalFound: 0` pour n'importe quel identifiant. Un sondage par nom doit exiger au moins une offre et vérifier le nom et la ville, car 3 correspondances sur 8 étaient des homonymes étrangers.
+- **Leçon** : `detectAtsBoard` renvoie le jeton générique `company` sur certaines URL SmartRecruiters. C'est à corriger au prochain passage dans ce fichier.
+- **Leçon** : `tsx` sur un script `.ts` hors du paquet compile en CommonJS, donc sans await au premier niveau. Nommer le script `.mts` et importer le module TS avec `import * as`.

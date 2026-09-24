@@ -194,8 +194,12 @@ Deux stories fondatrices passent donc **avant** le backlog ci-dessous. Elles son
     délivre un jeton, et la racine `/partenaire/synthese-pages-employeurs/v1` existe (403 ; une
     racine inventée répond 401). Tous les chemins essayés répondent 403, comme La Bonne Boîte
     avant que le support ne donne les siens. **À demander au support**, puis finir cette story.
-- [ ] **[US-117]** Mesurer le rendement de la chaîne SIRET → site → page carrière → ATS sur un
+- [x] **[US-117]** Mesurer le rendement de la chaîne SIRET → site → page carrière → ATS sur un
       échantillon de 100 entreprises. Livrable : un chiffre et une décision.
+  - **Mesuré le 2026-09-24** ([[workflows/runs/developer-20260924160000]], [[spikes/SPIKE-005-siret-ats-yield]]) :
+    - **Chiffre : 6 sur 100.** Ce sont des tableaux collectables, vérifiés à la main. Seuls 3 publient à Nantes. L'échantillon compte 60 % d'entreprises du numérique, ce qui avantage la chaîne.
+    - Par le site, on n'en trouve qu'**1** : l'Annuaire ne donne pas d'URL, et deviner le domaine se trompe une fois sur huit. En interrogeant directement les logiciels par un identifiant tiré du nom, on en trouve 5.
+    - **Décision : ne pas industrialiser**, sous le seuil de 10 %. L'usage n°2 est abandonné. À reconsidérer si Teamtailor ou WeRecruit sont un jour pris en charge, ou si les Pages employeurs donnent l'URL.
 - [x] **[US-118]** Le code ROME dans le projet de recherche (saisie et stockage).
   - *Précisé le 2026-09-23* : la question « comment l'obtenir » est tranchée par ADR-024.
     - [x] Enregistrer le projet (et seulement ce moment-là, jamais l'affichage) appelle ROMEO v2
@@ -318,3 +322,4 @@ Deux stories fondatrices passent donc **avant** le backlog ci-dessous. Elles son
 - 2026-09-24 — [[workflows/runs/developer-20260924130000|developer]] (US-116, US-119) — passed ; US-119 close, US-116 ouverte (chemins de Pages employeurs à obtenir)
 - 2026-09-24 — [[workflows/runs/developer-20260924140000|developer]] (US-120) — passed
 - 2026-09-24 — [[workflows/runs/developer-20260924150000|developer]] (US-121) — passed
+- 2026-09-24 — [[workflows/runs/developer-20260924160000|developer]] (US-117) — passed, décision : ne pas industrialiser
