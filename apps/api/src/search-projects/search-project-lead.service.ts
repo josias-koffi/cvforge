@@ -64,6 +64,30 @@ export class SearchProjectLeadService {
     this.logger.log(`Search written from the job market tool.`);
   }
 
+  /**
+   * A visitor of the employer check asked for the companies that hire in
+   * their job (US-139). The SIREN names no job, so nothing is pre-filled:
+   * the search only has to exist, empty if new, for `/entreprises` to say
+   * what it lacks and for the activation to be counted.
+   */
+  async applyCompanyCheck(userEmail: string) {
+    const profileId = await this.activeProfileId(userEmail);
+
+    if (!(await this.store.findByProfileId(userEmail, profileId))) {
+      await this.store.save(
+        userEmail,
+        normalizeSearchProject(profileId, emptySearchProject(profileId)),
+      );
+    }
+    await this.store.markLeadOrigin(
+      userEmail,
+      profileId,
+      "company_check",
+      new Date(this.now()),
+    );
+    this.logger.log(`Search opened from the employer check.`);
+  }
+
   /** The profile the app opens on; a blank one for an account that has none. */
   private async activeProfileId(userEmail: string): Promise<string> {
     const registry = await this.profiles.findByUserEmail(userEmail);

@@ -46,25 +46,43 @@ export class CompanySources {
   }
 
   async read(siren: string): Promise<CompanyRecord | null | undefined> {
-    const annuaire = await this.getJson<{ results?: AnnuaireResult[] }>(
-      `${ANNUAIRE_API_URL}/search?q=${encodeURIComponent(siren)}&page=1&per_page=1`,
-    );
-    if (annuaire === undefined) return undefined;
+    const results = await this.search(siren, 1);
+    if (results === undefined) return undefined;
 
-    const record = readCompanyRecord(siren, annuaire.results);
+    const record = readCompanyRecord(siren, results);
     if (!record?.egaproDeclared) return record;
 
-    // An Egapro failure costs the score only, not the whole record.
-    const egapro = await this.getJson<{ data?: EgaproEntry[] }>(
-      `${EGAPRO_API_URL}/search?q=${encodeURIComponent(siren)}`,
-    );
-    const score = readEgaproScore(siren, egapro?.data);
+    const score = await this.egaproScore(siren);
 
     return {
       ...record,
       egaproScore: score?.score ?? null,
       egaproYear: score?.year ?? null,
     };
+  }
+
+  /**
+   * The Annuaire's full-text search: a name or a SIREN, at least three
+   * characters. Each result already carries the whole record.
+   */
+  async search(
+    query: string,
+    limit: number,
+  ): Promise<AnnuaireResult[] | undefined> {
+    const answer = await this.getJson<{ results?: AnnuaireResult[] }>(
+      `${ANNUAIRE_API_URL}/search?q=${encodeURIComponent(query)}&page=1&per_page=${limit}`,
+    );
+
+    return answer === undefined ? undefined : (answer.results ?? []);
+  }
+
+  /** An Egapro failure costs the score only, not the whole record. */
+  async egaproScore(siren: string) {
+    const egapro = await this.getJson<{ data?: EgaproEntry[] }>(
+      `${EGAPRO_API_URL}/search?q=${encodeURIComponent(siren)}`,
+    );
+
+    return readEgaproScore(siren, egapro?.data);
   }
 
   private async getJson<T>(url: string): Promise<T | undefined> {

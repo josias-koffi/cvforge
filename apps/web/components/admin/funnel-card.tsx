@@ -7,6 +7,7 @@ const TOOL_LABELS: Record<AcquisitionTool, string> = {
   ats: "Analyse ATS",
   keyword_match: "Comparateur CV ↔ offre",
   job_market: "Ce métier recrute-t-il ?",
+  company_check: "Vérifier un employeur",
 }
 
 function countOf(value: number) {

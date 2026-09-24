@@ -78,11 +78,17 @@ export type MetricsStore = {
    */
   readKeywordMatchActivations: (since: Date) => Promise<number>;
   /**
-   * Accounts that redeemed a job market tool link: the search it wrote
-   * carries the tool's origin (US-137).
+   * Accounts that redeemed a job market (US-137) or employer check (US-139)
+   * link: the search it wrote or opened carries the tool's origin.
    */
-  readJobMarketActivations: (since: Date) => Promise<number>;
+  readSearchLeadActivations: (
+    tool: SearchLeadTool,
+    since: Date,
+  ) => Promise<number>;
 };
+
+/** The free tools whose link writes a search rather than a record of its own. */
+export type SearchLeadTool = "job_market" | "company_check";
 
 export type AdminMetrics = {
   generatedAt: string;

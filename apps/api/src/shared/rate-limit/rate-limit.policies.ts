@@ -16,22 +16,16 @@ export const EVENTS_REJECTED_MESSAGE =
 const DEFAULT_EVENTS_HOURLY_LIMIT = 60;
 const DEFAULT_EVENTS_DAILY_LIMIT = 300;
 const DEFAULT_EVENTS_DAILY_BUDGET = 20_000;
-const DEFAULT_KEYWORD_MATCH_HOURLY_LIMIT = 10;
-const DEFAULT_KEYWORD_MATCH_DAILY_LIMIT = 30;
-const DEFAULT_KEYWORD_MATCH_DAILY_BUDGET = 2_000;
-const DEFAULT_KEYWORD_MATCH_LEAD_HOURLY_LIMIT = 5;
-const DEFAULT_KEYWORD_MATCH_LEAD_DAILY_LIMIT = 20;
-
-const DEFAULT_JOB_MARKET_HOURLY_LIMIT = 120;
-const DEFAULT_JOB_MARKET_DAILY_LIMIT = 600;
-const DEFAULT_JOB_MARKET_DAILY_BUDGET = 50_000;
-const DEFAULT_JOB_MARKET_LEAD_HOURLY_LIMIT = 5;
-const DEFAULT_JOB_MARKET_LEAD_DAILY_LIMIT = 20;
 
 export const JOB_MARKET_UNAVAILABLE_MESSAGE =
   "L'outil marche de l'emploi est momentanement indisponible. Reessayez demain.";
 export const KEYWORD_MATCH_UNAVAILABLE_MESSAGE =
   "Le comparateur gratuit est momentanement indisponible. Reessayez demain.";
+export const COMPANY_CHECK_UNAVAILABLE_MESSAGE =
+  "La verification d'employeur est momentanement indisponible. Reessayez demain.";
+
+/** The lead routes send a magic link: 5 an hour and 20 a day per address. */
+const LEAD_LIMITS = { daily: 20, hourly: 5 };
 
 /**
  * Every rate-limited public route, most specific first. Adding a route means
@@ -84,89 +78,35 @@ export function resolveRateLimitPolicies(
       ],
       routes: ["public/events"],
     },
-    {
-      budgetMessage: KEYWORD_MATCH_UNAVAILABLE_MESSAGE,
-      // Sends a magic link, so it is capped per address like the ATS unlock;
-      // it spends nothing until the link is redeemed (US-136).
-      globalBudget: null,
-      limitedMessage: RATE_LIMITED_MESSAGE,
-      matches: (path) => /\/public\/keyword-match\/lead\/?$/i.test(path),
-      name: "keyword-match-lead",
-      perIp: perIpRules(
-        env.PUBLIC_KEYWORD_MATCH_LEAD_HOURLY_LIMIT,
-        DEFAULT_KEYWORD_MATCH_LEAD_HOURLY_LIMIT,
-        env.PUBLIC_KEYWORD_MATCH_LEAD_DAILY_LIMIT,
-        DEFAULT_KEYWORD_MATCH_LEAD_DAILY_LIMIT,
-      ),
-      routes: ["public/keyword-match/{*splat}"],
-    },
-    {
-      budgetMessage: KEYWORD_MATCH_UNAVAILABLE_MESSAGE,
-      // No model call, but parsing a PDF costs CPU on the API process: the
-      // budget caps that, far above what real visitors need.
-      globalBudget: {
-        key: "global:keyword-match",
-        rule: {
-          limit: readPositiveInt(
-            env.PUBLIC_KEYWORD_MATCH_DAILY_BUDGET,
-            DEFAULT_KEYWORD_MATCH_DAILY_BUDGET,
-          ),
-          windowMs: DAY_MS,
-        },
-      },
-      limitedMessage: RATE_LIMITED_MESSAGE,
-      matches: (path) => /\/public\/keyword-match\/?$/i.test(path),
+    // No model call, but parsing a PDF costs CPU on the API process: the
+    // budget caps that, far above what real visitors need (US-136).
+    ...freeToolPolicies(env, {
+      envPrefix: "PUBLIC_KEYWORD_MATCH",
+      limits: { budget: 2_000, daily: 30, hourly: 10 },
+      message: KEYWORD_MATCH_UNAVAILABLE_MESSAGE,
       name: "keyword-match",
-      perIp: perIpRules(
-        env.PUBLIC_KEYWORD_MATCH_HOURLY_LIMIT,
-        DEFAULT_KEYWORD_MATCH_HOURLY_LIMIT,
-        env.PUBLIC_KEYWORD_MATCH_DAILY_LIMIT,
-        DEFAULT_KEYWORD_MATCH_DAILY_LIMIT,
-      ),
-      routes: ["public/keyword-match"],
-    },
-    {
-      budgetMessage: JOB_MARKET_UNAVAILABLE_MESSAGE,
-      // Sends a magic link: capped per address like the comparator's (US-137).
-      globalBudget: null,
-      limitedMessage: RATE_LIMITED_MESSAGE,
-      matches: (path) => /\/public\/job-market\/lead\/?$/i.test(path),
-      name: "job-market-lead",
-      perIp: perIpRules(
-        env.PUBLIC_JOB_MARKET_LEAD_HOURLY_LIMIT,
-        DEFAULT_JOB_MARKET_LEAD_HOURLY_LIMIT,
-        env.PUBLIC_JOB_MARKET_LEAD_DAILY_LIMIT,
-        DEFAULT_JOB_MARKET_LEAD_DAILY_LIMIT,
-      ),
-      routes: ["public/job-market/{*splat}"],
-    },
-    {
-      budgetMessage: JOB_MARKET_UNAVAILABLE_MESSAGE,
-      // Reads of our own copies, the autocomplete included, so the per-address
-      // allowance is wide. The budget caps the database reads and the pairs a
-      // crowd could queue for the monthly refresh (US-137).
-      globalBudget: {
-        key: "global:job-market",
-        rule: {
-          limit: readPositiveInt(
-            env.PUBLIC_JOB_MARKET_DAILY_BUDGET,
-            DEFAULT_JOB_MARKET_DAILY_BUDGET,
-          ),
-          windowMs: DAY_MS,
-        },
-      },
-      limitedMessage: RATE_LIMITED_MESSAGE,
-      matches: (path) =>
-        /\/public\/job-market(\/appellations)?\/?$/i.test(path),
+      reads: /\/public\/keyword-match\/?$/i,
+    }),
+    // Reads of our own copies, the autocomplete included, so the per-address
+    // allowance is wide. The budget caps the database reads and the pairs a
+    // crowd could queue for the monthly refresh (US-137).
+    ...freeToolPolicies(env, {
+      envPrefix: "PUBLIC_JOB_MARKET",
+      limits: { budget: 50_000, daily: 600, hourly: 120 },
+      message: JOB_MARKET_UNAVAILABLE_MESSAGE,
       name: "job-market",
-      perIp: perIpRules(
-        env.PUBLIC_JOB_MARKET_HOURLY_LIMIT,
-        DEFAULT_JOB_MARKET_HOURLY_LIMIT,
-        env.PUBLIC_JOB_MARKET_DAILY_LIMIT,
-        DEFAULT_JOB_MARKET_DAILY_LIMIT,
-      ),
-      routes: ["public/job-market"],
-    },
+      reads: /\/public\/job-market(\/appellations)?\/?$/i,
+    }),
+    // Each search or record is a call to the Annuaire des entreprises, which
+    // tolerates about 5 a second per server address: the budget keeps a
+    // crowd from starving the hourly company refresh (US-139).
+    ...freeToolPolicies(env, {
+      envPrefix: "PUBLIC_COMPANY_CHECK",
+      limits: { budget: 10_000, daily: 300, hourly: 60 },
+      message: COMPANY_CHECK_UNAVAILABLE_MESSAGE,
+      name: "company-check",
+      reads: /\/public\/company-check(\/\d{9})?\/?$/i,
+    }),
     {
       budgetMessage: BUDGET_EXHAUSTED_MESSAGE,
       // Unlocking hands back a report already computed: it spends nothing,
@@ -205,5 +145,63 @@ function perIpRules(
   return [
     { limit: readPositiveInt(hourly, hourlyDefault), windowMs: HOUR_MS },
     { limit: readPositiveInt(daily, dailyDefault), windowMs: DAY_MS },
+  ];
+}
+
+/**
+ * A free tool's two policies: its lead route, capped per address since it
+ * sends mail and spends nothing else, then its reads, under a global budget.
+ * Every limit is overridable by `${envPrefix}_[LEAD_]HOURLY_LIMIT`,
+ * `_DAILY_LIMIT` and `${envPrefix}_DAILY_BUDGET`.
+ */
+function freeToolPolicies(
+  env: NodeJS.ProcessEnv,
+  tool: {
+    name: string;
+    envPrefix: string;
+    message: string;
+    /** The read paths; the lead path is matched before them. */
+    reads: RegExp;
+    limits: { hourly: number; daily: number; budget: number };
+  },
+): RateLimitPolicy[] {
+  const { envPrefix, limits, message, name } = tool;
+  const lead = new RegExp(`/public/${name}/lead/?$`, "i");
+
+  return [
+    {
+      budgetMessage: message,
+      globalBudget: null,
+      limitedMessage: RATE_LIMITED_MESSAGE,
+      matches: (path) => lead.test(path),
+      name: `${name}-lead`,
+      perIp: perIpRules(
+        env[`${envPrefix}_LEAD_HOURLY_LIMIT`],
+        LEAD_LIMITS.hourly,
+        env[`${envPrefix}_LEAD_DAILY_LIMIT`],
+        LEAD_LIMITS.daily,
+      ),
+      routes: [`public/${name}/{*splat}`],
+    },
+    {
+      budgetMessage: message,
+      globalBudget: {
+        key: `global:${name}`,
+        rule: {
+          limit: readPositiveInt(env[`${envPrefix}_DAILY_BUDGET`], limits.budget),
+          windowMs: DAY_MS,
+        },
+      },
+      limitedMessage: RATE_LIMITED_MESSAGE,
+      matches: (path) => tool.reads.test(path),
+      name,
+      perIp: perIpRules(
+        env[`${envPrefix}_HOURLY_LIMIT`],
+        limits.hourly,
+        env[`${envPrefix}_DAILY_LIMIT`],
+        limits.daily,
+      ),
+      routes: [`public/${name}`],
+    },
   ];
 }

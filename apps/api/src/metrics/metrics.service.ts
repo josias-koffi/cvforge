@@ -36,6 +36,7 @@ export class MetricsService {
       atsActivations,
       keywordMatchActivations,
       jobMarketActivations,
+      companyCheckActivations,
       balance,
     ] = await Promise.all([
       this.store.readProductCounters(this.config.activeWindowDays),
@@ -43,7 +44,8 @@ export class MetricsService {
       this.store.readAcquisitionSteps(sinceDay),
       this.store.readAtsActivations(new Date(sinceDay)),
       this.store.readKeywordMatchActivations(new Date(sinceDay)),
-      this.store.readJobMarketActivations(new Date(sinceDay)),
+      this.store.readSearchLeadActivations("job_market", new Date(sinceDay)),
+      this.store.readSearchLeadActivations("company_check", new Date(sinceDay)),
       this.balanceService.isEnabled
         ? this.balanceService.getBalance()
         : Promise.resolve(null),
@@ -63,6 +65,7 @@ export class MetricsService {
     return {
       acquisition: buildFunnels(acquisitionSteps, {
         ats: atsActivations,
+        company_check: companyCheckActivations,
         job_market: jobMarketActivations,
         keyword_match: keywordMatchActivations,
       }),

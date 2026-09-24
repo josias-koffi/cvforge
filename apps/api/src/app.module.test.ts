@@ -9,6 +9,7 @@ import { SmtpModule } from "./smtp/smtp.module";
 import { OpenRouterModule } from "./ai/openrouter.module";
 import { ApplicationsModule } from "./applications/applications.module";
 import { AtsModule } from "./ats/ats.module";
+import { CompanyCheckModule } from "./company-check/company-check.module";
 import { JobMarketModule } from "./job-market/job-market.module";
 import { KeywordMatchModule } from "./keyword-match/keyword-match.module";
 import { BillingModule } from "./billing/billing.module";
@@ -48,6 +49,7 @@ describe("AppModule", () => {
       AtsModule,
       KeywordMatchModule,
       JobMarketModule,
+      CompanyCheckModule,
       BillingModule,
       CvGenerationModule,
       CreditsModule,

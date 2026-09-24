@@ -188,7 +188,13 @@ describe("PgMetricsStore — acquisition funnels", () => {
       new Date("2026-08-01T00:00:00.000Z"),
     );
 
-    await expect(store.readJobMarketActivations(WINDOW_START)).resolves.toBe(1);
+    await expect(
+      store.readSearchLeadActivations("job_market", WINDOW_START),
+    ).resolves.toBe(1);
+    // Another tool's origin is another funnel (US-139).
+    await expect(
+      store.readSearchLeadActivations("company_check", WINDOW_START),
+    ).resolves.toBe(0);
   });
 
   it("keeps the first origin of a search", async () => {
@@ -207,6 +213,8 @@ describe("PgMetricsStore — acquisition funnels", () => {
       new Date("2026-09-10T00:00:00.000Z"),
     );
 
-    await expect(store.readJobMarketActivations(WINDOW_START)).resolves.toBe(0);
+    await expect(
+      store.readSearchLeadActivations("job_market", WINDOW_START),
+    ).resolves.toBe(0);
   });
 });

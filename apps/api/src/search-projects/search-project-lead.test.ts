@@ -7,6 +7,8 @@ import {
   createTestDatabase,
   type TestDatabase,
 } from "../database/testing/test-database";
+import { PublicCompanyCheckController } from "../company-check/company-check.controller";
+import { CompanyCheckService } from "../company-check/company-check.service";
 import { PublicJobMarketController } from "../job-market/job-market.controller";
 import { JobMarketService } from "../job-market/job-market.service";
 import { LeadCaptureService } from "../leads/lead-capture.service";
@@ -87,13 +89,21 @@ function createHarness() {
   );
   const sent: string[] = [];
   const appellations = new PgRomeAppellationsReader(db);
+  const leadCapture = new LeadCaptureService(auth, {
+    sendMagicLinkEmail: async ({ magicLink }: { magicLink: string }) => {
+      sent.push(magicLink);
+    },
+  } as never);
   const controller = new PublicJobMarketController(
     new JobMarketService(appellations, { lookup: async () => null }),
-    new LeadCaptureService(auth, {
-      sendMagicLinkEmail: async ({ magicLink }: { magicLink: string }) => {
-        sent.push(magicLink);
-      },
-    } as never),
+    leadCapture,
+  );
+  const companyCheck = new PublicCompanyCheckController(
+    new CompanyCheckService(
+      { egaproScore: vi.fn(), search: vi.fn() },
+      { findMany: vi.fn() },
+    ),
+    leadCapture,
   );
   const romeo = { predict: vi.fn() };
   const searchProjects = new PgSearchProjectsStore(db);
@@ -117,6 +127,22 @@ function createHarness() {
       department,
       email: LEAD,
     });
+
+    return redeem();
+  }
+
+  async function signUpFromCompanyCheck() {
+    await companyCheck.lead({
+      consentAccepted: true,
+      email: LEAD,
+      siren: "381983568",
+    });
+
+    return redeem();
+  }
+
+  /** Clicks the last link sent; answers the screen the app opens on. */
+  async function redeem() {
     const link = new URL(sent.at(-1)!);
 
     await auth.consumeMagicLink(link.searchParams.get("token")!);
@@ -126,7 +152,7 @@ function createHarness() {
     );
   }
 
-  return { profiles, romeo, searchProjects, signUp };
+  return { profiles, romeo, searchProjects, signUp, signUpFromCompanyCheck };
 }
 
 describe("job market lead → search, end to end", () => {
@@ -199,6 +225,55 @@ describe("job market lead → search, end to end", () => {
     expect(project?.targetRoles).toEqual(["Développeur / développeuse web"]);
     expect(project?.digestEnabled).toBe(true);
     expect((await harness.profiles.findByUserEmail(LEAD))?.profiles).toHaveLength(1);
+  });
+});
+
+describe("employer check lead → companies that hire, end to end", () => {
+  /** The SIREN names no job: an empty search, for `/entreprises` to explain. */
+  it("opens the list on a new, empty search counted as activated (US-139)", async () => {
+    const harness = createHarness();
+
+    expect(await harness.signUpFromCompanyCheck()).toBe("/entreprises");
+
+    const profileId = (await harness.profiles.findByUserEmail(LEAD))!
+      .activeProfileId;
+    expect(
+      await harness.searchProjects.findByProfileId(LEAD, profileId),
+    ).toMatchObject({ locations: [], targetRoles: [] });
+    const [row] = await testDatabase.db
+      .select({ leadOrigin: searchProjectsTable.leadOrigin })
+      .from(searchProjectsTable);
+    expect(row?.leadOrigin).toBe("company_check");
+  });
+
+  it("leaves an existing search as its owner set it", async () => {
+    const harness = createHarness();
+    await harness.profiles.save(LEAD, emptyProfileRegistry(LEAD, "profile-1"));
+    await harness.searchProjects.save(LEAD, {
+      ...emptySearchProject("profile-1"),
+      targetRoles: ["Comptable"],
+    });
+
+    await harness.signUpFromCompanyCheck();
+
+    expect(
+      await harness.searchProjects.findByProfileId(LEAD, "profile-1"),
+    ).toMatchObject({ targetRoles: ["Comptable"] });
+  });
+
+  it("refuses a malformed SIREN before sending anything", async () => {
+    const harness = createHarness();
+
+    await expect(
+      new PublicCompanyCheckController(
+        new CompanyCheckService(
+          { egaproScore: vi.fn(), search: vi.fn() },
+          { findMany: vi.fn() },
+        ),
+        { acceptedEmail: () => LEAD, sendLink: vi.fn() } as never,
+      ).lead({ consentAccepted: true, email: LEAD, siren: "123" }),
+    ).rejects.toMatchObject({ status: 400 });
+    expect(await harness.profiles.findByUserEmail(LEAD)).toBeNull();
   });
 });
 

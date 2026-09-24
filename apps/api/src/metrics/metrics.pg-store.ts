@@ -18,6 +18,7 @@ import type {
   AtsCounters,
   MetricsStore,
   ProductCounters,
+  SearchLeadTool,
 } from "./metrics.types";
 
 const MS_PER_DAY = 86_400_000;
@@ -216,7 +217,10 @@ export class PgMetricsStore implements MetricsStore {
     return toNumber(row?.activated ?? 0);
   }
 
-  async readJobMarketActivations(since: Date): Promise<number> {
+  async readSearchLeadActivations(
+    tool: SearchLeadTool,
+    since: Date,
+  ): Promise<number> {
     const [row] = await this.db
       .select({
         activated: sql<string>`count(distinct ${searchProjects.userEmail})`,
@@ -224,7 +228,7 @@ export class PgMetricsStore implements MetricsStore {
       .from(searchProjects)
       .where(
         and(
-          eq(searchProjects.leadOrigin, "job_market"),
+          eq(searchProjects.leadOrigin, tool),
           gte(searchProjects.leadOriginAt, since),
         ),
       );

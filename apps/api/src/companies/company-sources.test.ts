@@ -87,4 +87,19 @@ describe("CompanySources", () => {
       }).sources.read(SIREN),
     ).toMatchObject({ egaproScore: null, legalName: "EVERIENCE" });
   });
+
+  it("searches by name, and answers an empty list apart from a failure", async () => {
+    const found = sources({ [ANNUAIRE]: () => annuaire(false) });
+
+    expect(await found.sources.search("helpline nantes", 8)).toHaveLength(1);
+    expect(found.asked[0]).toBe(
+      `https://${ANNUAIRE}/search?q=helpline%20nantes&page=1&per_page=8`,
+    );
+    expect(
+      await sources({ [ANNUAIRE]: () => json({}) }).sources.search("zzz", 8),
+    ).toEqual([]);
+    expect(
+      await sources({ [ANNUAIRE]: () => json({}, 500) }).sources.search("zzz", 8),
+    ).toBeUndefined();
+  });
 });

@@ -74,6 +74,24 @@ describe("resolveRateLimitPolicies", () => {
     expect(lead.globalBudget).toBeNull();
   });
 
+  /** Every search and record is a call to the Annuaire des entreprises. */
+  it("meters the employer check and its lead route apart (US-139)", () => {
+    const check = policy("company-check", {
+      PUBLIC_COMPANY_CHECK_HOURLY_LIMIT: "30",
+    });
+    const lead = policy("company-check-lead", {
+      PUBLIC_COMPANY_CHECK_LEAD_DAILY_LIMIT: "8",
+    });
+
+    expect(check.perIp.map((rule) => rule.limit)).toEqual([30, 300]);
+    expect(check.globalBudget).toEqual({
+      key: "global:company-check",
+      rule: { limit: 10_000, windowMs: DAY_MS },
+    });
+    expect(lead.perIp.map((rule) => rule.limit)).toEqual([5, 8]);
+    expect(lead.globalBudget).toBeNull();
+  });
+
   it("falls back to the default for an unusable event limit", () => {
     expect(
       policy("events", { PUBLIC_EVENTS_HOURLY_LIMIT: "-1" }).perIp[0]?.limit,
@@ -92,6 +110,10 @@ describe("resolveRateLimitPolicies", () => {
     ["/public/job-market", "job-market"],
     ["/public/job-market/appellations", "job-market"],
     ["/Public/Job-Market/Lead/", "job-market-lead"],
+    ["/public/company-check", "company-check"],
+    ["/public/company-check/381983568", "company-check"],
+    ["/public/company-check/lead", "company-check-lead"],
+    ["/public/company-check/unknown/path", "scan"],
   ])("sends %s to the %s policy", (path, name) => {
     const matched = resolveRateLimitPolicies({}).find((entry) =>
       entry.matches(path),
@@ -118,6 +140,8 @@ describe("rateLimitedRoutes", () => {
       "public/keyword-match",
       "public/job-market/{*splat}",
       "public/job-market",
+      "public/company-check/{*splat}",
+      "public/company-check",
       "public/ats-scan/{*splat}",
       "public/ats-scan",
     ]);

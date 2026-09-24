@@ -5,7 +5,12 @@
  * other value, and the admin, which labels them. Each new tool adds its id
  * here; nothing else has to be told.
  */
-export const acquisitionTools = ["ats", "keyword_match", "job_market"] as const;
+export const acquisitionTools = [
+  "ats",
+  "keyword_match",
+  "job_market",
+  "company_check",
+] as const;
 export type AcquisitionTool = (typeof acquisitionTools)[number];
 
 /** In funnel order: every step is a subset of the one before it. */

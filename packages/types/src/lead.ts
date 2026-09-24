@@ -82,6 +82,10 @@ export function leadIntentPath(intent: LeadIntent): string | null {
     // department the visitor picked (US-137).
     case "job_search":
       return "/ma-recherche";
+    // The visitor checked one employer and asked for the others that hire in
+    // their job: the list, which says what its search still lacks (US-139).
+    case "company":
+      return "/entreprises";
     default:
       return null;
   }

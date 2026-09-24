@@ -86,7 +86,9 @@ describe("leadIntentPath", () => {
     ).toBe("/ma-recherche");
   });
 
-  it("keeps the default screen for tools that have none yet", () => {
-    expect(leadIntentPath({ kind: "company", siren: "552100554" })).toBeNull();
+  it("opens the companies that hire after an employer check (US-139)", () => {
+    expect(leadIntentPath({ kind: "company", siren: "552100554" })).toBe(
+      "/entreprises",
+    );
   });
 });

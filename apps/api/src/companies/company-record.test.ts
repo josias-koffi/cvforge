@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
   companyBadges,
-  headcountLabel,
   readCompanyRecord,
   readEgaproScore,
   toCompanyProfile,
@@ -142,9 +141,7 @@ describe("badges and profile", () => {
     expect(toCompanyProfile(stored())?.employerPage).toBeNull();
   });
 
-  it("labels INSEE's headcount bands, and says nothing of an unpublished one", () => {
-    expect(headcountLabel("22")).toBe("100 à 199 salariés");
-    expect(headcountLabel("NN")).toBe("");
+  it("labels INSEE's headcount band", () => {
     expect(toCompanyProfile(stored())?.headcountLabel).toBe("2 000 à 4 999 salariés");
   });
 });

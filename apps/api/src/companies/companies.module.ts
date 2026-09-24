@@ -18,7 +18,7 @@ import { WikidataLogosSource } from "./wikidata-logos.source";
  * Travail employer page (US-116).
  */
 @Module({
-  exports: [CompaniesService],
+  exports: [CompaniesService, COMPANIES_STORE],
   imports: [FranceTravailModule],
   providers: [
     {

@@ -46,6 +46,7 @@ function createService({
   atsActivations = 2,
   keywordMatchActivations = 1,
   jobMarketActivations = 3,
+  companyCheckActivations = 4,
   counters = COUNTERS,
   isEnabled = true,
   totalUsage = 10 as number | null,
@@ -54,7 +55,9 @@ function createService({
     readAcquisitionSteps: vi.fn().mockResolvedValue(acquisitionSteps),
     readAtsActivations: vi.fn().mockResolvedValue(atsActivations),
     readAtsCounters: vi.fn().mockResolvedValue(ats),
-    readJobMarketActivations: vi.fn().mockResolvedValue(jobMarketActivations),
+    readSearchLeadActivations: vi.fn(async (tool: string) =>
+      tool === "job_market" ? jobMarketActivations : companyCheckActivations,
+    ),
     readKeywordMatchActivations: vi
       .fn()
       .mockResolvedValue(keywordMatchActivations),
@@ -118,7 +121,12 @@ describe("MetricsService", () => {
     expect(store.readKeywordMatchActivations).toHaveBeenCalledWith(
       new Date("2026-08-18T00:00:00.000Z"),
     );
-    expect(store.readJobMarketActivations).toHaveBeenCalledWith(
+    expect(store.readSearchLeadActivations).toHaveBeenCalledWith(
+      "job_market",
+      new Date("2026-08-18T00:00:00.000Z"),
+    );
+    expect(store.readSearchLeadActivations).toHaveBeenCalledWith(
+      "company_check",
       new Date("2026-08-18T00:00:00.000Z"),
     );
   });
@@ -152,6 +160,13 @@ describe("MetricsService", () => {
         results: 0,
         tool: "job_market",
         visitors: 0,
+      },      {
+        accountsActivated: 4,
+        ctaClicks: 0,
+        emailsSubmitted: 0,
+        results: 0,
+        tool: "company_check",
+        visitors: 0,
       },
     ]);
   });
@@ -162,6 +177,7 @@ describe("MetricsService", () => {
       atsActivations: 0,
       keywordMatchActivations: 0,
       jobMarketActivations: 0,
+      companyCheckActivations: 0,
     });
 
     const { acquisition } = await service.readAdminMetrics();
@@ -189,6 +205,13 @@ describe("MetricsService", () => {
         emailsSubmitted: 0,
         results: 0,
         tool: "job_market",
+        visitors: 0,
+      },      {
+        accountsActivated: 0,
+        ctaClicks: 0,
+        emailsSubmitted: 0,
+        results: 0,
+        tool: "company_check",
         visitors: 0,
       },
     ]);

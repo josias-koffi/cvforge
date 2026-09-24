@@ -1,6 +1,7 @@
-import type {
-  CompanyBadge,
-  CompanyProfile,
+import {
+  headcountLabel,
+  type CompanyBadge,
+  type CompanyProfile,
 } from "@cvforge/types";
 import { EMPLOYER_PAGE_URL } from "./employer-pages.source";
 
@@ -13,6 +14,10 @@ export interface AnnuaireResult {
   nom_raison_sociale?: string | null;
   nom_complet?: string | null;
   activite_principale?: string | null;
+  section_activite_principale?: string | null;
+  /** "O" when fully public; "P" hides what the company asked to withhold. */
+  statut_diffusion?: string | null;
+  siege?: { libelle_commune?: string | null; code_postal?: string | null } | null;
   categorie_entreprise?: string | null;
   tranche_effectif_salarie?: string | null;
   date_creation?: string | null;
@@ -25,6 +30,7 @@ export interface AnnuaireResult {
     est_siae?: boolean | null;
     bilan_ges_renseigne?: boolean | null;
     egapro_renseignee?: boolean | null;
+    est_entrepreneur_individuel?: boolean | null;
   } | null;
 }
 
@@ -68,28 +74,6 @@ export interface StoredCompany extends Omit<CompanyRecord, "egaproDeclared"> {
 }
 
 const CATEGORIES = new Set(["PME", "ETI", "GE"]);
-
-/** INSEE's headcount bands; "NN" and "00" say nothing worth showing. */
-const HEADCOUNT_BANDS: Record<string, string> = {
-  "01": "1 ou 2 salariés",
-  "02": "3 à 5 salariés",
-  "03": "6 à 9 salariés",
-  "11": "10 à 19 salariés",
-  "12": "20 à 49 salariés",
-  "21": "50 à 99 salariés",
-  "22": "100 à 199 salariés",
-  "31": "200 à 249 salariés",
-  "32": "250 à 499 salariés",
-  "41": "500 à 999 salariés",
-  "42": "1 000 à 1 999 salariés",
-  "51": "2 000 à 4 999 salariés",
-  "52": "5 000 à 9 999 salariés",
-  "53": "10 000 salariés et plus",
-};
-
-export function headcountLabel(band: string): string {
-  return HEADCOUNT_BANDS[band] ?? "";
-}
 
 /** The Annuaire's answer for `siren`, or null when it lists another company. */
 export function readCompanyRecord(
@@ -165,18 +149,10 @@ export function toCompanyProfile(company: StoredCompany): CompanyProfile | null 
 
   return {
     badges: companyBadges(company),
-    category: CATEGORIES.has(company.category)
-      ? (company.category as CompanyProfile["category"])
-      : null,
+    category: companyCategory(company.category),
     closed: company.closed,
     createdOn: company.createdOn,
-    employerPage: company.employerPagePath
-      ? {
-          edited: company.employerPageEdited,
-          offers: company.employerPageOffers ?? 0,
-          url: `${EMPLOYER_PAGE_URL}/${company.employerPagePath}`,
-        }
-      : null,
+    employerPage: employerPageOf(company),
     finances: company.financesYear
       ? {
           netIncome: company.netIncome,
@@ -190,6 +166,27 @@ export function toCompanyProfile(company: StoredCompany): CompanyProfile | null 
     refreshedAt: company.refreshedAt.toISOString(),
     siren: company.siren,
   };
+}
+
+/** INSEE's class of the company, null for anything else. */
+export function companyCategory(value: string): CompanyProfile["category"] {
+  return CATEGORIES.has(value) ? (value as CompanyProfile["category"]) : null;
+}
+
+/** Its France Travail page, when the refresh found one (US-116). */
+export function employerPageOf(
+  company: Pick<
+    StoredCompany,
+    "employerPagePath" | "employerPageOffers" | "employerPageEdited"
+  >,
+): CompanyProfile["employerPage"] {
+  return company.employerPagePath
+    ? {
+        edited: company.employerPageEdited,
+        offers: company.employerPageOffers ?? 0,
+        url: `${EMPLOYER_PAGE_URL}/${company.employerPagePath}`,
+      }
+    : null;
 }
 
 /** A SIRET's company: its first nine digits. */

@@ -18,6 +18,8 @@ export const publicErrorCodes = [
   "BUDGET_EXHAUSTED",
   "ROME_APPELLATION_UNKNOWN",
   "DEPARTMENT_UNKNOWN",
+  "COMPANY_QUERY_INVALID",
+  "COMPANY_SOURCE_UNAVAILABLE",
 ] as const;
 export type PublicErrorCode = (typeof publicErrorCodes)[number];
 
