@@ -3,6 +3,7 @@ export * from "./data-imports";
 export * from "./applications";
 export * from "./ats";
 export * from "./auth";
+export * from "./companies";
 export * from "./credits";
 export * from "./offers";
 export * from "./hiring-companies";

@@ -6,6 +6,7 @@ import {
 } from "@cvforge/types"
 import { Building2Icon } from "lucide-react"
 
+import { CompanyBadges } from "@/components/job-search/company-badges"
 import { SpontaneousApplyButton } from "@/components/job-search/spontaneous-apply-button"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -123,7 +124,14 @@ function CompanyCard({
   return (
     <li className="flex flex-col gap-2 rounded-lg border border-border p-4">
       <div className="flex flex-wrap items-start justify-between gap-2">
-        <h3 className="font-medium">{company.name}</h3>
+        <h3 className="font-medium">
+          <Link
+            href={`/entreprises/${company.siret}?profileId=${profileId}`}
+            className="hover:underline"
+          >
+            {company.name}
+          </Link>
+        </h3>
         {company.highPotential ? (
           <Badge variant="secondary">Fort potentiel d&apos;embauche</Badge>
         ) : null}
@@ -137,6 +145,7 @@ function CompanyCard({
       <p className="text-xs text-muted-foreground">
         Recrute dans : {company.romeLabel}
       </p>
+      <CompanyBadges badges={company.badges} />
       <SpontaneousApplyButton
         profileId={profileId}
         siret={company.siret}
@@ -146,7 +155,7 @@ function CompanyCard({
   )
 }
 
-function headcountText(company: HiringCompany): string {
+export function headcountText(company: HiringCompany): string {
   if (company.headcountMax === null) return ""
   if (company.headcountMin === company.headcountMax) {
     return `${company.headcountMax} salariés`

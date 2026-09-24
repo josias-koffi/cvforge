@@ -36,6 +36,28 @@ export class HiringCompaniesController {
     return this.hiringCompanies.view(this.requireEmail(request), profileId);
   }
 
+  /** One company of the list, with its record (US-121); 404 otherwise. */
+  @Get(":siret")
+  async readHiringCompany(
+    @Param("profileId") profileId: string,
+    @Param("siret") siret: string,
+    @Req() request: RequestLike,
+  ) {
+    const detail = await this.hiringCompanies.detail(
+      this.requireEmail(request),
+      profileId,
+      siret,
+    );
+
+    if (!detail) {
+      throw new NotFoundException(
+        "Cette entreprise ne figure plus parmi celles de votre recherche.",
+      );
+    }
+
+    return detail;
+  }
+
   /**
    * A spontaneous application to one of the companies listed (US-120). Free:
    * no model runs here, only the CV and the letter cost credits, later.

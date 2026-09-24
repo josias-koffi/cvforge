@@ -4,6 +4,8 @@
  * published an offer. Read weekly from France Travail, never on a page view.
  */
 
+import type { CompanyBadge, CompanyProfile } from "./companies";
+
 export interface HiringCompany {
   siret: string;
   name: string;
@@ -21,6 +23,8 @@ export interface HiringCompany {
   /** The confirmed job it was found for. */
   romeCode: string;
   romeLabel: string;
+  /** The company's commitments (US-121); empty before its first reading. */
+  badges: CompanyBadge[];
 }
 
 export type HiringCompaniesStatus =
@@ -37,6 +41,13 @@ export interface HiringCompaniesView {
   companies: HiringCompany[];
   /** When the oldest of the readings shown was made, ISO; null before any. */
   refreshedAt: string | null;
+}
+
+/** One establishment of the candidate's list, and its company (US-121). */
+export interface HiringCompanyDetail {
+  company: HiringCompany;
+  /** Null before the first reading, or when the SIREN is unknown. */
+  profile: CompanyProfile | null;
 }
 
 /** The attribution shown wherever La Bonne Boîte data appears (ADR-024 §4). */

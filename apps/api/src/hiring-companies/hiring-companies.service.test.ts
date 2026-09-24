@@ -1,5 +1,6 @@
 import { emptySearchProject, type SearchProject } from "@cvforge/types";
 import type { StoredApplication } from "../applications/applications.types";
+import type { StoredCompany } from "../companies/company-record";
 import { describe, expect, it } from "vitest";
 import type {
   HiringCompaniesStore,
@@ -57,6 +58,7 @@ function createHarness(options: {
   rows?: StoredHiringCompany[];
   unavailable?: boolean;
   applications?: StoredApplication[];
+  records?: StoredCompany[];
 }) {
   const applications = [...(options.applications ?? [])];
   const queries = new Map((options.queries ?? []).map((query) => [query.queryKey, query]));
@@ -111,6 +113,14 @@ function createHarness(options: {
         },
         listByUserEmail: async (userEmail) =>
           applications.filter((application) => application.userEmail === userEmail),
+      },
+      {
+        bySiren: async (sirens) =>
+          new Map(
+            (options.records ?? [])
+              .filter((record) => sirens.includes(record.siren))
+              .map((record) => [record.siren, record]),
+          ),
       },
       () => NOW,
     ),
@@ -254,5 +264,69 @@ describe("HiringCompaniesService.applySpontaneously (US-120)", () => {
       await harness.service.applySpontaneously(ANA, "p1", "00000000000000"),
     ).toEqual({ outcome: "not_found" });
     expect(harness.applications).toEqual([]);
+  });
+});
+
+describe("HiringCompaniesService company pages (US-121)", () => {
+  const EVERIENCE: StoredCompany = {
+    category: "GE",
+    closed: false,
+    createdOn: "1991-04-02",
+    egaproScore: 94,
+    egaproYear: "2025",
+    ess: false,
+    financesYear: "2025",
+    found: true,
+    gesReport: true,
+    headcountBand: "51",
+    inclusive: false,
+    legalName: "EVERIENCE",
+    mission: false,
+    nafCode: "62.03Z",
+    netIncome: 20_941_726,
+    openEstablishments: 6,
+    refreshedAt: new Date(NOW),
+    revenue: 211_086_627,
+    siren: "381983568",
+  };
+
+  async function readyHarness(records: StoredCompany[]) {
+    const harness = createHarness({
+      readings: {
+        "M1805|44109": {
+          companies: [company("38198356800092", 25), company("11111111100011", 5)],
+          hits: 2,
+          romeLabel: "Développeur / Développeuse informatique",
+        },
+      },
+      records,
+    });
+    await harness.service.refreshDue();
+    return harness;
+  }
+
+  it("badges each card from its company's record, none before it is read", async () => {
+    const view = await (await readyHarness([EVERIENCE])).service.view(ANA, "p1");
+
+    expect(view.companies.map((entry) => entry.badges.map((badge) => badge.key))).toEqual([
+      ["egapro", "ges"],
+      [],
+    ]);
+  });
+
+  it("opens a listed company with its record, and no other", async () => {
+    const harness = await readyHarness([EVERIENCE]);
+
+    const detail = await harness.service.detail(ANA, "p1", "38198356800092");
+
+    expect(detail?.company.name).toBe("Entreprise 38198356800092");
+    expect(detail?.profile).toMatchObject({
+      category: "GE",
+      finances: { netIncome: 20_941_726, revenue: 211_086_627, year: "2025" },
+      headcountLabel: "2 000 à 4 999 salariés",
+      siren: "381983568",
+    });
+    expect((await harness.service.detail(ANA, "p1", "11111111100011"))?.profile).toBeNull();
+    expect(await harness.service.detail(ANA, "p1", "00000000000000")).toBeNull();
   });
 });

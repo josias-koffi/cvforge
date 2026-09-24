@@ -2,6 +2,7 @@ import type { Locale } from "./locale";
 
 export * from "./documents";
 export * from "./grounding";
+export * from "./companies";
 export * from "./hiring-companies";
 export * from "./locale";
 export * from "./market";

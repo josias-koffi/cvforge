@@ -5,6 +5,8 @@ import {
   type ApplicationsStore,
 } from "../applications/applications.types";
 import { AuthModule } from "../auth/auth.module";
+import { CompaniesModule } from "../companies/companies.module";
+import { CompaniesService } from "../companies/companies.service";
 import { DATABASE, type Database } from "../database/database.types";
 import { FranceTravailModule } from "../france-travail/france-travail.module";
 import { FtHttpClient } from "../france-travail/ft-http.client";
@@ -24,7 +26,8 @@ import { LaBonneBoiteSource } from "./la-bonne-boite.source";
 
 /**
  * "Entreprises qui recrutent", from France Travail's La Bonne Boîte (US-119),
- * and the spontaneous applications made from it (US-120).
+ * the spontaneous applications made from it (US-120), and each company's page
+ * (US-121).
  */
 @Module({
   controllers: [HiringCompaniesController],
@@ -32,6 +35,7 @@ import { LaBonneBoiteSource } from "./la-bonne-boite.source";
   imports: [
     ApplicationsModule,
     AuthModule,
+    CompaniesModule,
     FranceTravailModule,
     SearchProjectsModule,
   ],
@@ -53,6 +57,7 @@ import { LaBonneBoiteSource } from "./la-bonne-boite.source";
         LaBonneBoiteSource,
         SEARCH_PROJECTS_STORE,
         APPLICATIONS_STORE,
+        CompaniesService,
       ],
       provide: HiringCompaniesService,
       useFactory: (
@@ -60,8 +65,15 @@ import { LaBonneBoiteSource } from "./la-bonne-boite.source";
         source: LaBonneBoiteSource,
         searchProjects: SearchProjectsStore,
         applications: ApplicationsStore,
+        companies: CompaniesService,
       ) =>
-        new HiringCompaniesService(store, source, searchProjects, applications),
+        new HiringCompaniesService(
+          store,
+          source,
+          searchProjects,
+          applications,
+          companies,
+        ),
     },
   ],
 })

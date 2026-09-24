@@ -245,7 +245,37 @@ Deux stories fondatrices passent donc **avant** le backlog ci-dessous. Elles son
     - [x] Seule une entreprise de la liste du candidat est acceptée.
   - **Livré le 2026-09-24** ([[workflows/runs/developer-20260924140000]]). Création vérifiée en réel ;
     générer une lettre sur une candidature spontanée reste à relire à la main (1 crédit).
-- [ ] **[US-121]** Table `companies`, rattachement au SIREN, fiche entreprise et badges RSE.
+- [x] **[US-121]** Table `companies`, rattachement au SIREN, fiche entreprise et badges RSE.
+  - Agent: `developer`
+  - Contrat vérifié en direct le 2026-09-24 :
+    - API Recherche d'entreprises : `GET recherche-entreprises.api.gouv.fr/search?q=<siren>`,
+      publique et sans clé, 7 appels/s au plus.
+      - Elle donne `siren`, `nom_raison_sociale`, `activite_principale`, `categorie_entreprise`,
+        `tranche_effectif_salarie`, `date_creation`, `nombre_etablissements_ouverts`,
+        `finances.<année>` et `etat_administratif`.
+      - Dans `complements` : `est_societe_mission`, `est_ess`, `est_siae`, `bilan_ges_renseigne`
+        et `egapro_renseignee`.
+      - **Aucune URL de site web.**
+    - API Egapro : `GET egapro.travail.gouv.fr/api/search?q=<siren>` donne `notes.<année>`, sur 100.
+  - Critères d'acceptation *(précisés le 2026-09-24)* :
+    - [x] Migration 0037 : table `companies` indexée par SIREN, qui ne contient que des données
+          publiques. Les dirigeants ne sont pas copiés, car ce sont des données personnelles.
+    - [x] Chaque établissement de La Bonne Boîte est rattaché à son SIREN, soit les 9 premiers
+          chiffres du SIRET. Sa fiche est lue en arrière-plan, jamais à l'affichage :
+          - relue tous les 30 jours ;
+          - au plus 100 lectures par passage horaire ;
+          - Egapro n'est appelé que si l'index est déclaré ;
+          - une entreprise introuvable est notée comme telle, pour ne pas la redemander à chaque heure.
+    - [x] Chaque carte de « Entreprises qui recrutent » affiche ses badges : société à mission, ESS,
+          entreprise inclusive, bilan GES publié, et index Egapro avec sa note.
+    - [x] Une fiche entreprise `/entreprises/<siret>` réunit l'établissement (La Bonne Boîte),
+          l'entreprise (catégorie, effectif, création, établissements, chiffre d'affaires) et ses
+          engagements, avec le bouton de candidature spontanée.
+          - Seule une entreprise de la liste du candidat s'ouvre.
+          - Chaque source est citée.
+    - [x] Pages employeurs n'est pas ajoutée à la fiche tant que US-116 attend le support.
+  - **Livré le 2026-09-24** ([[workflows/runs/developer-20260924150000]]). Vérifié en réel : 178 SIREN lus, 64 des 100 cartes de Nantes badgées.
+    - Hors périmètre : les offres d'emploi rattachées au SIREN.
 
 ## 🔗 Dépendances
 
@@ -287,3 +317,4 @@ Deux stories fondatrices passent donc **avant** le backlog ci-dessous. Elles son
 - 2026-09-24 — [[workflows/runs/analyze-design-dev-review-20260923233426|analyze-design-dev-review]] (US-118) — passed
 - 2026-09-24 — [[workflows/runs/developer-20260924130000|developer]] (US-116, US-119) — passed ; US-119 close, US-116 ouverte (chemins de Pages employeurs à obtenir)
 - 2026-09-24 — [[workflows/runs/developer-20260924140000|developer]] (US-120) — passed
+- 2026-09-24 — [[workflows/runs/developer-20260924150000|developer]] (US-121) — passed

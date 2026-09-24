@@ -3,6 +3,7 @@ import {
   APPLICATION_SOURCE_SPONTANEOUS,
   type HiringCompaniesView,
   type HiringCompany,
+  type HiringCompanyDetail,
   type SearchProject,
 } from "@cvforge/types";
 import {
@@ -11,6 +12,12 @@ import {
   type OnModuleInit,
 } from "@nestjs/common";
 import type { ApplicationsStore } from "../applications/applications.types";
+import type { CompaniesService } from "../companies/companies.service";
+import {
+  companyBadges,
+  sirenOf,
+  toCompanyProfile,
+} from "../companies/company-record";
 import type { SearchProjectsStore } from "../search-projects/search-projects.types";
 import { placeKey, placeOf, queryKey, type HiringPlace } from "./hiring-places";
 import type {
@@ -64,6 +71,7 @@ export class HiringCompaniesService implements OnModuleInit, OnModuleDestroy {
       ApplicationsStore,
       "createDraft" | "listByUserEmail"
     >,
+    private readonly companies: Pick<CompaniesService, "bySiren">,
     private readonly now: () => number = Date.now,
   ) {}
 
@@ -208,15 +216,43 @@ export class HiringCompaniesService implements OnModuleInit, OnModuleDestroy {
       queries.map((query) => [query.queryKey, query.romeLabel || query.romeCode]),
     );
     const oldest = Math.min(...queries.map((query) => query.refreshedAt.getTime()));
+    const shown = bestBySiret(await this.store.companies(keys), labels).slice(
+      0,
+      MAX_SHOWN,
+    );
+    const records = await this.companies.bySiren(
+      shown.map((company) => sirenOf(company.siret)),
+    );
 
     return {
-      companies: bestBySiret(await this.store.companies(keys), labels).slice(
-        0,
-        MAX_SHOWN,
-      ),
+      companies: shown.map((company) => {
+        const record = records.get(sirenOf(company.siret));
+        return { ...company, badges: record ? companyBadges(record) : [] };
+      }),
       refreshedAt: new Date(oldest).toISOString(),
       status: "ready",
     };
+  }
+
+  /**
+   * One company's page (US-121): only one the search's list shows, with its
+   * company's record once read.
+   */
+  async detail(
+    userEmail: string,
+    profileId: string,
+    siret: string,
+  ): Promise<HiringCompanyDetail | null> {
+    const company = (await this.view(userEmail, profileId)).companies.find(
+      (entry) => entry.siret === siret,
+    );
+    if (!company) return null;
+
+    const record = (await this.companies.bySiren([sirenOf(siret)])).get(
+      sirenOf(siret),
+    );
+
+    return { company, profile: record ? toCompanyProfile(record) : null };
   }
 }
 
@@ -267,6 +303,7 @@ function bestBySiret(
         name: row.name,
         postcode: row.postcode,
         romeCode,
+        badges: [],
         romeLabel: labels.get(row.queryKey) ?? romeCode,
         siret: row.siret,
       };

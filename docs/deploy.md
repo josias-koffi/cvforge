@@ -98,6 +98,12 @@ Boîte expects to hire in each confirmed job, near each place of the searches
 (`hiring_companies`, sixty reads an hour). `hiring-companies:refresh:built`
 fills it right after a deploy.
 
+The company behind each of them is then read monthly from two public, keyless
+APIs, the Annuaire des entreprises (`recherche-entreprises.api.gouv.fr`) and
+Egapro (`companies`, a hundred reads an hour). Nothing to configure; outbound
+HTTPS to both hosts must be allowed. `companies:refresh:built` fills it once
+`hiring-companies:refresh:built` has run.
+
 Optional too: `LA_BONNE_ALTERNANCE_API_KEY`, a key created on
 <https://api.apprentissage.beta.gouv.fr>. It adds apprenticeship offers, and is
 only called for searches that ask for an alternance. A *sandbox* key is granted

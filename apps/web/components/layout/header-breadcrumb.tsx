@@ -53,6 +53,7 @@ const segmentLabels: Record<string, string> = {
  */
 const parentFallbacks: Record<string, string> = {
   candidatures: "Détail de la candidature",
+  entreprises: "Fiche entreprise",
   entretiens: "Détail de l'entretien",
   users: "Détail du compte",
 }

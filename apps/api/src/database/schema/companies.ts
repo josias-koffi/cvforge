@@ -1,0 +1,40 @@
+import {
+  bigint,
+  boolean,
+  integer,
+  pgTable,
+  text,
+  timestamp,
+} from "drizzle-orm/pg-core";
+
+/**
+ * The company behind each hiring establishment (US-121), from the Annuaire
+ * des entreprises and Egapro, read monthly in the background. Public data
+ * only: the officers the Annuaire lists are people, and are not copied.
+ */
+export const companies = pgTable("companies", {
+  siren: text("siren").primaryKey(),
+  /** False when the Annuaire does not know the SIREN: not asked again for a month. */
+  found: boolean("found").notNull().default(true),
+  legalName: text("legal_name").notNull().default(""),
+  nafCode: text("naf_code").notNull().default(""),
+  /** PME, ETI or GE; "" when INSEE has not classed it. */
+  category: text("category").notNull().default(""),
+  /** INSEE's headcount band code, e.g. "22" for 100 to 199. */
+  headcountBand: text("headcount_band").notNull().default(""),
+  createdOn: text("created_on"),
+  openEstablishments: integer("open_establishments"),
+  financesYear: text("finances_year"),
+  revenue: bigint("revenue", { mode: "number" }),
+  netIncome: bigint("net_income", { mode: "number" }),
+  closed: boolean("closed").notNull().default(false),
+  mission: boolean("mission").notNull().default(false),
+  ess: boolean("ess").notNull().default(false),
+  inclusive: boolean("inclusive").notNull().default(false),
+  gesReport: boolean("ges_report").notNull().default(false),
+  egaproScore: integer("egapro_score"),
+  egaproYear: text("egapro_year"),
+  refreshedAt: timestamp("refreshed_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});

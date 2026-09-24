@@ -1390,3 +1390,9 @@
 - **Leçon** : un nouveau type de candidature passe par une nouvelle valeur de `sourceType` et par le magasin, sans toucher `applications.service.ts`. La génération le reconnaît dans `offerContextOf`.
 - **Leçon** : après l'ajout d'une constante dans `@cvforge/types`, reconstruire le paquet avant les tests de l'API : sinon la constante vaut `undefined` à l'exécution, et les tests échouent sans erreur de type.
 - **Leçon** : quand une autre session travaille en parallèle dans le dépôt, n'ajouter au commit que ses propres fichiers, un par un (`git add <fichiers>`), jamais `git add -A`.
+
+### 2026-09-24 — US-121 fiche entreprise et badges RSE (sprint-026)
+- **Context** : table `companies` indexée par SIREN, lue chaque mois depuis l'Annuaire des entreprises et Egapro. Les cartes affichent des badges, et la page `/entreprises/[siret]` donne la fiche.
+- **Leçon** : l'API Recherche d'entreprises ne donne pas l'index Egapro, seulement `egapro_renseignee`. La note vient de `egapro.travail.gouv.fr/api/search?q=<siren>` (`notes.<année>`, parfois null) : n'appeler Egapro que si l'index est déclaré.
+- **Leçon** : pour tirer une file de travail d'une autre table, une requête `selectDistinct` avec `left join`, `refreshed_at < cutoff` et `limit` suffit. Pas besoin de liste intermédiaire.
+- **Leçon** : en dev, `notFound()` dans une page Next répond 200 en streaming. Vérifier `NEXT_HTTP_ERROR_FALLBACK;404` dans le HTML, pas le code HTTP.

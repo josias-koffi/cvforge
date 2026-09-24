@@ -1,4 +1,7 @@
-import type { HiringCompaniesView } from "@cvforge/types"
+import type {
+  HiringCompaniesView,
+  HiringCompanyDetail,
+} from "@cvforge/types"
 
 import { api } from "@/lib/api"
 
@@ -21,5 +24,22 @@ export async function loadHiringCompanies(
     )
   } catch {
     return NO_SEARCH
+  }
+}
+
+/**
+ * One company of the search's list, with its record (US-121). Null when the
+ * list no longer shows it, or the API cannot say.
+ */
+export async function loadHiringCompany(
+  profileId: string,
+  siret: string
+): Promise<HiringCompanyDetail | null> {
+  try {
+    return await api<HiringCompanyDetail>(
+      `/profiles/${encodeURIComponent(profileId)}/hiring-companies/${encodeURIComponent(siret)}`
+    )
+  } catch {
+    return null
   }
 }

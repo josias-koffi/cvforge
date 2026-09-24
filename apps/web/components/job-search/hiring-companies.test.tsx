@@ -12,6 +12,7 @@ const { HiringCompanies } = await import(
 )
 
 const EVERIENCE: HiringCompany = {
+  badges: [],
   city: "Nantes",
   headcountMax: 199,
   headcountMin: 100,
@@ -71,6 +72,22 @@ describe("HiringCompanies", () => {
     expect(html).toContain("Candidature spontanée chez EVERIENCE")
     expect(html).toContain("gratuite à créer")
     expect(html).toContain("crédits habituels")
+  })
+
+  it("links each company to its page, and shows its commitments (US-121)", () => {
+    const html = render({
+      companies: [
+        {
+          ...EVERIENCE,
+          badges: [{ key: "egapro", label: "Index égalité F/H : 94/100 (2025)" }],
+        },
+      ],
+      refreshedAt: "2026-09-24T10:00:00.000Z",
+      status: "ready",
+    })
+
+    expect(html).toContain('href="/entreprises/38198356800092?profileId=p1"')
+    expect(html).toContain("Index égalité F/H : 94/100 (2025)")
   })
 
   it("credits La Bonne Boîte with the reading date, and says it is free", () => {
