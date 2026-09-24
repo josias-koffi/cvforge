@@ -213,7 +213,8 @@ export const fr: LandingDictionary = {
       {
         id: "interview-report",
         label: "Rapport d'entretien",
-        caption: "Une note sur dix, cinq dimensions, et ce qu'il faut travailler.",
+        caption:
+          "Une note sur dix, cinq dimensions, et ce qu'il faut travailler.",
         alt: "Rapport d'entretien avec note globale, radar des dimensions et conseils",
       },
     ],
@@ -284,6 +285,7 @@ export const fr: LandingDictionary = {
         question: "Qu'est-ce qu'un CV « prêt pour l'ATS » ?",
         answer:
           "Les ATS sont les logiciels de tri de candidatures utilisés par les recruteurs. CVSpark produit des documents à la structure simple et lisible, avec les mots-clés de l'offre, pour qu'ils soient correctement analysés.",
+        atsCheckLink: "Tester gratuitement mon CV actuel",
       },
       {
         question: "L'IA écrit-elle à ma place ?",
@@ -335,6 +337,8 @@ export const fr: LandingDictionary = {
   },
   legal: {
     updated: "Dernière mise à jour le",
+    metaDescription:
+      "{title} de CVSpark, le service qui adapte votre CV et votre lettre de motivation à chaque offre d'emploi.",
     links: {
       terms: "Conditions d'utilisation",
       "sales-terms": "Conditions de vente",
@@ -359,7 +363,8 @@ export const fr: LandingDictionary = {
       change: "Changer de fichier",
       analyse: "Analyser mon CV",
       analysing: "Analyse en cours…",
-      tooLarge: "Ce fichier dépasse 5 Mo. Essayez un PDF exporté plutôt que scanné.",
+      tooLarge:
+        "Ce fichier dépasse 5 Mo. Essayez un PDF exporté plutôt que scanné.",
       wrongType: "Format non reconnu. Déposez un PDF ou un DOCX.",
     },
     offer: {
@@ -389,8 +394,7 @@ export const fr: LandingDictionary = {
     },
     unlock: {
       title: "Recevoir le rapport complet",
-      body:
-        "Indiquez votre adresse : le rapport détaillé s'affiche immédiatement, et vous recevez un lien pour le retrouver dans CVSpark.",
+      body: "Indiquez votre adresse : le rapport détaillé s'affiche immédiatement, et vous recevez un lien pour le retrouver dans CVSpark.",
       emailLabel: "Votre adresse email",
       emailPlaceholder: "vous@exemple.com",
       consent:
@@ -402,8 +406,10 @@ export const fr: LandingDictionary = {
         "Un lien de connexion vient de partir vers votre boîte mail : il vous ramènera directement à ce rapport.",
     },
     findings: {
-      NO_TEXT_LAYER: "Le fichier ne contient aucun texte lisible par une machine",
-      MULTI_COLUMN_LAYOUT: "La mise en page sur plusieurs colonnes brouille l'ordre de lecture",
+      NO_TEXT_LAYER:
+        "Le fichier ne contient aucun texte lisible par une machine",
+      MULTI_COLUMN_LAYOUT:
+        "La mise en page sur plusieurs colonnes brouille l'ordre de lecture",
       TOO_MANY_PAGES: "Le CV dépasse deux pages",
       GARBLED_CHARACTERS: "Des caractères ressortent illisibles à l'extraction",
       MISSING_EXPERIENCE_SECTION: "Aucune section « Expérience » identifiée",
@@ -415,7 +421,8 @@ export const fr: LandingDictionary = {
       MISSING_LINKEDIN: "Aucun profil LinkedIn détecté",
       MISSING_CITY: "Aucune ville détectée",
       UNPARSABLE_DATES: "Les dates ne sont pas dans un format exploitable",
-      INCONSISTENT_DATE_FORMATS: "Les formats de date varient d'une expérience à l'autre",
+      INCONSISTENT_DATE_FORMATS:
+        "Les formats de date varient d'une expérience à l'autre",
       FEW_BULLETS: "Les expériences ne sont pas détaillées en puces",
       TOO_SHORT: "Le CV manque de matière : peu de contenu à indexer",
       TOO_LONG: "Le CV est trop long",
@@ -424,7 +431,8 @@ export const fr: LandingDictionary = {
       KEYWORD_STUFFING: "Un même mot-clé est répété à l'excès",
       MISSING_ACTION_VERBS: "Les puces ne commencent pas par un verbe d'action",
       MISSING_QUANTIFICATION: "Les résultats ne sont pas chiffrés",
-      UNSUPPORTED_SKILLS: "Des compétences annoncées ne sont étayées par aucune expérience",
+      UNSUPPORTED_SKILLS:
+        "Des compétences annoncées ne sont étayées par aucune expérience",
     },
     dimensions: {
       machineReadability: "Lisibilité machine",
@@ -440,7 +448,8 @@ export const fr: LandingDictionary = {
         "Vous avez lancé plusieurs analyses coup sur coup. Patientez quelques minutes.",
       unavailable:
         "L'analyse gratuite est momentanément indisponible. Revenez demain, ou créez un compte pour analyser vos CV sans attendre.",
-      expired: "Cette analyse a expiré. Relancez-en une pour obtenir un rapport à jour.",
+      expired:
+        "Cette analyse a expiré. Relancez-en une pour obtenir un rapport à jour.",
       network: "Connexion impossible. Vérifiez votre réseau et réessayez.",
     },
     cta: "Créer mon CV optimisé",

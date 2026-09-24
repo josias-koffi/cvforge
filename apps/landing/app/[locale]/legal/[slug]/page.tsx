@@ -4,13 +4,17 @@ import { notFound } from "next/navigation"
 
 import { LegalPage } from "@/components/legal-page"
 import { getDictionary } from "@/lib/dictionaries"
-import { hasLocale, locales, type Locale } from "@/lib/i18n"
+import { format, hasLocale, locales, type Locale } from "@/lib/i18n"
 import { legalPath, legalSlugFromPath, legalSlugs } from "@/lib/legal"
 import { fetchLegalDocument } from "@/lib/legal-api"
+import { pageMetadata } from "@/lib/seo"
 
 export function generateStaticParams() {
   return locales.flatMap((locale) =>
-    legalDocumentSlugs.map((slug) => ({ locale, slug: legalSlugs[slug][locale] }))
+    legalDocumentSlugs.map((slug) => ({
+      locale,
+      slug: legalSlugs[slug][locale],
+    }))
   )
 }
 
@@ -47,18 +51,23 @@ export async function generateMetadata({
     return {}
   }
 
+  const title = document.title[resolved.locale]
+  const { legal } = getDictionary(resolved.locale)
+
   return {
-    title: document.title[resolved.locale],
-    alternates: {
-      canonical: legalPath(resolved.locale, resolved.slug),
-      languages: Object.fromEntries(
-        locales.map((other) => [other, legalPath(other, resolved.slug)])
-      ),
-    },
+    title,
+    ...pageMetadata({
+      locale: resolved.locale,
+      title,
+      description: format(legal.metaDescription, { title }),
+      path: (locale) => legalPath(locale, resolved.slug),
+    }),
   }
 }
 
-export default async function Page({ params }: PageProps<"/[locale]/legal/[slug]">) {
+export default async function Page({
+  params,
+}: PageProps<"/[locale]/legal/[slug]">) {
   const { locale, slug: segment } = await params
   const resolved = resolve(locale, segment)
 

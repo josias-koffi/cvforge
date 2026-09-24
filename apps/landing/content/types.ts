@@ -118,7 +118,14 @@ export interface LandingDictionary {
   testimonials: SectionHeading & {
     items: { quote: string; name: string; role: string }[]
   }
-  faq: SectionHeading & { items: { question: string; answer: string }[] }
+  faq: SectionHeading & {
+    items: {
+      question: string
+      answer: string
+      /** Label of a link to the free ATS check, shown under the answer. */
+      atsCheckLink?: string
+    }[]
+  }
   cta: { title: string; body: string; button: string }
   footer: {
     tagline: string
@@ -131,6 +138,8 @@ export interface LandingDictionary {
   legal: {
     /** Prefix of the publication date, e.g. "Dernière mise à jour le". */
     updated: string
+    /** Search snippet of a legal page; `{title}` is the document title. */
+    metaDescription: string
     links: Record<LegalDocumentSlug, string>
   }
   /**

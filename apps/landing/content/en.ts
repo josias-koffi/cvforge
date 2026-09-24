@@ -283,6 +283,7 @@ export const en: LandingDictionary = {
         question: 'What is an "ATS-ready" resume?',
         answer:
           "An ATS is the screening software recruiters use to sort applications. CVSpark produces documents with a simple, readable structure and the offer's keywords, so they are parsed correctly.",
+        atsCheckLink: "Test my current CV for free",
       },
       {
         question: "Does the AI write for me?",
@@ -333,6 +334,8 @@ export const en: LandingDictionary = {
   },
   legal: {
     updated: "Last updated on",
+    metaDescription:
+      "{title} of CVSpark, the service that tailors your resume and cover letter to every job offer.",
     links: {
       terms: "Terms of use",
       "sales-terms": "Terms of sale",
@@ -357,7 +360,8 @@ export const en: LandingDictionary = {
       change: "Change file",
       analyse: "Analyse my CV",
       analysing: "Analysing…",
-      tooLarge: "This file is over 5 MB. Try a PDF exported from your editor rather than a scan.",
+      tooLarge:
+        "This file is over 5 MB. Try a PDF exported from your editor rather than a scan.",
       wrongType: "Unrecognised format. Please drop a PDF or a DOCX.",
     },
     offer: {
@@ -387,11 +391,11 @@ export const en: LandingDictionary = {
     },
     unlock: {
       title: "Get the full report",
-      body:
-        "Enter your address: the detailed report appears straight away, and you get a link to find it again in CVSpark.",
+      body: "Enter your address: the detailed report appears straight away, and you get a link to find it again in CVSpark.",
       emailLabel: "Your email address",
       emailPlaceholder: "you@example.com",
-      consent: "I agree that CVSpark creates my account and sends me a sign-in link.",
+      consent:
+        "I agree that CVSpark creates my account and sends me a sign-in link.",
       submit: "Show the full report",
       submitting: "Sending…",
       success: "Report unlocked",
@@ -433,10 +437,12 @@ export const en: LandingDictionary = {
     },
     errors: {
       generic: "The analysis did not complete. Try again in a moment.",
-      tooManyRequests: "You have run several analyses in a row. Give it a few minutes.",
+      tooManyRequests:
+        "You have run several analyses in a row. Give it a few minutes.",
       unavailable:
         "The free check is temporarily unavailable. Come back tomorrow, or create an account to analyse your CVs right away.",
-      expired: "This analysis has expired. Run a new one for an up-to-date report.",
+      expired:
+        "This analysis has expired. Run a new one for an up-to-date report.",
       network: "Could not connect. Check your network and try again.",
     },
     cta: "Build my optimised CV",

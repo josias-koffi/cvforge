@@ -4,6 +4,7 @@ import { notFound } from "next/navigation"
 import { StoryPage } from "@/components/story-page"
 import { getDictionary } from "@/lib/dictionaries"
 import { hasLocale, storyPath } from "@/lib/i18n"
+import { pageMetadata } from "@/lib/seo"
 
 export async function generateMetadata({
   params,
@@ -16,11 +17,12 @@ export async function generateMetadata({
 
   return {
     title: story.metaTitle,
-    description: story.metaDescription,
-    alternates: {
-      canonical: storyPath(locale),
-      languages: { fr: storyPath("fr"), en: storyPath("en") },
-    },
+    ...pageMetadata({
+      locale,
+      title: story.metaTitle,
+      description: story.metaDescription,
+      path: storyPath,
+    }),
   }
 }
 

@@ -16,7 +16,10 @@ const offers: PublicCreditOffer[] = [
     credits: 90,
     currency: "eur",
     description: { en: "Get going", fr: "Pour démarrer" },
-    features: { en: ["One-time payment, no subscription"], fr: ["Paiement unique, sans abonnement"] },
+    features: {
+      en: ["One-time payment, no subscription"],
+      fr: ["Paiement unique, sans abonnement"],
+    },
     id: "o-essentiel",
     isFeatured: false,
     name: { en: "Essential", fr: "Essentiel" },
@@ -58,7 +61,11 @@ describe("HomePage", () => {
       locale === "fr" ? "20 candidatures" : "20 applications"
     )
     expect(html).toContain(dict.pricing.popular)
-    expect(html).toContain(locale === "fr" ? "Paiement unique, sans abonnement" : "One-time payment, no subscription")
+    expect(html).toContain(
+      locale === "fr"
+        ? "Paiement unique, sans abonnement"
+        : "One-time payment, no subscription"
+    )
     expect(html).toContain(escapeHtml(dict.faq.items[0].question))
     expect(html).toContain('href="/login"')
   })
@@ -118,6 +125,23 @@ describe("HomePage", () => {
     expect(html).toContain(`alt="${en.showcase.tabs[0].alt}"`)
     expect(html).toContain("%2Fscreenshots%2Fdark%2Fcv-editor.webp")
   })
+
+  it.each([
+    ["fr", fr, "/fr/analyse-ats"],
+    ["en", en, "/en/ats-check"],
+  ] as const)(
+    "serves every FAQ answer and the ATS check link in the %s HTML",
+    (locale, dict, atsHref) => {
+      const html = renderToStaticMarkup(
+        <HomePage locale={locale} offers={offers} withTestimonials={false} />
+      )
+
+      for (const { answer } of dict.faq.items) {
+        expect(html).toContain(escapeHtml(answer))
+      }
+      expect(html).toContain(`href="${atsHref}"`)
+    }
+  )
 })
 
 describe("SiteHeader", () => {

@@ -36,7 +36,7 @@ export function HomePage({
         <Testimonials testimonials={dict.testimonials} />
       ) : null}
       <Pricing locale={locale} offers={offers} pricing={dict.pricing} />
-      <Faq faq={dict.faq} />
+      <Faq faq={dict.faq} locale={locale} />
       <Cta cta={dict.cta} />
     </>
   )

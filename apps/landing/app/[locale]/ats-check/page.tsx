@@ -7,6 +7,7 @@ import { atsPath } from "@/lib/ats"
 import { getDictionary } from "@/lib/dictionaries"
 import { hasLocale } from "@/lib/i18n"
 import { LOGIN_PATH } from "@/lib/links"
+import { pageMetadata } from "@/lib/seo"
 
 export async function generateMetadata({
   params,
@@ -19,16 +20,19 @@ export async function generateMetadata({
 
   return {
     title: ats.metaTitle,
-    description: ats.metaDescription,
-    alternates: {
-      canonical: atsPath(locale),
-      languages: { fr: atsPath("fr"), en: atsPath("en") },
-    },
+    ...pageMetadata({
+      locale,
+      title: ats.metaTitle,
+      description: ats.metaDescription,
+      path: atsPath,
+    }),
   }
 }
 
 /** Served at /en/ats-check and, through a rewrite in next.config, at /fr/analyse-ats. */
-export default async function Page({ params }: PageProps<"/[locale]/ats-check">) {
+export default async function Page({
+  params,
+}: PageProps<"/[locale]/ats-check">) {
   const { locale } = await params
   if (!hasLocale(locale)) {
     notFound()
