@@ -69,6 +69,22 @@ describe("toNormalizedListing", () => {
     expect(listing?.companyName).toBe("");
   });
 
+  it("keeps the employer's logo, never an anonymous one's (ADR-025)", () => {
+    const logo =
+      "https://api.francetravail.fr/exp-rechercheoffre/v1/logo-entreprise/MV3d7KZ8";
+
+    expect(
+      toNormalizedListing({ ...OFFER, entreprise: { logo, nom: "LIDL" } })?.companyLogoUrl,
+    ).toBe(logo);
+    expect(toNormalizedListing(OFFER)?.companyLogoUrl).toBe("");
+    expect(
+      toNormalizedListing({
+        ...OFFER,
+        entreprise: { logo, nom: "Entreprise confidentielle" },
+      })?.companyLogoUrl,
+    ).toBe("");
+  });
+
   it("reads no remote when nothing mentions it", () => {
     const listing = toNormalizedListing({
       ...OFFER,

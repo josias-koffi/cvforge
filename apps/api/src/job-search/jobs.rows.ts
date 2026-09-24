@@ -18,6 +18,7 @@ export function toJob(row: JobRow): StoredJob {
     closedAt: row.closedAt?.toISOString() ?? null,
     companyAnonymous: row.companyAnonymous,
     companyKey: row.companyKey,
+    companyLogoUrl: row.companyLogoUrl,
     companyName: row.companyName,
     contractType: row.contractType as SearchContractType | "unknown",
     department: row.department,
@@ -70,6 +71,7 @@ export function listingUrlKeys(listing: NormalizedJobListing): string[] {
 /** What a new job is made of: an advert, or a stored advert being detached. */
 interface JobSeed {
   companyAnonymous: boolean;
+  companyLogoUrl?: string;
   companyName: string;
   contractType: string;
   department: string;
@@ -95,6 +97,7 @@ export function newJobValues(
   return {
     companyAnonymous: seed.companyAnonymous,
     companyKey: companyKey(seed.companyName),
+    companyLogoUrl: seed.companyLogoUrl ?? "",
     companyName: seed.companyName,
     contractType: seed.contractType,
     department: seed.department,

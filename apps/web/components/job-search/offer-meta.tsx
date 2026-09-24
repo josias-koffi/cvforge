@@ -20,7 +20,7 @@ export function OfferMeta({
   compact?: boolean
 }) {
   return (
-    <ul className="flex flex-wrap gap-x-4 gap-y-1.5 text-sm text-muted-foreground">
+    <MetaList>
       <MetaItem icon={MapPinIcon} label="Lieu" wide={compact}>
         <span className={compact ? "truncate" : undefined}>
           {job.locationLabel || "Lieu non précisé"}
@@ -39,11 +39,20 @@ export function OfferMeta({
           {job.salaryLabel}
         </MetaItem>
       ) : null}
+    </MetaList>
+  )
+}
+
+/** Facts with an icon each, as the offer and company cards show them. */
+export function MetaList({ children }: { children: React.ReactNode }) {
+  return (
+    <ul className="flex flex-wrap gap-x-4 gap-y-1.5 text-sm text-muted-foreground">
+      {children}
     </ul>
   )
 }
 
-function MetaItem({
+export function MetaItem({
   icon: Icon,
   label,
   wide = false,

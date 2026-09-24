@@ -227,7 +227,11 @@ export class HiringCompaniesService implements OnModuleInit, OnModuleDestroy {
     return {
       companies: shown.map((company) => {
         const record = records.get(sirenOf(company.siret));
-        return { ...company, badges: record ? companyBadges(record) : [] };
+        return {
+          ...company,
+          badges: record ? companyBadges(record) : [],
+          logoUrl: record?.logoUrl ?? null,
+        };
       }),
       refreshedAt: new Date(oldest).toISOString(),
       status: "ready",
@@ -304,6 +308,7 @@ function bestBySiret(
         postcode: row.postcode,
         romeCode,
         badges: [],
+        logoUrl: null,
         romeLabel: labels.get(row.queryKey) ?? romeCode,
         siret: row.siret,
       };

@@ -28,13 +28,14 @@ export interface CompaniesStore {
   ): Promise<DueCompany[]>;
   /**
    * `null` records an unknown SIREN, so it is not asked again at once. An
-   * `undefined` page leaves the known one as it was.
+   * `undefined` page or logo leaves the known one as it was.
    */
   save(
     siren: string,
     record: CompanyRecord | null,
     at: Date,
     page?: EmployerPage | null,
+    logo?: string | null,
   ): Promise<void>;
   findMany(sirens: readonly string[]): Promise<StoredCompany[]>;
 }
@@ -44,7 +45,12 @@ export class PgCompaniesStore implements CompaniesStore {
 
   async due(before: Date, limit: number, options: { employerPages?: boolean } = {}) {
     const siren = sql<string>`left(${hiringCompanies.siret}, 9)`;
-    const stale: SQL[] = [isNull(companies.siren), lt(companies.refreshedAt, before)];
+    const stale: SQL[] = [
+      isNull(companies.siren),
+      lt(companies.refreshedAt, before),
+      // Companies read before logos existed get theirs without a month's wait.
+      isNull(companies.logoReadAt),
+    ];
     if (options.employerPages) stale.push(isNull(companies.employerPageReadAt));
 
     return this.db
@@ -66,7 +72,10 @@ export class PgCompaniesStore implements CompaniesStore {
     record: CompanyRecord | null,
     at: Date,
     page?: EmployerPage | null,
+    logo?: string | null,
   ) {
+    const logoValues =
+      logo === undefined ? {} : { logoReadAt: at, logoUrl: logo };
     const pageValues =
       page === undefined
         ? {}
@@ -77,8 +86,16 @@ export class PgCompaniesStore implements CompaniesStore {
             employerPageReadAt: at,
           };
     const values = record
-      ? { ...withoutDeclared(record), ...pageValues, found: true, refreshedAt: at, siren }
-      : { found: false, refreshedAt: at, siren };
+      ? {
+          ...withoutDeclared(record),
+          ...pageValues,
+          ...logoValues,
+          found: true,
+          refreshedAt: at,
+          siren,
+        }
+      : // Unknown or not, Wikidata was asked: not due again for its logo.
+        { ...logoValues, found: false, refreshedAt: at, siren };
 
     await this.db
       .insert(companies)
@@ -121,6 +138,8 @@ const EMPTY = {
   headcountBand: "",
   inclusive: false,
   legalName: "",
+  logoReadAt: null,
+  logoUrl: null,
   mission: false,
   nafCode: "",
   netIncome: null,

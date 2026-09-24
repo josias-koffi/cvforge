@@ -268,6 +268,8 @@ describe("HiringCompaniesService.applySpontaneously (US-120)", () => {
 });
 
 describe("HiringCompaniesService company pages (US-121)", () => {
+  const LOGO =
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/Everience.png/120px-Everience.png";
   const EVERIENCE: StoredCompany = {
     category: "GE",
     closed: false,
@@ -285,6 +287,8 @@ describe("HiringCompaniesService company pages (US-121)", () => {
     headcountBand: "51",
     inclusive: false,
     legalName: "EVERIENCE",
+    logoReadAt: new Date(NOW),
+    logoUrl: LOGO,
     mission: false,
     nafCode: "62.03Z",
     netIncome: 20_941_726,
@@ -316,6 +320,8 @@ describe("HiringCompaniesService company pages (US-121)", () => {
       ["egapro", "ges"],
       [],
     ]);
+    // The logo too, from the same record (ADR-025).
+    expect(view.companies.map((entry) => entry.logoUrl)).toEqual([LOGO, null]);
   });
 
   it("opens a listed company with its record, and no other", async () => {

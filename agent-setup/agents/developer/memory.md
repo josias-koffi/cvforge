@@ -1438,3 +1438,16 @@
 ### 2026-09-24 — Refonte UX des cartes d'offres et du panneau (/offres, /offres-du-jour)
 - **Did** : cartes repensées (initiale de l'entreprise, méta avec icônes, actions « Garder » et « Pas pour moi » écrites en toutes lettres, plus aucune ✕). Score affiché en mots + % + jauge (`lib/match-score.ts`, `match-score.tsx`), avec le détail par critère dans le panneau (« Pourquoi cette offre ? »). Panneau à `max(45vw, 36rem)`. `SCORE_WEIGHTS` / `ScoreBreakdown` déplacés dans `@cvforge/types`. `scoreBreakdown` exposé par `/job-search/offers`.
 - **Learned** : pour élargir un `Sheet`, il faut les mêmes modificateurs `data-[side=right]:` que la classe de base. Sans eux, `sm:max-w-sm` l'emporte en silence. Un match avec `score: 0` est une offre choisie à la main : ne jamais afficher « 0 % ».
+
+### 2026-09-24 — Cartes « Entreprises qui recrutent » alignées sur les offres
+- **Did** : `CompanyCard` repensée sur le modèle de `OfferCard` (initiale, secteur, méta avec icônes, badge « Fort potentiel » en succès, pied avec « Voir la fiche » et « Candidature spontanée », carte entière cliquable). `CompanyMark` extrait (`company-mark.tsx`) et `MetaList` / `MetaItem` exportés de `offer-meta.tsx` pour les deux listes.
+- **Learned** : pour voir /entreprises en local, lancer `pnpm --filter @cvforge/api hiring-companies:refresh`, sinon la liste reste « Première lecture en cours ».
+
+### 2026-09-24 — Fiche entreprise repensée (/entreprises/[siret])
+- **Did** : en-tête avec l'initiale, tuiles de chiffres clés (`company-key-figures.tsx`), engagements en tuiles avec icônes (`company-commitments.tsx`), colonne « Elle recrute » avec la candidature spontanée et son coût, page employeur, fiche d'identité avec les sources. `CompanyProfileView` reçoit le bouton par un prop `action`.
+- **Learned** : pour voir une fiche complète en local, OPEN (38103128500574) a finances, page employeur, Egapro et bilan carbone ; YZEE (40799716200042) montre le cas « fiche pas encore lue ». La règle `react-hooks/purity` refuse `Date.now()` pendant le rendu, même en paramètre par défaut.
+
+### 2026-09-24 — Logos des entreprises, premier client Redis (ADR-025)
+- **Did** : `entreprise.logo` d'Offres v2 gardé sur l'offre (`jobs.company_logo_url`, recopié depuis `job_listings.raw` par la migration 0042). Wikidata (P1616 → P154) lu par la passe des entreprises (`companies.logo_url`, `logo_read_at`). Proxy `GET /company-logos?src=` avec liste de préfixes autorisés, images matricielles de 512 Ko au plus, cache Redis 30 j (1 j pour un logo absent). Route web `/api/company-logos` ; `CompanyMark` affiche le logo, avec l'initiale en repli.
+- **Learned** : le SPARQL de Wikidata (`query.wikidata.org`) a cessé de répondre pendant plusieurs minutes ; l'API du wiki (`haswbstatement` puis `wbgetentities`) répond en une seconde. Une recherche fait 300 caractères au plus, soit 15 SIREN. Les miniatures Commons n'existent qu'en largeurs standard : 120 px passe, 128 px donne 400. Sans `disconnect()` à l'arrêt, ioredis empêche un script CLI de se terminer quand Redis est injoignable. Un SIREN inconnu doit aussi enregistrer `logo_read_at`, sinon il revient chaque heure.
+- **Open** : partager le logo entre les offres d'une même entreprise (`companyKey`), pour les sources qui n'en donnent pas.

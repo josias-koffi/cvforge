@@ -2,35 +2,23 @@
 
 import { BookmarkIcon, ThumbsDownIcon } from "lucide-react"
 
+import { CompanyMark } from "@/components/job-search/company-mark"
 import { MatchScoreSummary } from "@/components/job-search/match-score"
 import { OfferMeta } from "@/components/job-search/offer-meta"
 import { OfferSkills } from "@/components/job-search/offer-skills"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { formatRelativeDays } from "@/lib/format"
 import type { JobCardOffer } from "@/lib/job-search"
 
-export function companyLabel(offer: JobCardOffer) {
-  return offer.job.companyAnonymous
-    ? "Entreprise non communiquée"
-    : offer.job.companyName
+/** The company's name, or `null` when the advert does not give it. */
+export function companyName(offer: JobCardOffer) {
+  return offer.job.companyAnonymous ? null : offer.job.companyName
 }
 
-/** The company's initial, so a column of cards is not a column of text. */
-export function CompanyMark({ offer }: { offer: JobCardOffer }) {
-  const initial = offer.job.companyAnonymous
-    ? "?"
-    : offer.job.companyName.trim().charAt(0).toUpperCase() || "?"
-
-  return (
-    <Avatar size="lg" className="rounded-lg after:rounded-lg">
-      <AvatarFallback className="rounded-lg bg-primary/10 font-medium text-primary">
-        {initial}
-      </AvatarFallback>
-    </Avatar>
-  )
+export function companyLabel(offer: JobCardOffer) {
+  return companyName(offer) ?? "Entreprise non communiquée"
 }
 
 /**
@@ -68,7 +56,10 @@ export function OfferCard({
     >
       <CardContent className="flex h-full flex-col gap-4">
         <div className="flex items-center gap-3">
-          <CompanyMark offer={offer} />
+          <CompanyMark
+            name={companyName(offer)}
+            logoUrl={offer.job.companyLogoUrl}
+          />
           <div className="flex min-w-0 flex-1 flex-col">
             <p className="truncate text-sm font-medium">
               {companyLabel(offer)}

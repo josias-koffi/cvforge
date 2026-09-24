@@ -12,6 +12,7 @@ const DETAIL: HiringCompanyDetail = {
     headcountMin: 100,
     highPotential: true,
     hiringPotential: 25.7,
+    logoUrl: null,
     nafLabel: "Conseil en systèmes et logiciels informatiques",
     name: "EVERIENCE",
     postcode: "44000",

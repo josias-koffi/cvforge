@@ -15,7 +15,8 @@ import {
   setMatchStatus,
 } from "@/app/(app)/offres-du-jour/actions"
 import { AiReason, MatchScoreDetail } from "@/components/job-search/match-score"
-import { CompanyMark, companyLabel } from "@/components/job-search/offer-card"
+import { CompanyMark } from "@/components/job-search/company-mark"
+import { companyLabel, companyName } from "@/components/job-search/offer-card"
 import { OfferMeta } from "@/components/job-search/offer-meta"
 import { OfferSkills } from "@/components/job-search/offer-skills"
 import { Button } from "@/components/ui/button"
@@ -122,7 +123,10 @@ function OfferDetail({
     <>
       <SheetHeader className="gap-4 border-b p-6">
         <div className="flex items-center gap-3 pr-8">
-          <CompanyMark offer={offer} />
+          <CompanyMark
+            name={companyName(offer)}
+            logoUrl={offer.job.companyLogoUrl}
+          />
           <SheetDescription className="text-sm font-medium text-foreground">
             {companyLabel(offer)}
           </SheetDescription>

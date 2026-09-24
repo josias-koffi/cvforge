@@ -41,6 +41,10 @@ export const companies = pgTable("companies", {
   employerPageEdited: boolean("employer_page_edited").notNull().default(false),
   /** Null until Pages employeurs was asked: then read with the next pass. */
   employerPageReadAt: timestamp("employer_page_read_at", { withTimezone: true }),
+  /** Its logo on Wikimedia Commons, from Wikidata (ADR-025), or null. */
+  logoUrl: text("logo_url"),
+  /** Null until Wikidata was asked: then read with the next pass. */
+  logoReadAt: timestamp("logo_read_at", { withTimezone: true }),
   refreshedAt: timestamp("refreshed_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

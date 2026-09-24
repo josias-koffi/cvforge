@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import Link from "next/link"
+import { ArrowLeftIcon } from "lucide-react"
 import { notFound } from "next/navigation"
 
 import { CompanyProfileView } from "@/components/job-search/company-profile"
@@ -36,26 +37,33 @@ export default async function HiringCompanyPage(
 
   return (
     <>
+      {/* The name is in the hero, with its mark: the header only says where
+          the candidate is, and how to go back. */}
       <PageHeader
-        title={company.name}
-        description={[company.nafLabel, company.city].filter(Boolean).join(" · ")}
+        title="Fiche entreprise"
+        description="Ce que l'on sait d'elle, et pourquoi elle est dans votre liste."
         actions={
           <Button asChild variant="outline">
             <Link href={`/entreprises?profileId=${selected.id}`}>
+              <ArrowLeftIcon />
               Toutes les entreprises
             </Link>
           </Button>
         }
       />
-      <div className="flex flex-col gap-4 px-4 lg:px-6">
-        <CompanyProfileView detail={detail} />
-        <div className="max-w-sm">
-          <SpontaneousApplyButton
-            profileId={selected.id}
-            siret={company.siret}
-            companyName={company.name}
-          />
-        </div>
+      <div className="flex flex-col gap-4 px-4 pb-6 lg:px-6">
+        <CompanyProfileView
+          detail={detail}
+          action={
+            <SpontaneousApplyButton
+              className="w-full"
+              variant="default"
+              profileId={selected.id}
+              siret={company.siret}
+              companyName={company.name}
+            />
+          }
+        />
       </div>
     </>
   )

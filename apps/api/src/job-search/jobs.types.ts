@@ -14,6 +14,8 @@ export interface StoredJob {
   companyName: string;
   companyKey: string;
   companyAnonymous: boolean;
+  /** The employer's logo at its source, "" when none is known (ADR-025). */
+  companyLogoUrl: string;
   department: string;
   locationLabel: string;
   latitude: number | null;

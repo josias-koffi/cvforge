@@ -21,6 +21,7 @@ function makeJob(overrides: Partial<StoredJob> = {}): StoredJob {
     closedAt: null,
     companyAnonymous: false,
     companyKey: "acme",
+    companyLogoUrl: "",
     companyName: "ACME",
     contractType: "cdi",
     department: "44",

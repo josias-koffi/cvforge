@@ -22,6 +22,7 @@ function makeScored(id: string, overrides: Partial<StoredJob> = {}): ScoredJob {
       closedAt: null,
       companyAnonymous: false,
       companyKey: "acme",
+      companyLogoUrl: "",
       companyName: "ACME",
       contractType: "cdi",
       department: "44",

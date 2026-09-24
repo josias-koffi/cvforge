@@ -69,16 +69,35 @@ describe("PgCompaniesStore", () => {
     ]);
     expect(await store.due(SEPTEMBER, 1)).toHaveLength(1);
 
-    await store.save("381983568", RECORD, MARCH);
-    await store.save("111111111", null, SEPTEMBER);
+    await store.save("381983568", RECORD, MARCH, undefined, null);
+    await store.save("111111111", null, SEPTEMBER, undefined, null);
 
     // March is before September's cutoff: due again.
     expect(await sirens()).toEqual(["381983568"]);
 
-    await store.save("381983568", RECORD, SEPTEMBER);
+    await store.save("381983568", RECORD, SEPTEMBER, undefined, null);
     expect(await sirens()).toEqual([]);
     // Pages employeurs never asked: due once it is enabled.
     expect(await sirens({ employerPages: true })).toEqual(["111111111", "381983568"]);
+  });
+
+  it("is due for its logo until Wikidata was asked, and keeps it when Wikidata fails (ADR-025)", async () => {
+    await listEstablishments("38198356800092");
+    const logo =
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/Logo.png/120px-Logo.png";
+
+    // Read before logos existed: due again, whatever its date.
+    await store.save("381983568", RECORD, SEPTEMBER);
+    expect((await store.due(SEPTEMBER, 10)).map((due) => due.siren)).toEqual(["381983568"]);
+
+    await store.save("381983568", RECORD, SEPTEMBER, undefined, logo);
+    expect(await store.due(SEPTEMBER, 10)).toEqual([]);
+
+    await store.save("381983568", RECORD, SEPTEMBER, undefined, undefined);
+    expect((await store.findMany(["381983568"]))[0]).toMatchObject({
+      logoReadAt: SEPTEMBER,
+      logoUrl: logo,
+    });
   });
 
   it("keeps the known employer page when the page could not be read", async () => {

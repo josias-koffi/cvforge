@@ -281,6 +281,13 @@
       "when": 1792550000000,
       "tag": "0040_jobs_description_entities",
       "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1792580000000,
+      "tag": "0042_company_logos",
+      "breakpoints": true
     }
   ]
 }

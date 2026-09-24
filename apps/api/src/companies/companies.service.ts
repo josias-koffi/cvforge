@@ -7,6 +7,7 @@ import type { CompaniesStore } from "./companies.pg-store";
 import type { CompanySources } from "./company-sources";
 import type { StoredCompany } from "./company-record";
 import type { EmployerPagesSource } from "./employer-pages.source";
+import type { WikidataLogosSource } from "./wikidata-logos.source";
 
 const HOUR_MS = 60 * 60_000;
 /** A company's record changes yearly at most: a month is plenty. */
@@ -34,6 +35,7 @@ export class CompaniesService implements OnModuleInit, OnModuleDestroy {
     private readonly store: CompaniesStore,
     private readonly sources: Pick<CompanySources, "read">,
     private readonly employerPages: Pick<EmployerPagesSource, "isAvailable" | "find">,
+    private readonly logos: Pick<WikidataLogosSource, "find">,
     private readonly now: () => number = Date.now,
   ) {}
 
@@ -61,6 +63,8 @@ export class CompaniesService implements OnModuleInit, OnModuleDestroy {
         limit,
         { employerPages },
       );
+      // One Wikidata query for the whole pass; a failure keeps known logos.
+      const logos = await this.logos.find(due.map((company) => company.siren));
       let read = 0;
       let unknown = 0;
       let failed = 0;
@@ -83,7 +87,13 @@ export class CompaniesService implements OnModuleInit, OnModuleDestroy {
               )
             : undefined;
 
-        await this.store.save(siren, record, new Date(this.now()), page);
+        await this.store.save(
+          siren,
+          record,
+          new Date(this.now()),
+          page,
+          logos === undefined ? undefined : (logos.get(siren) ?? null),
+        );
         if (record) read += 1;
         else unknown += 1;
       }

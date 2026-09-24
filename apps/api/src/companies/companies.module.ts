@@ -10,6 +10,7 @@ import {
 import { CompaniesService } from "./companies.service";
 import { CompanySources } from "./company-sources";
 import { EmployerPagesSource } from "./employer-pages.source";
+import { WikidataLogosSource } from "./wikidata-logos.source";
 
 /**
  * The companies behind the hiring establishments (US-121): SIREN, record and
@@ -33,6 +34,7 @@ import { EmployerPagesSource } from "./employer-pages.source";
           store,
           new CompanySources(),
           new EmployerPagesSource(franceTravail),
+          new WikidataLogosSource(),
         ),
     },
   ],

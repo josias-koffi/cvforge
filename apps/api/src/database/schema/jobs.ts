@@ -30,6 +30,8 @@ export const jobs = pgTable(
     companyName: text("company_name").notNull().default(""),
     companyKey: text("company_key").notNull().default(""),
     companyAnonymous: boolean("company_anonymous").notNull().default(false),
+    /** The employer's logo at its source (ADR-025), "" when none is known. */
+    companyLogoUrl: text("company_logo_url").notNull().default(""),
     department: text("department").notNull().default(""),
     locationLabel: text("location_label").notNull().default(""),
     latitude: doublePrecision("latitude"),

@@ -9,6 +9,8 @@ import type { CompanyBadge, CompanyProfile } from "./companies";
 export interface HiringCompany {
   siret: string;
   name: string;
+  /** Its logo at the source (Wikidata, ADR-025); null for most companies. */
+  logoUrl: string | null;
   /** The sector, as the NAF names it ("Conseil en systèmes et logiciels informatiques"). */
   nafLabel: string;
   city: string;

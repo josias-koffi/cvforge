@@ -189,6 +189,9 @@ export class PgJobsStore implements JobsStore {
               titleKey: titleKey(listing.title) || current.titleKey,
             }
           : {}),
+        // Whichever source ranks first, a logo from any of them is worth
+        // keeping: the boards give none (ADR-025).
+        companyLogoUrl: listing.companyLogoUrl || current.companyLogoUrl,
         // The first advert that named a ROME job keeps it; skills are only
         // replaced by an advert that lists some.
         romeCode: current.romeCode ?? listing.rome?.code ?? null,

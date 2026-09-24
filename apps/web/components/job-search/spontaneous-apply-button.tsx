@@ -16,10 +16,15 @@ export function SpontaneousApplyButton({
   profileId,
   siret,
   companyName,
+  className = "self-start",
+  variant = "outline",
 }: {
   profileId: string
   siret: string
   companyName: string
+  className?: string
+  /** "default" where it is the page's main action. */
+  variant?: "default" | "outline"
 }) {
   const router = useRouter()
   const [pending, startApplying] = useTransition()
@@ -45,8 +50,8 @@ export function SpontaneousApplyButton({
     <Button
       type="button"
       size="sm"
-      variant="outline"
-      className="self-start"
+      variant={variant}
+      className={className}
       disabled={pending}
       aria-label={`Candidature spontanée chez ${companyName}`}
       onClick={apply}

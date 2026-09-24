@@ -16,6 +16,8 @@ export interface JobOffer {
   title: string
   companyName: string
   companyAnonymous: boolean
+  /** The employer's logo at its source, "" when none is known (ADR-025). */
+  companyLogoUrl?: string
   locationLabel: string
   department: string
   /** Set when the source gave a geocoded place — France Travail often does. */

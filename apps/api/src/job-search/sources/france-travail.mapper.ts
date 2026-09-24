@@ -28,7 +28,7 @@ export interface FranceTravailOffer {
     latitude?: number | string;
     longitude?: number | string;
   };
-  entreprise?: { nom?: string; entrepriseAdaptee?: boolean };
+  entreprise?: { nom?: string; entrepriseAdaptee?: boolean; logo?: string };
   salaire?: { libelle?: string; commentaire?: string };
   origineOffre?: {
     urlOrigine?: string;
@@ -77,6 +77,8 @@ export function toNormalizedListing(
   return {
     applyUrl: text(offer.contact?.urlPostulation),
     companyAnonymous: !companyName || isAnonymous(companyName),
+    // An anonymous employer's logo would name it all the same.
+    companyLogoUrl: isAnonymous(companyName) ? "" : text(offer.entreprise?.logo),
     companyName: isAnonymous(companyName) ? "" : companyName,
     contractType: readContractType(offer),
     department: readDepartment(offer),

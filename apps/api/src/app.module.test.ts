@@ -18,6 +18,7 @@ import { CreditOffersModule } from "./offers/offers.module";
 import { PrivacyModule } from "./privacy/privacy.module";
 import { JobSearchModule } from "./job-search/job-search.module";
 import { HiringCompaniesModule } from "./hiring-companies/hiring-companies.module";
+import { CompanyLogosModule } from "./company-logos/company-logos.module";
 import { MarketModule } from "./market/market.module";
 import { RomeModule } from "./rome/rome.module";
 import { ProfilesModule } from "./profiles/profiles.module";
@@ -26,6 +27,7 @@ import { TemplatesModule } from "./templates/templates.module";
 import { InterviewModule } from "./interview/interview.module";
 import { MetricsModule } from "./metrics/metrics.module";
 import { RateLimitModule } from "./shared/rate-limit/rate-limit.module";
+import { RedisModule } from "./shared/redis/redis.module";
 
 describe("AppModule", () => {
   it("should register all core modules including CvGenerationModule", () => {
@@ -55,9 +57,11 @@ describe("AppModule", () => {
       JobSearchModule,
       MarketModule,
       HiringCompaniesModule,
+      CompanyLogosModule,
       RomeModule,
       MetricsModule,
       RateLimitModule,
+      RedisModule,
     ]);
   });
 

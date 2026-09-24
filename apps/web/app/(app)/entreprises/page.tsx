@@ -19,7 +19,7 @@ export default async function HiringCompaniesPage(
   props: PageProps<"/entreprises">
 ) {
   const session = await requireSession()
-  const { profileId } = await props.searchParams
+  const { page, profileId } = await props.searchParams
   const registry = await loadRegistry(session.email)
   const selected = pickProfile(
     registry,
@@ -58,7 +58,11 @@ export default async function HiringCompaniesPage(
             ))}
           </div>
         ) : null}
-        <HiringCompanies profileId={selected.id} view={view} />
+        <HiringCompanies
+          profileId={selected.id}
+          view={view}
+          page={typeof page === "string" ? Number(page) || 1 : 1}
+        />
       </div>
     </>
   )

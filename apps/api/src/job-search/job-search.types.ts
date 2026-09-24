@@ -31,6 +31,8 @@ export interface NormalizedJobListing {
   companyName: string;
   /** Empty when the source hides the employer ("entreprise confidentielle"). */
   companyAnonymous: boolean;
+  /** The employer's logo, when the source gives one (France Travail, ADR-025). */
+  companyLogoUrl?: string;
   description: string;
   locationLabel: string;
   /** INSEE department code ("75", "2A"), empty when the source gave none. */

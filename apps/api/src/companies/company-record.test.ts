@@ -46,6 +46,8 @@ function stored(overrides: Partial<StoredCompany> = {}): StoredCompany {
     employerPagePath: null,
     employerPageReadAt: null,
     found: true,
+    logoReadAt: null,
+    logoUrl: null,
     refreshedAt: new Date("2026-09-24T10:00:00.000Z"),
     siren: "381983568",
     ...overrides,

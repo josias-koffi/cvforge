@@ -63,6 +63,8 @@ export interface StoredCompany extends Omit<CompanyRecord, "egaproDeclared"> {
   employerPageOffers: number | null;
   employerPageEdited: boolean;
   employerPageReadAt: Date | null;
+  logoUrl: string | null;
+  logoReadAt: Date | null;
 }
 
 const CATEGORIES = new Set(["PME", "ETI", "GE"]);
