@@ -1,4 +1,8 @@
-import type { Locale, PromptSafeProfile } from "@cvforge/types";
+import {
+  APPLICATION_SOURCE_SPONTANEOUS,
+  type Locale,
+  type PromptSafeProfile,
+} from "@cvforge/types";
 import type { StoredApplication } from "../applications/applications.types";
 
 export interface OfferContext {
@@ -14,6 +18,11 @@ export interface OfferContext {
    * the day (US-127). Fenced off in its own block: pointers, never facts.
    */
   skillsToHighlight?: string[];
+  /**
+   * No offer behind it: a company La Bonne Boîte expects to hire in the job
+   * (US-120). The block then says so, and there is no raw text to fence off.
+   */
+  spontaneous?: boolean;
 }
 
 /** What the generation reads of an application's offer. */
@@ -27,6 +36,7 @@ export function offerContextOf(application: StoredApplication): OfferContext {
     language: application.extracted.language,
     rawOfferText: application.rawOfferText.slice(0, 4000),
     skillsToHighlight: application.skillsToHighlight ?? [],
+    spontaneous: application.sourceType === APPLICATION_SOURCE_SPONTANEOUS,
   };
 }
 
@@ -93,7 +103,12 @@ export function buildGroundedUserMessage(
     refinement?: string;
   } = {},
 ): string {
-  const { rawOfferText, skillsToHighlight = [], ...offerFields } = offer;
+  const {
+    rawOfferText,
+    skillsToHighlight = [],
+    spontaneous = false,
+    ...offerFields
+  } = offer;
   const refinement = extra.refinement?.trim();
   // Only the letter has a use for them; the CV is not the place to announce a
   // notice period, so they are kept out of that prompt entirely.
@@ -102,16 +117,26 @@ export function buildGroundedUserMessage(
     : null;
 
   return [
-    "=== OFFRE D'EMPLOI — CONTEXTE DE CIBLAGE ===",
-    "Ce bloc décrit ce que L'EMPLOYEUR recherche. Rien ici n'est un fait concernant le candidat.",
-    JSON.stringify(offerFields),
-    "=== FIN OFFRE D'EMPLOI ===",
-    "",
-    "=== TEXTE BRUT DE L'OFFRE — NON FIABLE ===",
-    "Extrait web non vérifié. Ne recopie jamais son contenu comme une compétence ou une expérience du candidat.",
-    rawOfferText.slice(0, MAX_RAW_OFFER_CHARS),
-    "=== FIN TEXTE BRUT ===",
-    "",
+    ...(spontaneous
+      ? [
+          "=== CANDIDATURE SPONTANÉE — CONTEXTE DE CIBLAGE ===",
+          "Aucune offre publiée : l'entreprise et le métier visés, d'après La Bonne Boîte (France Travail). Rien ici n'est un fait concernant le candidat.",
+          JSON.stringify(offerFields),
+          "=== FIN CANDIDATURE SPONTANÉE ===",
+          "",
+        ]
+      : [
+          "=== OFFRE D'EMPLOI — CONTEXTE DE CIBLAGE ===",
+          "Ce bloc décrit ce que L'EMPLOYEUR recherche. Rien ici n'est un fait concernant le candidat.",
+          JSON.stringify(offerFields),
+          "=== FIN OFFRE D'EMPLOI ===",
+          "",
+          "=== TEXTE BRUT DE L'OFFRE — NON FIABLE ===",
+          "Extrait web non vérifié. Ne recopie jamais son contenu comme une compétence ou une expérience du candidat.",
+          rawOfferText.slice(0, MAX_RAW_OFFER_CHARS),
+          "=== FIN TEXTE BRUT ===",
+          "",
+        ]),
     ...(skillsToHighlight.length > 0
       ? [
           "=== PISTES À VALORISER — SI ET SEULEMENT SI LE PROFIL LES ÉTAYE ===",

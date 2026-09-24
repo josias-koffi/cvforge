@@ -1,4 +1,5 @@
 import { emptySearchProject, type SearchProject } from "@cvforge/types";
+import type { StoredApplication } from "../applications/applications.types";
 import { describe, expect, it } from "vitest";
 import type {
   HiringCompaniesStore,
@@ -55,7 +56,9 @@ function createHarness(options: {
   queries?: StoredHiringQuery[];
   rows?: StoredHiringCompany[];
   unavailable?: boolean;
+  applications?: StoredApplication[];
 }) {
+  const applications = [...(options.applications ?? [])];
   const queries = new Map((options.queries ?? []).map((query) => [query.queryKey, query]));
   let rows = [...(options.rows ?? [])];
   const asked: string[] = [];
@@ -90,6 +93,7 @@ function createHarness(options: {
   ];
 
   return {
+    applications,
     asked,
     queries,
     service: new HiringCompaniesService(
@@ -99,6 +103,14 @@ function createHarness(options: {
         findByProfileId: async () => searches[0]?.project ?? null,
         findRomeCodes: async () => searches[0]?.romeCodes ?? [],
         listAll: async () => searches.map((search) => ({ ...search, userEmail: ANA })),
+      },
+      {
+        createDraft: async (application) => {
+          applications.push(application);
+          return application;
+        },
+        listByUserEmail: async (userEmail) =>
+          applications.filter((application) => application.userEmail === userEmail),
       },
       () => NOW,
     ),
@@ -179,5 +191,68 @@ describe("HiringCompaniesService.view", () => {
     ).toBe("no_location");
     expect((await createHarness({}).service.view(ANA, "p1")).status).toBe("pending");
     expect((await createHarness({ searches: [] }).service.view(ANA, "p1")).status).toBe("no_rome");
+  });
+});
+
+describe("HiringCompaniesService.applySpontaneously (US-120)", () => {
+  async function readyHarness() {
+    const harness = createHarness({
+      readings: {
+        "M1805|44109": {
+          companies: [company("38198356800092", 25)],
+          hits: 1,
+          romeLabel: "Développeur / Développeuse informatique",
+        },
+      },
+    });
+    await harness.service.refreshDue();
+    return harness;
+  }
+
+  it("creates a draft with no offer, from what La Bonne Boîte says of the company", async () => {
+    const harness = await readyHarness();
+
+    const result = await harness.service.applySpontaneously(ANA, "p1", "38198356800092");
+
+    expect(result.outcome).toBe("created");
+    expect(harness.applications).toHaveLength(1);
+    expect(harness.applications[0]).toMatchObject({
+      extracted: {
+        companyName: "Entreprise 38198356800092",
+        location: "44000 Nantes",
+        requirements: [],
+        responsibilities: [],
+        title: "Développeur / Développeuse informatique",
+      },
+      offerUrl: null,
+      profileId: "p1",
+      sourceLabel: "Candidature spontanée — Entreprise 38198356800092 (SIRET 38198356800092)",
+      sourceType: "spontaneous",
+      status: "draft",
+      userEmail: ANA,
+    });
+    expect(harness.applications[0]?.rawOfferText).toContain("Aucune offre publiée");
+  });
+
+  it("opens the application already made rather than a second one", async () => {
+    const harness = await readyHarness();
+
+    const first = await harness.service.applySpontaneously(ANA, "p1", "38198356800092");
+    const second = await harness.service.applySpontaneously(ANA, "p1", "38198356800092");
+
+    expect(second).toEqual({
+      applicationId: first.outcome === "not_found" ? "" : first.applicationId,
+      outcome: "existing",
+    });
+    expect(harness.applications).toHaveLength(1);
+  });
+
+  it("refuses a company the candidate's search does not list", async () => {
+    const harness = await readyHarness();
+
+    expect(
+      await harness.service.applySpontaneously(ANA, "p1", "00000000000000"),
+    ).toEqual({ outcome: "not_found" });
+    expect(harness.applications).toEqual([]);
   });
 });

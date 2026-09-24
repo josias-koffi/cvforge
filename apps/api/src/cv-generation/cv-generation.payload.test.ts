@@ -86,6 +86,38 @@ describe("pointers to bring forward (US-127)", () => {
   });
 });
 
+describe("spontaneous applications (US-120)", () => {
+  it("says there is no offer, and sends no raw text to fence off", () => {
+    const message = buildGroundedUserMessage(makeProfile(), {
+      ...OFFER,
+      rawOfferText: "Candidature spontanée auprès de EVERIENCE.",
+      spontaneous: true,
+    });
+
+    expect(message).toContain("=== CANDIDATURE SPONTANÉE — CONTEXTE DE CIBLAGE ===");
+    expect(message).toContain("Aucune offre publiée");
+    expect(message).not.toContain("=== OFFRE D'EMPLOI");
+    expect(message).not.toContain("TEXTE BRUT");
+    expect(message).not.toContain('"spontaneous"');
+    expect(message.indexOf("CANDIDATURE SPONTANÉE")).toBeLessThan(
+      message.indexOf("=== PROFIL CANDIDAT"),
+    );
+  });
+
+  it("recognises one from its source", () => {
+    const application = {
+      extracted: OFFER,
+      rawOfferText: "Texte",
+      sourceType: "spontaneous",
+    } as unknown as StoredApplication;
+
+    expect(offerContextOf(application).spontaneous).toBe(true);
+    expect(
+      offerContextOf({ ...application, sourceType: "url" }).spontaneous,
+    ).toBe(false);
+  });
+});
+
 describe("buildGroundedUserMessage", () => {
   it("fences the offer off from the profile and puts the profile last", () => {
     const message = buildGroundedUserMessage(makeProfile(), OFFER);

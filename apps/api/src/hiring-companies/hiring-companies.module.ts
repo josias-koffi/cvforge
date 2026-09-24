@@ -1,4 +1,9 @@
 import { Module } from "@nestjs/common";
+import { ApplicationsModule } from "../applications/applications.module";
+import {
+  APPLICATIONS_STORE,
+  type ApplicationsStore,
+} from "../applications/applications.types";
 import { AuthModule } from "../auth/auth.module";
 import { DATABASE, type Database } from "../database/database.types";
 import { FranceTravailModule } from "../france-travail/france-travail.module";
@@ -17,11 +22,19 @@ import {
 import { HiringCompaniesService } from "./hiring-companies.service";
 import { LaBonneBoiteSource } from "./la-bonne-boite.source";
 
-/** "Entreprises qui recrutent", from France Travail's La Bonne Boîte (US-119). */
+/**
+ * "Entreprises qui recrutent", from France Travail's La Bonne Boîte (US-119),
+ * and the spontaneous applications made from it (US-120).
+ */
 @Module({
   controllers: [HiringCompaniesController],
   exports: [HiringCompaniesService],
-  imports: [AuthModule, FranceTravailModule, SearchProjectsModule],
+  imports: [
+    ApplicationsModule,
+    AuthModule,
+    FranceTravailModule,
+    SearchProjectsModule,
+  ],
   providers: [
     {
       inject: [DATABASE],
@@ -35,13 +48,20 @@ import { LaBonneBoiteSource } from "./la-bonne-boite.source";
         new LaBonneBoiteSource(franceTravail),
     },
     {
-      inject: [HIRING_COMPANIES_STORE, LaBonneBoiteSource, SEARCH_PROJECTS_STORE],
+      inject: [
+        HIRING_COMPANIES_STORE,
+        LaBonneBoiteSource,
+        SEARCH_PROJECTS_STORE,
+        APPLICATIONS_STORE,
+      ],
       provide: HiringCompaniesService,
       useFactory: (
         store: HiringCompaniesStore,
         source: LaBonneBoiteSource,
         searchProjects: SearchProjectsStore,
-      ) => new HiringCompaniesService(store, source, searchProjects),
+        applications: ApplicationsStore,
+      ) =>
+        new HiringCompaniesService(store, source, searchProjects, applications),
     },
   ],
 })

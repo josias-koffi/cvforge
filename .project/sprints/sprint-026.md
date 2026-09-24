@@ -233,7 +233,18 @@ Deux stories fondatrices passent donc **avant** le backlog ci-dessous. Elles son
   - **Livré le 2026-09-24** ([[workflows/runs/developer-20260924130000]]) : page `/entreprises`,
     migration 0036, relecture hebdomadaire, `hiring-companies:refresh`. Vérifié en réel : Nantes à
     30 km, métiers Comptable et Développeur web, 100 entreprises sans doublon.
-- [ ] **[US-120]** Candidature spontanée depuis une entreprise.
+- [x] **[US-120]** Candidature spontanée depuis une entreprise.
+  - Agent: `developer`
+  - Critères d'acceptation *(précisés le 2026-09-24)* :
+    - [x] Depuis « Entreprises qui recrutent », un bouton crée une candidature sans offre, rattachée
+          au profil de la recherche, et y mène. Un deuxième clic rouvre la même candidature.
+    - [x] Création gratuite et sans appel au modèle (ADR-024 §3) ; le CV et la lettre coûtent les
+          crédits habituels. Cela tranche la question ouverte de l'usage n°1.
+    - [x] La génération sait qu'il n'y a pas d'offre : le CV cible le métier, et la lettre ne parle
+          d'aucune annonce (objet « Candidature spontanée — <métier> »).
+    - [x] Seule une entreprise de la liste du candidat est acceptée.
+  - **Livré le 2026-09-24** ([[workflows/runs/developer-20260924140000]]). Création vérifiée en réel ;
+    générer une lettre sur une candidature spontanée reste à relire à la main (1 crédit).
 - [ ] **[US-121]** Table `companies`, rattachement au SIREN, fiche entreprise et badges RSE.
 
 ## 🔗 Dépendances
@@ -275,3 +286,4 @@ Deux stories fondatrices passent donc **avant** le backlog ci-dessous. Elles son
 - 2026-09-24 — [[workflows/runs/developer-20260924124500|developer]] (US-123) — passed, story close
 - 2026-09-24 — [[workflows/runs/analyze-design-dev-review-20260923233426|analyze-design-dev-review]] (US-118) — passed
 - 2026-09-24 — [[workflows/runs/developer-20260924130000|developer]] (US-116, US-119) — passed ; US-119 close, US-116 ouverte (chemins de Pages employeurs à obtenir)
+- 2026-09-24 — [[workflows/runs/developer-20260924140000|developer]] (US-120) — passed

@@ -45,6 +45,14 @@ describe("CV generation prompt", () => {
     expect(CV_SYSTEM_PROMPT).toContain("N'invente jamais un niveau CECRL");
   });
 
+  it("never lets a spontaneous letter mention an offer (US-120)", () => {
+    expect(CV_SYSTEM_PROMPT).toContain("CANDIDATURE SPONTANÉE");
+    expect(LETTER_SYSTEM_PROMPT).toContain(
+      "n'évoque jamais une annonce, une offre ou un poste publié",
+    );
+    expect(LETTER_SYSTEM_PROMPT).toContain("Candidature spontanée — <métier>");
+  });
+
   it("treats the offer's missing skills as pointers, never as experience (US-127)", () => {
     expect(CV_SYSTEM_PROMPT).toContain("PISTES À VALORISER");
     expect(CV_SYSTEM_PROMPT).toContain(

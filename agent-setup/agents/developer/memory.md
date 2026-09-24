@@ -1384,3 +1384,9 @@
 - **Leçon** : La Bonne Boîte renvoie ses paramètres effectifs (`params`, `resolved_params`) : les lire suffit pour voir qu'un paramètre a été mal compris (`rome=A,B` devient un seul code et rend 0 résultat ; `department=44` rend 0 alors que `department_number=44` fonctionne).
 - **Leçon** : pour distinguer une racine d'API existante d'une racine inventée, comparer les codes : 403 pour la bonne racine sans les droits ou avec un mauvais chemin, 401 « TypeAuth invalide » pour une racine inconnue (Pages employeurs).
 - **Leçon** : une table des requêtes à part de leurs résultats permet de distinguer « lu, personne trouvé » de « jamais lu » : sinon, une requête sans résultat serait relancée à chaque passage.
+
+### 2026-09-24 — US-120 : candidature spontanée (stage 01 · [[workflows/runs/developer-20260924140000]])
+- **Context** : [[sprints/sprint-026#US-120]] · [[workflows/runs/developer-20260924140000/01-developer]]
+- **Leçon** : un nouveau type de candidature passe par une nouvelle valeur de `sourceType` et par le magasin, sans toucher `applications.service.ts`. La génération le reconnaît dans `offerContextOf`.
+- **Leçon** : après l'ajout d'une constante dans `@cvforge/types`, reconstruire le paquet avant les tests de l'API : sinon la constante vaut `undefined` à l'exécution, et les tests échouent sans erreur de type.
+- **Leçon** : quand une autre session travaille en parallèle dans le dépôt, n'ajouter au commit que ses propres fichiers, un par un (`git add <fichiers>`), jamais `git add -A`.

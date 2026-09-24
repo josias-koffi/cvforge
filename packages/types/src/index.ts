@@ -25,6 +25,8 @@ export const APPLICATION_STATUS_REJECTED = "rejected" as const;
 export const APPLICATION_STATUS_OFFER_RECEIVED = "offer_received" as const;
 export const APPLICATION_SOURCE_URL = "url" as const;
 export const APPLICATION_SOURCE_TEXT = "text" as const;
+/** No offer: a company La Bonne Boîte expects to hire (US-120). */
+export const APPLICATION_SOURCE_SPONTANEOUS = "spontaneous" as const;
 export const AI_CREDIT_ACTION_OFFER_ENRICHMENT = "offer_enrichment" as const;
 export const AI_CREDIT_ACTION_CV_GENERATION = "cv_generation" as const;
 export const AI_CREDIT_ACTION_LETTER_GENERATION = "letter_generation" as const;
@@ -754,7 +756,10 @@ export interface DraftApplication {
   /** Base profile picked for this application; null or absent means the default profile. */
   profileId?: string | null;
   sourceLabel: string;
-  sourceType: typeof APPLICATION_SOURCE_URL | typeof APPLICATION_SOURCE_TEXT;
+  sourceType:
+    | typeof APPLICATION_SOURCE_URL
+    | typeof APPLICATION_SOURCE_TEXT
+    | typeof APPLICATION_SOURCE_SPONTANEOUS;
   status: ApplicationStatus;
   statusHistory: ApplicationStatusHistoryEntry[];
   updatedAt: string;

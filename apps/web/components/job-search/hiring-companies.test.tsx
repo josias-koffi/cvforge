@@ -1,8 +1,15 @@
 import type { HiringCompaniesView, HiringCompany } from "@cvforge/types"
 import { renderToStaticMarkup } from "react-dom/server"
-import { describe, expect, it } from "vitest"
+import { describe, expect, it, vi } from "vitest"
 
-import { HiringCompanies } from "@/components/job-search/hiring-companies"
+vi.mock("@/app/(app)/entreprises/actions", () => ({
+  applySpontaneously: vi.fn(),
+}))
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }))
+
+const { HiringCompanies } = await import(
+  "@/components/job-search/hiring-companies"
+)
 
 const EVERIENCE: HiringCompany = {
   city: "Nantes",
@@ -19,7 +26,9 @@ const EVERIENCE: HiringCompany = {
 }
 
 function render(view: HiringCompaniesView) {
-  return renderToStaticMarkup(<HiringCompanies view={view} />).replace(
+  return renderToStaticMarkup(
+    <HiringCompanies profileId="p1" view={view} />
+  ).replace(
     /&#x27;/g,
     "'"
   )
@@ -50,6 +59,18 @@ describe("HiringCompanies", () => {
     expect(html).toContain("Recrute dans : Développeur / Développeuse informatique")
     // The badge only for La Bonne Boîte's high potential.
     expect(html.match(/Fort potentiel/g)).toHaveLength(1)
+  })
+
+  it("offers a spontaneous application on every company, free to create (US-120)", () => {
+    const html = render({
+      companies: [EVERIENCE],
+      refreshedAt: "2026-09-24T10:00:00.000Z",
+      status: "ready",
+    })
+
+    expect(html).toContain("Candidature spontanée chez EVERIENCE")
+    expect(html).toContain("gratuite à créer")
+    expect(html).toContain("crédits habituels")
   })
 
   it("credits La Bonne Boîte with the reading date, and says it is free", () => {

@@ -1,13 +1,16 @@
-import type {
-  HiringCompaniesView,
-  HiringCompany,
-  SearchProject,
+import { randomUUID } from "node:crypto";
+import {
+  APPLICATION_SOURCE_SPONTANEOUS,
+  type HiringCompaniesView,
+  type HiringCompany,
+  type SearchProject,
 } from "@cvforge/types";
 import {
   Logger,
   type OnModuleDestroy,
   type OnModuleInit,
 } from "@nestjs/common";
+import type { ApplicationsStore } from "../applications/applications.types";
 import type { SearchProjectsStore } from "../search-projects/search-projects.types";
 import { placeKey, placeOf, queryKey, type HiringPlace } from "./hiring-places";
 import type {
@@ -15,6 +18,10 @@ import type {
   StoredHiringCompany,
 } from "./hiring-companies.pg-store";
 import type { LaBonneBoiteSource } from "./la-bonne-boite.source";
+import {
+  spontaneousApplication,
+  spontaneousSourceLabel,
+} from "./spontaneous-application";
 
 const HOUR_MS = 60 * 60_000;
 const DAY_MS = 24 * HOUR_MS;
@@ -27,6 +34,10 @@ const MAX_READS_PER_CHECK = 60;
 const MAX_SHOWN = 100;
 
 type Target = { key: string; romeCode: string; place: HiringPlace };
+
+export type SpontaneousOutcome =
+  | { outcome: "created" | "existing"; applicationId: string }
+  | { outcome: "not_found" };
 
 export type HiringRefreshOutcome =
   | { status: "skipped"; reason: "unavailable" | "running" }
@@ -48,6 +59,10 @@ export class HiringCompaniesService implements OnModuleInit, OnModuleDestroy {
     private readonly searchProjects: Pick<
       SearchProjectsStore,
       "listAll" | "findByProfileId" | "findRomeCodes"
+    >,
+    private readonly applications: Pick<
+      ApplicationsStore,
+      "createDraft" | "listByUserEmail"
     >,
     private readonly now: () => number = Date.now,
   ) {}
@@ -125,6 +140,43 @@ export class HiringCompaniesService implements OnModuleInit, OnModuleDestroy {
     } finally {
       this.running = false;
     }
+  }
+
+  /**
+   * A spontaneous application to one of the search's companies (US-120). Only
+   * a company the page shows can be applied to; a second click opens the
+   * application already made for it with this profile.
+   */
+  async applySpontaneously(
+    userEmail: string,
+    profileId: string,
+    siret: string,
+  ): Promise<SpontaneousOutcome> {
+    const company = (await this.view(userEmail, profileId)).companies.find(
+      (entry) => entry.siret === siret,
+    );
+    if (!company) return { outcome: "not_found" };
+
+    const label = spontaneousSourceLabel(company);
+    const existing = (await this.applications.listByUserEmail(userEmail)).find(
+      (application) =>
+        application.sourceType === APPLICATION_SOURCE_SPONTANEOUS &&
+        application.sourceLabel === label &&
+        (application.profileId ?? null) === profileId,
+    );
+    if (existing) return { applicationId: existing.id, outcome: "existing" };
+
+    const created = await this.applications.createDraft(
+      spontaneousApplication({
+        company,
+        id: randomUUID(),
+        now: new Date(this.now()),
+        profileId,
+        userEmail,
+      }),
+    );
+
+    return { applicationId: created.id, outcome: "created" };
   }
 
   /** What one search's page shows. */

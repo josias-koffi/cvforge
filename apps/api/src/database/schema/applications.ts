@@ -40,7 +40,9 @@ export const applications = pgTable(
       .$type<ApplicationStatusHistoryEntry[]>()
       .notNull()
       .default([]),
-    sourceType: text("source_type").$type<"url" | "text">().notNull(),
+    sourceType: text("source_type")
+      .$type<"url" | "text" | "spontaneous">()
+      .notNull(),
     sourceLabel: text("source_label").notNull().default(""),
     offerUrl: text("offer_url"),
     rawOfferText: text("raw_offer_text").notNull().default(""),

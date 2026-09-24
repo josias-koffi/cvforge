@@ -6,6 +6,7 @@ import {
 } from "@cvforge/types"
 import { Building2Icon } from "lucide-react"
 
+import { SpontaneousApplyButton } from "@/components/job-search/spontaneous-apply-button"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -50,7 +51,13 @@ const dateFormat = new Intl.DateTimeFormat("fr-FR", {
  * to hire in the candidate's jobs near their places, offer or not. Free, like
  * every France Travail datum (ADR-024 §3), and always credited.
  */
-export function HiringCompanies({ view }: { view: HiringCompaniesView }) {
+export function HiringCompanies({
+  profileId,
+  view,
+}: {
+  profileId: string
+  view: HiringCompaniesView
+}) {
   if (view.companies.length === 0) {
     const state = EMPTY_STATES[view.status]
 
@@ -81,10 +88,16 @@ export function HiringCompanies({ view }: { view: HiringCompaniesView }) {
         {view.companies.length > 1 ? "s" : ""} susceptible
         {view.companies.length > 1 ? "s" : ""} d&apos;embaucher dans vos métiers,
         même sans offre publiée. Les premières ont le plus fort potentiel.
+        Une candidature spontanée est gratuite à créer ; le CV et la lettre
+        adaptés coûtent les crédits habituels.
       </p>
       <ul className="grid gap-3 md:grid-cols-2">
         {view.companies.map((company) => (
-          <CompanyCard key={company.siret} company={company} />
+          <CompanyCard
+            key={company.siret}
+            company={company}
+            profileId={profileId}
+          />
         ))}
       </ul>
       <p className="text-xs text-muted-foreground">
@@ -98,7 +111,13 @@ export function HiringCompanies({ view }: { view: HiringCompaniesView }) {
   )
 }
 
-function CompanyCard({ company }: { company: HiringCompany }) {
+function CompanyCard({
+  company,
+  profileId,
+}: {
+  company: HiringCompany
+  profileId: string
+}) {
   const headcount = headcountText(company)
 
   return (
@@ -118,6 +137,11 @@ function CompanyCard({ company }: { company: HiringCompany }) {
       <p className="text-xs text-muted-foreground">
         Recrute dans : {company.romeLabel}
       </p>
+      <SpontaneousApplyButton
+        profileId={profileId}
+        siret={company.siret}
+        companyName={company.name}
+      />
     </li>
   )
 }

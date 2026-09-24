@@ -2,7 +2,9 @@ import {
   Controller,
   Get,
   Inject,
+  NotFoundException,
   Param,
+  Post,
   Req,
   UnauthorizedException,
 } from "@nestjs/common";
@@ -31,6 +33,35 @@ export class HiringCompaniesController {
     @Param("profileId") profileId: string,
     @Req() request: RequestLike,
   ) {
+    return this.hiringCompanies.view(this.requireEmail(request), profileId);
+  }
+
+  /**
+   * A spontaneous application to one of the companies listed (US-120). Free:
+   * no model runs here, only the CV and the letter cost credits, later.
+   */
+  @Post(":siret/apply")
+  async applySpontaneously(
+    @Param("profileId") profileId: string,
+    @Param("siret") siret: string,
+    @Req() request: RequestLike,
+  ) {
+    const result = await this.hiringCompanies.applySpontaneously(
+      this.requireEmail(request),
+      profileId,
+      siret,
+    );
+
+    if (result.outcome === "not_found") {
+      throw new NotFoundException(
+        "Cette entreprise ne figure plus parmi celles de votre recherche.",
+      );
+    }
+
+    return result;
+  }
+
+  private requireEmail(request: RequestLike): string {
     const session = this.authService.readSessionFromCookieHeader(
       request.headers.cookie,
     );
@@ -39,6 +70,6 @@ export class HiringCompaniesController {
       throw new UnauthorizedException("A valid session is required.");
     }
 
-    return this.hiringCompanies.view(session.email, profileId);
+    return session.email;
   }
 }

@@ -58,7 +58,7 @@ export default async function HiringCompaniesPage(
             ))}
           </div>
         ) : null}
-        <HiringCompanies view={view} />
+        <HiringCompanies profileId={selected.id} view={view} />
       </div>
     </>
   )

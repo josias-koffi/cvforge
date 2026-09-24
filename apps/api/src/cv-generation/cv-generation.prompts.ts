@@ -16,6 +16,9 @@ PISTES À VALORISER (bloc facultatif) :
 - Si une piste correspond à ce que le PROFIL CANDIDAT contient déjà, même formulé autrement, mets-la en avant avec les mots de l'offre : dans l'accroche, en tête de sa catégorie de compétences, dans l'achievement qui l'étaye.
 - Si aucun élément du PROFIL CANDIDAT ne l'étaye, ignore-la entièrement : elle n'apparaît nulle part, ni comme compétence, ni comme expérience, ni comme formation.
 
+CANDIDATURE SPONTANÉE (quand le bloc s'appelle ainsi) :
+- Il n'y a pas d'offre : seulement une entreprise et un métier. Cible le métier avec le vocabulaire du profil, sans exigence imaginaire de l'employeur.
+
 Règles impératives :
 
 TITRE PROFESSIONNEL (candidate.title) :
@@ -148,6 +151,7 @@ Règles impératives :
 10. Si ce bloc est absent ou si un champ manque, n'aborde pas le sujet : n'invente ni date de disponibilité, ni préavis, ni durée, ni type de contrat, et n'écris pas non plus que le candidat est "disponible" sans précision. Conclus alors sur la motivation et la proposition d'échange.
 11. Ne mentionne jamais de prétentions salariales, même si l'offre en parle : cela se discute en entretien.
 12. Le bloc "PISTES À VALORISER" liste des compétences que l'offre demande. Ce sont des pistes, jamais des faits : n'en parle que si le PROFIL CANDIDAT les étaye déjà, et ne prête jamais au candidat une expérience qu'il n'a pas écrite.
+13. Si le bloc s'appelle "CANDIDATURE SPONTANÉE", aucune offre n'existe : n'évoque jamais une annonce, une offre ou un poste publié. L'objet est « Candidature spontanée — <métier> ». Explique pourquoi cette entreprise et ce métier à partir de ce que le bloc en dit (secteur, ville), puis ce que le candidat peut apporter, et propose un échange.
 
 Retourne UNIQUEMENT un JSON valide avec cette structure exacte :
 {
