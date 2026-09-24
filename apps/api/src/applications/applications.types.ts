@@ -24,6 +24,8 @@ export type StoredApplication = DraftApplication & {
   letterContent?: LetterDocumentContent | null;
   letterVersions?: LetterDocumentVersionEntry[];
   rawOfferText: string;
+  /** What the offer asked and the CV did not show (US-127); pointers only. */
+  skillsToHighlight?: string[];
 };
 
 /** DI token for the applications store, shared by every module that reads them. */

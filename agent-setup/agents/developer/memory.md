@@ -1352,3 +1352,17 @@
 - Scopes donnés par le support : La Bonne Boîte `api_labonneboitev2 search office`, ROME Substitutions `api_rome-substitutionsv1 nomenclatureRomeSubstitutions` (ajoutée au catalogue `ft.config.ts`, non vérifiée).
 - Avec ces scopes le jeton est délivré, mais les appels répondent toujours 403 `WWW-Authenticate: insufficient_scope` : habilitation à obtenir côté France Travail, incident à rouvrir.
 - **Leçon** : `source .env` altère le secret FT (caractère interprété par le shell → `invalid_client`) ; utiliser `node --env-file=../../.env --import tsx src/france-travail/ft-smoke.main.ts <api>`.
+
+### 2026-09-24 — US-127 : les pistes jusqu'au CV (stage 01 · [[workflows/runs/developer-20260924110500]])
+- **Context** : [[sprints/sprint-027#^us-127]] · [[workflows/runs/developer-20260924110500/01-developer]]
+- **Leçon** : pour un ajout qui traverse un fichier trop gros (`applications.service.ts`, 767 lignes), passer par une dépendance plus petite (le magasin) plutôt que de toucher le fichier et de devoir le découper hors périmètre.
+- **Leçon** : une consigne au modèle se teste deux fois : le texte du prompt, et un modèle simulé qui désobéit, pour prouver que le serveur rattrape.
+- **Leçon** : un contrôle visuel des offres du jour n'exige pas de lancer le digest (qui envoie des e-mails) : écrire quelques correspondances locales pour le compte de dev, puis les supprimer.
+
+## 2026-09-24 — Landing : refonte UX de l'analyse ATS (/fr/analyse-ats)
+- Drop zone (`components/ats/cv-drop-zone.tsx`) : toute la zone est le `<label>` de l'input `sr-only`, drag & drop, carte fichier, shake sur refus.
+- Vague de l'app reprise via `components/ats/spark-pending.tsx` (miroir de `PendingContent` d'apps/web) sur « Analyser » et « Afficher le rapport ».
+- `scan-progress.tsx` : étapes cadencées côté client, la dernière tourne jusqu'à la réponse (jamais « fini » avant l'API).
+- Jauge : remplissage CSS (`gauge-fill`, part de `--gauge-from`) + compteur `motion` ; le SSR garde les valeurs finales (tests SSR inchangés).
+- `UnlockedReport` extrait dans `unlocked-report.tsx` (barres `bar-fill`, icônes par sévérité), `bandFor` dupliqué depuis @cvforge/ats-score (landing n'en dépend pas).
+- Piège : l'API limite les scans par IP en local ; pour tester l'animation, mocker `/api/ats-scan` (Playwright `page.route`, Chrome système via `executablePath`). Un onglet Claude-in-Chrome en arrière-plan ne fait pas tourner rAF.

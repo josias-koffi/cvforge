@@ -3,6 +3,10 @@ import { OpenRouterModule, OPENROUTER_SERVICE } from "../ai/openrouter.module";
 import type { OpenRouterService } from "../ai/openrouter.service";
 import { ApplicationsModule } from "../applications/applications.module";
 import { ApplicationsService } from "../applications/applications.service";
+import {
+  APPLICATIONS_STORE,
+  type ApplicationsStore,
+} from "../applications/applications.types";
 import { AuthModule } from "../auth/auth.module";
 import { resolveAuthConfig } from "../auth/auth.config";
 import { CreditsModule } from "../credits/credits.module";
@@ -126,6 +130,7 @@ import {
         ApplicationsService,
         JOB_SOURCES_STORE,
         JOB_SOURCE_ADAPTERS,
+        APPLICATIONS_STORE,
       ],
       useFactory: (
         matches: JobMatchesStore,
@@ -133,6 +138,7 @@ import {
         applications: ApplicationsService,
         sourceStates: JobSourcesStore,
         adapters: JobSourceAdapter[],
+        applicationsStore: ApplicationsStore,
       ) =>
         new JobMatchesService(
           matches,
@@ -140,6 +146,7 @@ import {
           applications,
           adapters,
           sourceStates,
+          applicationsStore,
         ),
     },
     {

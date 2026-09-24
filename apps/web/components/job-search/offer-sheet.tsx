@@ -13,6 +13,7 @@ import { toast } from "sonner"
 
 import { applyToMatch, setMatchStatus } from "@/app/(app)/offres-du-jour/actions"
 import { companyLabel, scoreTone } from "@/components/job-search/offer-card"
+import { OfferSkills } from "@/components/job-search/offer-skills"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
@@ -127,18 +128,7 @@ function OfferDetail({
           </p>
         ) : null}
 
-        {offer.matchedSkills && offer.matchedSkills.length > 0 ? (
-          <div className="flex flex-col gap-2">
-            <h4 className="text-sm font-medium">Ce qui correspond</h4>
-            <div className="flex flex-wrap gap-1.5">
-              {offer.matchedSkills.map((skill) => (
-                <Badge key={skill} variant="outline">
-                  {skill}
-                </Badge>
-              ))}
-            </div>
-          </div>
-        ) : null}
+        <OfferSkills offer={offer} />
 
         <Separator />
 

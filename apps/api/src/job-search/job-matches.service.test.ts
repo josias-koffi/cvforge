@@ -94,6 +94,16 @@ function createService(options: {
   const importFromText = vi.fn(async () => ({ id: "app-1" }) as never);
   const importFromUrl = vi.fn(async () => ({ id: "app-2" }) as never);
   const updateOffer = vi.fn(async () => ({}) as never);
+  const savedApplications: Array<{ id: string; skillsToHighlight?: string[] }> =
+    [];
+  const applicationsStore = {
+    findByIdForUserEmail: async (_userEmail: string, id: string) =>
+      ({ id }) as never,
+    save: async (application: { id: string; skillsToHighlight?: string[] }) => {
+      savedApplications.push(application);
+      return application as never;
+    },
+  };
 
   const matches = {
     createMany: async (entries: readonly unknown[]) => {
@@ -163,8 +173,10 @@ function createService(options: {
         recordRun: async () => {},
         setEnabled: async () => null,
       },
+      applicationsStore,
       () => NOW,
     ),
+    savedApplications,
     statuses,
     updateOffer,
   };
@@ -272,6 +284,29 @@ describe("JobMatchesService", () => {
       expect(harness.statuses).toEqual([
         { applicationId: "app-1", status: "applied" },
       ]);
+    });
+
+    it("carries what the offer asks and the CV lacks to the CV generation (US-127)", async () => {
+      const harness = createService({
+        match: {
+          ...makeMatch(),
+          missingSkills: ["Tests unitaires et d'intégration"],
+        },
+      });
+
+      await harness.service.applyToJob("user@example.com", "job-1");
+
+      expect(harness.savedApplications).toEqual([
+        { id: "app-1", skillsToHighlight: ["Tests unitaires et d'intégration"] },
+      ]);
+    });
+
+    it("writes nothing more when the offer lacked nothing", async () => {
+      const harness = createService();
+
+      await harness.service.applyToJob("user@example.com", "job-1");
+
+      expect(harness.savedApplications).toEqual([]);
     });
 
     it("falls back on the URL when the advert text is too thin", async () => {

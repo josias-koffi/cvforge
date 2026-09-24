@@ -5,7 +5,12 @@ import type {
   LetterDocumentContent,
   LetterDocumentVersionEntry,
 } from "@cvforge/types";
+import type {
+  TEMPLATE_KIND_CV,
+  TEMPLATE_KIND_LETTER,
+} from "@cvforge/types";
 import type { StoredApplication } from "../applications/applications.types";
+import type { TemplatesStore } from "../templates/templates.types";
 
 function nextVersionNumber(
   versions: Array<{ versionNumber: number }> | undefined,
@@ -87,4 +92,17 @@ export function appendLetterVersion(
       versionNumber,
     },
   ];
+}
+
+/** The default template of that kind, or the first one; null without any. */
+export async function defaultTemplateId(
+  templatesStore: Pick<TemplatesStore, "list"> | undefined,
+  kind: typeof TEMPLATE_KIND_CV | typeof TEMPLATE_KIND_LETTER,
+) {
+  const templates = (await templatesStore?.list()) ?? [];
+  const defaultTemplate =
+    templates.find((template) => template.kind === kind && template.isDefault) ??
+    templates.find((template) => template.kind === kind);
+
+  return defaultTemplate?.id ?? null;
 }

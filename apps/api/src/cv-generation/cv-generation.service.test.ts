@@ -115,6 +115,40 @@ describe("CvGenerationService", () => {
       });
     });
 
+    it("passes the offer's pointers, and drops one the profile does not back (US-127)", async () => {
+      const app = {
+        ...makeStoredApplication(),
+        skillsToHighlight: ["Kubernetes", "TypeScript"],
+      };
+      store.findByIdForUserEmail = vi.fn().mockReturnValue(app);
+      // The model disobeys and lists the pointer the profile never mentions.
+      openRouter.chat.mockResolvedValue(
+        JSON.stringify({
+          ...VALID_CV_JSON,
+          skills: { hard: ["TypeScript", "Node.js", "Kubernetes"], soft: [] },
+        }),
+      );
+
+      const cvContent = await service.generateCv(
+        "user@test.example",
+        "app-001",
+        makeRequest(),
+      );
+      const [messages] = (openRouter.chat as ReturnType<typeof vi.fn>).mock
+        .calls[0] as [Array<{ role: string; content: string }>];
+      const userMessage = messages.find((m) => m.role === "user")!.content;
+
+      expect(userMessage).toContain("=== PISTES À VALORISER");
+      expect(userMessage).toContain('["Kubernetes","TypeScript"]');
+      // Removed server-side, and reported as removed: the prompt asks, the
+      // grounding enforces.
+      expect(cvContent.skills.hard).toEqual(["TypeScript", "Node.js"]);
+      expect(cvContent.grounding?.removals).toContainEqual({
+        kind: "skill",
+        label: "Kubernetes",
+      });
+    });
+
     it("injects localFields into the returned cvContent", async () => {
       const cvContent = await service.generateCv(
         "user@test.example",

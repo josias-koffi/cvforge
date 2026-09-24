@@ -4,6 +4,7 @@ import { XIcon } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { OfferSkills } from "@/components/job-search/offer-skills"
 import { Card, CardContent } from "@/components/ui/card"
 import { formatDate } from "@/lib/format"
 import { CONTRACT_LABELS } from "@/lib/job-labels"
@@ -89,6 +90,8 @@ export function OfferCard({
             <Badge variant="outline">Candidature créée</Badge>
           ) : null}
         </div>
+
+        <OfferSkills offer={offer} compact />
 
         <div className="mt-auto flex items-end justify-between gap-2 pt-1">
           <span className="text-muted-foreground text-xs">

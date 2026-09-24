@@ -69,6 +69,15 @@ export const applications = pgTable(
     companyContextGeneratedAt: timestamp("company_context_generated_at", {
       withTimezone: true,
     }),
+    /**
+     * The competences the offer asked and the CV did not show, when the
+     * application came from an offer of the day (US-127). Pointers for the
+     * generation, never facts about the candidate.
+     */
+    skillsToHighlight: jsonb("skills_to_highlight")
+      .$type<string[]>()
+      .notNull()
+      .default([]),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
   },

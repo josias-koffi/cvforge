@@ -29,6 +29,8 @@ export interface JobOffer {
   publishedAt: string | null
   firstSeenAt: string
   closedAt: string | null
+  /** The ROME métier France Travail filed it under; absent on older offers. */
+  romeCode?: string | null
 }
 
 export type JobMatchStatus = "new" | "seen" | "saved" | "dismissed" | "applied"
@@ -46,7 +48,10 @@ export interface JobCardOffer {
   status: JobMatchStatus | null
   score: number | null
   aiReason: string | null
+  /** What the candidate has: their own skills, then ROME competences. */
   matchedSkills?: string[]
+  /** What the offer asks that the CV does not show, required first (US-126). */
+  missingSkills?: string[]
 }
 
 export interface JobMatch {
@@ -55,6 +60,7 @@ export interface JobMatch {
   digestDate: string
   score: number
   matchedSkills: string[]
+  missingSkills?: string[]
   aiRank: number | null
   aiReason: string | null
   status: JobMatchStatus

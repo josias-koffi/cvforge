@@ -1,4 +1,5 @@
 import type { Locale, PromptSafeProfile } from "@cvforge/types";
+import type { StoredApplication } from "../applications/applications.types";
 
 export interface OfferContext {
   companyName: string | null;
@@ -8,6 +9,25 @@ export interface OfferContext {
   responsibilities: string[];
   summary: string | null;
   title: string;
+  /**
+   * What the offer asked and the CV did not show, carried from an offer of
+   * the day (US-127). Fenced off in its own block: pointers, never facts.
+   */
+  skillsToHighlight?: string[];
+}
+
+/** What the generation reads of an application's offer. */
+export function offerContextOf(application: StoredApplication): OfferContext {
+  return {
+    title: application.extracted.title,
+    companyName: application.extracted.companyName,
+    requirements: application.extracted.requirements,
+    responsibilities: application.extracted.responsibilities,
+    summary: application.extracted.summary,
+    language: application.extracted.language,
+    rawOfferText: application.rawOfferText.slice(0, 4000),
+    skillsToHighlight: application.skillsToHighlight ?? [],
+  };
 }
 
 /**
@@ -73,7 +93,7 @@ export function buildGroundedUserMessage(
     refinement?: string;
   } = {},
 ): string {
-  const { rawOfferText, ...offerFields } = offer;
+  const { rawOfferText, skillsToHighlight = [], ...offerFields } = offer;
   const refinement = extra.refinement?.trim();
   // Only the letter has a use for them; the CV is not the place to announce a
   // notice period, so they are kept out of that prompt entirely.
@@ -92,6 +112,15 @@ export function buildGroundedUserMessage(
     rawOfferText.slice(0, MAX_RAW_OFFER_CHARS),
     "=== FIN TEXTE BRUT ===",
     "",
+    ...(skillsToHighlight.length > 0
+      ? [
+          "=== PISTES À VALORISER — SI ET SEULEMENT SI LE PROFIL LES ÉTAYE ===",
+          "Compétences que l'offre demande et que le profil ne montre pas clairement (référentiel ROME 4.0, France Travail). Ce ne sont PAS des faits concernant le candidat.",
+          JSON.stringify(skillsToHighlight),
+          "=== FIN PISTES ===",
+          "",
+        ]
+      : []),
     "=== PROFIL CANDIDAT — SOURCE DE VÉRITÉ ===",
     "Seuls les faits de ce bloc peuvent figurer dans le document.",
     JSON.stringify({

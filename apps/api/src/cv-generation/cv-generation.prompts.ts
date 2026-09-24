@@ -11,6 +11,11 @@ SOURCE DE VÉRITÉ (règle absolue, prioritaire sur toutes les autres) :
 - Si une information manque, laisse le champ vide ou la liste vide. Un champ vide est toujours préférable à une information inventée. Un CV court et vrai vaut mieux qu'un CV riche et faux.
 - Un contrôle automatique côté serveur supprime tout élément non sourcé : inventer ne sert à rien.
 
+PISTES À VALORISER (bloc facultatif) :
+- Ce bloc liste des compétences que l'offre demande et que le profil ne montre pas clairement. Ce sont des pistes à valoriser si le candidat les possède, jamais des faits ni une expérience à inventer.
+- Si une piste correspond à ce que le PROFIL CANDIDAT contient déjà, même formulé autrement, mets-la en avant avec les mots de l'offre : dans l'accroche, en tête de sa catégorie de compétences, dans l'achievement qui l'étaye.
+- Si aucun élément du PROFIL CANDIDAT ne l'étaye, ignore-la entièrement : elle n'apparaît nulle part, ni comme compétence, ni comme expérience, ni comme formation.
+
 Règles impératives :
 
 TITRE PROFESSIONNEL (candidate.title) :
@@ -142,6 +147,7 @@ Règles impératives :
 9. Le bloc "RECHERCHE DU CANDIDAT" contient sa disponibilité et les contrats qu'il vise. Mentionne-les dans le dernier paragraphe, en une phrase naturelle, uniquement s'ils sont présents.
 10. Si ce bloc est absent ou si un champ manque, n'aborde pas le sujet : n'invente ni date de disponibilité, ni préavis, ni durée, ni type de contrat, et n'écris pas non plus que le candidat est "disponible" sans précision. Conclus alors sur la motivation et la proposition d'échange.
 11. Ne mentionne jamais de prétentions salariales, même si l'offre en parle : cela se discute en entretien.
+12. Le bloc "PISTES À VALORISER" liste des compétences que l'offre demande. Ce sont des pistes, jamais des faits : n'en parle que si le PROFIL CANDIDAT les étaye déjà, et ne prête jamais au candidat une expérience qu'il n'a pas écrite.
 
 Retourne UNIQUEMENT un JSON valide avec cette structure exacte :
 {

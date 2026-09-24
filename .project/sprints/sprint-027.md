@@ -89,14 +89,24 @@ seulement de ses mots-clés. Chaque offre lui dit ce qu'il a déjà et ce qu'il 
     - `missing_skills` (migration **0033**) ne vient que des compétences propres de l'offre, pas de
       la fiche métier, trop longue pour « À mettre en avant ».
 
-- [ ] **[US-127]** La carte d'offre explique, et le CV en tient compte
+- [x] **[US-127]** La carte d'offre explique, et le CV en tient compte
   - Agent: `developer`
   - Critères d'acceptation :
-    - [ ] `offer-card` et `offer-sheet` : « Vous avez » et « À mettre en avant », avec les
+    - [x] `offer-card` et `offer-sheet` : « Vous avez » et « À mettre en avant », avec les
           compétences ROME. Source France Travail citée.
-    - [ ] « Postuler avec CVForge » transmet `missingSkills` à la génération de CV, comme **pistes
+    - [x] « Postuler avec CVForge » transmet `missingSkills` à la génération de CV, comme **pistes
           à valoriser si le candidat les possède**, jamais comme expérience à inventer. Le prompt le
           dit explicitement, et un test le vérifie.
+  - **Livré le 2026-09-24** ([[workflows/runs/developer-20260924110500]]) :
+    - composant `offer-skills` sur la carte (compact) et le panneau ; la source est citée quand
+      l'offre a un code ROME ;
+    - les pistes voyagent sur la candidature (`applications.skills_to_highlight`, migration
+      **0034**) et arrivent dans un bloc à part du message, « si et seulement si le profil les
+      étaye » ; la même règle vaut pour la lettre ;
+    - le grounding serveur retire une piste que le modèle ajouterait sans source (testé avec un
+      modèle qui désobéit) ;
+    - « Postuler » n'a pas été essayé en direct (un crédit et deux appels au LLM).
+
 - [ ] **[US-128]** Radar marché sur « Ma recherche » et dans le digest
   - Agent: `developer`
   - Critères d'acceptation :
@@ -131,3 +141,4 @@ seulement de ses mots-clés. Chaque offre lui dit ce qu'il a déjà et ce qu'il 
 - 2026-09-24 — [[workflows/runs/developer-20260924080225|developer]] (US-124) — passed
 - 2026-09-24 — [[workflows/runs/developer-20260924085500|developer]] (US-125) — passed
 - 2026-09-24 — [[workflows/runs/developer-20260924100500|developer]] (US-126) — passed
+- 2026-09-24 — [[workflows/runs/developer-20260924110500|developer]] (US-127) — passed

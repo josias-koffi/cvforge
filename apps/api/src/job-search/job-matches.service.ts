@@ -1,5 +1,6 @@
 import { Injectable, Logger } from "@nestjs/common";
 import type { ApplicationsService } from "../applications/applications.service";
+import type { ApplicationsStore } from "../applications/applications.types";
 import { dateInParis } from "./job-digest.service";
 import type { JobSourceAdapter } from "./job-search.types";
 import type { JobSourcesStore } from "./job-sources.types";
@@ -54,6 +55,10 @@ export class JobMatchesService {
     private readonly applications: ApplicationsService,
     private readonly sources: JobSourceAdapter[],
     private readonly sourceStates: JobSourcesStore,
+    private readonly applicationsStore: Pick<
+      ApplicationsStore,
+      "findByIdForUserEmail" | "save"
+    >,
     private readonly now: () => number = Date.now,
   ) {}
 
@@ -183,9 +188,35 @@ export class JobMatchesService {
     if (!(await this.isStillOpen(listings))) return { outcome: "closed" };
 
     const application = await this.createApplication(userEmail, match);
+    await this.carrySkillsToHighlight(userEmail, application.id, match);
     await this.matches.setStatus(userEmail, match.id, "applied", application.id);
 
     return { applicationId: application.id, outcome: "applied" };
+  }
+
+  /**
+   * What the offer asked and the CV did not show goes with the application,
+   * for the CV generation to bring forward — if, and only if, the profile
+   * already holds it (US-127). Stored on the application because the
+   * generation runs later, from another screen.
+   */
+  private async carrySkillsToHighlight(
+    userEmail: string,
+    applicationId: string,
+    match: JobMatchWithJob,
+  ) {
+    if (match.missingSkills.length === 0) return;
+
+    const stored = await this.applicationsStore.findByIdForUserEmail(
+      userEmail,
+      applicationId,
+    );
+    if (!stored) return;
+
+    await this.applicationsStore.save({
+      ...stored,
+      skillsToHighlight: match.missingSkills,
+    });
   }
 
   /**

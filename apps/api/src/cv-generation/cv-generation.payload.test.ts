@@ -3,8 +3,10 @@ import { describe, expect, it } from "vitest";
 import {
   MAX_RAW_OFFER_CHARS,
   buildGroundedUserMessage,
+  offerContextOf,
   type OfferContext,
 } from "./cv-generation.payload";
+import type { StoredApplication } from "../applications/applications.types";
 
 function makeProfile(
   preferences?: PromptSafeProfile["preferences"],
@@ -36,6 +38,53 @@ const OFFER: OfferContext = {
   summary: "Ingénieur plateforme",
   title: "Ingénieur Plateforme Senior",
 };
+
+describe("pointers to bring forward (US-127)", () => {
+  it("fences them between the offer and the profile, as pointers, not facts", () => {
+    const message = buildGroundedUserMessage(makeProfile(), {
+      ...OFFER,
+      skillsToHighlight: ["Kubernetes", "Tests unitaires"],
+    });
+    const block = message.indexOf("=== PISTES À VALORISER");
+
+    expect(block).toBeGreaterThan(message.indexOf("=== FIN TEXTE BRUT"));
+    expect(block).toBeLessThan(message.indexOf("=== PROFIL CANDIDAT"));
+    expect(message).toContain("SI ET SEULEMENT SI LE PROFIL LES ÉTAYE");
+    expect(message).toContain("Ce ne sont PAS des faits concernant le candidat");
+    expect(message).toContain('["Kubernetes","Tests unitaires"]');
+    // Not repeated inside the offer's own JSON.
+    expect(message).not.toContain('"skillsToHighlight"');
+  });
+
+  it("adds no block when the offer lacked nothing", () => {
+    expect(
+      buildGroundedUserMessage(makeProfile(), { ...OFFER, skillsToHighlight: [] }),
+    ).not.toContain("PISTES À VALORISER");
+    expect(buildGroundedUserMessage(makeProfile(), OFFER)).not.toContain(
+      "PISTES À VALORISER",
+    );
+  });
+
+  it("reads them from the application, empty for an older one", () => {
+    const application = {
+      extracted: {
+        companyName: "CloudScale",
+        language: "fr",
+        requirements: [],
+        responsibilities: [],
+        summary: null,
+        title: "Ingénieur",
+      },
+      rawOfferText: "Texte",
+    } as unknown as StoredApplication;
+
+    expect(offerContextOf(application).skillsToHighlight).toEqual([]);
+    expect(
+      offerContextOf({ ...application, skillsToHighlight: ["Kubernetes"] })
+        .skillsToHighlight,
+    ).toEqual(["Kubernetes"]);
+  });
+});
 
 describe("buildGroundedUserMessage", () => {
   it("fences the offer off from the profile and puts the profile last", () => {

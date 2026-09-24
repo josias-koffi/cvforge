@@ -48,6 +48,7 @@ function makeApplication(
     offerUrl: null,
     profileId: null,
     rawOfferText: "Long offer text",
+    skillsToHighlight: [],
     sourceLabel: "Texte colle",
     sourceType: APPLICATION_SOURCE_TEXT,
     status: APPLICATION_STATUS_DRAFT,
@@ -85,6 +86,16 @@ describe("PgApplicationsStore", () => {
     await expect(store.findById("app-1")).resolves.toEqual(
       makeApplication("app-1"),
     );
+  });
+
+  it("keeps what an offer of the day asked the CV to bring forward (US-127)", async () => {
+    await store.createDraft(
+      makeApplication("app-1", { skillsToHighlight: ["Kubernetes"] }),
+    );
+
+    expect((await store.findById("app-1"))?.skillsToHighlight).toEqual([
+      "Kubernetes",
+    ]);
   });
 
   /**

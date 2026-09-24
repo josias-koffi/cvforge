@@ -45,6 +45,19 @@ describe("CV generation prompt", () => {
     expect(CV_SYSTEM_PROMPT).toContain("N'invente jamais un niveau CECRL");
   });
 
+  it("treats the offer's missing skills as pointers, never as experience (US-127)", () => {
+    expect(CV_SYSTEM_PROMPT).toContain("PISTES À VALORISER");
+    expect(CV_SYSTEM_PROMPT).toContain(
+      "pistes à valoriser si le candidat les possède, jamais des faits ni une expérience à inventer",
+    );
+    expect(CV_SYSTEM_PROMPT).toContain(
+      "Si aucun élément du PROFIL CANDIDAT ne l'étaye, ignore-la entièrement",
+    );
+    expect(LETTER_SYSTEM_PROMPT).toContain(
+      "ne prête jamais au candidat une expérience qu'il n'a pas écrite",
+    );
+  });
+
   it("forces a single output language", () => {
     expect(CV_SYSTEM_PROMPT).toContain("entièrement dans la langue");
     expect(LETTER_SYSTEM_PROMPT).toContain("entièrement dans la langue");
