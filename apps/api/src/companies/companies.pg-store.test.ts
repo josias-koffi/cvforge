@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { hiringCompanies } from "../database/schema";
+import { companies, hiringCompanies } from "../database/schema";
 import {
   createTestDatabase,
   type TestDatabase,
@@ -30,6 +30,7 @@ const RECORD: CompanyRecord = {
   nafCode: "62.03Z",
   netIncome: 20_941_726,
   openEstablishments: 6,
+  publishable: true,
   revenue: 211_086_627,
 };
 
@@ -98,6 +99,30 @@ describe("PgCompaniesStore", () => {
       logoReadAt: SEPTEMBER,
       logoUrl: logo,
     });
+  });
+
+  it("is due until it is known whether a public page may show it (US-140)", async () => {
+    await listEstablishments("38198356800092", "11111111100011");
+    await store.save("381983568", RECORD, SEPTEMBER, undefined, null);
+    await store.save("111111111", null, SEPTEMBER, undefined, null);
+    // A record read before the flag existed.
+    await testDatabase.db.update(companies).set({ publishable: null });
+    expect((await store.due(SEPTEMBER, 10)).map((due) => due.siren)).toEqual([
+      "111111111",
+      "381983568",
+    ]);
+
+    await store.save("381983568", RECORD, SEPTEMBER, undefined, null);
+    await store.save("111111111", null, SEPTEMBER, undefined, null);
+    expect(await store.due(SEPTEMBER, 10)).toEqual([]);
+    expect(
+      (await store.findMany(["111111111", "381983568"]))
+        .map(({ publishable, siren }) => [siren, publishable])
+        .sort(),
+    ).toEqual([
+      ["111111111", false],
+      ["381983568", true],
+    ]);
   });
 
   it("keeps the known employer page when the page could not be read", async () => {

@@ -59,7 +59,8 @@ export function isIndexable(
   return stats.tension !== null && stats.offersYear !== null;
 }
 
-const INDEXABLE = and(
+/** `isIndexable` in SQL: the pairs a job × department page exists for. */
+export const INDEXABLE_MARKET_STATS = and(
   isNotNull(marketStats.tensionLevel),
   isNotNull(marketStats.tensionPeriod),
   isNotNull(marketStats.offersYearCount),
@@ -213,7 +214,7 @@ export class PgMarketStatsStore implements MarketStatsStore {
     const rows = await this.db
       .select()
       .from(marketStats)
-      .where(INDEXABLE)
+      .where(INDEXABLE_MARKET_STATS)
       .orderBy(desc(marketStats.offersYearCount), marketStats.romeCode, marketStats.department)
       .limit(limit);
 
@@ -224,7 +225,7 @@ export class PgMarketStatsStore implements MarketStatsStore {
     const rows = await this.db
       .select()
       .from(marketStats)
-      .where(and(eq(marketStats.department, department), INDEXABLE))
+      .where(and(eq(marketStats.department, department), INDEXABLE_MARKET_STATS))
       .orderBy(desc(marketStats.offersYearCount), marketStats.romeCode)
       .limit(limit);
 

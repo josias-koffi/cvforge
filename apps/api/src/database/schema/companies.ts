@@ -17,6 +17,12 @@ export const companies = pgTable("companies", {
   /** False when the Annuaire does not know the SIREN: not asked again for a month. */
   found: boolean("found").notNull().default(true),
   legalName: text("legal_name").notNull().default(""),
+  /**
+   * Neither a sole trader, whose name is a person's, nor a unit that asked
+   * INSEE to withhold its data: only these get a public page (US-140). Null
+   * until the next read.
+   */
+  publishable: boolean("publishable"),
   nafCode: text("naf_code").notNull().default(""),
   /** PME, ETI or GE; "" when INSEE has not classed it. */
   category: text("category").notNull().default(""),

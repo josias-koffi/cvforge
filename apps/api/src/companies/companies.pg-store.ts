@@ -50,6 +50,8 @@ export class PgCompaniesStore implements CompaniesStore {
       lt(companies.refreshedAt, before),
       // Companies read before logos existed get theirs without a month's wait.
       isNull(companies.logoReadAt),
+      // Likewise for the flag the public pages need (US-140).
+      isNull(companies.publishable),
     ];
     if (options.employerPages) stale.push(isNull(companies.employerPageReadAt));
 
@@ -95,7 +97,7 @@ export class PgCompaniesStore implements CompaniesStore {
           siren,
         }
       : // Unknown or not, Wikidata was asked: not due again for its logo.
-        { ...logoValues, found: false, refreshedAt: at, siren };
+        { ...logoValues, found: false, publishable: false, refreshedAt: at, siren };
 
     await this.db
       .insert(companies)
@@ -144,5 +146,6 @@ const EMPTY = {
   nafCode: "",
   netIncome: null,
   openEstablishments: null,
+  publishable: false,
   revenue: null,
 } satisfies Omit<StoredCompany, "found" | "refreshedAt" | "siren">;

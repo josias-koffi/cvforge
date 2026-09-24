@@ -293,6 +293,7 @@ describe("HiringCompaniesService company pages (US-121)", () => {
     nafCode: "62.03Z",
     netIncome: 20_941_726,
     openEstablishments: 6,
+    publishable: true,
     refreshedAt: new Date(NOW),
     revenue: 211_086_627,
     siren: "381983568",

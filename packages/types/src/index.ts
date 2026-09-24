@@ -6,6 +6,7 @@ export * from "./grounding";
 export * from "./acquisition";
 export * from "./companies";
 export * from "./company-check";
+export * from "./company-pages";
 export * from "./hiring-companies";
 export * from "./lead";
 export * from "./locale";

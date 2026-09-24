@@ -1,6 +1,7 @@
 import {
   headcountLabel,
   type CompanyBadge,
+  type CompanyCheckSheet,
   type CompanyProfile,
 } from "@cvforge/types";
 import { EMPLOYER_PAGE_URL } from "./employer-pages.source";
@@ -42,6 +43,8 @@ export interface EgaproEntry {
 
 export interface CompanyRecord {
   legalName: string;
+  /** Whether a public page may show it (see `isPublishable`). */
+  publishable: boolean;
   nafCode: string;
   category: string;
   headcountBand: string;
@@ -61,8 +64,11 @@ export interface CompanyRecord {
   egaproYear: string | null;
 }
 
-export interface StoredCompany extends Omit<CompanyRecord, "egaproDeclared"> {
+export interface StoredCompany
+  extends Omit<CompanyRecord, "egaproDeclared" | "publishable"> {
   siren: string;
+  /** Null for a record read before US-140: not shown until read again. */
+  publishable: boolean | null;
   found: boolean;
   refreshedAt: Date;
   employerPagePath: string | null;
@@ -74,6 +80,25 @@ export interface StoredCompany extends Omit<CompanyRecord, "egaproDeclared"> {
 }
 
 const CATEGORIES = new Set(["PME", "ETI", "GE"]);
+/** Nine digits: INSEE's number of a company. */
+export const SIREN = /^\d{9}$/;
+
+/**
+ * Only named companies: a sole trader's record names a person, a unit that
+ * asked INSEE to withhold its data is not ours to show, and the Annuaire
+ * answers some SIRENs with a blank record (123456789 on 2026-09-24).
+ */
+export function isPublishable(result: AnnuaireResult): result is AnnuaireResult & {
+  siren: string;
+} {
+  return (
+    typeof result.siren === "string" &&
+    SIREN.test(result.siren) &&
+    Boolean(result.nom_raison_sociale || result.nom_complet) &&
+    result.statut_diffusion !== "P" &&
+    result.complements?.est_entrepreneur_individuel !== true
+  );
+}
 
 /** The Annuaire's answer for `siren`, or null when it lists another company. */
 export function readCompanyRecord(
@@ -104,6 +129,7 @@ export function readCompanyRecord(
     nafCode: result.activite_principale ?? "",
     netIncome: finances?.resultat_net ?? null,
     openEstablishments: result.nombre_etablissements_ouverts ?? null,
+    publishable: isPublishable(result),
     revenue: finances?.ca ?? null,
   };
 }
@@ -187,6 +213,57 @@ export function employerPageOf(
         url: `${EMPLOYER_PAGE_URL}/${company.employerPagePath}`,
       }
     : null;
+}
+
+/**
+ * One company's sheet, as the employer check (US-139) and the company pages
+ * (US-140) show it: the record, its Egapro score and its employer page.
+ */
+export function toCompanyCheckSheet(
+  siren: string,
+  record: Omit<CompanyRecord, "egaproDeclared" | "egaproScore" | "egaproYear" | "publishable">,
+  extras: Pick<CompanyCheckSheet, "egapro" | "employerPage" | "nafSection">,
+): CompanyCheckSheet {
+  return {
+    ...extras,
+    category: companyCategory(record.category),
+    closed: record.closed,
+    createdOn: record.createdOn,
+    ess: record.ess,
+    finances: record.financesYear
+      ? {
+          netIncome: record.netIncome,
+          revenue: record.revenue,
+          year: record.financesYear,
+        }
+      : null,
+    gesReport: record.gesReport,
+    headcountBand: record.headcountBand,
+    inclusive: record.inclusive,
+    legalName: record.legalName,
+    mission: record.mission,
+    nafCode: record.nafCode,
+    openEstablishments: record.openEstablishments,
+    siren,
+  };
+}
+
+/** The last NAF division of each section, "62.02A" being in J (58 to 63). */
+const NAF_SECTIONS: [lastDivision: number, section: string][] = [
+  [3, "A"], [9, "B"], [33, "C"], [35, "D"], [39, "E"], [43, "F"], [47, "G"],
+  [53, "H"], [56, "I"], [63, "J"], [66, "K"], [68, "L"], [75, "M"], [82, "N"],
+  [84, "O"], [85, "P"], [88, "Q"], [93, "R"], [96, "S"], [98, "T"], [99, "U"],
+];
+
+/**
+ * The section letter of a NAF code, which the copy does not keep: the
+ * Annuaire's `section_activite_principale`, worked out from the division.
+ */
+export function nafSectionOf(nafCode: string): string {
+  const division = Number(/^(\d{2})\./.exec(nafCode)?.[1]);
+  if (!division) return "";
+
+  return NAF_SECTIONS.find(([last]) => division <= last)?.[1] ?? "";
 }
 
 /** A SIRET's company: its first nine digits. */

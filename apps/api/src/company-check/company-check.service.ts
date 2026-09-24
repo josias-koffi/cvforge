@@ -1,7 +1,6 @@
 import {
   publicError,
   type CompanyCheckMatch,
-  type CompanyCheckSheet,
   type PublicCompanyCheckResponse,
   type PublicCompanyCheckSearch,
 } from "@cvforge/types";
@@ -11,10 +10,12 @@ import {
 } from "@nestjs/common";
 import type { CompaniesStore } from "../companies/companies.pg-store";
 import {
-  companyCategory,
   employerPageOf,
+  isPublishable,
   readCompanyRecord,
+  SIREN,
   sirenOf,
+  toCompanyCheckSheet,
   type AnnuaireResult,
 } from "../companies/company-record";
 import type { CompanySources } from "../companies/company-sources";
@@ -23,7 +24,6 @@ import type { CompanySources } from "../companies/company-sources";
 const MIN_QUERY_CHARS = 3;
 const MAX_QUERY_CHARS = 100;
 const MATCHES_LIMIT = 8;
-const SIREN = /^\d{9}$/;
 const SIRET = /^\d{14}$/;
 
 export const COMPANY_QUERY_INVALID_MESSAGE =
@@ -70,30 +70,11 @@ export class CompanyCheckService {
       this.store.findMany([siren]),
     ]);
 
-    const company: CompanyCheckSheet = {
-      category: companyCategory(record.category),
-      closed: record.closed,
-      createdOn: record.createdOn,
+    const company = toCompanyCheckSheet(siren, record, {
       egapro,
       employerPage: stored[0] ? employerPageOf(stored[0]) : null,
-      ess: record.ess,
-      finances: record.financesYear
-        ? {
-            netIncome: record.netIncome,
-            revenue: record.revenue,
-            year: record.financesYear,
-          }
-        : null,
-      gesReport: record.gesReport,
-      headcountBand: record.headcountBand,
-      inclusive: record.inclusive,
-      legalName: record.legalName,
-      mission: record.mission,
-      nafCode: record.nafCode,
       nafSection: result.section_activite_principale ?? "",
-      openEstablishments: record.openEstablishments,
-      siren,
-    };
+    });
 
     return { company, status: "found" };
   }
@@ -139,23 +120,6 @@ function readQuery(query: unknown): { siren: string | null; text: string } {
 function invalidQuery() {
   return new BadRequestException(
     publicError("COMPANY_QUERY_INVALID", COMPANY_QUERY_INVALID_MESSAGE),
-  );
-}
-
-/**
- * Only named companies: a sole trader's record names a person, a unit that
- * asked INSEE to withhold its data is not ours to show, and the Annuaire
- * answers some SIRENs with a blank record (123456789 on 2026-09-24).
- */
-function isPublishable(result: AnnuaireResult): result is AnnuaireResult & {
-  siren: string;
-} {
-  return (
-    typeof result.siren === "string" &&
-    SIREN.test(result.siren) &&
-    Boolean(result.nom_raison_sociale || result.nom_complet) &&
-    result.statut_diffusion !== "P" &&
-    result.complements?.est_entrepreneur_individuel !== true
   );
 }
 

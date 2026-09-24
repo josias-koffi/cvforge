@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   companyBadges,
+  nafSectionOf,
   readCompanyRecord,
   readEgaproScore,
   toCompanyProfile,
@@ -72,6 +73,7 @@ describe("readCompanyRecord", () => {
       nafCode: "62.03Z",
       netIncome: 20_941_726,
       openEstablishments: 6,
+      publishable: true,
       revenue: 211_086_627,
     });
   });
@@ -95,6 +97,37 @@ describe("readCompanyRecord", () => {
       legalName: "",
       revenue: null,
     });
+  });
+});
+
+describe("publishable (US-140)", () => {
+  it("keeps a sole trader, a withheld unit and a blank record off public pages", () => {
+    const publishable = (overrides: Partial<AnnuaireResult>) =>
+      readCompanyRecord("381983568", [{ ...EVERIENCE, ...overrides }])?.publishable;
+
+    expect(publishable({})).toBe(true);
+    expect(
+      publishable({ complements: { est_entrepreneur_individuel: true } }),
+    ).toBe(false);
+    expect(publishable({ statut_diffusion: "P" })).toBe(false);
+    expect(publishable({ nom_complet: null, nom_raison_sociale: null })).toBe(false);
+  });
+});
+
+describe("nafSectionOf", () => {
+  it("finds the section of a NAF code from its division", () => {
+    expect(nafSectionOf("01.11Z")).toBe("A");
+    expect(nafSectionOf("33.20A")).toBe("C");
+    expect(nafSectionOf("62.02A")).toBe("J");
+    expect(nafSectionOf("63.99Z")).toBe("J");
+    expect(nafSectionOf("64.19Z")).toBe("K");
+    expect(nafSectionOf("99.00Z")).toBe("U");
+  });
+
+  it("answers nothing for a code it cannot read", () => {
+    expect(nafSectionOf("")).toBe("");
+    expect(nafSectionOf("00.00Z")).toBe("");
+    expect(nafSectionOf("6202A")).toBe("");
   });
 });
 
