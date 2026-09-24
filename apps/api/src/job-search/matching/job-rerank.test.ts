@@ -17,6 +17,7 @@ function makeScored(id: string, overrides: Partial<StoredJob> = {}): ScoredJob {
       skills: 20,
       title: 25,
     },
+    missingSkills: [],
     job: {
       closedAt: null,
       companyAnonymous: false,
@@ -35,6 +36,8 @@ function makeScored(id: string, overrides: Partial<StoredJob> = {}): ScoredJob {
       primaryUrl: "https://example.com",
       publishedAt: "2026-09-21T08:00:00.000Z",
       remote: false,
+      romeCode: null,
+      romeCompetences: [],
       salaryLabel: "",
       title: `Poste ${id}`,
       titleKey: `poste ${id}`,

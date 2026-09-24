@@ -19,6 +19,8 @@ export interface StoredJobMatch {
   score: number;
   scoreBreakdown: ScoreBreakdown | null;
   matchedSkills: string[];
+  /** The offer's ROME competences the CV does not show (US-126). */
+  missingSkills: string[];
   aiRank: number | null;
   aiReason: string | null;
   status: JobMatchStatus;
@@ -39,6 +41,7 @@ export interface NewJobMatch {
   score: number;
   scoreBreakdown: ScoreBreakdown;
   matchedSkills: string[];
+  missingSkills: string[];
   aiRank?: number | null;
   aiReason?: string | null;
   jobSnapshot: StoredJob;

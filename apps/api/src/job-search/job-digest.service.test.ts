@@ -19,6 +19,8 @@ import type {
 } from "./job-search.types";
 import type { JobSourcesStore } from "./job-sources.types";
 import type { JobsStore, StoredJob, StoredJobListing } from "./jobs.types";
+import type { RomeScoringContext } from "./matching/rome-matching";
+import type { RomeMatchingReader } from "./rome-matching.pg-reader";
 import type {
   JobDigestRunsStore,
   JobMatchesStore,
@@ -47,6 +49,8 @@ function makeJob(overrides: Partial<StoredJob> = {}): StoredJob {
     primaryUrl: "https://example.com/jobs/1",
     publishedAt: new Date(NOW - 86_400_000).toISOString(),
     remote: false,
+    romeCode: null,
+    romeCompetences: [],
     salaryLabel: "",
     title: "Développeur Full Stack (H/F)",
     titleKey: "developpeur full stack",
@@ -149,12 +153,19 @@ interface Harness {
   consumed: string[];
   chat: ReturnType<typeof vi.fn>;
   isStillOpen: ReturnType<typeof vi.fn>;
+  romeAsked: Array<{ profileId: string; projectCodes: readonly string[] }>;
   service: JobDigestService;
 }
 
 function createService(
   options: {
-    projects?: Array<{ userEmail: string; project: SearchProject }>;
+    projects?: Array<{
+      userEmail: string;
+      project: SearchProject;
+      romeCodes?: string[];
+    }>;
+    /** What the CV and the referential say, for the ROME part of the score. */
+    rome?: Omit<RomeScoringContext, "projectCodes">;
     /** Sources an admin switched off. */
     disabledSources?: JobSource[];
     /** Original links carried by the collected adverts. */
@@ -202,9 +213,26 @@ function createService(
         ]
       ).map((entry) => ({ romeCodes: [], ...entry })),
     listDigestEnabled: async () =>
-      options.projects ?? [
-        { project: makeProject(), userEmail: "user@example.com" },
-      ],
+      (
+        options.projects ?? [
+          { project: makeProject(), userEmail: "user@example.com" },
+        ]
+      ).map((entry) => ({ romeCodes: [], ...entry })),
+  };
+  const romeAsked: Harness["romeAsked"] = [];
+  const rome: RomeMatchingReader = {
+    forRun: () => ({
+      contextFor: async ({ profileId, projectCodes }) => {
+        romeAsked.push({ profileId, projectCodes });
+        return {
+          genericCodes: new Set(),
+          metierCompetences: new Map(),
+          profileCompetences: [],
+          ...options.rome,
+          projectCodes,
+        };
+      },
+    }),
   };
   const profiles = {
     deleteByUserEmail: async () => 0,
@@ -363,6 +391,7 @@ function createService(
     searched,
     isStillOpen,
     released,
+    romeAsked,
     service: new JobDigestService(
       searchProjects,
       profiles,
@@ -376,6 +405,7 @@ function createService(
       credits,
       { chat } as unknown as OpenRouterService,
       notifications,
+      rome,
       "https://app.cvforge.test",
       () => now,
     ),
@@ -440,6 +470,43 @@ describe("JobDigestService", () => {
       [true, []],
       [false, ["M1855"]],
     ]);
+  });
+
+  it("scores by the ROME jobs confirmed and the competences of the CV (US-126)", async () => {
+    const harness = createService({
+      jobs: [
+        makeJob({
+          romeCode: "M1805",
+          romeCompetences: [
+            { code: "C1", label: "Concevoir une application web", required: false },
+            { code: "C2", label: "Programmation en Java", required: true },
+          ],
+          title: "Ingénieur logiciel",
+        }),
+      ],
+      projects: [
+        {
+          project: makeProject({ targetRoles: ["Développeur full stack"] }),
+          romeCodes: ["M1855"],
+          userEmail: "user@example.com",
+        },
+      ],
+      rome: {
+        genericCodes: new Set(),
+        metierCompetences: new Map(),
+        profileCompetences: [{ code: "C1", label: "Concevoir une application web" }],
+      },
+    });
+
+    await harness.service.run();
+
+    expect(harness.romeAsked).toEqual([
+      { profileId: "profile-1", projectCodes: ["M1855"] },
+    ]);
+    expect(harness.written[0]).toMatchObject({
+      matchedSkills: expect.arrayContaining(["Concevoir une application web"]),
+      missingSkills: ["Programmation en Java"],
+    });
   });
 
   it("collects for a search even when its owner declined the morning mail", async () => {

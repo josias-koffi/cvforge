@@ -32,6 +32,8 @@ export function toJob(row: JobRow): StoredJob {
     primaryUrl: row.primaryUrl,
     publishedAt: row.publishedAt?.toISOString() ?? null,
     remote: row.remote,
+    romeCode: row.romeCode,
+    romeCompetences: row.romeCompetences,
     salaryLabel: row.salaryLabel,
     title: row.title,
     titleKey: row.titleKey,

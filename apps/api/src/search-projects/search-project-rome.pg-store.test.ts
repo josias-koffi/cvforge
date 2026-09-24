@@ -278,4 +278,23 @@ describe("PgSearchProjectsStore.listAll with ROME jobs (US-124)", () => {
 
     expect((await projects.listAll())[0]?.romeCodes).toEqual([]);
   });
+
+  it("gives them to the morning selection too, which scores by them (US-126)", async () => {
+    await seedReferential();
+    const projects = new PgSearchProjectsStore(testDatabase.db);
+    await projects.save(ANA, {
+      ...emptySearchProject("p1"),
+      digestEnabled: true,
+    });
+    await projects.save(BOB, emptySearchProject("p1"));
+    await store.confirm(ANA, "p1", FULL_STACK);
+    await store.confirm(BOB, "p1", BAKER);
+
+    expect(
+      (await projects.listDigestEnabled()).map((entry) => [
+        entry.userEmail,
+        entry.romeCodes,
+      ]),
+    ).toEqual([[ANA, ["M1855"]]]);
+  });
 });

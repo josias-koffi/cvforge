@@ -65,19 +65,30 @@ seulement de ses mots-clés. Chaque offre lui dit ce qu'il a déjà et ce qu'il 
     - migration **0032** (`profile_rome_competences` et `profile_rome_inferences`) ; carte « Vos
       compétences » sur `/ma-recherche`.
 
-- [ ] **[US-126]** Score par compétences ROME et « pourquoi cette offre »
+- [x] **[US-126]** Score par compétences ROME et « pourquoi cette offre »
   - Agent: `developer`
   - Critères d'acceptation :
-    - [ ] `matching/rome-matching.ts`, extrait de `job-matching.ts` pour respecter la limite de
+    - [x] `matching/rome-matching.ts`, extrait de `job-matching.ts` pour respecter la limite de
           taille (§9) :
       - titre : 1 si le code ROME est identique, 0,6 pour le même grand domaine, sinon le score
         actuel par sous-chaîne ;
       - compétences : recouvrement entre les compétences de l'offre (à défaut, celles du métier ROME
         de l'offre) et celles du profil ;
       - le barème reste sur 100.
-    - [ ] `job_matches.missing_skills` rejoint `matched_skills` : les compétences exigées d'abord.
-    - [ ] Tests sur des fixtures où ROME et mots-clés divergent, par exemple « Ingénieur logiciel »
+    - [x] `job_matches.missing_skills` rejoint `matched_skills` : les compétences exigées d'abord.
+    - [x] Tests sur des fixtures où ROME et mots-clés divergent, par exemple « Ingénieur logiciel »
           face à une recherche de « Développeur full stack ».
+  - **Livré le 2026-09-24** ([[workflows/runs/developer-20260924100500]]) :
+    - 0,6 pour le même **domaine** (M18) et non le même grand domaine : la lettre M regroupe
+      comptabilité, RH et informatique ;
+    - un CV lu par ROMEO tombe rarement sur le code exact d'une fiche (3 sur 21 mesurés). Une
+      compétence compte donc aussi quand les libellés partagent deux mots significatifs, et les
+      compétences génériques (plus de 100 métiers) sont ignorées ;
+    - le score garde le meilleur des mots-clés et du ROME : sur 1 948 offres locales, 1 108
+      relevées, aucune baissée ;
+    - `missing_skills` (migration **0033**) ne vient que des compétences propres de l'offre, pas de
+      la fiche métier, trop longue pour « À mettre en avant ».
+
 - [ ] **[US-127]** La carte d'offre explique, et le CV en tient compte
   - Agent: `developer`
   - Critères d'acceptation :
@@ -119,3 +130,4 @@ seulement de ses mots-clés. Chaque offre lui dit ce qu'il a déjà et ce qu'il 
 
 - 2026-09-24 — [[workflows/runs/developer-20260924080225|developer]] (US-124) — passed
 - 2026-09-24 — [[workflows/runs/developer-20260924085500|developer]] (US-125) — passed
+- 2026-09-24 — [[workflows/runs/developer-20260924100500|developer]] (US-126) — passed

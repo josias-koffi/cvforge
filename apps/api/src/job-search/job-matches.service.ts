@@ -130,6 +130,7 @@ export class JobMatchesService {
         jobId,
         jobSnapshot: found.job,
         matchedSkills: [],
+        missingSkills: [],
         profileId: "",
         score: 0,
         scoreBreakdown: {

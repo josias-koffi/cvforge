@@ -1,6 +1,14 @@
 import type { SearchProject } from "@cvforge/types";
 import { fold } from "../../shared/text";
 import type { StoredJob } from "../jobs.types";
+import {
+  romeSkillsMatch,
+  romeTitleScore,
+  type RomeScoringContext,
+} from "./rome-matching";
+import { salaryScore } from "./salary";
+
+export { readYearlySalary } from "./salary";
 
 /**
  * Deciding which offers a candidate is shown, and in what order.
@@ -16,9 +24,6 @@ import type { StoredJob } from "../jobs.types";
  */
 
 const MS_PER_DAY = 86_400_000;
-const HOURS_PER_WEEK = 35;
-const WEEKS_PER_YEAR = 52;
-const MONTHS_PER_YEAR = 12;
 export const DEFAULT_MAX_AGE_DAYS = 30;
 /** Offers kept per candidate per morning. Ten is a readable e-mail. */
 export const DEFAULT_SELECTION_SIZE = 10;
@@ -124,8 +129,13 @@ export interface ScoredJob {
   job: StoredJob;
   score: number;
   breakdown: ScoreBreakdown;
-  /** The candidate's own skills found in the advert, for the explanation. */
+  /**
+   * What the candidate has: their own skills found in the advert, then the
+   * offer's ROME competences their CV shows, required ones first.
+   */
   matchedSkills: string[];
+  /** The offer's ROME competences the CV does not show, required first. */
+  missingSkills: string[];
 }
 
 /**
@@ -150,33 +160,60 @@ export interface ScoreInput {
   /** `sections.technicalSkills` of the profile behind this search. */
   skills: readonly string[];
   now: number;
+  /** Without it, the score reads keywords only, as before US-126. */
+  rome?: RomeScoringContext;
 }
 
 export function scoreJob(input: ScoreInput): ScoredJob {
-  const { job, project, now } = input;
+  const { job, project, now, rome } = input;
   const haystack = fold(`${job.title} ${job.description}`);
-  const matchedSkills = matchSkills(haystack, input.skills);
+  const keywordSkills = matchSkills(haystack, input.skills);
+  const romeSkills = rome
+    ? romeSkillsMatch(job, rome)
+    : { matched: [], missing: [], ratio: 0 };
   const breakdown: ScoreBreakdown = {
     experience: WEIGHTS.experience * experienceScore(job, project),
     freshness: WEIGHTS.freshness * freshnessScore(job, now),
     location: WEIGHTS.location * locationScore(job, project),
     salary: WEIGHTS.salary * salaryScore(job, project),
+    // The best of the two readings: ROME only ever adds to the keywords.
     skills:
       WEIGHTS.skills *
-      (input.skills.length > 0
-        ? Math.min(1, matchedSkills.length / Math.min(5, input.skills.length))
-        : 0),
-    title: WEIGHTS.title * titleScore(job, project),
+      Math.max(
+        input.skills.length > 0
+          ? Math.min(1, keywordSkills.length / Math.min(5, input.skills.length))
+          : 0,
+        romeSkills.ratio,
+      ),
+    title:
+      WEIGHTS.title *
+      Math.max(
+        titleScore(job, project),
+        romeTitleScore(job, rome?.projectCodes ?? []),
+      ),
   };
 
   return {
     breakdown,
     job,
-    matchedSkills,
+    matchedSkills: distinctFolded([...keywordSkills, ...romeSkills.matched]),
+    missingSkills: romeSkills.missing,
     score: Math.round(
       Object.values(breakdown).reduce((total, points) => total + points, 0),
     ),
   };
+}
+
+/** "TypeScript" typed by the candidate and ROME's "Typescript" are one skill. */
+function distinctFolded(labels: readonly string[]): string[] {
+  const seen = new Set<string>();
+
+  return labels.filter((label) => {
+    const key = fold(label);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
 
 /** How much of a target job title the offer's own title carries. */
@@ -301,72 +338,12 @@ export function haversineKm(
   return 2 * EARTH_RADIUS_KM * Math.asin(Math.sqrt(a));
 }
 
-/**
- * A bonus, never a filter: most adverts hide the salary, and filtering on it
- * would drop the offers that simply did not say.
- */
-function salaryScore(job: StoredJob, project: SearchProject): number {
-  if (!project.salaryMinYearly) return 0.5;
-  if (!job.salaryLabel) return 0.5;
-
-  const yearly = readYearlySalary(job.salaryLabel);
-  if (yearly === null) return 0.5;
-
-  return yearly >= project.salaryMinYearly ? 1 : 0;
-}
-
-/**
- * Reads a salary label into a yearly figure.
- *
- * France Travail writes "Annuel de 45000,00 Euros à 55000,00 Euros sur 12
- * mois", a board writes "45 000 € / an" or "3 000 € par mois". Three traps:
- * the decimal comma, the thousands space, and "sur 12 mois" — which ends an
- * **annual** label and must not be read as a monthly one.
- *
- * Anything unreadable returns null, which scores neutral. Inventing a figure
- * would filter offers on a number nobody wrote.
- */
-export function readYearlySalary(label: string): number | null {
-  const text = label
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    // "sur 12 mois" qualifies the annual total, not the period.
-    .replace(/sur\s+\d+\s+mois/g, " ");
-
-  const cleaned = text
-    // Thousands separator: a space or a dot before exactly three digits.
-    .replace(/(\d)[\s.](?=\d{3}\b)/g, "$1")
-    // Decimals, which carry nothing here.
-    .replace(/(\d)[.,]\d{1,2}\b/g, "$1");
-
-  const hourly = /\bhoraire|heure|\/\s?h\b|per hour\b/.test(text);
-  const numbers = [...cleaned.matchAll(/\d+/g)]
-    .map((match) => Number(match[0]))
-    // An hourly rate is a two-figure number; anywhere else a number under 100
-    // is "35 heures" or "12 mois", never a salary.
-    .filter((value) => (hourly ? value >= 5 && value <= 500 : value >= 100));
-  if (numbers.length === 0) return null;
-
-  // A range ("de 45000 à 55000") is read at its top: it is what the candidate
-  // is being offered at best, and the low end filters nobody out usefully.
-  const highest = Math.max(...numbers);
-
-  if (hourly) return highest * HOURS_PER_WEEK * WEEKS_PER_YEAR;
-  if (/\bannuel|annual|par an\b|\/\s?an\b|per year\b/.test(text)) return highest;
-  if (/\bmensuel|par mois\b|\/\s?mois\b|per month\b/.test(text)) {
-    return highest * MONTHS_PER_YEAR;
-  }
-
-  // No period stated: in France a four-figure salary is a monthly one.
-  return highest < 10_000 ? highest * MONTHS_PER_YEAR : highest;
-}
-
 export interface SelectionInput {
   jobs: readonly StoredJob[];
   project: SearchProject;
   skills: readonly string[];
   now: number;
+  rome?: RomeScoringContext;
   alreadyProposedJobIds?: ReadonlySet<string>;
   limit?: number;
   threshold?: number;
@@ -388,7 +365,13 @@ export function selectJobsForProject(input: SelectionInput): ScoredJob[] {
 
   return eligible
     .map((job) =>
-      scoreJob({ job, now: input.now, project: input.project, skills: input.skills }),
+      scoreJob({
+        job,
+        now: input.now,
+        project: input.project,
+        rome: input.rome,
+        skills: input.skills,
+      }),
     )
     .filter((scored) => scored.score >= (input.threshold ?? DEFAULT_SCORE_THRESHOLD))
     .sort((left, right) => right.score - left.score)

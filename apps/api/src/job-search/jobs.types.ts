@@ -1,5 +1,9 @@
 import type { SearchContractType } from "@cvforge/types";
-import type { JobSource, NormalizedJobListing } from "./job-search.types";
+import type {
+  JobSource,
+  ListingCompetence,
+  NormalizedJobListing,
+} from "./job-search.types";
 import type { MatchCandidate, MatchMethod } from "./dedup/match-job";
 
 /** One offer as the candidate sees it, with every source that publishes it. */
@@ -24,6 +28,10 @@ export interface StoredJob {
   firstSeenAt: string;
   lastSeenAt: string;
   closedAt: string | null;
+  /** The ROME métier of the offer, when a source gave it (US-124). */
+  romeCode: string | null;
+  /** The offer's own ROME competences; most offers name none. */
+  romeCompetences: ListingCompetence[];
 }
 
 export interface StoredJobListing {

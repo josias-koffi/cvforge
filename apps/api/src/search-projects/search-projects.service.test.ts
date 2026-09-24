@@ -57,7 +57,11 @@ function createService(profileIds = ["profile-1"]) {
     listDigestEnabled: async () =>
       saved
         .filter((project) => project.digestEnabled)
-        .map((project) => ({ project, userEmail: "user@example.com" })),
+        .map((project) => ({
+          project,
+          romeCodes: [],
+          userEmail: "user@example.com",
+        })),
     save: async (_userEmail, project) => {
       saved.push(project);
       return project;

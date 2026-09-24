@@ -36,6 +36,8 @@ function makeJob(overrides: Partial<StoredJob> = {}): StoredJob {
     primaryUrl: "https://example.com/jobs/1",
     publishedAt: daysAgo(2),
     remote: false,
+    romeCode: null,
+    romeCompetences: [],
     salaryLabel: "",
     title: "Développeur Full Stack (H/F)",
     titleKey: "developpeur full stack",

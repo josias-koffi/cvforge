@@ -23,6 +23,26 @@ import {
  * orders them (split from `job-digest.service.ts`, US-124).
  */
 
+/** What one morning run did, kept in `job_digest_runs.stats`. */
+export interface DigestStats {
+  /** Searches the collection worked from. */
+  projects: number;
+  /** Companies added to the registry from the adverts' original links. */
+  boardsDiscovered: number;
+  /** Sources an admin switched off, named rather than silently missing. */
+  sourcesSkipped: string[];
+  /** Among them, those that also asked for the morning selection. */
+  digestProjects: number;
+  listingsCollected: number;
+  jobsCreated: number;
+  boardsRead: number;
+  matchesWritten: number;
+  candidatesWithoutOffers: number;
+  notificationsSent: number;
+  aiReranks: number;
+  errors: string[];
+}
+
 /**
  * Checks the offers are still online before proposing them.
  *
@@ -142,6 +162,7 @@ export function toNewMatches(input: {
       jobId: entry.job.id,
       jobSnapshot: entry.job,
       matchedSkills: entry.matchedSkills,
+      missingSkills: entry.missingSkills,
       profileId: input.project.profileId,
       score: entry.score,
       scoreBreakdown: entry.breakdown,

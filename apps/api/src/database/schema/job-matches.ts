@@ -33,6 +33,8 @@ export const jobMatches = pgTable(
     score: integer("score").notNull(),
     scoreBreakdown: jsonb("score_breakdown"),
     matchedSkills: jsonb("matched_skills").$type<string[]>().notNull().default([]),
+    /** The offer's ROME competences the CV does not show, required first. */
+    missingSkills: jsonb("missing_skills").$type<string[]>().notNull().default([]),
     /** Rank the paid AI pass gave it, and its one-line explanation. */
     aiRank: integer("ai_rank"),
     aiReason: text("ai_reason"),

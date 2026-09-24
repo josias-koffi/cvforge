@@ -1,7 +1,7 @@
 import { and, desc, eq, inArray, lt } from "drizzle-orm";
 import type { Database } from "../database/database.types";
 import { jobDigestRuns, jobMatches, jobs } from "../database/schema";
-import type { StoredJob } from "./jobs.types";
+import { toJob } from "./jobs.rows";
 import type {
   DigestRun,
   DigestRunKind,
@@ -27,36 +27,12 @@ function toMatch(row: MatchRow): StoredJobMatch {
     id: row.id,
     jobId: row.jobId,
     matchedSkills: row.matchedSkills,
+    missingSkills: row.missingSkills,
     profileId: row.profileId,
     score: row.score,
     scoreBreakdown: (row.scoreBreakdown as ScoreBreakdown | null) ?? null,
     status: row.status as JobMatchStatus,
     userEmail: row.userEmail,
-  };
-}
-
-function toJob(row: JobRow): StoredJob {
-  return {
-    closedAt: row.closedAt?.toISOString() ?? null,
-    companyAnonymous: row.companyAnonymous,
-    companyKey: row.companyKey,
-    companyName: row.companyName,
-    contractType: row.contractType as StoredJob["contractType"],
-    department: row.department,
-    description: row.description,
-    descriptionSimhash: row.descriptionSimhash,
-    firstSeenAt: row.firstSeenAt.toISOString(),
-    id: row.id,
-    lastSeenAt: row.lastSeenAt.toISOString(),
-    latitude: row.latitude,
-    locationLabel: row.locationLabel,
-    longitude: row.longitude,
-    primaryUrl: row.primaryUrl,
-    publishedAt: row.publishedAt?.toISOString() ?? null,
-    remote: row.remote,
-    salaryLabel: row.salaryLabel,
-    title: row.title,
-    titleKey: row.titleKey,
   };
 }
 
@@ -89,6 +65,7 @@ export class PgJobMatchesStore implements JobMatchesStore {
           jobId: match.jobId,
           jobSnapshot: match.jobSnapshot,
           matchedSkills: match.matchedSkills,
+          missingSkills: match.missingSkills,
           profileId: match.profileId,
           score: match.score,
           scoreBreakdown: match.scoreBreakdown,

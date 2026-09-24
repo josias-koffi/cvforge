@@ -232,6 +232,13 @@
       "when": 1791900000000,
       "tag": "0032_profile_rome_competences",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1792000000000,
+      "tag": "0033_job_match_missing_skills",
+      "breakpoints": true
     }
   ]
 }

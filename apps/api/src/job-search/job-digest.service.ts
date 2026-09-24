@@ -16,11 +16,16 @@ import type {
   JobMatchesStore,
 } from "./matches.types";
 import type { JobSourcesStore } from "./job-sources.types";
+import type {
+  RomeMatchingReader,
+  RomeMatchingRun,
+} from "./rome-matching.pg-reader";
 import { JobCollector } from "./job-collector";
 import {
   keepLiveOnly,
   rerankSelection,
   toNewMatches,
+  type DigestStats,
 } from "./job-digest.steps";
 import { dateInParis, hourInParis } from "./paris-time";
 import {
@@ -39,7 +44,6 @@ import {
 
 const CHECK_INTERVAL_MS = 15 * 60_000;
 const DIGEST_HOUR = 6;
-/** One day back: yesterday's offers are already collected. */
 /**
  * The daily pass only asks for what was published since yesterday: the rest is
  * already in the base. A first collection has nothing to build on, and takes
@@ -60,25 +64,6 @@ const MS_PER_DAY = 86_400_000;
 
 /** Offers named in the e-mail; the rest are one click away. */
 const EMAIL_PREVIEW_SIZE = 5;
-
-export interface DigestStats {
-  /** Searches the collection worked from. */
-  projects: number;
-  /** Companies added to the registry from the adverts' original links. */
-  boardsDiscovered: number;
-  /** Sources an admin switched off, named rather than silently missing. */
-  sourcesSkipped: string[];
-  /** Among them, those that also asked for the morning selection. */
-  digestProjects: number;
-  listingsCollected: number;
-  jobsCreated: number;
-  boardsRead: number;
-  matchesWritten: number;
-  candidatesWithoutOffers: number;
-  notificationsSent: number;
-  aiReranks: number;
-  errors: string[];
-}
 
 @Injectable()
 export class JobDigestService implements OnModuleInit {
@@ -102,6 +87,7 @@ export class JobDigestService implements OnModuleInit {
     private readonly credits: CreditsService,
     private readonly openRouter: OpenRouterService,
     private readonly notifications: NotificationsService,
+    private readonly rome: RomeMatchingReader,
     private readonly appUrl: string,
     private readonly now: () => number = Date.now,
   ) {
@@ -226,9 +212,10 @@ export class JobDigestService implements OnModuleInit {
       if (kind === "digest") {
         const digestProjects = await this.searchProjects.listDigestEnabled();
         stats.digestProjects = digestProjects.length;
+        const rome = this.rome.forRun();
 
         for (const entry of digestProjects) {
-          await this.buildSelection(entry, runDate, stats);
+          await this.buildSelection(entry, runDate, stats, rome);
         }
       }
 
@@ -249,9 +236,10 @@ export class JobDigestService implements OnModuleInit {
   }
 
   private async buildSelection(
-    entry: { userEmail: string; project: SearchProject },
+    entry: { userEmail: string; project: SearchProject; romeCodes: string[] },
     runDate: string,
     stats: DigestStats,
+    rome: RomeMatchingRun,
   ): Promise<void> {
     const { project, userEmail } = entry;
 
@@ -274,6 +262,12 @@ export class JobDigestService implements OnModuleInit {
         limit: DEFAULT_SELECTION_SIZE,
         now: this.now(),
         project,
+        rome: await rome.contextFor({
+          jobs: candidates,
+          profileId: project.profileId,
+          projectCodes: entry.romeCodes,
+          userEmail,
+        }),
         skills: profile?.sections.technicalSkills ?? [],
       });
       const live = await this.keepLiveOnly(selected);

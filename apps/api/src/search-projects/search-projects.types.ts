@@ -9,9 +9,12 @@ export type SearchProjectsStore = {
     profileId: string,
   ): Promise<SearchProject | null>;
   listByUserEmail(userEmail: string): Promise<SearchProject[]>;
-  /** Every search whose owner asked for the morning selection. */
+  /**
+   * Every search whose owner asked for the morning selection, with the métier
+   * codes they confirmed: the score reads them (US-126).
+   */
   listDigestEnabled(): Promise<
-    Array<{ userEmail: string; project: SearchProject }>
+    Array<{ userEmail: string; project: SearchProject; romeCodes: string[] }>
   >;
   /**
    * Every search, morning selection or not. The collection reads this one:

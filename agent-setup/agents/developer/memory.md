@@ -1340,3 +1340,15 @@
 - **Leçon** : une empreinte n'est enregistrée que si ROMEO a répondu ; sinon une panne passagère figerait un profil sans compétences jusqu'à sa prochaine modification.
 - **Leçon** : ne jamais envoyer à une API externe le contenu de profils réels de la base locale pour mesurer, même en dev ; utiliser des textes fictifs.
 - **Leçon** : `prettier` lancé depuis `apps/api` sur `packages/types` applique la mauvaise config ; relancer depuis le paquet ou vérifier le diff.
+
+### 2026-09-24 — US-126 : le score ROME (stage 01 · [[workflows/runs/developer-20260924100500]])
+- **Context** : [[sprints/sprint-027#^us-126]] · [[workflows/runs/developer-20260924100500/01-developer]]
+- **Leçon** : 35 000 compétences ROME, et ROMEO ne tombe que rarement sur le code exact d'une fiche métier. Comparer les codes seuls ne voit presque rien ; il faut aussi comparer les libellés, en ignorant les mots de cadrage (« règles », « respecter », « techniques »).
+- **Leçon** : un essai à blanc sur la base locale (scorer sans écrire) a trouvé le faux positif que les tests n'avaient pas ; le garder comme étape avant de cocher une story de score.
+- **Leçon** : ne pas démarrer `AppModule` dans un script ponctuel : le minuteur du digest peut envoyer les e-mails du matin. Ouvrir la base avec `createDatabaseClient`.
+- **Leçon** : le code d'`apps/api` n'est pas formaté par prettier (lignes jusqu'à 90) ; lancer prettier sur un fichier existant ajoute du bruit. Le réserver aux fichiers neufs.
+
+## 2026-09-24 — Scopes France Travail corrigés (INC2741452)
+- Scopes donnés par le support : La Bonne Boîte `api_labonneboitev2 search office`, ROME Substitutions `api_rome-substitutionsv1 nomenclatureRomeSubstitutions` (ajoutée au catalogue `ft.config.ts`, non vérifiée).
+- Avec ces scopes le jeton est délivré, mais les appels répondent toujours 403 `WWW-Authenticate: insufficient_scope` : habilitation à obtenir côté France Travail, incident à rouvrir.
+- **Leçon** : `source .env` altère le secret FT (caractère interprété par le shell → `invalid_client`) ; utiliser `node --env-file=../../.env --import tsx src/france-travail/ft-smoke.main.ts <api>`.

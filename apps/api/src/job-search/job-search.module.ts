@@ -47,6 +47,11 @@ import { JobBoardsController } from "./job-boards.controller";
 import { JobSearchAdminController } from "./job-search-admin.controller";
 import { JobMatchesController } from "./job-matches.controller";
 import { JobMatchesService } from "./job-matches.service";
+import {
+  PgRomeMatchingReader,
+  ROME_MATCHING_READER,
+  type RomeMatchingReader,
+} from "./rome-matching.pg-reader";
 
 /**
  * The job search: where offers come from.
@@ -138,6 +143,11 @@ import { JobMatchesService } from "./job-matches.service";
         ),
     },
     {
+      provide: ROME_MATCHING_READER,
+      inject: [DATABASE],
+      useFactory: (db: Database) => new PgRomeMatchingReader(db),
+    },
+    {
       provide: JobDigestService,
       inject: [
         SEARCH_PROJECTS_STORE,
@@ -152,6 +162,7 @@ import { JobMatchesService } from "./job-matches.service";
         OPENROUTER_SERVICE,
         NotificationsService,
         JOB_SOURCE_ADAPTERS,
+        ROME_MATCHING_READER,
       ],
       useFactory: (
         searchProjects: SearchProjectsStore,
@@ -166,6 +177,7 @@ import { JobMatchesService } from "./job-matches.service";
         openRouter: OpenRouterService,
         notifications: NotificationsService,
         adapters: JobSourceAdapter[],
+        rome: RomeMatchingReader,
       ) =>
         new JobDigestService(
           searchProjects,
@@ -180,6 +192,7 @@ import { JobMatchesService } from "./job-matches.service";
           credits,
           openRouter,
           notifications,
+          rome,
           // Same source as the magic links, so both point at the same app.
           resolveAuthConfig(process.env).appUrl,
         ),

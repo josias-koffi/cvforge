@@ -68,19 +68,21 @@ export class PgSearchProjectsStore implements SearchProjectsStore {
       .from(searchProjects)
       .where(eq(searchProjects.digestEnabled, true));
 
-    return rows.map((row) => ({
-      project: toProject(row),
-      userEmail: row.userEmail,
-    }));
+    return this.withRomeCodes(rows);
   }
 
   async listAll() {
-    const rows = await this.db.select().from(searchProjects);
+    return this.withRomeCodes(await this.db.select().from(searchProjects));
+  }
+
+  private async withRomeCodes(rows: Array<typeof searchProjects.$inferSelect>) {
     const romeCodes = await this.confirmedRomeCodes();
 
     return rows.map((row) => ({
       project: toProject(row),
-      romeCodes: [...(romeCodes.get(ownerKey(row.userEmail, row.profileId)) ?? [])],
+      romeCodes: [
+        ...(romeCodes.get(ownerKey(row.userEmail, row.profileId)) ?? []),
+      ],
       userEmail: row.userEmail,
     }));
   }
