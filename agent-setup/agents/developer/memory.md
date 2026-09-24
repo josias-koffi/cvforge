@@ -1435,19 +1435,61 @@
 - **Context** : `search_project_rome` et `profile_rome_competences` étaient purgées à la suppression du compte, mais absentes de l'export. Elles y sont désormais (`ownedSearchJobs`, `ownedProfileCompetences`).
 - **Leçon** : chaque nouvelle table par utilisateur doit être ajoutée **à la purge et à l'export**. Le test « lignes résiduelles » de `privacy.service.test.ts` ne vérifie que la purge : un oubli dans l'export ne fait échouer aucun test.
 
+## 2026-09-24 — US-131 implement (stage 03 · [[workflows/runs/analyze-design-dev-review-20260924143552]])
+- **Context**: [[sprints/sprint-029#US-131]] · [[workflows/runs/analyze-design-dev-review-20260924143552/03-implement]]
+- **Did**: Module `acquisition/` (POST /public/events, migration 0039, purge à 90 j), tunnel dans les métriques et le CSV, `FunnelCard` côté web, `trackToolEvent` et BFF `/api/events` côté landing. `shared/ip-hash.ts` et `lib/forwarded-for.ts` extraits.
+- **Why**: E23 : mesurer le tunnel avant d'ajouter des outils.
+- **Learned**: `app.module.test.ts` fige la liste des modules : tout nouveau module doit y être ajouté. `@cvforge/types` est lu depuis `dist` à l'exécution : lancer `pnpm --filter @cvforge/types build` après y avoir ajouté un export. Le test de démarrage tourne contre la base de dev locale : une purge journalise une erreur si cette base n'est pas migrée.
+- **Open**: Découper la livraison en deux PR (API, puis web et landing).
+
 ### 2026-09-24 — Refonte UX des cartes d'offres et du panneau (/offres, /offres-du-jour)
 - **Did** : cartes repensées (initiale de l'entreprise, méta avec icônes, actions « Garder » et « Pas pour moi » écrites en toutes lettres, plus aucune ✕). Score affiché en mots + % + jauge (`lib/match-score.ts`, `match-score.tsx`), avec le détail par critère dans le panneau (« Pourquoi cette offre ? »). Panneau à `max(45vw, 36rem)`. `SCORE_WEIGHTS` / `ScoreBreakdown` déplacés dans `@cvforge/types`. `scoreBreakdown` exposé par `/job-search/offers`.
 - **Learned** : pour élargir un `Sheet`, il faut les mêmes modificateurs `data-[side=right]:` que la classe de base. Sans eux, `sm:max-w-sm` l'emporte en silence. Un match avec `score: 0` est une offre choisie à la main : ne jamais afficher « 0 % ».
+
+## 2026-09-24 — US-132 implement (stage 03 · [[workflows/runs/analyze-design-dev-review-20260924145528]])
+- **Context**: [[sprints/sprint-029#US-132]] · [[workflows/runs/analyze-design-dev-review-20260924145528/03-implement]]
+- **Did**: Limitation par politique de route (`rate-limit.policies.ts`), `/public/events` couverte, `CLIENT_IP_HEADER` côté landing, ADR-022 amendée.
+- **Why**: E23 ajoute des routes publiques ; le limiteur était câblé pour l'ATS.
+- **Learned**: Faire de la politique la plus stricte le repli par défaut garde les anciens tests intacts, sans jamais ouvrir de passage libre. La balise `!override` de docker-compose.prod.yml empêche la lecture par PyYAML.
+- **Open**: Vérification en production de `CF-Connecting-IP` et de l'origine réservée à Cloudflare.
 
 ### 2026-09-24 — Cartes « Entreprises qui recrutent » alignées sur les offres
 - **Did** : `CompanyCard` repensée sur le modèle de `OfferCard` (initiale, secteur, méta avec icônes, badge « Fort potentiel » en succès, pied avec « Voir la fiche » et « Candidature spontanée », carte entière cliquable). `CompanyMark` extrait (`company-mark.tsx`) et `MetaList` / `MetaItem` exportés de `offer-meta.tsx` pour les deux listes.
 - **Learned** : pour voir /entreprises en local, lancer `pnpm --filter @cvforge/api hiring-companies:refresh`, sinon la liste reste « Première lecture en cours ».
 
+## 2026-09-24 — US-133 implement (stage 03 · [[workflows/runs/analyze-design-dev-review-20260924155415]])
+- **Context**: [[sprints/sprint-029#US-133]] · [[workflows/runs/analyze-design-dev-review-20260924155415/03-implement]]
+- **Did**: Intention de lead portée par le lien magique (migration 0042), `LeadCaptureService`, ATS migré, rapports ATS dans l'app.
+- **Why**: Socle de conversion commun aux outils gratuits d'E23.
+- **Learned**: Une autre session a livré la migration 0040 pendant que la 0039 était en cours : lire le journal Drizzle juste avant d'ajouter une migration, et choisir un `when` supérieur à tous ceux déjà présents. Dans le JSX, l'apostrophe typographique ’ évite `react/no-unescaped-entities`.
+- **Open**: Deux PR (API, puis web).
+
 ### 2026-09-24 — Fiche entreprise repensée (/entreprises/[siret])
 - **Did** : en-tête avec l'initiale, tuiles de chiffres clés (`company-key-figures.tsx`), engagements en tuiles avec icônes (`company-commitments.tsx`), colonne « Elle recrute » avec la candidature spontanée et son coût, page employeur, fiche d'identité avec les sources. `CompanyProfileView` reçoit le bouton par un prop `action`.
 - **Learned** : pour voir une fiche complète en local, OPEN (38103128500574) a finances, page employeur, Egapro et bilan carbone ; YZEE (40799716200042) montre le cas « fiche pas encore lue ». La règle `react-hooks/purity` refuse `Date.now()` pendant le rendu, même en paramètre par défaut.
+
+## 2026-09-24 — US-134 implement (stage 03 · [[workflows/runs/analyze-design-dev-review-20260924162332]])
+- **Context**: [[sprints/sprint-029#US-134]] · [[workflows/runs/analyze-design-dev-review-20260924162332/03-implement]]
+- **Did**: Codes d'erreur publics partagés entre l'API et la landing ; `locale` envoyée ; liens vers l'outil ATS dans le Hero et le CTA ; `ats-checker` découpé.
+- **Why**: La version EN affichait les messages français de l'API.
+- **Learned**: `HttpException` de Nest 11 garde `message` quand on lui passe un objet `{ code, message }` : les tests qui comparent le message restent valides. D'autres sessions modifient le dépôt en parallèle : relancer un test en échec hors périmètre avant de conclure.
+- **Open**: none
 
 ### 2026-09-24 — Logos des entreprises, premier client Redis (ADR-025)
 - **Did** : `entreprise.logo` d'Offres v2 gardé sur l'offre (`jobs.company_logo_url`, recopié depuis `job_listings.raw` par la migration 0042). Wikidata (P1616 → P154) lu par la passe des entreprises (`companies.logo_url`, `logo_read_at`). Proxy `GET /company-logos?src=` avec liste de préfixes autorisés, images matricielles de 512 Ko au plus, cache Redis 30 j (1 j pour un logo absent). Route web `/api/company-logos` ; `CompanyMark` affiche le logo, avec l'initiale en repli.
 - **Learned** : le SPARQL de Wikidata (`query.wikidata.org`) a cessé de répondre pendant plusieurs minutes ; l'API du wiki (`haswbstatement` puis `wbgetentities`) répond en une seconde. Une recherche fait 300 caractères au plus, soit 15 SIREN. Les miniatures Commons n'existent qu'en largeurs standard : 120 px passe, 128 px donne 400. Sans `disconnect()` à l'arrêt, ioredis empêche un script CLI de se terminer quand Redis est injoignable. Un SIREN inconnu doit aussi enregistrer `logo_read_at`, sinon il revient chaque heure.
 - **Open** : partager le logo entre les offres d'une même entreprise (`companyKey`), pour les sources qui n'en donnent pas.
+
+## 2026-09-24 — US-135 implement (stage 03 · [[workflows/runs/analyze-design-dev-review-20260924164112]])
+- **Context**: [[sprints/sprint-029#US-135]] · [[workflows/runs/analyze-design-dev-review-20260924164112/03-implement]]
+- **Did**: lib/tools.ts, route app/[locale]/tools, réécriture /fr/outils, FreeToolGrid, section FreeTools, toolsStructuredData, sitemap, lien d'en-tête.
+- **Why**: Même montage que la page ATS.
+- **Learned**: Un build avec NEXT_DIST_DIR réécrit tsconfig.json et next-env.d.ts : les restaurer après coup.
+- **Open**: none
+
+## 2026-09-24 — US-136 implement (stage 03 · [[workflows/runs/analyze-design-dev-review-20260924173554]])
+- **Context**: [[sprints/sprint-029#US-136]] · [[workflows/runs/analyze-design-dev-review-20260924173554/03-implement]]
+- **Did**: Module keyword-match sans dépendance ; offer-structuring extrait ; relais BFF partagé ; toolFunnel ; EmailConsentForm.
+- **Why**: Réutiliser sans dupliquer (proxy, formulaire, constructeur de PDF de test).
+- **Learned**: Focaliser un panneau monté après un await : useEffect sur l'état, pas requestAnimationFrame. Modifier offerTerms change le score ATS, donc demande de monter la version du moteur.
+- **Open**: Le checker ATS a probablement le même défaut de focus.

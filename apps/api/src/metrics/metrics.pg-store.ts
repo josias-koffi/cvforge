@@ -1,7 +1,9 @@
 import { and, count, eq, gte, isNotNull, sql, sum } from "drizzle-orm";
 import { union } from "drizzle-orm/pg-core";
+import { LEAD_OFFER_SOURCE_LABEL } from "../applications/applications.types";
 import type { Database } from "../database/database.types";
 import {
+  acquisitionEvents,
   applicationCvVersions,
   applications,
   atsScans,
@@ -10,7 +12,12 @@ import {
   creditOrders,
   interviewSessions,
 } from "../database/schema";
-import type { AtsCounters, MetricsStore, ProductCounters } from "./metrics.types";
+import type {
+  AcquisitionStepCount,
+  AtsCounters,
+  MetricsStore,
+  ProductCounters,
+} from "./metrics.types";
 
 const MS_PER_DAY = 86_400_000;
 
@@ -157,5 +164,54 @@ export class PgMetricsStore implements MetricsStore {
       })),
       unlockedScanCount: toNumber(scanTotals?.unlockedScanCount ?? 0),
     };
+  }
+
+  /**
+   * One row per visitor, step and day is guaranteed by the table's unique
+   * index, so a plain count is already a count of daily visitors.
+   */
+  async readAcquisitionSteps(sinceDay: string): Promise<AcquisitionStepCount[]> {
+    const rows = await this.db
+      .select({
+        step: acquisitionEvents.step,
+        tool: acquisitionEvents.tool,
+        visitors: count(),
+      })
+      .from(acquisitionEvents)
+      .where(gte(acquisitionEvents.day, sinceDay))
+      .groupBy(acquisitionEvents.tool, acquisitionEvents.step);
+
+    return rows.map((row) => ({ ...row, visitors: Number(row.visitors) }));
+  }
+
+  /** The same read-time join as `convertedLeadCount`, bounded to the window. */
+  async readAtsActivations(since: Date): Promise<number> {
+    const [row] = await this.db
+      .select({ activated: sql<string>`count(distinct ${atsScans.email})` })
+      .from(atsScans)
+      .innerJoin(authAccounts, eq(authAccounts.email, atsScans.email))
+      .where(
+        and(eq(atsScans.source, "public"), gte(atsScans.unlockedAt, since)),
+      );
+
+    return toNumber(row?.activated ?? 0);
+  }
+
+  /**
+   * The comparator keeps no address of its own: an account counts as
+   * activated once its link created the offered application (US-136).
+   */
+  async readKeywordMatchActivations(since: Date): Promise<number> {
+    const [row] = await this.db
+      .select({ activated: sql<string>`count(distinct ${applications.userEmail})` })
+      .from(applications)
+      .where(
+        and(
+          eq(applications.sourceLabel, LEAD_OFFER_SOURCE_LABEL),
+          gte(applications.createdAt, since),
+        ),
+      );
+
+    return toNumber(row?.activated ?? 0);
   }
 }

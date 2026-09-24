@@ -1,3 +1,4 @@
+import { FunnelCard } from "@/components/admin/funnel-card"
 import { MetricCard } from "@/components/admin/metric-card"
 import { OpenRouterBalanceCard } from "@/components/admin/openrouter-balance-card"
 import { formatPrice } from "@/lib/format"
@@ -54,6 +55,13 @@ export function MetricsGrid({
           },
         ]}
       />
+      {metrics.acquisition.map((funnel) => (
+        <FunnelCard
+          key={funnel.tool}
+          funnel={funnel}
+          windowDays={metrics.activeWindowDays}
+        />
+      ))}
       <MetricCard
         label="Score ATS moyen"
         // Per engine version, never pooled: the scale is versioned, and an

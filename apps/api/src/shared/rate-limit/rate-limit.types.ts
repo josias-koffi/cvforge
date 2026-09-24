@@ -32,3 +32,21 @@ export const RATE_LIMIT_STORE = Symbol("RATE_LIMIT_STORE");
 export const RATE_LIMIT_CLOCK = Symbol("RATE_LIMIT_CLOCK");
 
 export type Clock = () => number;
+
+/**
+ * How one public route is metered (US-132). The middleware applies the first
+ * policy whose `matches` accepts the path, and the default one otherwise.
+ */
+export type RateLimitPolicy = {
+  /** Namespaces the per-IP counters: `${name}:${ip}`. */
+  name: string;
+  /** The Nest route patterns `AppModule` applies the middleware to. */
+  routes: string[];
+  matches: (path: string) => boolean;
+  /** Checked in order; the first rule exceeded answers 429. */
+  perIp: RateLimitRule[];
+  /** The shared counter that stops spending, or null for a route that spends nothing. */
+  globalBudget: { key: string; rule: RateLimitRule } | null;
+  limitedMessage: string;
+  budgetMessage: string;
+};

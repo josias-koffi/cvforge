@@ -10,11 +10,14 @@ import {
 import {
   ACCOUNT_STATUS_ACTIVE,
   ACCOUNT_STATUS_SUSPENDED,
+  leadIntentPath,
+  type LeadIntent,
 } from "@cvforge/types";
 import { randomBytes } from "node:crypto";
 import { SUSPENDED_ACCOUNT_MESSAGE } from "./session-messages";
 import { SessionCookieCodec } from "./session-cookie";
 import { InvitationFlow } from "./invitations";
+import { buildMagicLink, normalizeRedirectTarget } from "./auth.links";
 import {
   createConsentRecord,
   hashToken,
@@ -31,11 +34,23 @@ import type {
 } from "./auth.types";
 
 /** Runs once an account exists for the first time; failures never block sign-in. */
-export type AccountCreatedListener = (email: string) => Promise<unknown> | unknown;
+export type AccountCreatedListener = (
+  email: string,
+) => Promise<unknown> | unknown;
+
+/**
+ * Runs when a link carrying a free tool's intent is redeemed, new account or
+ * not; failures never block sign-in (US-133).
+ */
+export type LeadIntentListener = (
+  email: string,
+  intent: LeadIntent,
+) => Promise<unknown> | unknown;
 
 @Injectable()
 export class AuthService {
   private readonly accountCreatedListeners: AccountCreatedListener[] = [];
+  private readonly leadIntentListeners: LeadIntentListener[] = [];
   private readonly logger = new Logger(AuthService.name);
   private readonly sessionCookies: SessionCookieCodec;
   private readonly invitations: InvitationFlow;
@@ -53,9 +68,14 @@ export class AuthService {
     );
   }
 
+  /**
+   * `intent` is what a free tool's visitor asked for: it travels with the link
+   * and dies with it, and decides where the link opens the app (US-133).
+   */
   async requestMagicLink(
     rawEmail: string,
     consentAccepted = false,
+    intent: LeadIntent | null = null,
   ): Promise<MagicLinkResponse> {
     await this.pruneExpiredMagicLinks();
 
@@ -67,7 +87,9 @@ export class AuthService {
     }
 
     if (!existingAccount && !consentAccepted) {
-      throw new BadRequestException("Consent is required before creating an account.");
+      throw new BadRequestException(
+        "Consent is required before creating an account.",
+      );
     }
 
     // A suspended account keeps its data but gets no way back in.
@@ -82,11 +104,16 @@ export class AuthService {
       consent: existingAccount?.consent ?? createConsentRecord("passwordless"),
       email,
       expiresAt: new Date(expiresAt).toISOString(),
+      intent,
     });
 
     return {
       email,
-      magicLink: this.buildMagicLink(token),
+      magicLink: buildMagicLink(
+        this.config,
+        token,
+        intent ? leadIntentPath(intent) : null,
+      ),
       expiresAt: new Date(expiresAt).toISOString(),
       sessionDurationDays: this.config.sessionTtlDays,
     };
@@ -101,13 +128,25 @@ export class AuthService {
     this.accountCreatedListeners.push(listener);
   }
 
-  private async notifyAccountCreated(email: string) {
-    for (const listener of this.accountCreatedListeners) {
+  onLeadIntent(listener: LeadIntentListener) {
+    this.leadIntentListeners.push(listener);
+  }
+
+  private notifyAccountCreated(email: string) {
+    return this.notify("Account-created", this.accountCreatedListeners, email);
+  }
+
+  private async notify<Args extends unknown[]>(
+    label: string,
+    listeners: Array<(...args: Args) => unknown>,
+    ...args: Args
+  ) {
+    for (const listener of listeners) {
       try {
-        await listener(email);
+        await listener(...args);
       } catch (error) {
         this.logger.error(
-          `Account-created listener failed: ${error instanceof Error ? error.message : String(error)}`,
+          `${label} listener failed: ${error instanceof Error ? error.message : String(error)}`,
         );
       }
     }
@@ -156,10 +195,20 @@ export class AuthService {
       await this.notifyAccountCreated(link.email);
     }
 
+    // After the account exists, so a listener can write for it.
+    if (link.intent) {
+      await this.notify(
+        "Lead-intent",
+        this.leadIntentListeners,
+        link.email,
+        link.intent,
+      );
+    }
+
     const session = this.sessionCookies.createSession(link.email, role);
 
     return {
-      redirectUrl: this.normalizeRedirectTarget(redirectTo),
+      redirectUrl: normalizeRedirectTarget(this.config, redirectTo),
       session,
       cookie: this.sessionCookies.serialize(session),
     };
@@ -277,36 +326,6 @@ export class AuthService {
     }
 
     return (await this.accountStore.demoteToUser(email)) as AuthAccountRecord;
-  }
-
-  private buildMagicLink(token: string) {
-    const loginSuccessUrl = new URL("/login/success", this.config.appUrl);
-    const consumeUrl = new URL("/auth/passwordless/consume", this.config.apiUrl);
-
-    consumeUrl.searchParams.set("token", token);
-    consumeUrl.searchParams.set("redirectTo", loginSuccessUrl.toString());
-
-    return consumeUrl.toString();
-  }
-
-  private normalizeRedirectTarget(redirectTo?: string) {
-    if (!redirectTo) {
-      return new URL("/login/success", this.config.appUrl).toString();
-    }
-
-    const allowedOrigin = new URL(this.config.appUrl).origin;
-
-    try {
-      const candidate = new URL(redirectTo, this.config.appUrl);
-
-      if (candidate.origin !== allowedOrigin) {
-        return new URL("/login", this.config.appUrl).toString();
-      }
-
-      return candidate.toString();
-    } catch {
-      return new URL("/login", this.config.appUrl).toString();
-    }
   }
 
   /**

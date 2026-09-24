@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest"
 import nextConfig, { legalRedirects, resolveNextDistDir } from "../next.config"
 import { locales } from "../lib/i18n"
 import { atsPath } from "../lib/ats"
+import { keywordMatchPath, toolsPath } from "../lib/tools"
 import { legalPath } from "../lib/legal"
 
 describe("landing next config", () => {
@@ -105,6 +106,54 @@ describe("landing next config", () => {
           redirect.destination
         )
       }
+    })
+  })
+
+  /** The comparator, same arrangement again (US-136). */
+  it("serves the comparator under each language's slug", async () => {
+    const redirects = await nextConfig.redirects!()
+    const rewrites = await nextConfig.rewrites!()
+
+    expect(redirects).toContainEqual({
+      source: "/fr/cv-job-match",
+      destination: "/fr/comparateur-cv-offre",
+      permanent: true,
+    })
+    expect(redirects).toContainEqual({
+      source: "/en/comparateur-cv-offre",
+      destination: "/en/cv-job-match",
+      permanent: true,
+    })
+    expect(rewrites).toContainEqual({
+      source: keywordMatchPath("fr"),
+      destination: "/fr/cv-job-match",
+    })
+  })
+
+  /** The free tools hub, same arrangement as the ATS check (US-135). */
+  describe("the free tools hub", () => {
+    it("redirects each language away from the other's slug", async () => {
+      const redirects = await nextConfig.redirects!()
+
+      expect(redirects).toContainEqual({
+        source: "/fr/tools",
+        destination: "/fr/outils",
+        permanent: true,
+      })
+      expect(redirects).toContainEqual({
+        source: "/en/outils",
+        destination: "/en/tools",
+        permanent: true,
+      })
+    })
+
+    it("rewrites the French address onto the shared route", async () => {
+      const rewrites = await nextConfig.rewrites!()
+
+      expect(rewrites).toContainEqual({
+        source: toolsPath("fr"),
+        destination: "/fr/tools",
+      })
     })
   })
 })

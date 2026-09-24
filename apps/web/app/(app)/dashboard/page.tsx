@@ -9,6 +9,7 @@ import type {
 } from "@cvforge/types"
 import { ArrowRightIcon, PlusIcon } from "lucide-react"
 
+import { AtsScansPanel } from "@/components/ats/ats-scans-panel"
 import { ActivityChart } from "@/components/dashboard/activity-chart"
 import { InterviewScoreChart } from "@/components/dashboard/interview-score-chart"
 import { SectionCards } from "@/components/dashboard/section-cards"
@@ -18,6 +19,7 @@ import { OffersTable } from "@/components/offers/offers-table"
 import { Button } from "@/components/ui/button"
 import { buildActivitySeries } from "@/lib/activity"
 import { api } from "@/lib/api"
+import type { AtsScanSummary } from "@/lib/ats-report"
 import { hasProgressData } from "@/lib/interview/progress"
 
 export const metadata: Metadata = { title: "Tableau de bord" }
@@ -53,7 +55,7 @@ function Panel({
 export default async function DashboardPage() {
   // The interview calls are optional: a dashboard that 500s because the
   // practice history is unavailable helps nobody.
-  const [{ summary }, { applications }, credits, interviews, sessions] =
+  const [{ summary }, { applications }, credits, interviews, sessions, ats] =
     await Promise.all([
       api<{ summary: ApplicationsKpiSummary }>("/applications/summary"),
       api<{ applications: DraftApplication[] }>("/applications"),
@@ -64,6 +66,7 @@ export default async function DashboardPage() {
       api<{ sessions: InterviewSessionListItem[] }>("/interviews/sessions").catch(
         () => null
       ),
+      api<{ scans: AtsScanSummary[] }>("/ats/scans").catch(() => null),
     ])
 
   const recent = [...applications]
@@ -101,6 +104,8 @@ export default async function DashboardPage() {
       </div>
 
       <div className="grid gap-6 px-4 lg:px-6">
+        <AtsScansPanel scans={ats?.scans ?? []} />
+
         <Panel
           href="/candidatures"
           linkLabel="Toutes les candidatures"

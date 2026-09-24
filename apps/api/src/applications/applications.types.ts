@@ -28,6 +28,13 @@ export type StoredApplication = DraftApplication & {
   skillsToHighlight?: string[];
 };
 
+/**
+ * Source of an application created for a free tool's lead (US-136). Shown as
+ * the source in the app, and what `/admin/metrics` counts the comparator's
+ * activated accounts by.
+ */
+export const LEAD_OFFER_SOURCE_LABEL = "Comparateur gratuit CV / offre";
+
 /** DI token for the applications store, shared by every module that reads them. */
 export const APPLICATIONS_STORE = Symbol("APPLICATIONS_STORE");
 

@@ -141,6 +141,30 @@ describe("PgAtsScanStore", () => {
     });
   });
 
+  describe("the reports of a signed-in address (US-133)", () => {
+    it("finds what the address unlocked, newest first, within retention", async () => {
+      const older = await store.create(makeScan());
+      const newer = await store.create(makeScan());
+      const expired = await store.create(
+        makeScan({ expiresAt: new Date(Date.now() - 1000).toISOString() }),
+      );
+      const stranger = await store.create(makeScan());
+      await store.create(makeScan());
+
+      await store.unlock(older.id, "lead@example.com", "2026-09-01T10:00:00.000Z");
+      await store.unlock(newer.id, "lead@example.com", "2026-09-20T10:00:00.000Z");
+      await store.unlock(expired.id, "lead@example.com", "2026-09-21T10:00:00.000Z");
+      await store.unlock(stranger.id, "someone@else.com", "2026-09-21T10:00:00.000Z");
+
+      const found = await store.findUnlockedByEmail(
+        "lead@example.com",
+        new Date().toISOString(),
+      );
+
+      expect(found.map((scan) => scan.id)).toEqual([newer.id, older.id]);
+    });
+  });
+
   describe("retention", () => {
     it("deletes scans past their deadline and keeps the rest", async () => {
       const expired = await store.create(

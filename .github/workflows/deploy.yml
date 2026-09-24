@@ -323,6 +323,9 @@ jobs:
       # empty salt, which the API replaces with a per-process random one rather
       # than failing the deploy.
       TF_VAR_ats_ip_hash_secret: ${{ secrets.ATS_IP_HASH_SECRET }}
+      # Optional too: without it the landing's visitors share one rate-limit
+      # counter at the API (US-132).
+      TF_VAR_landing_proxy_secret: ${{ secrets.LANDING_PROXY_SECRET }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4

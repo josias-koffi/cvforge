@@ -2,6 +2,7 @@ import type { PublicCreditOffer } from "@cvforge/types"
 
 import type { LandingDictionary } from "@/content/types"
 import { homePath, type Locale } from "@/lib/i18n"
+import { freeTools, toolsPath } from "@/lib/tools"
 
 /**
  * schema.org graph of the home page: who publishes the site, what the product
@@ -69,6 +70,44 @@ export function homeStructuredData({
         })),
       },
     ],
+  }
+}
+
+/**
+ * schema.org list of the free tools hub: one free web application per live
+ * tool. Built from `freeTools`, so a tool not yet shipped is never announced.
+ */
+export function toolsStructuredData({
+  base,
+  locale,
+  tools,
+}: {
+  base: string
+  locale: Locale
+  tools: LandingDictionary["tools"]
+}) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: tools.title,
+    url: `${base}${toolsPath(locale)}`,
+    inLanguage: locale,
+    itemListElement: freeTools.map(({ key, path }, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      item: {
+        "@type": "WebApplication",
+        name: tools.items[key].name,
+        description: tools.items[key].description,
+        url: `${base}${path(locale)}`,
+        applicationCategory: "BusinessApplication",
+        operatingSystem: "Web",
+        inLanguage: locale,
+        isAccessibleForFree: true,
+        offers: { "@type": "Offer", price: 0, priceCurrency: "EUR" },
+        publisher: { "@id": `${base}/#organization` },
+      },
+    })),
   }
 }
 

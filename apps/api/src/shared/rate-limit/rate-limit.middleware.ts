@@ -5,23 +5,24 @@ import {
   Injectable,
   type NestMiddleware,
 } from "@nestjs/common";
-import { DAY_MS, resolveRateLimitConfig, type RateLimitConfig } from "./rate-limit.config";
+import { publicError } from "@cvforge/types";
+import { clientIp } from "./client-ip";
+import { DAY_MS } from "./rate-limit.config";
+import { resolveRateLimitPolicies } from "./rate-limit.policies";
 import {
   RATE_LIMIT_CLOCK,
   RATE_LIMIT_STORE,
   type Clock,
+  type RateLimitPolicy,
   type RateLimitRule,
   type RateLimitStore,
 } from "./rate-limit.types";
 
-/** The shared counter every request charges against, whatever its origin. */
-const GLOBAL_KEY = "global:ats-scan";
-const UNKNOWN_IP = "unknown";
-
-export const RATE_LIMITED_MESSAGE =
-  "Trop d'analyses demandees depuis cette adresse. Reessayez plus tard.";
-export const BUDGET_EXHAUSTED_MESSAGE =
-  "L'analyse gratuite est momentanement indisponible. Reessayez demain.";
+export { clientIp } from "./client-ip";
+export {
+  BUDGET_EXHAUSTED_MESSAGE,
+  RATE_LIMITED_MESSAGE,
+} from "./rate-limit.policies";
 
 type RequestLike = {
   headers: Record<string, string | string[] | undefined>;
@@ -36,9 +37,9 @@ type ResponseLike = {
 };
 
 /**
- * Protects the unauthenticated scan route, which is the first public AI surface
- * of the product: an upload, a parse and a model call, none of it behind a
- * session.
+ * Meters the unauthenticated public routes, each by its own policy
+ * (`rate-limit.policies.ts`): per-IP windows, and a global daily budget for
+ * the routes that spend something.
  *
  * Written by hand rather than with `@nestjs/throttler`, which is Guard-based
  * while this codebase deliberately uses none — every handler goes through
@@ -46,7 +47,7 @@ type ResponseLike = {
  */
 @Injectable()
 export class RateLimitMiddleware implements NestMiddleware {
-  private readonly config: RateLimitConfig;
+  private readonly policies: RateLimitPolicy[];
 
   constructor(
     @Inject(RATE_LIMIT_STORE) private readonly store: RateLimitStore,
@@ -54,7 +55,7 @@ export class RateLimitMiddleware implements NestMiddleware {
     // for it, and Nest still has something to resolve.
     @Inject(RATE_LIMIT_CLOCK) private readonly now: Clock,
   ) {
-    this.config = resolveRateLimitConfig();
+    this.policies = resolveRateLimitPolicies();
   }
 
   use(request: RequestLike, response: ResponseLike, next: () => void) {
@@ -64,32 +65,29 @@ export class RateLimitMiddleware implements NestMiddleware {
     // weight no rule will ever read again.
     this.store.prune(now - DAY_MS);
 
-    const unlocking = isUnlock(request);
+    const policy = this.policyFor(request);
+    const budget = policy.globalBudget;
 
-    // The budget exists to stop *spending*, and unlocking spends nothing — it
-    // returns a report already computed. Charging it here would strand a
-    // visitor holding a scan they cannot open.
-    if (!unlocking) {
-      const budget = this.config.dailyBudget;
-
-      if (this.store.count(GLOBAL_KEY, budget.windowMs, now) >= budget.limit) {
-        this.reject(
-          response,
-          GLOBAL_KEY,
-          budget,
-          now,
-          HttpStatus.SERVICE_UNAVAILABLE,
-          BUDGET_EXHAUSTED_MESSAGE,
-        );
-      }
+    if (
+      budget &&
+      this.store.count(budget.key, budget.rule.windowMs, now) >=
+        budget.rule.limit
+    ) {
+      this.reject(
+        response,
+        budget.key,
+        budget.rule,
+        now,
+        HttpStatus.SERVICE_UNAVAILABLE,
+        policy.budgetMessage,
+      );
     }
 
-    // Separate keys, not just separate limits: scans must not eat into the
-    // unlock allowance either.
-    const key = `${unlocking ? "unlock" : "scan"}:${clientIp(request)}`;
-    const rules = unlocking ? this.config.unlockPerIp : this.config.perIp;
+    // One key per policy, not just separate limits: scans must not eat into
+    // the unlock allowance, nor funnel events into either.
+    const key = `${policy.name}:${clientIp(request)}`;
 
-    for (const rule of rules) {
+    for (const rule of policy.perIp) {
       if (this.store.count(key, rule.windowMs, now) >= rule.limit) {
         this.reject(
           response,
@@ -97,7 +95,7 @@ export class RateLimitMiddleware implements NestMiddleware {
           rule,
           now,
           HttpStatus.TOO_MANY_REQUESTS,
-          RATE_LIMITED_MESSAGE,
+          policy.limitedMessage,
         );
       }
     }
@@ -107,11 +105,21 @@ export class RateLimitMiddleware implements NestMiddleware {
     // back under the limit.
     this.store.record(key, now);
 
-    if (!unlocking) {
-      this.store.record(GLOBAL_KEY, now);
+    if (budget) {
+      this.store.record(budget.key, now);
     }
 
     next();
+  }
+
+  /**
+   * The first policy that claims the path. Never undefined: the last policy,
+   * the ATS scan, claims every path (asserted in `rate-limit.policies.test.ts`).
+   */
+  private policyFor(request: RequestLike) {
+    const path = (request.originalUrl ?? request.url ?? "").split("?")[0] ?? "";
+
+    return this.policies.find((policy) => policy.matches(path))!;
   }
 
   private reject(
@@ -127,7 +135,13 @@ export class RateLimitMiddleware implements NestMiddleware {
       String(this.retryAfterSeconds(key, rule, now)),
     );
 
-    throw new HttpException(message, status);
+    // A code the landing translates, since the message is French (US-134).
+    const code =
+      status === HttpStatus.SERVICE_UNAVAILABLE
+        ? "BUDGET_EXHAUSTED"
+        : "RATE_LIMITED";
+
+    throw new HttpException(publicError(code, message), status);
   }
 
   /** When the oldest hit leaves the window, which is when a slot frees up. */
@@ -138,37 +152,4 @@ export class RateLimitMiddleware implements NestMiddleware {
 
     return Math.max(1, Math.ceil((oldest + rule.windowMs - now) / 1000));
   }
-}
-
-/**
- * Which of the two public routes this is.
- *
- * They are metered apart because they cost wildly different things: a scan
- * parses a file and calls a model, an unlock reads a row back.
- */
-function isUnlock(request: RequestLike) {
-  const path = (request.originalUrl ?? request.url ?? "").split("?")[0] ?? "";
-
-  return path.endsWith("/unlock");
-}
-
-/**
- * The first hop of `X-Forwarded-For` is the client; the rest are the proxies it
- * passed through. Express only populates `request.ip` from that header when
- * `trust proxy` is set, so both are consulted.
- *
- * An unidentifiable caller shares one bucket rather than bypassing the limit:
- * the global budget still bounds the damage either way.
- */
-export function clientIp(request: RequestLike): string {
-  const forwarded = request.headers["x-forwarded-for"];
-  const raw = Array.isArray(forwarded) ? forwarded[0] : forwarded;
-  const firstHop = raw?.split(",")[0]?.trim();
-
-  return (
-    firstHop ||
-    request.ip ||
-    request.socket?.remoteAddress ||
-    UNKNOWN_IP
-  );
 }

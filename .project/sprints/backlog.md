@@ -27,6 +27,7 @@
 | E16 ✅ | 022 | Supervision solde IA & pilotage revenus admin | L'admin surveille le solde OpenRouter, est alerté avant rupture, ne vend pas de crédits qu'il ne peut pas honorer, et dispose d'un dashboard de métriques produit + revenus | 022 | Hors vision v0.7, hors ADR existante — décision produit du 2026-09-17 |
 | E17 ✅ | 023 | Gestion utilisateurs avancée (admin) | Recherche/filtres/pagination serveur, fiche utilisateur complète, suspension, suppression RGPD vérifiée, rétrogradation admin→user uniquement, journal d'audit, révocation de session | 023 | Complète vision `§13.2`/`§15.1` ; US-093 contraint par vision `§3.2` |
 | E18 ✅ | 024 | Score ATS (produit d'appel + in-app) | Un visiteur non authentifié scanne son CV sur la landing, obtient un score et 3 points gratuitement, et déverrouille le rapport contre son email — ce qui lui crée un compte ; en in-app, chaque CV généré porte un badge de score gratuit | 024 | Complète vision `§7.1`, `§7.4`, `§12.2`, `§12.3`, `§8.1` ; **la page publique est hors vision** — décision produit du 2026-09-22 |
+| E23 | 029-030 | Outils gratuits d'acquisition sur la landing | Quatre outils sans compte en plus du scan ATS (comparateur CV ↔ offre, métier qui recrute + salaire, vérification d'employeur, questions d'entretien probables) ; chacun donne un résultat utile, puis convertit par email en un compte pré-rempli avec ce que le visiteur a saisi ; le tunnel de chaque outil est mesuré de la vue à l'activation du compte | 029-030 | **Hors vision** — décision produit du 2026-09-24 ; prolonge E18 (ADR-022) et exploite E19-E21 (ADR-024 §3 : les données France Travail restent gratuites) |
 
 ## Estimate Scale
 
@@ -138,6 +139,17 @@ Référence de gate: le spec impose des branches courtes et des PRs <= 400 ligne
 | US-105 | Score in-app : persistance sur `applications` et `application_cv_versions`, calcul à la génération et à la sauvegarde, 0 crédit | E18 | M | P0 | 024 | vision `§7.4`, `§12.3` |
 | US-106 | Badge de score ATS dans `apps/web` (colonne de liste, entête éditeur CV), WCAG 2.1 AA | E18 | S | P1 | 024 | vision `§7.1` |
 | US-107 | KPI admin : score ATS moyen groupé par version de moteur, scans publics, taux de déverrouillage, conversion en compte | E18 | S | P2 | 024 | vision `§12.2` |
+| US-131 | Événements de tunnel côté API : table `acquisition_events` (outil, étape, locale, `ip_hash`, aucune donnée personnelle), route `POST /public/events` rate-limitée, tunnel par outil dans `/admin/metrics` | E23 | M | P0 | 029 | vision `§12.2` ; Hors vision — décision produit du 2026-09-24 |
+| US-132 | Rate limit générique : clé de budget global, limites et variables d'env par route publique ; l'ATS garde ses `ATS_*` | E23 | M | P0 | 029 | ADR-022 |
+| US-133 | Service « lead » générique extrait du déverrouillage ATS : email + consentement → magic link + intention de pré-remplissage appliquée à la première connexion ; le scan ATS est retrouvé dans l'app | E23 | M | P0 | 029 | vision `§15.1` ; Hors vision — décision produit du 2026-09-24 |
+| US-134 | Correctifs du tunnel ATS : `locale` transmise par la landing, erreurs traduites par code, liens depuis le Hero et la section CTA | E23 | S | P1 | 029 | Hors vision — décision produit du 2026-09-24 |
+| US-135 | Hub « Outils gratuits » sur la landing FR/EN (`/fr/outils`, `/en/tools`) : entrée de menu, section home, sitemap, JSON-LD | E23 | M | P1 | 029 | Hors vision — décision produit du 2026-09-24 |
+| US-136 | Comparateur CV ↔ offre : `POST /public/keyword-match` (moteur `packages/ats-score`, extraction sans OCR, 0 LLM, CV jamais persisté), page landing, CTA « Générer un CV adapté » → candidature pré-créée | E23 | L | P0 | 029 | Hors vision — décision produit du 2026-09-24 |
+| US-137 | « Ce métier recrute-t-il près de chez moi ? » : autocomplete ROME public, tension, offres, demandeurs et salaire médian avec taille d'échantillon ; CTA « offres du jour par email » → projet de recherche pré-rempli | E23 | L | P1 | 030 | Hors vision — décision produit du 2026-09-24 ; ADR-024 §3 |
+| US-138 | Pages SEO métier × département (ISR, sitemap, JSON-LD) générées depuis les données locales | E23 | M | P2 | 030 | Hors vision — décision produit du 2026-09-24 |
+| US-139 | « Vérifier un employeur » : recherche par nom ou SIREN, fiche (effectif, NAF, Egapro, ESS, société à mission, bilan carbone, page employeur France Travail) ; CTA entreprises qui recrutent | E23 | M | P1 | 030 | Hors vision — décision produit du 2026-09-24 ; ADR-024 §3 |
+| US-140 | Pages SEO entreprises (ISR, sitemap) avec sources citées | E23 | M | P2 | 030 | Hors vision — décision produit du 2026-09-24 |
+| US-141 | Questions d'entretien probables : 5 questions pour un texte d'offre, un appel LLM court sous budget global quotidien et limite par IP ; CTA entretien vocal | E23 | M | P2 | 030 | Hors vision — décision produit du 2026-09-24 ; ADR-022 |
 
 ## Critères d'acceptation détaillés — E16
 
@@ -191,6 +203,46 @@ Référence de gate: le spec impose des branches courtes et des PRs <= 400 ligne
   cette story doit en **extraire** du code, pas en ajouter ; OpenRouter coupé ⇒ la génération
   réussit quand même, score rendu en mode règles.
 
+## Critères d'acceptation détaillés — E23
+
+> ⚠️ **Hors vision.** Décision produit du 2026-09-24 : les quatre outils ont été validés par le
+> propriétaire. À reporter dans `.project/vision.md` par le `product-owner`, jamais en auto-édition.
+
+> ⚠️ **RÈGLE DE COÛT** : toute route `public/*` passe par le rate limit (US-132) **avant** sa mise
+> en ligne. Seule US-141 appelle un LLM ; elle a son propre budget global quotidien.
+
+> ⚠️ **RÈGLE RGPD (reprise d'E18)** : aucun texte de CV n'est persisté. Le pré-remplissage à
+> l'inscription ne porte que sur ce que le visiteur a saisi hors CV : texte d'offre, code ROME et
+> lieu, SIREN, identifiant de scan.
+
+Critères communs à chaque outil (US-136, US-137, US-139, US-141) :
+- utilisable sans compte, en FR et en EN, sans texte en dur (`content/{fr,en}.ts`, test de parité) ;
+- événements US-131 émis à chaque étape : vue, résultat affiché, clic CTA, email saisi ;
+- WCAG 2.1 AA (axe-core propre, `aria-live` sur le résultat), `prefers-reduced-motion` respecté ;
+- source citée dès que la donnée vient de France Travail ou d'une API de l'État ;
+- page déclarée dans `sitemap.ts`, métadonnées via `pageMetadata()`.
+
+- **US-131** : aucune IP brute, aucun email, aucun texte libre dans `acquisition_events` ;
+  l'activation du compte se lit par jointure, comme `readAtsCounters` ; le tunnel admin affiche
+  vue → résultat → email → compte activé pour chaque outil, ATS inclus.
+- **US-132** : les limites et l'ATS existant restent inchangés (tests actuels verts) ; une nouvelle
+  route s'ajoute par configuration, sans copier le middleware ; tests à timers simulés.
+- **US-133** : réponse identique qu'un compte existe ou non (pas d'énumération) ; l'intention de
+  pré-remplissage expire avec le magic link ; ATS migré sur ce service sans régression.
+- **US-134** : un scan fait depuis `/en/…` est stocké en `en` ; aucune erreur française sur la
+  version EN.
+- **US-136** : 0 appel LLM, prouvé par test ; la réponse liste les mots-clés présents et
+  manquants et un taux de couverture ; après inscription, la candidature existe avec le texte de
+  l'offre, sans crédit consommé.
+- **US-137** : 0 appel France Travail à la requête, lecture des copies locales uniquement ; un
+  salaire n'est affiché qu'au-dessus d'une taille d'échantillon minimale, sinon message explicite.
+- **US-138 / US-140** : pas de page générée sans données (pas de contenu mince) ; canonical et
+  hreflang corrects.
+- **US-139** : fonctionne sans clé API (sources publiques) ; une entreprise inconnue renvoie un
+  message clair, pas une erreur.
+- **US-141** : panne OpenRouter ⇒ message propre, jamais une 500 ; budget épuisé ⇒ 503 avec
+  `Retry-After`.
+
 ## Statut E18
 
 **Livré le 2026-09-22**, US-097 à US-107 incluses. Barème en version **1.1.0** (les plafonds de
@@ -241,6 +293,13 @@ Contexte persistance : la migration ADR-011 est **terminée** — tous les modul
 
 - 2026-09-21 — **Le ZDR est désactivé et la chaîne de repli sort de l'UE, contre la vision `§15.2`.** `ENABLE_ZDR_CHAT=false` et `ENABLE_ZDR_STT=false` dans `.env.example` comme en réel, et les modèles de repli (`openai/gpt-4.1-nano`, `google/gemini-2.5-flash`, plus les modèles voix/STT d'OpenAI) sont hors Union européenne, alors que la vision prescrit « activer ZDR systématiquement » et `provider.only = ["Mistral"]`. La politique de confidentialité publiée ce jour **dit la vérité plutôt que de promettre le zéro-rétention** : elle nomme OpenRouter, OpenAI, Google et Mistral, et assume les transferts hors UE sous clauses contractuelles types. À arbitrer : réactiver le ZDR sur le chat (l'endpoint transcription n'accepte pas de filtre provider, cf. `ADR-013`), et décider si la chaîne de repli doit être restreinte à l'UE au prix de la disponibilité. Toute décision change le texte de la politique, qui s'édite désormais depuis `/admin/legal`.
 
+- **Rate limit (revue US-132)** : `/public/ats-scan/` (barre oblique finale) correspond aux deux motifs Nest, donc le middleware s'exécute deux fois et compte la requête double. Préexistant ; la landing n'utilise jamais ce chemin.
+
+- **Landing, contraste (revue US-134)** : le paragraphe `cta.body` de `components/sections/cta.tsx` (`text-lg opacity-85`, blanc à 85 % sur le bleu primaire) tombe à environ 4,06:1, sous les 4,5:1 exigés pour du texte de 18 px non gras. Préexistant : le choix visuel revient au designer.
+- **Landing, focus du résultat ATS (revue US-136)** : `components/ats/ats-checker.tsx` focalise le résultat dans un `requestAnimationFrame` lancé depuis `analyse()`. Sur le comparateur, ce motif s'exécutait avant que React monte le panneau, et le focus restait sur le `body` (vérifié au navigateur). Le comparateur utilise désormais un `useEffect` sur le résultat. Le checker ATS a probablement le même défaut : à vérifier, puis corriger de la même façon.
+- **Comparateur, vocabulaire de l'offre (US-136)** : les termes sont les mots de 4 lettres et plus, moins les mots vides d'offre et les verbes en « -ez ». Des mots de prose passent encore (« bases », « code », « revues »). Deux pistes : une liste de mots vides plus riche, ou des groupes nominaux. Un changement dans `offerTerms` modifie aussi la dimension `keywords`, donc demande de monter `ATS_SCORE_ENGINE_VERSION`.
+- **API, taille (US-136)** : `applications.service.ts` passe de 767 à 669 lignes (structuration de l'offre sortie dans `offer-structuring.ts`). Il reste au-dessus de la cible de 300.
+
 ## Clarifications Pendantes
 
 - Choisir le provider email pour magic links et notifications. La vision cite seulement un exemple: `Resend` (source: vision `§2`)
@@ -276,6 +335,7 @@ Contexte persistance : la migration ADR-011 est **terminée** — tous les modul
 | `E16` | `E8`, `E9` | La supervision du solde et les métriques de revenus s'appuient sur le ledger crédits, les commandes Stripe et le panel admin |
 | `E17` | `E3`, `E9` | La gestion utilisateurs avancée prolonge l'auth/les rôles et le panel admin utilisateurs |
 | `E18` | `E3`, `E7`, `E10` | Le score réutilise l'extraction de texte de l'import CV (`E10`), le pipeline documentaire pour le badge in-app (`E7`), et l'auth magic link (`E3`) pour convertir un visiteur en compte |
+| `E23` | `E3`, `E18`, `E19`, `E20`, `E21` | Les outils réutilisent le rate limit et le déverrouillage d'E18, l'auth magic link (`E3`), les offres du jour (`E19`), les fiches entreprises (`E20`), le référentiel ROME et le radar marché (`E21`) |
 
 ## Technical Gates
 
@@ -295,11 +355,14 @@ Contexte persistance : la migration ADR-011 est **terminée** — tous les modul
 | `024` | Gate coût surface IA publique : rate limit par IP **et** budget global quotidien vérifiés en conditions réelles avant mise en ligne ; OCR désactivé sur la route publique | `tech-lead` |
 | `024` | Gate RGPD scan anonyme : aucune ligne `ats_scans` ne contient de texte de CV (test d'intégration) | `tech-lead` + `qa-reviewer` |
 | `024` | Gate résilience scoring : OpenRouter coupé ⇒ la génération de CV réussit, score rendu en mode règles | `tech-lead` |
+| `029` | Gate mesure : le tunnel de chaque outil est visible dans `/admin/metrics` avant d'en ajouter un autre | `analyst` + `tech-lead` |
+| `030` | Gate coût : budget global et limite par IP vérifiés sur la route LLM d'US-141 avant mise en ligne | `tech-lead` |
 
 ## ADR Watchlist
 
 - Direction visuelle "Papier & Crayon raffiné" vs mobile-first (vision `§2.5`/`§2.6`) : décision produit desktop-first actée depuis 2026-04-26 (sprint 016) mais jamais formalisée en ADR — à écrire avant le prochain freeze de vision.
 - **Page publique d'analyse ATS (E18)** : fonctionnalité **absente de la vision**, qui ne prévoit le score qu'en in-app. Décidée avec le propriétaire le 2026-09-22 — à reporter dans `.project/vision.md` par le `product-owner` (hard rule : jamais d'auto-édition de la vision).
+- **Outils gratuits d'acquisition (E23)** : **absents de la vision**. Décidés avec le propriétaire le 2026-09-24 — à reporter dans `.project/vision.md` par le `product-owner`. Mesure par événements côté API, sans outil tiers : pas d'ADR analytics tant que ce choix tient.
 - **ADR-021** ✅ écrit — moteur ATS : package pur, barème versionné, LLM borné à une dimension.
 - **ADR-022** ✅ écrit — surface IA publique : rate limiting sans Redis ni throttler, budget global, OCR désactivé, rétention zéro.
 - **Rate limit en mémoire = mono-instance.** Valide tant que l'API tourne en une instance ; le jour du scale-out, le `RateLimitStore` bascule sur Redis (déjà provisionné dans `docker-compose.yml`, lu nulle part aujourd'hui) — ADR à ce moment-là.

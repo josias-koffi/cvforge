@@ -1,3 +1,4 @@
+import { isPublicErrorCode, type PublicErrorCode } from "@cvforge/types"
 import { apiUrl } from "@/lib/offers-api"
 
 /** Mirrors the API's `PublicAtsScanResponse`; the free tier carries no dimensions. */
@@ -39,13 +40,13 @@ export type AtsUnlockResult = {
 }
 
 /**
- * Anything the caller can act on. The API's own message is passed through when
- * it has one: it already speaks the visitor's language and says what happened
- * (file too large, budget exhausted, scan expired).
+ * Anything the caller can act on: the status, and the code the API named the
+ * refusal with. Never the API's message, which is French whatever the page's
+ * language: the landing words every code itself (US-134).
  */
 export type AtsApiError = {
   status: number
-  message: string | null
+  code: PublicErrorCode | null
 }
 
 export function isAtsApiError(value: unknown): value is AtsApiError {
@@ -65,23 +66,34 @@ export function scanEndpoint(env: NodeJS.ProcessEnv = process.env) {
   return `${apiUrl(env)}/public/ats-scan`
 }
 
+/** The free CV ↔ offer comparator (US-136). */
+export function keywordMatchEndpoint(env: NodeJS.ProcessEnv = process.env) {
+  return `${apiUrl(env)}/public/keyword-match`
+}
+
+export function keywordMatchLeadEndpoint(env: NodeJS.ProcessEnv = process.env) {
+  return `${keywordMatchEndpoint(env)}/lead`
+}
+
 export function unlockEndpoint(
   scanId: string,
-  env: NodeJS.ProcessEnv = process.env,
+  env: NodeJS.ProcessEnv = process.env
 ) {
   return `${scanEndpoint(env)}/${encodeURIComponent(scanId)}/unlock`
 }
 
 /**
- * Reads the API's error body without assuming it is JSON: a 502 from the proxy
- * in front of it is HTML, and blowing up on that would replace a useful status
- * with a parse error.
+ * Reads the code of the API's error body without assuming it is JSON: a 502
+ * from the proxy in front of it is HTML, and blowing up on that would replace
+ * a useful status with a parse error. An unknown code reads as none.
  */
-export async function readErrorMessage(response: Response) {
+export async function readErrorCode(
+  response: Response
+): Promise<PublicErrorCode | null> {
   try {
-    const payload = (await response.json()) as { message?: unknown }
+    const payload = (await response.json()) as { code?: unknown }
 
-    return typeof payload.message === "string" ? payload.message : null
+    return isPublicErrorCode(payload.code) ? payload.code : null
   } catch {
     return null
   }

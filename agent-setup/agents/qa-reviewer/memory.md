@@ -408,3 +408,51 @@
 ### 2026-09-24 — US-118 (qa-reviewer · [[workflows/runs/analyze-design-dev-review-20260923233426]])
 - **Context** : [[sprints/sprint-026#^us-118]]
 - **Learned** : Chaque décision passe par assertProfile ; un code saisi à la main doit exister dans le référentiel local. La purge est testée sur PGlite avec deux comptes.
+
+## 2026-09-24 — US-131 review (stage 04 · [[workflows/runs/analyze-design-dev-review-20260924143552]])
+- **Context**: [[sprints/sprint-029#US-131]] · [[workflows/runs/analyze-design-dev-review-20260924143552/04-review]]
+- **Did**: Les 4 critères sont vérifiés, verdict PASS. Six remarques, dont une corrigée pendant la revue : la fenêtre des activations est désormais alignée sur le jour UTC.
+- **Why**: Le tunnel doit comparer des unités cohérentes d'une étape à l'autre.
+- **Learned**: Toute limite par IP (rate limit comme dédoublonnage) repose sur le `X-Forwarded-For` réécrit par le proxy. C'est à vérifier à chaque route publique.
+- **Open**: Réécriture de `X-Forwarded-For` par le proxy (US-132) ; test du branchement dans `AtsChecker` (US-134).
+
+## 2026-09-24 — US-132 review (stage 04 · [[workflows/runs/analyze-design-dev-review-20260924145528]])
+- **Context**: [[sprints/sprint-029#US-132]] · [[workflows/runs/analyze-design-dev-review-20260924145528/04-review]]
+- **Did**: PASS en deux passes. La première a révélé que, sur Dokploy, la landing appelle l'API par son domaine public : Traefik y écrase `X-Forwarded-For`, et tous les visiteurs partageaient un seul compteur. La seconde a validé le relais signé.
+- **Why**: Les limites par IP n'ont de sens que si l'IP est celle du visiteur.
+- **Learned**: Pour toute route publique, suivre le chemin réel du déploiement (`API_INTERNAL_URL` de chaque fichier compose), pas celui du compose de dev.
+- **Open**: Origine réservée à Cloudflare ; journaux d'accès de Traefik.
+
+## 2026-09-24 — US-133 review (stage 04 · [[workflows/runs/analyze-design-dev-review-20260924155415]])
+- **Context**: [[sprints/sprint-029#US-133]] · [[workflows/runs/analyze-design-dev-review-20260924155415/04-review]]
+- **Did**: FAIL, puis FAIL, puis PASS. Deux contournements de redirection ouverte sur `next` : `/%09/evil.com` (tabulation) et `/.//evil.com` (segments point). Corrigés et couverts par des tests.
+- **Why**: Un paramètre de redirection sur un lien envoyé par email est une cible classique d'hameçonnage.
+- **Learned**: Pour une redirection, toujours faire les deux contrôles : résoudre comme le navigateur (`new URL`), puis examiner le résultat. Un contrôle sur l'entrée seule ne suffit pas.
+- **Open**: none
+
+## 2026-09-24 — US-134 review (stage 04 · [[workflows/runs/analyze-design-dev-review-20260924162332]])
+- **Context**: [[sprints/sprint-029#US-134]] · [[workflows/runs/analyze-design-dev-review-20260924162332/04-review]]
+- **Did**: FAIL sur un contraste (texte blanc à 85 % sur le bleu primaire, environ 4,06:1), puis PASS une fois corrigé.
+- **Why**: WCAG 2.1 AA bloquant pour toute interface.
+- **Learned**: `opacity-*` s'applique aussi aux liens enfants : calculer le contraste réel sur fond coloré, pas celui de la couleur d'origine.
+- **Open**: `cta.body`, préexistant, noté au backlog.
+
+## 2026-09-24 — US-135 review (stage 04 · [[workflows/runs/analyze-design-dev-review-20260924164112]])
+- **Context**: [[sprints/sprint-029#US-135]] · [[workflows/runs/analyze-design-dev-review-20260924164112/04-review]]
+- **Did**: Les 3 critères sont vérifiés par des tests, par next start (200/308, JSON-LD, hreflang, sitemap) et par la mesure des contrastes au navigateur.
+- **Why**: Critère « pas d'outil non livré » verrouillé par un test qui lie le registre aux dossiers de route.
+- **Learned**: Mesurer les contrastes après la fin des transitions de thème : à 300 ms, les valeurs sont fausses.
+- **Open**: Rendu mobile non capturé.
+
+## 2026-09-24 — US-136 review (stage 04 · [[workflows/runs/analyze-design-dev-review-20260924173554]])
+- **Context**: [[sprints/sprint-029#US-136]] · [[workflows/runs/analyze-design-dev-review-20260924173554/04-review]]
+- **Did**: Critères vérifiés : tests, appels réels à l'API isolée sur le port 3998, build Next, navigateur. Défaut de focus trouvé et corrigé.
+- **Why**: 0 LLM prouvé par la structure (aucune dépendance) plus un espion sur fetch.
+- **Learned**: Tester le focus dans un vrai navigateur : le rendu statique ne le voit pas.
+- **Open**: Gate RGPD sur Postgres.
+
+## 2026-09-24 — Gate RGPD du sprint 029 ([[sprints/sprint-029]])
+- **Did**: Test d'intégration `leads/public-tools.rgpd.test.ts` : chaque outil public de bout en bout sur PGlite, puis `row_to_json` sur toutes les tables et recherche des chaînes propres au CV.
+- **Why**: La gate demandait une preuve sur la vraie base, pas seulement sur des stores en mémoire.
+- **Learned**: Vérifier une gate par mutation. Une première mutation échouait sur le contrôle « le test n'est pas vide », pas sur la recherche : il faut viser l'assertion elle-même.
+- **Open**: none

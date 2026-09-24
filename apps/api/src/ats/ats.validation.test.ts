@@ -8,7 +8,10 @@ import {
   readOfferText,
 } from "./ats.validation";
 
-function makeFile(buffer: Buffer, overrides: Partial<CvSourceFile> = {}): CvSourceFile {
+function makeFile(
+  buffer: Buffer,
+  overrides: Partial<CvSourceFile> = {},
+): CvSourceFile {
   return {
     buffer,
     mimetype: "application/pdf",
@@ -25,6 +28,33 @@ const DOCX = Buffer.concat([
 ]);
 
 describe("assertScannableFile", () => {
+  /** The landing translates the code; the French message is never shown (US-134). */
+  it.each([
+    ["a missing file", undefined, "CV_FILE_REQUIRED"],
+    [
+      "an oversized file",
+      makeFile(PDF, { size: MAX_SCAN_BYTES + 1 }),
+      "CV_FILE_TOO_LARGE",
+    ],
+    [
+      "a file that is neither PDF nor DOCX",
+      makeFile(Buffer.from("GIF89a")),
+      "CV_FILE_UNSUPPORTED",
+    ],
+  ])("names %s with a code", (_label, file, code) => {
+    let caught: unknown;
+
+    try {
+      assertScannableFile(file);
+    } catch (error) {
+      caught = error;
+    }
+
+    expect((caught as BadRequestException).getResponse()).toMatchObject({
+      code,
+    });
+  });
+
   it("accepts a PDF", () => {
     expect(() => assertScannableFile(makeFile(PDF))).not.toThrow();
   });

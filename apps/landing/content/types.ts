@@ -11,6 +11,9 @@ export type ScreenshotName =
   | "interview-report"
   | "interview-progress"
 
+/** The free tools that are live on the landing (US-135). */
+export type FreeToolKey = "ats" | "keyword_match"
+
 interface TitledText {
   title: string
   body: string
@@ -34,6 +37,8 @@ export interface LandingDictionary {
     interview: string
     /** The free ATS check: the top of the acquisition funnel. */
     ats: string
+    /** The hub listing every free tool (US-135). */
+    tools: string
     story: string
     login: string
     start: string
@@ -49,6 +54,9 @@ export interface LandingDictionary {
     subtitle: string
     primaryCta: string
     secondaryCta: string
+    /** A line under the buttons pointing to the free ATS check (US-134). */
+    atsPrompt: string
+    atsLink: string
     highlights: string[]
     screenshotAlt: string
   }
@@ -126,7 +134,14 @@ export interface LandingDictionary {
       atsCheckLink?: string
     }[]
   }
-  cta: { title: string; body: string; button: string }
+  cta: {
+    title: string
+    body: string
+    button: string
+    /** For the visitor not ready to sign up: the free ATS check (US-134). */
+    atsPrompt: string
+    atsLink: string
+  }
   footer: {
     tagline: string
     product: string
@@ -227,8 +242,92 @@ export interface LandingDictionary {
       unavailable: string
       expired: string
       network: string
+      /** The refusals the API names by code (US-134). */
+      fileRequired: string
+      notEnoughText: string
+      invalidEmail: string
+      consentRequired: string
+      notFound: string
+      /** The comparator's own refusals (US-136), worded with the others. */
+      offerRequired: string
+      offerNotUsable: string
     }
     cta: string
+  }
+  /** The free tools hub and its section on the home page (US-135). */
+  tools: {
+    metaTitle: string
+    metaDescription: string
+    eyebrow: string
+    title: string
+    subtitle: string
+    /** The section on the home page, shorter than the hub's own heading. */
+    home: SectionHeading & { seeAll: string }
+    /** Call to action on each card. */
+    open: string
+    /** Closing line of the hub, towards the signup. */
+    more: { body: string; link: string }
+    /** One entry per tool that is live. A tool is added the day its page ships. */
+    items: Record<FreeToolKey, { name: string; description: string; tags: string[] }>
+  }
+  /**
+   * The free CV ↔ offer comparator (US-136). The drop zone reuses the ATS
+   * check's wording, and its refusals are worded in `ats.errors`.
+   */
+  keywordMatch: {
+    metaTitle: string
+    metaDescription: string
+    eyebrow: string
+    title: string
+    subtitle: string
+    privacyNote: string
+    cvLabel: string
+    offer: {
+      label: string
+      hint: string
+      placeholder: string
+      /** "{count} / {min} caractères minimum" until the floor is reached. */
+      counter: string
+      /** Once the floor is reached: "{count} caractères". */
+      counterReady: string
+    }
+    compare: string
+    comparing: string
+    result: {
+      title: string
+      gauge: {
+        scoreLabel: string
+        outOf: string
+        bands: Record<"low" | "fair" | "good", string>
+      }
+      /** One sentence per band, saying what to do next. */
+      verdicts: Record<"low" | "fair" | "good", string>
+      /** "{count} termes de l'offre sur {total}" */
+      summary: string
+      matchedTitle: string
+      missingTitle: string
+      /** When a list was cut: "et {count} autres". */
+      more: string
+      matchedEmpty: string
+      missingEmpty: string
+      method: string
+      again: string
+    }
+    cta: {
+      title: string
+      body: string
+      button: string
+    }
+    lead: {
+      body: string
+      emailLabel: string
+      emailPlaceholder: string
+      consent: string
+      submit: string
+      submitting: string
+      success: string
+      successBody: string
+    }
   }
   story: {
     metaTitle: string

@@ -18,6 +18,7 @@ export const fr: LandingDictionary = {
     faq: "FAQ",
     interview: "Entretien",
     ats: "Test ATS gratuit",
+    tools: "Outils gratuits",
     story: "Notre histoire",
     login: "Connexion",
     start: "Commencer",
@@ -34,6 +35,8 @@ export const fr: LandingDictionary = {
       "Arrêtez de passer vos soirées à réécrire le même CV. CVSpark lit l'offre, reprend votre profil et génère un CV et une lettre prêts pour l'ATS, en quelques secondes.",
     primaryCta: "Créer mon CV",
     secondaryCta: "Voir comment ça marche",
+    atsPrompt: "Pas encore prêt ?",
+    atsLink: "Testez votre CV gratuitement",
     highlights: [
       `${WELCOME_APPLICATIONS} candidatures offertes`,
       "Sans abonnement",
@@ -327,6 +330,8 @@ export const fr: LandingDictionary = {
     title: "Arrêtez de réécrire. Laissez jaillir.",
     body: "Votre prochaine candidature peut être prête avant la fin de votre café.",
     button: "Créer mon CV",
+    atsPrompt: "Envie de voir d'abord où en est votre CV ?",
+    atsLink: "Testez-le gratuitement",
   },
   footer: {
     tagline: "L'étincelle entre votre profil et l'offre.",
@@ -468,8 +473,119 @@ export const fr: LandingDictionary = {
       expired:
         "Cette analyse a expiré. Relancez-en une pour obtenir un rapport à jour.",
       network: "Connexion impossible. Vérifiez votre réseau et réessayez.",
+      fileRequired: "Choisissez un fichier PDF ou DOCX à analyser.",
+      notEnoughText:
+        "Ce CV ne contient pas assez de texte pour être analysé. Exportez-le en PDF depuis votre traitement de texte.",
+      invalidEmail: "Cette adresse email n'est pas valide.",
+      consentRequired:
+        "Cochez la case pour recevoir votre rapport et votre lien de connexion.",
+      notFound:
+        "Cette analyse est introuvable. Relancez-en une pour obtenir votre rapport.",
+      offerRequired:
+        "Collez le texte complet de l'offre : 200 caractères au minimum.",
+      offerNotUsable:
+        "Cette offre ne contient pas assez de termes précis pour être comparée. Collez l'annonce complète.",
     },
     cta: "Créer mon CV optimisé",
+  },
+  tools: {
+    metaTitle: "Outils gratuits pour votre recherche d'emploi",
+    metaDescription:
+      "Des outils gratuits et sans inscription pour préparer vos candidatures : testez votre CV face aux logiciels de recrutement en quelques secondes.",
+    eyebrow: "Gratuit, sans compte",
+    title: "Des outils gratuits pour avancer dès maintenant",
+    subtitle:
+      "Un résultat immédiat, sans inscription. Votre CV est analysé puis oublié : rien n'est conservé.",
+    home: {
+      eyebrow: "Gratuit, sans compte",
+      title: "Essayez avant de vous inscrire",
+      subtitle:
+        "Des outils qui donnent un résultat utile en quelques secondes, sans créer de compte.",
+      seeAll: "Voir tous les outils gratuits",
+    },
+    open: "Essayer",
+    more: {
+      body: "Pour adapter votre CV à chaque offre, écrire vos lettres et suivre vos candidatures, il vous faut un compte.",
+      link: "Créer mon compte gratuitement",
+    },
+    items: {
+      ats: {
+        name: "Test ATS de votre CV",
+        description:
+          "Votre CV passe-t-il les logiciels de tri des recruteurs ? Un score et les points à corriger.",
+        tags: ["Sans compte", "Quelques secondes"],
+      },
+      keyword_match: {
+        name: "Comparateur CV / offre",
+        description:
+          "Les mots-clés de l'offre déjà dans votre CV, et ceux qui manquent. Sans IA, rien n'est conservé.",
+        tags: ["Sans compte", "Sans IA"],
+      },
+    },
+  },
+  keywordMatch: {
+    metaTitle: "Comparateur CV / offre gratuit : les mots-clés qui manquent",
+    metaDescription:
+      "Comparez votre CV à une offre d'emploi : les mots-clés déjà présents, ceux qui manquent et votre taux de couverture, gratuitement et sans inscription.",
+    eyebrow: "Comparateur gratuit",
+    title: "Votre CV parle-t-il le langage de l'offre ?",
+    subtitle:
+      "Déposez votre CV, collez l'offre : voyez les mots-clés que le recruteur cherche et qui manquent à votre CV.",
+    privacyNote:
+      "Votre CV est lu le temps de la comparaison, puis oublié : rien n'est conservé. Aucune IA n'est utilisée.",
+    cvLabel: "Votre CV",
+    offer: {
+      label: "L'offre d'emploi",
+      hint: "Collez le texte complet de l'annonce : missions, profil recherché, compétences.",
+      placeholder: "Collez ici le texte de l'offre…",
+      counter: "{count} / {min} caractères minimum",
+      counterReady: "{count} caractères",
+    },
+    compare: "Comparer",
+    comparing: "Comparaison…",
+    result: {
+      title: "Votre CV face à cette offre",
+      gauge: {
+        scoreLabel: "Couverture",
+        outOf: "en %",
+        bands: {
+          low: "Faible",
+          fair: "Correcte",
+          good: "Bonne",
+        },
+      },
+      verdicts: {
+        low: "Votre CV reprend peu de termes de l'offre : un logiciel de tri risque de le classer loin.",
+        fair: "Votre CV reprend une partie des termes de l'offre. Ajoutez ceux qui vous correspondent vraiment.",
+        good: "Votre CV parle déjà le langage de l'offre. Vérifiez les derniers termes manquants.",
+      },
+      summary: "{count} termes de l'offre sur {total} se retrouvent dans votre CV.",
+      matchedTitle: "Déjà dans votre CV",
+      missingTitle: "Absents de votre CV",
+      more: "et {count} autres",
+      matchedEmpty: "Aucun terme de l'offre dans votre CV pour l'instant.",
+      missingEmpty: "Tous les termes de l'offre sont dans votre CV.",
+      method:
+        "Mots de 4 lettres et plus, comparés sans accents ni majuscules. Les plus fréquents dans l'offre d'abord. N'ajoutez que ce qui est vrai pour vous.",
+      again: "Comparer un autre CV ou une autre offre",
+    },
+    cta: {
+      title: "Générer un CV adapté à cette offre",
+      body: "Créez votre compte : la candidature pour cette offre vous attend, prête à générer votre CV et votre lettre.",
+      button: "Générer un CV adapté à cette offre",
+    },
+    lead: {
+      body: "Nous vous envoyons un lien de connexion. En cliquant dessus, vous retrouvez cette offre dans vos candidatures.",
+      emailLabel: "Votre email",
+      emailPlaceholder: "vous@exemple.fr",
+      consent:
+        "J'accepte que CVSpark crée mon compte et m'envoie un lien de connexion.",
+      submit: "Recevoir mon lien",
+      submitting: "Envoi…",
+      success: "Vérifiez votre boîte mail",
+      successBody:
+        "Le lien de connexion ouvre votre compte, avec la candidature pour cette offre déjà créée.",
+    },
   },
   story: {
     metaTitle: "Notre histoire",

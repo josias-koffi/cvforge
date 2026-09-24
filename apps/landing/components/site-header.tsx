@@ -16,6 +16,7 @@ import type { LandingDictionary } from "@/content/types"
 import { atsPath } from "@/lib/ats"
 import { homePath, storyPath, type Locale } from "@/lib/i18n"
 import { LOGIN_PATH } from "@/lib/links"
+import { toolsPath } from "@/lib/tools"
 
 /**
  * Every destination, in reading order.
@@ -34,6 +35,7 @@ export function buildNavLinks(
     { href: homePath(locale, "interview"), label: nav.interview },
     { href: homePath(locale, "pricing"), label: nav.pricing },
     { href: homePath(locale, "faq"), label: nav.faq },
+    { href: toolsPath(locale), label: nav.tools },
     { href: atsPath(locale), label: nav.ats },
     { href: storyPath(locale), label: nav.story },
   ]
@@ -43,9 +45,11 @@ export function buildNavLinks(
  * What the desktop header shows.
  *
  * Two destinations stay in the open because they are what a visitor comes to
- * decide on: the price, and the free check that is the top of the funnel —
- * burying the latter in a menu would defeat the page it leads to. The rest is
- * what you read *before* deciding, and sits one click away.
+ * decide on: the price, and the free tools that are the top of the funnel —
+ * burying them in a menu would defeat the pages they lead to. The hub rather
+ * than the ATS check itself, since there is more than one tool to come; the
+ * Hero and the closing call to action still link the check directly (US-134).
+ * The rest is what you read *before* deciding, and sits one click away.
  */
 function buildHeaderNav(locale: Locale, nav: LandingDictionary["nav"]) {
   return {
@@ -58,7 +62,7 @@ function buildHeaderNav(locale: Locale, nav: LandingDictionary["nav"]) {
     ],
     visible: [
       { href: homePath(locale, "pricing"), label: nav.pricing },
-      { href: atsPath(locale), label: nav.ats },
+      { href: toolsPath(locale), label: nav.tools },
     ],
   }
 }

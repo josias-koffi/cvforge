@@ -108,9 +108,36 @@ export function buildMetricsCsv(metrics: AdminMetrics) {
           ? ""
           : metrics.margin.ratio.toFixed(4),
     },
+    ...metrics.acquisition.flatMap(funnelRows),
   ];
 
   return toCsv(HEADERS, rows);
+}
+
+/**
+ * The same funnel the dashboard shows, one row per step. An activation that
+ * cannot be measured yet is an empty value, not a 0.
+ */
+function funnelRows(funnel: AdminMetrics["acquisition"][number]): MetricRow[] {
+  const prefix = `funnel_${funnel.tool}`;
+  const unit = "visitors";
+
+  return [
+    { metric: `${prefix}_visitors`, unit, value: String(funnel.visitors) },
+    { metric: `${prefix}_results`, unit, value: String(funnel.results) },
+    { metric: `${prefix}_cta_clicks`, unit, value: String(funnel.ctaClicks) },
+    {
+      metric: `${prefix}_emails_submitted`,
+      unit,
+      value: String(funnel.emailsSubmitted),
+    },
+    {
+      metric: `${prefix}_accounts_activated`,
+      unit,
+      value:
+        funnel.accountsActivated === null ? "" : String(funnel.accountsActivated),
+    },
+  ];
 }
 
 /** Timestamped, so successive exports never overwrite each other. */

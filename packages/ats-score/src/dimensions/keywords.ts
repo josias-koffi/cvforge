@@ -1,5 +1,5 @@
-import { isOfferStopword } from "../lexicons";
-import { extractKeywords, normalizeToken, toScore } from "../normalize";
+import { offerTerms } from "../keyword-match";
+import { normalizeToken, toScore } from "../normalize";
 import type { AtsDocument, AtsFinding, AtsOfferContext } from "../types";
 
 /**
@@ -22,11 +22,11 @@ export function scoreKeywords(doc: AtsDocument, offer: AtsOfferContext) {
   // Recruiting boilerplate is dropped: a pasted offer is mostly prose about
   // the company, and counting it would bury the handful of terms that actually
   // describe the job.
-  const wanted = extractKeywords([
+  const wanted = offerTerms([
     offer.title,
     ...offer.requirements,
     ...offer.responsibilities,
-  ]).filter((keyword) => !isOfferStopword(keyword));
+  ]);
 
   const haystack = normalizeToken(documentText(doc));
   const present = new Set(

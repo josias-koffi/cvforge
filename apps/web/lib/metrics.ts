@@ -1,3 +1,19 @@
+import type { AcquisitionTool } from "@cvforge/types"
+
+/**
+ * One free tool's funnel over `activeWindowDays`, in visitors counted once per
+ * day and per step. `accountsActivated` is null while the tool has no email
+ * capture to join on.
+ */
+export type AcquisitionFunnel = {
+  tool: AcquisitionTool
+  visitors: number
+  results: number
+  ctaClicks: number
+  emailsSubmitted: number
+  accountsActivated: number | null
+}
+
 export type AdminMetrics = {
   generatedAt: string
   activeWindowDays: number
@@ -27,6 +43,7 @@ export type AdminMetrics = {
     unlockRate: number | null
     conversionRate: number | null
   }
+  acquisition: AcquisitionFunnel[]
   credits: { consumed: number; granted: number; sold: number }
   revenue: { currency: "eur"; grossCents: number; paidOrderCount: number }
   /** Null when OpenRouter supervision is off or the balance is unreadable. */

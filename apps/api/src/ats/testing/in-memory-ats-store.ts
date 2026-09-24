@@ -51,6 +51,15 @@ export class InMemoryAtsScanStore implements AtsScanStore {
     return scan;
   }
 
+  async findUnlockedByEmail(email: string, now: string) {
+    return this.scans
+      .filter(
+        (scan) =>
+          scan.email === email && scan.unlockedAt !== null && scan.expiresAt > now,
+      )
+      .sort((a, b) => (b.unlockedAt ?? "").localeCompare(a.unlockedAt ?? ""));
+  }
+
   async deleteExpired(now: string) {
     const expired = this.scans.filter((scan) => scan.expiresAt <= now);
 

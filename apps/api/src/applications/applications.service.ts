@@ -24,21 +24,26 @@ import {
   type InterviewReport,
 } from "@cvforge/types";
 import { randomUUID } from "node:crypto";
-import { withOpenRouterHttpErrors } from "../ai/openrouter.exception";
 import type { OpenRouterService } from "../ai/openrouter.service";
 import type { CreditsService } from "../credits/credits.service";
-import type {
-  ApplicationsStore,
-  OfferExtractionResult,
-  OfferUpdateInput,
-  StoredApplication,
+import {
+  LEAD_OFFER_SOURCE_LABEL,
+  type ApplicationsStore,
+  type OfferExtractionResult,
+  type OfferUpdateInput,
+  type StoredApplication,
 } from "./applications.types";
 import {
   buildOfferPreview,
   extractOfferMetadata,
   extractVisibleTextFromHtml,
-  inferLocaleFromText,
 } from "./offer-extraction";
+import {
+  structureOffer,
+  toStringArray,
+  toStringOrNull,
+  unstructuredOffer,
+} from "./offer-structuring";
 
 type NullableOfferField =
   | "companyName"
@@ -46,13 +51,8 @@ type NullableOfferField =
   | "location"
   | "salaryRange";
 
-type ExtractedOfferPayload = Omit<ExtractedOfferFields, "language"> & {
-  language?: string | null;
-};
-
 const MIN_OFFER_TEXT_LENGTH = 160;
 const MAX_OFFER_TEXT_LENGTH = 50_000;
-const MAX_EXTRACTED_LIST_ITEMS = 8;
 const MAX_EDITED_LIST_ITEMS = 30;
 const MANUAL_TEXT_SOURCE_LABEL = "Texte colle manuellement";
 const RESPONSE_STATUSES = new Set<ApplicationStatus>([
@@ -77,7 +77,9 @@ function normalizeOfferUrl(rawUrl: string) {
   }
 
   if (!["http:", "https:"].includes(url.protocol)) {
-    throw new BadRequestException("Seules les URL http et https sont acceptees.");
+    throw new BadRequestException(
+      "Seules les URL http et https sont acceptees.",
+    );
   }
 
   return url.toString();
@@ -171,85 +173,6 @@ function createEmptyStatusCounts(): ApplicationsKpiSummary["statusCounts"] {
     offer_received: 0,
     rejected: 0,
     sent: 0,
-  };
-}
-
-function extractFirstJsonObject(rawContent: string) {
-  const fencedMatch = rawContent.match(/```json\s*([\s\S]*?)```/i);
-  const candidate = fencedMatch?.[1] ?? rawContent;
-  const start = candidate.indexOf("{");
-  const end = candidate.lastIndexOf("}");
-
-  if (start === -1 || end === -1 || end <= start) {
-    throw new UnprocessableEntityException(
-      "Le service d'extraction n'a pas retourne un JSON exploitable.",
-    );
-  }
-
-  try {
-    return JSON.parse(candidate.slice(start, end + 1)) as ExtractedOfferPayload;
-  } catch {
-    throw new UnprocessableEntityException(
-      "Le service d'extraction a retourne un JSON invalide.",
-    );
-  }
-}
-
-function toStringOrNull(value: unknown) {
-  if (typeof value !== "string") {
-    return null;
-  }
-
-  const normalized = value.trim();
-
-  return normalized.length > 0 ? normalized : null;
-}
-
-function toStringArray(value: unknown, limit = MAX_EXTRACTED_LIST_ITEMS) {
-  if (!Array.isArray(value)) {
-    return [];
-  }
-
-  return value
-    .map((entry) => (typeof entry === "string" ? entry.trim() : ""))
-    .filter((entry) => entry.length > 0)
-    .slice(0, limit);
-}
-
-function normalizeExtractedFields(
-  payload: ExtractedOfferPayload,
-  fallback: {
-    description: string | null;
-    offerText: string;
-    siteName: string | null;
-    title: string | null;
-  },
-): ExtractedOfferFields {
-  const title = toStringOrNull(payload.title) ?? fallback.title;
-  const summary =
-    toStringOrNull(payload.summary) ??
-    fallback.description ??
-    buildOfferPreview(fallback.offerText, 320);
-
-  if (!title || !summary) {
-    throw new UnprocessableEntityException(
-      "L'offre a ete recuperee mais ses informations utiles n'ont pas pu etre extraites.",
-    );
-  }
-
-  return {
-    companyName: toStringOrNull(payload.companyName) ?? fallback.siteName,
-    contractType: toStringOrNull(payload.contractType),
-    language:
-      payload.language === "en" || payload.language === "fr"
-        ? payload.language
-        : inferLocaleFromText(fallback.offerText),
-    location: toStringOrNull(payload.location),
-    requirements: toStringArray(payload.requirements),
-    responsibilities: toStringArray(payload.responsibilities),
-    salaryRange: toStringOrNull(payload.salaryRange),
-    summary,
-    title,
   };
 }
 
@@ -368,7 +291,10 @@ export class ApplicationsService {
     applicationId: string,
     report: InterviewReport,
   ): Promise<DraftApplication> {
-    const application = await this.getOwnedApplication(userEmail, applicationId);
+    const application = await this.getOwnedApplication(
+      userEmail,
+      applicationId,
+    );
     const timestamp = report.createdAt;
     const updatedApplication: StoredApplication = {
       ...application,
@@ -388,7 +314,10 @@ export class ApplicationsService {
       throw new BadRequestException("Le statut cible est invalide.");
     }
 
-    const application = await this.getOwnedApplication(userEmail, applicationId);
+    const application = await this.getOwnedApplication(
+      userEmail,
+      applicationId,
+    );
 
     if (application.status === nextStatusValue) {
       throw new BadRequestException("La candidature possede deja ce statut.");
@@ -439,6 +368,45 @@ export class ApplicationsService {
     return this.createDraftFromExtraction(userEmail, extraction);
   }
 
+  /**
+   * The application a free tool's visitor asked for by signing up (US-136):
+   * on the house, so no credit is checked or spent. If the model cannot
+   * structure the offer, the application is still created from its text —
+   * the visitor was promised one, and can re-extract it later.
+   */
+  async importOfferedText(
+    userEmail: string,
+    rawOfferText: string,
+  ): Promise<DraftApplication> {
+    const offerText = normalizeOfferText(rawOfferText);
+    const extracted = await structureOffer(
+      this.openRouterService,
+      offerText,
+      {
+        description: buildOfferPreview(offerText, 320),
+        siteName: null,
+        title: null,
+      },
+      null,
+      APPLICATION_SOURCE_TEXT,
+    ).catch((error: unknown) => {
+      this.logger.warn(
+        `Offered offer structuring failed, kept as text: ${error instanceof Error ? error.message : String(error)}`,
+      );
+
+      return unstructuredOffer(offerText);
+    });
+
+    return this.createDraftFromExtraction(userEmail, {
+      extracted,
+      offerText,
+      offerTextPreview: buildOfferPreview(offerText),
+      offerUrl: null,
+      sourceLabel: LEAD_OFFER_SOURCE_LABEL,
+      sourceType: APPLICATION_SOURCE_TEXT,
+    });
+  }
+
   /** Remembers the base profile used for this application (null resets to the default one). */
   async setProfile(
     userEmail: string,
@@ -456,7 +424,10 @@ export class ApplicationsService {
       throw new BadRequestException("Un identifiant de profil est requis.");
     }
 
-    const application = await this.getOwnedApplication(userEmail, applicationId);
+    const application = await this.getOwnedApplication(
+      userEmail,
+      applicationId,
+    );
 
     if (
       profileId &&
@@ -466,11 +437,16 @@ export class ApplicationsService {
       throw new NotFoundException("Le profil est introuvable.");
     }
 
-    return stripRawOfferText(await this.store.save({ ...application, profileId }));
+    return stripRawOfferText(
+      await this.store.save({ ...application, profileId }),
+    );
   }
 
   async getOfferForUser(userEmail: string, applicationId: string) {
-    const application = await this.getOwnedApplication(userEmail, applicationId);
+    const application = await this.getOwnedApplication(
+      userEmail,
+      applicationId,
+    );
 
     return {
       application: stripRawOfferText(application),
@@ -483,7 +459,10 @@ export class ApplicationsService {
     applicationId: string,
     patch: OfferUpdateInput,
   ): Promise<DraftApplication> {
-    const application = await this.getOwnedApplication(userEmail, applicationId);
+    const application = await this.getOwnedApplication(
+      userEmail,
+      applicationId,
+    );
     const offerUrl =
       patch.offerUrl === undefined
         ? application.offerUrl
@@ -515,7 +494,10 @@ export class ApplicationsService {
     applicationId: string,
     source: string,
   ): Promise<DraftApplication> {
-    const application = await this.getOwnedApplication(userEmail, applicationId);
+    const application = await this.getOwnedApplication(
+      userEmail,
+      applicationId,
+    );
     let extraction: OfferExtractionResult;
 
     if (source === APPLICATION_SOURCE_URL) {
@@ -528,7 +510,10 @@ export class ApplicationsService {
       extraction = await this.extractOffer(userEmail, application.offerUrl);
     } else if (source === APPLICATION_SOURCE_TEXT) {
       extraction = {
-        ...(await this.extractOfferFromText(userEmail, application.rawOfferText)),
+        ...(await this.extractOfferFromText(
+          userEmail,
+          application.rawOfferText,
+        )),
         ...describeSource(application.offerUrl),
         offerUrl: application.offerUrl,
       };
@@ -606,7 +591,8 @@ export class ApplicationsService {
 
     const metadata = extractOfferMetadata(html);
     const extracted = await this.extractWithCredits(userEmail, () =>
-      this.extractStructuredFields(
+      structureOffer(
+        this.openRouterService,
         offerText,
         metadata,
         offerUrl,
@@ -630,7 +616,8 @@ export class ApplicationsService {
   ): Promise<OfferExtractionResult> {
     const offerText = normalizeOfferText(rawOfferText);
     const extracted = await this.extractWithCredits(userEmail, () =>
-      this.extractStructuredFields(
+      structureOffer(
+        this.openRouterService,
         offerText,
         {
           description: buildOfferPreview(offerText, 320),
@@ -708,50 +695,6 @@ export class ApplicationsService {
     });
 
     return extracted;
-  }
-
-  private async extractStructuredFields(
-    offerText: string,
-    metadata: {
-      description: string | null;
-      siteName: string | null;
-      title: string | null;
-    },
-    offerUrl: string | null,
-    sourceType: DraftApplication["sourceType"],
-  ) {
-    const response = await withOpenRouterHttpErrors(() =>
-      this.openRouterService.chat(
-        [
-          {
-            role: "system",
-            content:
-              "You extract structured job-offer data. Return JSON only with keys: title, companyName, location, contractType, salaryRange, summary, responsibilities, requirements, language.",
-          },
-          {
-            role: "user",
-            content: JSON.stringify({
-              description: metadata.description,
-              offerText,
-              offerUrl,
-              sourceType,
-              siteName: metadata.siteName,
-              titleHint: metadata.title,
-            }),
-          },
-        ],
-        { temperature: 0 },
-      ),
-    );
-
-    const payload = extractFirstJsonObject(response);
-
-    return normalizeExtractedFields(payload, {
-      description: metadata.description,
-      offerText,
-      siteName: metadata.siteName,
-      title: metadata.title,
-    });
   }
 }
 

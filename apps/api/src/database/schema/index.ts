@@ -1,6 +1,7 @@
 export * from "./admin-audit";
 export * from "./data-imports";
 export * from "./applications";
+export * from "./acquisition";
 export * from "./ats";
 export * from "./auth";
 export * from "./companies";

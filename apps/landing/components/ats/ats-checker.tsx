@@ -1,30 +1,20 @@
 "use client"
 
-import { useId, useRef, useState } from "react"
-import {
-  ChevronDownIcon,
-  CircleAlertIcon,
-  LockIcon,
-  RotateCcwIcon,
-  TriangleAlertIcon,
-  ZapIcon,
-} from "lucide-react"
+import { useEffect, useId, useMemo, useRef, useState } from "react"
+import { ChevronDownIcon, CircleAlertIcon, ZapIcon } from "lucide-react"
 
+import { AtsResult } from "@/components/ats/ats-result"
 import { CvDropZone } from "@/components/ats/cv-drop-zone"
 import { ScanProgress } from "@/components/ats/scan-progress"
-import { ScoreGauge } from "@/components/ats/score-gauge"
 import {
   SparkPending,
   sparkPendingClassName,
 } from "@/components/ats/spark-pending"
-import { stagger } from "@/components/ats/stagger"
-import { UnlockForm } from "@/components/ats/unlock-form"
-import { UnlockedReport } from "@/components/ats/unlocked-report"
 import { Button } from "@/components/ui/button"
 import type { LandingDictionary } from "@/content/types"
 import type { AtsScanResult, AtsUnlockResult } from "@/lib/ats-api"
 import { postScan, scanErrorMessage } from "@/lib/ats-client"
-import { format } from "@/lib/i18n"
+import { atsFunnel } from "@/lib/ats-funnel"
 import { cn } from "@/lib/utils"
 
 type Status = "idle" | "scanning" | "done"
@@ -56,6 +46,19 @@ export function AtsChecker({
   const offerId = useId()
   const scanning = status === "scanning"
 
+  const funnel = useMemo(() => atsFunnel(locale), [locale])
+
+  // Counted once per visitor and day by the API, so a remount or a second
+  // scan in the same visit adds nothing (US-131).
+  useEffect(() => {
+    funnel.viewed()
+  }, [funnel])
+
+  function unlock(report: AtsUnlockResult) {
+    setUnlocked(report)
+    funnel.emailSubmitted()
+  }
+
   function pick(selected: File | null) {
     setError(null)
     setFile(selected)
@@ -70,11 +73,13 @@ export function AtsChecker({
     try {
       const result = (await postScan(
         file,
-        showOffer && offerText.trim() ? offerText : null
+        showOffer && offerText.trim() ? offerText : null,
+        locale
       )) as AtsScanResult
 
       setScan(result)
       setStatus("done")
+      funnel.scanned()
       // The score is why they came: move the reader to it rather than leaving
       // them at the top of a page that silently changed below.
       requestAnimationFrame(() => resultRef.current?.focus())
@@ -95,109 +100,16 @@ export function AtsChecker({
   return (
     <div className="mx-auto w-full max-w-2xl">
       {scan ? (
-        <div
-          className="animate-rise-in rounded-2xl border bg-card p-6 shadow-raised outline-none md:p-8"
+        <AtsResult
+          ctaHref={ctaHref}
+          dictionary={dictionary}
+          onCtaClick={funnel.ctaClicked}
+          onRestart={restart}
+          onUnlocked={unlock}
           ref={resultRef}
-          tabIndex={-1}
-        >
-          <div className="rise-in" style={stagger(0)}>
-            <ScoreGauge
-              band={scan.band}
-              dictionary={dictionary.result}
-              score={scan.overallScore}
-            />
-
-            <p className="mt-4 text-center text-sm text-muted-foreground">
-              {format(dictionary.result.dimensionsScored, {
-                count: scan.scoredDimensionCount,
-              })}
-            </p>
-          </div>
-
-          {scan.partial ? (
-            <div
-              className="mt-6 flex rise-in gap-3 rounded-lg border border-destructive/40 bg-destructive/5 p-4"
-              style={stagger(1)}
-            >
-              <TriangleAlertIcon className="mt-0.5 size-5 shrink-0 text-destructive" />
-              <div>
-                <h3 className="font-medium text-destructive">
-                  {dictionary.result.partialTitle}
-                </h3>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {dictionary.result.partialBody}
-                </p>
-              </div>
-            </div>
-          ) : null}
-
-          {/* Dropped once the report is open: it lists these same findings, and
-              showing them twice reads as a bug. */}
-          {!unlocked && scan.highlights.length > 0 ? (
-            <ul className="mt-6 space-y-2">
-              {scan.highlights.map((code, index) => (
-                <li
-                  className="flex rise-in items-start gap-2.5 rounded-lg bg-muted/40 px-3 py-2 text-sm"
-                  key={code}
-                  style={stagger(2 + index)}
-                >
-                  <CircleAlertIcon className="mt-0.5 size-4 shrink-0 text-warning" />
-                  <span>{dictionary.findings[code] ?? code}</span>
-                </li>
-              ))}
-            </ul>
-          ) : null}
-
-          {unlocked ? (
-            <UnlockedReport dictionary={dictionary} report={unlocked} />
-          ) : (
-            <div
-              className="mt-6 rise-in rounded-xl border bg-muted/30 p-5"
-              style={stagger(3 + scan.highlights.length)}
-            >
-              <div className="flex items-start gap-3">
-                <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                  <LockIcon className="size-4" />
-                </span>
-                <div>
-                  {/* "0 autres points détectés" is a hook that deflates on the very
-                      CVs that scored well; the breakdown is the offer then. */}
-                  <h3 className="font-medium">
-                    {scan.lockedFindingCount > 0
-                      ? format(dictionary.result.lockedTitle, {
-                          count: scan.lockedFindingCount,
-                        })
-                      : dictionary.result.lockedTitleNone}
-                  </h3>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    {dictionary.result.lockedBody}
-                  </p>
-                </div>
-              </div>
-              <UnlockForm
-                dictionary={dictionary}
-                onUnlocked={setUnlocked}
-                scanId={scan.scanId}
-              />
-            </div>
-          )}
-
-          <div
-            className="mt-6 flex rise-in flex-wrap gap-3 border-t pt-6"
-            style={stagger(4 + scan.highlights.length)}
-          >
-            <Button asChild variant="spark">
-              <a href={ctaHref}>
-                <ZapIcon />
-                {dictionary.cta}
-              </a>
-            </Button>
-            <Button onClick={restart} type="button" variant="outline">
-              <RotateCcwIcon />
-              {dictionary.result.again}
-            </Button>
-          </div>
-        </div>
+          scan={scan}
+          unlocked={unlocked}
+        />
       ) : (
         <div className="rounded-2xl border bg-card p-6 shadow-raised md:p-8">
           <h2 className="font-medium">{dictionary.upload.label}</h2>

@@ -1,4 +1,5 @@
-import type { AccountStatus } from "@cvforge/types";
+import type { AccountStatus, LeadIntent } from "@cvforge/types";
+
 export type AuthConsentRecord = {
   acceptedAt: string;
   source: "invitation" | "passwordless";
@@ -53,6 +54,8 @@ export type AuthMagicLink = {
   consent: AuthConsentRecord | null;
   email: string;
   expiresAt: string;
+  /** What a free tool's visitor asked for, applied on redemption (US-133). */
+  intent?: LeadIntent | null;
 };
 
 export type AuthSession = {

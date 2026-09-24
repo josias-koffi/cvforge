@@ -1,3 +1,4 @@
+import type { AcquisitionTool } from "@cvforge/types";
 import type { OpenRouterBalance } from "../ai/openrouter-balance.service";
 
 export const METRICS_STORE = Symbol("METRICS_STORE");
@@ -41,9 +42,41 @@ export type AtsCounters = {
   convertedLeadCount: number;
 };
 
+/** Distinct visitors of one step of one tool over the window, straight from SQL. */
+export type AcquisitionStepCount = {
+  tool: string;
+  step: string;
+  visitors: number;
+};
+
+/**
+ * The funnel of one free tool over the dashboard window (US-131).
+ *
+ * Every figure counts visitors once per day and per step, never page loads.
+ * `accountsActivated` is null for a tool that has no email capture yet: there
+ * is no address to join on, which is not the same fact as nobody signing up.
+ */
+export type AcquisitionFunnel = {
+  tool: AcquisitionTool;
+  visitors: number;
+  results: number;
+  ctaClicks: number;
+  emailsSubmitted: number;
+  accountsActivated: number | null;
+};
+
 export type MetricsStore = {
   readProductCounters: (activeWindowDays: number) => Promise<ProductCounters>;
   readAtsCounters: () => Promise<AtsCounters>;
+  /** `sinceDay` is an ISO date, inclusive. */
+  readAcquisitionSteps: (sinceDay: string) => Promise<AcquisitionStepCount[]>;
+  /** Addresses that unlocked a public scan since then and now have an account. */
+  readAtsActivations: (since: Date) => Promise<number>;
+  /**
+   * Accounts that redeemed a comparator link since then: one application
+   * carrying the comparator's source label each (US-136).
+   */
+  readKeywordMatchActivations: (since: Date) => Promise<number>;
 };
 
 export type AdminMetrics = {
@@ -71,6 +104,8 @@ export type AdminMetrics = {
     unlockRate: number | null;
     conversionRate: number | null;
   };
+  /** One funnel per free tool, over `activeWindowDays`. */
+  acquisition: AcquisitionFunnel[];
   credits: { consumed: number; granted: number; sold: number };
   revenue: { currency: "eur"; grossCents: number; paidOrderCount: number };
   /**

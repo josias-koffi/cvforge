@@ -73,7 +73,7 @@ export function resolveRateLimitConfig(
  * A malformed value falls back to the default rather than disabling the limit:
  * a typo in an env var must not silently open the door on a public AI route.
  */
-function readPositiveInt(raw: string | undefined, fallback: number) {
+export function readPositiveInt(raw: string | undefined, fallback: number) {
   const parsed = Number(raw);
 
   return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;

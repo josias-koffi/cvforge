@@ -31,6 +31,8 @@ export interface AtsScanStore {
   /** Scans created since `since`, used to charge the daily budget. */
   countSince(since: string): Promise<number>;
   unlock(id: string, email: string, at: string): Promise<StoredAtsScan | null>;
+  /** The reports this address unlocked, still within retention, newest first. */
+  findUnlockedByEmail(email: string, now: string): Promise<StoredAtsScan[]>;
   deleteExpired(now: string): Promise<number>;
 }
 
@@ -56,3 +58,15 @@ export type PublicAtsScanResponse = {
   partial: boolean;
   expiresAt: string;
 };
+
+/** One report a signed-in user unlocked on the landing (US-133). */
+export type AtsScanSummary = {
+  scanId: string;
+  overallScore: number;
+  band: AtsScoreBand;
+  unlockedAt: string;
+  /** The report is purged past this point; the app says so. */
+  expiresAt: string;
+};
+
+export type AtsScanReport = AtsScanSummary & { result: AtsScoreResult };

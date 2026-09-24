@@ -2,7 +2,12 @@ import type { PublicCreditOffer } from "@cvforge/types"
 import { describe, expect, it } from "vitest"
 
 import { getDictionary } from "@/lib/dictionaries"
-import { homeStructuredData, jsonLd } from "@/lib/structured-data"
+import {
+  homeStructuredData,
+  jsonLd,
+  toolsStructuredData,
+} from "@/lib/structured-data"
+import { freeTools } from "@/lib/tools"
 
 const base = "https://cvspark.example"
 const offer = (priceCents: number) => ({ priceCents }) as PublicCreditOffer
@@ -55,5 +60,25 @@ describe("homeStructuredData", () => {
 describe("jsonLd", () => {
   it("cannot close the surrounding script tag", () => {
     expect(jsonLd({ text: "</script><script>" })).not.toContain("</script>")
+  })
+})
+
+describe("toolsStructuredData", () => {
+  it("lists every live tool as a free web application", () => {
+    const { tools } = getDictionary("en")
+    const data = toolsStructuredData({ base, locale: "en", tools })
+
+    expect(data).toMatchObject({ "@type": "ItemList", url: `${base}/en/tools` })
+    expect(data.itemListElement).toHaveLength(freeTools.length)
+    expect(data.itemListElement[0]).toMatchObject({
+      position: 1,
+      item: {
+        "@type": "WebApplication",
+        name: tools.items.ats.name,
+        url: `${base}/en/ats-check`,
+        isAccessibleForFree: true,
+        offers: { price: 0 },
+      },
+    })
   })
 })

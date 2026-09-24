@@ -1,9 +1,13 @@
-import { describe, expect, it } from "vitest"
+import { afterEach, describe, expect, it, vi } from "vitest"
 
+import { publicErrorCodes } from "@cvforge/types"
+
+import { en } from "@/content/en"
 import { fr } from "@/content/fr"
 import {
   MAX_CV_BYTES,
   cvRejectionReason,
+  postScan,
   scanErrorMessage,
 } from "@/lib/ats-client"
 
@@ -52,38 +56,50 @@ describe("scanErrorMessage", () => {
    * The API's own message is already localised and says precisely what
    * happened, so it wins over any generic wording here.
    */
-  it("prefers the message the API sent", () => {
+  /** Never the API's message: it is French whatever the page's language. */
+  it("words a named refusal in the page's language", () => {
     expect(
-      scanErrorMessage({ message: "Le fichier est illisible.", status: 422 }, ats)
-    ).toBe("Le fichier est illisible.")
+      scanErrorMessage({ code: "INVALID_EMAIL", status: 400 }, en.ats)
+    ).toBe(en.ats.errors.invalidEmail)
+    expect(
+      scanErrorMessage({ code: "CV_FILE_UNSUPPORTED", status: 400 }, ats)
+    ).toBe(ats.upload.wrongType)
+  })
+
+  it.each(publicErrorCodes)("words %s in both languages", (code) => {
+    expect(scanErrorMessage({ code, status: 400 }, ats)).toBeTruthy()
+    expect(scanErrorMessage({ code, status: 400 }, en.ats)).toBeTruthy()
+    expect(scanErrorMessage({ code, status: 400 }, en.ats)).not.toBe(
+      scanErrorMessage({ code, status: 400 }, ats)
+    )
   })
 
   it("explains a rate limit", () => {
-    expect(scanErrorMessage({ message: null, status: 429 }, ats)).toBe(
+    expect(scanErrorMessage({ code: null, status: 429 }, ats)).toBe(
       ats.errors.tooManyRequests
     )
   })
 
   it("explains an exhausted budget", () => {
-    expect(scanErrorMessage({ message: null, status: 503 }, ats)).toBe(
+    expect(scanErrorMessage({ code: null, status: 503 }, ats)).toBe(
       ats.errors.unavailable
     )
   })
 
   it("explains an expired scan", () => {
-    expect(scanErrorMessage({ message: null, status: 410 }, ats)).toBe(
+    expect(scanErrorMessage({ code: null, status: 410 }, ats)).toBe(
       ats.errors.expired
     )
   })
 
   it("explains an oversized upload", () => {
-    expect(scanErrorMessage({ message: null, status: 413 }, ats)).toBe(
+    expect(scanErrorMessage({ code: null, status: 413 }, ats)).toBe(
       ats.upload.tooLarge
     )
   })
 
   it("falls back to the generic message for an unexpected status", () => {
-    expect(scanErrorMessage({ message: null, status: 418 }, ats)).toBe(
+    expect(scanErrorMessage({ code: null, status: 418 }, ats)).toBe(
       ats.errors.generic
     )
   })
@@ -92,5 +108,44 @@ describe("scanErrorMessage", () => {
   it("reports a network failure when the error is not from the API", () => {
     expect(scanErrorMessage(new Error("offline"), ats)).toBe(ats.errors.network)
     expect(scanErrorMessage(undefined, ats)).toBe(ats.errors.network)
+  })
+})
+
+describe("postScan", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  /** A scan made on the English page is stored in English (US-134). */
+  it("sends the page's language with the file", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(new Response(JSON.stringify({ scanId: "x" })))
+    vi.stubGlobal("fetch", fetchMock)
+
+    await postScan(makeFile("cv.pdf", 10), null, "en")
+
+    const body = fetchMock.mock.calls[0]![1].body as FormData
+    expect(body.get("locale")).toBe("en")
+    expect(body.has("offerText")).toBe(false)
+  })
+
+  it("carries the API's code, never its message, on a refusal", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValue(
+          new Response(
+            JSON.stringify({ code: "CV_NOT_ENOUGH_TEXT", message: "Ce CV..." }),
+            { status: 422 }
+          )
+        )
+    )
+
+    await expect(postScan(makeFile("cv.pdf", 10), null, "en")).rejects.toEqual({
+      code: "CV_NOT_ENOUGH_TEXT",
+      status: 422,
+    })
   })
 })

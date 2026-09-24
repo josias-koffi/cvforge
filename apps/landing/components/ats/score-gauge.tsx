@@ -64,7 +64,11 @@ export function ScoreGauge({
 }: {
   score: number
   band: Band
-  dictionary: LandingDictionary["ats"]["result"]
+  /** Only the wording of the gauge, so another tool can give its own. */
+  dictionary: Pick<
+    LandingDictionary["ats"]["result"],
+    "scoreLabel" | "outOf" | "bands"
+  >
 }) {
   const offset = CIRCUMFERENCE * (1 - Math.max(0, Math.min(100, score)) / 100)
 

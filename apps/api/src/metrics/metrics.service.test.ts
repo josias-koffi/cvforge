@@ -32,14 +32,30 @@ const ATS_COUNTERS = {
   unlockedScanCount: 0,
 };
 
+const ACQUISITION_STEPS = [
+  { step: "view", tool: "ats", visitors: 40 },
+  { step: "result", tool: "ats", visitors: 25 },
+  { step: "email_submitted", tool: "ats", visitors: 6 },
+  // A tool removed from the list must not resurface on the dashboard.
+  { step: "view", tool: "retired-tool", visitors: 99 },
+];
+
 function createService({
+  acquisitionSteps = ACQUISITION_STEPS,
   ats = ATS_COUNTERS,
+  atsActivations = 2,
+  keywordMatchActivations = 1,
   counters = COUNTERS,
   isEnabled = true,
   totalUsage = 10 as number | null,
 } = {}) {
   const store: MetricsStore = {
+    readAcquisitionSteps: vi.fn().mockResolvedValue(acquisitionSteps),
+    readAtsActivations: vi.fn().mockResolvedValue(atsActivations),
     readAtsCounters: vi.fn().mockResolvedValue(ats),
+    readKeywordMatchActivations: vi
+      .fn()
+      .mockResolvedValue(keywordMatchActivations),
     readProductCounters: vi.fn().mockResolvedValue(counters),
   };
   const balanceService = {
@@ -86,6 +102,74 @@ describe("MetricsService", () => {
       revenue: { currency: "eur", grossCents: 3998, paidOrderCount: 2 },
       users: { activeCount: 4, adminCount: 1, totalCount: 9 },
     });
+  });
+
+  it("reads the funnels over the same window as the active users", async () => {
+    const { service, store } = createService();
+
+    await service.readAdminMetrics();
+
+    expect(store.readAcquisitionSteps).toHaveBeenCalledWith("2026-08-18");
+    expect(store.readAtsActivations).toHaveBeenCalledWith(
+      new Date("2026-08-18T00:00:00.000Z"),
+    );
+    expect(store.readKeywordMatchActivations).toHaveBeenCalledWith(
+      new Date("2026-08-18T00:00:00.000Z"),
+    );
+  });
+
+  it("builds one funnel per known tool, with zeros for steps nobody reached", async () => {
+    const { service } = createService();
+
+    const { acquisition } = await service.readAdminMetrics();
+
+    expect(acquisition).toEqual([
+      {
+        accountsActivated: 2,
+        ctaClicks: 0,
+        emailsSubmitted: 6,
+        results: 25,
+        tool: "ats",
+        visitors: 40,
+      },
+      {
+        accountsActivated: 1,
+        ctaClicks: 0,
+        emailsSubmitted: 0,
+        results: 0,
+        tool: "keyword_match",
+        visitors: 0,
+      },
+    ]);
+  });
+
+  it("still lists a tool nobody opened yet", async () => {
+    const { service } = createService({
+      acquisitionSteps: [],
+      atsActivations: 0,
+      keywordMatchActivations: 0,
+    });
+
+    const { acquisition } = await service.readAdminMetrics();
+
+    expect(acquisition).toEqual([
+      {
+        accountsActivated: 0,
+        ctaClicks: 0,
+        emailsSubmitted: 0,
+        results: 0,
+        tool: "ats",
+        visitors: 0,
+      },
+      {
+        accountsActivated: 0,
+        ctaClicks: 0,
+        emailsSubmitted: 0,
+        results: 0,
+        tool: "keyword_match",
+        visitors: 0,
+      },
+    ]);
   });
 
   it("converts the API cost at the configured rate and derives the margin", async () => {
@@ -171,6 +255,9 @@ describe("buildMetricsCsv", () => {
     expect(lines).toContain("revenue_gross,39.98,eur");
     expect(lines).toContain("api_cost_estimated,9.20,eur");
     expect(lines).toContain("margin_net,30.78,eur");
+    expect(lines).toContain("funnel_ats_visitors,40,visitors");
+    expect(lines).toContain("funnel_ats_cta_clicks,0,visitors");
+    expect(lines).toContain("funnel_ats_accounts_activated,2,visitors");
     expect(csv.endsWith("\n")).toBe(true);
   });
 
@@ -181,6 +268,17 @@ describe("buildMetricsCsv", () => {
     expect(lines).toContain("api_cost_estimated,,eur");
     expect(lines).toContain("margin_net,,eur");
     expect(lines).toContain("margin_ratio,,ratio");
+  });
+
+  it("leaves an activation that cannot be measured yet empty, not 0", async () => {
+    const { service } = createService();
+    const metrics = await service.readAdminMetrics();
+    const lines = buildMetricsCsv({
+      ...metrics,
+      acquisition: [{ ...metrics.acquisition[0]!, accountsActivated: null }],
+    }).split("\n");
+
+    expect(lines).toContain("funnel_ats_accounts_activated,,visitors");
   });
 
   it("timestamps the filename so exports never overwrite each other", () => {

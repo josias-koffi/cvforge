@@ -52,6 +52,7 @@ const METRICS = {
     unlockedScanCount: 0,
   },
   applications: { totalCount: 3 },
+  acquisition: [],
   credits: { consumed: 9, granted: 0, sold: 550 },
   documents: {
     cvImportCount: 0,

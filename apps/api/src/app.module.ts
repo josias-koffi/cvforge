@@ -1,4 +1,5 @@
 import { Module, type MiddlewareConsumer, type NestModule } from "@nestjs/common";
+import { AcquisitionModule } from "./acquisition/acquisition.module";
 import { AdminModule } from "./admin/admin.module";
 import { AppController } from "./app.controller";
 import { AuthModule } from "./auth/auth.module";
@@ -7,6 +8,7 @@ import { SmtpModule } from "./smtp/smtp.module";
 import { OpenRouterModule } from "./ai/openrouter.module";
 import { ApplicationsModule } from "./applications/applications.module";
 import { AtsModule } from "./ats/ats.module";
+import { KeywordMatchModule } from "./keyword-match/keyword-match.module";
 import { BillingModule } from "./billing/billing.module";
 import { CvGenerationModule } from "./cv-generation/cv-generation.module";
 import { CreditsModule } from "./credits/credits.module";
@@ -28,15 +30,18 @@ import { MetricsModule } from "./metrics/metrics.module";
 import { RateLimitModule } from "./shared/rate-limit/rate-limit.module";
 import { RedisModule } from "./shared/redis/redis.module";
 import { RateLimitMiddleware } from "./shared/rate-limit/rate-limit.middleware";
+import { rateLimitedRoutes } from "./shared/rate-limit/rate-limit.policies";
 
 @Module({
   imports: [
+    AcquisitionModule,
     AdminModule,
     AuthModule,
     SmtpModule,
     OpenRouterModule,
     ApplicationsModule,
     AtsModule,
+    KeywordMatchModule,
     BillingModule,
     CvGenerationModule,
     CreditsModule,
@@ -76,11 +81,9 @@ export class AppModule implements NestModule {
       .exclude("auth/{*splat}", "health", "ready", "billing/stripe/webhook")
       .forRoutes("{*splat}");
 
-    // Scoped to the public scan alone: it is the only unauthenticated route
-    // that spends CPU and model credits, and every other public route is a
-    // cheap read (US-101, ADR-022).
-    consumer
-      .apply(RateLimitMiddleware)
-      .forRoutes("public/ats-scan", "public/ats-scan/{*splat}");
+    // Only the public routes that write or spend: each one is declared with
+    // its limits in `rate-limit.policies.ts`, and the cheap public reads
+    // (`public/legal`, `public/credit-offers`) stay unmetered (ADR-022).
+    consumer.apply(RateLimitMiddleware).forRoutes(...rateLimitedRoutes());
   }
 }

@@ -439,3 +439,52 @@
 ### 2026-09-24 — US-118 (product-owner · [[workflows/runs/analyze-design-dev-review-20260923233426]])
 - **Context** : [[sprints/sprint-026#^us-118]]
 - **Learned** : Les suggestions sont ce que l'IA propose, les confirmées ce que le candidat retient ; une suggestion écartée reste en base pour ne jamais revenir. Reste à ajouter les appellations à l'export RGPD.
+
+## 2026-09-24 — Plan « Outils gratuits d'acquisition » (E23, sprints 029 et 030 en brouillon)
+- **Context**: [[sprints/sprint-029]] · [[sprints/sprint-030]] · [[decisions/ADR-022-public-ai-surface-rate-limiting]]
+- **Did**: Le propriétaire a validé quatre outils sans compte en plus du scan ATS : comparateur CV ↔ offre, métier qui recrute + salaire, vérification d'employeur, questions d'entretien probables. Il a choisi de mesurer par événements côté API, sans outil tiers. US-131 à US-141 écrites, miroir claude-space resynchronisé.
+- **Why**: Le tunnel ATS affichait 7 scans, 3 déverrouillages et 0 compte converti, sans aucune mesure front. Les briques E19-E21 coûtent peu ou rien par appel.
+- **Learned**: Chaque outil convertit vers un compte pré-rempli avec ce que le visiteur a saisi hors CV (offre, ROME + lieu, SIREN). La règle RGPD d'E18 interdit d'y mettre du texte de CV.
+- **Open**: Report de E23 dans `vision.md` (avec E18 à E22). Comparateur : page dédiée ou onglet de la page ATS. Volume de pages SEO métier au lancement.
+
+## 2026-09-24 — US-131 analyze (stage 01 · [[workflows/runs/analyze-design-dev-review-20260924143552]])
+- **Context**: [[sprints/sprint-029#US-131]] · [[workflows/runs/analyze-design-dev-review-20260924143552/01-analyze]]
+- **Did**: Périmètre fixé (outil `ats` seul, 4 étapes, un visiteur par jour et par étape, `ip_hash` salé par jour). Critère « rate-limitée (US-132) » amendé : la route est bornée par des valeurs fermées et le dédoublonnage ; US-132 l'ajoutera au rate limit.
+- **Why**: US-132 vient après US-131 dans le sprint, et le limiteur actuel compterait chaque événement comme un scan ATS.
+- **Learned**: En écrivant un sprint, vérifier que l'ordre des stories suit leurs dépendances.
+- **Open**: Mention de la mesure d'audience dans la politique de confidentialité (propriétaire, via /admin/legal).
+
+## 2026-09-24 — US-132 analyze (stage 01 · [[workflows/runs/analyze-design-dev-review-20260924145528]])
+- **Context**: [[sprints/sprint-029#US-132]] · [[workflows/runs/analyze-design-dev-review-20260924145528/01-analyze]]
+- **Did**: Politique de limitation par route ; `/public/events` à 60 par heure et 300 par jour pour une IP, budget de 20 000 par jour. Critère `X-Forwarded-For` scindé : un en-tête d'IP configurable dans le code, la vérification en production dans le DoD du sprint.
+- **Why**: Derrière Cloudflare, c'est la landing qui voit une IP partagée ou falsifiable. L'API est protégée par le comportement par défaut de Traefik.
+- **Learned**: Un critère qui dépend de l'infrastructure hors dépôt ne se vérifie pas dans une story de code : il va au DoD du sprint.
+- **Open**: Vérification en production (en-tête `CF-Connecting-IP`, origine réservée à Cloudflare).
+
+## 2026-09-24 — US-133 analyze (stage 01 · [[workflows/runs/analyze-design-dev-review-20260924155415]])
+- **Context**: [[sprints/sprint-029#US-133]] · [[workflows/runs/analyze-design-dev-review-20260924155415/01-analyze]]
+- **Did**: L'intention voyage avec le lien magique (colonne `intent`, migration 0041). Types `ats_scan`, `offer`, `job_search` et `company`. Effet livré ici pour `ats_scan` seulement : le rapport dans l'app. Les trois autres arrivent avec leur outil.
+- **Why**: `onAccountCreated` ignore les comptes existants. Et la landing promettait déjà « le lien vous ramènera à ce rapport », ce qui était faux.
+- **Learned**: Vérifier ce que la page publique promet déjà au visiteur : c'est souvent là que se trouve la dette produit.
+- **Open**: Crédit et profil pour les intentions `offer`, `job_search` et `company` (US-136, US-137, US-139).
+
+## 2026-09-24 — US-134 analyze (stage 01 · [[workflows/runs/analyze-design-dev-review-20260924162332]])
+- **Context**: [[sprints/sprint-029#US-134]] · [[workflows/runs/analyze-design-dev-review-20260924162332/01-analyze]]
+- **Did**: Erreurs du tunnel ATS par code (liste partagée), `locale` transmise, liens depuis le Hero et le CTA. Critère « branchement testé » précisé : les quatre appels sont testés dans `atsFunnel`.
+- **Why**: La version EN affichait des messages français.
+- **Learned**: none
+- **Open**: none
+
+## 2026-09-24 — US-135 analyze (stage 01 · [[workflows/runs/analyze-design-dev-review-20260924164112]])
+- **Context**: [[sprints/sprint-029#US-135]] · [[workflows/runs/analyze-design-dev-review-20260924164112/01-analyze]]
+- **Did**: Hub des outils gratuits cadré : un registre des outils livrés alimente le hub, la section home et le JSON-LD.
+- **Why**: Le critère « pas d'outil non livré » se tient par construction plutôt que par drapeau.
+- **Learned**: Un outil entre dans le registre le jour où sa page est livrée ; pas de carte « bientôt ».
+- **Open**: Le hub ne contient qu'un outil jusqu'à US-136.
+
+## 2026-09-24 — US-136 analyze (stage 01 · [[workflows/runs/analyze-design-dev-review-20260924173554]])
+- **Context**: [[sprints/sprint-029#US-136]] · [[workflows/runs/analyze-design-dev-review-20260924173554/01-analyze]]
+- **Did**: Comparateur cadré en deux tranches (API, landing). Candidature offerte à l'inscription, avec extraction payée par la plateforme.
+- **Why**: Le critère « sans crédit consommé » interdisait d'appeler importFromText, qui débite.
+- **Learned**: L'activation d'un outil sans email stocké se mesure par une trace métier (l'étiquette de source de la candidature).
+- **Open**: La gate RGPD du sprint demande encore un test d'intégration sur Postgres.

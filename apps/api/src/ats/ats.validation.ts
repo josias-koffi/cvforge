@@ -1,3 +1,4 @@
+import { publicError } from "@cvforge/types";
 import { BadRequestException } from "@nestjs/common";
 import type { CvSourceFile } from "../cv-generation/cv-text-extraction";
 
@@ -10,8 +11,7 @@ const ZIP_MAGIC = Buffer.from("504b0304", "hex");
 
 export const UNSUPPORTED_FILE_MESSAGE =
   "Seuls les fichiers PDF et DOCX sont acceptes.";
-export const FILE_TOO_LARGE_MESSAGE =
-  "Le fichier CV doit peser moins de 5 Mo.";
+export const FILE_TOO_LARGE_MESSAGE = "Le fichier CV doit peser moins de 5 Mo.";
 
 /**
  * Validates an upload arriving on a public, unauthenticated route.
@@ -25,21 +25,31 @@ export function assertScannableFile(
   file: CvSourceFile | undefined,
 ): asserts file is CvSourceFile {
   if (!file) {
-    throw new BadRequestException("Un fichier CV est requis.");
+    throw new BadRequestException(
+      publicError("CV_FILE_REQUIRED", "Un fichier CV est requis."),
+    );
   }
 
   if (file.size > MAX_SCAN_BYTES || file.buffer.length > MAX_SCAN_BYTES) {
-    throw new BadRequestException(FILE_TOO_LARGE_MESSAGE);
+    throw new BadRequestException(
+      publicError("CV_FILE_TOO_LARGE", FILE_TOO_LARGE_MESSAGE),
+    );
   }
 
-  if (!startsWith(file.buffer, PDF_MAGIC) && !startsWith(file.buffer, ZIP_MAGIC)) {
-    throw new BadRequestException(UNSUPPORTED_FILE_MESSAGE);
+  if (
+    !startsWith(file.buffer, PDF_MAGIC) &&
+    !startsWith(file.buffer, ZIP_MAGIC)
+  ) {
+    throw new BadRequestException(
+      publicError("CV_FILE_UNSUPPORTED", UNSUPPORTED_FILE_MESSAGE),
+    );
   }
 }
 
 function startsWith(buffer: Buffer, magic: Buffer) {
   return (
-    buffer.length >= magic.length && buffer.subarray(0, magic.length).equals(magic)
+    buffer.length >= magic.length &&
+    buffer.subarray(0, magic.length).equals(magic)
   );
 }
 

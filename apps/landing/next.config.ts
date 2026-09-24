@@ -58,6 +58,12 @@ const nextConfig: NextConfig = {
       // English slug, the French address is rewritten onto it.
       { source: "/fr/ats-check", destination: "/fr/analyse-ats", permanent: true },
       { source: "/en/analyse-ats", destination: "/en/ats-check", permanent: true },
+      // And for the free tools hub.
+      { source: "/fr/tools", destination: "/fr/outils", permanent: true },
+      { source: "/en/outils", destination: "/en/tools", permanent: true },
+      // And for the CV ↔ offer comparator.
+      { source: "/fr/cv-job-match", destination: "/fr/comparateur-cv-offre", permanent: true },
+      { source: "/en/comparateur-cv-offre", destination: "/en/cv-job-match", permanent: true },
       ...legalRedirects(),
     ]
   },
@@ -65,6 +71,8 @@ const nextConfig: NextConfig = {
     return [
       { source: "/fr/histoire", destination: "/fr/story" },
       { source: "/fr/analyse-ats", destination: "/fr/ats-check" },
+      { source: "/fr/outils", destination: "/fr/tools" },
+      { source: "/fr/comparateur-cv-offre", destination: "/fr/cv-job-match" },
     ]
   },
 }

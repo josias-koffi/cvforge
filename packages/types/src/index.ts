@@ -2,12 +2,15 @@ import type { Locale } from "./locale";
 
 export * from "./documents";
 export * from "./grounding";
+export * from "./acquisition";
 export * from "./companies";
 export * from "./hiring-companies";
+export * from "./lead";
 export * from "./locale";
 export * from "./market";
 export * from "./match-score";
 export * from "./profile";
+export * from "./public-errors";
 export * from "./rome";
 export * from "./search-project";
 

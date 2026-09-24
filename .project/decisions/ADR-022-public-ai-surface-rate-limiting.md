@@ -75,3 +75,54 @@ Aucun texte de CV n'est persisté par le scan public — ni fichier, ni texte ex
 - **Compter le budget en base (`ats_scans` du jour)** : plus robuste au redémarrage, mais une requête SQL sur chaque requête publique, et une dépendance à une table que la US suivante n'a pas encore créée. À reconsidérer si les redémarrages s'avèrent fréquents.
 - **Redis maintenant** : rejeté, voir §4. Repoussé derrière l'interface, pas écarté.
 - **Ne compter que les requêtes acceptées côté client (cookie / jeton)** : rejeté, trivialement contournable sur une route publique.
+
+## Amendement du 2026-09-24 — une politique par route publique (US-132)
+
+Le middleware n'est plus propre au scan ATS. Chaque route publique limitée déclare une **politique** dans `apps/api/src/shared/rate-limit/rate-limit.policies.ts` : ses routes Nest, la reconnaissance de son chemin, ses limites par IP, son budget global (ou aucun) et ses messages. `AppModule` applique le middleware à l'union des routes déclarées. Ajouter une route revient à ajouter une politique.
+
+| Politique | Par IP | Budget global | Variables |
+|---|---|---|---|
+| `events` (`POST /public/events`, E23) | 60 / h, 300 / 24 h | 20 000 / 24 h | `PUBLIC_EVENTS_*` |
+| `unlock` | 10 / h, 30 / 24 h | aucun | `ATS_UNLOCK_*` |
+| `scan` | 3 / h, 10 / 24 h | 300 / 24 h | `ATS_PUBLIC_*` |
+
+- **Rien ne change pour l'ATS** : clés `scan:<ip>`, `unlock:<ip>` et `global:ats-scan`, variables et messages identiques. Les tests existants passent sans modification.
+- **La dernière politique, le scan, sert par défaut.** C'est la plus stricte : une route branchée sans politique propre est freinée fortement, jamais laissée libre.
+- **Un compteur par politique** : les événements du tunnel ne consomment ni le quota de scans ni le budget du scan, et inversement.
+
+### Qui est le visiteur, derrière Cloudflare
+
+Les domaines passent par le proxy Cloudflare, puis par le Traefik de Dokploy. Le premier saut de `X-Forwarded-For` reçu par la landing est alors :
+- soit le nœud Cloudflare, si Traefik n'accorde pas sa confiance à Cloudflare : un compteur partagé par beaucoup de visiteurs ;
+- soit une valeur écrite par le visiteur, si Traefik lui accorde sa confiance.
+
+La BFF de la landing lit donc l'IP dans l'en-tête que désigne `CLIENT_IP_HEADER`, fixé à `cf-connecting-ip` dans les fichiers compose de production. En son absence, elle revient à `X-Forwarded-For`.
+
+Côté API, l'accès public passe par Traefik, qui remplace par défaut les `X-Forwarded-*` d'une source non déclarée fiable.
+
+### Le relais signé de la landing vers l'API
+
+Sur Dokploy, la landing joint l'API par son **domaine public**, pas par le nom de service : l'alias `api` est partagé entre la production et le staging (voir `infra/compose/dokploy-stack.yml`). La requête retraverse donc Traefik, qui remplace le `X-Forwarded-For` posé par la landing. Tous les visiteurs de la landing partageaient ainsi **un seul compteur par IP**, y compris pour le scan ATS.
+
+La landing relaie donc aussi l'adresse du visiteur dans `x-cvforge-client-ip`, accompagnée de `x-cvforge-proxy-secret`. L'API ne croit cette adresse que si le secret vaut `LANDING_PROXY_SECRET`, comparé en temps constant (`apps/api/src/shared/rate-limit/client-ip.ts`). Sans secret configuré des deux côtés, le relais est ignoré et rien ne change. Le secret ne voyage que de serveur à serveur, en HTTPS, et n'atteint jamais le navigateur.
+
+Chemin du secret : secret GitHub `LANDING_PROXY_SECRET`, puis `TF_VAR_landing_proxy_secret`, puis l'`env` Dokploy, puis les conteneurs `api` et `landing`.
+
+Au passage, les conteneurs `api` ne recevaient ni `ATS_IP_HASH_SECRET` ni les limites `ATS_PUBLIC_*` : Terraform les écrivait dans le `.env` du projet, mais la liste `environment` du service ne les nommait pas. Ils y sont désormais listés.
+
+**À vérifier en production, hors dépôt** :
+- `CF-Connecting-IP` arrive bien à la landing ;
+- l'origine n'accepte que les plages Cloudflare (sinon l'en-tête est falsifiable par un appel direct à l'origine, borné par le budget global) ;
+- le Traefik de Dokploy ne déclare ni `forwardedHeaders.trustedIPs` ni `insecure`.
+
+## Amendement 2026-09-24 (bis) — comparateur CV ↔ offre (US-136)
+
+Deux politiques s'ajoutent avant celle du scan ATS, qui reste la politique par défaut :
+- **`keyword-match`** (`POST public/keyword-match`) : 10 par heure et 30 par jour et par IP, plus un budget global de 2 000 par jour. La route n'appelle aucun modèle, mais l'analyse d'un PDF consomme du CPU sur le processus de l'API. Variables `PUBLIC_KEYWORD_MATCH_HOURLY_LIMIT`, `PUBLIC_KEYWORD_MATCH_DAILY_LIMIT` et `PUBLIC_KEYWORD_MATCH_DAILY_BUDGET`, facultatives.
+- **`keyword-match-lead`** (`POST public/keyword-match/lead`) : 5 par heure et 20 par jour et par IP, sans budget global, parce que la route envoie un email. Variables `PUBLIC_KEYWORD_MATCH_LEAD_HOURLY_LIMIT` et `PUBLIC_KEYWORD_MATCH_LEAD_DAILY_LIMIT`, facultatives.
+
+**Seul coût de modèle** : quand le lien est consommé, la candidature offerte déclenche une extraction structurée de l'offre (un appel court), payée par la plateforme et sans débit de crédit. Ce coût est borné par la politique `keyword-match-lead` et par le fait qu'un lien ne sert qu'une fois. Si le modèle échoue, la candidature est créée depuis le texte seul.
+
+Le coût de l'extraction offerte à l'inscription a été validé par le propriétaire le 2026-09-24.
+
+La règle « aucun texte de CV persisté » est vérifiée par `apps/api/src/leads/public-tools.rgpd.test.ts`. Le test fait tourner tous les outils publics sur Postgres (scan ATS, déblocage, événements, comparateur, lead, consommation des liens), puis relit chaque table.

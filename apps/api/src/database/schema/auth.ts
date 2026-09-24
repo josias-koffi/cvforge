@@ -1,4 +1,4 @@
-import type { AccountStatus } from "@cvforge/types";
+import type { AccountStatus, LeadIntent } from "@cvforge/types";
 import type { AuthConsentRecord, AuthRole } from "../../auth/auth.types";
 import { sql } from "drizzle-orm";
 import {
@@ -82,6 +82,8 @@ export const authMagicLinks = pgTable(
     tokenHash: text("token_hash").primaryKey(),
     email: text("email").notNull(),
     consent: jsonb("consent").$type<AuthConsentRecord | null>(),
+    /** What a free tool's visitor asked for; dies with the link (US-133). */
+    intent: jsonb("intent").$type<LeadIntent | null>(),
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()

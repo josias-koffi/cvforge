@@ -13,6 +13,16 @@ const BALANCE: OpenRouterBalanceResponse = {
 
 function makeMetrics(ats: Partial<AdminMetrics["ats"]> = {}): AdminMetrics {
   return {
+    acquisition: [
+      {
+        accountsActivated: 0,
+        ctaClicks: 0,
+        emailsSubmitted: 0,
+        results: 0,
+        tool: "ats",
+        visitors: 0,
+      },
+    ],
     activeWindowDays: 30,
     apiCost: null,
     applications: { totalCount: 0 },
@@ -72,6 +82,12 @@ describe("MetricsGrid — ATS funnel", () => {
 
     expect(markup).toContain("Analyses ATS publiques")
     expect(markup).not.toContain("%")
+  })
+})
+
+describe("MetricsGrid — free tool funnels", () => {
+  it("shows one funnel card per tool, over the dashboard window", () => {
+    expect(render()).toContain("Tunnel · Analyse ATS (30 j)")
   })
 })
 

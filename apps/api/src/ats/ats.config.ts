@@ -1,4 +1,4 @@
-import { randomBytes } from "node:crypto";
+import { resolveIpHashSecret } from "../shared/ip-hash";
 
 export type AtsConfig = {
   /** Scans allowed across every visitor per rolling day; the cost stop-loss. */
@@ -22,10 +22,6 @@ export function resolveAtsConfig(
   return {
     dailyBudget:
       Number.isInteger(parsed) && parsed > 0 ? parsed : DEFAULT_DAILY_BUDGET,
-    // A per-process random salt when unset: hashes stop correlating across
-    // restarts, which weakens forensics but never leaks an address. Set
-    // ATS_IP_HASH_SECRET in production to keep them comparable.
-    ipHashSecret:
-      env.ATS_IP_HASH_SECRET?.trim() || randomBytes(32).toString("hex"),
+    ipHashSecret: resolveIpHashSecret(env),
   };
 }

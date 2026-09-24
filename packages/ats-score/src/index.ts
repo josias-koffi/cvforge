@@ -1,6 +1,13 @@
 export { fromCvDocument } from "./adapters/from-cv-document";
 export { parseCvText } from "./adapters/from-text";
 export { LLM_INFLUENCE } from "./dimensions/impact";
+export {
+  KEYWORD_MATCH_LIST_LIMIT,
+  matchOfferKeywords,
+  offerTerms,
+  type KeywordMatchBand,
+  type KeywordMatchResult,
+} from "./keyword-match";
 export { scoreAts } from "./engine";
 export { isQuantified, startsWithActionVerb } from "./lexicons";
 export {

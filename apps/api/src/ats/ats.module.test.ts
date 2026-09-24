@@ -6,6 +6,8 @@ import { AtsImpactService } from "./ats-impact.service";
 import { AtsPurgeService } from "./ats-purge.service";
 import { AtsScanService } from "./ats-scan.service";
 import { AtsUnlockService } from "./ats-unlock.service";
+import { AtsReportsController } from "./ats-reports.controller";
+import { AtsReportsService } from "./ats-reports.service";
 import { AtsModule } from "./ats.module";
 import { PgAtsScanStore } from "./ats.pg-store";
 import { ATS_SCAN_STORE } from "./ats.types";
@@ -30,9 +32,7 @@ describe("AtsModule", () => {
   });
 
   it("builds the Postgres store from the database", () => {
-    const store = providerFor(ATS_SCAN_STORE)?.useFactory?.(
-      {} as never,
-    );
+    const store = providerFor(ATS_SCAN_STORE)?.useFactory?.({} as never);
 
     expect(store).toBeInstanceOf(PgAtsScanStore);
   });
@@ -52,14 +52,25 @@ describe("AtsModule", () => {
     expect(service).toBeInstanceOf(AtsScanService);
   });
 
-  it("builds the unlock service with the store and the auth collaborators", () => {
+  it("builds the unlock service with the store and the lead capture", () => {
     const service = providerFor(AtsUnlockService)?.useFactory?.(
-      {} as never,
       {} as never,
       {} as never,
     );
 
     expect(service).toBeInstanceOf(AtsUnlockService);
+  });
+
+  it("builds the in-app reports from the store", () => {
+    expect(
+      providerFor(AtsReportsService)?.useFactory?.({} as never),
+    ).toBeInstanceOf(AtsReportsService);
+  });
+
+  it("exposes the signed-in reports next to the public scan", () => {
+    expect(Reflect.getMetadata("controllers", AtsModule)).toContain(
+      AtsReportsController,
+    );
   });
 
   it("builds the retention purge from the store", () => {

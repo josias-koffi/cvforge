@@ -1,3 +1,5 @@
+import { isPublicErrorCode, type PublicErrorCode } from "@cvforge/types"
+
 import { CV_ACCEPT, MAX_CV_BYTES, isAtsApiError } from "@/lib/ats-api"
 import type { LandingDictionary } from "@/content/types"
 
@@ -24,19 +26,43 @@ export function cvRejectionReason(file: File): ScanRejection | null {
 export { CV_ACCEPT, MAX_CV_BYTES }
 
 /**
- * Turns a failed response into wording the visitor can act on.
- *
- * The API's own message is preferred when it sent one: it is already localised
- * and says precisely what happened. The status-based fallbacks exist for the
- * cases where the failure never reached the API at all.
+ * The page's own wording for each refusal the API names (US-134). Shared by
+ * every free tool: the comparator's refusals are the scan's, plus the offer's.
+ */
+function codeMessage(
+  code: PublicErrorCode,
+  dictionary: LandingDictionary["ats"]
+): string {
+  const messages: Record<PublicErrorCode, string> = {
+    BUDGET_EXHAUSTED: dictionary.errors.unavailable,
+    CONSENT_REQUIRED: dictionary.errors.consentRequired,
+    CV_FILE_REQUIRED: dictionary.errors.fileRequired,
+    CV_FILE_TOO_LARGE: dictionary.upload.tooLarge,
+    CV_FILE_UNSUPPORTED: dictionary.upload.wrongType,
+    CV_NOT_ENOUGH_TEXT: dictionary.errors.notEnoughText,
+    INVALID_EMAIL: dictionary.errors.invalidEmail,
+    OFFER_NOT_USABLE: dictionary.errors.offerNotUsable,
+    OFFER_TEXT_REQUIRED: dictionary.errors.offerRequired,
+    RATE_LIMITED: dictionary.errors.tooManyRequests,
+    SCAN_EXPIRED: dictionary.errors.expired,
+    SCAN_NOT_FOUND: dictionary.errors.notFound,
+  }
+
+  return messages[code]
+}
+
+/**
+ * Turns a failed response into wording the visitor can act on, in the page's
+ * language: from the code the API named the refusal with, else from the
+ * status, for the failures that never reached the API at all.
  */
 export function scanErrorMessage(
   error: unknown,
-  dictionary: LandingDictionary["ats"],
+  dictionary: LandingDictionary["ats"]
 ): string {
   if (!isAtsApiError(error)) return dictionary.errors.network
 
-  if (error.message) return error.message
+  if (error.code) return codeMessage(error.code, dictionary)
 
   switch (error.status) {
     case 410:
@@ -55,51 +81,62 @@ export function scanErrorMessage(
 }
 
 /** POSTs to the landing's own BFF, never to the API directly (CORS). */
-export async function postScan(file: File, offerText: string | null) {
+export async function postScan(
+  file: File,
+  offerText: string | null,
+  locale: string
+) {
   const body = new FormData()
 
   body.append("cvFile", file)
+  // The scan is stored in the page's language, not always French (US-134).
+  body.append("locale", locale)
 
   if (offerText) {
     body.append("offerText", offerText)
   }
 
-  return request("/api/ats-scan", { body, method: "POST" })
+  return callBff("/api/ats-scan", { body, method: "POST" })
 }
 
 export async function postUnlock(
   scanId: string,
   email: string,
-  consentAccepted: boolean,
+  consentAccepted: boolean
 ) {
-  return request(`/api/ats-scan/${encodeURIComponent(scanId)}/unlock`, {
+  return callBff(`/api/ats-scan/${encodeURIComponent(scanId)}/unlock`, {
     body: JSON.stringify({ consentAccepted, email }),
     headers: { "Content-Type": "application/json" },
     method: "POST",
   })
 }
 
-async function request(url: string, init: RequestInit) {
+/**
+ * POSTs to one of the landing's own routes. Throws `{ code, status }` on any
+ * failure, which `scanErrorMessage` words; `status` 0 means it never answered.
+ */
+export async function callBff(url: string, init: RequestInit) {
   let response: Response
 
   try {
     response = await fetch(url, init)
   } catch {
     // Offline, or the route never answered: not something the API said.
-    throw { message: null, status: 0 }
+    throw { code: null, status: 0 }
   }
 
   const payload = await response.json().catch(() => null)
 
   if (!response.ok) {
     throw {
-      message:
-        payload && typeof payload === "object" && "message" in payload
-          ? ((payload as { message?: string }).message ?? null)
-          : null,
+      code: readCode((payload as { code?: unknown } | null)?.code),
       status: response.status,
     }
   }
 
   return payload as unknown
+}
+
+function readCode(value: unknown): PublicErrorCode | null {
+  return isPublicErrorCode(value) ? value : null
 }

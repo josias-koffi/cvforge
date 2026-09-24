@@ -20,6 +20,12 @@ orchestrated
 - [[sprints/sprint-020#US-075]] — 2026-07-10 → [[workflows/runs/analyze-design-dev-review-20260710010750]]
 - [[sprints/sprint-020#US-076]] — 2026-07-10 → [[workflows/runs/analyze-design-dev-review-20260710123525]]
 - [[sprints/sprint-026#US-118]] — 2026-09-23 → [[workflows/runs/analyze-design-dev-review-20260923233426]]
+- [[sprints/sprint-029#US-131]] — 2026-09-24 → [[workflows/runs/analyze-design-dev-review-20260924143552]]
+- [[sprints/sprint-029#US-132]] — 2026-09-24 → [[workflows/runs/analyze-design-dev-review-20260924145528]]
+- [[sprints/sprint-029#US-133]] — 2026-09-24 → [[workflows/runs/analyze-design-dev-review-20260924155415]]
+- [[sprints/sprint-029#US-134]] — 2026-09-24 → [[workflows/runs/analyze-design-dev-review-20260924162332]]
+- [[sprints/sprint-029#US-135]] — 2026-09-24 → [[workflows/runs/analyze-design-dev-review-20260924164112]]
+- [[sprints/sprint-029#US-136]] — 2026-09-24 → [[workflows/runs/analyze-design-dev-review-20260924173554]]
 
 ## Stage 1 - Analyze
 Agent: [[agents/product-owner/agent|product-owner]]

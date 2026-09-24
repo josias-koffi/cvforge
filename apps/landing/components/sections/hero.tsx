@@ -4,9 +4,17 @@ import { BrowserFrame, Screenshot } from "@/components/screenshot"
 import { BorderBeam } from "@/components/ui/border-beam"
 import { Button } from "@/components/ui/button"
 import type { LandingDictionary } from "@/content/types"
+import { atsPath } from "@/lib/ats"
+import type { Locale } from "@/lib/i18n"
 import { LOGIN_PATH } from "@/lib/links"
 
-export function Hero({ hero }: { hero: LandingDictionary["hero"] }) {
+export function Hero({
+  hero,
+  locale,
+}: {
+  hero: LandingDictionary["hero"]
+  locale: Locale
+}) {
   return (
     <section className="relative isolate overflow-hidden pt-16 md:pt-24">
       <HeroBackdrop />
@@ -61,6 +69,20 @@ export function Hero({ hero }: { hero: LandingDictionary["hero"] }) {
             </a>
           </Button>
         </div>
+
+        {/* A line, not a third button: the hero keeps one main action. */}
+        <p
+          className="mt-4 rise-in text-sm text-muted-foreground"
+          style={{ "--stagger": 3 } as React.CSSProperties}
+        >
+          {hero.atsPrompt}{" "}
+          <a
+            className="rounded-sm font-medium text-foreground underline underline-offset-4 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+            href={atsPath(locale)}
+          >
+            {hero.atsLink}
+          </a>
+        </p>
 
         <ul
           className="mt-6 flex rise-in flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-muted-foreground"

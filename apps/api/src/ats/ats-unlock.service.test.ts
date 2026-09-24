@@ -1,4 +1,7 @@
-import { ATS_SCORE_ENGINE_VERSION, type AtsScoreResult } from "@cvforge/ats-score";
+import {
+  ATS_SCORE_ENGINE_VERSION,
+  type AtsScoreResult,
+} from "@cvforge/ats-score";
 import {
   BadRequestException,
   ForbiddenException,
@@ -8,6 +11,7 @@ import {
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { AuthMailerService } from "../auth/auth-mailer.service";
 import type { AuthService } from "../auth/auth.service";
+import { LeadCaptureService } from "../leads/lead-capture.service";
 import { AtsUnlockService } from "./ats-unlock.service";
 import { InMemoryAtsScanStore } from "./testing/in-memory-ats-store";
 
@@ -16,7 +20,11 @@ const RESULT: AtsScoreResult = {
   dimensions: [{ key: "structure", score: 80, status: "scored" }],
   engineVersion: ATS_SCORE_ENGINE_VERSION,
   findings: [
-    { code: "MISSING_QUANTIFICATION", dimension: "impact", severity: "critical" },
+    {
+      code: "MISSING_QUANTIFICATION",
+      dimension: "impact",
+      severity: "critical",
+    },
   ],
   llmApplied: false,
   overallScore: 72,
@@ -40,11 +48,15 @@ describe("AtsUnlockService", () => {
       }),
     };
     authMailer = { sendMagicLinkEmail: vi.fn().mockResolvedValue(undefined) };
-    consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
     service = new AtsUnlockService(
       store,
-      authService as unknown as AuthService,
-      authMailer as unknown as AuthMailerService,
+      new LeadCaptureService(
+        authService as unknown as AuthService,
+        authMailer as unknown as AuthMailerService,
+      ),
     );
   });
 
@@ -85,9 +97,11 @@ describe("AtsUnlockService", () => {
 
       const response = await service.unlock(unlockRequest(scan.id));
 
+      // The link carries the scan, so it opens this report in the app (US-133).
       expect(authService.requestMagicLink).toHaveBeenCalledWith(
         "lead@example.com",
         true,
+        { kind: "ats_scan", scanId: scan.id },
       );
       expect(authMailer.sendMagicLinkEmail).toHaveBeenCalledTimes(1);
       expect(response.magicLinkSent).toBe(true);
@@ -150,12 +164,25 @@ describe("AtsUnlockService", () => {
       ).rejects.toBeInstanceOf(NotFoundException);
     });
 
+    it("names an unknown and an expired scan with a code", async () => {
+      const expired = await seedScan(-1000);
+
+      await expect(
+        service.unlock(unlockRequest("00000000-0000-4000-8000-000000000000")),
+      ).rejects.toMatchObject({ response: { code: "SCAN_NOT_FOUND" } });
+      await expect(
+        service.unlock(unlockRequest(expired.id)),
+      ).rejects.toMatchObject({
+        response: { code: "SCAN_EXPIRED" },
+      });
+    });
+
     it("410s on a scan past its retention deadline", async () => {
       const scan = await seedScan(-1000);
 
-      await expect(service.unlock(unlockRequest(scan.id))).rejects.toBeInstanceOf(
-        GoneException,
-      );
+      await expect(
+        service.unlock(unlockRequest(scan.id)),
+      ).rejects.toBeInstanceOf(GoneException);
     });
   });
 

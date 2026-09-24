@@ -332,6 +332,18 @@ variable "ats_ip_hash_secret" {
   default     = ""
 }
 
+variable "landing_proxy_secret" {
+  type        = string
+  description = <<-EOT
+    Shared by the landing and the API: the landing signs the visitor's address
+    it relays, since Traefik overwrites X-Forwarded-For on the way in. Optional:
+    empty means the relay is ignored and every visitor of the landing shares
+    one rate-limit counter (US-132, ADR-022).
+  EOT
+  sensitive   = true
+  default     = ""
+}
+
 variable "ats_public_hourly_limit" {
   type        = number
   description = "Public ATS scans allowed per IP and per hour."

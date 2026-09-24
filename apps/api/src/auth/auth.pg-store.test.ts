@@ -234,6 +234,27 @@ describe("PgAuthAccountStore", () => {
       await expect(store.consumeMagicLink("hash-link", NOW)).resolves.toBeNull();
     });
 
+    it("keeps a lead's intent with the link, and hands it back on redemption", async () => {
+      const intent = {
+        kind: "ats_scan",
+        scanId: "3f2b8c1e-5d4a-4b6f-9a8e-1c2d3e4f5a6b",
+      } as const;
+
+      await store.saveMagicLink("hash-lead", makeMagicLink({ intent }));
+
+      await expect(store.consumeMagicLink("hash-lead", NOW)).resolves.toMatchObject({
+        intent,
+      });
+    });
+
+    it("reads a link without intent as none", async () => {
+      await store.saveMagicLink("hash-plain", makeMagicLink());
+
+      await expect(store.consumeMagicLink("hash-plain", NOW)).resolves.toMatchObject({
+        intent: null,
+      });
+    });
+
     it("refuses an expired link and an unknown one", async () => {
       await store.saveMagicLink(
         "hash-expired",

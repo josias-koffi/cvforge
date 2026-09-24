@@ -5,13 +5,13 @@ import {
   type AtsOfferContext,
   type AtsScoreResult,
 } from "@cvforge/ats-score";
+import { publicError } from "@cvforge/types";
 import {
   Inject,
   Injectable,
   ServiceUnavailableException,
   UnprocessableEntityException,
 } from "@nestjs/common";
-import { createHash } from "node:crypto";
 import { buildOfferPreview } from "../applications/offer-extraction";
 import {
   extractCvText,
@@ -25,6 +25,7 @@ import {
   type StoredAtsScan,
 } from "./ats.types";
 import { assertScannableFile } from "./ats.validation";
+import { hashIp } from "../shared/ip-hash";
 
 export const SCAN_RETENTION_DAYS = 30;
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -99,7 +100,9 @@ export class AtsScanService {
     const hasTextLayer = extraction.signals?.hasTextLayer ?? true;
 
     if (extraction.text.length < MIN_SCANNABLE_CHARS && hasTextLayer) {
-      throw new UnprocessableEntityException(NOT_ENOUGH_TEXT_MESSAGE);
+      throw new UnprocessableEntityException(
+        publicError("CV_NOT_ENOUGH_TEXT", NOT_ENOUGH_TEXT_MESSAGE),
+      );
     }
 
     const offer = offerText ? toOfferContext(offerText) : null;
@@ -129,15 +132,14 @@ export class AtsScanService {
     const since = new Date(this.now() - DAY_MS).toISOString();
 
     if ((await this.store.countSince(since)) >= this.dailyBudget) {
-      throw new ServiceUnavailableException(BUDGET_EXHAUSTED_MESSAGE);
+      throw new ServiceUnavailableException(
+        publicError("BUDGET_EXHAUSTED", BUDGET_EXHAUSTED_MESSAGE),
+      );
     }
   }
 
-  /** Salted so the hashes are not a rainbow table of the IPv4 space. */
   private hashIp(ip: string | null) {
-    if (!ip) return null;
-
-    return createHash("sha256").update(`${ip}${this.ipHashSecret}`).digest("hex");
+    return ip ? hashIp(ip, this.ipHashSecret) : null;
   }
 }
 

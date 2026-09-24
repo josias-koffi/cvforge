@@ -1,3 +1,4 @@
+import { AcquisitionModule } from "./acquisition/acquisition.module";
 import { AdminModule } from "./admin/admin.module";
 import "reflect-metadata";
 import { describe, expect, it } from "vitest";
@@ -8,6 +9,7 @@ import { SmtpModule } from "./smtp/smtp.module";
 import { OpenRouterModule } from "./ai/openrouter.module";
 import { ApplicationsModule } from "./applications/applications.module";
 import { AtsModule } from "./ats/ats.module";
+import { KeywordMatchModule } from "./keyword-match/keyword-match.module";
 import { BillingModule } from "./billing/billing.module";
 import { CvGenerationModule } from "./cv-generation/cv-generation.module";
 import { CreditsModule } from "./credits/credits.module";
@@ -36,12 +38,14 @@ describe("AppModule", () => {
       | undefined;
 
     expect(imports).toEqual([
+      AcquisitionModule,
       AdminModule,
       AuthModule,
       SmtpModule,
       OpenRouterModule,
       ApplicationsModule,
       AtsModule,
+      KeywordMatchModule,
       BillingModule,
       CvGenerationModule,
       CreditsModule,

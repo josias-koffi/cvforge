@@ -1,6 +1,7 @@
 import { Cta } from "@/components/sections/cta"
 import { Faq } from "@/components/sections/faq"
 import { FeaturesBento } from "@/components/sections/features-bento"
+import { FreeTools } from "@/components/sections/free-tools"
 import { Hero } from "@/components/sections/hero"
 import { Interview } from "@/components/sections/interview"
 import { HowItWorks } from "@/components/sections/how-it-works"
@@ -26,9 +27,10 @@ export function HomePage({
 
   return (
     <>
-      <Hero hero={dict.hero} />
+      <Hero hero={dict.hero} locale={locale} />
       <Problem problem={dict.problem} />
       <HowItWorks howItWorks={dict.howItWorks} />
+      <FreeTools locale={locale} tools={dict.tools} />
       <FeaturesBento features={dict.features} />
       <Interview interview={dict.interview} />
       <ProductShowcase showcase={dict.showcase} />
@@ -37,7 +39,7 @@ export function HomePage({
       ) : null}
       <Pricing locale={locale} offers={offers} pricing={dict.pricing} />
       <Faq faq={dict.faq} locale={locale} />
-      <Cta cta={dict.cta} />
+      <Cta cta={dict.cta} locale={locale} />
     </>
   )
 }

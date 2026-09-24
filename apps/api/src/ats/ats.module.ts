@@ -1,9 +1,11 @@
 import { Module } from "@nestjs/common";
 import { OpenRouterModule, OPENROUTER_SERVICE } from "../ai/openrouter.module";
 import { AuthModule } from "../auth/auth.module";
-import { AuthMailerService } from "../auth/auth-mailer.service";
-import { AuthService } from "../auth/auth.service";
 import { DATABASE, type Database } from "../database/database.types";
+import { LeadCaptureService } from "../leads/lead-capture.service";
+import { LeadsModule } from "../leads/leads.module";
+import { AtsReportsController } from "./ats-reports.controller";
+import { AtsReportsService } from "./ats-reports.service";
 import { AtsImpactService } from "./ats-impact.service";
 import { AtsPurgeService } from "./ats-purge.service";
 import { AtsScanService } from "./ats-scan.service";
@@ -14,17 +16,19 @@ import { ATS_SCAN_STORE, type AtsScanStore } from "./ats.types";
 import { resolveAtsConfig } from "./ats.config";
 
 @Module({
-  imports: [AuthModule, OpenRouterModule],
-  controllers: [PublicAtsScanController],
+  imports: [AuthModule, LeadsModule, OpenRouterModule],
+  controllers: [AtsReportsController, PublicAtsScanController],
   providers: [
     {
       provide: AtsUnlockService,
-      inject: [ATS_SCAN_STORE, AuthService, AuthMailerService],
-      useFactory: (
-        store: AtsScanStore,
-        authService: ConstructorParameters<typeof AtsUnlockService>[1],
-        authMailer: ConstructorParameters<typeof AtsUnlockService>[2],
-      ) => new AtsUnlockService(store, authService, authMailer),
+      inject: [ATS_SCAN_STORE, LeadCaptureService],
+      useFactory: (store: AtsScanStore, leads: LeadCaptureService) =>
+        new AtsUnlockService(store, leads),
+    },
+    {
+      provide: AtsReportsService,
+      inject: [ATS_SCAN_STORE],
+      useFactory: (store: AtsScanStore) => new AtsReportsService(store),
     },
     {
       provide: AtsPurgeService,

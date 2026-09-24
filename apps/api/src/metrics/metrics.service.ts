@@ -1,7 +1,15 @@
+import { acquisitionTools, type AcquisitionTool } from "@cvforge/types";
 import { Injectable } from "@nestjs/common";
 import type { OpenRouterBalanceService } from "../ai/openrouter-balance.service";
 import type { MetricsConfig } from "./metrics.config";
-import type { AdminMetrics, MetricsStore } from "./metrics.types";
+import type {
+  AcquisitionFunnel,
+  AcquisitionStepCount,
+  AdminMetrics,
+  MetricsStore,
+} from "./metrics.types";
+
+const MS_PER_DAY = 86_400_000;
 
 type BalanceReader = Pick<OpenRouterBalanceService, "getBalance" | "isEnabled">;
 
@@ -14,9 +22,26 @@ export class MetricsService {
   ) {}
 
   async readAdminMetrics(): Promise<AdminMetrics> {
-    const [counters, ats, balance] = await Promise.all([
+    // Both reads start at midnight UTC of the same day: the steps are counted
+    // per day, and an activation counted from a later hour would not match.
+    const sinceDay = new Date(
+      Date.now() - this.config.activeWindowDays * MS_PER_DAY,
+    )
+      .toISOString()
+      .slice(0, 10);
+    const [
+      counters,
+      ats,
+      acquisitionSteps,
+      atsActivations,
+      keywordMatchActivations,
+      balance,
+    ] = await Promise.all([
       this.store.readProductCounters(this.config.activeWindowDays),
       this.store.readAtsCounters(),
+      this.store.readAcquisitionSteps(sinceDay),
+      this.store.readAtsActivations(new Date(sinceDay)),
+      this.store.readKeywordMatchActivations(new Date(sinceDay)),
       this.balanceService.isEnabled
         ? this.balanceService.getBalance()
         : Promise.resolve(null),
@@ -34,6 +59,10 @@ export class MetricsService {
       : null;
 
     return {
+      acquisition: buildFunnels(acquisitionSteps, {
+        ats: atsActivations,
+        keyword_match: keywordMatchActivations,
+      }),
       activeWindowDays: this.config.activeWindowDays,
       apiCost,
       applications: { totalCount: counters.applicationCount },
@@ -75,6 +104,30 @@ export class MetricsService {
       },
     };
   }
+}
+
+/**
+ * One funnel per known tool, zeros included: a tool nobody opened yet still
+ * belongs on the dashboard. Rows for a tool no longer in the list are dropped.
+ */
+function buildFunnels(
+  steps: AcquisitionStepCount[],
+  activations: Partial<Record<AcquisitionTool, number>>,
+): AcquisitionFunnel[] {
+  return acquisitionTools.map((tool) => {
+    const visitorsAt = (step: string) =>
+      steps.find((row) => row.tool === tool && row.step === step)?.visitors ??
+      0;
+
+    return {
+      accountsActivated: activations[tool] ?? null,
+      ctaClicks: visitorsAt("cta_click"),
+      emailsSubmitted: visitorsAt("email_submitted"),
+      results: visitorsAt("result"),
+      tool,
+      visitors: visitorsAt("view"),
+    };
+  });
 }
 
 /** `ratio` stays null with no revenue: a margin rate over zero means nothing. */

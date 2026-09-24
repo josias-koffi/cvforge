@@ -7,6 +7,7 @@ import { CreditsService } from "../credits/credits.service";
 import { ApplicationsController } from "./applications.controller";
 import { ApplicationsService } from "./applications.service";
 import { CompanyContextService } from "./company-context.service";
+import { LeadOfferListener } from "./lead-offer.listener";
 import { PgApplicationsStore } from "./applications.pg-store";
 import { APPLICATIONS_STORE, type ApplicationsStore } from "./applications.types";
 import { ProfilesModule } from "../profiles/profiles.module";
@@ -53,6 +54,7 @@ import { PROFILES_STORE, type ProfilesStore } from "../profiles/profiles.types";
         store: ApplicationsStore,
       ) => new CompanyContextService(openRouterService, store),
     },
+    LeadOfferListener,
   ],
   exports: [APPLICATIONS_STORE, ApplicationsService, CompanyContextService],
 })

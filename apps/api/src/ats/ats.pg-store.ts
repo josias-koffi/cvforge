@@ -1,4 +1,4 @@
-import { and, count, eq, gte, isNull, lte } from "drizzle-orm";
+import { and, count, desc, eq, gt, gte, isNotNull, isNull, lte } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
 import type { Database } from "../database/database.types";
 import { atsScans } from "../database/schema";
@@ -75,6 +75,22 @@ export class PgAtsScanStore implements AtsScanStore {
       .returning();
 
     return row ? toScan(row) : null;
+  }
+
+  async findUnlockedByEmail(email: string, now: string) {
+    const rows = await this.db
+      .select()
+      .from(atsScans)
+      .where(
+        and(
+          eq(atsScans.email, email),
+          isNotNull(atsScans.unlockedAt),
+          gt(atsScans.expiresAt, new Date(now)),
+        ),
+      )
+      .orderBy(desc(atsScans.unlockedAt));
+
+    return rows.map(toScan);
   }
 
   async deleteExpired(now: string) {

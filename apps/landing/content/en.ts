@@ -18,6 +18,7 @@ export const en: LandingDictionary = {
     faq: "FAQ",
     interview: "Interview",
     ats: "Free ATS test",
+    tools: "Free tools",
     story: "Our story",
     login: "Log in",
     start: "Get started",
@@ -34,6 +35,8 @@ export const en: LandingDictionary = {
       "Stop spending your evenings rewriting the same resume. CVSpark reads the offer, takes your profile and generates an ATS-ready resume and cover letter in seconds.",
     primaryCta: "Create my resume",
     secondaryCta: "See how it works",
+    atsPrompt: "Not ready yet?",
+    atsLink: "Check your CV for free",
     highlights: [
       `${WELCOME_APPLICATIONS} free applications`,
       "No subscription",
@@ -324,6 +327,8 @@ export const en: LandingDictionary = {
     title: "Stop rewriting. Let it spark.",
     body: "Your next application can be ready before your coffee gets cold.",
     button: "Create my resume",
+    atsPrompt: "Want to see where your CV stands first?",
+    atsLink: "Check it for free",
   },
   footer: {
     tagline: "The spark between your profile and the job.",
@@ -461,8 +466,118 @@ export const en: LandingDictionary = {
       expired:
         "This analysis has expired. Run a new one for an up-to-date report.",
       network: "Could not connect. Check your network and try again.",
+      fileRequired: "Choose a PDF or DOCX file to analyse.",
+      notEnoughText:
+        "This CV does not hold enough text to analyse. Export it to PDF from your word processor.",
+      invalidEmail: "This email address is not valid.",
+      consentRequired:
+        "Tick the box to receive your report and your sign-in link.",
+      notFound:
+        "This analysis cannot be found. Run a new one to get your report.",
+      offerRequired: "Paste the full text of the offer: 200 characters at least.",
+      offerNotUsable:
+        "This offer does not have enough specific terms to compare. Paste the full ad.",
     },
     cta: "Build my optimised CV",
+  },
+  tools: {
+    metaTitle: "Free tools for your job search",
+    metaDescription:
+      "Free tools, no signup, to get your applications ready: check your CV against recruiting software in seconds.",
+    eyebrow: "Free, no account",
+    title: "Free tools to move forward right now",
+    subtitle:
+      "An instant result, no signup. Your CV is analysed then forgotten: nothing is kept.",
+    home: {
+      eyebrow: "Free, no account",
+      title: "Try before you sign up",
+      subtitle:
+        "Tools that give you something useful in seconds, without creating an account.",
+      seeAll: "See all free tools",
+    },
+    open: "Try it",
+    more: {
+      body: "To tailor your CV to each job, write your cover letters and track your applications, you need an account.",
+      link: "Create my free account",
+    },
+    items: {
+      ats: {
+        name: "ATS check for your CV",
+        description:
+          "Does your CV get through the software recruiters use to sort applications? A score and what to fix.",
+        tags: ["No account", "Seconds"],
+      },
+      keyword_match: {
+        name: "CV vs job offer checker",
+        description:
+          "The offer's keywords already in your CV, and the ones missing. No AI, nothing kept.",
+        tags: ["No account", "No AI"],
+      },
+    },
+  },
+  keywordMatch: {
+    metaTitle: "Free CV vs job offer checker: the missing keywords",
+    metaDescription:
+      "Compare your CV with a job offer: the keywords you already have, the ones you are missing and your coverage rate, free and with no signup.",
+    eyebrow: "Free checker",
+    title: "Does your CV speak the job offer's language?",
+    subtitle:
+      "Drop your CV, paste the offer: see the keywords the recruiter is looking for that your CV is missing.",
+    privacyNote:
+      "Your CV is read for the comparison, then forgotten: nothing is kept. No AI is used.",
+    cvLabel: "Your CV",
+    offer: {
+      label: "The job offer",
+      hint: "Paste the full text of the ad: duties, profile, skills.",
+      placeholder: "Paste the job offer here…",
+      counter: "{count} / {min} characters minimum",
+      counterReady: "{count} characters",
+    },
+    compare: "Compare",
+    comparing: "Comparing…",
+    result: {
+      title: "Your CV against this offer",
+      gauge: {
+        scoreLabel: "Coverage",
+        outOf: "in %",
+        bands: {
+          low: "Low",
+          fair: "Fair",
+          good: "Good",
+        },
+      },
+      verdicts: {
+        low: "Your CV uses few of the offer's terms: screening software may rank it low.",
+        fair: "Your CV uses some of the offer's terms. Add the ones that genuinely apply to you.",
+        good: "Your CV already speaks the offer's language. Check the last missing terms.",
+      },
+      summary: "{count} of the offer's {total} terms appear in your CV.",
+      matchedTitle: "Already in your CV",
+      missingTitle: "Missing from your CV",
+      more: "and {count} more",
+      matchedEmpty: "None of the offer's terms are in your CV yet.",
+      missingEmpty: "Every term of the offer is in your CV.",
+      method:
+        "Words of 4 letters or more, compared regardless of accents and case. Most frequent in the offer first. Only add what is true for you.",
+      again: "Compare another CV or offer",
+    },
+    cta: {
+      title: "Generate a CV tailored to this offer",
+      body: "Create your account: the application for this offer will be waiting, ready to generate your CV and cover letter.",
+      button: "Generate a CV tailored to this offer",
+    },
+    lead: {
+      body: "We send you a sign-in link. Clicking it opens this offer in your applications.",
+      emailLabel: "Your email",
+      emailPlaceholder: "you@example.com",
+      consent:
+        "I agree that CVSpark creates my account and sends me a sign-in link.",
+      submit: "Get my link",
+      submitting: "Sending…",
+      success: "Check your inbox",
+      successBody:
+        "The sign-in link opens your account, with the application for this offer already created.",
+    },
   },
   story: {
     metaTitle: "Our story",

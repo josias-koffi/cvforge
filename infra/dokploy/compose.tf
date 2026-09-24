@@ -81,5 +81,6 @@ resource "dokploy_compose" "cvspark" {
     "ATS_PUBLIC_HOURLY_LIMIT=${var.ats_public_hourly_limit}",
     "ATS_PUBLIC_DAILY_LIMIT=${var.ats_public_daily_limit}",
     "ATS_PUBLIC_DAILY_BUDGET=${var.ats_public_daily_budget}",
+    "LANDING_PROXY_SECRET=${var.landing_proxy_secret}",
   ])
 }

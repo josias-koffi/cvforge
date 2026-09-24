@@ -28,6 +28,7 @@ function toMagicLink(row: MagicLinkRow): AuthMagicLink {
     consent: row.consent ?? null,
     email: row.email,
     expiresAt: row.expiresAt.toISOString(),
+    intent: row.intent ?? null,
   };
 }
 
@@ -244,6 +245,7 @@ export class PgAuthAccountStore implements AuthAccountStore {
       consent: link.consent,
       email: link.email,
       expiresAt: new Date(link.expiresAt),
+      intent: link.intent ?? null,
       tokenHash,
     };
 
