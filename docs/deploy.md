@@ -103,6 +103,10 @@ APIs, the Annuaire des entreprises (`recherche-entreprises.api.gouv.fr`) and
 Egapro (`companies`, a hundred reads an hour). Nothing to configure; outbound
 HTTPS to both hosts must be allowed. `companies:refresh:built` fills it once
 `hiring-companies:refresh:built` has run.
+With `pages-employeurs` enabled as well, the same pass looks up each
+company's France Travail employer page, by name in its department, and links
+it on the company page (29 % of them have one). Enabling it later reads every
+company once at the next passes, without waiting for the month.
 
 Optional too: `LA_BONNE_ALTERNANCE_API_KEY`, a key created on
 <https://api.apprentissage.beta.gouv.fr>. It adds apprenticeship offers, and is

@@ -228,8 +228,20 @@ Deux stories fondatrices passent donc **avant** le backlog ci-dessous. Elles son
       - L'établissement de La Bonne Boîte figure dans les 52 pages.
       - Aucune URL de site web ni de page carrière, ce qui ne change rien à la décision de US-117.
     - Ajoutée au catalogue `FT_APIS` (`pages-employeurs`) : `ft:smoke pages-employeurs` répond 200.
-      Aucun code ne l'appelle encore.
   - **Livré le 2026-09-24** ([[workflows/runs/developer-20260924170000]]).
+  - **Suite validée par le propriétaire le même jour** ([[workflows/runs/developer-20260924180000]]) :
+    la fiche entreprise de US-121 affiche « Sa page employeur sur France Travail », avec son nombre
+    d'offres et la mention « présentée par l'entreprise elle-même » quand l'employeur l'a rédigée.
+    - Migration 0038 : colonnes `employer_page_*` dans `companies`. La page est cherchée pendant la
+      relecture mensuelle, par le nom de l'établissement puis par la raison sociale, dans le
+      département de l'établissement.
+    - Un échec de France Travail garde la page déjà connue. `employer_page_read_at` nul rend
+      l'entreprise due dès que l'API est activée.
+    - Vérifié en réel : 51 pages sur 174 entreprises lues (29 %). La fiche HELPLINE mène à
+      `recrute.francetravail.fr/page-employeur/helpline-913`.
+    - L'Annuaire a répondu 429 à 5 appels/s : son rythme passe à 2 appels/s.
+    - `pages-employeurs` est ajoutée aux valeurs par défaut de `FRANCE_TRAVAIL_APIS` (compose,
+      Dokploy, Terraform).
 - [x] **[US-117]** Mesurer le rendement de la chaîne SIRET → site → page carrière → ATS sur un
       échantillon de 100 entreprises. Livrable : un chiffre et une décision.
   - **Mesuré le 2026-09-24** ([[workflows/runs/developer-20260924160000]], [[spikes/SPIKE-005-siret-ats-yield]]) :
@@ -360,3 +372,4 @@ Deux stories fondatrices passent donc **avant** le backlog ci-dessous. Elles son
 - 2026-09-24 — [[workflows/runs/developer-20260924150000|developer]] (US-121) — passed
 - 2026-09-24 — [[workflows/runs/developer-20260924160000|developer]] (US-117) — passed, décision : ne pas industrialiser
 - 2026-09-24 — [[workflows/runs/developer-20260924170000|developer]] (US-116) — passed, Pages employeurs débloquée par le support
+- 2026-09-24 — [[workflows/runs/developer-20260924180000|developer]] (US-116, suite) — passed, page employeur sur la fiche entreprise

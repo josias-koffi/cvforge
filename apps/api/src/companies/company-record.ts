@@ -2,6 +2,7 @@ import type {
   CompanyBadge,
   CompanyProfile,
 } from "@cvforge/types";
+import { EMPLOYER_PAGE_URL } from "./employer-pages.source";
 
 /**
  * What the Annuaire des entreprises answers for one company, trimmed to the
@@ -58,6 +59,10 @@ export interface StoredCompany extends Omit<CompanyRecord, "egaproDeclared"> {
   siren: string;
   found: boolean;
   refreshedAt: Date;
+  employerPagePath: string | null;
+  employerPageOffers: number | null;
+  employerPageEdited: boolean;
+  employerPageReadAt: Date | null;
 }
 
 const CATEGORIES = new Set(["PME", "ETI", "GE"]);
@@ -163,6 +168,13 @@ export function toCompanyProfile(company: StoredCompany): CompanyProfile | null 
       : null,
     closed: company.closed,
     createdOn: company.createdOn,
+    employerPage: company.employerPagePath
+      ? {
+          edited: company.employerPageEdited,
+          offers: company.employerPageOffers ?? 0,
+          url: `${EMPLOYER_PAGE_URL}/${company.employerPagePath}`,
+        }
+      : null,
     finances: company.financesYear
       ? {
           netIncome: company.netIncome,

@@ -1408,3 +1408,8 @@
 - **Leçon** : chez France Travail, un 403 `insufficient_scope` sur tous les chemins peut venir d'un **second scope manquant**, même si le premier délivre bien un jeton : ce fut le cas pour La Bonne Boîte, ROME Substitutions, puis Pages employeurs. Demander au support la liste complète des scopes dès le premier 403.
 - **Leçon** : ne pas se fier à l'exemple du support. Son champ `siret` était ignoré, et seul `what` (nom) + `where` (département), vérifié par le SIREN, retrouve une entreprise.
 - **Leçon** : l'URL publique d'une page employeur est `recrute.francetravail.fr/page-employeur/<urlPath>`. `pro.francetravail.fr` est une application JavaScript qui répond 200 puis redirige vers `not-found` : un code HTTP ne prouve pas qu'une page d'application JavaScript existe.
+
+### 2026-09-24 — US-116 suite : page employeur sur la fiche entreprise (sprint-026)
+- **Context** : Pages employeurs est lue pendant la relecture mensuelle des entreprises. La fiche affiche le lien vers `recrute.francetravail.fr`, et 29 % des entreprises en ont une.
+- **Leçon** : pour une source ajoutée après coup à une relecture existante, une colonne `*_read_at` nulle rend les lignes dues dès l'activation, sans attendre l'échéance mensuelle.
+- **Leçon** : l'Annuaire des entreprises annonce 7 appels/s mais répond 429 à 5 appels/s. Rester à 2 appels/s.

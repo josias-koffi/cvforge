@@ -21,6 +21,8 @@ export interface CompanyProfile {
   headcountLabel: string;
   /** ISO date. */
   createdOn: string | null;
+  /** Its page on France Travail's employer directory, when it has one (US-116). */
+  employerPage: { url: string; offers: number; edited: boolean } | null;
   openEstablishments: number | null;
   /** The last published accounts, in euros. */
   finances: { year: string; revenue: number | null; netIncome: number | null } | null;
@@ -42,5 +44,7 @@ export const COMPANY_CATEGORY_LABELS: Record<
 /** The attributions shown wherever these data appear. */
 export const COMPANY_SOURCE_LABEL =
   "Source : Annuaire des entreprises (API Recherche d'entreprises, État)";
+export const EMPLOYER_PAGE_SOURCE_LABEL =
+  "Page employeur : France Travail (Synthèse Pages employeurs)";
 export const EGAPRO_SOURCE_LABEL =
   "Index de l'égalité professionnelle : ministère du Travail (Egapro)";

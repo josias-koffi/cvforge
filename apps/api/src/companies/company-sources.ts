@@ -16,8 +16,12 @@ type FetchLike = typeof globalThis.fetch;
 export const ANNUAIRE_API_URL = "https://recherche-entreprises.api.gouv.fr";
 export const EGAPRO_API_URL = "https://egapro.travail.gouv.fr/api";
 
-/** The Annuaire allows 7 calls a second; staying under leaves Egapro room. */
-const REQUESTS_PER_SECOND = 5;
+/**
+ * The Annuaire documents 7 calls a second, but answered 429 at 5 a second on
+ * 2026-09-24. Two a second reads the hundred companies of a pass, Egapro
+ * included, in under two minutes.
+ */
+const REQUESTS_PER_SECOND = 2;
 const TIMEOUT_MS = 10_000;
 const DEFAULT_PAUSE_MS = 2_000;
 

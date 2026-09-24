@@ -79,7 +79,7 @@ services:
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
       FRANCE_TRAVAIL_CLIENT_ID: ${FRANCE_TRAVAIL_CLIENT_ID:-}
       FRANCE_TRAVAIL_CLIENT_SECRET: ${FRANCE_TRAVAIL_CLIENT_SECRET:-}
-      FRANCE_TRAVAIL_APIS: ${FRANCE_TRAVAIL_APIS:-offres,romeo,rome-metiers,rome-competences,rome-fiches-metiers,rome-substitutions,marche-travail,la-bonne-boite}
+      FRANCE_TRAVAIL_APIS: ${FRANCE_TRAVAIL_APIS:-offres,romeo,rome-metiers,rome-competences,rome-fiches-metiers,rome-substitutions,marche-travail,la-bonne-boite,pages-employeurs}
       LA_BONNE_ALTERNANCE_API_KEY: ${LA_BONNE_ALTERNANCE_API_KEY:-}
       OPENROUTER_MANAGEMENT_API_KEY: ${OPENROUTER_MANAGEMENT_API_KEY:-}
       OPENROUTER_BALANCE_ALERT_THRESHOLD: ${OPENROUTER_BALANCE_ALERT_THRESHOLD:-5}

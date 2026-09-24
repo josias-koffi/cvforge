@@ -268,7 +268,7 @@ variable "france_travail_client_secret" {
 variable "france_travail_apis" {
   type        = string
   description = "Comma-separated France Travail APIs to call (offres, romeo, rome-metiers...)"
-  default     = "offres,romeo,rome-metiers,rome-competences,rome-fiches-metiers,rome-substitutions,marche-travail,la-bonne-boite"
+  default     = "offres,romeo,rome-metiers,rome-competences,rome-fiches-metiers,rome-substitutions,marche-travail,la-bonne-boite,pages-employeurs"
 }
 
 # La bonne alternance. Same rule: an empty key leaves the source inert.

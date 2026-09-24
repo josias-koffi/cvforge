@@ -274,6 +274,10 @@ describe("HiringCompaniesService company pages (US-121)", () => {
     createdOn: "1991-04-02",
     egaproScore: 94,
     egaproYear: "2025",
+    employerPageEdited: true,
+    employerPageOffers: 8,
+    employerPagePath: "helpline-913",
+    employerPageReadAt: new Date(NOW),
     ess: false,
     financesYear: "2025",
     found: true,
@@ -322,6 +326,7 @@ describe("HiringCompaniesService company pages (US-121)", () => {
     expect(detail?.company.name).toBe("Entreprise 38198356800092");
     expect(detail?.profile).toMatchObject({
       category: "GE",
+      employerPage: { offers: 8, url: "https://recrute.francetravail.fr/page-employeur/helpline-913" },
       finances: { netIncome: 20_941_726, revenue: 211_086_627, year: "2025" },
       headcountLabel: "2 000 à 4 999 salariés",
       siren: "381983568",

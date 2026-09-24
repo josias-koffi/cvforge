@@ -41,6 +41,10 @@ function stored(overrides: Partial<StoredCompany> = {}): StoredCompany {
 
   return {
     ...record,
+    employerPageEdited: false,
+    employerPageOffers: null,
+    employerPagePath: null,
+    employerPageReadAt: null,
     found: true,
     refreshedAt: new Date("2026-09-24T10:00:00.000Z"),
     siren: "381983568",
@@ -121,6 +125,19 @@ describe("badges and profile", () => {
   it("shows nothing of an unknown SIREN", () => {
     expect(companyBadges(stored({ found: false, gesReport: true }))).toEqual([]);
     expect(toCompanyProfile(stored({ found: false }))).toBeNull();
+  });
+
+  it("links the France Travail employer page when there is one (US-116)", () => {
+    expect(
+      toCompanyProfile(
+        stored({ employerPageEdited: true, employerPageOffers: 8, employerPagePath: "helpline-913" }),
+      )?.employerPage,
+    ).toEqual({
+      edited: true,
+      offers: 8,
+      url: "https://recrute.francetravail.fr/page-employeur/helpline-913",
+    });
+    expect(toCompanyProfile(stored())?.employerPage).toBeNull();
   });
 
   it("labels INSEE's headcount bands, and says nothing of an unpublished one", () => {

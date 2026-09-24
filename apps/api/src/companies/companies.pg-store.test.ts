@@ -36,6 +36,7 @@ const RECORD: CompanyRecord = {
 async function listEstablishments(...sirets: string[]) {
   await testDatabase.db.insert(hiringCompanies).values(
     sirets.map((siret, index) => ({
+      department: "44",
       name: `Entreprise ${index}`,
       queryKey: `M1805|city:44109:30|${index}`,
       siret,
@@ -57,17 +58,47 @@ beforeEach(async () => {
 });
 
 describe("PgCompaniesStore", () => {
-  it("lists each establishment's SIREN once, until it is read", async () => {
+  it("lists each establishment's company once, with a name and a department, until it is read", async () => {
     await listEstablishments("38198356800092", "38198356800118", "11111111100011");
+    const sirens = async (options?: { employerPages?: boolean }) =>
+      (await store.due(SEPTEMBER, 10, options)).map((due) => due.siren);
 
-    expect(await store.sirensDue(SEPTEMBER, 10)).toEqual(["111111111", "381983568"]);
-    expect(await store.sirensDue(SEPTEMBER, 1)).toEqual(["111111111"]);
+    expect(await store.due(SEPTEMBER, 10)).toEqual([
+      { department: "44", name: "Entreprise 2", siren: "111111111" },
+      { department: "44", name: "Entreprise 0", siren: "381983568" },
+    ]);
+    expect(await store.due(SEPTEMBER, 1)).toHaveLength(1);
 
     await store.save("381983568", RECORD, MARCH);
     await store.save("111111111", null, SEPTEMBER);
 
     // March is before September's cutoff: due again.
-    expect(await store.sirensDue(SEPTEMBER, 10)).toEqual(["381983568"]);
+    expect(await sirens()).toEqual(["381983568"]);
+
+    await store.save("381983568", RECORD, SEPTEMBER);
+    expect(await sirens()).toEqual([]);
+    // Pages employeurs never asked: due once it is enabled.
+    expect(await sirens({ employerPages: true })).toEqual(["111111111", "381983568"]);
+  });
+
+  it("keeps the known employer page when the page could not be read", async () => {
+    const page = { edited: true, offers: 8, path: "helpline-913" };
+    await store.save("381983568", RECORD, MARCH, page);
+    await store.save("381983568", RECORD, SEPTEMBER);
+
+    expect((await store.findMany(["381983568"]))[0]).toMatchObject({
+      employerPageEdited: true,
+      employerPageOffers: 8,
+      employerPagePath: "helpline-913",
+      employerPageReadAt: MARCH,
+      refreshedAt: SEPTEMBER,
+    });
+
+    await store.save("381983568", RECORD, SEPTEMBER, null);
+    expect((await store.findMany(["381983568"]))[0]).toMatchObject({
+      employerPagePath: null,
+      employerPageReadAt: SEPTEMBER,
+    });
   });
 
   it("gives a record back, and forgets it when the SIREN is no longer known", async () => {

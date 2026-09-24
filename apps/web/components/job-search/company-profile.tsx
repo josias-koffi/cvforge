@@ -2,6 +2,7 @@ import {
   COMPANY_CATEGORY_LABELS,
   COMPANY_SOURCE_LABEL,
   EGAPRO_SOURCE_LABEL,
+  EMPLOYER_PAGE_SOURCE_LABEL,
   LA_BONNE_BOITE_SOURCE_LABEL,
   type CompanyProfile,
   type HiringCompanyDetail,
@@ -134,6 +135,9 @@ function CompanyCard({ profile }: { profile: CompanyProfile }) {
             <p className="text-xs text-muted-foreground">{EGAPRO_SOURCE_LABEL}</p>
           ) : null}
         </div>
+        {profile.employerPage ? (
+          <EmployerPageLink page={profile.employerPage} />
+        ) : null}
         <a
           href={`https://annuaire-entreprises.data.gouv.fr/entreprise/${profile.siren}`}
           target="_blank"
@@ -145,6 +149,37 @@ function CompanyCard({ profile }: { profile: CompanyProfile }) {
         </a>
       </CardContent>
     </Card>
+  )
+}
+
+/**
+ * Its page on France Travail's employer directory (US-116): what it says of
+ * itself, and every offer it publishes there.
+ */
+function EmployerPageLink({
+  page,
+}: {
+  page: NonNullable<CompanyProfile["employerPage"]>
+}) {
+  return (
+    <div className="flex flex-col gap-1 rounded-md border border-border p-3">
+      <a
+        href={page.url}
+        target="_blank"
+        rel="noreferrer"
+        className="inline-flex items-center gap-1 text-sm font-medium underline-offset-4 hover:underline"
+      >
+        Sa page employeur sur France Travail
+        <ExternalLinkIcon className="size-3.5" />
+      </a>
+      <p className="text-sm text-muted-foreground">
+        {page.offers > 0
+          ? `${page.offers} offre${page.offers > 1 ? "s" : ""} publiée${page.offers > 1 ? "s" : ""}`
+          : "Aucune offre publiée pour l'instant"}
+        {page.edited ? " · présentée par l'entreprise elle-même" : ""}
+      </p>
+      <p className="text-xs text-muted-foreground">{EMPLOYER_PAGE_SOURCE_LABEL}</p>
+    </div>
   )
 }
 

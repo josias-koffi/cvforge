@@ -6,12 +6,13 @@ import {
 import type { CompaniesStore } from "./companies.pg-store";
 import type { CompanySources } from "./company-sources";
 import type { StoredCompany } from "./company-record";
+import type { EmployerPagesSource } from "./employer-pages.source";
 
 const HOUR_MS = 60 * 60_000;
 /** A company's record changes yearly at most: a month is plenty. */
 const REFRESH_EVERY_MS = 30 * 24 * HOUR_MS;
 const CHECK_INTERVAL_MS = HOUR_MS;
-/** A hundred companies at five calls a second: under a minute an hour. */
+/** A hundred companies at two calls a second: under two minutes an hour. */
 const MAX_READS_PER_CHECK = 100;
 
 export type CompaniesRefreshOutcome =
@@ -20,7 +21,9 @@ export type CompaniesRefreshOutcome =
 
 /**
  * The company behind each establishment La Bonne Boîte lists (US-121), read
- * monthly in the background from public sources. Pages only read the copy.
+ * monthly in the background from public sources, with its France Travail
+ * employer page when Pages employeurs is enabled (US-116). Pages only read
+ * the copy.
  */
 export class CompaniesService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(CompaniesService.name);
@@ -30,6 +33,7 @@ export class CompaniesService implements OnModuleInit, OnModuleDestroy {
   constructor(
     private readonly store: CompaniesStore,
     private readonly sources: Pick<CompanySources, "read">,
+    private readonly employerPages: Pick<EmployerPagesSource, "isAvailable" | "find">,
     private readonly now: () => number = Date.now,
   ) {}
 
@@ -51,15 +55,17 @@ export class CompaniesService implements OnModuleInit, OnModuleDestroy {
 
     this.running = true;
     try {
-      const due = await this.store.sirensDue(
+      const employerPages = this.employerPages.isAvailable();
+      const due = await this.store.due(
         new Date(this.now() - REFRESH_EVERY_MS),
         limit,
+        { employerPages },
       );
       let read = 0;
       let unknown = 0;
       let failed = 0;
 
-      for (const siren of due) {
+      for (const { department, name, siren } of due) {
         const record = await this.sources.read(siren);
 
         if (record === undefined) {
@@ -67,7 +73,17 @@ export class CompaniesService implements OnModuleInit, OnModuleDestroy {
           continue;
         }
 
-        await this.store.save(siren, record, new Date(this.now()));
+        // A failed page keeps the one already known: `undefined` is not "none".
+        const page =
+          record && employerPages
+            ? await this.employerPages.find(
+                siren,
+                [name, record.legalName],
+                department,
+              )
+            : undefined;
+
+        await this.store.save(siren, record, new Date(this.now()), page);
         if (record) read += 1;
         else unknown += 1;
       }

@@ -27,6 +27,11 @@ const DETAIL: HiringCompanyDetail = {
     category: "GE",
     closed: false,
     createdOn: "1991-04-02",
+    employerPage: {
+      edited: true,
+      offers: 8,
+      url: "https://recrute.francetravail.fr/page-employeur/helpline-913",
+    },
     finances: { netIncome: 20_941_726, revenue: 211_086_627, year: "2025" },
     headcountLabel: "2 000 à 4 999 salariés",
     legalName: "EVERIENCE",
@@ -65,6 +70,19 @@ describe("CompanyProfileView", () => {
     expect(
       render({ ...DETAIL, profile: { ...DETAIL.profile!, badges: [] } })
     ).not.toContain("Egapro")
+  })
+
+  it("links the France Travail employer page, only when there is one (US-116)", () => {
+    const html = render(DETAIL)
+
+    expect(html).toContain(
+      'href="https://recrute.francetravail.fr/page-employeur/helpline-913"'
+    )
+    expect(html).toContain("8 offres publiées · présentée par l'entreprise elle-même")
+    expect(html).toContain("Page employeur : France Travail")
+    expect(
+      render({ ...DETAIL, profile: { ...DETAIL.profile!, employerPage: null } })
+    ).not.toContain("page employeur")
   })
 
   it("says the company is still to be read, and when it is closed", () => {

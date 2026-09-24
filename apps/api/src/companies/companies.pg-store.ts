@@ -1,38 +1,83 @@
-import { eq, inArray, isNull, lt, or, sql } from "drizzle-orm";
+import { eq, inArray, isNull, lt, or, sql, type SQL } from "drizzle-orm";
 import type { Database } from "../database/database.types";
 import { companies, hiringCompanies } from "../database/schema";
 import type { CompanyRecord, StoredCompany } from "./company-record";
+import type { EmployerPage } from "./employer-pages.source";
 
 /** DI token for the companies' store. */
 export const COMPANIES_STORE = Symbol("COMPANIES_STORE");
 
+/** A company to read, with what Pages employeurs needs to find it. */
+export interface DueCompany {
+  siren: string;
+  /** The name La Bonne Boîte gives one of its establishments. */
+  name: string;
+  /** The department of that establishment. */
+  department: string;
+}
+
 export interface CompaniesStore {
-  /** Hiring establishments' SIRENs never read, or read before `before`. */
-  sirensDue(before: Date, limit: number): Promise<string[]>;
-  /** `null` records an unknown SIREN, so it is not asked again at once. */
-  save(siren: string, record: CompanyRecord | null, at: Date): Promise<void>;
+  /**
+   * Hiring establishments' companies never read, or read before `before`;
+   * with `employerPages`, also those whose page was never asked for.
+   */
+  due(
+    before: Date,
+    limit: number,
+    options?: { employerPages?: boolean },
+  ): Promise<DueCompany[]>;
+  /**
+   * `null` records an unknown SIREN, so it is not asked again at once. An
+   * `undefined` page leaves the known one as it was.
+   */
+  save(
+    siren: string,
+    record: CompanyRecord | null,
+    at: Date,
+    page?: EmployerPage | null,
+  ): Promise<void>;
   findMany(sirens: readonly string[]): Promise<StoredCompany[]>;
 }
 
 export class PgCompaniesStore implements CompaniesStore {
   constructor(private readonly db: Database) {}
 
-  async sirensDue(before: Date, limit: number) {
+  async due(before: Date, limit: number, options: { employerPages?: boolean } = {}) {
     const siren = sql<string>`left(${hiringCompanies.siret}, 9)`;
-    const rows = await this.db
-      .selectDistinct({ siren })
+    const stale: SQL[] = [isNull(companies.siren), lt(companies.refreshedAt, before)];
+    if (options.employerPages) stale.push(isNull(companies.employerPageReadAt));
+
+    return this.db
+      .select({
+        department: sql<string>`min(${hiringCompanies.department})`,
+        name: sql<string>`min(${hiringCompanies.name})`,
+        siren,
+      })
       .from(hiringCompanies)
       .leftJoin(companies, eq(companies.siren, siren))
-      .where(or(isNull(companies.siren), lt(companies.refreshedAt, before)))
+      .where(or(...stale))
+      .groupBy(siren)
       .orderBy(siren)
       .limit(limit);
-
-    return rows.map((row) => row.siren);
   }
 
-  async save(siren: string, record: CompanyRecord | null, at: Date) {
+  async save(
+    siren: string,
+    record: CompanyRecord | null,
+    at: Date,
+    page?: EmployerPage | null,
+  ) {
+    const pageValues =
+      page === undefined
+        ? {}
+        : {
+            employerPageEdited: page?.edited ?? false,
+            employerPageOffers: page?.offers ?? null,
+            employerPagePath: page?.path ?? null,
+            employerPageReadAt: at,
+          };
     const values = record
-      ? { ...withoutDeclared(record), found: true, refreshedAt: at, siren }
+      ? { ...withoutDeclared(record), ...pageValues, found: true, refreshedAt: at, siren }
       : { found: false, refreshedAt: at, siren };
 
     await this.db
@@ -66,6 +111,10 @@ const EMPTY = {
   createdOn: null,
   egaproScore: null,
   egaproYear: null,
+  employerPageEdited: false,
+  employerPageOffers: null,
+  employerPagePath: null,
+  employerPageReadAt: null,
   ess: false,
   financesYear: null,
   gesReport: false,
@@ -77,4 +126,4 @@ const EMPTY = {
   netIncome: null,
   openEstablishments: null,
   revenue: null,
-} satisfies Omit<CompanyRecord, "egaproDeclared">;
+} satisfies Omit<StoredCompany, "found" | "refreshedAt" | "siren">;
