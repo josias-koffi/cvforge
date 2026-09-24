@@ -8,6 +8,7 @@ import {
   formatCredits,
   formatDate,
   formatPrice,
+  formatRelativeDays,
   formatTime,
   splitLines,
   statusVariants,
@@ -15,7 +16,10 @@ import {
 
 describe("format helpers", () => {
   it("splits multiline input into trimmed non-empty entries", () => {
-    expect(splitLines(" Node.js \n\n  NestJS\n ")).toEqual(["Node.js", "NestJS"])
+    expect(splitLines(" Node.js \n\n  NestJS\n ")).toEqual([
+      "Node.js",
+      "NestJS",
+    ])
   })
 
   it("formats missing dates and euro prices", () => {
@@ -63,5 +67,25 @@ describe("formatFileSize", () => {
 
   it("never shows a 0 Ko file", () => {
     expect(formatFileSize(120)).toBe("1 Ko")
+  })
+})
+
+describe("formatRelativeDays", () => {
+  const now = Date.parse("2026-09-24T10:00:00Z")
+
+  it("says how fresh an offer is, in days", () => {
+    expect(formatRelativeDays("2026-09-24T08:00:00Z", now)).toBe("aujourd’hui")
+    expect(formatRelativeDays("2026-09-23T08:00:00Z", now)).toBe("hier")
+    expect(formatRelativeDays("2026-09-19T08:00:00Z", now)).toBe(
+      "il y a 5 jours"
+    )
+  })
+
+  it("falls back to the date past a month, and to a dash without one", () => {
+    expect(formatRelativeDays("2026-07-01T08:00:00Z", now)).toBe(
+      "01 juil. 2026"
+    )
+    expect(formatRelativeDays(null, now)).toBe("—")
+    expect(formatRelativeDays("not a date", now)).toBe("—")
   })
 })

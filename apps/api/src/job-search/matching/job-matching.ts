@@ -1,4 +1,4 @@
-import type { SearchProject } from "@cvforge/types";
+import { SCORE_WEIGHTS, type ScoreBreakdown, type SearchProject } from "@cvforge/types";
 import { fold } from "../../shared/text";
 import type { StoredJob } from "../jobs.types";
 import {
@@ -116,14 +116,7 @@ function locationAllowed(job: StoredJob, project: SearchProject): boolean {
   return distanceScore(job, project) > 0;
 }
 
-export interface ScoreBreakdown {
-  title: number;
-  skills: number;
-  experience: number;
-  location: number;
-  freshness: number;
-  salary: number;
-}
+export type { ScoreBreakdown };
 
 export interface ScoredJob {
   job: StoredJob;
@@ -137,22 +130,6 @@ export interface ScoredJob {
   /** The offer's ROME competences the CV does not show, required first. */
   missingSkills: string[];
 }
-
-/**
- * Weights, as a share of the 100 points.
- *
- * Sector and company values are deliberately absent: they need a company's NAF
- * code and Egapro index, which arrive with the company sheet (E19 phase 2).
- * Adding them as always-zero dimensions would quietly cap every score at 85.
- */
-const WEIGHTS: ScoreBreakdown = {
-  experience: 10,
-  freshness: 15,
-  location: 15,
-  salary: 5,
-  skills: 25,
-  title: 30,
-};
 
 export interface ScoreInput {
   job: StoredJob;
@@ -172,13 +149,13 @@ export function scoreJob(input: ScoreInput): ScoredJob {
     ? romeSkillsMatch(job, rome)
     : { matched: [], missing: [], ratio: 0 };
   const breakdown: ScoreBreakdown = {
-    experience: WEIGHTS.experience * experienceScore(job, project),
-    freshness: WEIGHTS.freshness * freshnessScore(job, now),
-    location: WEIGHTS.location * locationScore(job, project),
-    salary: WEIGHTS.salary * salaryScore(job, project),
+    experience: SCORE_WEIGHTS.experience * experienceScore(job, project),
+    freshness: SCORE_WEIGHTS.freshness * freshnessScore(job, now),
+    location: SCORE_WEIGHTS.location * locationScore(job, project),
+    salary: SCORE_WEIGHTS.salary * salaryScore(job, project),
     // The best of the two readings: ROME only ever adds to the keywords.
     skills:
-      WEIGHTS.skills *
+      SCORE_WEIGHTS.skills *
       Math.max(
         input.skills.length > 0
           ? Math.min(1, keywordSkills.length / Math.min(5, input.skills.length))
@@ -186,7 +163,7 @@ export function scoreJob(input: ScoreInput): ScoredJob {
         romeSkills.ratio,
       ),
     title:
-      WEIGHTS.title *
+      SCORE_WEIGHTS.title *
       Math.max(
         titleScore(job, project),
         romeTitleScore(job, rome?.projectCodes ?? []),

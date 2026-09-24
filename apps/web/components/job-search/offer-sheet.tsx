@@ -5,16 +5,19 @@ import { useTransition } from "react"
 import {
   BookmarkIcon,
   ExternalLinkIcon,
-  MapPinIcon,
   SparklesIcon,
-  XIcon,
+  ThumbsDownIcon,
 } from "lucide-react"
 import { toast } from "sonner"
 
-import { applyToMatch, setMatchStatus } from "@/app/(app)/offres-du-jour/actions"
-import { companyLabel, scoreTone } from "@/components/job-search/offer-card"
+import {
+  applyToMatch,
+  setMatchStatus,
+} from "@/app/(app)/offres-du-jour/actions"
+import { AiReason, MatchScoreDetail } from "@/components/job-search/match-score"
+import { CompanyMark, companyLabel } from "@/components/job-search/offer-card"
+import { OfferMeta } from "@/components/job-search/offer-meta"
 import { OfferSkills } from "@/components/job-search/offer-skills"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import {
@@ -27,7 +30,7 @@ import {
 } from "@/components/ui/sheet"
 import { Spinner } from "@/components/ui/spinner"
 import { formatDate } from "@/lib/format"
-import { CONTRACT_LABELS, SOURCE_LABELS } from "@/lib/job-labels"
+import { SOURCE_LABELS } from "@/lib/job-labels"
 import type { JobCardOffer } from "@/lib/job-search"
 
 /**
@@ -37,20 +40,35 @@ import type { JobCardOffer } from "@/lib/job-search"
  * included, cleaned at collection time — so opening the panel costs no
  * request. That is why the open offer is read from the URL on the client: a
  * server read would re-fetch the whole page on every open and close.
+ *
+ * At least 45% of the screen: the advert is the one long text of the page,
+ * and it has to be read, not scrolled through a slot. The width classes carry
+ * the same `data-[side=right]` modifiers as the Sheet's own, or theirs win.
  */
 export function OfferSheet({
   offer,
   onClose,
   onDismissed,
+  onSaved,
 }: {
   offer: JobCardOffer | null
   onClose: () => void
   onDismissed: (jobId: string) => void
+  onSaved: (jobId: string) => void
 }) {
   return (
-    <Sheet open={offer !== null} onOpenChange={(open) => (open ? null : onClose())}>
-      <SheetContent className="w-full gap-0 overflow-y-auto sm:max-w-xl">
-        {offer ? <OfferDetail offer={offer} onDismissed={onDismissed} /> : null}
+    <Sheet
+      open={offer !== null}
+      onOpenChange={(open) => (open ? null : onClose())}
+    >
+      <SheetContent className="@container gap-0 overflow-y-auto data-[side=right]:w-full data-[side=right]:sm:w-[max(45vw,36rem)] data-[side=right]:sm:max-w-full">
+        {offer ? (
+          <OfferDetail
+            offer={offer}
+            onDismissed={onDismissed}
+            onSaved={onSaved}
+          />
+        ) : null}
       </SheetContent>
     </Sheet>
   )
@@ -59,9 +77,11 @@ export function OfferSheet({
 function OfferDetail({
   offer,
   onDismissed,
+  onSaved,
 }: {
   offer: JobCardOffer
   onDismissed: (jobId: string) => void
+  onSaved: (jobId: string) => void
 }) {
   const router = useRouter()
   const [applying, startApplying] = useTransition()
@@ -95,61 +115,48 @@ function OfferDetail({
 
       toast.success(result.message)
       if (status === "dismissed") onDismissed(job.id)
+      else onSaved(job.id)
     })
 
   return (
     <>
-      <SheetHeader className="gap-2">
-        <SheetTitle className="pr-8 text-lg">{job.title}</SheetTitle>
-        <SheetDescription>{companyLabel(offer)}</SheetDescription>
-        <div className="flex flex-wrap items-center gap-1.5">
-          {offer.score === null ? null : (
-            <span
-              className={`rounded-md px-2 py-1 text-sm font-medium ${scoreTone(offer.score)}`}
-            >
-              {offer.score}/100
-            </span>
-          )}
-          <Badge variant="secondary">
-            {CONTRACT_LABELS[job.contractType] ?? job.contractType}
-          </Badge>
-          {job.remote ? <Badge variant="secondary">Télétravail</Badge> : null}
-          {job.salaryLabel ? (
-            <Badge variant="secondary">{job.salaryLabel}</Badge>
-          ) : null}
+      <SheetHeader className="gap-4 border-b p-6">
+        <div className="flex items-center gap-3 pr-8">
+          <CompanyMark offer={offer} />
+          <SheetDescription className="text-sm font-medium text-foreground">
+            {companyLabel(offer)}
+          </SheetDescription>
         </div>
+        <SheetTitle className="text-xl leading-snug font-semibold">
+          {job.title}
+        </SheetTitle>
+        <OfferMeta job={job} />
       </SheetHeader>
 
-      <div className="flex flex-col gap-4 px-4 pb-4">
-        {offer.aiReason ? (
-          <p className="text-muted-foreground flex gap-2 text-sm">
-            <SparklesIcon className="mt-0.5 size-4 shrink-0" aria-hidden />
-            {offer.aiReason}
-          </p>
-        ) : null}
+      <div className="flex flex-col gap-6 p-6">
+        {offer.score === null ? (
+          offer.aiReason ? (
+            <AiReason reason={offer.aiReason} />
+          ) : null
+        ) : (
+          <MatchScoreDetail
+            score={offer.score}
+            breakdown={offer.scoreBreakdown}
+            aiReason={offer.aiReason}
+          />
+        )}
 
         <OfferSkills offer={offer} />
 
-        <Separator />
-
-        <dl className="grid grid-cols-2 gap-3 text-sm">
-          <Detail label="Lieu">
-            <span className="flex items-start gap-1.5">
-              <MapPinIcon className="mt-0.5 size-3.5 shrink-0" aria-hidden />
-              <span>
-                {job.locationLabel || "Non précisé"}
-                {job.department ? (
-                  <span className="text-muted-foreground block text-xs">
-                    Département {job.department}
-                  </span>
-                ) : null}
-              </span>
-            </span>
-          </Detail>
+        {/* The place itself is in the header; here, what helps to place it. */}
+        <dl className="grid grid-cols-2 gap-4 rounded-xl border p-4 text-sm @lg:grid-cols-4">
           <Detail label="Publiée le">{formatDate(job.publishedAt)}</Detail>
           <Detail label="Vue pour la première fois">
             {formatDate(job.firstSeenAt)}
           </Detail>
+          {job.department ? (
+            <Detail label="Département">{job.department}</Detail>
+          ) : null}
           {job.latitude !== null && job.longitude !== null ? (
             <Detail label="Sur une carte">
               <a
@@ -166,44 +173,45 @@ function OfferDetail({
 
         <Separator />
 
-        <div className="flex flex-col gap-2">
-          <h4 className="text-sm font-medium">L&apos;annonce</h4>
+        <section className="flex flex-col gap-3">
+          <h3 className="text-base font-semibold">L&apos;annonce</h3>
           {job.description ? (
             // Collected as plain text, so the line breaks are all the shape
             // there is — and nothing from a third party is rendered as HTML.
-            <p className="text-muted-foreground text-sm whitespace-pre-line">
+            <p className="max-w-prose text-sm leading-relaxed whitespace-pre-line text-foreground/85">
               {job.description}
             </p>
           ) : (
-            <p className="text-muted-foreground text-sm">
-              Cette source ne publie pas de description. Le lien ci-dessous mène à
-              l&apos;annonce complète.
+            <p className="text-sm text-muted-foreground">
+              Cette source ne publie pas de description. Le lien « Voir
+              l&apos;offre » mène à l&apos;annonce complète.
             </p>
           )}
-        </div>
+        </section>
 
         {openListings.length > 0 ? (
-          <div className="flex flex-col gap-2">
-            <h4 className="text-sm font-medium">Où lire l&apos;offre</h4>
-            <ul className="text-muted-foreground flex flex-col gap-1 text-sm">
+          <section className="flex flex-col gap-2">
+            <h3 className="text-sm font-medium">Où lire l&apos;offre</h3>
+            <ul className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
               {openListings.map((listing) => (
                 <li key={listing.id}>
                   <a
                     href={listing.url || listing.applyUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="underline underline-offset-4"
+                    className="inline-flex items-center gap-1 underline underline-offset-4"
                   >
                     {SOURCE_LABELS[listing.source] ?? listing.source}
+                    <ExternalLinkIcon className="size-3" aria-hidden />
                   </a>
                 </li>
               ))}
             </ul>
-          </div>
+          </section>
         ) : null}
       </div>
 
-      <SheetFooter className="bg-popover sticky bottom-0 border-t">
+      <SheetFooter className="sticky bottom-0 mt-auto flex-row flex-wrap items-center justify-between gap-2 border-t bg-popover px-6 py-4">
         <div className="flex flex-wrap gap-2">
           <Button disabled={applying || applied} onClick={apply}>
             {applying ? <Spinner /> : <SparklesIcon />}
@@ -215,20 +223,23 @@ function OfferDetail({
               Voir l&apos;offre
             </a>
           </Button>
+        </div>
+        <div className="flex flex-wrap gap-1">
           <Button
             variant="ghost"
-            disabled={updating || saved}
+            disabled={updating || saved || applied}
             onClick={() => update("saved")}
           >
             <BookmarkIcon />
             {saved ? "Gardée" : "Garder"}
           </Button>
           <Button
+            className="text-muted-foreground"
             variant="ghost"
             disabled={updating}
             onClick={() => update("dismissed")}
           >
-            <XIcon />
+            <ThumbsDownIcon />
             Pas pour moi
           </Button>
         </div>
@@ -246,7 +257,7 @@ function Detail({
 }) {
   return (
     <div className="flex flex-col gap-0.5">
-      <dt className="text-muted-foreground text-xs">{label}</dt>
+      <dt className="text-xs text-muted-foreground">{label}</dt>
       <dd>{children}</dd>
     </div>
   )

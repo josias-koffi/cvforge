@@ -6,6 +6,7 @@ export * from "./companies";
 export * from "./hiring-companies";
 export * from "./locale";
 export * from "./market";
+export * from "./match-score";
 export * from "./profile";
 export * from "./rome";
 export * from "./search-project";

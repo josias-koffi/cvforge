@@ -1,4 +1,4 @@
-import type { SearchContractType } from "@cvforge/types"
+import type { ScoreBreakdown, SearchContractType } from "@cvforge/types"
 
 import { api } from "@/lib/api"
 
@@ -47,6 +47,8 @@ export interface JobCardOffer {
   listings: JobListingSummary[]
   status: JobMatchStatus | null
   score: number | null
+  /** Points per criterion behind `score`; absent on older selections. */
+  scoreBreakdown?: ScoreBreakdown | null
   aiReason: string | null
   /** What the candidate has: their own skills, then ROME competences. */
   matchedSkills?: string[]
@@ -59,6 +61,7 @@ export interface JobMatch {
   jobId: string
   digestDate: string
   score: number
+  scoreBreakdown: ScoreBreakdown | null
   matchedSkills: string[]
   missingSkills?: string[]
   aiRank: number | null
@@ -86,6 +89,7 @@ export interface OfferSearchResult {
   status: JobMatchStatus | null
   /** Only set when the offer came from a morning selection. */
   score: number | null
+  scoreBreakdown: ScoreBreakdown | null
   aiReason: string | null
   applicationId: string | null
 }
@@ -118,9 +122,12 @@ export async function searchOffers(filters: OfferSearchFilters) {
 }
 
 export async function loadRecentMatches(limit = 60): Promise<JobMatch[]> {
-  const { matches } = await api<{ matches: JobMatch[] }>("/job-search/history", {
-    query: { limit },
-  })
+  const { matches } = await api<{ matches: JobMatch[] }>(
+    "/job-search/history",
+    {
+      query: { limit },
+    }
+  )
 
   return matches
 }

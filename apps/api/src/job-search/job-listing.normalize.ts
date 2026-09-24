@@ -188,19 +188,83 @@ export function htmlToText(html: string): string {
     .replace(/<\/(p|div|li|h[1-6])>/gi, "\n")
     .replace(/<[^>]+>/g, " ");
 
+  // A non-breaking space is a space to the reader: collapsed with the others,
+  // or a line holding only one would survive as a blank-looking paragraph.
   return decodeEntities(stripped)
-    .replace(/[ \t]+/g, " ")
+    .replace(/[ \t\u00a0]+/g, " ")
     .replace(/ *\n */g, "\n")
     .replace(/\n{3,}/g, "\n\n")
     .trim();
 }
 
+/**
+ * The named entities boards actually send. Anything else named is left as is:
+ * a stray "&foo;" is less wrong than a guess.
+ */
+const NAMED_ENTITIES: Record<string, string> = {
+  agrave: "à",
+  acirc: "â",
+  amp: "&",
+  apos: "'",
+  bull: "•",
+  ccedil: "ç",
+  deg: "°",
+  eacute: "é",
+  ecirc: "ê",
+  egrave: "è",
+  euml: "ë",
+  euro: "€",
+  gt: ">",
+  hellip: "…",
+  icirc: "î",
+  iuml: "ï",
+  laquo: "«",
+  ldquo: "“",
+  lsquo: "‘",
+  lt: "<",
+  mdash: "—",
+  middot: "·",
+  nbsp: " ",
+  ndash: "–",
+  ocirc: "ô",
+  oelig: "œ",
+  quot: '"',
+  raquo: "»",
+  rdquo: "”",
+  rsquo: "’",
+  ucirc: "û",
+  ugrave: "ù",
+};
+
+/**
+ * One pass, so "&amp;lt;" becomes "&lt;" and not "<": double-escaped content
+ * is what the second call in `htmlToText` is for. Numeric entities
+ * (SmartRecruiters writes its non-breaking spaces as "&#xa0;") are decoded
+ * whatever the code point, except the invalid ones.
+ */
 function decodeEntities(value: string): string {
-  return value
-    .replace(/&nbsp;/gi, " ")
-    .replace(/&lt;/gi, "<")
-    .replace(/&gt;/gi, ">")
-    .replace(/&quot;/gi, '"')
-    .replace(/&#39;|&apos;/gi, "'")
-    .replace(/&amp;/gi, "&");
+  return value.replace(
+    /&(#x[0-9a-f]+|#[0-9]+|[a-z]+);/gi,
+    (entity, body: string) => {
+      if (body.startsWith("#")) {
+        const hex = body[1] === "x" || body[1] === "X";
+        const code = Number.parseInt(body.slice(hex ? 2 : 1), hex ? 16 : 10);
+
+        if (!Number.isFinite(code) || code <= 0 || code > 0x10ffff)
+          return entity;
+        if (code >= 0xd800 && code <= 0xdfff) return entity;
+
+        return code === 0xa0 ? " " : String.fromCodePoint(code);
+      }
+
+      const named = NAMED_ENTITIES[body];
+      if (named) return named;
+
+      // Entities are case-sensitive: "&Eacute;" is "É", not "é".
+      const lower =
+        NAMED_ENTITIES[body.charAt(0).toLowerCase() + body.slice(1)];
+
+      return lower && /\p{L}/u.test(lower) ? lower.toUpperCase() : entity;
+    },
+  );
 }

@@ -183,9 +183,20 @@ function createService(options: {
 }
 
 describe("JobMatchesService.searchOffers", () => {
+  const breakdown = {
+    experience: 10,
+    freshness: 12,
+    location: 15,
+    salary: 0,
+    skills: 15,
+    title: 26,
+  };
+
   it("returns the offers we hold, with what the candidate already did", async () => {
     const harness = createService({
-      knownStatuses: new Map([["job-1", { ...makeMatch(), status: "saved" }]]),
+      knownStatuses: new Map([
+        ["job-1", { ...makeMatch(), scoreBreakdown: breakdown, status: "saved" }],
+      ]),
     });
 
     const found = await harness.service.searchOffers("user@example.com", {
@@ -199,7 +210,12 @@ describe("JobMatchesService.searchOffers", () => {
     });
 
     expect(found.total).toBe(1);
-    expect(found.offers[0]).toMatchObject({ score: 78, status: "saved" });
+    expect(found.offers[0]).toMatchObject({
+      score: 78,
+      // What the score is made of travels with it: "78" alone explains nothing.
+      scoreBreakdown: breakdown,
+      status: "saved",
+    });
     expect(found.offers[0]?.listings).toHaveLength(1);
   });
 
@@ -217,7 +233,11 @@ describe("JobMatchesService.searchOffers", () => {
     });
 
     // Inventing a number would claim a ranking that never happened.
-    expect(found.offers[0]).toMatchObject({ score: null, status: null });
+    expect(found.offers[0]).toMatchObject({
+      score: null,
+      scoreBreakdown: null,
+      status: null,
+    });
   });
 });
 

@@ -1434,3 +1434,7 @@
 ### 2026-09-24 — US-118 reste : appellations dans l'export RGPD (sprint-026)
 - **Context** : `search_project_rome` et `profile_rome_competences` étaient purgées à la suppression du compte, mais absentes de l'export. Elles y sont désormais (`ownedSearchJobs`, `ownedProfileCompetences`).
 - **Leçon** : chaque nouvelle table par utilisateur doit être ajoutée **à la purge et à l'export**. Le test « lignes résiduelles » de `privacy.service.test.ts` ne vérifie que la purge : un oubli dans l'export ne fait échouer aucun test.
+
+### 2026-09-24 — Refonte UX des cartes d'offres et du panneau (/offres, /offres-du-jour)
+- **Did** : cartes repensées (initiale de l'entreprise, méta avec icônes, actions « Garder » et « Pas pour moi » écrites en toutes lettres, plus aucune ✕). Score affiché en mots + % + jauge (`lib/match-score.ts`, `match-score.tsx`), avec le détail par critère dans le panneau (« Pourquoi cette offre ? »). Panneau à `max(45vw, 36rem)`. `SCORE_WEIGHTS` / `ScoreBreakdown` déplacés dans `@cvforge/types`. `scoreBreakdown` exposé par `/job-search/offers`.
+- **Learned** : pour élargir un `Sheet`, il faut les mêmes modificateurs `data-[side=right]:` que la classe de base. Sans eux, `sm:max-w-sm` l'emporte en silence. Un match avec `score: 0` est une offre choisie à la main : ne jamais afficher « 0 % ».

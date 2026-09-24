@@ -1,3 +1,4 @@
+import type { ScoreBreakdown } from "@cvforge/types";
 import { Injectable, Logger } from "@nestjs/common";
 import type { ApplicationsService } from "../applications/applications.service";
 import type { ApplicationsStore } from "../applications/applications.types";
@@ -32,6 +33,8 @@ export interface OfferSearchResult {
   status: JobMatchStatus | null;
   /** Only set when the offer came from a morning selection. */
   score: number | null;
+  /** Points per criterion behind `score`, so the candidate can read it. */
+  scoreBreakdown: ScoreBreakdown | null;
   aiReason: string | null;
   applicationId: string | null;
 }
@@ -98,13 +101,16 @@ export class JobMatchesService {
       const match = statuses.get(job.id) ?? null;
       const detailed = await this.jobs.findById(job.id);
 
+      const ranked = match !== null && match.score > 0;
+
       offers.push({
         aiReason: match?.aiReason ?? null,
         applicationId: match?.applicationId ?? null,
         job,
         listings: detailed?.listings ?? [],
         // A score means "we ranked this for you"; a hand-picked offer has none.
-        score: match && match.score > 0 ? match.score : null,
+        score: ranked ? match.score : null,
+        scoreBreakdown: ranked ? match.scoreBreakdown : null,
         status: match?.status ?? null,
       });
     }

@@ -28,11 +28,25 @@ export function OfferGrid({ offers }: { offers: JobCardOffer[] }) {
   const pathname = usePathname()
   const params = useSearchParams()
   const [dismissed, setDismissed] = useState<string[]>([])
-  const [dismissing, startDismissing] = useTransition()
+  const [saved, setSaved] = useState<string[]>([])
+  const [pending, startUpdating] = useTransition()
 
-  const visible = offers.filter(
-    (offer) => offer.status !== "dismissed" && !dismissed.includes(offer.job.id)
-  )
+  // What the candidate just did shows at once, without waiting for a reload.
+  const visible = offers
+    .filter(
+      (offer) =>
+        offer.status !== "dismissed" && !dismissed.includes(offer.job.id)
+    )
+    .map((offer) => ({
+      ...offer,
+      // A 0 is an offer the candidate picked by hand: nothing ranked it, and
+      // "0 % de correspondance" would claim otherwise.
+      score: offer.score ? offer.score : null,
+      status:
+        saved.includes(offer.job.id) && offer.status !== "applied"
+          ? ("saved" as const)
+          : offer.status,
+    }))
   const openId = params.get(OFFER_PARAM)
   const open = visible.find((offer) => offer.job.id === openId) ?? null
 
@@ -47,9 +61,9 @@ export function OfferGrid({ offers }: { offers: JobCardOffer[] }) {
     router.push(suffix ? `${pathname}?${suffix}` : pathname, { scroll: false })
   }
 
-  const dismiss = (jobId: string) =>
-    startDismissing(async () => {
-      const result = await setMatchStatus(jobId, "dismissed")
+  const update = (jobId: string, status: "saved" | "dismissed") =>
+    startUpdating(async () => {
+      const result = await setMatchStatus(jobId, status)
 
       if (!result.ok) {
         toast.error(result.message)
@@ -57,7 +71,8 @@ export function OfferGrid({ offers }: { offers: JobCardOffer[] }) {
       }
 
       toast.success(result.message)
-      setDismissed((current) => [...current, jobId])
+      if (status === "dismissed") setDismissed((current) => [...current, jobId])
+      else setSaved((current) => [...current, jobId])
     })
 
   return (
@@ -67,8 +82,9 @@ export function OfferGrid({ offers }: { offers: JobCardOffer[] }) {
           <OfferCard
             key={offer.job.id}
             offer={offer}
-            dismissing={dismissing}
-            onDismiss={() => dismiss(offer.job.id)}
+            pending={pending}
+            onSave={() => update(offer.job.id, "saved")}
+            onDismiss={() => update(offer.job.id, "dismissed")}
             onOpen={() => show(offer.job.id)}
           />
         ))}
@@ -81,6 +97,7 @@ export function OfferGrid({ offers }: { offers: JobCardOffer[] }) {
           setDismissed((current) => [...current, jobId])
           show(null)
         }}
+        onSaved={(jobId) => setSaved((current) => [...current, jobId])}
       />
     </>
   )

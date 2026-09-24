@@ -105,6 +105,32 @@ describe("htmlToText", () => {
     );
   });
 
+  it("decodes numeric entities, the way SmartRecruiters writes its spaces", () => {
+    expect(
+      htmlToText(
+        "<p>sur&#xa0; trois piliers &#xa0;:</p><p>&#xa0;</p><p>l&#x27;équipe &#8212; Paris</p>",
+      ),
+    ).toBe("sur trois piliers :\n\nl'équipe — Paris");
+  });
+
+  it("decodes the named entities boards send, and leaves unknown ones alone", () => {
+    expect(
+      htmlToText(
+        "<p>&Eacute;quipe &mdash; caf&eacute; &laquo;&nbsp;top&nbsp;&raquo; &foo;</p>",
+      ),
+    ).toBe("Équipe — café « top » &foo;");
+  });
+
+  it("decodes one level per pass, so double-escaped text is not over-decoded", () => {
+    expect(htmlToText("&amp;amp;lt;")).toBe("&lt;");
+  });
+
+  it("keeps an invalid code point as it came", () => {
+    expect(htmlToText("<p>a &#0; b &#xd800; c</p>")).toBe(
+      "a &#0; b &#xd800; c",
+    );
+  });
+
   it("drops scripts and styles entirely", () => {
     expect(htmlToText("<script>alert(1)</script><p>Texte</p>")).toBe("Texte");
   });
