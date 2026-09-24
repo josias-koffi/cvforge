@@ -9,13 +9,10 @@ import {
 } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
 import type { PublicKeywordMatchResponse } from "@cvforge/types";
-import { MAX_SCAN_BYTES } from "../ats/ats.validation";
+import { acceptedOfferText, MAX_SCAN_BYTES } from "../ats/ats.validation";
 import type { CvSourceFile } from "../cv-generation/cv-text-extraction";
 import { LeadCaptureService } from "../leads/lead-capture.service";
-import {
-  acceptedOfferText,
-  KeywordMatchService,
-} from "./keyword-match.service";
+import { KeywordMatchService } from "./keyword-match.service";
 
 /**
  * The free CV ↔ offer comparator (US-136). No session: a visitor tries it

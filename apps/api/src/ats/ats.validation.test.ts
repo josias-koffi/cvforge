@@ -2,8 +2,10 @@ import { BadRequestException } from "@nestjs/common";
 import { describe, expect, it } from "vitest";
 import type { CvSourceFile } from "../cv-generation/cv-text-extraction";
 import {
+  acceptedOfferText,
   assertScannableFile,
   MAX_OFFER_CHARS,
+  MIN_OFFER_CHARS,
   MAX_SCAN_BYTES,
   readOfferText,
 } from "./ats.validation";
@@ -136,5 +138,23 @@ describe("readOfferText", () => {
   /** It is forwarded to a model, so its length is bounded. */
   it("truncates an offer past the cap", () => {
     expect(readOfferText("a".repeat(20_000))).toHaveLength(MAX_OFFER_CHARS);
+  });
+});
+
+describe("acceptedOfferText", () => {
+  it("refuses an offer too short to work from, with a code", () => {
+    expect(() => acceptedOfferText("Développeur")).toThrow(BadRequestException);
+    expect(() => acceptedOfferText(undefined)).toThrow(
+      expect.objectContaining({
+        response: expect.objectContaining({ code: "OFFER_TEXT_REQUIRED" }),
+      }),
+    );
+  });
+
+  it("trims and bounds an offer long enough", () => {
+    const offer = "a".repeat(MIN_OFFER_CHARS);
+
+    expect(acceptedOfferText(`  ${offer}  `)).toBe(offer);
+    expect(acceptedOfferText("b".repeat(20_000))).toHaveLength(MAX_OFFER_CHARS);
   });
 });

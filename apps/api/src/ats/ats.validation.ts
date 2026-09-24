@@ -63,3 +63,26 @@ export function readOfferText(value: unknown): string | null {
 
   return trimmed.length > 0 ? trimmed.slice(0, MAX_OFFER_CHARS) : null;
 }
+
+/** Enough for a real offer; a job title alone gives nothing to work from. */
+export const MIN_OFFER_CHARS = 200;
+
+export const OFFER_REQUIRED_MESSAGE =
+  "Collez le texte complet de l'offre (200 caracteres minimum).";
+
+/**
+ * The offer a free tool requires (US-136, US-141), trimmed and bounded, or a
+ * 400 the visitor can act on. The ATS scan's offer is optional, hence
+ * `readOfferText` above.
+ */
+export function acceptedOfferText(value: unknown): string {
+  const text = readOfferText(value) ?? "";
+
+  if (text.length < MIN_OFFER_CHARS) {
+    throw new BadRequestException(
+      publicError("OFFER_TEXT_REQUIRED", OFFER_REQUIRED_MESSAGE),
+    );
+  }
+
+  return text;
+}

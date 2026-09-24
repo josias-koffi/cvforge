@@ -1,26 +1,19 @@
 import {
-  BadGatewayException,
   BadRequestException,
   ConflictException,
   Injectable,
   Logger,
   NotFoundException,
-  UnprocessableEntityException,
 } from "@nestjs/common";
 import {
-  AI_CREDIT_ACTION_OFFER_ENRICHMENT,
-  APPLICATION_STATUS_INTERVIEW_SCHEDULED,
   APPLICATION_SOURCE_TEXT,
   APPLICATION_SOURCE_URL,
   APPLICATION_STATUS_DRAFT,
-  APPLICATION_STATUS_OFFER_RECEIVED,
-  APPLICATION_STATUS_REJECTED,
   applicationStatuses,
   applicationStatusTransitions,
   type ApplicationStatus,
   type ApplicationsKpiSummary,
   type DraftApplication,
-  type ExtractedOfferFields,
   type InterviewReport,
 } from "@cvforge/types";
 import { randomUUID } from "node:crypto";
@@ -33,147 +26,19 @@ import {
   type OfferUpdateInput,
   type StoredApplication,
 } from "./applications.types";
+import { summarizeApplications } from "./applications.kpi";
+import { stripRawOfferText } from "./applications.normalize";
+import { buildOfferPreview } from "./offer-extraction";
+import { OfferImporter } from "./offer-import";
 import {
-  buildOfferPreview,
-  extractOfferMetadata,
-  extractVisibleTextFromHtml,
-} from "./offer-extraction";
-import {
-  structureOffer,
-  toStringArray,
-  toStringOrNull,
-  unstructuredOffer,
-} from "./offer-structuring";
-
-type NullableOfferField =
-  | "companyName"
-  | "contractType"
-  | "location"
-  | "salaryRange";
-
-const MIN_OFFER_TEXT_LENGTH = 160;
-const MAX_OFFER_TEXT_LENGTH = 50_000;
-const MAX_EDITED_LIST_ITEMS = 30;
-const MANUAL_TEXT_SOURCE_LABEL = "Texte colle manuellement";
-const RESPONSE_STATUSES = new Set<ApplicationStatus>([
-  APPLICATION_STATUS_INTERVIEW_SCHEDULED,
-  APPLICATION_STATUS_REJECTED,
-  APPLICATION_STATUS_OFFER_RECEIVED,
-]);
-
-function normalizeOfferUrl(rawUrl: string) {
-  const value = rawUrl.trim();
-
-  if (!value) {
-    throw new BadRequestException("Une URL d'offre est requise.");
-  }
-
-  let url: URL;
-
-  try {
-    url = new URL(value);
-  } catch {
-    throw new BadRequestException("L'URL de l'offre est invalide.");
-  }
-
-  if (!["http:", "https:"].includes(url.protocol)) {
-    throw new BadRequestException(
-      "Seules les URL http et https sont acceptees.",
-    );
-  }
-
-  return url.toString();
-}
-
-function normalizeOfferText(rawText: string) {
-  const value = rawText.trim();
-
-  if (!value) {
-    throw new BadRequestException("Le texte de l'offre est requis.");
-  }
-
-  if (value.length < MIN_OFFER_TEXT_LENGTH) {
-    throw new UnprocessableEntityException(
-      "Le texte fourni est insuffisant pour creer une candidature.",
-    );
-  }
-
-  return value;
-}
-
-function normalizeEditedOfferText(rawText: string) {
-  const value = rawText.trim();
-
-  if (!value) {
-    throw new BadRequestException("Le descriptif de l'offre est requis.");
-  }
-
-  if (value.length > MAX_OFFER_TEXT_LENGTH) {
-    throw new BadRequestException("Le descriptif de l'offre est trop long.");
-  }
-
-  return value;
-}
-
-function describeSource(offerUrl: string | null) {
-  return offerUrl
-    ? { offerUrl, sourceLabel: offerUrl, sourceType: APPLICATION_SOURCE_URL }
-    : {
-        offerUrl: null,
-        sourceLabel: MANUAL_TEXT_SOURCE_LABEL,
-        sourceType: APPLICATION_SOURCE_TEXT,
-      };
-}
-
-function mergeExtractedFields(
-  current: ExtractedOfferFields,
-  patch: Partial<ExtractedOfferFields>,
-): ExtractedOfferFields {
-  const title =
-    patch.title === undefined ? current.title : toStringOrNull(patch.title);
-
-  if (!title) {
-    throw new BadRequestException("L'intitule du poste est requis.");
-  }
-
-  const pickNullable = (key: NullableOfferField) =>
-    patch[key] === undefined ? current[key] : toStringOrNull(patch[key]);
-  const pickList = (key: "requirements" | "responsibilities") =>
-    patch[key] === undefined
-      ? current[key]
-      : toStringArray(patch[key], MAX_EDITED_LIST_ITEMS);
-
-  return {
-    companyName: pickNullable("companyName"),
-    contractType: pickNullable("contractType"),
-    language:
-      patch.language === "en" || patch.language === "fr"
-        ? patch.language
-        : current.language,
-    location: pickNullable("location"),
-    requirements: pickList("requirements"),
-    responsibilities: pickList("responsibilities"),
-    salaryRange: pickNullable("salaryRange"),
-    summary:
-      patch.summary === undefined
-        ? current.summary
-        : (toStringOrNull(patch.summary) ?? ""),
-    title,
-  };
-}
+  describeSource,
+  mergeExtractedFields,
+  normalizeEditedOfferText,
+  normalizeOfferUrl,
+} from "./offer-input";
 
 function isApplicationStatus(value: string): value is ApplicationStatus {
   return applicationStatuses.includes(value as ApplicationStatus);
-}
-
-function createEmptyStatusCounts(): ApplicationsKpiSummary["statusCounts"] {
-  return {
-    draft: 0,
-    interview_scheduled: 0,
-    offer_received: 0,
-    rejected: 0,
-    sent: 0,
-  };
 }
 
 /** Notified with the URL of an offer a candidate just imported. */
@@ -183,14 +48,18 @@ export type OfferImportedListener = (offerUrl: string) => Promise<void>;
 export class ApplicationsService {
   private readonly logger = new Logger(ApplicationsService.name);
 
+  private readonly offers: OfferImporter;
+
   constructor(
     private readonly store: ApplicationsStore,
-    private readonly openRouterService: OpenRouterService,
-    private readonly creditsService: CreditsService,
+    openRouterService: OpenRouterService,
+    creditsService: CreditsService,
     private readonly listProfileIds:
       | ((userEmail: string) => Promise<string[]>)
       | null = null,
-  ) {}
+  ) {
+    this.offers = new OfferImporter(openRouterService, creditsService);
+  }
 
   private readonly offerImportedListeners: OfferImportedListener[] = [];
 
@@ -229,29 +98,8 @@ export class ApplicationsService {
     userEmail: string,
   ): Promise<ApplicationsKpiSummary> {
     const applications = await this.store.listByUserEmail(userEmail);
-    const statusCounts = createEmptyStatusCounts();
 
-    applications.forEach((application) => {
-      statusCounts[application.status] += 1;
-    });
-
-    const totalCount = applications.length;
-    const actionableCount = applications.filter(
-      (application) => application.status !== APPLICATION_STATUS_DRAFT,
-    ).length;
-    const respondedCount = applications.filter((application) =>
-      RESPONSE_STATUSES.has(application.status),
-    ).length;
-
-    return {
-      respondedCount,
-      responseRate:
-        actionableCount === 0
-          ? 0
-          : Math.round((respondedCount / actionableCount) * 100),
-      statusCounts,
-      totalCount,
-    };
+    return summarizeApplications(applications);
   }
 
   async getApplicationForUser(
@@ -354,7 +202,7 @@ export class ApplicationsService {
     userEmail: string,
     rawUrl: string,
   ): Promise<DraftApplication> {
-    const extraction = await this.extractOffer(userEmail, rawUrl);
+    const extraction = await this.offers.fromUrl(userEmail, rawUrl);
 
     return this.createDraftFromExtraction(userEmail, extraction);
   }
@@ -363,48 +211,25 @@ export class ApplicationsService {
     userEmail: string,
     rawOfferText: string,
   ): Promise<DraftApplication> {
-    const extraction = await this.extractOfferFromText(userEmail, rawOfferText);
+    const extraction = await this.offers.fromText(userEmail, rawOfferText);
 
     return this.createDraftFromExtraction(userEmail, extraction);
   }
 
   /**
-   * The application a free tool's visitor asked for by signing up (US-136):
-   * on the house, so no credit is checked or spent. If the model cannot
-   * structure the offer, the application is still created from its text —
-   * the visitor was promised one, and can re-extract it later.
+   * The application a free tool's visitor asked for by signing up (US-136,
+   * US-141), on the house. `sourceLabel` names the tool, which is what
+   * `/admin/metrics` counts its activated accounts by.
    */
   async importOfferedText(
     userEmail: string,
     rawOfferText: string,
+    sourceLabel = LEAD_OFFER_SOURCE_LABEL,
   ): Promise<DraftApplication> {
-    const offerText = normalizeOfferText(rawOfferText);
-    const extracted = await structureOffer(
-      this.openRouterService,
-      offerText,
-      {
-        description: buildOfferPreview(offerText, 320),
-        siteName: null,
-        title: null,
-      },
-      null,
-      APPLICATION_SOURCE_TEXT,
-    ).catch((error: unknown) => {
-      this.logger.warn(
-        `Offered offer structuring failed, kept as text: ${error instanceof Error ? error.message : String(error)}`,
-      );
-
-      return unstructuredOffer(offerText);
-    });
-
-    return this.createDraftFromExtraction(userEmail, {
-      extracted,
-      offerText,
-      offerTextPreview: buildOfferPreview(offerText),
-      offerUrl: null,
-      sourceLabel: LEAD_OFFER_SOURCE_LABEL,
-      sourceType: APPLICATION_SOURCE_TEXT,
-    });
+    return this.createDraftFromExtraction(
+      userEmail,
+      await this.offers.offered(rawOfferText, sourceLabel),
+    );
   }
 
   /** Remembers the base profile used for this application (null resets to the default one). */
@@ -507,13 +332,10 @@ export class ApplicationsService {
         );
       }
 
-      extraction = await this.extractOffer(userEmail, application.offerUrl);
+      extraction = await this.offers.fromUrl(userEmail, application.offerUrl);
     } else if (source === APPLICATION_SOURCE_TEXT) {
       extraction = {
-        ...(await this.extractOfferFromText(
-          userEmail,
-          application.rawOfferText,
-        )),
+        ...(await this.offers.fromText(userEmail, application.rawOfferText)),
         ...describeSource(application.offerUrl),
         offerUrl: application.offerUrl,
       };
@@ -574,137 +396,4 @@ export class ApplicationsService {
 
     return draft;
   }
-
-  private async extractOffer(
-    userEmail: string,
-    rawUrl: string,
-  ): Promise<OfferExtractionResult> {
-    const offerUrl = normalizeOfferUrl(rawUrl);
-    const html = await this.fetchOfferHtml(offerUrl);
-    const offerText = extractVisibleTextFromHtml(html);
-
-    if (offerText.length < MIN_OFFER_TEXT_LENGTH) {
-      throw new UnprocessableEntityException(
-        "Le scraping a reussi mais le contenu recupere est insuffisant pour creer une candidature.",
-      );
-    }
-
-    const metadata = extractOfferMetadata(html);
-    const extracted = await this.extractWithCredits(userEmail, () =>
-      structureOffer(
-        this.openRouterService,
-        offerText,
-        metadata,
-        offerUrl,
-        APPLICATION_SOURCE_URL,
-      ),
-    );
-
-    return {
-      extracted,
-      offerText,
-      offerTextPreview: buildOfferPreview(offerText),
-      offerUrl,
-      sourceLabel: offerUrl,
-      sourceType: APPLICATION_SOURCE_URL,
-    };
-  }
-
-  private async extractOfferFromText(
-    userEmail: string,
-    rawOfferText: string,
-  ): Promise<OfferExtractionResult> {
-    const offerText = normalizeOfferText(rawOfferText);
-    const extracted = await this.extractWithCredits(userEmail, () =>
-      structureOffer(
-        this.openRouterService,
-        offerText,
-        {
-          description: buildOfferPreview(offerText, 320),
-          siteName: null,
-          title: null,
-        },
-        null,
-        APPLICATION_SOURCE_TEXT,
-      ),
-    );
-
-    return {
-      extracted,
-      offerText,
-      offerTextPreview: buildOfferPreview(offerText),
-      offerUrl: null,
-      sourceLabel: MANUAL_TEXT_SOURCE_LABEL,
-      sourceType: APPLICATION_SOURCE_TEXT,
-    };
-  }
-
-  private async fetchOfferHtml(offerUrl: string) {
-    let response: Response;
-
-    try {
-      response = await fetch(offerUrl, {
-        headers: {
-          Accept: "text/html,application/xhtml+xml",
-          "User-Agent":
-            "Mozilla/5.0 (compatible; CVforgeBot/1.0; +https://cvforge.app)",
-        },
-      });
-    } catch {
-      throw new BadGatewayException(
-        "Impossible de recuperer cette offre depuis l'URL fournie.",
-      );
-    }
-
-    if (!response.ok) {
-      throw new BadGatewayException(
-        "Le site cible a refuse ou interrompu la recuperation de l'offre.",
-      );
-    }
-
-    const html = await response.text();
-
-    if (!html.trim()) {
-      throw new UnprocessableEntityException(
-        "L'URL a repondu mais n'a fourni aucun contenu exploitable.",
-      );
-    }
-
-    return html;
-  }
-
-  /**
-   * Checks the balance up front so a broke user never triggers a paid call,
-   * but debits only once the extraction succeeded: a throttled provider used
-   * to burn the user's credits and still return an error.
-   */
-  private async extractWithCredits<T>(
-    userEmail: string,
-    extract: () => Promise<T>,
-  ): Promise<T> {
-    await this.creditsService.assertSufficientCredits(
-      AI_CREDIT_ACTION_OFFER_ENRICHMENT,
-      userEmail,
-    );
-
-    const extracted = await extract();
-
-    await this.creditsService.consumeCredits({
-      action: AI_CREDIT_ACTION_OFFER_ENRICHMENT,
-      userEmail,
-    });
-
-    return extracted;
-  }
-}
-
-function stripRawOfferText(application: StoredApplication): DraftApplication {
-  const {
-    rawOfferText: _rawOfferText,
-    cvContent: _cvContent,
-    letterContent: _letterContent,
-    ...draftApplication
-  } = application;
-
-  return draftApplication;
 }

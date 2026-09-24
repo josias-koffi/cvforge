@@ -1,11 +1,7 @@
 import { matchOfferKeywords } from "@cvforge/ats-score";
 import { publicError, type PublicKeywordMatchResponse } from "@cvforge/types";
-import {
-  BadRequestException,
-  Injectable,
-  UnprocessableEntityException,
-} from "@nestjs/common";
-import { assertScannableFile } from "../ats/ats.validation";
+import { Injectable, UnprocessableEntityException } from "@nestjs/common";
+import { acceptedOfferText, assertScannableFile } from "../ats/ats.validation";
 import {
   extractCvText,
   type CvSourceFile,
@@ -13,30 +9,11 @@ import {
 
 /** Below this there is nothing to compare, whatever the file claimed to be. */
 const MIN_CV_CHARS = 120;
-/** Enough for a real offer; a job title alone makes a meaningless comparison. */
-export const MIN_OFFER_CHARS = 200;
-/** Same cap as the lead intent that carries the offer to the app. */
-export const MAX_OFFER_CHARS = 8_000;
 
-export const OFFER_REQUIRED_MESSAGE =
-  "Collez le texte complet de l'offre (200 caracteres minimum).";
 export const OFFER_NOT_USABLE_MESSAGE =
   "Cette offre ne contient aucun terme exploitable pour la comparaison.";
 export const CV_NOT_ENOUGH_TEXT_MESSAGE =
   "Ce CV ne contient pas assez de texte exploitable pour etre compare.";
-
-/** The pasted offer, trimmed and bounded, or a 400 the visitor can act on. */
-export function acceptedOfferText(value: unknown): string {
-  const text = typeof value === "string" ? value.trim() : "";
-
-  if (text.length < MIN_OFFER_CHARS) {
-    throw new BadRequestException(
-      publicError("OFFER_TEXT_REQUIRED", OFFER_REQUIRED_MESSAGE),
-    );
-  }
-
-  return text.slice(0, MAX_OFFER_CHARS);
-}
 
 /**
  * The free CV ↔ offer comparator (US-136).

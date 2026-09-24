@@ -4,6 +4,7 @@ import {
   type ApplicationStatus,
   type ApplicationStatusHistoryEntry,
   type CVDocumentVersionEntry,
+  type DraftApplication,
   type InterviewReport,
   type LetterDocumentVersionEntry,
 } from "@cvforge/types";
@@ -225,4 +226,18 @@ export function normalizeLetterVersions(
       versionNumber: 1,
     },
   ];
+}
+
+/** What leaves the API: never the raw offer text nor the documents' bodies. */
+export function stripRawOfferText(
+  application: StoredApplication,
+): DraftApplication {
+  const {
+    rawOfferText: _rawOfferText,
+    cvContent: _cvContent,
+    letterContent: _letterContent,
+    ...draftApplication
+  } = application;
+
+  return draftApplication;
 }
