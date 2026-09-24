@@ -27,7 +27,15 @@ export interface ProfileCompetencesStore {
   dismiss(userEmail: string, profileId: string, code: string): Promise<boolean>;
   /** Drops what belonged to profiles the registry no longer has. */
   forgetOtherProfiles(userEmail: string, profileIds: string[]): Promise<void>;
+  /** Every row of the account, dismissed ones included: the RGPD export. */
+  exportByUserEmail(userEmail: string): Promise<ExportedProfileCompetence[]>;
 }
+
+/** One competence as the RGPD export gives it back. */
+export type ExportedProfileCompetence = Omit<
+  typeof profileRomeCompetences.$inferSelect,
+  "userEmail"
+>;
 
 export class PgProfileCompetencesStore implements ProfileCompetencesStore {
   constructor(private readonly db: Database) {}
@@ -59,6 +67,19 @@ export class PgProfileCompetencesStore implements ProfileCompetencesStore {
         desc(profileRomeCompetences.score),
         profileRomeCompetences.libelle,
       );
+  }
+
+  async exportByUserEmail(userEmail: string) {
+    const rows = await this.db
+      .select()
+      .from(profileRomeCompetences)
+      .where(eq(profileRomeCompetences.userEmail, userEmail))
+      .orderBy(
+        profileRomeCompetences.profileId,
+        profileRomeCompetences.competenceCode,
+      );
+
+    return rows.map(({ userEmail: _owner, ...row }) => row);
   }
 
   async fingerprint(userEmail: string, profileId: string) {

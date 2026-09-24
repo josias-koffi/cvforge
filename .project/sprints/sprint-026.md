@@ -267,7 +267,13 @@ Deux stories fondatrices passent donc **avant** le backlog ci-dessous. Elles son
       prenait les cinq places ;
     - le champ « Postes visés » avalait espaces et retours à la ligne pendant la frappe (défaut
       antérieur).
-    - Reste : exporter les appellations dans l'export RGPD.
+    - ~~Reste : exporter les appellations dans l'export RGPD.~~ **Fait le 2026-09-24**
+      ([[workflows/runs/developer-20260924190000]]).
+      - L'export RGPD contient `ownedSearchJobs`, soit toutes les appellations du compte, avec leur
+        statut (suggérée, confirmée ou écartée), leur score et leur source.
+      - Il contient aussi `ownedProfileCompetences`, les compétences ROME lues dans les CV, qui
+        n'étaient pas exportées non plus.
+      - Vérifié sur le compte local : 8 appellations et 22 compétences, identiques à la base.
 - [x] **[US-119]** `LaBonneBoiteSource` et la rubrique « Entreprises qui recrutent ».
   - Agent: `developer`
   - Critères d'acceptation *(précisés le 2026-09-24, d'après l'usage n°1 et le contrat de US-116)* :
@@ -373,3 +379,4 @@ Deux stories fondatrices passent donc **avant** le backlog ci-dessous. Elles son
 - 2026-09-24 — [[workflows/runs/developer-20260924160000|developer]] (US-117) — passed, décision : ne pas industrialiser
 - 2026-09-24 — [[workflows/runs/developer-20260924170000|developer]] (US-116) — passed, Pages employeurs débloquée par le support
 - 2026-09-24 — [[workflows/runs/developer-20260924180000|developer]] (US-116, suite) — passed, page employeur sur la fiche entreprise
+- 2026-09-24 — [[workflows/runs/developer-20260924190000|developer]] (US-118, reste) — passed, appellations dans l'export RGPD

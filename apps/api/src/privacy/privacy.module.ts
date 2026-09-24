@@ -25,6 +25,10 @@ import {
   NOTIFICATIONS_STORE,
   type NotificationsStore,
 } from "../notifications/notifications.types";
+import {
+  PROFILE_COMPETENCES_STORE,
+  type ProfileCompetencesStore,
+} from "../profiles/profile-competences.pg-store";
 import { ProfilesModule } from "../profiles/profiles.module";
 import { PROFILES_STORE, type ProfilesStore } from "../profiles/profiles.types";
 import { JobSearchModule } from "../job-search/job-search.module";
@@ -32,6 +36,10 @@ import {
   JOB_MATCHES_STORE,
   type JobMatchesStore,
 } from "../job-search/matches.types";
+import {
+  SEARCH_PROJECT_ROME_STORE,
+  type SearchProjectRomeStore,
+} from "../search-projects/search-project-rome.pg-store";
 import { SearchProjectsModule } from "../search-projects/search-projects.module";
 import {
   SEARCH_PROJECTS_STORE,
@@ -68,6 +76,8 @@ import { PrivacyService } from "./privacy.service";
         INTERVIEW_STORE,
         PgCreditOrdersStore,
         ADMIN_AUDIT_STORE,
+        SEARCH_PROJECT_ROME_STORE,
+        PROFILE_COMPETENCES_STORE,
       ],
       useFactory: (
         authStore: AuthAccountStore,
@@ -80,6 +90,8 @@ import { PrivacyService } from "./privacy.service";
         interviewStore: InterviewStore,
         creditOrdersStore: PgCreditOrdersStore,
         auditStore: AdminAuditStore,
+        searchJobsStore: SearchProjectRomeStore,
+        profileCompetencesStore: ProfileCompetencesStore,
       ) =>
         new PrivacyService(
           authStore,
@@ -92,6 +104,8 @@ import { PrivacyService } from "./privacy.service";
           interviewStore,
           creditOrdersStore,
           auditStore,
+          searchJobsStore,
+          profileCompetencesStore,
         ),
     },
   ],

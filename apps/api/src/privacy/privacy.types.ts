@@ -1,6 +1,8 @@
 import type { AuthExportSnapshot } from "../auth/auth.types";
 import type { StoredApplication } from "../applications/applications.types";
+import type { ExportedProfileCompetence } from "../profiles/profile-competences.pg-store";
 import type { StoredProfileRegistry } from "../profiles/profiles.types";
+import type { ExportedSearchJob } from "../search-projects/search-project-rome.pg-store";
 import type {
   CreditLedgerEntry,
   InAppNotification,
@@ -33,6 +35,10 @@ export type PrivacyExportPayload = {
   ownedCredits: CreditLedgerEntry[];
   ownedProfiles: StoredProfileRegistry | null;
   ownedSearchProjects: SearchProject[];
+  /** The ROME jobs of each search: suggested, confirmed or dismissed (US-118). */
+  ownedSearchJobs: ExportedSearchJob[];
+  /** The ROME competences read in each profile's CV, dismissed ones included. */
+  ownedProfileCompetences: ExportedProfileCompetence[];
   notifications: InAppNotification[];
   adminGrantReferences: CreditLedgerEntry[];
   retentionPolicy: PrivacyRetentionPolicy;

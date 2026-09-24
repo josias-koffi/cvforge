@@ -56,6 +56,6 @@ import {
       ) => new SearchProjectsService(store, profiles, rome),
     },
   ],
-  exports: [SEARCH_PROJECTS_STORE],
+  exports: [SEARCH_PROJECTS_STORE, SEARCH_PROJECT_ROME_STORE],
 })
 export class SearchProjectsModule {}

@@ -44,6 +44,6 @@ import { PROFILES_STORE, type ProfilesStore } from "./profiles.types";
       ) => new ProfilesService(store, competences),
     },
   ],
-  exports: [PROFILES_STORE],
+  exports: [PROFILES_STORE, PROFILE_COMPETENCES_STORE],
 })
 export class ProfilesModule {}

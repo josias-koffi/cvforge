@@ -12,6 +12,8 @@ import {
 import { PgNotificationsStore } from "../notifications/notifications.pg-store";
 import { PgProfilesStore } from "../profiles/profiles.pg-store";
 import { PgJobMatchesStore } from "../job-search/matches.pg-store";
+import { PgProfileCompetencesStore } from "../profiles/profile-competences.pg-store";
+import { PgSearchProjectRomeStore } from "../search-projects/search-project-rome.pg-store";
 import { PgSearchProjectsStore } from "../search-projects/search-projects.pg-store";
 import { createSellableOffer } from "../billing/testing/billing-fixtures";
 import { interviewChunks } from "../database/schema";
@@ -190,6 +192,8 @@ async function createService() {
       interviewStore,
       creditOrdersStore,
       auditStore,
+      new PgSearchProjectRomeStore(testDatabase.db),
+      new PgProfileCompetencesStore(testDatabase.db),
     ),
   };
 }

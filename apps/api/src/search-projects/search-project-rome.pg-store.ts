@@ -45,7 +45,15 @@ export interface SearchProjectRomeStore {
     profileId: string,
     code: string,
   ): Promise<SearchProjectRomeAppellation | null>;
+  /** Every row of the account, dismissed ones included: the RGPD export. */
+  exportByUserEmail(userEmail: string): Promise<ExportedSearchJob[]>;
 }
+
+/** One appellation as the RGPD export gives it back (US-118). */
+export type ExportedSearchJob = Omit<
+  typeof searchProjectRome.$inferSelect,
+  "userEmail"
+>;
 
 const VISIBLE_STATUSES: SearchProjectRomeStatus[] = ["confirmed", "suggested"];
 
@@ -58,6 +66,16 @@ export class PgSearchProjectRomeStore implements SearchProjectRomeStore {
       sql`${searchProjectRome.score} desc nulls last`,
       searchProjectRome.libelle,
     );
+  }
+
+  async exportByUserEmail(userEmail: string) {
+    const rows = await this.db
+      .select()
+      .from(searchProjectRome)
+      .where(eq(searchProjectRome.userEmail, userEmail))
+      .orderBy(searchProjectRome.profileId, searchProjectRome.appellationCode);
+
+    return rows.map(({ userEmail: _owner, ...row }) => row);
   }
 
   async findOne(userEmail: string, profileId: string, code: string) {

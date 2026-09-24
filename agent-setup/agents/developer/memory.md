@@ -1430,3 +1430,7 @@
 - **Context** : Pages employeurs est lue pendant la relecture mensuelle des entreprises. La fiche affiche le lien vers `recrute.francetravail.fr`, et 29 % des entreprises en ont une.
 - **Leçon** : pour une source ajoutée après coup à une relecture existante, une colonne `*_read_at` nulle rend les lignes dues dès l'activation, sans attendre l'échéance mensuelle.
 - **Leçon** : l'Annuaire des entreprises annonce 7 appels/s mais répond 429 à 5 appels/s. Rester à 2 appels/s.
+
+### 2026-09-24 — US-118 reste : appellations dans l'export RGPD (sprint-026)
+- **Context** : `search_project_rome` et `profile_rome_competences` étaient purgées à la suppression du compte, mais absentes de l'export. Elles y sont désormais (`ownedSearchJobs`, `ownedProfileCompetences`).
+- **Leçon** : chaque nouvelle table par utilisateur doit être ajoutée **à la purge et à l'export**. Le test « lignes résiduelles » de `privacy.service.test.ts` ne vérifie que la purge : un oubli dans l'export ne fait échouer aucun test.
