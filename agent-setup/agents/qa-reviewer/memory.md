@@ -484,3 +484,10 @@
 - **Why**: « Seules les entreprises en base » et « pas de contenu mince » se prouvent sur la vraie base après relecture.
 - **Learned**: Tester l'accord entre un filtre SQL et son jumeau TS, sinon sitemap et page divergent.
 - **Open**: sitemap à découper au-delà de 4 500 entreprises.
+
+## 2026-09-25 — US-141 review (stage 04 · [[workflows/runs/analyze-design-dev-review-20260925000215]])
+- **Context**: [[sprints/sprint-030#US-141]] · [[workflows/runs/analyze-design-dev-review-20260925000215/04-review]]
+- **Did**: Les 4 critères et la gate coût de la DoD sont vérifiés en test et sur l'API lancée (429, 503 + `Retry-After`, panne OpenRouter en 503), et le lead racheté bout en bout.
+- **Why**: Première route publique E23 qui dépense : le plafond doit être prouvé avant mise en ligne.
+- **Learned**: Deux 503 distincts (budget avec `Retry-After`, panne sans) : vérifier que la landing les formule différemment.
+- **Open**: Message `BUDGET_EXHAUSTED` générique « analyser vos CV » partagé par tous les outils ; pré-sélection `/entretiens/new` non vue au navigateur.

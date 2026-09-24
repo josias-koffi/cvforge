@@ -472,3 +472,10 @@
 - **Why**: Une page unique et utile sans texte inventé ; les blocs gardent leurs H3.
 - **Learned**: Une phrase par parties (secteur, effectif, création) évite le « inconnu ».
 - **Open**: none
+
+## 2026-09-25 — US-141 design (stage 02 · [[workflows/runs/analyze-design-dev-review-20260925000215]])
+- **Context**: [[sprints/sprint-030#US-141]] · [[workflows/runs/analyze-design-dev-review-20260925000215/02-design]]
+- **Did**: Page calquée sur le comparateur (textarea offre), résultat en liste ordonnée de 5 cartes (type, question, intention), CTA micro vers l'entretien vocal.
+- **Why**: Même geste que l'outil voisin ; le badge de type reste du texte.
+- **Learned**: Dire « probables » dès le sous-titre pour un contenu généré.
+- **Open**: none

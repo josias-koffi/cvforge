@@ -51,25 +51,27 @@ outil d'entretien qui mène vers l'entretien vocal.
     - [x] Pages ISR avec sources citées, sitemap, canonical et hreflang.
     - [x] Seules les entreprises déjà en base sont générées.
   - Décidé le 2026-09-24 : entreprises publiables (ni entrepreneur individuel ni diffusion partielle), ouvertes, avec au moins un fait au-delà du NAF ; plafond de 4 500 (ADR-022, amendement septies).
-- [ ] **[US-141]** Questions d'entretien probables
+- [x] **[US-141]** Questions d'entretien probables
   - Agent: `developer`
+  - Workflow: `analyze-design-dev-review`
   - Critères d'acceptation :
-    - [ ] Pour un texte d'offre : 5 questions, un appel LLM court via `OpenRouterService`, prompt
+    - [x] Pour un texte d'offre : 5 questions, un appel LLM court via `OpenRouterService`, prompt
           dérivé de `interview.prompts.ts`, sortie en schéma JSON strict.
-    - [ ] Budget global quotidien et limite par IP (US-132) ; budget épuisé ⇒ 503 avec
+    - [x] Budget global quotidien et limite par IP (US-132) ; budget épuisé ⇒ 503 avec
           `Retry-After`.
-    - [ ] Panne OpenRouter ⇒ message propre, jamais une 500.
-    - [ ] CTA « S'entraîner à l'oral avec un recruteur IA » → service lead.
+    - [x] Panne OpenRouter ⇒ message propre, jamais une 500.
+    - [x] CTA « S'entraîner à l'oral avec un recruteur IA » → service lead.
+  - Vérifié le 2026-09-25 : 3/h et 10/j par IP, 300/j global (ADR-022, amendement octies) ; 429 et 503 + `Retry-After` vus sur l'API lancée.
 
 Critères communs aux outils : voir `backlog.md`, « Critères d'acceptation détaillés — E23 ».
 
 ## 📊 Sprint DoD
 
-- [ ] All tasks ticked
+- [x] All tasks ticked
 - [ ] All acceptance criteria verified
 - [ ] `run-tests` green
 - [ ] QA review
-- [ ] Gate coût : budget global et limite par IP vérifiés sur la route LLM d'US-141 avant mise en
+- [x] Gate coût : budget global et limite par IP vérifiés sur la route LLM d'US-141 avant mise en
       ligne
 
 ## 🔁 Workflow Runs
@@ -77,3 +79,4 @@ Critères communs aux outils : voir `backlog.md`, « Critères d'acceptation dé
 - 2026-09-24 — [[workflows/runs/analyze-design-dev-review-20260924215644|analyze-design-dev-review]] (US-138) — passed
 - 2026-09-24 — [[workflows/runs/analyze-design-dev-review-20260924222645|analyze-design-dev-review]] (US-139) — passed
 - 2026-09-24 — [[workflows/runs/analyze-design-dev-review-20260924232418|analyze-design-dev-review]] (US-140) — passed
+- 2026-09-25 — [[workflows/runs/analyze-design-dev-review-20260925000215|analyze-design-dev-review]] (US-141) — passed

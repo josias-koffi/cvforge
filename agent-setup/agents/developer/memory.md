@@ -1541,3 +1541,15 @@
   - Un mock `fetch` qui renvoie la même `Response` à deux appels « passe » par accident (corps déjà lu) : rendre le mock sensible à l'URL.
   - Ni l'API ni la landing ne sont formatées par prettier à HEAD : ne formater que les nouveaux fichiers.
 - **Open**: none
+
+## 2026-09-25 — US-141 implement (stage 03 · [[workflows/runs/analyze-design-dev-review-20260925000215]])
+- **Context**: [[sprints/sprint-030#US-141]] · [[workflows/runs/analyze-design-dev-review-20260925000215/03-implement]]
+- **Did**: module `interview-questions` (un `chat` borné, `parseQuestions`, 503 `QUESTIONS_UNAVAILABLE`) ; politique `interview-questions` 3/h·10/j·300/j ; intention `interview` + `?candidature=recente` ; `readOfferLeadActivations(label)` ; `applications.service.ts` découpé (710 → 399 : `offer-input`, `offer-import`, `applications.kpi`) ; `OfferTextField` partagé.
+- **Why**: Seule route E23 qui coûte un appel modèle : budget avant tout, et aucune erreur fournisseur ne remonte en 500.
+- **Learned**:
+  - Un dev server de l'utilisateur tourne souvent sur 3101/3333 : lancer le sien sur 3102/3344 avec `NEXT_DIST_DIR` à part, puis restaurer `tsconfig.json` et `next-env.d.ts`.
+  - Couper le mail d'une instance de test : `SMTP_PROVIDER= SMTP_SERVER= …` vides (`loadEnvFile` n'écrase pas).
+  - Racheter un lien sans email : remplacer `token_hash` par le sha256 d'un jeton connu, puis `GET /auth/passwordless/consume`.
+  - Les 400 comptent dans le budget (middleware avant contrôleur) : pratique pour tester le 503 sans payer d'appels.
+  - `pkill -f` a encore tué le shell : tuer par PID via `ss -ltnp`.
+- **Open**: none

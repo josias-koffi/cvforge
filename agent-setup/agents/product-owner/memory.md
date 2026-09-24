@@ -516,3 +516,10 @@
 - **Why**: La table contient un entrepreneur individuel (nom d'une personne) : le statut n'était pas stocké, d'où une colonne `publishable`.
 - **Learned**: Avant d'indexer une donnée publique, vérifier qu'elle ne nomme pas une personne.
 - **Open**: none
+
+## 2026-09-25 — US-141 analyze (stage 01 · [[workflows/runs/analyze-design-dev-review-20260925000215]])
+- **Context**: [[sprints/sprint-030#US-141]] · [[workflows/runs/analyze-design-dev-review-20260925000215/01-analyze]]
+- **Did**: Outil cadré : offre seule → 5 questions (question, intention, type), un appel LLM borné, 3/h·10/j par IP et 300/j global ; lead `interview` → candidature créée + `/entretiens/new` pré-sélectionné.
+- **Why**: Sans CV, pas de donnée personnelle envoyée au modèle ; la candidature donne au recruteur IA l'offre comme contexte.
+- **Learned**: La panne LLM (503 sans `Retry-After`) et le budget épuisé (503 avec) sont deux codes distincts pour la landing.
+- **Open**: none

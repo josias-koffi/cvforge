@@ -180,3 +180,24 @@ Vérifié sur l'API lancée : 60 appels passent, le 61ᵉ reçoit un 429 avec `R
 `GET public/company-pages` et `GET public/company-pages/:siren` restent **hors rate limit**, comme `public/market-pages` (quinquies), et pour la même raison : c'est le serveur de la landing qui les appelle en ISR, toujours depuis la même adresse.
 
 Ces routes ne lisent que la copie de `companies`, `hiring_companies` et `market_stats`. Elles n'appellent ni l'Annuaire, ni Egapro, ni France Travail, et n'écrivent rien : aucun quota externe n'est en jeu, contrairement à `public/company-check`.
+
+## Amendement 2026-09-25 (octies) — questions d'entretien probables (US-141)
+
+Seule route publique d'E23 qui appelle un modèle. Deux politiques de plus, ajoutées par `freeToolPolicies` :
+- **`interview-questions`** (`POST public/interview-questions`) :
+  - 3 requêtes par heure et 10 par jour, par IP, comme le scan ATS ;
+  - budget global de 300 requêtes par jour, qui plafonne la facture quelle que soit la forme du trafic.
+
+  Un appel coûte un seul `chat` court : 900 jetons de sortie au plus, avec schéma JSON strict et `require_parameters`. Le budget est compté avant le contrôleur. Une requête refusée en 400 le consomme donc aussi, ce qui l'empêche d'être contourné par des requêtes invalides.
+
+  Variables facultatives : `PUBLIC_INTERVIEW_QUESTIONS_HOURLY_LIMIT`, `PUBLIC_INTERVIEW_QUESTIONS_DAILY_LIMIT` et `PUBLIC_INTERVIEW_QUESTIONS_DAILY_BUDGET`.
+- **`interview-questions-lead`** (`POST public/interview-questions/lead`) : 5 requêtes par heure et 20 par jour, par IP, sans budget global. Variables facultatives : `PUBLIC_INTERVIEW_QUESTIONS_LEAD_HOURLY_LIMIT` et `PUBLIC_INTERVIEW_QUESTIONS_LEAD_DAILY_LIMIT`.
+
+Budget épuisé : 503 `BUDGET_EXHAUSTED` avec `Retry-After`. Panne d'OpenRouter, délai dépassé ou réponse hors schéma : 503 `QUESTIONS_UNAVAILABLE`, sans `Retry-After`. Ce n'est jamais une 500.
+
+Comme les autres compteurs, celui-ci vit en mémoire : un redémarrage le remet à zéro. C'est accepté tant que l'API tourne sur un seul conteneur (voir plus haut).
+
+Vérifié sur l'API lancée le 2026-09-25 :
+- le 4ᵉ appel d'une même IP reçoit un 429 avec `Retry-After: 3600` ;
+- avec un budget abaissé à 6, le 7ᵉ appel reçoit un 503 avec `Retry-After` ;
+- avec OpenRouter injoignable, la réponse est un 503 `QUESTIONS_UNAVAILABLE`.
