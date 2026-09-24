@@ -154,6 +154,8 @@ interface Harness {
   chat: ReturnType<typeof vi.fn>;
   isStillOpen: ReturnType<typeof vi.fn>;
   romeAsked: Array<{ profileId: string; projectCodes: readonly string[] }>;
+  /** What the morning e-mail was given of the job market, per announcement. */
+  marketNotes: string[][];
   service: JobDigestService;
 }
 
@@ -185,6 +187,8 @@ function createService(
     creditsFail?: boolean;
     notificationFails?: boolean;
     alreadyAnnounced?: boolean;
+    /** What moved in the candidate's job market since yesterday (US-128). */
+    marketNotes?: string[];
     now?: number;
   } = {},
 ): Harness {
@@ -355,12 +359,15 @@ function createService(
   };
 
   const announced: Array<{ emailEnabled: boolean; totalCount: number }> = [];
+  const marketNotes: string[][] = [];
   const notifications = {
     sendJobDigestNotification: async (input: {
       emailEnabled: boolean;
       totalCount: number;
+      marketNotes: string[];
     }) => {
       if (options.notificationFails) throw new Error("SMTP en panne");
+      marketNotes.push(input.marketNotes);
       announced.push({
         emailEnabled: input.emailEnabled,
         totalCount: input.totalCount,
@@ -390,6 +397,7 @@ function createService(
     sourceRuns,
     searched,
     isStillOpen,
+    marketNotes,
     released,
     romeAsked,
     service: new JobDigestService(
@@ -406,6 +414,13 @@ function createService(
       { chat } as unknown as OpenRouterService,
       notifications,
       rome,
+      {
+        notesFor: async ({ since }) => {
+          // Since yesterday's run: a note is repeated once, not every morning.
+          expect(since.getTime()).toBe(now - 86_400_000);
+          return options.marketNotes ?? [];
+        },
+      },
       "https://app.cvforge.test",
       () => now,
     ),
@@ -749,6 +764,16 @@ describe("JobDigestService", () => {
       expect(harness.announced).toEqual([
         { emailEnabled: true, totalCount: 1 },
       ]);
+    });
+
+    it("adds what moved in the candidate's job market (US-128)", async () => {
+      const note =
+        "Développeur informatique en Loire-Atlantique : la difficulté de recruter passe de moyenne à élevée (ANNEE 2025).";
+      const harness = createService({ marketNotes: [note] });
+
+      await harness.service.run();
+
+      expect(harness.marketNotes).toEqual([[note]]);
     });
 
     it("passes on the candidate's choice about the e-mail", async () => {

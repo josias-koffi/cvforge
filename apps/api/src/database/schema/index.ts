@@ -11,6 +11,7 @@ export * from "./job-sources";
 export * from "./jobs";
 export * from "./job-matches";
 export * from "./legal";
+export * from "./market";
 export * from "./notifications";
 export * from "./profiles";
 export * from "./search-projects";

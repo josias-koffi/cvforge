@@ -30,6 +30,7 @@ const BASE_INPUT = {
     },
   ],
   preferencesUrl: "https://app.cvforge.fr/notifications",
+  marketNotes: [] as string[],
   to: "candidat@example.com",
   totalCount: 1,
 };
@@ -94,5 +95,19 @@ describe("sendJobDigestEmail", () => {
     });
 
     expect(sent[0]!.text).toContain("entreprise non communiquee");
+  });
+
+  it("adds the market changes with their source, and nothing when there are none (US-128)", async () => {
+    const { sent, service } = createMailer();
+    const note =
+      "Développeur informatique en Loire-Atlantique : offres en hausse, 2 910 sur douze mois contre 2 100 (1er trimestre 2026).";
+
+    await service.sendJobDigestEmail(BASE_INPUT);
+    await service.sendJobDigestEmail({ ...BASE_INPUT, marketNotes: [note] });
+
+    expect(sent[0]!.text).not.toContain("Le marché de votre métier");
+    expect(sent[1]!.text).toContain(`Le marché de votre métier :\n${note}`);
+    expect(sent[1]!.text).toContain("Source : Marché du travail, France Travail");
+    expect(sent[1]!.html).toContain("Source : Marché du travail, France Travail");
   });
 });

@@ -107,18 +107,24 @@ seulement de ses mots-clés. Chaque offre lui dit ce qu'il a déjà et ce qu'il 
       modèle qui désobéit) ;
     - « Postuler » n'a pas été essayé en direct (un crédit et deux appels au LLM).
 
-- [ ] **[US-128]** Radar marché sur « Ma recherche » et dans le digest
+- [x] **[US-128]** Radar marché sur « Ma recherche » et dans le digest
   - Agent: `developer`
   - Critères d'acceptation :
-    - [ ] API Marché du travail : tension, volume d'offres, demandeurs et salaires par code ROME et
+    - [x] API Marché du travail : tension, volume d'offres, demandeurs et salaires par code ROME et
           territoire. Table `market_stats` (migration `0031`), rafraîchie une fois par mois, jamais
           à l'affichage.
-    - [ ] Encart sur `/ma-recherche` : « Métier en tension dans votre département », « Salaire
+          — *2026-09-24 : fait (migration 0035), sauf les salaires : l'API n'en sert pas par ROME,
+          seulement par FAP. Médiane lue dans nos offres collectées, avec sa propre source. Écart validé par le PO le 2026-09-24.*
+    - [x] Encart sur `/ma-recherche` : « Métier en tension dans votre département », « Salaire
           médian observé », et le département voisin le plus porteur.
-    - [ ] Une ligne dans l'e-mail du matin quand un indicateur change de manière notable.
-    - [ ] Aucune donnée affichée sans sa période et sa source.
+          — *2026-09-24 : fait ; « voisin » veut dire ici la même région. Écart validé par le PO le 2026-09-24.*
+    - [x] Une ligne dans l'e-mail du matin quand un indicateur change de manière notable.
+    - [x] Aucune donnée affichée sans sa période et sa source.
   - À vérifier en direct : indicateurs réellement servis, granularité territoriale (département,
     bassin d'emploi, région), fraîcheur, et licence.
+    — *Vérifié le 2026-09-24 : DEP, REG, bassin, EPCI et commune ; offres et demandeurs au trimestre
+    (1er trimestre 2026, mis à jour en juin), tension à l'année (2025) ; salaires seulement par FAP.
+    Licence : non relue.*
 
 ## 📊 Sprint DoD
 
@@ -142,3 +148,5 @@ seulement de ses mots-clés. Chaque offre lui dit ce qu'il a déjà et ce qu'il 
 - 2026-09-24 — [[workflows/runs/developer-20260924085500|developer]] (US-125) — passed
 - 2026-09-24 — [[workflows/runs/developer-20260924100500|developer]] (US-126) — passed
 - 2026-09-24 — [[workflows/runs/developer-20260924110500|developer]] (US-127) — passed
+- 2026-09-24 — [[workflows/runs/developer-20260924120000|developer]] (US-128) — blocked (API Marché du travail non souscrite)
+- 2026-09-24 — [[workflows/runs/developer-20260924121500|developer]] (US-128) — passed, écarts validés (salaires, voisin)

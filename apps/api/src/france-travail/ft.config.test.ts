@@ -106,6 +106,7 @@ describe("isFtApiId", () => {
   it("accepts catalogue ids only", () => {
     expect(isFtApiId("romeo")).toBe(true);
     expect(isFtApiId("ROMEO")).toBe(false);
-    expect(isFtApiId("marche-travail")).toBe(false);
+    expect(isFtApiId("marche-travail")).toBe(true);
+    expect(isFtApiId("marche")).toBe(false);
   });
 });

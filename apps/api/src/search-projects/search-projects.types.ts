@@ -28,6 +28,8 @@ export type SearchProjectsStore = {
   listAll(): Promise<
     Array<{ userEmail: string; project: SearchProject; romeCodes: string[] }>
   >;
+  /** The métier codes of the ROME jobs one search confirmed (US-128). */
+  findRomeCodes(userEmail: string, profileId: string): Promise<string[]>;
   save(userEmail: string, project: SearchProject): Promise<SearchProject>;
   deleteByUserEmail(userEmail: string): Promise<number>;
 };

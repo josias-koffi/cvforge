@@ -75,6 +75,12 @@ export class PgSearchProjectsStore implements SearchProjectsStore {
     return this.withRomeCodes(await this.db.select().from(searchProjects));
   }
 
+  async findRomeCodes(userEmail: string, profileId: string) {
+    const romeCodes = await this.confirmedRomeCodes({ profileId, userEmail });
+
+    return [...(romeCodes.get(ownerKey(userEmail, profileId)) ?? [])];
+  }
+
   private async withRomeCodes(rows: Array<typeof searchProjects.$inferSelect>) {
     const romeCodes = await this.confirmedRomeCodes();
 
@@ -88,11 +94,14 @@ export class PgSearchProjectsStore implements SearchProjectsStore {
   }
 
   /**
-   * The métier of every confirmed appellation, one read for all searches. The
-   * referential's current métier wins over the snapshot, so a job France
-   * Travail moved is queried where it now lives.
+   * The métier of every confirmed appellation, one read for all searches —
+   * or for one owner's. The referential's current métier wins over the
+   * snapshot, so a job France Travail moved is queried where it now lives.
    */
-  private async confirmedRomeCodes(): Promise<Map<string, Set<string>>> {
+  private async confirmedRomeCodes(owner?: {
+    userEmail: string;
+    profileId: string;
+  }): Promise<Map<string, Set<string>>> {
     const rows = await this.db
       .select({
         metierCode: sql<string>`coalesce(${romeAppellations.metierCode}, ${searchProjectRome.metierCode})`,
@@ -104,7 +113,13 @@ export class PgSearchProjectsStore implements SearchProjectsStore {
         romeAppellations,
         eq(romeAppellations.code, searchProjectRome.appellationCode),
       )
-      .where(eq(searchProjectRome.status, "confirmed"));
+      .where(
+        and(
+          eq(searchProjectRome.status, "confirmed"),
+          owner && eq(searchProjectRome.userEmail, owner.userEmail),
+          owner && eq(searchProjectRome.profileId, owner.profileId),
+        ),
+      );
     const byOwner = new Map<string, Set<string>>();
 
     for (const row of rows) {

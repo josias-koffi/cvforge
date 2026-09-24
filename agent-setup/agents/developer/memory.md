@@ -1366,3 +1366,10 @@
 - Jauge : remplissage CSS (`gauge-fill`, part de `--gauge-from`) + compteur `motion` ; le SSR garde les valeurs finales (tests SSR inchangés).
 - `UnlockedReport` extrait dans `unlocked-report.tsx` (barres `bar-fill`, icônes par sévérité), `bandFor` dupliqué depuis @cvforge/ats-score (landing n'en dépend pas).
 - Piège : l'API limite les scans par IP en local ; pour tester l'animation, mocker `/api/ats-scan` (Playwright `page.route`, Chrome système via `executablePath`). Un onglet Claude-in-Chrome en arrière-plan ne fait pas tourner rAF.
+
+### 2026-09-24 — US-128 : radar marché (stage 01 · [[workflows/runs/developer-20260924121500]])
+- **Context** : [[sprints/sprint-027#US-128]] · [[workflows/runs/developer-20260924121500/01-developer]]
+- **Leçon** : l'API Marché du travail se découvre par ses référentiels (`GET /referentiel/indicateurs`, `nomenclatures`, `activites`, `territoires`) ; chaque indicateur exige son `codeTypeNomenclature` (TYPE_TENSION, ORIGINEOFF, CATCAND…), sinon 400 « nomenclature non disponible ».
+- **Leçon** : « pas de donnée » arrive en 500 « n'a pas pu trouver la liste » ou en 200 sans `listeValeursParPeriode` : ce n'est pas une panne ; une vraie panne garde les chiffres du mois d'avant.
+- **Leçon** : pas de salaire par ROME dans cette API (FAP seulement, sans table ROME→FAP accessible) ; médiane sur nos offres, avec sa propre source.
+- **Leçon** : en zsh, `set -- $var` ne découpe pas les mots ; utiliser `${=var}`, sinon les sondes envoient des corps faux et on accuse l'API.

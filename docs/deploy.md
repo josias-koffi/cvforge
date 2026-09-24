@@ -85,6 +85,11 @@ Terraform default), the API copies the ROME 4.0 referential into `rome_*` once
 a week by itself, in three calls. The first copy can be forced right after a
 deploy with `rome:sync:built`; a failed sync keeps the previous copy.
 
+With `marche-travail` enabled, the API reads the labour market figures of every
+confirmed ROME job in each department of the searches (and the other
+departments of their region) into `market_stats`, once a month, forty reads an
+hour. `market:refresh:built` fills it right after a deploy.
+
 Optional too: `LA_BONNE_ALTERNANCE_API_KEY`, a key created on
 <https://api.apprentissage.beta.gouv.fr>. It adds apprenticeship offers, and is
 only called for searches that ask for an alternance. A *sandbox* key is granted

@@ -244,6 +244,8 @@ export class NotificationsService {
       reason: string;
     }>;
     totalCount: number;
+    /** What moved in the candidate's job market this month (US-128). */
+    marketNotes?: string[];
     emailEnabled: boolean;
     digestUrl: string;
     preferencesUrl: string;
@@ -269,6 +271,7 @@ export class NotificationsService {
     if (input.emailEnabled && preferences.email.jobDigest) {
       await this.notificationsMailer.sendJobDigestEmail({
         digestUrl: input.digestUrl,
+        marketNotes: input.marketNotes ?? [],
         offers: input.offers,
         preferencesUrl: input.preferencesUrl,
         to: input.userEmail,

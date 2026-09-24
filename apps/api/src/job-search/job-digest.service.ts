@@ -22,11 +22,13 @@ import type {
 } from "./rome-matching.pg-reader";
 import { JobCollector } from "./job-collector";
 import {
+  digestNotification,
   keepLiveOnly,
   rerankSelection,
   toNewMatches,
   type DigestStats,
 } from "./job-digest.steps";
+import type { MarketNotesReader } from "../market/market-stats.service";
 import { dateInParis, hourInParis } from "./paris-time";
 import {
   DEFAULT_SELECTION_SIZE,
@@ -62,9 +64,6 @@ const CANDIDATE_WINDOW_DAYS = 31;
 const CANDIDATE_POOL_SIZE = 500;
 const MS_PER_DAY = 86_400_000;
 
-/** Offers named in the e-mail; the rest are one click away. */
-const EMAIL_PREVIEW_SIZE = 5;
-
 @Injectable()
 export class JobDigestService implements OnModuleInit {
   private readonly logger = new Logger(JobDigestService.name);
@@ -88,6 +87,7 @@ export class JobDigestService implements OnModuleInit {
     private readonly openRouter: OpenRouterService,
     private readonly notifications: NotificationsService,
     private readonly rome: RomeMatchingReader,
+    private readonly market: MarketNotesReader,
     private readonly appUrl: string,
     private readonly now: () => number = Date.now,
   ) {
@@ -299,45 +299,33 @@ export class JobDigestService implements OnModuleInit {
   }
 
   /**
-   * The announcement. It never fails the run: a candidate whose e-mail bounces
-   * still has their offers waiting on the page.
+   * The announcement, with what moved in the candidate's job market (US-128).
+   * It never fails the run: a candidate whose e-mail bounces still has their
+   * offers waiting on the page.
    */
   private async announce(
-    entry: { userEmail: string; project: SearchProject },
+    entry: { userEmail: string; project: SearchProject; romeCodes: string[] },
     runDate: string,
     live: ScoredJob[],
     ranked: Array<{ id: string; rank: number; reason: string }> | null,
     stats: DigestStats,
   ): Promise<void> {
-    const reasons = new Map(
-      ranked?.map((item) => [item.id, item.reason]) ?? [],
-    );
-    const ordered = ranked
-      ? [...live].sort(
-          (left, right) =>
-            (ranked.find((item) => item.id === left.job.id)?.rank ?? 99) -
-            (ranked.find((item) => item.id === right.job.id)?.rank ?? 99),
-        )
-      : live;
-
     try {
-      const sent = await this.notifications.sendJobDigestNotification({
-        digestDate: runDate,
-        digestUrl: `${this.appUrl}/offres-du-jour`,
-        emailEnabled: entry.project.emailEnabled,
-        offers: ordered.slice(0, EMAIL_PREVIEW_SIZE).map((scored) => ({
-          companyName: scored.job.companyAnonymous
-            ? ""
-            : scored.job.companyName,
-          locationLabel: scored.job.locationLabel,
-          reason: reasons.get(scored.job.id) ?? "",
-          score: scored.score,
-          title: scored.job.title,
-        })),
-        preferencesUrl: `${this.appUrl}/notifications`,
-        totalCount: live.length,
-        userEmail: entry.userEmail,
+      const marketNotes = await this.market.notesFor({
+        project: entry.project,
+        romeCodes: entry.romeCodes,
+        since: new Date(this.now() - MS_PER_DAY),
       });
+      const sent = await this.notifications.sendJobDigestNotification(
+        digestNotification({
+          appUrl: this.appUrl,
+          entry,
+          live,
+          marketNotes,
+          ranked,
+          runDate,
+        }),
+      );
 
       if (sent) stats.notificationsSent += 1;
     } catch (error) {

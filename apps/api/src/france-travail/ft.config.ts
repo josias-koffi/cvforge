@@ -3,8 +3,8 @@
  *
  * Each API has its own OAuth scope and its own quota. `verified: true` means
  * `ft:smoke <api>` got a real answer with this scope, path and payload
- * (2026-09-23, 2026-09-24 for La Bonne Boîte and ROME Substitutions). Quotas
- * outside Offres d'emploi are
+ * (2026-09-23, 2026-09-24 for La Bonne Boîte, ROME Substitutions and
+ * Marché du travail). Quotas outside Offres d'emploi are
  * still unknown. A wrong scope is not an exception here, it is `invalid_scope`
  * at token time — which is why each one can be overridden from the
  * environment without a release.
@@ -22,7 +22,8 @@ export type FtApiId =
   | "rome-competences"
   | "rome-fiches-metiers"
   | "rome-substitutions"
-  | "la-bonne-boite";
+  | "la-bonne-boite"
+  | "marche-travail";
 
 /** A read-only call `ft:smoke` makes to prove the scope, the path and the payload. */
 export interface FtSmokeCall {
@@ -127,6 +128,27 @@ export const FT_APIS: Record<FtApiId, FtApiDefinition> = {
       method: "GET",
       path: "/recherche",
       query: { rome: "M1805", citycode: "44109" },
+    },
+  },
+  "marche-travail": {
+    label: "Marché du travail",
+    baseUrl: `${FT_API_ROOT}/stats-offres-demandes-emploi/v1`,
+    scope: "api_stats-offres-demandes-emploiv1 offresetdemandesemploi",
+    requestsPerSecond: UNKNOWN_QUOTA_RPS,
+    verified: true,
+    smoke: {
+      method: "POST",
+      path: "/indicateur/stat-perspective-employeur",
+      // Read live on 2026-09-24: the tension of one métier in one department,
+      // one line per year and per axis (`PERSPECTIVE` is the main one).
+      body: {
+        codeActivite: "M1805",
+        codeTerritoire: "44",
+        codeTypeActivite: "ROME",
+        codeTypeNomenclature: "TYPE_TENSION",
+        codeTypePeriode: "ANNEE",
+        codeTypeTerritoire: "DEP",
+      },
     },
   },
 };

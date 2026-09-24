@@ -3,6 +3,7 @@ import type { Locale } from "./locale";
 export * from "./documents";
 export * from "./grounding";
 export * from "./locale";
+export * from "./market";
 export * from "./profile";
 export * from "./rome";
 export * from "./search-project";

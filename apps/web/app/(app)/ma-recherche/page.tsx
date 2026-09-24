@@ -2,10 +2,12 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { SparklesIcon } from "lucide-react"
 
+import { MarketRadar } from "@/components/job-search/market-radar"
 import { ProfileCompetences } from "@/components/job-search/profile-competences"
 import { SearchProjectForm } from "@/components/job-search/search-project-form"
 import { PageHeader } from "@/components/layout/page-header"
 import { Button } from "@/components/ui/button"
+import { loadMarketRadar } from "@/lib/market"
 import { loadRegistry } from "@/lib/profile"
 import { loadProfileCompetences } from "@/lib/profile-competences"
 import { pickProfile } from "@/lib/profile-model"
@@ -31,9 +33,10 @@ export default async function SearchProjectPage(
     registry,
     typeof profileId === "string" ? profileId : undefined
   )
-  const [{ searchProject, rome }, competences] = await Promise.all([
+  const [{ searchProject, rome }, competences, market] = await Promise.all([
     loadSearchProject(selected.id),
     loadProfileCompetences(selected.id),
+    loadMarketRadar(selected.id),
   ])
 
   return (
@@ -81,6 +84,9 @@ export default async function SearchProjectPage(
             profileId={selected.id}
             initialCompetences={competences}
           />
+        </div>
+        <div className="mt-6">
+          <MarketRadar entries={market} />
         </div>
       </div>
     </>

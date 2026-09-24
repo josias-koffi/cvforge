@@ -170,3 +170,41 @@ export function toNewMatches(input: {
     };
   });
 }
+
+/** Offers named in the e-mail; the rest are one click away. */
+const EMAIL_PREVIEW_SIZE = 5;
+
+/** The morning notification: the AI's order when it ran, the score's otherwise. */
+export function digestNotification(input: {
+  appUrl: string;
+  entry: { userEmail: string; project: SearchProject };
+  live: ScoredJob[];
+  marketNotes: string[];
+  ranked: Array<{ id: string; rank: number; reason: string }> | null;
+  runDate: string;
+}) {
+  const { entry, live, ranked } = input;
+  const reasons = new Map(ranked?.map((item) => [item.id, item.reason]) ?? []);
+  const rankOf = (scored: ScoredJob) =>
+    ranked?.find((item) => item.id === scored.job.id)?.rank ?? 99;
+  const ordered = ranked
+    ? [...live].sort((left, right) => rankOf(left) - rankOf(right))
+    : live;
+
+  return {
+    digestDate: input.runDate,
+    digestUrl: `${input.appUrl}/offres-du-jour`,
+    emailEnabled: entry.project.emailEnabled,
+    marketNotes: input.marketNotes,
+    offers: ordered.slice(0, EMAIL_PREVIEW_SIZE).map((scored) => ({
+      companyName: scored.job.companyAnonymous ? "" : scored.job.companyName,
+      locationLabel: scored.job.locationLabel,
+      reason: reasons.get(scored.job.id) ?? "",
+      score: scored.score,
+      title: scored.job.title,
+    })),
+    preferencesUrl: `${input.appUrl}/notifications`,
+    totalCount: live.length,
+    userEmail: entry.userEmail,
+  };
+}

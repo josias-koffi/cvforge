@@ -1,3 +1,4 @@
+import { MARKET_SOURCE_LABEL } from "@cvforge/types";
 import {
   Inject,
   Injectable,
@@ -37,6 +38,8 @@ type JobDigestEmailInput = {
     reason: string;
   }>;
   totalCount: number;
+  /** One line per notable market change, each with its period (US-128). */
+  marketNotes: string[];
   digestUrl: string;
   preferencesUrl: string;
   to: string;
@@ -120,6 +123,10 @@ export class NotificationsMailerService {
         ),
         "</ul>",
         remaining > 0 ? `<p>Et ${remaining} autre(s) dans l'application.</p>` : "",
+        input.marketNotes.length > 0
+          ? `<p><strong>Le marché de votre métier</strong><br />${input.marketNotes.map(escapeHtml).join("<br />")}` +
+            `<br /><span style="font-size:12px;color:#666">${escapeHtml(MARKET_SOURCE_LABEL)}</span></p>`
+          : "",
         `<p><a href="${input.digestUrl}">Voir mes offres du jour</a></p>`,
         `<p style="font-size:12px;color:#666">Vous ne voulez plus de cet e-mail ? <a href="${input.preferencesUrl}">Desactivez-le ici</a> ; les offres restent visibles dans l'application.</p>`,
       ].join(""),
@@ -133,6 +140,9 @@ export class NotificationsMailerService {
         "",
         // Only this line is conditional; the blank lines above are the layout.
         ...(remaining > 0 ? [`Et ${remaining} autre(s) dans l'application.`, ""] : []),
+        ...(input.marketNotes.length > 0
+          ? ["Le marché de votre métier :", ...input.marketNotes, MARKET_SOURCE_LABEL, ""]
+          : []),
         `Voir mes offres du jour : ${input.digestUrl}`,
         "",
         `Ne plus recevoir cet e-mail : ${input.preferencesUrl}`,

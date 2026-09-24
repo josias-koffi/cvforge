@@ -11,6 +11,8 @@ import { AuthModule } from "../auth/auth.module";
 import { resolveAuthConfig } from "../auth/auth.config";
 import { CreditsModule } from "../credits/credits.module";
 import { CreditsService } from "../credits/credits.service";
+import { MarketModule } from "../market/market.module";
+import { MarketStatsService } from "../market/market-stats.service";
 import { NotificationsModule } from "../notifications/notifications.module";
 import { NotificationsService } from "../notifications/notifications.service";
 import { ProfilesModule } from "../profiles/profiles.module";
@@ -70,6 +72,7 @@ import {
     AuthModule,
     CreditsModule,
     FranceTravailModule,
+    MarketModule,
     NotificationsModule,
     OpenRouterModule,
     ProfilesModule,
@@ -170,6 +173,7 @@ import {
         NotificationsService,
         JOB_SOURCE_ADAPTERS,
         ROME_MATCHING_READER,
+        MarketStatsService,
       ],
       useFactory: (
         searchProjects: SearchProjectsStore,
@@ -185,6 +189,7 @@ import {
         notifications: NotificationsService,
         adapters: JobSourceAdapter[],
         rome: RomeMatchingReader,
+        market: MarketStatsService,
       ) =>
         new JobDigestService(
           searchProjects,
@@ -200,6 +205,7 @@ import {
           openRouter,
           notifications,
           rome,
+          market,
           // Same source as the magic links, so both point at the same app.
           resolveAuthConfig(process.env).appUrl,
         ),
