@@ -67,6 +67,9 @@ const nextConfig: NextConfig = {
       // And for the job market tool.
       { source: "/fr/job-market", destination: "/fr/metier-recrute", permanent: true },
       { source: "/en/metier-recrute", destination: "/en/job-market", permanent: true },
+      // Its job × department pages (US-138), under the same slugs.
+      { source: "/fr/job-market/:path+", destination: "/fr/metier-recrute/:path+", permanent: true },
+      { source: "/en/metier-recrute/:path+", destination: "/en/job-market/:path+", permanent: true },
       ...legalRedirects(),
     ]
   },
@@ -77,6 +80,7 @@ const nextConfig: NextConfig = {
       { source: "/fr/outils", destination: "/fr/tools" },
       { source: "/fr/comparateur-cv-offre", destination: "/fr/cv-job-match" },
       { source: "/fr/metier-recrute", destination: "/fr/job-market" },
+      { source: "/fr/metier-recrute/:path+", destination: "/fr/job-market/:path+" },
     ]
   },
 }

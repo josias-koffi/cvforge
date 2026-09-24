@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs"
 import path from "node:path"
 
-import { describe, expect, it } from "vitest"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 import sitemap from "@/app/sitemap"
 import { en } from "@/content/en"
@@ -74,8 +74,18 @@ describe("freeTools", () => {
 })
 
 describe("sitemap", () => {
-  it("declares the hub in every language, with its alternates", () => {
-    const entries = sitemap()
+  // The job × department pages come from the API; unreachable here, so the
+  // sitemap holds the static pages only.
+  beforeEach(() => {
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("offline")))
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it("declares the hub in every language, with its alternates", async () => {
+    const entries = await sitemap()
 
     for (const locale of locales) {
       const entry = entries.find(({ url }) => url.endsWith(toolsPath(locale)))
@@ -89,8 +99,10 @@ describe("sitemap", () => {
 })
 
 describe("sitemap and the free tools", () => {
-  it("declares every live tool in both languages", () => {
-    const urls = sitemap().map(({ url }) => url)
+  it("declares every live tool in both languages", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("offline")))
+    const urls = (await sitemap()).map(({ url }) => url)
+    vi.unstubAllGlobals()
 
     for (const tool of freeTools) {
       for (const locale of locales) {

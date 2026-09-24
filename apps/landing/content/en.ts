@@ -534,7 +534,7 @@ export const en: LandingDictionary = {
     form: {
       jobLabel: "Job",
       jobHint: "Type at least 2 letters, then pick from the list. Job titles are in French.",
-      jobPlaceholder: "E.g. comptable, développeur web, aide-soignant…",
+      jobPlaceholder: "E.g. comptable, développeur web…",
       searching: "Looking for jobs…",
       noMatch: "No job matches. Try another word.",
       suggestions: "{count} jobs suggested",
@@ -602,6 +602,22 @@ export const en: LandingDictionary = {
       success: "Check your inbox",
       successBody:
         "The sign-in link opens your account, with your search already set up.",
+    },
+    page: {
+      metaTitle: "{job}, {department}: is this job hiring?",
+      metaDescription:
+        "{job} ({department}, France): hiring difficulty, openings over twelve months, job seekers and median salary. France Travail figures, updated monthly.",
+      title: "{job}, {department}: is this job hiring?",
+      breadcrumbLabel: "Breadcrumb",
+      summary:
+        "Hiring difficulty at level {level} of 5 according to France Travail ({period}), and {offers} openings published over the last twelve months.",
+      summaryJobseekers:
+        "{count} category A job seekers are looking for this job ({period}).",
+      figuresTitle: "Market figures",
+      appellationsTitle: "Job titles this job covers",
+      neighboursTitle: "The same job elsewhere in the region",
+      otherJobsTitle: "Other jobs in this département",
+      toolLink: "Look up another job or another département",
     },
   },
   keywordMatch: {

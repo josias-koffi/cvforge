@@ -1,25 +1,17 @@
 "use client"
 
-import { forwardRef, useState } from "react"
-import {
-  HourglassIcon,
-  MailCheckIcon,
-  RotateCcwIcon,
-  SendIcon,
-  SunriseIcon,
-} from "lucide-react"
+import { forwardRef } from "react"
+import { HourglassIcon, RotateCcwIcon } from "lucide-react"
 import type { PublicJobMarketResponse } from "@cvforge/types"
 
-import { EmailConsentForm } from "@/components/ats/email-consent-form"
 import {
   MarketFigures,
   TensionGauge,
 } from "@/components/job-market/job-market-figures"
+import { JobMarketLeadCta } from "@/components/job-market/job-market-lead-cta"
 import { Button } from "@/components/ui/button"
 import type { LandingDictionary } from "@/content/types"
-import { scanErrorMessage } from "@/lib/ats-client"
 import { format } from "@/lib/i18n"
-import { postJobMarketLead } from "@/lib/job-market-client"
 
 type Dictionary = LandingDictionary["jobMarket"]
 
@@ -42,8 +34,6 @@ export const JobMarketResult = forwardRef<
   { dictionary, errors, result, locale, onCtaClick, onLeadSent, onRestart },
   ref
 ) {
-  const [leadOpen, setLeadOpen] = useState(false)
-  const [leadSent, setLeadSent] = useState(false)
   const { appellation } = result
   const text = dictionary.result
 
@@ -109,56 +99,14 @@ export const JobMarketResult = forwardRef<
         </div>
       </div>
 
-      <section className="rounded-2xl border bg-card p-6 shadow-raised md:p-8">
-        <h2 className="text-lg font-medium">{dictionary.cta.title}</h2>
-        {leadSent ? (
-          <div className="mt-3 flex items-start gap-3" role="status">
-            <MailCheckIcon
-              aria-hidden="true"
-              className="mt-0.5 size-5 shrink-0 text-success"
-            />
-            <div>
-              <p className="font-medium">{dictionary.lead.success}</p>
-              <p className="text-sm text-muted-foreground">
-                {dictionary.lead.successBody}
-              </p>
-            </div>
-          </div>
-        ) : leadOpen ? (
-          <EmailConsentForm
-            errorMessage={(error) => scanErrorMessage(error, errors)}
-            icon={<SendIcon />}
-            labels={dictionary.lead}
-            onSubmit={async (email, consent) => {
-              await postJobMarketLead(
-                email,
-                consent,
-                appellation.code,
-                result.department
-              )
-              setLeadSent(true)
-              onLeadSent()
-            }}
-          />
-        ) : (
-          <>
-            <p className="mt-2 text-muted-foreground">{dictionary.cta.body}</p>
-            <Button
-              className="mt-4 h-auto min-h-11 w-full text-base whitespace-normal"
-              onClick={() => {
-                setLeadOpen(true)
-                onCtaClick()
-              }}
-              size="lg"
-              type="button"
-              variant="spark"
-            >
-              <SunriseIcon />
-              {dictionary.cta.button}
-            </Button>
-          </>
-        )}
-      </section>
+      <JobMarketLeadCta
+        appellationCode={appellation.code}
+        department={result.department}
+        dictionary={dictionary}
+        errors={errors}
+        onCtaClick={onCtaClick}
+        onLeadSent={onLeadSent}
+      />
 
       <Button
         className="self-center"

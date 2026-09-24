@@ -351,6 +351,22 @@ export interface LandingDictionary {
       success: string
       successBody: string
     }
+    /** The job × department pages (US-138). `{job}`, `{department}` everywhere. */
+    page: {
+      metaTitle: string
+      metaDescription: string
+      title: string
+      breadcrumbLabel: string
+      /** "{level}", "{period}", "{offers}" */
+      summary: string
+      /** "{count}", "{period}" */
+      summaryJobseekers: string
+      figuresTitle: string
+      appellationsTitle: string
+      neighboursTitle: string
+      otherJobsTitle: string
+      toolLink: string
+    }
   }
   /**
    * The free CV ↔ offer comparator (US-136). The drop zone reuses the ATS

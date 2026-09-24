@@ -1,4 +1,4 @@
-import type { PublicCreditOffer } from "@cvforge/types"
+import type { PublicCreditOffer, PublicMarketPage } from "@cvforge/types"
 
 import type { LandingDictionary } from "@/content/types"
 import { homePath, type Locale } from "@/lib/i18n"
@@ -108,6 +108,70 @@ export function toolsStructuredData({
         publisher: { "@id": `${base}/#organization` },
       },
     })),
+  }
+}
+
+/**
+ * schema.org graph of a job × department page (US-138): where it sits, and
+ * the figures as a dataset whose creator is France Travail — the source the
+ * page cites, said to search engines too.
+ */
+export function marketPageStructuredData({
+  base,
+  locale,
+  page,
+  title,
+  description,
+  crumbs,
+}: {
+  base: string
+  locale: Locale
+  page: PublicMarketPage
+  title: string
+  description: string
+  /** Name and path of each level, the page itself last. */
+  crumbs: Array<{ name: string; path: string }>
+}) {
+  const url = `${base}${crumbs[crumbs.length - 1]!.path}`
+
+  return {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "BreadcrumbList",
+        itemListElement: crumbs.map(({ name, path }, index) => ({
+          "@type": "ListItem",
+          position: index + 1,
+          name,
+          item: `${base}${path}`,
+        })),
+      },
+      {
+        "@type": "Dataset",
+        name: title,
+        description,
+        url,
+        inLanguage: locale,
+        isAccessibleForFree: true,
+        dateModified: page.refreshedAt,
+        creator: {
+          "@type": "Organization",
+          name: "France Travail",
+          url: "https://www.francetravail.fr",
+        },
+        publisher: { "@id": `${base}/#organization` },
+        spatialCoverage: {
+          "@type": "Place",
+          name: `${page.departmentLabel} (${page.department}), France`,
+        },
+        variableMeasured: [
+          "Tension (1-5)",
+          "Offres publiées",
+          "Demandeurs d'emploi (catégorie A)",
+          "Salaire médian proposé",
+        ],
+      },
+    ],
   }
 }
 

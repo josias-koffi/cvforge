@@ -542,7 +542,7 @@ export const fr: LandingDictionary = {
     form: {
       jobLabel: "Métier",
       jobHint: "Tapez au moins 2 lettres, puis choisissez dans la liste.",
-      jobPlaceholder: "Ex. : comptable, développeur web, aide-soignant…",
+      jobPlaceholder: "Ex. : comptable, développeur web…",
       searching: "Recherche des métiers…",
       noMatch: "Aucun métier ne correspond. Essayez un autre mot.",
       suggestions: "{count} métiers proposés",
@@ -554,7 +554,7 @@ export const fr: LandingDictionary = {
         "Aucun compte, aucune donnée personnelle : seuls le métier et le département sont envoyés.",
     },
     result: {
-      title: "{job} en {department}",
+      title: "{job}, {department}",
       romeNote: "Chiffres du métier ROME {code} : {label}",
       tension: {
         title: "Difficulté de recruter",
@@ -610,6 +610,22 @@ export const fr: LandingDictionary = {
       success: "Vérifiez votre boîte mail",
       successBody:
         "Le lien de connexion ouvre votre compte, avec votre recherche déjà prête.",
+    },
+    page: {
+      metaTitle: "{job}, {department} : le métier recrute-t-il ?",
+      metaDescription:
+        "{job} ({department}) : difficulté de recrutement, offres publiées sur douze mois, demandeurs d'emploi et salaire médian. Chiffres France Travail, mis à jour chaque mois.",
+      title: "{job}, {department} : le métier recrute-t-il ?",
+      breadcrumbLabel: "Fil d'Ariane",
+      summary:
+        "Difficulté de recrutement de niveau {level} sur 5 selon France Travail ({period}), et {offers} offres publiées sur les douze derniers mois.",
+      summaryJobseekers:
+        "{count} demandeurs d'emploi de catégorie A recherchent ce métier ({period}).",
+      figuresTitle: "Les chiffres du marché",
+      appellationsTitle: "Appellations couvertes par ce métier",
+      neighboursTitle: "Le même métier ailleurs dans la région",
+      otherJobsTitle: "D'autres métiers dans ce département",
+      toolLink: "Chercher un autre métier ou un autre département",
     },
   },
   keywordMatch: {

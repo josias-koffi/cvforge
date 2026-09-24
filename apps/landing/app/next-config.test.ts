@@ -151,6 +151,27 @@ describe("landing next config", () => {
     })
   })
 
+  /** And its job × department pages, below the same slugs (US-138). */
+  it("serves the job × department pages under each language's slug", async () => {
+    const redirects = await nextConfig.redirects!()
+    const rewrites = await nextConfig.rewrites!()
+
+    expect(rewrites).toContainEqual({
+      source: "/fr/metier-recrute/:path+",
+      destination: "/fr/job-market/:path+",
+    })
+    expect(redirects).toContainEqual({
+      source: "/fr/job-market/:path+",
+      destination: "/fr/metier-recrute/:path+",
+      permanent: true,
+    })
+    expect(redirects).toContainEqual({
+      source: "/en/metier-recrute/:path+",
+      destination: "/en/job-market/:path+",
+      permanent: true,
+    })
+  })
+
   /** The free tools hub, same arrangement as the ATS check (US-135). */
   describe("the free tools hub", () => {
     it("redirects each language away from the other's slug", async () => {
