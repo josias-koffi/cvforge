@@ -1510,3 +1510,13 @@
   - Un onglet Chrome en arrière-plan ne joue pas `Reveal` : piloter la page en JS.
   - Ne pas lancer `pkill -f` avec un motif présent dans sa propre ligne de commande.
 - **Open**: none
+
+## 2026-09-24 — US-138 implement (stage 03 · [[workflows/runs/analyze-design-dev-review-20260924215644]])
+- **Context**: [[sprints/sprint-030#US-138]] · [[workflows/runs/analyze-design-dev-review-20260924215644/03-implement]]
+- **Did**: `public/market-pages` (hors rate limit) ; route ISR imbriquée sous `job-market` ; slugs à codes finaux ; sitemap asynchrone ; `JobMarketLeadCta` extrait.
+- **Why**: L'ISR appelle l'API depuis le serveur de la landing, donc toujours depuis la même IP.
+- **Learned**:
+  - La landing lit les types dans `packages/types/dist` : reconstruire (`tsc -p`) après un ajout de type.
+  - Un sitemap asynchrone casse les tests qui l'appelaient en synchrone : il faut simuler `fetch`.
+  - `next dev` réécrit `next-env.d.ts` : le restaurer.
+- **Open**: none

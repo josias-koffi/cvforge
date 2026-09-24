@@ -27,12 +27,13 @@ outil d'entretien qui mène vers l'entretien vocal.
     - [x] CTA « Recevoir chaque matin les offres de ce métier » → service lead ; après
           inscription, le projet de recherche est pré-rempli (ROME + lieu) et le digest E19 part.
   - Découpage obligatoire (story `L`) : API d'abord, page ensuite.
-- [ ] **[US-138]** Pages SEO métier × département
+- [x] **[US-138]** Pages SEO métier × département
   - Agent: `developer`
+  - Workflow: `analyze-design-dev-review`
   - Critères d'acceptation :
-    - [ ] Pages ISR générées depuis les données locales, sitemap, JSON-LD, canonical et hreflang.
-    - [ ] Pas de page sans données.
-  - À décider : le volume de pages indexées au lancement (tous les couples ou les plus demandés).
+    - [x] Pages ISR générées depuis les données locales, sitemap, JSON-LD, canonical et hreflang.
+    - [x] Pas de page sans données.
+  - Décidé le 2026-09-24 : les couples qui ont des données (tension et offres sur 12 mois), donc ceux que la demande a fait lire ; plafond de 20 000.
 - [ ] **[US-139]** « Vérifier un employeur »
   - Agent: `developer`
   - Critères d'acceptation :
@@ -70,3 +71,4 @@ Critères communs aux outils : voir `backlog.md`, « Critères d'acceptation dé
 
 ## 🔁 Workflow Runs
 - 2026-09-24 — [[workflows/runs/analyze-design-dev-review-20260924211657|analyze-design-dev-review]] (US-137) — passed
+- 2026-09-24 — [[workflows/runs/analyze-design-dev-review-20260924215644|analyze-design-dev-review]] (US-138) — passed

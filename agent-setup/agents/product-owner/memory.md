@@ -495,3 +495,10 @@
 - **Why**: `market_stats` ne couvre que les couples des projets de candidats (25 lignes en dev) ; le critère interdit d'appeler France Travail.
 - **Learned**: L'intention `job_search` doit porter l'appellation, pas le code métier : c'est l'appellation que le projet confirme.
 - **Open**: none
+
+## 2026-09-24 — US-138 analyze (stage 01 · [[workflows/runs/analyze-design-dev-review-20260924215644]])
+- **Context**: [[sprints/sprint-030#US-138]] · [[workflows/runs/analyze-design-dev-review-20260924215644/01-analyze]]
+- **Did**: Volume tranché. On indexe les couples qui ont des données (tension et offres sur 12 mois), plafonnés à 20 000.
+- **Why**: `market_stats` ne contient que des couples demandés : le volume suit la demande sans liste à tenir.
+- **Learned**: Une question « tous ou les plus demandés » se tranche parfois par la donnée elle-même.
+- **Open**: none

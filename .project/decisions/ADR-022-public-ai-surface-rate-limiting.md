@@ -148,3 +148,11 @@ Deux politiques de plus, ajoutées par configuration :
 **Correctif — une requête n'est comptée qu'une fois.** Nest applique le middleware une fois par route déclarée qui correspond au chemin. Or `public/x/{*splat}` et `public/x` correspondent tous deux à `/public/x/lead`. Chaque lien de connexion et chaque déverrouillage ATS consommait donc **deux** unités de l'allocation de l'appelant : la limite réelle était environ la moitié de celle annoncée. Constaté sur l'API lancée : un 429 dès le 3ᵉ appel lead au lieu du 6ᵉ.
 
 Le middleware marque désormais la requête qu'il a comptée et laisse passer le second passage. Vérifié sur l'API lancée : 5 appels passent, le 6ᵉ reçoit un 429.
+
+## Amendement 2026-09-24 (quinquies) — pages métier × département (US-138)
+
+`GET public/market-pages` et `GET public/market-pages/:rome/:department` restent **hors rate limit**, comme `public/legal` et `public/credit-offers`.
+
+Le serveur de la landing appelle ces routes quand il rend ou revalide une page en ISR, pas le visiteur. Tous ces appels viennent donc de la même adresse, et une politique par IP bloquerait la régénération des pages.
+
+Ce sont des lectures indexées de `market_stats` : rien n'est écrit ni mis en file, et aucun service externe n'est appelé.

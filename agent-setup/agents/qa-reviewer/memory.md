@@ -463,3 +463,10 @@
 - **Why**: Le critère commun demande un axe propre ; les stories précédentes ne l'avaient pas exécuté.
 - **Learned**: Relancer les limites sur l'API lancée : c'est là qu'est apparu le double comptage, invisible aux tests unitaires du middleware.
 - **Open**: La promesse « chiffres sous 24 h » dépend du débit du radar (40 lectures par heure).
+
+## 2026-09-24 — US-138 review (stage 04 · [[workflows/runs/analyze-design-dev-review-20260924215644]])
+- **Context**: [[sprints/sprint-030#US-138]] · [[workflows/runs/analyze-design-dev-review-20260924215644/04-review]]
+- **Did**: Seuil vérifié à trois niveaux (SQL, service, maillage) ; canonical, hreflang et sitemap lus sur la landing servie.
+- **Why**: « Pas de page sans données » vaut aussi pour les liens et le sitemap.
+- **Learned**: Contrôler aussi les liens internes vers des pages absentes, pas seulement les pages.
+- **Open**: none

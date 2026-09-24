@@ -451,3 +451,10 @@
 - **Why**: Seule une appellation du référentiel est acceptée ; un département se choisit mieux qu'il ne se tape.
 - **Learned**: Nommer le métier ROME sous l'appellation : les chiffres sont ceux du métier, plus large.
 - **Open**: none
+
+## 2026-09-24 — US-138 design (stage 02 · [[workflows/runs/analyze-design-dev-review-20260924215644]])
+- **Context**: [[sprints/sprint-030#US-138]] · [[workflows/runs/analyze-design-dev-review-20260924215644/02-design]]
+- **Did**: Fil d'Ariane, H1, phrase tirée des chiffres, blocs d'US-137 réutilisés, CTA partagé, maillage.
+- **Why**: Une page unique et utile sans texte inventé.
+- **Learned**: « en {département} » ne marche pas en français (« en Nord ») : la virgule, oui.
+- **Open**: none
