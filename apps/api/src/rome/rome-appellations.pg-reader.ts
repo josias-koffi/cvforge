@@ -10,6 +10,8 @@ export interface RomeAppellationsReader {
   /** Appellations whose label contains the query, those starting with it first. */
   search(query: string, limit: number): Promise<RomeAppellationOption[]>;
   find(code: string): Promise<RomeAppellationOption | null>;
+  /** The appellations of one ROME job, shortest first (US-138). */
+  listByMetier(metierCode: string, limit: number): Promise<RomeAppellationOption[]>;
 }
 
 const MIN_QUERY_CHARS = 2;
@@ -40,6 +42,13 @@ export class PgRomeAppellationsReader implements RomeAppellationsReader {
       .limit(1);
 
     return row ?? null;
+  }
+
+  async listByMetier(metierCode: string, limit: number) {
+    return this.select()
+      .where(eq(romeAppellations.metierCode, metierCode))
+      .orderBy(sql`length(${romeAppellations.libelle})`, asc(romeAppellations.libelle))
+      .limit(limit);
   }
 
   private select() {

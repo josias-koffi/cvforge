@@ -82,3 +82,33 @@ export type PublicJobMarketResponse = {
   refreshedAt: string | null;
   salaryMinSample: number;
 };
+
+/** One job × department page of the landing (US-138). */
+export interface MarketPageLink {
+  romeCode: string;
+  romeLabel: string;
+  department: string;
+  departmentLabel: string;
+}
+
+export interface MarketPageEntry extends MarketPageLink {
+  /** When the figures were read, ISO: the sitemap's `lastModified`. */
+  refreshedAt: string;
+}
+
+/**
+ * Everything a job × department page shows (US-138). Only served for a pair
+ * with a published tension and a yearly offer count: no page without data.
+ */
+export interface PublicMarketPage extends MarketPageEntry {
+  stats: Omit<MarketDepartmentStats, "department" | "departmentLabel">;
+  salaryMinSample: number;
+  /** The ROME appellations the job covers, shortest first. */
+  appellations: RomeAppellationOption[];
+  /** The appellation the "every morning" link confirms, or null without one. */
+  leadAppellationCode: string | null;
+  /** The same job in the region's other departments that have a page. */
+  neighbours: MarketPageLink[];
+  /** Other jobs of the department that have a page, most offers first. */
+  otherJobs: MarketPageLink[];
+}

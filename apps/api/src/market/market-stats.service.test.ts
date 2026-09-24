@@ -75,6 +75,8 @@ function createHarness(options: {
     refreshedAt: async () =>
       new Map([...rows].map(([key, row]) => [key, row.refreshedAt])),
     salaryLabels: async () => options.salaryLabels ?? [],
+    listIndexable: async () => [],
+    listIndexableInDepartment: async () => [],
     recordDemand: async (romeCode, department, at) => {
       demand.set(marketKey(romeCode, department), { at, department, romeCode });
     },

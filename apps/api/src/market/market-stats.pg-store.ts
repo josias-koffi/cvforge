@@ -1,5 +1,5 @@
 import type { MarketTensionLevel } from "@cvforge/types";
-import { and, eq, gte, inArray, ne } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, isNotNull, ne } from "drizzle-orm";
 import type { Database } from "../database/database.types";
 import { jobs, marketDemand, marketStats } from "../database/schema";
 import type { MarketReading } from "./market-stats.readings";
@@ -33,11 +33,38 @@ export interface MarketStatsStore {
     department: string,
     since: Date,
   ): Promise<string[]>;
+  /**
+   * The pairs with enough figures for a page of their own (US-138), most
+   * offers over a year first.
+   */
+  listIndexable(limit: number): Promise<StoredMarketStats[]>;
+  /** The same, in one department. */
+  listIndexableInDepartment(
+    department: string,
+    limit: number,
+  ): Promise<StoredMarketStats[]>;
   /** A visitor asked for a pair never read (US-137): the next refresh reads it. */
   recordDemand(romeCode: string, department: string, at: Date): Promise<void>;
   /** The pairs visitors asked for since this date. */
   listDemand(since: Date): Promise<Array<{ romeCode: string; department: string }>>;
 }
+
+/**
+ * A published tension and a yearly offer count: below this, a page would be
+ * a title and "not published" twice — thin content (US-138).
+ */
+export function isIndexable(
+  stats: Pick<StoredMarketStats, "tension" | "offersYear">,
+): boolean {
+  return stats.tension !== null && stats.offersYear !== null;
+}
+
+const INDEXABLE = and(
+  isNotNull(marketStats.tensionLevel),
+  isNotNull(marketStats.tensionPeriod),
+  isNotNull(marketStats.offersYearCount),
+  isNotNull(marketStats.offersPeriod),
+);
 
 export function marketKey(romeCode: string, department: string): string {
   return `${romeCode}|${department}`;
@@ -180,6 +207,28 @@ export class PgMarketStatsStore implements MarketStatsStore {
       );
 
     return rows.map((row) => row.label);
+  }
+
+  async listIndexable(limit: number) {
+    const rows = await this.db
+      .select()
+      .from(marketStats)
+      .where(INDEXABLE)
+      .orderBy(desc(marketStats.offersYearCount), marketStats.romeCode, marketStats.department)
+      .limit(limit);
+
+    return rows.map(toStats);
+  }
+
+  async listIndexableInDepartment(department: string, limit: number) {
+    const rows = await this.db
+      .select()
+      .from(marketStats)
+      .where(and(eq(marketStats.department, department), INDEXABLE))
+      .orderBy(desc(marketStats.offersYearCount), marketStats.romeCode)
+      .limit(limit);
+
+    return rows.map(toStats);
   }
 
   async recordDemand(romeCode: string, department: string, at: Date) {

@@ -20,7 +20,7 @@ import { MarketStatsService } from "./market-stats.service";
 /** The labour market radar, from France Travail's Marché du travail API (US-128). */
 @Module({
   controllers: [MarketController],
-  exports: [MarketStatsService],
+  exports: [MarketStatsService, MARKET_STATS_STORE],
   imports: [AuthModule, FranceTravailModule, SearchProjectsModule],
   providers: [
     {
