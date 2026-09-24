@@ -166,7 +166,7 @@ Deux stories fondatrices passent donc **avant** le backlog ci-dessous. Elles son
 
 ## 📋 Backlog
 
-- [ ] **[US-116]** Vérifier les deux API en direct et consigner leurs contrats réels (§ « À
+- [x] **[US-116]** Vérifier les deux API en direct et consigner leurs contrats réels (§ « À
       vérifier »). Livrable : une note dans ce fichier, pas du code.
   - **La Bonne Boîte v2, vérifiée en direct le 2026-09-24** (chemins donnés par le support,
     INC2741452) :
@@ -190,10 +190,46 @@ Deux stories fondatrices passent donc **avant** le backlog ci-dessous. Elles son
     - Volumes : M1805 à Nantes, 47 entreprises dans la commune et 95 dans un rayon de 50 km.
     - Licence et mention obligatoire : non relues. Nous citons « La Bonne Boîte, France Travail »
       comme pour les autres données France Travail (ADR-024 §4).
-  - **Synthèse Pages employeurs, en partie seulement** : le scope `api_synthese-pages-employeursv1`
-    délivre un jeton, et la racine `/partenaire/synthese-pages-employeurs/v1` existe (403 ; une
-    racine inventée répond 401). Tous les chemins essayés répondent 403, comme La Bonne Boîte
-    avant que le support ne donne les siens. **À demander au support**, puis finir cette story.
+  - **Synthèse Pages employeurs, vérifiée en direct le 2026-09-24** (scopes et chemin donnés par le
+    support, qui a résolu l'incident par un « conseil et accompagnement ») :
+    - Scope `api_synthese-pages-employeursv1 pages-employeurs-synthese`. Avec le premier seul, le
+      jeton est délivré mais chaque chemin répond 403 `insufficient_scope`.
+    - **Une seule ressource** : `POST /partenaire/synthese-pages-employeurs/v1/page-employeur/recherche`.
+      Toute autre ressource répond 403 : pas de lecture par SIRET, SIREN ou URL.
+    - Corps de la requête :
+      - `where` : code département, **obligatoire** (400 sans lui). L'employeur doit y avoir un
+        établissement. Une région ou un code INSEE rend 0 résultat, et un nom de ville rend 400.
+      - `what` : recherche plein texte sur le nom et l'accroche de la page. Un SIREN ou un SIRET rend
+        0 résultat.
+      - `siret` : accepté mais **ignoré**. L'exemple du support, avec un SIRET, rend un autre
+        employeur du 62.
+      - `offresOnly`, `minOffres`, `createdLast` : filtres pris par l'exemple du support, non
+        mesurés ici.
+      - `pageNumber` : pagination. `pageMaxSize` n'est pas respecté, le serveur renvoie 10 ou 20
+        résultats.
+    - Réponse : `{pageEmployeurResults[], totalPages, totalResults}`. Chaque résultat contient
+      `pageEmployeur` et `rechercheResult.scoreTotal`. `pageEmployeur` porte :
+      - `sirenOrSiret` et `offresCount` ;
+      - `page.entete` : `pageName`, `accroche`, `naf` ;
+      - `statutWrapper.auto` : false si l'employeur a rédigé sa page ;
+      - `urls[]` : `{urlPath, actif}` ;
+      - `employeur.etablissements[]` : `{siret, adresse{codePostal, libelleDistributionPostale},
+        compteurOffre, content.visibilite}`.
+    - **Attention au volume** : les grands groupes listent tous leurs établissements. 3 pages
+      d'intérim pèsent 3 Mo, et une recherche « elephant technologies » 874 Ko.
+    - **URL publique** : `https://recrute.francetravail.fr/page-employeur/<urlPath actif>`, vérifiée
+      dans le navigateur sur `helpline-913` (présentation, chiffres clés, 8 offres).
+      `pro.francetravail.fr` et `candidat.francetravail.fr` renvoient « page introuvable ».
+    - Débit annoncé dans les en-têtes : 50 appels par seconde par application.
+    - **Couverture mesurée** sur les 179 entreprises de La Bonne Boîte en base : **52 ont une page
+      (29 %)**. On les retrouve par `what` = nom et `where` = département, puis on vérifie le SIREN.
+      - 25 pages ont été rédigées par l'employeur, les autres sont générées automatiquement.
+      - 42 pages affichent des offres, et 16 ont une accroche.
+      - L'établissement de La Bonne Boîte figure dans les 52 pages.
+      - Aucune URL de site web ni de page carrière, ce qui ne change rien à la décision de US-117.
+    - Ajoutée au catalogue `FT_APIS` (`pages-employeurs`) : `ft:smoke pages-employeurs` répond 200.
+      Aucun code ne l'appelle encore.
+  - **Livré le 2026-09-24** ([[workflows/runs/developer-20260924170000]]).
 - [x] **[US-117]** Mesurer le rendement de la chaîne SIRET → site → page carrière → ATS sur un
       échantillon de 100 entreprises. Livrable : un chiffre et une décision.
   - **Mesuré le 2026-09-24** ([[workflows/runs/developer-20260924160000]], [[spikes/SPIKE-005-siret-ats-yield]]) :
@@ -323,3 +359,4 @@ Deux stories fondatrices passent donc **avant** le backlog ci-dessous. Elles son
 - 2026-09-24 — [[workflows/runs/developer-20260924140000|developer]] (US-120) — passed
 - 2026-09-24 — [[workflows/runs/developer-20260924150000|developer]] (US-121) — passed
 - 2026-09-24 — [[workflows/runs/developer-20260924160000|developer]] (US-117) — passed, décision : ne pas industrialiser
+- 2026-09-24 — [[workflows/runs/developer-20260924170000|developer]] (US-116) — passed, Pages employeurs débloquée par le support

@@ -1,0 +1,1817 @@
+[
+ {
+  "siren": "007280365",
+  "name": "ATLAGEL",
+  "tried": [
+   "200:0"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "054807748",
+  "name": "EDITIONS QUO VADIS",
+  "tried": [
+   "200:391"
+  ],
+  "hit": {
+   "page": "EDITIONS QUO VADIS",
+   "auto": false,
+   "offres": 1,
+   "url": "editions-quo-vadis-634",
+   "accroche": false,
+   "etabHere": true
+  }
+ },
+ {
+  "siren": "130020688",
+  "name": "DELEGATION DE LOIRE ATLANTIQUE",
+  "tried": [
+   "200:1411",
+   "200:2626"
+  ],
+  "hit": {
+   "page": "CHAMBRE DE METIERS ET DE L'ARTISANAT DE",
+   "auto": true,
+   "offres": 2,
+   "url": "chambre-de-metiers-et-de-l-artisanat-de-849",
+   "accroche": false,
+   "etabHere": true
+  }
+ },
+ {
+  "siren": "274400027",
+  "name": "NANTES METROPOLE HABITAT-OFFICE PUBLIC D",
+  "tried": [
+   "200:2119",
+   "200:2614"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "301275285",
+  "name": "THIERRY THOMAS, ARNAUD HOUIS, ARNAUD GIR",
+  "tried": [
+   "200:108",
+   "200:2205"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "305024382",
+  "name": "J.E.S.",
+  "tried": [
+   "200:2968",
+   "200:3"
+  ],
+  "hit": {
+   "page": "JES",
+   "auto": true,
+   "offres": 4,
+   "url": "jes-672",
+   "accroche": false,
+   "etabHere": true
+  }
+ },
+ {
+  "siren": "305508061",
+  "name": "ESTUAIRE NOTAIRES",
+  "tried": [
+   "200:13"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "312398050",
+  "name": "GMV NOTAIRES",
+  "tried": [
+   "200:1"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "316807015",
+  "name": "SYSCO FRANCE SAS",
+  "tried": [
+   "200:631"
+  ],
+  "hit": {
+   "page": "SYSCO FRANCE SAS",
+   "auto": true,
+   "offres": 9,
+   "url": "sysco-france-sas-020",
+   "accroche": false,
+   "etabHere": true
+  }
+ },
+ {
+  "siren": "317288389",
+  "name": "FIDUCIAL INFORMATIQUE",
+  "tried": [
+   "200:54"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "320459084",
+  "name": "VIF",
+  "tried": [
+   "200:4"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "325192870",
+  "name": "LIEU UNIQUE SCENE NATIONALE DE NANTES AS",
+  "tried": [
+   "200:2175",
+   "200:1724"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "332484021",
+  "name": "ECRITEL",
+  "tried": [
+   "200:0"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "338946502",
+  "name": "FONCIA LA ROCHELLE",
+  "tried": [
+   "200:1233",
+   "200:165"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "341604858",
+  "name": "SITACI",
+  "tried": [
+   "200:0"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "342191491",
+  "name": "IRIS RESSOURCES HUMAINES",
+  "tried": [
+   "200:142"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "342270691",
+  "name": "OFFICE DU DOME - NOTAIRES",
+  "tried": [
+   "200:2641"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "343122784",
+  "name": "GEIREC NANTES",
+  "tried": [
+   "200:713"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "345039416",
+  "name": "ORANGE BUSINESS SERVICES",
+  "tried": [
+   "200:416"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "345130488",
+  "name": "CARREFOUR PROXIMITE FRANCE",
+  "tried": [
+   "200:745"
+  ],
+  "hit": {
+   "page": "CARREFOUR PROXIMITE FRANCE",
+   "auto": true,
+   "offres": 10,
+   "url": "carrefour-proximite-france-304",
+   "accroche": true,
+   "etabHere": true
+  }
+ },
+ {
+  "siren": "347538043",
+  "name": "AS 24",
+  "tried": [
+   "200:1472"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "348284977",
+  "name": "ASYS",
+  "tried": [
+   "200:1"
+  ],
+  "hit": {
+   "page": "ASYS",
+   "auto": false,
+   "offres": 0,
+   "url": "asys-671",
+   "accroche": false,
+   "etabHere": true
+  }
+ },
+ {
+  "siren": "348884677",
+  "name": "NOVEOCARE",
+  "tried": [
+   "200:1"
+  ],
+  "hit": {
+   "page": "NOVEOCARE",
+   "auto": false,
+   "offres": 12,
+   "url": "noveocare-545",
+   "accroche": false,
+   "etabHere": true
+  }
+ },
+ {
+  "siren": "350753125",
+  "name": "JDC",
+  "tried": [
+   "200:1"
+  ],
+  "hit": {
+   "page": "JDC",
+   "auto": true,
+   "offres": 1,
+   "url": "jdc-104",
+   "accroche": false,
+   "etabHere": true
+  }
+ },
+ {
+  "siren": "351421300",
+  "name": "ARPEGE",
+  "tried": [
+   "200:2"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "352905707",
+  "name": "RANDSTAD DIGITAL FRANCE",
+  "tried": [
+   "200:595"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "377550249",
+  "name": "WAVESTONE",
+  "tried": [
+   "200:0"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "378615363",
+  "name": "SMILE",
+  "tried": [
+   "200:1"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "379723547",
+  "name": "SOFIA DEV",
+  "tried": [
+   "200:648"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "380794511",
+  "name": "CENTRAKOR",
+  "tried": [
+   "200:2"
+  ],
+  "hit": {
+   "page": "CENTRAKOR STORES",
+   "auto": true,
+   "offres": 5,
+   "url": "centrakor-stores-525",
+   "accroche": false,
+   "etabHere": true
+  }
+ },
+ {
+  "siren": "381031285",
+  "name": "OPEN",
+  "tried": [
+   "200:7"
+  ],
+  "hit": {
+   "page": "OPEN",
+   "auto": true,
+   "offres": 1,
+   "url": "open-495",
+   "accroche": false,
+   "etabHere": true
+  }
+ },
+ {
+  "siren": "381983568",
+  "name": "EVERIENCE",
+  "tried": [
+   "200:1"
+  ],
+  "hit": {
+   "page": "HELPLINE",
+   "auto": false,
+   "offres": 8,
+   "url": "helpline-913",
+   "accroche": true,
+   "etabHere": true
+  }
+ },
+ {
+  "siren": "384440889",
+  "name": "EXCO AVEC",
+  "tried": [
+   "200:0"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "385365713",
+  "name": "INETUM",
+  "tried": [
+   "200:1"
+  ],
+  "hit": {
+   "page": "INETUM",
+   "auto": true,
+   "offres": 2,
+   "url": "inetum-126",
+   "accroche": false,
+   "etabHere": true
+  }
+ },
+ {
+  "siren": "387837032",
+  "name": "CELAD",
+  "tried": [
+   "200:4"
+  ],
+  "hit": {
+   "page": "CELAD",
+   "auto": false,
+   "offres": 0,
+   "url": "celad-996",
+   "accroche": false,
+   "etabHere": true
+  }
+ },
+ {
+  "siren": "388577090",
+  "name": "BOUL'PAT ATLANTIQUE",
+  "tried": [
+   "200:577"
+  ],
+  "hit": {
+   "page": "BOUL'PAT ATLANTIQUE, plateforme logistique du Groupe Coup de Pates",
+   "auto": false,
+   "offres": 1,
+   "url": "boul-pat-atlantique",
+   "accroche": true,
+   "etabHere": true
+  }
+ },
+ {
+  "siren": "389080060",
+  "name": "ISILOG",
+  "tried": [
+   "200:0"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "390865749",
+  "name": "ASI",
+  "tried": [
+   "200:143"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "391504693",
+  "name": "AUBAY",
+  "tried": [
+   "200:0"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "395139652",
+  "name": "KERSEA",
+  "tried": [
+   "200:0"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "398820712",
+  "name": "CABINET BRAS",
+  "tried": [
+   "200:90"
+  ],
+  "hit": {
+   "page": "CABINET BRAS",
+   "auto": true,
+   "offres": 3,
+   "url": "cabinet-bras-500",
+   "accroche": false,
+   "etabHere": true
+  }
+ },
+ {
+  "siren": "399091339",
+  "name": "SULLY GROUP",
+  "tried": [
+   "200:454"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "401032925",
+  "name": "SOCIETE D V",
+  "tried": [
+   "200:2233"
+  ],
+  "hit": {
+   "page": "SOCIETE D V",
+   "auto": true,
+   "offres": 2,
+   "url": "d-v-959",
+   "accroche": false,
+   "etabHere": true
+  }
+ },
+ {
+  "siren": "403154263",
+  "name": "GROUPE LACOUR",
+  "tried": [
+   "200:211",
+   "200:69"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "403431778",
+  "name": "ADOC SOLUTIONS",
+  "tried": [
+   "200:283"
+  ],
+  "hit": {
+   "page": "ADOC SOLUTIONS",
+   "auto": false,
+   "offres": 0,
+   "url": "adoc-solutions",
+   "accroche": true,
+   "etabHere": true
+  }
+ },
+ {
+  "siren": "403503741",
+  "name": "PROGINOV",
+  "tried": [
+   "200:0"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "403561137",
+  "name": "PHARMAGEST INTERACTIVE CIP",
+  "tried": [
+   "200:400",
+   "200:0"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "404208035",
+  "name": "ALTECA",
+  "tried": [
+   "200:1"
+  ],
+  "hit": {
+   "page": "ALTECA",
+   "auto": true,
+   "offres": 7,
+   "url": "alteca-250",
+   "accroche": false,
+   "etabHere": true
+  }
+ },
+ {
+  "siren": "404536922",
+  "name": "ITS GROUP",
+  "tried": [
+   "200:671"
+  ],
+  "hit": {
+   "page": "ITS GROUP",
+   "auto": true,
+   "offres": 5,
+   "url": "its-group-915",
+   "accroche": false,
+   "etabHere": true
+  }
+ },
+ {
+  "siren": "404960486",
+  "name": "EURO SERVICES FLEURS",
+  "tried": [
+   "200:465"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "409214244",
+  "name": "ERESIS",
+  "tried": [
+   "200:0"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "411708605",
+  "name": "ATEMIS",
+  "tried": [
+   "200:0"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "413309675",
+  "name": "AIS",
+  "tried": [
+   "200:1011"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "415050681",
+  "name": "CHEOPS TECHNOLOGY FRANCE",
+  "tried": [
+   "200:559"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "419223425",
+  "name": "KOSMOS",
+  "tried": [
+   "200:0"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "420316952",
+  "name": "I3KONNECT",
+  "tried": [
+   "200:0",
+   "200:0"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "422956474",
+  "name": "SYD CONSEIL",
+  "tried": [
+   "200:235"
+  ],
+  "hit": {
+   "page": "GROUPE SYD",
+   "auto": false,
+   "offres": 0,
+   "url": "syd-conseil-539",
+   "accroche": true,
+   "etabHere": true
+  }
+ },
+ {
+  "siren": "423908995",
+  "name": "SECOM",
+  "tried": [
+   "200:1"
+  ],
+  "hit": {
+   "page": "SECOM",
+   "auto": false,
+   "offres": 3,
+   "url": "fetis-group",
+   "accroche": true,
+   "etabHere": true
+  }
+ },
+ {
+  "siren": "424151678",
+  "name": "CADRES EN MISSION",
+  "tried": [
+   "200:1504"
+  ],
+  "hit": {
+   "page": "CADRES EN MISSION",
+   "auto": true,
+   "offres": 1,
+   "url": "cadres-en-mission-482",
+   "accroche": false,
+   "etabHere": true
+  }
+ },
+ {
+  "siren": "424690626",
+  "name": "MERCURIA",
+  "tried": [
+   "200:0"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "428677124",
+  "name": "THALES SERVICES NUMERIQUES SAS",
+  "tried": [
+   "200:470"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "428692008",
+  "name": "UGECAM BRPL",
+  "tried": [
+   "200:1"
+  ],
+  "hit": {
+   "page": "UGECAM Bretagne Pays de la Loire - Pôle Gériatrique Rennais",
+   "auto": false,
+   "offres": 29,
+   "url": "ugecam-brpl-089",
+   "accroche": true,
+   "etabHere": true
+  }
+ },
+ {
+  "siren": "428704977",
+  "name": "SANTECLAIR",
+  "tried": [
+   "200:0"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "428826150",
+  "name": "AGM INFORMATIQUE",
+  "tried": [
+   "200:62"
+  ],
+  "hit": {
+   "page": "AGM INFORMATIQUE",
+   "auto": false,
+   "offres": 2,
+   "url": "agm-informatique",
+   "accroche": true,
+   "etabHere": true
+  }
+ },
+ {
+  "siren": "429987548",
+  "name": "DAWAN",
+  "tried": [
+   "200:0"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "432123735",
+  "name": "ADP GSI FRANCE",
+  "tried": [
+   "200:558"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "433002011",
+  "name": "EVIDEN FRANCE",
+  "tried": [
+   "200:560"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "433994175",
+  "name": "SA EXAKIS",
+  "tried": [
+   "200:901",
+   "200:1"
+  ],
+  "hit": {
+   "page": "EXAKIS NELITE",
+   "auto": true,
+   "offres": 1,
+   "url": "exakis-nelite-623",
+   "accroche": false,
+   "etabHere": true
+  }
+ },
+ {
+  "siren": "434792974",
+  "name": "KOESIO DATA SOLUTIONS",
+  "tried": [
+   "200:302"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "438004822",
+  "name": "BT LEC OUEST",
+  "tried": [
+   "200:629"
+  ],
+  "hit": {
+   "page": "BTLEC OUEST",
+   "auto": false,
+   "offres": 0,
+   "url": "bt-lec-ouest-080",
+   "accroche": true,
+   "etabHere": true
+  }
+ },
+ {
+  "siren": "438309940",
+  "name": "CADRES EN MISSION SERVICES",
+  "tried": [
+   "200:1637"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "439283276",
+  "name": "ORYGAMY",
+  "tried": [
+   "200:0"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "439752817",
+  "name": "ASTEK FRANCE",
+  "tried": [
+   "200:557"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "439869587",
+  "name": "BPCE FINANCEMENT",
+  "tried": [
+   "200:15"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "441637691",
+  "name": "LUCCA",
+  "tried": [
+   "200:0"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "442203972",
+  "name": "CONSEPT INFORMATIQUE",
+  "tried": [
+   "200:53"
+  ],
+  "hit": {
+   "page": "CONSEPT INFORMATIQUE",
+   "auto": false,
+   "offres": 2,
+   "url": "consept-informatique-876",
+   "accroche": false,
+   "etabHere": true
+  }
+ },
+ {
+  "siren": "442427134",
+  "name": "SODASTREAM FRANCE",
+  "tried": [
+   "200:557"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "442490306",
+  "name": "CATALYS CONSEIL",
+  "tried": [
+   "200:235"
+  ],
+  "hit": {
+   "page": "SOCIETE NOUVELLE CATALYS",
+   "auto": true,
+   "offres": 12,
+   "url": "catalys-609",
+   "accroche": false,
+   "etabHere": true
+  }
+ },
+ {
+  "siren": "442812574",
+  "name": "SCALIAN OP",
+  "tried": [
+   "200:1069"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "443884580",
+  "name": "TRANQUIL I.T. SYSTEMS",
+  "tried": [
+   "200:2866"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "449989573",
+  "name": "L'OUVRE-BOITES",
+  "tried": [
+   "200:2319"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "451335236",
+  "name": "HERCULEPRO",
+  "tried": [
+   "200:1"
+  ],
+  "hit": {
+   "page": "HERCULEPRO",
+   "auto": false,
+   "offres": 0,
+   "url": "herculepro",
+   "accroche": false,
+   "etabHere": true
+  }
+ },
+ {
+  "siren": "451804363",
+  "name": "ARTISS",
+  "tried": [
+   "200:1",
+   "200:1"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "452625981",
+  "name": "4 CAD PLM",
+  "tried": [
+   "200:756"
+  ],
+  "hit": {
+   "page": "4 CAD PLM",
+   "auto": true,
+   "offres": 2,
+   "url": "4-cad-plm-628",
+   "accroche": false,
+   "etabHere": true
+  }
+ },
+ {
+  "siren": "453664427",
+  "name": "CADRES EN MISSION ACPS",
+  "tried": [
+   "200:1504"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "478906860",
+  "name": "ILIADE CONSULTING",
+  "tried": [
+   "200:9"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "479766842",
+  "name": "CAPGEMINI TECHNOLOGY SERVICES",
+  "tried": [
+   "200:359"
+  ],
+  "hit": {
+   "page": "CAPGEMINI TECHNOLOGY SERVICES",
+   "auto": true,
+   "offres": 27,
+   "url": "capgemini-technology-services-047",
+   "accroche": false,
+   "etabHere": true
+  }
+ },
+ {
+  "siren": "480609510",
+  "name": "SD20",
+  "tried": [
+   "200:0"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "483772547",
+  "name": "PALISSEA",
+  "tried": [
+   "200:0",
+   "200:3"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "483815619",
+  "name": "SNCF CONNECT & TECH SERVICES",
+  "tried": [
+   "200:700"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "488247941",
+  "name": "NUMERI WAN",
+  "tried": [
+   "200:76"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "493265284",
+  "name": "COMPAGNIE D'EXPLOITATION ET DE REPARTITI",
+  "tried": [
+   "200:2031"
+  ],
+  "hit": {
+   "page": "COMPAGNIE D'EXPLOITATION ET DE REPARTITI - SCHILTIGHEIM",
+   "auto": true,
+   "offres": 1,
+   "url": "compagnie-d-exploitation-et-de-repartiti-042",
+   "accroche": false,
+   "etabHere": true
+  }
+ },
+ {
+  "siren": "499748259",
+  "name": "ROSEMOOD",
+  "tried": [
+   "200:1"
+  ],
+  "hit": {
+   "page": "ROSEMOOD",
+   "auto": true,
+   "offres": 4,
+   "url": "rosemood-527",
+   "accroche": false,
+   "etabHere": true
+  }
+ },
+ {
+  "siren": "502958598",
+  "name": "CREATIVE INGENIERIE",
+  "tried": [
+   "200:79"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "507525020",
+  "name": "INGENIERIE TOUT CORPS D'ETAT",
+  "tried": [
+   "200:1864"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "508439833",
+  "name": "BOTIA",
+  "tried": [
+   "200:0"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "509336640",
+  "name": "AERIALGROUP",
+  "tried": [
+   "200:0"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "512568114",
+  "name": "KEY CONSULTING OUEST",
+  "tried": [
+   "200:173"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "513381434",
+  "name": "LENGOW",
+  "tried": [
+   "200:0"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "513519066",
+  "name": "INOVAXO",
+  "tried": [
+   "200:0"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "519698914",
+  "name": "IADVIZE",
+  "tried": [
+   "200:0"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "521295162",
+  "name": "IDEOLYS",
+  "tried": [
+   "200:0"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "521676155",
+  "name": "CAISSE MSA LOIRE ATLANTIQUE VENDEE",
+  "tried": [
+   "200:484"
+  ],
+  "hit": {
+   "page": "MSA LOIRE ATLANTIQUE VENDEE",
+   "auto": true,
+   "offres": 2,
+   "url": "msa-loire-atlantique-vendee-431",
+   "accroche": false,
+   "etabHere": true
+  }
+ },
+ {
+  "siren": "523585891",
+  "name": "DEFINOX SAS",
+  "tried": [
+   "200:118"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "525031522",
+  "name": "FIDAL",
+  "tried": [
+   "200:0"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "529830267",
+  "name": "YPRESIA",
+  "tried": [
+   "200:0"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "535257067",
+  "name": "4 CAD ERP",
+  "tried": [
+   "200:849"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "537526329",
+  "name": "CONSEPT SERVICES",
+  "tried": [
+   "200:360"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "538208455",
+  "name": "GCS E-SANTE PAYS DE LA LOIRE",
+  "tried": [
+   "200:1842"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "539781963",
+  "name": "DGSYS",
+  "tried": [
+   "200:0"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "542084454",
+  "name": "PRIMAGAZ",
+  "tried": [
+   "200:0"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "552044992",
+  "name": "POMONA PASSIONFROID",
+  "tried": [
+   "200:1"
+  ],
+  "hit": {
+   "page": "POMONA PassionFroid",
+   "auto": false,
+   "offres": 21,
+   "url": "pomona-023",
+   "accroche": false,
+   "etabHere": true
+  }
+ },
+ {
+  "siren": "552046484",
+  "name": "CDC HABITAT SOCIAL SOCIETE ANONYME D'HAB",
+  "tried": [
+   "200:2046"
+  ],
+  "hit": {
+   "page": "CDC HABITAT SOCIAL SOCIETE ANONYME D'HAB",
+   "auto": true,
+   "offres": 1,
+   "url": "cdc-habitat-social-d-hab-814",
+   "accroche": false,
+   "etabHere": true
+  }
+ },
+ {
+  "siren": "602062481",
+  "name": "GENERALI VIE",
+  "tried": [
+   "200:668"
+  ],
+  "hit": {
+   "page": "GENERALI FRANCE",
+   "auto": false,
+   "offres": 1,
+   "url": "generali-vie-067",
+   "accroche": false,
+   "etabHere": true
+  }
+ },
+ {
+  "siren": "642017834",
+  "name": "CREDIT MUTUEL LEASING",
+  "tried": [
+   "200:96"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "652023961",
+  "name": "AVIS LOCATION DE VOITURES",
+  "tried": [
+   "200:1259"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "702011172",
+  "name": "SECURITAS ACCUEIL",
+  "tried": [
+   "200:244"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "702042755",
+  "name": "CGI FRANCE",
+  "tried": [
+   "200:557"
+  ],
+  "hit": {
+   "page": "CGI FRANCE",
+   "auto": false,
+   "offres": 6,
+   "url": "cgi-france-386",
+   "accroche": true,
+   "etabHere": true
+  }
+ },
+ {
+  "siren": "753050038",
+  "name": "LOGIROAD",
+  "tried": [
+   "200:0"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "775688732",
+  "name": "CGM PAYS DE LOIRE",
+  "tried": [
+   "200:1429",
+   "200:613"
+  ],
+  "hit": {
+   "page": "APF France handicap",
+   "auto": false,
+   "offres": 386,
+   "url": "apf-france-handicap-495",
+   "accroche": true,
+   "etabHere": true
+  }
+ },
+ {
+  "siren": "775726417",
+  "name": "KPMG SA",
+  "tried": [
+   "200:901",
+   "200:2"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "784824153",
+  "name": "FORVIS MAZARS",
+  "tried": [
+   "200:0",
+   "200:901"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "786218974",
+  "name": "SEENOVIA",
+  "tried": [
+   "200:1"
+  ],
+  "hit": {
+   "page": "SEENOVIA",
+   "auto": true,
+   "offres": 6,
+   "url": "seenovia-678",
+   "accroche": false,
+   "etabHere": true
+  }
+ },
+ {
+  "siren": "790184329",
+  "name": "FIZEN",
+  "tried": [
+   "200:0"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "790672588",
+  "name": "AKENEO",
+  "tried": [
+   "200:0"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "791289481",
+  "name": "CONSERTO",
+  "tried": [
+   "200:0"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "791428766",
+  "name": "AMARRIS IMMO",
+  "tried": [
+   "200:89"
+  ],
+  "hit": {
+   "page": "AMARRIS IMMO",
+   "auto": true,
+   "offres": 1,
+   "url": "amarris-immo-958",
+   "accroche": false,
+   "etabHere": true
+  }
+ },
+ {
+  "siren": "793253717",
+  "name": "AVISIA OUEST",
+  "tried": [
+   "200:162"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "793288010",
+  "name": "VISEO",
+  "tried": [
+   "200:1"
+  ],
+  "hit": {
+   "page": "VISEO",
+   "auto": true,
+   "offres": 8,
+   "url": "viseo-021",
+   "accroche": false,
+   "etabHere": true
+  }
+ },
+ {
+  "siren": "797546769",
+  "name": "INTRUM",
+  "tried": [
+   "200:0",
+   "200:1"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "800204935",
+  "name": "BOSSER EXPERTISE",
+  "tried": [
+   "200:269"
+  ],
+  "hit": {
+   "page": "BOSSER EXPERTISE",
+   "auto": false,
+   "offres": 0,
+   "url": "bosser-expertise",
+   "accroche": true,
+   "etabHere": true
+  }
+ },
+ {
+  "siren": "800456097",
+  "name": "MOBIAPPS",
+  "tried": [
+   "200:0"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "808130140",
+  "name": "VYV ECOUTE & SOLUTIONS",
+  "tried": [
+   "200:391"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "811962794",
+  "name": "SYD APPS",
+  "tried": [
+   "200:5"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "812680197",
+  "name": "VALEURIAD",
+  "tried": [
+   "200:0"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "814577649",
+  "name": "GENS DE CONFIANCE",
+  "tried": [
+   "200:1331"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "814768321",
+  "name": "MR SURICATE",
+  "tried": [
+   "200:62"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "814994471",
+  "name": "EPSIGHT",
+  "tried": [
+   "200:0"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "817723687",
+  "name": "EY & ASSOCIES",
+  "tried": [
+   "200:334"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "820363331",
+  "name": "CATAMANIA",
+  "tried": [
+   "200:0"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "822620225",
+  "name": "KEREIS SERVICES",
+  "tried": [
+   "200:357"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "824041453",
+  "name": "AVT CONSULTANTS",
+  "tried": [
+   "200:27"
+  ],
+  "hit": {
+   "page": "GROUPE AVT",
+   "auto": false,
+   "offres": 0,
+   "url": "groupe-avt",
+   "accroche": false,
+   "etabHere": true
+  }
+ },
+ {
+  "siren": "825015894",
+  "name": "WEMOOV",
+  "tried": [
+   "200:1"
+  ],
+  "hit": {
+   "page": "WEMOOV",
+   "auto": false,
+   "offres": 0,
+   "url": "wemoov",
+   "accroche": true,
+   "etabHere": true
+  }
+ },
+ {
+  "siren": "825098171",
+  "name": "ELEPHANT TECHNOLOGIES",
+  "tried": [
+   "200:48"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "828338772",
+  "name": "CADRES EN MISSION TRANSITION",
+  "tried": [
+   "200:1520"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "828871699",
+  "name": "HERA-MI",
+  "tried": [
+   "200:0"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "828952796",
+  "name": "UMR",
+  "tried": [
+   "200:3"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "829547264",
+  "name": "AGOSTINO NANTES",
+  "tried": [
+   "200:713"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "829817469",
+  "name": "GCSMS LES CHARMILLES",
+  "tried": [
+   "200:681"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "833975188",
+  "name": "CADRES EN MISSION DEVELOPPEMENT",
+  "tried": [
+   "200:1621"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "837472075",
+  "name": "CADRES EN MISSION & CO",
+  "tried": [
+   "200:2257"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "839443322",
+  "name": "KANOMA",
+  "tried": [
+   "200:0"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "840434740",
+  "name": "CREDIT AGRICOLE-GROUP INFRASTRUCTURE PLA",
+  "tried": [
+   "200:818",
+   "200:70"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "843645086",
+  "name": "HURA PORTAGE OUEST",
+  "tried": [
+   "200:167"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "845050202",
+  "name": "RUBIX CONSULTING",
+  "tried": [
+   "200:8"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "850622895",
+  "name": "YOUNUP",
+  "tried": [
+   "200:0"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "852579184",
+  "name": "TALEND",
+  "tried": [
+   "200:1"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "853530434",
+  "name": "CASI DE NANTES",
+  "tried": [
+   "200:1591"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "856801360",
+  "name": "SA NANTAISE D HABITATIONS",
+  "tried": [
+   "200:2020"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "856802145",
+  "name": "VAMA-DOCKS",
+  "tried": [
+   "200:1"
+  ],
+  "hit": {
+   "page": "PROLIANS VAMA-DOCKS",
+   "auto": true,
+   "offres": 4,
+   "url": "vama-docks-906",
+   "accroche": false,
+   "etabHere": true
+  }
+ },
+ {
+  "siren": "857803993",
+  "name": "ETABLISSEMENTS DEVINEAU ET AUBRON",
+  "tried": [
+   "200:1035"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "871800546",
+  "name": "BDO ATLANTIQUE",
+  "tried": [
+   "200:165"
+  ],
+  "hit": {
+   "page": "BDO ATLANTIQUE",
+   "auto": false,
+   "offres": 1,
+   "url": "bdo-atlantique-123",
+   "accroche": true,
+   "etabHere": true
+  }
+ },
+ {
+  "siren": "872803390",
+  "name": "SIGMA",
+  "tried": [
+   "200:0",
+   "200:53"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "878260371",
+  "name": "VCSP BATIMENT FRANCE",
+  "tried": [
+   "200:628"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "888655198",
+  "name": "CALISSENS P.S",
+  "tried": [
+   "200:2638"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "889107298",
+  "name": "REISEL GRAND OUEST",
+  "tried": [
+   "200:592"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "889463519",
+  "name": "AURA CORP.",
+  "tried": [
+   "200:147"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "891973505",
+  "name": "GIE RSM OUEST",
+  "tried": [
+   "200:593"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "893269670",
+  "name": "COLLECTIF ENERGIE",
+  "tried": [
+   "200:220",
+   "200:229"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "897892469",
+  "name": "AVT INGENIERIE",
+  "tried": [
+   "200:64"
+  ],
+  "hit": {
+   "page": "AVT INGENIERIE",
+   "auto": true,
+   "offres": 1,
+   "url": "avt-ingenierie-484",
+   "accroche": false,
+   "etabHere": true
+  }
+ },
+ {
+  "siren": "898785894",
+  "name": "DAMRYS",
+  "tried": [
+   "200:0"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "903309490",
+  "name": "RYDGE CONSEIL",
+  "tried": [
+   "200:233"
+  ],
+  "hit": {
+   "page": "Rydge Conseil",
+   "auto": false,
+   "offres": 0,
+   "url": "kpmg-esc-gs-132",
+   "accroche": true,
+   "etabHere": true
+  }
+ },
+ {
+  "siren": "918609629",
+  "name": "OLDER IS BETTER",
+  "tried": [
+   "200:1986"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "919097741",
+  "name": "HOLENEK INGENIERIE",
+  "tried": [
+   "200:63"
+  ],
+  "hit": {
+   "page": "HOLENEK INGENIERIE",
+   "auto": false,
+   "offres": 22,
+   "url": "holenek-ingenierie-815",
+   "accroche": true,
+   "etabHere": true
+  }
+ },
+ {
+  "siren": "929385243",
+  "name": "KOMAWE",
+  "tried": [
+   "200:0"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "929670008",
+  "name": "BESOFT CONSULTING",
+  "tried": [
+   "200:8"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "948801600",
+  "name": "GRANDE OURSE FILMS",
+  "tried": [
+   "200:209"
+  ],
+  "hit": null
+ },
+ {
+  "siren": "949704225",
+  "name": "LEA SYNDIC",
+  "tried": [
+   "200:308"
+  ],
+  "hit": {
+   "page": "LEA SYNDIC",
+   "auto": true,
+   "offres": 3,
+   "url": "lea-syndic-788",
+   "accroche": false,
+   "etabHere": true
+  }
+ },
+ {
+  "siren": "982547747",
+  "name": "O GREEN",
+  "tried": [
+   "200:2458"
+  ],
+  "hit": {
+   "page": "O GREEN",
+   "auto": false,
+   "offres": 1,
+   "url": "o-green-067",
+   "accroche": false,
+   "etabHere": true
+  }
+ }
+]

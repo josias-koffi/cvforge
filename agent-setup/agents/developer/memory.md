@@ -1402,3 +1402,9 @@
 - **Leçon** : SmartRecruiters répond 200 avec `totalFound: 0` pour n'importe quel identifiant. Un sondage par nom doit exiger au moins une offre et vérifier le nom et la ville, car 3 correspondances sur 8 étaient des homonymes étrangers.
 - **Leçon** : `detectAtsBoard` renvoie le jeton générique `company` sur certaines URL SmartRecruiters. C'est à corriger au prochain passage dans ce fichier.
 - **Leçon** : `tsx` sur un script `.ts` hors du paquet compile en CommonJS, donc sans await au premier niveau. Nommer le script `.mts` et importer le module TS avec `import * as`.
+
+### 2026-09-24 — US-116 contrat Pages employeurs (sprint-026)
+- **Context** : le support a donné les scopes et le chemin. Contrat consigné dans sprint-026, et l'API ajoutée au catalogue `FT_APIS`.
+- **Leçon** : chez France Travail, un 403 `insufficient_scope` sur tous les chemins peut venir d'un **second scope manquant**, même si le premier délivre bien un jeton : ce fut le cas pour La Bonne Boîte, ROME Substitutions, puis Pages employeurs. Demander au support la liste complète des scopes dès le premier 403.
+- **Leçon** : ne pas se fier à l'exemple du support. Son champ `siret` était ignoré, et seul `what` (nom) + `where` (département), vérifié par le SIREN, retrouve une entreprise.
+- **Leçon** : l'URL publique d'une page employeur est `recrute.francetravail.fr/page-employeur/<urlPath>`. `pro.francetravail.fr` est une application JavaScript qui répond 200 puis redirige vers `not-found` : un code HTTP ne prouve pas qu'une page d'application JavaScript existe.

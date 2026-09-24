@@ -3,8 +3,8 @@
  *
  * Each API has its own OAuth scope and its own quota. `verified: true` means
  * `ft:smoke <api>` got a real answer with this scope, path and payload
- * (2026-09-23, 2026-09-24 for La Bonne Boîte, ROME Substitutions and
- * Marché du travail). Quotas outside Offres d'emploi are
+ * (2026-09-23, 2026-09-24 for La Bonne Boîte, ROME Substitutions,
+ * Marché du travail and Pages employeurs). Quotas outside Offres d'emploi are
  * still unknown. A wrong scope is not an exception here, it is `invalid_scope`
  * at token time — which is why each one can be overridden from the
  * environment without a release.
@@ -23,7 +23,8 @@ export type FtApiId =
   | "rome-fiches-metiers"
   | "rome-substitutions"
   | "la-bonne-boite"
-  | "marche-travail";
+  | "marche-travail"
+  | "pages-employeurs";
 
 /** A read-only call `ft:smoke` makes to prove the scope, the path and the payload. */
 export interface FtSmokeCall {
@@ -151,6 +152,23 @@ export const FT_APIS: Record<FtApiId, FtApiDefinition> = {
         codeTypePeriode: "ANNEE",
         codeTypeTerritoire: "DEP",
       },
+    },
+  },
+  "pages-employeurs": {
+    label: "Synthèse Pages employeurs",
+    baseUrl: `${FT_API_ROOT}/synthese-pages-employeurs/v1`,
+    // Both scopes, as the support gave them on 2026-09-24: the first alone
+    // gets a token that every path refuses with 403.
+    scope: "api_synthese-pages-employeursv1 pages-employeurs-synthese",
+    // Read in the answers' headers on 2026-09-24: 50 a second per application.
+    requestsPerSecond: 50,
+    verified: true,
+    smoke: {
+      method: "POST",
+      path: "/page-employeur/recherche",
+      // `where` (a department) is required, `what` searches names and
+      // taglines; `siret` is accepted and ignored.
+      body: { pageMaxSize: 10, pageNumber: 1, what: "helpline", where: "44" },
     },
   },
 };
