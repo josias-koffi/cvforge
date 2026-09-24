@@ -1520,3 +1520,14 @@
   - Un sitemap asynchrone casse les tests qui l'appelaient en synchrone : il faut simuler `fetch`.
   - `next dev` réécrit `next-env.d.ts` : le restaurer.
 - **Open**: none
+
+## 2026-09-24 — US-139 implement (stage 03 · [[workflows/runs/analyze-design-dev-review-20260924222645]])
+- **Context**: [[sprints/sprint-030#US-139]] · [[workflows/runs/analyze-design-dev-review-20260924222645/03-implement]]
+- **Did**: module `company-check` (Annuaire + Egapro à la demande, page employeur lue dans `companies`) ; `freeToolPolicies` ; `readSearchLeadActivations(tool)` ; `ToolLeadCta` générique ; contenu de l'outil dans `content/company-check/`.
+- **Why**: Sans clé API ni appel France Travail à la requête ; ne pas grossir `fr.ts`/`en.ts`, déjà hors plafond.
+- **Learned**:
+  - L'Annuaire exige 3 caractères et `per_page` ≤ 25, ne trouve pas un SIRET (chercher le SIREN), et renvoie une fiche vide pour certains SIREN (123456789).
+  - `tsx watch` de l'API de dev n'a pas rechargé un nouveau module : vérifier sur une instance à part (`PORT=3344`).
+  - Les nouvelles routes Next demandent `next typegen` avant `tsc` (`PageProps`/`RouteContext`).
+  - axe lancé pendant un `Reveal` donne de faux `color-contrast` : forcer l'opacité avant.
+- **Open**: none

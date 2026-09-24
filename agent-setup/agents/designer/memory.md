@@ -458,3 +458,10 @@
 - **Why**: Une page unique et utile sans texte inventé.
 - **Learned**: « en {département} » ne marche pas en français (« en Nord ») : la virgule, oui.
 - **Open**: none
+
+## 2026-09-24 — US-139 design (stage 02 · [[workflows/runs/analyze-design-dev-review-20260924222645]])
+- **Context**: [[sprints/sprint-030#US-139]] · [[workflows/runs/analyze-design-dev-review-20260924222645/02-design]]
+- **Did**: Recherche à la validation (pas de combobox), liste de résultats, fiche en cartes + engagements oui/non, CTA générique.
+- **Why**: Chaque frappe coûterait un appel à l'Annuaire, limité à ~5/s par IP partagés.
+- **Learned**: « Aucun résultat » est un état, pas une erreur : encart neutre dans la région live.
+- **Open**: none

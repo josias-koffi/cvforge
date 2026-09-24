@@ -34,15 +34,16 @@ outil d'entretien qui mène vers l'entretien vocal.
     - [x] Pages ISR générées depuis les données locales, sitemap, JSON-LD, canonical et hreflang.
     - [x] Pas de page sans données.
   - Décidé le 2026-09-24 : les couples qui ont des données (tension et offres sur 12 mois), donc ceux que la demande a fait lire ; plafond de 20 000.
-- [ ] **[US-139]** « Vérifier un employeur »
+- [x] **[US-139]** « Vérifier un employeur »
   - Agent: `developer`
+  - Workflow: `analyze-design-dev-review`
   - Critères d'acceptation :
-    - [ ] Recherche par nom ou SIREN ; fiche : effectif, NAF, Egapro, ESS, société à mission,
+    - [x] Recherche par nom ou SIREN ; fiche : effectif, NAF, Egapro, ESS, société à mission,
           bilan carbone, page employeur France Travail (`companies/`).
-    - [ ] Fonctionne sans clé API ; sources citées.
-    - [ ] Entreprise inconnue : message clair, pas d'erreur.
-    - [ ] CTA vers les entreprises qui recrutent (E20) → service lead.
-  - À vérifier : les quotas de recherche-entreprises.api.gouv.fr pour un appel à la demande.
+    - [x] Fonctionne sans clé API ; sources citées.
+    - [x] Entreprise inconnue : message clair, pas d'erreur.
+    - [x] CTA vers les entreprises qui recrutent (E20) → service lead.
+  - Quotas vérifiés le 2026-09-24 : 7 appels/s documentés, 429 vu à 5/s ; l'outil a son propre limiteur à 2/s (ADR-022, amendement sexies).
 - [ ] **[US-140]** Pages SEO entreprises
   - Agent: `developer`
   - Critères d'acceptation :
@@ -72,3 +73,4 @@ Critères communs aux outils : voir `backlog.md`, « Critères d'acceptation dé
 ## 🔁 Workflow Runs
 - 2026-09-24 — [[workflows/runs/analyze-design-dev-review-20260924211657|analyze-design-dev-review]] (US-137) — passed
 - 2026-09-24 — [[workflows/runs/analyze-design-dev-review-20260924215644|analyze-design-dev-review]] (US-138) — passed
+- 2026-09-24 — [[workflows/runs/analyze-design-dev-review-20260924222645|analyze-design-dev-review]] (US-139) — passed

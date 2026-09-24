@@ -517,3 +517,10 @@
 - **Why**: Le tunnel ATS parlait français aux visiteurs anglophones.
 - **Learned**: La landing n'a pas de DOM de test : les branchements se testent via de petits modules purs. Ajouter `happy-dom` demanderait un ADR.
 - **Open**: none
+
+## 2026-09-24 — US-139 final (finalization · [[workflows/runs/analyze-design-dev-review-20260924222645]])
+- **Context**: [[sprints/sprint-030#US-139]] · [[workflows/runs/analyze-design-dev-review-20260924222645/final-summary]]
+- **Did**: Verdict passed, case cochée, ADR-022 amendé (sexies).
+- **Why**: Tous les critères vérifiés, suites vertes.
+- **Learned**: Deux limiteurs de 2/s sur la même source restent sous le seuil de 429 observé ; un limiteur partagé ferait attendre l'outil derrière le job horaire.
+- **Open**: US-140.

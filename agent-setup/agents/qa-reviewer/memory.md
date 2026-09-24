@@ -470,3 +470,10 @@
 - **Why**: « Pas de page sans données » vaut aussi pour les liens et le sitemap.
 - **Learned**: Contrôler aussi les liens internes vers des pages absentes, pas seulement les pages.
 - **Open**: none
+
+## 2026-09-24 — US-139 review (stage 04 · [[workflows/runs/analyze-design-dev-review-20260924222645]])
+- **Context**: [[sprints/sprint-030#US-139]] · [[workflows/runs/analyze-design-dev-review-20260924222645/04-review]]
+- **Did**: Quatre critères, les critères E23 et les quotas vérifiés ; PASS.
+- **Why**: Tests de bout en bout du lead, `fetch` réel limité à deux hôtes publics, axe en deux thèmes, 429 vu en vrai.
+- **Learned**: « Page employeur » ne peut venir que de la copie locale : l'afficher « si connue » est le comportement voulu, pas un manque.
+- **Open**: dette de découpage de `content/{fr,en,types}.ts`.

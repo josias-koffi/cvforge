@@ -502,3 +502,10 @@
 - **Why**: `market_stats` ne contient que des couples demandés : le volume suit la demande sans liste à tenir.
 - **Learned**: Une question « tous ou les plus demandés » se tranche parfois par la donnée elle-même.
 - **Open**: none
+
+## 2026-09-24 — US-139 analyze (stage 01 · [[workflows/runs/analyze-design-dev-review-20260924222645]])
+- **Context**: [[sprints/sprint-030#US-139]] · [[workflows/runs/analyze-design-dev-review-20260924222645/01-analyze]]
+- **Did**: Outil cadré : recherche Annuaire par nom/SIREN, fiche en un appel (+ Egapro), page employeur lue dans la copie locale, CTA → `/entreprises`.
+- **Why**: « Sans clé API » exclut un appel France Travail à la requête ; l'Annuaire tolère ~5/s par IP, partagé avec le job horaire.
+- **Learned**: Une réponse `/search` de l'Annuaire contient déjà tout le dossier : inutile de rappeler par SIREN.
+- **Open**: none

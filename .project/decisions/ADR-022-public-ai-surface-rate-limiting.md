@@ -156,3 +156,21 @@ Le middleware marque désormais la requête qu'il a comptée et laisse passer le
 Le serveur de la landing appelle ces routes quand il rend ou revalide une page en ISR, pas le visiteur. Tous ces appels viennent donc de la même adresse, et une politique par IP bloquerait la régénération des pages.
 
 Ce sont des lectures indexées de `market_stats` : rien n'est écrit ni mis en file, et aucun service externe n'est appelé.
+
+## Amendement 2026-09-24 (sexies) — outil « Vérifier un employeur » (US-139)
+
+Deux politiques de plus, ajoutées par configuration :
+- **`company-check`** (`GET public/company-check?q=` et `GET public/company-check/:siren`) :
+  - 60 requêtes par heure et 300 par jour, par IP ;
+  - budget global de 10 000 requêtes par jour.
+
+  Chaque requête appelle l'Annuaire des entreprises, et Egapro pour une fiche dont l'index est déclaré. Ces deux sources sont publiques et sans clé.
+
+  **Quota de l'Annuaire** : 7 appels par seconde et par IP selon sa documentation, sans en-tête de quota dans les réponses. Il a pourtant renvoyé un 429 à 5 appels par seconde le 2026-09-24. L'outil a donc son propre limiteur à 2 appels par seconde. Avec les 2 appels par seconde du rafraîchissement horaire des entreprises, le total reste à 4 appels par seconde au plus. Le budget global empêche une foule d'affamer ce rafraîchissement.
+
+  Variables facultatives : `PUBLIC_COMPANY_CHECK_HOURLY_LIMIT`, `PUBLIC_COMPANY_CHECK_DAILY_LIMIT` et `PUBLIC_COMPANY_CHECK_DAILY_BUDGET`.
+- **`company-check-lead`** (`POST public/company-check/lead`) : 5 requêtes par heure et 20 par jour, par IP, sans budget global. Variables facultatives : `PUBLIC_COMPANY_CHECK_LEAD_HOURLY_LIMIT` et `PUBLIC_COMPANY_CHECK_LEAD_DAILY_LIMIT`.
+
+Les couples « lecture + lead » des outils sont désormais décrits par un seul assistant, `freeToolPolicies`. Les clés, les variables et les valeurs du comparateur et de l'outil marché ne changent pas, et leurs tests restent verts.
+
+Vérifié sur l'API lancée : 60 appels passent, le 61ᵉ reçoit un 429 avec `Retry-After`.
