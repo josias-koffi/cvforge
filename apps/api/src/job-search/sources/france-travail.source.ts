@@ -63,7 +63,7 @@ export class FranceTravailSource implements JobSourceAdapter {
     }
 
     this.logger.warn(
-      `Query "${query.keywords}" (${query.department || "France"}) hit the 1150-result ceiling; split it by commune.`,
+      `Query "${query.keywords || `ROME ${query.romeCodes.join(",")}`}" (${query.department || "France"}) hit the 1150-result ceiling; split it by commune.`,
     );
 
     return listings;

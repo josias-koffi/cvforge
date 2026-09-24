@@ -22,19 +22,31 @@ seulement de ses mots-clés. Chaque offre lui dit ce qu'il a déjà et ce qu'il 
 
 ## ✅ Tasks
 
-- [ ] **[US-124]** Collecte par métier : Offres v2 et La bonne alternance interrogées par ROME
+- [x] **[US-124]** Collecte par métier : Offres v2 et La bonne alternance interrogées par ROME
   - Agent: `developer`
   - Critères d'acceptation :
-    - [ ] `buildSourceQueries` groupe les requêtes par (appellation ou code ROME confirmé) × (commune
+    - [x] `buildSourceQueries` groupe les requêtes par (appellation ou code ROME confirmé) × (commune
           avec rayon, ou département). Une requête reste partagée entre candidats.
-    - [ ] Repli sur `motsCles` quand un projet n'a aucune appellation confirmée : jamais moins
+    - [x] Repli sur `motsCles` quand un projet n'a aucune appellation confirmée : jamais moins
           d'offres qu'aujourd'hui.
-    - [ ] La bonne alternance est interrogée par `romes` et non plus seulement par département. Le
+    - [x] La bonne alternance est interrogée par `romes` et non plus seulement par département. Le
           cache de dix minutes est indexé sur la nouvelle requête.
-    - [ ] Le mapper Offres stocke `romeCode`, `appellationCode`, `competences[]` et `siret` quand ils
+    - [x] Le mapper Offres stocke `romeCode`, `appellationCode`, `competences[]` et `siret` quand ils
           sont présents. Migration `0030` sur `job_listings` et `jobs`.
   - À vérifier en direct : taux d'offres Offres v2 qui portent des compétences ROME et un SIRET, et
     format exact du champ compétences.
+  - **Livré le 2026-09-24** ([[workflows/runs/developer-20260924080225]]). Ce que la mesure a changé au plan :
+    - la recherche par ROME **s'ajoute** aux mots-clés, elle ne les remplace jamais. Sur sept
+      jours, « Ingénieur logiciel » (44) donne 8 offres par mots-clés et 16 de plus par ROME ;
+      « Commercial » (31) en donne 108 par mots-clés et 10 par ROME. Seule l'union ne perd
+      rien ;
+    - regroupement par département et non par commune et rayon, comme les mots-clés : plus
+      large et mieux partagé ;
+    - vérifié en direct : 100 % des offres France Travail portent `romeCode` et le libellé
+      d'appellation, 30 % leurs compétences (423 sur 1 431), 0 % un SIRET (ni en recherche,
+      ni sur le détail) et 0 % un code d'appellation. Donc pas de colonne SIRET, et le libellé
+      à la place du code. Migration **0031**, la 0030 étant prise par une autre session.
+
 - [ ] **[US-125]** Compétences du candidat, déduites du CV
   - Agent: `developer`
   - Critères d'acceptation :
@@ -93,3 +105,7 @@ seulement de ses mots-clés. Chaque offre lui dit ce qu'il a déjà et ce qu'il 
 - Part des offres Offres v2 sans compétences : le repli sur le métier ROME rend le score moins fin.
 - Les salaires de Marché du travail sont des agrégats : les afficher comme des repères, jamais comme
   une promesse.
+
+## 🔁 Workflow Runs
+
+- 2026-09-24 — [[workflows/runs/developer-20260924080225|developer]] (US-124) — passed

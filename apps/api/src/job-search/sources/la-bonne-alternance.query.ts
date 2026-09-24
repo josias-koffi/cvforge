@@ -8,14 +8,15 @@ import type { JobSourceQuery } from "../job-search.types";
  * there is no keyword parameter. The search takes ROME codes, an RNCP code, a
  * diploma level, a point and a radius, or department numbers — nothing else.
  *
- * Our queries carry a job title typed by the candidate, not a ROME code, so
- * the only filter we can honestly pass is the department. Everything else is
- * sorted out locally by the scorer, which reads titles and descriptions
- * anyway. Collecting a department's apprenticeships in full is cheap: the
- * answer is capped at 150 offers per source.
+ * A keyword query can only pass its department, and the scorer sorts the
+ * rest out locally. A query by ROME job (US-124) passes `romes` as well: the
+ * department alone is capped at 150 offers per source, so a candidate's job
+ * could simply fall outside the page. On 2026-09-24 in 44, the department
+ * alone gave 279 offers of every job; `romes=D1102` gave the 5 bakers.
  */
 export interface LaBonneAlternanceParams {
   departements?: string;
+  romes?: string;
 }
 
 /**
@@ -37,16 +38,23 @@ export function toLaBonneAlternanceParams(
   if (!query.contractTypes.includes("alternance")) return null;
 
   const department = query.department.trim().toUpperCase();
+  const romes = query.romeCodes.join(",");
 
   // No department means the whole of France, which the API accepts and which
   // is what a candidate ready to move asked for.
-  return department ? { departements: department } : {};
+  return {
+    ...(department ? { departements: department } : {}),
+    ...(romes ? { romes } : {}),
+  };
 }
 
 /**
  * What identifies the call itself, so that two queries differing only by
- * keywords — which this API ignores — are not asked twice.
+ * keywords — which this API ignores — are not asked twice, while a query by
+ * ROME job is never answered from its department's page.
  */
 export function cacheKeyFor(params: LaBonneAlternanceParams): string {
-  return params.departements ?? "france";
+  const place = params.departements ?? "france";
+
+  return params.romes ? `${place}|${params.romes}` : place;
 }

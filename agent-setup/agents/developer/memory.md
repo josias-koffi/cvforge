@@ -1327,15 +1327,9 @@
 - **Context** : [[sprints/sprint-026#^us-118]]
 - **Learned** : Classer au seul score laisse un texte prendre toutes les places : on prend les réponses tour à tour entre les textes. Un textarea contrôlé qui se reconstruit à chaque frappe à partir de lignes nettoyées avale espaces et retours à la ligne : il faut garder le texte brut. En développement, un clic avant l'hydratation ne fait rien ; vérifier la requête POST, pas seulement le toast.
 
-## 2026-09-24 — Scopes France Travail corrigés (INC2741452)
-- Scopes donnés par le support : La Bonne Boîte `api_labonneboitev2 search office`, ROME Substitutions `api_rome-substitutionsv1 nomenclatureRomeSubstitutions` (ajoutée au catalogue `ft.config.ts`, non vérifiée).
-- Avec ces scopes le jeton est délivré, mais les appels répondent toujours 403 `WWW-Authenticate: insufficient_scope` : habilitation à obtenir côté France Travail, incident à rouvrir.
-- **Leçon** : `source .env` altère le secret FT (caractère interprété par le shell → `invalid_client`) ; utiliser `node --env-file=../../.env --import tsx src/france-travail/ft-smoke.main.ts <api>`.
-
-## 2026-09-24 — Landing : refonte UX de l'analyse ATS (/fr/analyse-ats)
-- Drop zone (`components/ats/cv-drop-zone.tsx`) : toute la zone est le `<label>` de l'input `sr-only`, drag & drop, carte fichier, shake sur refus.
-- Vague de l'app reprise via `components/ats/spark-pending.tsx` (miroir de `PendingContent` d'apps/web) sur « Analyser » et « Afficher le rapport ».
-- `scan-progress.tsx` : étapes cadencées côté client, la dernière tourne jusqu'à la réponse (jamais « fini » avant l'API).
-- Jauge : remplissage CSS (`gauge-fill`, part de `--gauge-from`) + compteur `motion` ; le SSR garde les valeurs finales (tests SSR inchangés).
-- `UnlockedReport` extrait dans `unlocked-report.tsx` (barres `bar-fill`, icônes par sévérité), `bandFor` dupliqué depuis @cvforge/ats-score (landing n'en dépend pas).
-- Piège : l'API limite les scans par IP en local ; pour tester l'animation, mocker `/api/ats-scan` (Playwright `page.route`, Chrome système via `executablePath`). Un onglet Claude-in-Chrome en arrière-plan ne fait pas tourner rAF.
+### 2026-09-24 — US-124 : le ROME complète les mots-clés, il ne les remplace pas (stage 01 · [[workflows/runs/developer-20260924080225]])
+- **Context** : [[sprints/sprint-027#^us-124]] · [[workflows/runs/developer-20260924080225/01-developer]]
+- **Leçon** : le sprint prévoyait de remplacer les mots-clés par le ROME quand un métier est confirmé. La mesure dit l'inverse : les mots-clés de France Travail couvrent déjà le libellé ROME quand les mots concordent, et en ramènent souvent plus. Le ROME n'apporte que lorsque le candidat ne parle pas comme les annonces (+16 pour « Ingénieur logiciel »). D'où l'union.
+- **Leçon** : pour comparer deux recherches, il faut paginer jusqu'au bout. À 150 résultats par page, un « +50 » peut n'être qu'un effet de page.
+- **Leçon** : le sprint listait le SIRET et le code d'appellation « quand ils sont présents » ; ils ne le sont jamais. Mesurer avant de créer une colonne.
+- **Leçon** : toucher un fichier au-delà de 400 lignes oblige à le découper. Garder le constructeur public intact (le digest crée son collecteur en interne) a épargné les 30 tests du digest.

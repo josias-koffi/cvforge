@@ -9,6 +9,7 @@ const QUERY: JobSourceQuery = {
   department: "44",
   experienceLevel: null,
   keywords: "Comptable",
+  romeCodes: [],
   nafDivisions: [],
   publishedSinceDays: 1,
 };
@@ -79,6 +80,22 @@ describe("LaBonneAlternanceSource.search", () => {
 
     const url = new URL(fetchImpl.mock.calls[0]![0] as string);
     expect(url.pathname).toBe("/api/job/v1/search");
+    expect(url.searchParams.get("departements")).toBe("44");
+  });
+
+  it("asks for the job's apprenticeships when the query is by ROME", async () => {
+    const fetchImpl = vi.fn(async (_url: string) =>
+      jsonResponse({ jobs: [], recruiters: [] }),
+    );
+    const source = createSource(fetchImpl);
+
+    await source.search(QUERY);
+    await source.search({ ...QUERY, keywords: "", romeCodes: ["M1203"] });
+
+    // The department's page and the job's are two different calls.
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    const url = new URL(fetchImpl.mock.calls[1]![0] as string);
+    expect(url.searchParams.get("romes")).toBe("M1203");
     expect(url.searchParams.get("departements")).toBe("44");
   });
 

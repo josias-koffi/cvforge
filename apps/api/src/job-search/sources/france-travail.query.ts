@@ -92,6 +92,7 @@ export function publishedSinceParam(days: number): string | null {
 
 export interface FranceTravailParams {
   motsCles?: string;
+  codeROME?: string;
   departement?: string;
   typeContrat?: string;
   natureContrat?: string;
@@ -101,17 +102,55 @@ export interface FranceTravailParams {
   range: string;
 }
 
+/** A candidate's search, with the ROME jobs they confirmed (US-118). */
+export interface ProjectSearch {
+  project: SearchProject;
+  /** Métier codes of the confirmed appellations; empty when none. */
+  romeCodes: readonly string[];
+}
+
 /**
- * One query per (keywords × department) pair, so several candidates looking
- * for the same job in the same department cost a single call.
+ * One query per (keywords × department) pair, and one per (ROME job ×
+ * department) pair, so several candidates looking for the same thing in the
+ * same department cost a single call.
+ *
+ * The ROME queries come **in addition** to the keyword ones, never instead.
+ * Measured on 2026-09-24 over seven days: when the candidate's words differ
+ * from the adverts', the ROME job brings what keywords miss ("Ingénieur
+ * logiciel" in 44: 8 offers by keywords, 16 more by ROME); when they match,
+ * keywords bring more ("Commercial" in 31: 108 against 10). Only the union is
+ * never worse than before.
  */
 export function buildSourceQueries(
-  projects: readonly SearchProject[],
+  searches: readonly ProjectSearch[],
   publishedSinceDays: number,
 ): JobSourceQuery[] {
   const byKey = new Map<string, JobSourceQuery>();
 
-  for (const project of projects) {
+  const add = (
+    key: string,
+    project: SearchProject,
+    subject: Pick<JobSourceQuery, "keywords" | "romeCodes">,
+    department: string,
+  ) => {
+    const existing = byKey.get(key);
+
+    if (existing) {
+      mergeInto(existing, project);
+      return;
+    }
+
+    byKey.set(key, {
+      ...subject,
+      contractTypes: [...project.contractTypes],
+      department,
+      experienceLevel: project.experienceLevel,
+      nafDivisions: nafDivisionsForSectors(project.sectors),
+      publishedSinceDays,
+    });
+  };
+
+  for (const { project, romeCodes } of searches) {
     const departments = uniqueDepartments(project);
 
     for (const role of project.targetRoles) {
@@ -119,22 +158,23 @@ export function buildSourceQueries(
       if (!keywords) continue;
 
       for (const department of departments) {
-        const key = `${keywords.toLowerCase()}|${department}`;
-        const existing = byKey.get(key);
-
-        if (existing) {
-          mergeInto(existing, project);
-          continue;
-        }
-
-        byKey.set(key, {
-          contractTypes: [...project.contractTypes],
+        add(
+          `keywords:${keywords.toLowerCase()}|${department}`,
+          project,
+          { keywords, romeCodes: [] },
           department,
-          experienceLevel: project.experienceLevel,
-          keywords,
-          nafDivisions: nafDivisionsForSectors(project.sectors),
-          publishedSinceDays,
-        });
+        );
+      }
+    }
+
+    for (const code of new Set(romeCodes)) {
+      for (const department of departments) {
+        add(
+          `rome:${code}|${department}`,
+          project,
+          { keywords: "", romeCodes: [code] },
+          department,
+        );
       }
     }
   }
@@ -198,6 +238,9 @@ export function toFranceTravailParams(
 
   return {
     ...(query.keywords ? { motsCles: query.keywords } : {}),
+    ...(query.romeCodes.length > 0
+      ? { codeROME: query.romeCodes.join(",") }
+      : {}),
     ...(query.department ? { departement: query.department } : {}),
     // Contracts and natures are ORed by the API, so asking for both a CDI and
     // an alternance in one call is fine. Sending neither means "everything",

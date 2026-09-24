@@ -18,8 +18,13 @@ export type SearchProjectsStore = {
    * a candidate who turned the daily email off still configured what they are
    * looking for, and the offers they want belong in the database all the same
    * — that is what the search page serves.
+   *
+   * Each comes with the ROME jobs its owner confirmed (US-118): the métier
+   * codes the collection queries by (US-124).
    */
-  listAll(): Promise<Array<{ userEmail: string; project: SearchProject }>>;
+  listAll(): Promise<
+    Array<{ userEmail: string; project: SearchProject; romeCodes: string[] }>
+  >;
   save(userEmail: string, project: SearchProject): Promise<SearchProject>;
   deleteByUserEmail(userEmail: string): Promise<number>;
 };

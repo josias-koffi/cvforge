@@ -6,7 +6,11 @@ import type { ProfilesStore, StoredProfile } from "../profiles/profiles.types";
 import type { SearchProjectsStore } from "../search-projects/search-projects.types";
 import type { BoardsService } from "./boards.service";
 import type { JobDeduplicator } from "./dedup/job-deduplicator";
-import { dateInParis, hourInParis, JobDigestService } from "./job-digest.service";
+import {
+  dateInParis,
+  hourInParis,
+  JobDigestService,
+} from "./job-digest.service";
 import type {
   JobSource,
   JobSourceAdapter,
@@ -87,7 +91,11 @@ function makeProfile(): StoredProfile {
     },
     label: "Profil",
     meta: { lastSavedAt: null, maxProfiles: 3, source: "storage" },
-    preferences: { availabilityDate: "", availabilityMode: "", contractTypes: "" },
+    preferences: {
+      availabilityDate: "",
+      availabilityMode: "",
+      contractTypes: "",
+    },
     sections: {
       certifications: [],
       education: [],
@@ -144,25 +152,31 @@ interface Harness {
   service: JobDigestService;
 }
 
-function createService(options: {
-  projects?: Array<{ userEmail: string; project: SearchProject }>;
-  /** Sources an admin switched off. */
-  disabledSources?: JobSource[];
-  /** Original links carried by the collected adverts. */
-  partnerUrls?: string[];
-  /** Searches the collection works from, when they differ from the digest ones. */
-  allProjects?: Array<{ userEmail: string; project: SearchProject }>;
-  jobs?: StoredJob[];
-  listings?: StoredJobListing[];
-  alreadyClaimed?: boolean;
-  isStillOpen?: boolean | null;
-  chatAnswer?: string;
-  chatFails?: boolean;
-  creditsFail?: boolean;
-  notificationFails?: boolean;
-  alreadyAnnounced?: boolean;
-  now?: number;
-} = {}): Harness {
+function createService(
+  options: {
+    projects?: Array<{ userEmail: string; project: SearchProject }>;
+    /** Sources an admin switched off. */
+    disabledSources?: JobSource[];
+    /** Original links carried by the collected adverts. */
+    partnerUrls?: string[];
+    /** Searches the collection works from, when they differ from the digest ones. */
+    allProjects?: Array<{
+      userEmail: string;
+      project: SearchProject;
+      romeCodes?: string[];
+    }>;
+    jobs?: StoredJob[];
+    listings?: StoredJobListing[];
+    alreadyClaimed?: boolean;
+    isStillOpen?: boolean | null;
+    chatAnswer?: string;
+    chatFails?: boolean;
+    creditsFail?: boolean;
+    notificationFails?: boolean;
+    alreadyAnnounced?: boolean;
+    now?: number;
+  } = {},
+): Harness {
   const now = options.now ?? NOW;
   const written: NewJobMatch[] = [];
   const claims: string[] = [];
@@ -173,7 +187,7 @@ function createService(options: {
     options.chatFails
       ? Promise.reject(new Error("modèle indisponible"))
       : (options.chatAnswer ??
-          '{"classement":[{"id":"job-1","raison":"Même stack que la vôtre."}]}'),
+        '{"classement":[{"id":"job-1","raison":"Même stack que la vôtre."}]}'),
   );
 
   const searchProjects: Pick<
@@ -181,12 +195,16 @@ function createService(options: {
     "listAll" | "listDigestEnabled"
   > = {
     listAll: async () =>
-      options.allProjects ??
+      (
+        options.allProjects ??
+        options.projects ?? [
+          { project: makeProject(), userEmail: "user@example.com" },
+        ]
+      ).map((entry) => ({ romeCodes: [], ...entry })),
+    listDigestEnabled: async () =>
       options.projects ?? [
         { project: makeProject(), userEmail: "user@example.com" },
       ],
-    listDigestEnabled: async () =>
-      options.projects ?? [{ project: makeProject(), userEmail: "user@example.com" }],
   };
   const profiles = {
     deleteByUserEmail: async () => 0,
@@ -377,7 +395,9 @@ describe("Paris clock", () => {
 
   it("dates the run by the Paris day", () => {
     // 23:30 UTC is already the next day in Paris.
-    expect(dateInParis(Date.parse("2026-09-22T23:30:00.000Z"))).toBe("2026-09-23");
+    expect(dateInParis(Date.parse("2026-09-22T23:30:00.000Z"))).toBe(
+      "2026-09-23",
+    );
   });
 });
 
@@ -399,6 +419,27 @@ describe("JobDigestService", () => {
       userEmail: "user@example.com",
     });
     expect(harness.finished).toEqual([{ status: "done" }]);
+  });
+
+  it("also asks the sources by the ROME jobs a candidate confirmed (US-124)", async () => {
+    const harness = createService({
+      allProjects: [
+        {
+          project: makeProject(),
+          romeCodes: ["M1855"],
+          userEmail: "user@example.com",
+        },
+      ],
+    });
+
+    await harness.service.run({ kind: "collect" });
+
+    expect(
+      harness.searched.map((query) => [query.keywords !== "", query.romeCodes]),
+    ).toEqual([
+      [true, []],
+      [false, ["M1855"]],
+    ]);
   });
 
   it("collects for a search even when its owner declined the morning mail", async () => {
@@ -536,7 +577,9 @@ describe("JobDigestService", () => {
   it("waits for the morning before running", async () => {
     // 03:00 in Paris: too early. The day is not even claimed, so the run can
     // still happen later the same morning.
-    const early = createService({ now: Date.parse("2026-09-23T01:00:00.000Z") });
+    const early = createService({
+      now: Date.parse("2026-09-23T01:00:00.000Z"),
+    });
 
     expect(await early.service.runIfDue()).toBeNull();
     expect(early.claims).toEqual([]);
@@ -636,7 +679,9 @@ describe("JobDigestService", () => {
       const stats = await harness.service.run();
 
       expect(stats?.notificationsSent).toBe(1);
-      expect(harness.announced).toEqual([{ emailEnabled: true, totalCount: 1 }]);
+      expect(harness.announced).toEqual([
+        { emailEnabled: true, totalCount: 1 },
+      ]);
     });
 
     it("passes on the candidate's choice about the e-mail", async () => {
@@ -652,7 +697,9 @@ describe("JobDigestService", () => {
       await harness.service.run();
 
       // In-app only: the offers are still there, the e-mail is not sent.
-      expect(harness.announced).toEqual([{ emailEnabled: false, totalCount: 1 }]);
+      expect(harness.announced).toEqual([
+        { emailEnabled: false, totalCount: 1 },
+      ]);
     });
 
     it("says nothing when nothing new was written", async () => {

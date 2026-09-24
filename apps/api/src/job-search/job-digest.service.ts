@@ -1,39 +1,33 @@
-import {
-  AI_CREDIT_ACTION_JOB_DIGEST_RERANK,
-  type SearchProject,
-} from "@cvforge/types";
+import type { SearchProject } from "@cvforge/types";
 import { Injectable, Logger, type OnModuleInit } from "@nestjs/common";
-import { withOpenRouterHttpErrors } from "../ai/openrouter.exception";
 import type { OpenRouterService } from "../ai/openrouter.service";
 import type { CreditsService } from "../credits/credits.service";
 import type { NotificationsService } from "../notifications/notifications.service";
-import { extractJsonFromContent } from "../cv-generation/cv-generation.normalizers";
 import type { ProfilesStore, StoredProfile } from "../profiles/profiles.types";
 import type { SearchProjectsStore } from "../search-projects/search-projects.types";
 import { BoardsService } from "./boards.service";
 import { JobDeduplicator } from "./dedup/job-deduplicator";
-import type { JobSourceAdapter, NormalizedJobListing } from "./job-search.types";
+import type { JobSourceAdapter } from "./job-search.types";
 import type { JobsStore, StoredJob } from "./jobs.types";
 import type {
   DigestRun,
   DigestRunKind,
   JobDigestRunsStore,
   JobMatchesStore,
-  NewJobMatch,
 } from "./matches.types";
 import type { JobSourcesStore } from "./job-sources.types";
-import { buildSourceQueries } from "./sources/france-travail.query";
+import { JobCollector } from "./job-collector";
+import {
+  keepLiveOnly,
+  rerankSelection,
+  toNewMatches,
+} from "./job-digest.steps";
+import { dateInParis, hourInParis } from "./paris-time";
 import {
   DEFAULT_SELECTION_SIZE,
   selectJobsForProject,
   type ScoredJob,
 } from "./matching/job-matching";
-import {
-  buildRerankUserMessage,
-  JOB_RERANK_SYSTEM_PROMPT,
-  readRerankResponse,
-  toRerankCandidates,
-} from "./matching/job-rerank";
 
 /**
  * The morning run: collect, select, explain, write.
@@ -45,7 +39,6 @@ import {
 
 const CHECK_INTERVAL_MS = 15 * 60_000;
 const DIGEST_HOUR = 6;
-const PARIS_TIME_ZONE = "Europe/Paris";
 /** One day back: yesterday's offers are already collected. */
 /**
  * The daily pass only asks for what was published since yesterday: the rest is
@@ -90,6 +83,7 @@ export interface DigestStats {
 @Injectable()
 export class JobDigestService implements OnModuleInit {
   private readonly logger = new Logger(JobDigestService.name);
+  private readonly collector: JobCollector;
   private timer: NodeJS.Timeout | null = null;
 
   constructor(
@@ -101,8 +95,8 @@ export class JobDigestService implements OnModuleInit {
     private readonly jobs: JobsStore,
     private readonly matches: JobMatchesStore,
     private readonly runs: JobDigestRunsStore,
-    private readonly sourceStates: JobSourcesStore,
-    private readonly boards: BoardsService,
+    sourceStates: JobSourcesStore,
+    boards: BoardsService,
     private readonly deduplicator: JobDeduplicator,
     private readonly sources: JobSourceAdapter[],
     private readonly credits: CreditsService,
@@ -110,7 +104,9 @@ export class JobDigestService implements OnModuleInit {
     private readonly notifications: NotificationsService,
     private readonly appUrl: string,
     private readonly now: () => number = Date.now,
-  ) {}
+  ) {
+    this.collector = new JobCollector(sources, sourceStates, boards);
+  }
 
   onModuleInit() {
     // Checked every quarter of an hour rather than scheduled at 6:00 sharp: a
@@ -217,8 +213,8 @@ export class JobDigestService implements OnModuleInit {
       const allProjects = await this.searchProjects.listAll();
       stats.projects = allProjects.length;
 
-      const listings = await this.collect(
-        allProjects.map((entry) => entry.project),
+      const listings = await this.collector.collect(
+        allProjects,
         stats,
         sinceDays ?? COLLECTION_WINDOW_DAYS,
       );
@@ -236,7 +232,10 @@ export class JobDigestService implements OnModuleInit {
         }
       }
 
-      await this.runs.finish(claimed.id, { stats: { ...stats }, status: "done" });
+      await this.runs.finish(claimed.id, {
+        stats: { ...stats },
+        status: "done",
+      });
     } catch (error) {
       stats.errors.push(String(error));
       await this.runs.finish(claimed.id, {
@@ -247,98 +246,6 @@ export class JobDigestService implements OnModuleInit {
     }
 
     return stats;
-  }
-
-  /** Every source, once, for the queries the candidates' searches imply. */
-  private async collect(
-    projects: readonly SearchProject[],
-    stats: DigestStats,
-    sinceDays: number,
-  ): Promise<NormalizedJobListing[]> {
-    const listings: NormalizedJobListing[] = [];
-    const queries = buildSourceQueries(projects, sinceDays);
-    // Read at every run, not at boot: the adapters are built once when the
-    // module is constructed, so a switch flipped in the admin would otherwise
-    // stay invisible until the next deployment.
-    const disabled = await this.sourceStates.listDisabled();
-
-    for (const source of this.sources) {
-      if (disabled.has(source.source)) {
-        stats.sourcesSkipped.push(source.source);
-        continue;
-      }
-
-      let collected = 0;
-      let failure = "";
-
-      for (const query of queries) {
-        try {
-          const found = await source.search(query);
-          collected += found.length;
-          listings.push(...found);
-        } catch (error) {
-          // One failed query costs its offers, never the whole morning.
-          failure = String(error);
-          stats.errors.push(`${source.source}: ${failure}`);
-        }
-      }
-
-      await this.sourceStates.recordRun(source.source, {
-        failed: Boolean(failure),
-        listingCount: collected,
-        status: failure ? failure : "ok",
-      });
-    }
-
-    try {
-      const boards = await this.boards.collect(disabled);
-      stats.boardsRead = boards.boardsRead;
-      listings.push(...boards.listings);
-
-      for (const [provider, tally] of boards.byProvider) {
-        await this.sourceStates.recordRun(provider, {
-          failed: tally.failures > 0,
-          listingCount: tally.listingCount,
-          status: tally.failures > 0 ? `${tally.failures} échec(s)` : "ok",
-        });
-      }
-    } catch (error) {
-      stats.errors.push(`boards: ${String(error)}`);
-    }
-
-    stats.boardsDiscovered = await this.discoverBoards(listings, stats);
-
-    return listings;
-  }
-
-  /**
-   * France Travail publishes the advert's original link, which often points at
-   * the employer's own recruiting software. Those links cost nothing and grow
-   * the registry by themselves — without them it stays empty until an admin
-   * fills it by hand.
-   *
-   * Run after the boards were read, on purpose: a company registered a second
-   * ago would be fetched on an unverified token, and a 404 retires it on the
-   * spot. It is collected on the next run instead.
-   */
-  private async discoverBoards(
-    listings: readonly NormalizedJobListing[],
-    stats: DigestStats,
-  ): Promise<number> {
-    // A 31-day backfill carries thousands of links, most of them repeated.
-    const urls = new Set<string>();
-
-    for (const listing of listings) {
-      for (const url of listing.partnerUrls) urls.add(url);
-    }
-
-    try {
-      return await this.boards.registerManyFromUrls([...urls], "france_travail");
-    } catch (error) {
-      stats.errors.push(`board discovery: ${String(error)}`);
-
-      return 0;
-    }
   }
 
   private async buildSelection(
@@ -408,7 +315,9 @@ export class JobDigestService implements OnModuleInit {
     ranked: Array<{ id: string; rank: number; reason: string }> | null,
     stats: DigestStats,
   ): Promise<void> {
-    const reasons = new Map(ranked?.map((item) => [item.id, item.reason]) ?? []);
+    const reasons = new Map(
+      ranked?.map((item) => [item.id, item.reason]) ?? [],
+    );
     const ordered = ranked
       ? [...live].sort(
           (left, right) =>
@@ -423,7 +332,9 @@ export class JobDigestService implements OnModuleInit {
         digestUrl: `${this.appUrl}/offres-du-jour`,
         emailEnabled: entry.project.emailEnabled,
         offers: ordered.slice(0, EMAIL_PREVIEW_SIZE).map((scored) => ({
-          companyName: scored.job.companyAnonymous ? "" : scored.job.companyName,
+          companyName: scored.job.companyAnonymous
+            ? ""
+            : scored.job.companyName,
           locationLabel: scored.job.locationLabel,
           reason: reasons.get(scored.job.id) ?? "",
           score: scored.score,
@@ -449,52 +360,20 @@ export class JobDigestService implements OnModuleInit {
   ): Promise<StoredProfile | null> {
     const registry = await this.profiles.findByUserEmail(userEmail);
 
-    return registry?.profiles.find((profile) => profile.id === profileId) ?? null;
+    return (
+      registry?.profiles.find((profile) => profile.id === profileId) ?? null
+    );
   }
 
-  /**
-   * Checks the offers are still online before proposing them.
-   *
-   * A source that cannot answer leaves the offer in place: "we could not
-   * check" is not "it is gone", and dropping a live offer on a network blip
-   * would be the worse mistake.
-   */
-  private async keepLiveOnly(selected: ScoredJob[]): Promise<ScoredJob[]> {
-    const live: ScoredJob[] = [];
-
-    for (const entry of selected) {
-      const listings = (await this.jobs.findById(entry.job.id))?.listings ?? [];
-      const open = listings.filter((listing) => !listing.closedAt);
-      let isOpen = open.length > 0;
-
-      for (const listing of open) {
-        const source = this.sources.find(
-          (candidate) => candidate.source === listing.source,
-        );
-        if (!source) continue;
-
-        const answer = await source.isStillOpen(listing.externalId);
-        if (answer === false) {
-          await this.jobs.closeListing(
-            listing.source,
-            listing.externalId,
-            new Date(this.now()).toISOString(),
-          );
-          isOpen = open.length > 1;
-        }
-      }
-
-      if (isOpen) live.push(entry);
-    }
-
-    return live;
+  private keepLiveOnly(selected: ScoredJob[]): Promise<ScoredJob[]> {
+    return keepLiveOnly(selected, {
+      jobs: this.jobs,
+      now: this.now,
+      sources: this.sources,
+    });
   }
 
-  /**
-   * The paid pass. Credits are charged **after** the model answered: a failed
-   * call must not cost the candidate anything, and the deterministic order is
-   * a perfectly good fallback.
-   */
+  /** The deterministic order stands whenever the paid pass fails. */
   private async rerank(
     userEmail: string,
     profile: StoredProfile | null,
@@ -502,42 +381,10 @@ export class JobDigestService implements OnModuleInit {
     stats: DigestStats,
   ) {
     try {
-      await this.credits.assertSufficientCredits(
-        AI_CREDIT_ACTION_JOB_DIGEST_RERANK,
-        userEmail,
+      const ranked = await rerankSelection(
+        { profile, selected, userEmail },
+        { credits: this.credits, openRouter: this.openRouter },
       );
-
-      const raw = await withOpenRouterHttpErrors(() =>
-        this.openRouter.chat(
-          [
-            { content: JOB_RERANK_SYSTEM_PROMPT, role: "system" },
-            {
-              content: buildRerankUserMessage(
-                {
-                  // No name, no contact details: the model is given what the
-                  // candidate does, never who they are.
-                  headline: profile?.headline ?? "",
-                  skills: profile?.sections.technicalSkills ?? [],
-                  targetRoles: [],
-                },
-                toRerankCandidates(selected),
-              ),
-              role: "user",
-            },
-          ],
-          { temperature: 0.2 },
-        ),
-      );
-
-      const ranked = readRerankResponse(
-        extractJsonFromContent<{ classement?: unknown }>(raw),
-        selected,
-      );
-
-      await this.credits.consumeCredits({
-        action: AI_CREDIT_ACTION_JOB_DIGEST_RERANK,
-        userEmail,
-      });
       stats.aiReranks += 1;
 
       return ranked;
@@ -548,61 +395,5 @@ export class JobDigestService implements OnModuleInit {
   }
 }
 
-function toNewMatches(input: {
-  live: ScoredJob[];
-  project: SearchProject;
-  ranked: Array<{ id: string; rank: number; reason: string }> | null;
-  runDate: string;
-  userEmail: string;
-}): NewJobMatch[] {
-  const byId = new Map(input.ranked?.map((entry) => [entry.id, entry]) ?? []);
-
-  return input.live.map((entry) => {
-    const ranking = byId.get(entry.job.id);
-
-    return {
-      aiRank: ranking?.rank ?? null,
-      aiReason: ranking?.reason || null,
-      digestDate: input.runDate,
-      jobId: entry.job.id,
-      jobSnapshot: entry.job,
-      matchedSkills: entry.matchedSkills,
-      profileId: input.project.profileId,
-      score: entry.score,
-      scoreBreakdown: entry.breakdown,
-      userEmail: input.userEmail,
-    };
-  });
-}
-
-/** The run is a Paris day, not a UTC one: 6:00 means 6:00 for the candidate. */
-export function dateInParis(timestamp: number): string {
-  return new Intl.DateTimeFormat("fr-CA", {
-    day: "2-digit",
-    month: "2-digit",
-    timeZone: PARIS_TIME_ZONE,
-    year: "numeric",
-  }).format(new Date(timestamp));
-}
-
-/**
- * Read from the formatted **parts**, not from the formatted string: a French
- * locale renders the hour as "08 h", and `Number("08 h")` is NaN — which then
- * fails every comparison silently and lets the run start at any hour.
- */
-export function hourInParis(timestamp: number): number {
-  const hour = new Intl.DateTimeFormat("fr-FR", {
-    hour: "2-digit",
-    hour12: false,
-    timeZone: PARIS_TIME_ZONE,
-  })
-    .formatToParts(new Date(timestamp))
-    .find((part) => part.type === "hour")?.value;
-
-  const parsed = Number(hour);
-
-  // An hour we cannot read must not open the gate.
-  return Number.isFinite(parsed) ? parsed % 24 : DIGEST_HOUR - 1;
-}
-
+export { dateInParis, hourInParis };
 export type { StoredJob };

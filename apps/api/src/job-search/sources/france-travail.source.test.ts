@@ -10,6 +10,7 @@ const QUERY: JobSourceQuery = {
   department: "44",
   experienceLevel: null,
   keywords: "Développeur",
+  romeCodes: [],
   nafDivisions: [],
   publishedSinceDays: 1,
 };
@@ -124,6 +125,23 @@ describe("FranceTravailSource", () => {
     expect(url.searchParams.get("typeContrat")).toBe("CDI");
     expect(url.searchParams.get("publieeDepuis")).toBe("1");
     expect(url.searchParams.get("range")).toBe("0-149");
+  });
+
+  it("searches by ROME job, without keywords, for a query built from one", async () => {
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(tokenResponse())
+      .mockImplementation(async () => jsonResponse({ resultats: [] }));
+
+    await createSource(fetchImpl).search({
+      ...QUERY,
+      keywords: "",
+      romeCodes: ["M1855"],
+    });
+
+    const url = new URL(String(fetchImpl.mock.calls[1]?.[0]));
+    expect(url.searchParams.get("codeROME")).toBe("M1855");
+    expect(url.searchParams.has("motsCles")).toBe(false);
   });
 
   it("stops paginating on the first short page", async () => {

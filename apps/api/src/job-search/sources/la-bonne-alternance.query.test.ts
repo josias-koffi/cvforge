@@ -11,6 +11,7 @@ function makeQuery(overrides: Partial<JobSourceQuery> = {}): JobSourceQuery {
     department: "44",
     experienceLevel: null,
     keywords: "Comptable",
+    romeCodes: [],
     nafDivisions: [],
     publishedSinceDays: 1,
     ...overrides,
@@ -49,3 +50,25 @@ describe("cacheKeyFor", () => {
     expect(cacheKeyFor({})).toBe("france");
   });
 });
+
+describe("La bonne alternance by ROME job (US-124)", () => {
+  it("passes the job as `romes`, next to the department", () => {
+    expect(
+      toLaBonneAlternanceParams(makeQuery({ keywords: "", romeCodes: ["D1102"] })),
+    ).toEqual({ departements: "44", romes: "D1102" });
+    expect(
+      toLaBonneAlternanceParams(
+        makeQuery({ department: "", keywords: "", romeCodes: ["D1102"] }),
+      ),
+    ).toEqual({ romes: "D1102" });
+  });
+
+  it("never answers a job's query from its department's page", () => {
+    expect(cacheKeyFor({ departements: "44", romes: "D1102" })).toBe("44|D1102");
+    expect(cacheKeyFor({ romes: "D1102" })).toBe("france|D1102");
+    expect(cacheKeyFor({ departements: "44", romes: "D1102" })).not.toBe(
+      cacheKeyFor({ departements: "44" }),
+    );
+  });
+});
+

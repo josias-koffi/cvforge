@@ -11,6 +11,7 @@ import {
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
+import type { ListingCompetence } from "../../job-search/job-search.types";
 
 /**
  * One offer, as the candidate sees it — whatever number of sources publish it.
@@ -50,10 +51,17 @@ export const jobs = pgTable(
       .defaultNow(),
     /** Set only once every advert of this job is closed. */
     closedAt: timestamp("closed_at", { withTimezone: true }),
+    /** The ROME job, from the first advert that named one (US-124). */
+    romeCode: text("rome_code"),
+    romeCompetences: jsonb("rome_competences")
+      .$type<ListingCompetence[]>()
+      .notNull()
+      .default([]),
   },
   (table) => [
     // The fuzzy step only ever compares within one company and department.
     index("jobs_company_department_idx").on(table.companyKey, table.department),
+    index("jobs_rome_code_idx").on(table.romeCode),
     index("jobs_open_idx").on(table.closedAt, table.firstSeenAt),
     index("jobs_title_key_idx").on(table.titleKey),
   ],
@@ -97,6 +105,13 @@ export const jobListings = pgTable(
       .defaultNow(),
     closedAt: timestamp("closed_at", { withTimezone: true }),
     matchMethod: text("match_method").notNull().default("new"),
+    romeCode: text("rome_code"),
+    /** The appellation's label: offers never give its code. */
+    romeAppellation: text("rome_appellation"),
+    romeCompetences: jsonb("rome_competences")
+      .$type<ListingCompetence[]>()
+      .notNull()
+      .default([]),
     raw: jsonb("raw"),
   },
   (table) => [

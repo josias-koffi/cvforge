@@ -1,6 +1,10 @@
 import type { SearchContractType } from "@cvforge/types";
 import { departmentFromPostcode } from "../job-listing.normalize";
-import type { NormalizedJobListing } from "../job-search.types";
+import type {
+  ListingCompetence,
+  ListingRome,
+  NormalizedJobListing,
+} from "../job-search.types";
 
 /**
  * A France Travail offer, as the fields we read from it. Everything is
@@ -31,6 +35,9 @@ export interface FranceTravailOffer {
     partenaires?: Array<{ nom?: string; url?: string; logo?: string }>;
   };
   contact?: { urlPostulation?: string };
+  romeCode?: string;
+  appellationlibelle?: string;
+  competences?: Array<{ code?: string; libelle?: string; exigence?: string }>;
 }
 
 /** Wording France Travail uses when the employer stays hidden. */
@@ -82,6 +89,7 @@ export function toNormalizedListing(
     publishedAt: isoDate(offer.dateCreation),
     raw: offer,
     remote: isRemote(`${title} ${locationLabel} ${description}`),
+    ...readRome(offer),
     salaryLabel: text(offer.salaire?.libelle),
     source: "france_travail",
     title,
@@ -132,6 +140,41 @@ export function readDepartment(offer: FranceTravailOffer): string {
 /** "20" covers Corsica in older data; the API's own codes are 2A and 2B. */
 function normalizeDepartment(value: string): string {
   return value.toUpperCase();
+}
+
+/**
+ * The ROME job the offer is filed under. On 2026-09-24 every offer had a code
+ * and an appellation label, and a fifth to two fifths of them listed skills,
+ * each marked "E" (required) or "S" (wished for).
+ */
+export function readRome(offer: FranceTravailOffer): { rome?: ListingRome } {
+  const code = text(offer.romeCode).toUpperCase();
+  if (!code) return {};
+
+  const competences: ListingCompetence[] = (offer.competences ?? []).flatMap(
+    (competence) => {
+      const competenceCode = text(competence?.code);
+      const label = text(competence?.libelle);
+
+      return competenceCode && label
+        ? [
+            {
+              code: competenceCode,
+              label,
+              required: text(competence?.exigence).toUpperCase() === "E",
+            },
+          ]
+        : [];
+    },
+  );
+
+  return {
+    rome: {
+      appellationLabel: text(offer.appellationlibelle),
+      code,
+      competences,
+    },
+  };
 }
 
 /**

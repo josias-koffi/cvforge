@@ -3,6 +3,7 @@ import {
   readContractType,
   readDepartment,
   readPartnerUrls,
+  readRome,
   toNormalizedListing,
   type FranceTravailOffer,
 } from "./france-travail.mapper";
@@ -142,3 +143,43 @@ describe("readPartnerUrls", () => {
     expect(readPartnerUrls({ ...OFFER, origineOffre: {} })).toEqual([]);
   });
 });
+
+describe("readRome (US-124)", () => {
+  it("keeps the ROME code, the appellation's label and the skills", () => {
+    expect(
+      readRome({
+        ...OFFER,
+        appellationlibelle: "Développeur / Développeuse informatique",
+        competences: [
+          { code: "109846", exigence: "S", libelle: "Concevoir une application web" },
+          { code: "300688", exigence: "E", libelle: "Application web" },
+          { code: "", libelle: "Sans code" },
+        ],
+        romeCode: " m1805 ",
+      }),
+    ).toEqual({
+      rome: {
+        appellationLabel: "Développeur / Développeuse informatique",
+        code: "M1805",
+        competences: [
+          { code: "109846", label: "Concevoir une application web", required: false },
+          { code: "300688", label: "Application web", required: true },
+        ],
+      },
+    });
+  });
+
+  it("adds nothing without a ROME code", () => {
+    expect(readRome(OFFER)).toEqual({});
+    expect(toNormalizedListing(OFFER)?.rome).toBeUndefined();
+  });
+
+  it("carries the ROME job into the listing", () => {
+    expect(toNormalizedListing({ ...OFFER, romeCode: "M1855" })?.rome).toEqual({
+      appellationLabel: "",
+      code: "M1855",
+      competences: [],
+    });
+  });
+});
+

@@ -249,3 +249,33 @@ describe("PgRomeAppellationsReader", () => {
     expect(await reader.find("nope")).toBeNull();
   });
 });
+
+describe("PgSearchProjectsStore.listAll with ROME jobs (US-124)", () => {
+  it("gives each search the métiers of its confirmed appellations only", async () => {
+    await seedReferential();
+    const projects = new PgSearchProjectsStore(testDatabase.db);
+    await projects.save(ANA, emptySearchProject("p1"));
+    await projects.save(BOB, emptySearchProject("p1"));
+    await store.confirm(ANA, "p1", FULL_STACK);
+    await store.confirm(ANA, "p1", BACK_END);
+    await store.replaceSuggestions(ANA, "p1", [{ ...BAKER, score: 0.9 }]);
+    // A snapshot pointing at a stale métier: the referential's current one wins.
+    await store.confirm(BOB, "p1", { ...BAKER, metierCode: "OLD" });
+
+    const all = await projects.listAll();
+
+    expect(
+      all.map((entry) => [entry.userEmail, entry.romeCodes]).sort(),
+    ).toEqual([
+      [ANA, ["M1855"]],
+      [BOB, ["D1102"]],
+    ]);
+  });
+
+  it("gives an empty list to a search without confirmed jobs", async () => {
+    const projects = new PgSearchProjectsStore(testDatabase.db);
+    await projects.save(ANA, emptySearchProject("p1"));
+
+    expect((await projects.listAll())[0]?.romeCodes).toEqual([]);
+  });
+});

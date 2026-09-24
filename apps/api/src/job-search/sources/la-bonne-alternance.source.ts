@@ -18,6 +18,7 @@ import {
 import {
   cacheKeyFor,
   toLaBonneAlternanceParams,
+  type LaBonneAlternanceParams,
 } from "./la-bonne-alternance.query";
 import { readRetryAfterMs, SourceRateLimiter } from "./source-rate-limiter";
 
@@ -64,7 +65,8 @@ export class LaBonneAlternanceSource implements JobSourceAdapter {
   }
 
   /**
-   * Every apprenticeship in the query's department.
+   * Every apprenticeship in the query's department — for its ROME job only,
+   * when the query is one (US-124).
    *
    * Not paginated: the API caps an answer at 150 offers per underlying source
    * and states plainly that the rest cannot be fetched. Asking again would
@@ -81,7 +83,7 @@ export class LaBonneAlternanceSource implements JobSourceAdapter {
 
     if (cached && cached.expiresAt > this.now()) return cached.listings;
 
-    const listings = await this.fetchSearch(params.departements);
+    const listings = await this.fetchSearch(params);
 
     if (listings === null) return [];
 
@@ -127,11 +129,13 @@ export class LaBonneAlternanceSource implements JobSourceAdapter {
 
   /** The offers, or `null` when the call could not be made. */
   private async fetchSearch(
-    department: string | undefined,
+    params: LaBonneAlternanceParams,
   ): Promise<NormalizedJobListing[] | null> {
     const url = new URL(`${LA_BONNE_ALTERNANCE_API_URL}/job/v1/search`);
 
-    if (department) url.searchParams.set("departements", department);
+    for (const [key, value] of Object.entries(params)) {
+      if (value) url.searchParams.set(key, value);
+    }
 
     for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt += 1) {
       try {

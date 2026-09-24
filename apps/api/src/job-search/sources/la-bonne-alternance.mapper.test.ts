@@ -135,3 +135,22 @@ describe("departmentFromAddress", () => {
     expect(departmentFromAddress("Quelque part en France")).toBe("")
   });
 });
+
+describe("ROME job (US-124)", () => {
+  it("keeps the first ROME code of the offer", () => {
+    expect(toNormalizedListing(makeOffer())?.rome).toEqual({
+      appellationLabel: "",
+      code: "M1203",
+      competences: [],
+    });
+  });
+
+  it("adds nothing when the offer names no ROME code", () => {
+    expect(
+      toNormalizedListing(
+        makeOffer({ offer: { ...makeOffer().offer, rome_codes: [] } }),
+      )?.rome,
+    ).toBeUndefined();
+  });
+});
+

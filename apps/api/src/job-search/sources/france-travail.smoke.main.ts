@@ -46,6 +46,7 @@ async function main() {
     department,
     experienceLevel: null,
     keywords,
+    romeCodes: [],
     nafDivisions: [],
     publishedSinceDays: 7,
   });
@@ -58,6 +59,7 @@ async function main() {
     department,
     experienceLevel: null,
     keywords,
+    romeCodes: [],
     nafDivisions: [],
     publishedSinceDays: 31,
   });
@@ -66,6 +68,7 @@ async function main() {
     department: "",
     experienceLevel: null,
     keywords,
+    romeCodes: [],
     nafDivisions: [],
     publishedSinceDays: 31,
   });
@@ -74,7 +77,17 @@ async function main() {
     department,
     experienceLevel: null,
     keywords,
+    romeCodes: [],
     nafDivisions: ["62", "63"],
+    publishedSinceDays: 31,
+  });
+  await reportFilter(source, "métier ROME M1805, sans mots-clés", {
+    contractTypes: [],
+    department,
+    experienceLevel: null,
+    keywords: "",
+    romeCodes: ["M1805"],
+    nafDivisions: [],
     publishedSinceDays: 31,
   });
   await reportFilter(source, "débutant accepté", {
@@ -82,6 +95,7 @@ async function main() {
     department: "",
     experienceLevel: "debutant",
     keywords,
+    romeCodes: [],
     nafDivisions: [],
     publishedSinceDays: 31,
   });

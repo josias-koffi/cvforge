@@ -1,16 +1,4 @@
-import type { SearchContractType } from "@cvforge/types";
-import {
-  and,
-  count,
-  desc,
-  eq,
-  gte,
-  inArray,
-  isNull,
-  or,
-  sql,
-  type AnyColumn,
-} from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import type { Database } from "../database/database.types";
 import { jobLinks, jobListings, jobs } from "../database/schema";
 import {
@@ -22,6 +10,15 @@ import {
 } from "./dedup/job-keys";
 import type { MatchCandidate, MatchMethod } from "./dedup/match-job";
 import type { JobSource, NormalizedJobListing } from "./job-search.types";
+import {
+  newJobValues,
+  olderOf,
+  romeColumns,
+  seedFromListing,
+  toJob,
+  toListing,
+} from "./jobs.rows";
+import { findMatchCandidates, findOpenJobs, searchJobs } from "./jobs.search";
 import type {
   JobSearchFilters,
   JobsStore,
@@ -30,136 +27,18 @@ import type {
   StoredJobListing,
 } from "./jobs.types";
 
-type JobRow = typeof jobs.$inferSelect;
-
-const MS_PER_DAY = 86_400_000;
-/** More words than this and the query stops narrowing anything useful. */
-const MAX_SEARCH_WORDS = 6;
-
-/**
- * Accents, folded in SQL.
- *
- * `ilike` ignores case but not accents, so a candidate typing "developpeur"
- * found nothing while the table was full of "Développeur". `unaccent()` would
- * mean a Postgres extension — a schema decision — where `translate()` is
- * standard SQL and costs nothing at this volume.
- */
-const ACCENTED_CHARS = "àáâãäåçèéêëìíîïñòóôõöùúûüýÿœæ";
-const PLAIN_CHARS = "aaaaaaceeeeiiiinooooouuuuyyoa";
-
-function folded(column: AnyColumn) {
-  return sql`translate(lower(${column}), ${ACCENTED_CHARS}, ${PLAIN_CHARS})`;
-}
-
-/** Same folding as the database does, applied to what the candidate typed. */
-function foldWord(word: string): string {
-  return word
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase();
-}
-type ListingRow = typeof jobListings.$inferSelect;
-
-function toJob(row: JobRow): StoredJob {
-  return {
-    closedAt: row.closedAt?.toISOString() ?? null,
-    companyAnonymous: row.companyAnonymous,
-    companyKey: row.companyKey,
-    companyName: row.companyName,
-    contractType: row.contractType as SearchContractType | "unknown",
-    department: row.department,
-    description: row.description,
-    descriptionSimhash: row.descriptionSimhash,
-    firstSeenAt: row.firstSeenAt.toISOString(),
-    id: row.id,
-    lastSeenAt: row.lastSeenAt.toISOString(),
-    latitude: row.latitude,
-    locationLabel: row.locationLabel,
-    longitude: row.longitude,
-    primaryUrl: row.primaryUrl,
-    publishedAt: row.publishedAt?.toISOString() ?? null,
-    remote: row.remote,
-    salaryLabel: row.salaryLabel,
-    title: row.title,
-    titleKey: row.titleKey,
-  };
-}
-
-function toListing(row: ListingRow): StoredJobListing {
-  return {
-    applyUrl: row.applyUrl,
-    closedAt: row.closedAt?.toISOString() ?? null,
-    companyName: row.companyName,
-    externalId: row.externalId,
-    firstSeenAt: row.firstSeenAt.toISOString(),
-    id: row.id,
-    jobId: row.jobId,
-    lastSeenAt: row.lastSeenAt.toISOString(),
-    matchMethod: row.matchMethod as StoredJobListing["matchMethod"],
-    publishedAt: row.publishedAt?.toISOString() ?? null,
-    source: row.source as JobSource,
-    title: row.title,
-    url: row.url,
-  };
-}
-
-/** Every link an advert carries: its page, its application form, its partners. */
-export function listingUrlKeys(listing: NormalizedJobListing): string[] {
-  const keys = [listing.url, listing.applyUrl, ...listing.partnerUrls]
-    .map(urlKey)
-    .filter(Boolean);
-
-  return [...new Set(keys)];
-}
+export { listingUrlKeys } from "./jobs.rows";
 
 export class PgJobsStore implements JobsStore {
   constructor(private readonly db: Database) {}
 
-  /**
-   * The jobs worth comparing an advert against: same company and department,
-   * or — for an advert with no employer named — the anonymous ones. Bounded by
-   * date, so the comparison stays a handful of rows even with a full table.
-   */
-  async findMatchCandidates(input: {
+  findMatchCandidates(input: {
     companyKey: string;
     department: string;
     companyAnonymous: boolean;
     since: string;
   }): Promise<MatchCandidate[]> {
-    const rows = await this.db
-      .select({
-        companyAnonymous: jobs.companyAnonymous,
-        companyKey: jobs.companyKey,
-        department: jobs.department,
-        descriptionSimhash: jobs.descriptionSimhash,
-        jobId: jobs.id,
-        publishedAt: jobs.publishedAt,
-        titleKey: jobs.titleKey,
-      })
-      .from(jobs)
-      .where(
-        and(
-          isNull(jobs.closedAt),
-          gte(jobs.firstSeenAt, new Date(input.since)),
-          input.companyAnonymous || !input.companyKey
-            ? eq(jobs.companyAnonymous, true)
-            : and(
-                eq(jobs.companyKey, input.companyKey),
-                eq(jobs.department, input.department),
-              ),
-        ),
-      )
-      .limit(200);
-
-    return rows.map((row) => ({
-      companyAnonymous: row.companyAnonymous,
-      companyKey: row.companyKey,
-      department: row.department,
-      descriptionSimhash: row.descriptionSimhash,
-      jobId: row.jobId,
-      publishedAt: row.publishedAt?.toISOString() ?? null,
-      titleKey: row.titleKey,
-    }));
+    return findMatchCandidates(this.db, input);
   }
 
   async findJobByLinks(urlKeys: readonly string[]): Promise<string | null> {
@@ -179,7 +58,10 @@ export class PgJobsStore implements JobsStore {
       .select()
       .from(jobListings)
       .where(
-        and(eq(jobListings.source, source), eq(jobListings.externalId, externalId)),
+        and(
+          eq(jobListings.source, source),
+          eq(jobListings.externalId, externalId),
+        ),
       )
       .limit(1);
 
@@ -190,26 +72,9 @@ export class PgJobsStore implements JobsStore {
     const seenAt = new Date();
     const [row] = await this.db
       .insert(jobs)
-      .values({
-        companyAnonymous: listing.companyAnonymous,
-        companyKey: companyKey(listing.companyName),
-        companyName: listing.companyName,
-        contractType: listing.contractType,
-        department: listing.department,
-        description: listing.description,
-        descriptionSimhash: simhash(listing.description),
-        firstSeenAt: seenAt,
-        lastSeenAt: seenAt,
-        latitude: listing.latitude,
-        locationLabel: listing.locationLabel,
-        longitude: listing.longitude,
-        primaryUrl: listing.applyUrl || listing.url,
-        publishedAt: listing.publishedAt ? new Date(listing.publishedAt) : null,
-        remote: listing.remote,
-        salaryLabel: listing.salaryLabel,
-        title: listing.title,
-        titleKey: titleKey(listing.title),
-      })
+      .values(
+        newJobValues(seedFromListing(listing), { first: seenAt, last: seenAt }),
+      )
       .returning();
 
     return toJob(row!);
@@ -229,7 +94,9 @@ export class PgJobsStore implements JobsStore {
   }): Promise<StoredJobListing> {
     const { jobId, listing, matchMethod } = input;
     const seenAt = new Date();
-    const publishedAt = listing.publishedAt ? new Date(listing.publishedAt) : null;
+    const publishedAt = listing.publishedAt
+      ? new Date(listing.publishedAt)
+      : null;
     const values = {
       applyUrl: listing.applyUrl,
       companyAnonymous: listing.companyAnonymous,
@@ -247,6 +114,8 @@ export class PgJobsStore implements JobsStore {
       publishedAt,
       raw: listing.raw,
       remote: listing.remote,
+      romeAppellation: listing.rome?.appellationLabel || null,
+      ...romeColumns(listing),
       salaryLabel: listing.salaryLabel,
       source: listing.source,
       title: listing.title,
@@ -320,6 +189,13 @@ export class PgJobsStore implements JobsStore {
               titleKey: titleKey(listing.title) || current.titleKey,
             }
           : {}),
+        // The first advert that named a ROME job keeps it; skills are only
+        // replaced by an advert that lists some.
+        romeCode: current.romeCode ?? listing.rome?.code ?? null,
+        romeCompetences:
+          current.romeCompetences.length > 0
+            ? current.romeCompetences
+            : (listing.rome?.competences ?? []),
         closedAt: null,
         firstSeenAt: current.firstSeenAt,
         lastSeenAt: seenAt,
@@ -345,7 +221,11 @@ export class PgJobsStore implements JobsStore {
   }
 
   async findById(jobId: string): Promise<JobWithListings | null> {
-    const [row] = await this.db.select().from(jobs).where(eq(jobs.id, jobId)).limit(1);
+    const [row] = await this.db
+      .select()
+      .from(jobs)
+      .where(eq(jobs.id, jobId))
+      .limit(1);
     if (!row) return null;
 
     const listings = await this.db
@@ -357,112 +237,17 @@ export class PgJobsStore implements JobsStore {
     return { job: toJob(row), listings: listings.map(toListing) };
   }
 
-  async findOpenJobs(input: {
+  findOpenJobs(input: {
     departments: readonly string[];
     includeRemote: boolean;
     since: string;
     limit: number;
   }): Promise<StoredJob[]> {
-    const departments = [...new Set(input.departments.filter(Boolean))];
-    // No department and no remote filter means "anywhere in France", which is
-    // what a candidate mobile nationwide asked for.
-    const place =
-      departments.length === 0
-        ? undefined
-        : input.includeRemote
-          ? or(inArray(jobs.department, departments), eq(jobs.remote, true))
-          : inArray(jobs.department, departments);
-
-    const rows = await this.db
-      .select()
-      .from(jobs)
-      .where(
-        and(
-          isNull(jobs.closedAt),
-          gte(jobs.firstSeenAt, new Date(input.since)),
-          ...(place ? [place] : []),
-        ),
-      )
-      .orderBy(desc(jobs.firstSeenAt))
-      .limit(input.limit);
-
-    return rows.map(toJob);
+    return findOpenJobs(this.db, input);
   }
 
-  /**
-   * The candidate's own search.
-   *
-   * The words are matched with `ilike` on the title and the advert: this table
-   * holds the offers of the last weeks, not a search engine's index, and a
-   * full-text index would be a schema decision to take on real volume rather
-   * than on a guess.
-   */
-  async searchJobs(filters: JobSearchFilters) {
-    const words = filters.query
-      .split(/\s+/)
-      .map((word) => word.trim())
-      .filter((word) => word.length > 1)
-      .slice(0, MAX_SEARCH_WORDS);
-    const departments = [...new Set(filters.departments.filter(Boolean))];
-    // What the base holds at all: still open, and recent enough to show.
-    //
-    // The age is the oldest of "published at the source" and "first seen by
-    // us", like `ageInDays` in the scoring. Reading `firstSeenAt` alone would
-    // date an offer from the day we imported it: a back-fill over a month
-    // would make every advert of that month look published today.
-    const cutoff = new Date(Date.now() - filters.maxAgeDays * MS_PER_DAY);
-    const available = [
-      isNull(jobs.closedAt),
-      sql`least(coalesce(${jobs.publishedAt}, ${jobs.firstSeenAt}), ${jobs.firstSeenAt}) >= ${cutoff}`,
-    ];
-    const conditions = [
-      ...available,
-      // Every word has to appear somewhere: two words narrow, they do not widen.
-      ...words.map((word) => {
-        const needle = `%${foldWord(word)}%`;
-
-        return or(
-          sql`${folded(jobs.title)} like ${needle}`,
-          sql`${folded(jobs.description)} like ${needle}`,
-          sql`${folded(jobs.companyName)} like ${needle}`,
-        );
-      }),
-      ...(departments.length > 0
-        ? [
-            filters.remoteOnly
-              ? or(inArray(jobs.department, departments), eq(jobs.remote, true))
-              : inArray(jobs.department, departments),
-          ]
-        : []),
-      ...(filters.remoteOnly && departments.length === 0
-        ? [eq(jobs.remote, true)]
-        : []),
-      ...(filters.contractTypes.length > 0
-        ? [inArray(jobs.contractType, [...filters.contractTypes])]
-        : []),
-    ];
-
-    const rows = await this.db
-      .select()
-      .from(jobs)
-      .where(and(...conditions))
-      .orderBy(desc(jobs.firstSeenAt))
-      .limit(filters.limit)
-      .offset(filters.offset);
-    const [counted] = await this.db
-      .select({ total: count() })
-      .from(jobs)
-      .where(and(...conditions));
-    const [held] = await this.db
-      .select({ total: count() })
-      .from(jobs)
-      .where(and(...available));
-
-    return {
-      available: Number(held?.total ?? 0),
-      jobs: rows.map(toJob),
-      total: Number(counted?.total ?? 0),
-    };
+  searchJobs(filters: JobSearchFilters) {
+    return searchJobs(this.db, filters);
   }
 
   async closeListing(source: JobSource, externalId: string, at: string) {
@@ -470,7 +255,10 @@ export class PgJobsStore implements JobsStore {
       .update(jobListings)
       .set({ closedAt: new Date(at) })
       .where(
-        and(eq(jobListings.source, source), eq(jobListings.externalId, externalId)),
+        and(
+          eq(jobListings.source, source),
+          eq(jobListings.externalId, externalId),
+        ),
       )
       .returning({ jobId: jobListings.jobId });
 
@@ -534,26 +322,9 @@ export class PgJobsStore implements JobsStore {
     const listing = toListing(row);
     const [created] = await this.db
       .insert(jobs)
-      .values({
-        companyAnonymous: row.companyAnonymous,
-        companyKey: companyKey(row.companyName),
-        companyName: row.companyName,
-        contractType: row.contractType,
-        department: row.department,
-        description: row.description,
-        descriptionSimhash: simhash(row.description),
-        firstSeenAt: row.firstSeenAt,
-        lastSeenAt: row.lastSeenAt,
-        latitude: row.latitude,
-        locationLabel: row.locationLabel,
-        longitude: row.longitude,
-        primaryUrl: row.applyUrl || row.url,
-        publishedAt: row.publishedAt,
-        remote: row.remote,
-        salaryLabel: row.salaryLabel,
-        title: row.title,
-        titleKey: titleKey(row.title),
-      })
+      .values(
+        newJobValues(row, { first: row.firstSeenAt, last: row.lastSeenAt }),
+      )
       .returning();
 
     await this.db
@@ -591,11 +362,4 @@ export class PgJobsStore implements JobsStore {
 
     return found;
   }
-}
-
-function olderOf(left: Date | null, right: Date | null): Date | null {
-  if (!left) return right;
-  if (!right) return left;
-
-  return left <= right ? left : right;
 }

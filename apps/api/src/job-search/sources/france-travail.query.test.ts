@@ -1,9 +1,17 @@
 import { emptySearchProject, type SearchProject } from "@cvforge/types";
 import { describe, expect, it } from "vitest";
 import {
-  buildSourceQueries,
+  buildSourceQueries as buildQueries,
   toFranceTravailParams,
 } from "./france-travail.query";
+
+/** The searches as they were before US-124: no confirmed ROME job. */
+function buildSourceQueries(projects: SearchProject[], sinceDays: number) {
+  return buildQueries(
+    projects.map((project) => ({ project, romeCodes: [] })),
+    sinceDays,
+  );
+}
 
 function makeProject(overrides: Partial<SearchProject> = {}): SearchProject {
   return {
@@ -206,3 +214,66 @@ describe("toFranceTravailParams", () => {
     });
   });
 });
+
+describe("buildSourceQueries with confirmed ROME jobs (US-124)", () => {
+  it("adds one query per ROME job and department, next to the keyword ones", () => {
+    const queries = buildQueries(
+      [{ project: makeProject(), romeCodes: ["M1855", "M1805", "M1855"] }],
+      1,
+    );
+
+    expect(queries.map((query) => [query.keywords, query.romeCodes])).toEqual([
+      ["Développeur Full Stack", []],
+      ["", ["M1855"]],
+      ["", ["M1805"]],
+    ]);
+    expect(queries.every((query) => query.department === "44")).toBe(true);
+  });
+
+  it("shares a ROME query between candidates, with the union of their filters", () => {
+    const queries = buildQueries(
+      [
+        {
+          project: makeProject({ targetRoles: [] }),
+          romeCodes: ["D1102"],
+        },
+        {
+          project: makeProject({
+            contractTypes: ["alternance"],
+            targetRoles: [],
+          }),
+          romeCodes: ["D1102"],
+        },
+      ],
+      1,
+    );
+
+    expect(queries).toHaveLength(1);
+    expect(queries[0]).toMatchObject({
+      contractTypes: ["cdi", "alternance"],
+      keywords: "",
+      romeCodes: ["D1102"],
+    });
+  });
+
+  it("keeps a project without confirmed jobs on keywords alone", () => {
+    expect(
+      buildQueries([{ project: makeProject(), romeCodes: [] }], 1).map(
+        (query) => query.romeCodes,
+      ),
+    ).toEqual([[]]);
+  });
+
+  it("asks France Travail by codeROME, without motsCles", () => {
+    const [, byRome] = buildQueries(
+      [{ project: makeProject(), romeCodes: ["M1855"] }],
+      1,
+    );
+
+    const params = toFranceTravailParams(byRome!, "0-149");
+    expect(params.codeROME).toBe("M1855");
+    expect(params.motsCles).toBeUndefined();
+    expect(params.departement).toBe("44");
+  });
+});
+

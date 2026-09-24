@@ -1,5 +1,5 @@
 import { departmentFromPostcode } from "../job-listing.normalize";
-import type { NormalizedJobListing } from "../job-search.types";
+import type { ListingRome, NormalizedJobListing } from "../job-search.types";
 
 /**
  * One offer as La bonne alternance publishes it, limited to the fields we
@@ -88,6 +88,7 @@ export function toNormalizedListing(
     publishedAt: isoDate(offer.offer?.publication?.creation),
     raw: offer,
     remote: offer.contract?.remote === "remote" || offer.contract?.remote === "hybrid",
+    ...readRome(offer),
     // The API publishes no pay, and inventing "selon profil" would be a lie.
     salaryLabel: "",
     source: "la_bonne_alternance",
@@ -157,4 +158,15 @@ function isoDate(value: unknown): string | null {
   const parsed = Date.parse(text(value));
 
   return Number.isFinite(parsed) ? new Date(parsed).toISOString() : null;
+}
+
+/**
+ * The ROME code the offer is filed under. La bonne alternance gives codes
+ * only — no appellation, no skills — as a list, and the first one is kept.
+ * On 2026-09-24 all 301 offers of a `romes=D1102` search carried D1102.
+ */
+function readRome(offer: LaBonneAlternanceOffer): { rome?: ListingRome } {
+  const code = text(offer.offer?.rome_codes?.[0]).toUpperCase();
+
+  return code ? { rome: { appellationLabel: "", code, competences: [] } } : {};
 }

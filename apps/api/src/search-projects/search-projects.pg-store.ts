@@ -1,7 +1,11 @@
 import type { SearchProject } from "@cvforge/types";
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import type { Database } from "../database/database.types";
-import { searchProjectRome, searchProjects } from "../database/schema";
+import {
+  romeAppellations,
+  searchProjectRome,
+  searchProjects,
+} from "../database/schema";
 import type { SearchProjectsStore } from "./search-projects.types";
 
 type SearchProjectRow = typeof searchProjects.$inferSelect;
@@ -72,11 +76,41 @@ export class PgSearchProjectsStore implements SearchProjectsStore {
 
   async listAll() {
     const rows = await this.db.select().from(searchProjects);
+    const romeCodes = await this.confirmedRomeCodes();
 
     return rows.map((row) => ({
       project: toProject(row),
+      romeCodes: [...(romeCodes.get(ownerKey(row.userEmail, row.profileId)) ?? [])],
       userEmail: row.userEmail,
     }));
+  }
+
+  /**
+   * The métier of every confirmed appellation, one read for all searches. The
+   * referential's current métier wins over the snapshot, so a job France
+   * Travail moved is queried where it now lives.
+   */
+  private async confirmedRomeCodes(): Promise<Map<string, Set<string>>> {
+    const rows = await this.db
+      .select({
+        metierCode: sql<string>`coalesce(${romeAppellations.metierCode}, ${searchProjectRome.metierCode})`,
+        profileId: searchProjectRome.profileId,
+        userEmail: searchProjectRome.userEmail,
+      })
+      .from(searchProjectRome)
+      .leftJoin(
+        romeAppellations,
+        eq(romeAppellations.code, searchProjectRome.appellationCode),
+      )
+      .where(eq(searchProjectRome.status, "confirmed"));
+    const byOwner = new Map<string, Set<string>>();
+
+    for (const row of rows) {
+      const key = ownerKey(row.userEmail, row.profileId);
+      byOwner.set(key, (byOwner.get(key) ?? new Set()).add(row.metierCode));
+    }
+
+    return byOwner;
   }
 
   async save(userEmail: string, project: SearchProject) {
@@ -133,4 +167,8 @@ export class PgSearchProjectsStore implements SearchProjectsStore {
       return rows.length;
     });
   }
+}
+
+function ownerKey(userEmail: string, profileId: string): string {
+  return `${userEmail}|${profileId}`;
 }
