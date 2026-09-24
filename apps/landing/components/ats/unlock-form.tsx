@@ -2,10 +2,17 @@
 
 import { useId, useState } from "react"
 
+import { LockOpenIcon } from "lucide-react"
+
+import {
+  SparkPending,
+  sparkPendingClassName,
+} from "@/components/ats/spark-pending"
 import { Button } from "@/components/ui/button"
 import type { LandingDictionary } from "@/content/types"
 import type { AtsUnlockResult } from "@/lib/ats-api"
 import { postUnlock, scanErrorMessage } from "@/lib/ats-client"
+import { cn } from "@/lib/utils"
 
 /**
  * Trades the email for the detailed report.
@@ -57,7 +64,7 @@ export function UnlockForm({
         </label>
         <input
           autoComplete="email"
-          className="mt-1 w-full rounded-lg border bg-background p-2.5 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="mt-1 w-full rounded-lg border bg-background p-2.5 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
           id={emailId}
           onChange={(event) => setEmail(event.target.value)}
           placeholder={dictionary.unlock.emailPlaceholder}
@@ -70,7 +77,7 @@ export function UnlockForm({
       <div className="flex items-start gap-2">
         <input
           checked={consent}
-          className="mt-1 size-4 rounded border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="mt-1 size-4 rounded border focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
           id={consentId}
           onChange={(event) => setConsent(event.target.checked)}
           required
@@ -82,12 +89,18 @@ export function UnlockForm({
       </div>
 
       <Button
-        className="w-full"
+        className={cn("h-10 w-full", sparkPendingClassName(submitting))}
         disabled={submitting || !consent || email.trim().length === 0}
         type="submit"
         variant="spark"
       >
-        {submitting ? dictionary.unlock.submitting : dictionary.unlock.submit}
+        <SparkPending
+          pending={submitting}
+          pendingLabel={dictionary.unlock.submitting}
+        >
+          <LockOpenIcon />
+          {dictionary.unlock.submit}
+        </SparkPending>
       </Button>
 
       <p aria-live="polite" className="text-sm text-destructive" role="status">

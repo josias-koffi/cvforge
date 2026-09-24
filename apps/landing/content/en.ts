@@ -353,11 +353,19 @@ export const en: LandingDictionary = {
       "75% of CVs are discarded by software before a human reads them. Drop yours: you get your score in seconds, without creating an account.",
     privacyNote:
       "Your CV is never stored. It is analysed in memory and discarded: we keep only the score and the points we found.",
+    trust: {
+      private: "CV never stored",
+      fast: "Score in seconds",
+      noSignup: "No sign-up",
+    },
     upload: {
       label: "Drop your CV",
       hint: "PDF or DOCX, 5 MB maximum",
-      button: "Choose a file",
-      change: "Change file",
+      dropTitle: "Drag your CV here",
+      browse: "or browse your files",
+      dropActive: "Release to drop your CV",
+      ready: "Ready to be analysed",
+      remove: "Remove the file",
       analyse: "Analyse my CV",
       analysing: "Analysing…",
       tooLarge:
@@ -369,6 +377,15 @@ export const en: LandingDictionary = {
       hint: "With an ad, we also measure how well your CV matches the role.",
       placeholder: "Paste the text of the job ad here…",
       toggle: "Target a specific role",
+    },
+    progress: {
+      title: "Analysing your CV",
+      steps: [
+        "Reading the file",
+        "Extracting the text",
+        "Checking the ATS criteria",
+        "Computing the score",
+      ],
     },
     result: {
       scoreLabel: "ATS score",

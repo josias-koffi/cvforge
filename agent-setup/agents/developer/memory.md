@@ -1331,3 +1331,11 @@
 - Scopes donnés par le support : La Bonne Boîte `api_labonneboitev2 search office`, ROME Substitutions `api_rome-substitutionsv1 nomenclatureRomeSubstitutions` (ajoutée au catalogue `ft.config.ts`, non vérifiée).
 - Avec ces scopes le jeton est délivré, mais les appels répondent toujours 403 `WWW-Authenticate: insufficient_scope` : habilitation à obtenir côté France Travail, incident à rouvrir.
 - **Leçon** : `source .env` altère le secret FT (caractère interprété par le shell → `invalid_client`) ; utiliser `node --env-file=../../.env --import tsx src/france-travail/ft-smoke.main.ts <api>`.
+
+## 2026-09-24 — Landing : refonte UX de l'analyse ATS (/fr/analyse-ats)
+- Drop zone (`components/ats/cv-drop-zone.tsx`) : toute la zone est le `<label>` de l'input `sr-only`, drag & drop, carte fichier, shake sur refus.
+- Vague de l'app reprise via `components/ats/spark-pending.tsx` (miroir de `PendingContent` d'apps/web) sur « Analyser » et « Afficher le rapport ».
+- `scan-progress.tsx` : étapes cadencées côté client, la dernière tourne jusqu'à la réponse (jamais « fini » avant l'API).
+- Jauge : remplissage CSS (`gauge-fill`, part de `--gauge-from`) + compteur `motion` ; le SSR garde les valeurs finales (tests SSR inchangés).
+- `UnlockedReport` extrait dans `unlocked-report.tsx` (barres `bar-fill`, icônes par sévérité), `bandFor` dupliqué depuis @cvforge/ats-score (landing n'en dépend pas).
+- Piège : l'API limite les scans par IP en local ; pour tester l'animation, mocker `/api/ats-scan` (Playwright `page.route`, Chrome système via `executablePath`). Un onglet Claude-in-Chrome en arrière-plan ne fait pas tourner rAF.

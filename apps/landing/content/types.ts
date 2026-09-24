@@ -154,11 +154,23 @@ export interface LandingDictionary {
     subtitle: string
     /** Said before the upload, because it is the reason to trust the page. */
     privacyNote: string
+    /** Three short reassurances under the title, each paired with an icon. */
+    trust: {
+      private: string
+      fast: string
+      noSignup: string
+    }
     upload: {
       label: string
       hint: string
-      button: string
-      change: string
+      /** Drop zone, empty: the invitation, then the link-styled alternative. */
+      dropTitle: string
+      browse: string
+      /** Drop zone while a file hovers over it. */
+      dropActive: string
+      /** Under the file name once a file is picked. */
+      ready: string
+      remove: string
       analyse: string
       analysing: string
       /** Client-side refusals, before anything is sent. */
@@ -170,6 +182,14 @@ export interface LandingDictionary {
       hint: string
       placeholder: string
       toggle: string
+    }
+    /**
+     * Steps shown while the scan runs. They pace the wait, they do not report
+     * the engine's progress: the last one holds until the answer arrives.
+     */
+    progress: {
+      title: string
+      steps: string[]
     }
     result: {
       scoreLabel: string

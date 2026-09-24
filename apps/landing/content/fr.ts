@@ -356,11 +356,19 @@ export const fr: LandingDictionary = {
       "75 % des CV sont écartés par un logiciel avant d'être lus par un humain. Déposez le vôtre : vous avez votre score en quelques secondes, sans créer de compte.",
     privacyNote:
       "Votre CV n'est jamais enregistré. Il est analysé en mémoire puis détruit : nous ne conservons que le score et les points détectés.",
+    trust: {
+      private: "CV jamais conservé",
+      fast: "Score en quelques secondes",
+      noSignup: "Sans inscription",
+    },
     upload: {
       label: "Déposez votre CV",
       hint: "PDF ou DOCX, 5 Mo maximum",
-      button: "Choisir un fichier",
-      change: "Changer de fichier",
+      dropTitle: "Glissez votre CV ici",
+      browse: "ou parcourez vos fichiers",
+      dropActive: "Relâchez pour déposer votre CV",
+      ready: "Prêt à être analysé",
+      remove: "Retirer le fichier",
       analyse: "Analyser mon CV",
       analysing: "Analyse en cours…",
       tooLarge:
@@ -372,6 +380,15 @@ export const fr: LandingDictionary = {
       hint: "Avec une offre, nous mesurons aussi l'adéquation de votre CV au poste visé.",
       placeholder: "Collez ici le texte de l'offre qui vous intéresse…",
       toggle: "Cibler une offre précise",
+    },
+    progress: {
+      title: "Analyse de votre CV",
+      steps: [
+        "Lecture du fichier",
+        "Extraction du texte",
+        "Évaluation des critères ATS",
+        "Calcul du score",
+      ],
     },
     result: {
       scoreLabel: "Score ATS",

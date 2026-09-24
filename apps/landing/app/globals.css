@@ -65,6 +65,9 @@
   --animate-spark-flash: spark-flash 900ms var(--ease-spark) 1;
   --animate-spark-shimmer: spark-shimmer 1.6s linear infinite;
   --animate-float: float 3.2s ease-in-out infinite;
+  --animate-shake: shake 400ms var(--ease-spark) 1;
+  --animate-gauge-fill: gauge-fill 1s var(--ease-spark) both;
+  --animate-bar-fill: bar-fill 800ms var(--ease-spark) both;
 
   @keyframes rise-in {
     from {
@@ -95,6 +98,35 @@
     }
     to {
       background-position: -200% 0;
+    }
+  }
+
+  /* A refused file: a short no, not an alarm. */
+  @keyframes shake {
+    0%,
+    100% {
+      transform: translateX(0);
+    }
+    20%,
+    60% {
+      transform: translateX(-4px);
+    }
+    40%,
+    80% {
+      transform: translateX(4px);
+    }
+  }
+
+  /* Fills a ring from empty up to its stroke-dashoffset attribute. */
+  @keyframes gauge-fill {
+    from {
+      stroke-dashoffset: var(--gauge-from);
+    }
+  }
+
+  @keyframes bar-fill {
+    from {
+      transform: scaleX(0);
     }
   }
 
