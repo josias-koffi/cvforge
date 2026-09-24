@@ -13,7 +13,7 @@ RUN pnpm install --frozen-lockfile --filter @cvforge/landing...
 # Stage 2: Build
 FROM deps AS builder
 # Canonical URLs, sitemap and OG images are baked in at build time.
-ARG NEXT_PUBLIC_SITE_URL=http://localhost:3001
+ARG NEXT_PUBLIC_SITE_URL=http://localhost:3101
 ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
 COPY apps/landing apps/landing
 COPY packages/types packages/types

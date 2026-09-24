@@ -137,6 +137,7 @@ jobs:
           build-args: |
             NEXT_PUBLIC_APP_URL=https://${{ needs.resolve.outputs.web_domain }}
             NEXT_PUBLIC_API_URL=https://${{ needs.resolve.outputs.api_domain }}
+            NEXT_PUBLIC_SITE_URL=https://${{ needs.resolve.outputs.landing_domain }}
           cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.OWNER }}/${{ matrix.service }}:cache
           cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.OWNER }}/${{ matrix.service }}:cache,mode=max
 

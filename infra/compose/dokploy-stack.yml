@@ -57,6 +57,9 @@ services:
       NODE_ENV: production
       # The landing only links to the app; /login redirects to this origin.
       APP_URL: https://${WEB_DOMAIN}
+      # Canonical URLs and OG images: pages rendered at request time read it
+      # here, not from the value baked in at build.
+      NEXT_PUBLIC_SITE_URL: https://${LANDING_DOMAIN}
       # Credit offers for the pricing section. Public host, never `http://api`:
       # see the web service above.
       API_INTERNAL_URL: https://${API_DOMAIN}

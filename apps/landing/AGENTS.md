@@ -54,6 +54,6 @@ pnpm --filter @cvforge/landing build
 | ------------------------------- | -------------------------------------------- | ----------------------- |
 | `APP_URL`                       | runtime, target of `/login`                  | `http://localhost:3100` |
 | `API_INTERNAL_URL`              | runtime, API serving the credit offers       | `NEXT_PUBLIC_API_URL`, then `http://localhost:3333` |
-| `NEXT_PUBLIC_SITE_URL`          | build, canonical URLs / sitemap / OG images  | `http://localhost:3101` |
+| `NEXT_PUBLIC_SITE_URL`          | build + runtime, canonical URLs / sitemap / OG images | `http://localhost:3101` |
 | `NEXT_PUBLIC_SHOW_TESTIMONIALS` | build, `true` shows the testimonials section | off                     |
 | `NEXT_DIST_DIR`                 | dev in docker-compose                        | `.next`                 |
