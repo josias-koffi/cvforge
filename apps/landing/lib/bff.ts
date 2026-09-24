@@ -51,15 +51,42 @@ export async function relayJson(request: Request, endpoint: string) {
   })
 }
 
+/**
+ * A read, relayed with the query parameters named here and no others: the
+ * API sees only what the tool sends, whatever was appended to the URL.
+ */
+export function relayQuery(
+  request: Request,
+  endpoint: string,
+  params: readonly string[]
+) {
+  const incoming = new URL(request.url).searchParams
+  const url = new URL(endpoint)
+
+  for (const name of params) {
+    const value = incoming.get(name)
+    if (value !== null) url.searchParams.set(name, value)
+  }
+
+  return relay(url.toString(), {
+    headers: forwardedFor(request),
+    method: "GET",
+  })
+}
+
 async function relay(
   endpoint: string,
-  init: { body: BodyInit; headers: Record<string, string> }
+  init: {
+    body?: BodyInit
+    headers: Record<string, string>
+    method?: "GET" | "POST"
+  }
 ) {
   try {
     const response = await fetch(endpoint, {
       ...init,
       cache: "no-store",
-      method: "POST",
+      method: init.method ?? "POST",
     })
 
     if (!response.ok) {

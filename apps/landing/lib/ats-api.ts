@@ -75,6 +75,11 @@ export function keywordMatchLeadEndpoint(env: NodeJS.ProcessEnv = process.env) {
   return `${keywordMatchEndpoint(env)}/lead`
 }
 
+/** The job market tool (US-137): its figures, its autocomplete, its lead. */
+export function jobMarketEndpoint(env: NodeJS.ProcessEnv = process.env) {
+  return `${apiUrl(env)}/public/job-market`
+}
+
 export function unlockEndpoint(
   scanId: string,
   env: NodeJS.ProcessEnv = process.env

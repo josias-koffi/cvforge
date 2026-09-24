@@ -483,6 +483,8 @@ export const fr: LandingDictionary = {
         "Cette analyse est introuvable. Relancez-en une pour obtenir votre rapport.",
       offerRequired:
         "Collez le texte complet de l'offre : 200 caractères au minimum.",
+      appellationUnknown: "Choisissez un métier dans la liste proposée.",
+      departmentUnknown: "Choisissez un département dans la liste.",
       offerNotUsable:
         "Cette offre ne contient pas assez de termes précis pour être comparée. Collez l'annonce complète.",
     },
@@ -521,6 +523,93 @@ export const fr: LandingDictionary = {
           "Les mots-clés de l'offre déjà dans votre CV, et ceux qui manquent. Sans IA, rien n'est conservé.",
         tags: ["Sans compte", "Sans IA"],
       },
+      job_market: {
+        name: "Ce métier recrute-t-il ?",
+        description:
+          "Pour un métier et un département : difficulté de recruter, offres, demandeurs d'emploi et salaire médian.",
+        tags: ["Sans compte", "Données France Travail"],
+      },
+    },
+  },
+  jobMarket: {
+    metaTitle: "Ce métier recrute-t-il près de chez moi ? Tension, offres, salaire",
+    metaDescription:
+      "Pour un métier et un département : la difficulté de recruter, le nombre d'offres, les demandeurs d'emploi et le salaire médian. Gratuit, sans inscription, d'après France Travail.",
+    eyebrow: "Outil gratuit",
+    title: "Ce métier recrute-t-il près de chez vous ?",
+    subtitle:
+      "Choisissez un métier et un département : voyez si les employeurs peinent à recruter, combien d'offres paraissent et ce qu'elles paient.",
+    form: {
+      jobLabel: "Métier",
+      jobHint: "Tapez au moins 2 lettres, puis choisissez dans la liste.",
+      jobPlaceholder: "Ex. : comptable, développeur web, aide-soignant…",
+      searching: "Recherche des métiers…",
+      noMatch: "Aucun métier ne correspond. Essayez un autre mot.",
+      suggestions: "{count} métiers proposés",
+      departmentLabel: "Département",
+      departmentPlaceholder: "Choisissez un département",
+      submit: "Voir le marché",
+      submitting: "Lecture…",
+      privacyNote:
+        "Aucun compte, aucune donnée personnelle : seuls le métier et le département sont envoyés.",
+    },
+    result: {
+      title: "{job} en {department}",
+      romeNote: "Chiffres du métier ROME {code} : {label}",
+      tension: {
+        title: "Difficulté de recruter",
+        levels: {
+          "1": "Recrutement très facile : beaucoup de candidats",
+          "2": "Recrutement plutôt facile",
+          "3": "Recrutement moyennement difficile",
+          "4": "Recrutement difficile : les employeurs cherchent",
+          "5": "Recrutement très difficile : les employeurs peinent à trouver",
+        },
+        scale: "Niveau {value} sur 5",
+      },
+      offers: {
+        title: "Offres publiées sur le trimestre",
+        yearly: "{count} sur douze mois",
+      },
+      jobseekers: {
+        title: "Demandeurs d'emploi",
+        note: "Inscrits en catégorie A et cherchant ce métier",
+      },
+      salary: {
+        title: "Salaire médian proposé",
+        sample: "Brut annuel, d'après {count} offres",
+        masked:
+          "Moins de {min} offres affichent un salaire ici : pas assez pour une médiane fiable.",
+      },
+      missing: "Non publié",
+      period: "Période : {period}",
+      collecting: {
+        title: "Chiffres en cours de collecte",
+        body: "Nous n'avions pas encore lu ce métier dans ce département. Les chiffres arrivent sous 24 h : revenez demain, ou recevez directement les offres par email.",
+      },
+      refreshed: "Chiffres lus le {date}",
+      sources: {
+        market: "Source : Marché du travail, France Travail",
+        salary: "Salaires : offres collectées par CVSpark",
+      },
+      again: "Chercher un autre métier",
+    },
+    cta: {
+      title: "Recevoir chaque matin les offres de ce métier",
+      body: "Créez votre compte : votre recherche est prête avec ce métier et ce département, et les nouvelles offres arrivent chaque matin dans votre boîte mail.",
+      button: "Recevoir chaque matin les offres de ce métier",
+    },
+    lead: {
+      body: "Nous vous envoyons un lien de connexion. En cliquant dessus, votre recherche est créée et les offres arrivent dès le lendemain matin.",
+      emailLabel: "Votre email",
+      emailPlaceholder: "vous@exemple.fr",
+      consent:
+        "J'accepte que CVSpark crée mon compte et m'envoie un lien de connexion, puis les offres chaque matin.",
+      submit: "Recevoir mon lien",
+      submitting: "Envoi…",
+      success: "Vérifiez votre boîte mail",
+      successBody:
+        "Le lien de connexion ouvre votre compte, avec votre recherche déjà prête.",
     },
   },
   keywordMatch: {

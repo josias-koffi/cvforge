@@ -32,6 +32,12 @@ export const keywordMatchSlugs: Record<Locale, string> = {
   en: "cv-job-match",
 }
 
+/** The free "does this job hire near me?" tool (US-137). */
+export const jobMarketSlugs: Record<Locale, string> = {
+  fr: "metier-recrute",
+  en: "job-market",
+}
+
 /** Localised slug of the free tools hub (US-135); FR is rewritten to the shared route. */
 export const toolsSlugs: Record<Locale, string> = {
   fr: "outils",
@@ -54,7 +60,13 @@ export function localizedPath(pathname: string, target: Locale) {
 }
 
 function translateSlug(segment: string, target: Locale) {
-  for (const slugs of [storySlugs, atsSlugs, toolsSlugs, keywordMatchSlugs]) {
+  for (const slugs of [
+    storySlugs,
+    atsSlugs,
+    toolsSlugs,
+    keywordMatchSlugs,
+    jobMarketSlugs,
+  ]) {
     if (Object.values(slugs).includes(segment)) {
       return slugs[target]
     }

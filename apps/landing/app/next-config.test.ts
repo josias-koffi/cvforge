@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest"
 import nextConfig, { legalRedirects, resolveNextDistDir } from "../next.config"
 import { locales } from "../lib/i18n"
 import { atsPath } from "../lib/ats"
-import { keywordMatchPath, toolsPath } from "../lib/tools"
+import { jobMarketPath, keywordMatchPath, toolsPath } from "../lib/tools"
 import { legalPath } from "../lib/legal"
 
 describe("landing next config", () => {
@@ -127,6 +127,27 @@ describe("landing next config", () => {
     expect(rewrites).toContainEqual({
       source: keywordMatchPath("fr"),
       destination: "/fr/cv-job-match",
+    })
+  })
+
+  /** The job market tool, same arrangement again (US-137). */
+  it("serves the job market tool under each language's slug", async () => {
+    const redirects = await nextConfig.redirects!()
+    const rewrites = await nextConfig.rewrites!()
+
+    expect(redirects).toContainEqual({
+      source: "/fr/job-market",
+      destination: "/fr/metier-recrute",
+      permanent: true,
+    })
+    expect(redirects).toContainEqual({
+      source: "/en/metier-recrute",
+      destination: "/en/job-market",
+      permanent: true,
+    })
+    expect(rewrites).toContainEqual({
+      source: jobMarketPath("fr"),
+      destination: "/fr/job-market",
     })
   })
 

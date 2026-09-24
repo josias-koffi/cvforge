@@ -1,8 +1,18 @@
-import { FileSearchIcon, ListChecksIcon, type LucideIcon } from "lucide-react"
+import {
+  FileSearchIcon,
+  ListChecksIcon,
+  MapPinnedIcon,
+  type LucideIcon,
+} from "lucide-react"
 
 import type { FreeToolKey } from "@/content/types"
 import { atsPath } from "@/lib/ats"
-import { keywordMatchSlugs, toolsSlugs, type Locale } from "@/lib/i18n"
+import {
+  jobMarketSlugs,
+  keywordMatchSlugs,
+  toolsSlugs,
+  type Locale,
+} from "@/lib/i18n"
 
 export interface FreeTool {
   key: FreeToolKey
@@ -20,10 +30,15 @@ export interface FreeTool {
 export const freeTools: FreeTool[] = [
   { key: "ats", path: atsPath, icon: FileSearchIcon },
   { key: "keyword_match", path: keywordMatchPath, icon: ListChecksIcon },
+  { key: "job_market", path: jobMarketPath, icon: MapPinnedIcon },
 ]
 
 export function keywordMatchPath(locale: Locale) {
   return `/${locale}/${keywordMatchSlugs[locale]}`
+}
+
+export function jobMarketPath(locale: Locale) {
+  return `/${locale}/${jobMarketSlugs[locale]}`
 }
 
 export function toolsPath(locale: Locale) {

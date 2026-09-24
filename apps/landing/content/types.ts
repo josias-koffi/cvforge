@@ -12,7 +12,7 @@ export type ScreenshotName =
   | "interview-progress"
 
 /** The free tools that are live on the landing (US-135). */
-export type FreeToolKey = "ats" | "keyword_match"
+export type FreeToolKey = "ats" | "keyword_match" | "job_market"
 
 interface TitledText {
   title: string
@@ -251,6 +251,9 @@ export interface LandingDictionary {
       /** The comparator's own refusals (US-136), worded with the others. */
       offerRequired: string
       offerNotUsable: string
+      /** The job market tool's own refusals (US-137). */
+      appellationUnknown: string
+      departmentUnknown: string
     }
     cta: string
   }
@@ -269,6 +272,85 @@ export interface LandingDictionary {
     more: { body: string; link: string }
     /** One entry per tool that is live. A tool is added the day its page ships. */
     items: Record<FreeToolKey, { name: string; description: string; tags: string[] }>
+  }
+  /**
+   * The free "does this job hire near me?" tool (US-137). Its refusals are
+   * worded in `ats.errors`, with every other tool's.
+   */
+  jobMarket: {
+    metaTitle: string
+    metaDescription: string
+    eyebrow: string
+    title: string
+    subtitle: string
+    form: {
+      jobLabel: string
+      jobHint: string
+      jobPlaceholder: string
+      /** Read out while suggestions load. */
+      searching: string
+      noMatch: string
+      /** "{count} métiers proposés" for screen readers. */
+      suggestions: string
+      departmentLabel: string
+      departmentPlaceholder: string
+      submit: string
+      submitting: string
+      privacyNote: string
+    }
+    result: {
+      /** "{job} en {department}" */
+      title: string
+      /** "Chiffres du métier ROME {code} : {label}" */
+      romeNote: string
+      tension: {
+        title: string
+        /** One phrase per France Travail level, 1 to 5. */
+        levels: Record<"1" | "2" | "3" | "4" | "5", string>
+        /** "Niveau {value} sur 5" */
+        scale: string
+      }
+      offers: {
+        title: string
+        /** "{count} sur douze mois" */
+        yearly: string
+      }
+      jobseekers: {
+        title: string
+        note: string
+      }
+      salary: {
+        title: string
+        /** "Brut annuel, d'après {count} offres" */
+        sample: string
+        /** Below the minimum sample: "{min}" is that minimum. */
+        masked: string
+      }
+      /** A figure France Travail did not publish for this pair. */
+      missing: string
+      /** "Période : {period}" */
+      period: string
+      collecting: { title: string; body: string }
+      /** "Chiffres lus le {date}" */
+      refreshed: string
+      sources: { market: string; salary: string }
+      again: string
+    }
+    cta: {
+      title: string
+      body: string
+      button: string
+    }
+    lead: {
+      body: string
+      emailLabel: string
+      emailPlaceholder: string
+      consent: string
+      submit: string
+      submitting: string
+      success: string
+      successBody: string
+    }
   }
   /**
    * The free CV ↔ offer comparator (US-136). The drop zone reuses the ATS

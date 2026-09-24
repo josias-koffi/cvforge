@@ -43,6 +43,8 @@ function codeMessage(
     INVALID_EMAIL: dictionary.errors.invalidEmail,
     OFFER_NOT_USABLE: dictionary.errors.offerNotUsable,
     OFFER_TEXT_REQUIRED: dictionary.errors.offerRequired,
+    ROME_APPELLATION_UNKNOWN: dictionary.errors.appellationUnknown,
+    DEPARTMENT_UNKNOWN: dictionary.errors.departmentUnknown,
     RATE_LIMITED: dictionary.errors.tooManyRequests,
     SCAN_EXPIRED: dictionary.errors.expired,
     SCAN_NOT_FOUND: dictionary.errors.notFound,
@@ -112,7 +114,7 @@ export async function postUnlock(
 }
 
 /**
- * POSTs to one of the landing's own routes. Throws `{ code, status }` on any
+ * Calls one of the landing's own routes. Throws `{ code, status }` on any
  * failure, which `scanErrorMessage` words; `status` 0 means it never answered.
  */
 export async function callBff(url: string, init: RequestInit) {

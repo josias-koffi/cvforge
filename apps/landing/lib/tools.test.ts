@@ -7,7 +7,12 @@ import sitemap from "@/app/sitemap"
 import { en } from "@/content/en"
 import { fr } from "@/content/fr"
 import { localizedPath, locales } from "@/lib/i18n"
-import { freeTools, keywordMatchPath, toolsPath } from "@/lib/tools"
+import {
+  freeTools,
+  jobMarketPath,
+  keywordMatchPath,
+  toolsPath,
+} from "@/lib/tools"
 
 describe("toolsPath", () => {
   it("gives each language its own address", () => {
@@ -32,6 +37,14 @@ describe("keywordMatchPath", () => {
     expect(localizedPath("/fr/comparateur-cv-offre", "en")).toBe(
       "/en/cv-job-match"
     )
+  })
+})
+
+describe("jobMarketPath", () => {
+  it("gives the job market tool an address per language, both switchable", () => {
+    expect(jobMarketPath("fr")).toBe("/fr/metier-recrute")
+    expect(jobMarketPath("en")).toBe("/en/job-market")
+    expect(localizedPath("/fr/metier-recrute", "en")).toBe("/en/job-market")
   })
 })
 

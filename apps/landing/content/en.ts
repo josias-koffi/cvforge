@@ -475,6 +475,8 @@ export const en: LandingDictionary = {
       notFound:
         "This analysis cannot be found. Run a new one to get your report.",
       offerRequired: "Paste the full text of the offer: 200 characters at least.",
+      appellationUnknown: "Pick a job from the list.",
+      departmentUnknown: "Pick a département from the list.",
       offerNotUsable:
         "This offer does not have enough specific terms to compare. Paste the full ad.",
     },
@@ -513,6 +515,93 @@ export const en: LandingDictionary = {
           "The offer's keywords already in your CV, and the ones missing. No AI, nothing kept.",
         tags: ["No account", "No AI"],
       },
+      job_market: {
+        name: "Is this job hiring?",
+        description:
+          "For a job and a French département: hiring difficulty, openings, job seekers and median salary.",
+        tags: ["No account", "France Travail data"],
+      },
+    },
+  },
+  jobMarket: {
+    metaTitle: "Is this job hiring near me? Demand, openings, salary",
+    metaDescription:
+      "For a job and a French département: how hard employers find it to hire, the number of openings, job seekers and the median salary. Free, no signup, from France Travail data.",
+    eyebrow: "Free tool",
+    title: "Is this job hiring near you?",
+    subtitle:
+      "Pick a job and a département: see whether employers struggle to hire, how many openings are published and what they pay.",
+    form: {
+      jobLabel: "Job",
+      jobHint: "Type at least 2 letters, then pick from the list. Job titles are in French.",
+      jobPlaceholder: "E.g. comptable, développeur web, aide-soignant…",
+      searching: "Looking for jobs…",
+      noMatch: "No job matches. Try another word.",
+      suggestions: "{count} jobs suggested",
+      departmentLabel: "Département",
+      departmentPlaceholder: "Pick a département",
+      submit: "See the market",
+      submitting: "Reading…",
+      privacyNote:
+        "No account, no personal data: only the job and the département are sent.",
+    },
+    result: {
+      title: "{job} in {department}",
+      romeNote: "Figures for ROME job {code}: {label}",
+      tension: {
+        title: "Hiring difficulty",
+        levels: {
+          "1": "Very easy to hire: plenty of candidates",
+          "2": "Fairly easy to hire",
+          "3": "Moderately hard to hire",
+          "4": "Hard to hire: employers are looking",
+          "5": "Very hard to hire: employers struggle to find people",
+        },
+        scale: "Level {value} of 5",
+      },
+      offers: {
+        title: "Openings published this quarter",
+        yearly: "{count} over twelve months",
+      },
+      jobseekers: {
+        title: "Job seekers",
+        note: "Registered in category A and looking for this job",
+      },
+      salary: {
+        title: "Median salary offered",
+        sample: "Gross per year, from {count} openings",
+        masked:
+          "Fewer than {min} openings state a salary here: not enough for a reliable median.",
+      },
+      missing: "Not published",
+      period: "Period: {period}",
+      collecting: {
+        title: "Figures being collected",
+        body: "We had not read this job in this département yet. The figures arrive within 24 hours: come back tomorrow, or get the openings straight by email.",
+      },
+      refreshed: "Figures read on {date}",
+      sources: {
+        market: "Source: Marché du travail, France Travail",
+        salary: "Salaries: openings collected by CVSpark",
+      },
+      again: "Look up another job",
+    },
+    cta: {
+      title: "Get this job's openings every morning",
+      body: "Create your account: your search is ready with this job and this département, and new openings land in your inbox every morning.",
+      button: "Get this job's openings every morning",
+    },
+    lead: {
+      body: "We send you a sign-in link. Clicking it creates your search, and the openings arrive the next morning.",
+      emailLabel: "Your email",
+      emailPlaceholder: "you@example.com",
+      consent:
+        "I agree that CVSpark creates my account and sends me a sign-in link, then the openings every morning.",
+      submit: "Get my link",
+      submitting: "Sending…",
+      success: "Check your inbox",
+      successBody:
+        "The sign-in link opens your account, with your search already set up.",
     },
   },
   keywordMatch: {

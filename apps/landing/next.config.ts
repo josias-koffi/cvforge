@@ -64,6 +64,9 @@ const nextConfig: NextConfig = {
       // And for the CV ↔ offer comparator.
       { source: "/fr/cv-job-match", destination: "/fr/comparateur-cv-offre", permanent: true },
       { source: "/en/comparateur-cv-offre", destination: "/en/cv-job-match", permanent: true },
+      // And for the job market tool.
+      { source: "/fr/job-market", destination: "/fr/metier-recrute", permanent: true },
+      { source: "/en/metier-recrute", destination: "/en/job-market", permanent: true },
       ...legalRedirects(),
     ]
   },
@@ -73,6 +76,7 @@ const nextConfig: NextConfig = {
       { source: "/fr/analyse-ats", destination: "/fr/ats-check" },
       { source: "/fr/outils", destination: "/fr/tools" },
       { source: "/fr/comparateur-cv-offre", destination: "/fr/cv-job-match" },
+      { source: "/fr/metier-recrute", destination: "/fr/job-market" },
     ]
   },
 }
