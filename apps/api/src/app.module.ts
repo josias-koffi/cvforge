@@ -16,6 +16,7 @@ import { LegalDocumentsModule } from "./legal/legal.module";
 import { CreditOffersModule } from "./offers/offers.module";
 import { PrivacyModule } from "./privacy/privacy.module";
 import { JobSearchModule } from "./job-search/job-search.module";
+import { HiringCompaniesModule } from "./hiring-companies/hiring-companies.module";
 import { MarketModule } from "./market/market.module";
 import { RomeModule } from "./rome/rome.module";
 import { ProfilesModule } from "./profiles/profiles.module";
@@ -48,6 +49,7 @@ import { RateLimitMiddleware } from "./shared/rate-limit/rate-limit.middleware";
     InterviewModule,
     JobSearchModule,
     MarketModule,
+    HiringCompaniesModule,
     RomeModule,
     MetricsModule,
     RateLimitModule,

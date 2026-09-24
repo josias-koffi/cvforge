@@ -93,6 +93,11 @@ confirmed ROME job in each department of the searches (and the other
 departments of their region) into `market_stats`, once a month, forty reads an
 hour. `market:refresh:built` fills it right after a deploy.
 
+With `la-bonne-boite` enabled, it reads once a week the companies La Bonne
+Boîte expects to hire in each confirmed job, near each place of the searches
+(`hiring_companies`, sixty reads an hour). `hiring-companies:refresh:built`
+fills it right after a deploy.
+
 Optional too: `LA_BONNE_ALTERNANCE_API_KEY`, a key created on
 <https://api.apprentissage.beta.gouv.fr>. It adds apprenticeship offers, and is
 only called for searches that ask for an alternance. A *sandbox* key is granted

@@ -122,7 +122,9 @@ export const FT_APIS: Record<FtApiId, FtApiDefinition> = {
     label: "La Bonne Boîte v2",
     baseUrl: `${FT_API_ROOT}/labonneboite/v2`,
     scope: "api_labonneboitev2 search office",
-    requestsPerSecond: UNKNOWN_QUOTA_RPS,
+    // Read in the answers' headers on 2026-09-24: 2 a second per application,
+    // with a reserve of 2 (`x-ratelimit-replenish-rate-clientidlimiter`).
+    requestsPerSecond: 2,
     verified: true,
     smoke: {
       method: "GET",

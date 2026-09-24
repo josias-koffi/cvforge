@@ -168,6 +168,32 @@ Deux stories fondatrices passent donc **avant** le backlog ci-dessous. Elles son
 
 - [ ] **[US-116]** Vérifier les deux API en direct et consigner leurs contrats réels (§ « À
       vérifier »). Livrable : une note dans ce fichier, pas du code.
+  - **La Bonne Boîte v2, vérifiée en direct le 2026-09-24** (chemins donnés par le support,
+    INC2741452) :
+    - Scope `api_labonneboitev2 search office`, `GET /partenaire/labonneboite/v2/recherche`. La v1
+      n'est pas servie à notre application.
+    - Paramètres :
+      - `rome` est répétable (`rome=M1805&rome=M1855`) ; la forme `rome=A,B` rend 0 résultat ;
+      - un lieu est obligatoire (422 sinon) : `citycode` (INSEE), `latitude` + `longitude`,
+        `department_number` (le numéro, car `department=44` rend 0), `postcode`, `city` ou `region` ;
+      - `distance` en km, 200 au plus (422 au-delà) ;
+      - `page` et `page_size` (100 au plus, 10 par défaut) ;
+      - `naf` pour filtrer ;
+      - tri par défaut `sort_by=hiring_potential`, `sort_direction=desc`.
+    - Réponse : `{hits, items, params, resolved_params}`. Un code ROME inconnu rend 0 résultat, pas
+      une erreur. Chaque élément contient `siret`, `company_name`, `office_name`, `naf`, `naf_label`,
+      `headcount_min`, `headcount_max`, `location{lat,lon}`, `city`, `citycode`, `postcode`,
+      `department`, `department_number`, `region`, `hiring_potential`, `is_high_potential`, `rome`,
+      `id`, et `email` (« yes » ou « no », sans l'adresse elle-même).
+    - **Aucune URL de site web** : l'usage n°2 passe forcément par la Recherche d'entreprises (US-117).
+    - Débit annoncé dans les en-têtes : 2 appels par seconde par application (réserve de 2).
+    - Volumes : M1805 à Nantes, 47 entreprises dans la commune et 95 dans un rayon de 50 km.
+    - Licence et mention obligatoire : non relues. Nous citons « La Bonne Boîte, France Travail »
+      comme pour les autres données France Travail (ADR-024 §4).
+  - **Synthèse Pages employeurs, en partie seulement** : le scope `api_synthese-pages-employeursv1`
+    délivre un jeton, et la racine `/partenaire/synthese-pages-employeurs/v1` existe (403 ; une
+    racine inventée répond 401). Tous les chemins essayés répondent 403, comme La Bonne Boîte
+    avant que le support ne donne les siens. **À demander au support**, puis finir cette story.
 - [ ] **[US-117]** Mesurer le rendement de la chaîne SIRET → site → page carrière → ATS sur un
       échantillon de 100 entreprises. Livrable : un chiffre et une décision.
 - [x] **[US-118]** Le code ROME dans le projet de recherche (saisie et stockage).
@@ -190,7 +216,23 @@ Deux stories fondatrices passent donc **avant** le backlog ci-dessous. Elles son
     - le champ « Postes visés » avalait espaces et retours à la ligne pendant la frappe (défaut
       antérieur).
     - Reste : exporter les appellations dans l'export RGPD.
-- [ ] **[US-119]** `LaBonneBoiteSource` et la rubrique « Entreprises qui recrutent ».
+- [x] **[US-119]** `LaBonneBoiteSource` et la rubrique « Entreprises qui recrutent ».
+  - Agent: `developer`
+  - Critères d'acceptation *(précisés le 2026-09-24, d'après l'usage n°1 et le contrat de US-116)* :
+    - [x] `LaBonneBoiteSource` interroge `/recherche` par code ROME confirmé et par lieu de la
+          recherche : commune INSEE et rayon (200 km au plus), coordonnées à défaut, département en
+          dernier recours. 100 entreprises au plus par requête.
+    - [x] Copie locale (migration `0036`), relue chaque semaine en tâche de fond, jamais pendant
+          l'affichage. Un appel en échec garde la copie précédente.
+    - [x] Page « Entreprises qui recrutent » dans la navigation : les entreprises des métiers et des
+          lieux de la recherche, sans doublon, triées par potentiel d'embauche, avec secteur, ville,
+          effectif et métier. Le fort potentiel est signalé.
+    - [x] Source citée (« La Bonne Boîte, France Travail ») et gratuité (ADR-024 §3). Un état vide
+          explique quoi faire : confirmer un métier, ajouter un lieu, ou attendre la première lecture.
+    - Hors périmètre : la candidature spontanée (US-120) et la fiche entreprise (US-121).
+  - **Livré le 2026-09-24** ([[workflows/runs/developer-20260924130000]]) : page `/entreprises`,
+    migration 0036, relecture hebdomadaire, `hiring-companies:refresh`. Vérifié en réel : Nantes à
+    30 km, métiers Comptable et Développeur web, 100 entreprises sans doublon.
 - [ ] **[US-120]** Candidature spontanée depuis une entreprise.
 - [ ] **[US-121]** Table `companies`, rattachement au SIREN, fiche entreprise et badges RSE.
 
@@ -232,3 +274,4 @@ Deux stories fondatrices passent donc **avant** le backlog ci-dessous. Elles son
 - 2026-09-23 — [[workflows/runs/developer-20260923232118|developer]] (US-123) — passed, story ouverte (API Substitutions en 403)
 - 2026-09-24 — [[workflows/runs/developer-20260924124500|developer]] (US-123) — passed, story close
 - 2026-09-24 — [[workflows/runs/analyze-design-dev-review-20260923233426|analyze-design-dev-review]] (US-118) — passed
+- 2026-09-24 — [[workflows/runs/developer-20260924130000|developer]] (US-116, US-119) — passed ; US-119 close, US-116 ouverte (chemins de Pages employeurs à obtenir)

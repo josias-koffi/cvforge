@@ -5,6 +5,7 @@ export * from "./ats";
 export * from "./auth";
 export * from "./credits";
 export * from "./offers";
+export * from "./hiring-companies";
 export * from "./interview";
 export * from "./job-boards";
 export * from "./job-sources";

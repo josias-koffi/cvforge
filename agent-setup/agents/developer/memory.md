@@ -1378,3 +1378,9 @@
 - **Context** : [[sprints/sprint-026#US-123]] · [[workflows/runs/developer-20260924124500/01-developer]]
 - **Leçon** : un 403 France Travail peut venir d'un chemin faux, pas seulement d'un droit manquant (La Bonne Boîte et Substitutions, INC2741452). Demander au support les chemins exacts avant de conclure à une habilitation.
 - **Leçon** : sans liste de substitutions, ne demander que les codes qui comptent : ceux qu'un utilisateur stocke encore et que le nouveau référentiel a perdus.
+
+### 2026-09-24 — US-116 / US-119 : La Bonne Boîte (stage 01 · [[workflows/runs/developer-20260924130000]])
+- **Context** : [[sprints/sprint-026#US-119]] · [[workflows/runs/developer-20260924130000/01-developer]]
+- **Leçon** : La Bonne Boîte renvoie ses paramètres effectifs (`params`, `resolved_params`) : les lire suffit pour voir qu'un paramètre a été mal compris (`rome=A,B` devient un seul code et rend 0 résultat ; `department=44` rend 0 alors que `department_number=44` fonctionne).
+- **Leçon** : pour distinguer une racine d'API existante d'une racine inventée, comparer les codes : 403 pour la bonne racine sans les droits ou avec un mauvais chemin, 401 « TypeAuth invalide » pour une racine inconnue (Pages employeurs).
+- **Leçon** : une table des requêtes à part de leurs résultats permet de distinguer « lu, personne trouvé » de « jamais lu » : sinon, une requête sans résultat serait relancée à chaque passage.

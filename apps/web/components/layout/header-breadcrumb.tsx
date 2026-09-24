@@ -31,6 +31,7 @@ const segmentLabels: Record<string, string> = {
   cv: "CV",
   dashboard: "Tableau de bord",
   edit: "Modifier",
+  entreprises: "Entreprises qui recrutent",
   entretiens: "Entretiens",
   legal: "Documents légaux",
   letter: "Lettre de motivation",

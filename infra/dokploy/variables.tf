@@ -264,11 +264,11 @@ variable "france_travail_client_secret" {
 # only after `ft:smoke <api>` succeeded; an API left out is never called. The
 # three ROME ones feed the weekly `rome:sync`, Substitutions rewrites the
 # retired codes users hold, Marché du travail feeds the monthly market radar
-# (US-128). La Bonne Boîte is left out until a feature calls it (US-119).
+# (US-128), La Bonne Boîte the weekly "Entreprises qui recrutent" (US-119).
 variable "france_travail_apis" {
   type        = string
   description = "Comma-separated France Travail APIs to call (offres, romeo, rome-metiers...)"
-  default     = "offres,romeo,rome-metiers,rome-competences,rome-fiches-metiers,rome-substitutions,marche-travail"
+  default     = "offres,romeo,rome-metiers,rome-competences,rome-fiches-metiers,rome-substitutions,marche-travail,la-bonne-boite"
 }
 
 # La bonne alternance. Same rule: an empty key leaves the source inert.

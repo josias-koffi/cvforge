@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation"
 import {
   BellIcon,
   BriefcaseBusinessIcon,
+  Building2Icon,
   CoinsIcon,
   LayoutDashboardIcon,
   MicIcon,
@@ -50,6 +51,11 @@ const mainItems = [
   { href: "/dashboard", icon: LayoutDashboardIcon, title: "Tableau de bord" },
   { href: "/offres-du-jour", icon: SparklesIcon, title: "Offres du jour" },
   { href: "/offres", icon: SearchIcon, title: "Rechercher une offre" },
+  {
+    href: "/entreprises",
+    icon: Building2Icon,
+    title: "Entreprises qui recrutent",
+  },
   { href: "/candidatures", icon: BriefcaseBusinessIcon, title: "Candidatures" },
   { href: "/entretiens", icon: MicIcon, title: "Entretiens" },
   { href: "/profile", icon: UserRoundIcon, title: "Mes profils" },
