@@ -24,7 +24,16 @@ export {
   RATE_LIMITED_MESSAGE,
 } from "./rate-limit.policies";
 
+/**
+ * Set on a request once it has been counted. Nest applies the middleware once
+ * per declared route the path matches, and `public/ats-scan/{*splat}` and
+ * `public/ats-scan` both match `/public/ats-scan/…/unlock`: without this mark
+ * every lead and unlock request spent two of its caller's allowance.
+ */
+const METERED = Symbol("rateLimitMetered");
+
 type RequestLike = {
+  [METERED]?: true;
   headers: Record<string, string | string[] | undefined>;
   ip?: string;
   originalUrl?: string;
@@ -59,6 +68,11 @@ export class RateLimitMiddleware implements NestMiddleware {
   }
 
   use(request: RequestLike, response: ResponseLike, next: () => void) {
+    if (request[METERED]) {
+      next();
+      return;
+    }
+
     const now = this.now();
 
     // Opportunistic: the longest window is a day, so anything older is dead
@@ -104,6 +118,7 @@ export class RateLimitMiddleware implements NestMiddleware {
     // its own window forward, or a client hammering the route would never come
     // back under the limit.
     this.store.record(key, now);
+    request[METERED] = true;
 
     if (budget) {
       this.store.record(budget.key, now);

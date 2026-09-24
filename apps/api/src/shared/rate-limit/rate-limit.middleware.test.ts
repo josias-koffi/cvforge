@@ -150,15 +150,17 @@ describe("RateLimitMiddleware", () => {
     });
 
     it("reads the client from the first hop of X-Forwarded-For", () => {
-      const proxied = {
+      // A fresh object per call, as each HTTP request is: the middleware
+      // marks a request it has counted.
+      const proxied = () => ({
         headers: { "x-forwarded-for": "203.0.113.7, 70.41.3.18, 150.172.238.178" },
-      };
+      });
 
-      middleware.use(proxied, response, next);
-      middleware.use(proxied, response, next);
-      middleware.use(proxied, response, next);
+      middleware.use(proxied(), response, next);
+      middleware.use(proxied(), response, next);
+      middleware.use(proxied(), response, next);
 
-      expect(() => middleware.use(proxied, response, next)).toThrow(
+      expect(() => middleware.use(proxied(), response, next)).toThrow(
         HttpException,
       );
       // Same first hop, different proxy chain: still the same client.
@@ -184,13 +186,13 @@ describe("RateLimitMiddleware", () => {
 
     /** Unidentifiable callers share a bucket rather than bypassing the limit. */
     it("does not let an unidentifiable caller through unlimited", () => {
-      const anonymous = { headers: {} };
+      const anonymous = () => ({ headers: {} });
 
-      middleware.use(anonymous, response, next);
-      middleware.use(anonymous, response, next);
-      middleware.use(anonymous, response, next);
+      middleware.use(anonymous(), response, next);
+      middleware.use(anonymous(), response, next);
+      middleware.use(anonymous(), response, next);
 
-      expect(() => middleware.use(anonymous, response, next)).toThrow(
+      expect(() => middleware.use(anonymous(), response, next)).toThrow(
         HttpException,
       );
     });
@@ -318,6 +320,29 @@ describe("RateLimitMiddleware", () => {
       );
 
       expect(next).toHaveBeenCalled();
+    });
+  });
+
+  /** Nest runs it once per declared route that matches the path. */
+  describe("a request that matches two declared routes", () => {
+    it("is counted once", () => {
+      const unlock = {
+        headers: { "x-forwarded-for": "203.0.113.9" },
+        url: "/public/ats-scan/abc/unlock",
+      };
+
+      middleware.use(unlock, response, next);
+      middleware.use(unlock, response, next);
+
+      expect(next).toHaveBeenCalledTimes(2);
+      expect(store.count("unlock:203.0.113.9", DAY_MS, clock)).toBe(1);
+    });
+
+    it("still meters the next request", () => {
+      call();
+      call();
+
+      expect(store.count("scan:203.0.113.7", DAY_MS, clock)).toBe(2);
     });
   });
 
