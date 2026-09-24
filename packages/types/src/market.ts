@@ -1,3 +1,5 @@
+import type { RomeAppellationOption } from "./rome";
+
 /**
  * The labour market around a candidate's job (US-128): how hard employers find
  * it to recruit, how many offers and job seekers, and what offers pay. Read
@@ -61,3 +63,22 @@ export const MARKET_SOURCE_LABEL = "Source : Marché du travail, France Travail"
 /** The salary comes from our own collection; saying so is not optional. */
 export const MARKET_SALARY_SOURCE_LABEL =
   "Salaires : offres collectées par CVSpark";
+
+/** Below this many offers stating a salary, no median is shown (US-137). */
+export const MARKET_MIN_SALARY_SAMPLE = 5;
+
+/**
+ * What the free job market tool returns for one ROME job in one department
+ * (US-137). `collecting` means the pair was never read: it is queued for the
+ * next monthly refresh, and nothing was asked of France Travail meanwhile.
+ */
+export type PublicJobMarketResponse = {
+  appellation: RomeAppellationOption;
+  department: string;
+  departmentLabel: string;
+  status: "ready" | "collecting";
+  stats: Omit<MarketDepartmentStats, "department" | "departmentLabel"> | null;
+  /** When the figures were read, ISO; null while collecting. */
+  refreshedAt: string | null;
+  salaryMinSample: number;
+};

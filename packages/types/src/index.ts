@@ -1,5 +1,6 @@
 import type { Locale } from "./locale";
 
+export * from "./departments";
 export * from "./documents";
 export * from "./grounding";
 export * from "./acquisition";

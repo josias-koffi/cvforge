@@ -14,6 +14,8 @@ import {
   SEARCH_PROJECT_ROME_STORE,
   type SearchProjectRomeStore,
 } from "./search-project-rome.pg-store";
+import { LeadJobSearchListener } from "./lead-job-search.listener";
+import { SearchProjectLeadService } from "./search-project-lead.service";
 import { SearchProjectRomeService } from "./search-project-rome.service";
 import { SearchProjectsController } from "./search-projects.controller";
 import { PgSearchProjectsStore } from "./search-projects.pg-store";
@@ -55,6 +57,16 @@ import {
         rome: SearchProjectRomeService,
       ) => new SearchProjectsService(store, profiles, rome),
     },
+    {
+      provide: SearchProjectLeadService,
+      inject: [SEARCH_PROJECTS_STORE, PROFILES_STORE, SearchProjectRomeService],
+      useFactory: (
+        store: SearchProjectsStore,
+        profiles: ProfilesStore,
+        rome: SearchProjectRomeService,
+      ) => new SearchProjectLeadService(store, profiles, rome),
+    },
+    LeadJobSearchListener,
   ],
   exports: [SEARCH_PROJECTS_STORE, SEARCH_PROJECT_ROME_STORE],
 })

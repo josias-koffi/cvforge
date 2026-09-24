@@ -1,7 +1,10 @@
-import type {
-  MarketDepartmentStats,
-  MarketRadarEntry,
-  SearchProject,
+import {
+  departmentLabel,
+  regionNeighbours,
+  regionOf,
+  type MarketDepartmentStats,
+  type MarketRadarEntry,
+  type SearchProject,
 } from "@cvforge/types";
 import {
   Logger,
@@ -9,7 +12,6 @@ import {
   type OnModuleInit,
 } from "@nestjs/common";
 import type { SearchProjectsStore } from "../search-projects/search-projects.types";
-import { departmentLabel, regionNeighbours, regionOf } from "./departments";
 import type { MarketStatsClient } from "./market-stats.client";
 import {
   marketKey,
@@ -32,8 +34,22 @@ const MAX_READS_PER_CHECK = 40;
 const SALARY_WINDOW_DAYS = 92;
 /** A search with many places still gets a readable block, not a table. */
 const MAX_RADAR_ENTRIES = 6;
+/** A visitor's question keeps its pair in the refresh this long (US-137). */
+const DEMAND_WINDOW_DAYS = 90;
 
-type Target = { romeCode: string; department: string; own: boolean };
+/**
+ * A pair to read. `own`: a candidate searches there, so it comes first and
+ * its changes feed the morning e-mail. `demanded`: a visitor of the free tool
+ * asked for it. Both read the job seekers too; a neighbour does not.
+ */
+type Target = {
+  romeCode: string;
+  department: string;
+  own: boolean;
+  demanded: boolean;
+};
+
+type Pair = { romeCode: string; department: string };
 
 export type MarketRefreshOutcome =
   | { status: "skipped"; reason: "unavailable" | "running" }
@@ -98,7 +114,12 @@ export class MarketStatsService
 
     this.running = true;
     try {
-      const targets = wantedTargets(await this.searchProjects.listAll());
+      const targets = wantedTargets(
+        await this.searchProjects.listAll(),
+        await this.store.listDemand(
+          new Date(this.now() - DEMAND_WINDOW_DAYS * DAY_MS),
+        ),
+      );
       const refreshed = await this.store.refreshedAt([
         ...new Set(targets.map((target) => target.romeCode)),
       ]);
@@ -107,7 +128,11 @@ export class MarketStatsService
           const at = refreshed.get(marketKey(target.romeCode, target.department));
           return !at || this.now() - at.getTime() >= REFRESH_EVERY_MS;
         })
-        .sort((left, right) => Number(right.own) - Number(left.own));
+        .sort(
+          (left, right) =>
+            Number(right.own) - Number(left.own) ||
+            Number(right.demanded) - Number(left.demanded),
+        );
       let read = 0;
       let failed = 0;
 
@@ -166,6 +191,24 @@ export class MarketStatsService
     return entries.slice(0, MAX_RADAR_ENTRIES);
   }
 
+  /**
+   * One job in one department, for the free tool (US-137). A pair never read
+   * is queued for the next refresh and answers null: the visitor's request
+   * never becomes a France Travail call.
+   */
+  async lookup(
+    romeCode: string,
+    department: string,
+  ): Promise<StoredMarketStats | null> {
+    const stored = await this.store.find(romeCode, department);
+
+    if (!stored) {
+      await this.store.recordDemand(romeCode, department, new Date(this.now()));
+    }
+
+    return stored;
+  }
+
   async notesFor(input: {
     romeCodes: readonly string[];
     project: Pick<SearchProject, "locations">;
@@ -191,7 +234,7 @@ export class MarketStatsService
   /** One read. False when the API could not answer: the old figures stay. */
   private async refresh(target: Target): Promise<boolean> {
     const fromApi = await this.client.read(target.romeCode, target.department, {
-      jobseekers: target.own,
+      jobseekers: target.own || target.demanded,
     });
     if (!fromApi) return false;
 
@@ -219,11 +262,13 @@ export class MarketStatsService
 }
 
 /**
- * Every confirmed job in every department of every search, then the rest of
- * each region — only tension and offers there, to name the most promising.
+ * Every confirmed job in every department of every search, then the pairs
+ * visitors asked for, then the rest of each search's region — only tension
+ * and offers there, to name the most promising.
  */
 export function wantedTargets(
   searches: ReadonlyArray<{ project: SearchProject; romeCodes: string[] }>,
+  demand: readonly Pair[] = [],
 ): Target[] {
   const targets = new Map<string, Target>();
 
@@ -231,6 +276,7 @@ export function wantedTargets(
     for (const romeCode of romeCodes) {
       for (const department of departmentsOf(project)) {
         targets.set(marketKey(romeCode, department), {
+          demanded: false,
           department,
           own: true,
           romeCode,
@@ -239,11 +285,26 @@ export function wantedTargets(
     }
   }
 
-  for (const target of [...targets.values()]) {
+  const own = [...targets.values()];
+
+  for (const { romeCode, department } of demand) {
+    const key = marketKey(romeCode, department);
+    const target = targets.get(key);
+
+    if (target) target.demanded = true;
+    else targets.set(key, { demanded: true, department, own: false, romeCode });
+  }
+
+  for (const target of own) {
     for (const department of regionNeighbours(target.department)) {
       const key = marketKey(target.romeCode, department);
       if (!targets.has(key)) {
-        targets.set(key, { department, own: false, romeCode: target.romeCode });
+        targets.set(key, {
+          demanded: false,
+          department,
+          own: false,
+          romeCode: target.romeCode,
+        });
       }
     }
   }

@@ -112,4 +112,15 @@ describe("PgMarketStatsStore", () => {
       "Annuel de 42000,00 Euros",
     ]);
   });
+
+  it("keeps one demand per pair, dated by its latest request", async () => {
+    await store.recordDemand("M1805", "44", MARCH);
+    await store.recordDemand("M1805", "44", APRIL);
+    await store.recordDemand("D1102", "85", MARCH);
+
+    expect(await store.listDemand(APRIL)).toEqual([
+      { department: "44", romeCode: "M1805" },
+    ]);
+    expect(await store.listDemand(MARCH)).toHaveLength(2);
+  });
 });

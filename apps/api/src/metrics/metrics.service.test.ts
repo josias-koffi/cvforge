@@ -45,6 +45,7 @@ function createService({
   ats = ATS_COUNTERS,
   atsActivations = 2,
   keywordMatchActivations = 1,
+  jobMarketActivations = 3,
   counters = COUNTERS,
   isEnabled = true,
   totalUsage = 10 as number | null,
@@ -53,6 +54,7 @@ function createService({
     readAcquisitionSteps: vi.fn().mockResolvedValue(acquisitionSteps),
     readAtsActivations: vi.fn().mockResolvedValue(atsActivations),
     readAtsCounters: vi.fn().mockResolvedValue(ats),
+    readJobMarketActivations: vi.fn().mockResolvedValue(jobMarketActivations),
     readKeywordMatchActivations: vi
       .fn()
       .mockResolvedValue(keywordMatchActivations),
@@ -116,6 +118,9 @@ describe("MetricsService", () => {
     expect(store.readKeywordMatchActivations).toHaveBeenCalledWith(
       new Date("2026-08-18T00:00:00.000Z"),
     );
+    expect(store.readJobMarketActivations).toHaveBeenCalledWith(
+      new Date("2026-08-18T00:00:00.000Z"),
+    );
   });
 
   it("builds one funnel per known tool, with zeros for steps nobody reached", async () => {
@@ -140,6 +145,14 @@ describe("MetricsService", () => {
         tool: "keyword_match",
         visitors: 0,
       },
+      {
+        accountsActivated: 3,
+        ctaClicks: 0,
+        emailsSubmitted: 0,
+        results: 0,
+        tool: "job_market",
+        visitors: 0,
+      },
     ]);
   });
 
@@ -148,6 +161,7 @@ describe("MetricsService", () => {
       acquisitionSteps: [],
       atsActivations: 0,
       keywordMatchActivations: 0,
+      jobMarketActivations: 0,
     });
 
     const { acquisition } = await service.readAdminMetrics();
@@ -167,6 +181,14 @@ describe("MetricsService", () => {
         emailsSubmitted: 0,
         results: 0,
         tool: "keyword_match",
+        visitors: 0,
+      },
+      {
+        accountsActivated: 0,
+        ctaClicks: 0,
+        emailsSubmitted: 0,
+        results: 0,
+        tool: "job_market",
         visitors: 0,
       },
     ]);

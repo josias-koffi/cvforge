@@ -1,4 +1,4 @@
-import type { SearchProject } from "@cvforge/types";
+import type { AcquisitionTool, SearchProject } from "@cvforge/types";
 
 /** DI token for the search projects store. */
 export const SEARCH_PROJECTS_STORE = Symbol("SEARCH_PROJECTS_STORE");
@@ -31,5 +31,15 @@ export type SearchProjectsStore = {
   /** The métier codes of the ROME jobs one search confirmed (US-128). */
   findRomeCodes(userEmail: string, profileId: string): Promise<string[]>;
   save(userEmail: string, project: SearchProject): Promise<SearchProject>;
+  /**
+   * Records the free tool that wrote this search (US-137). The first one
+   * stays: a second visit must not count a second activation.
+   */
+  markLeadOrigin(
+    userEmail: string,
+    profileId: string,
+    tool: AcquisitionTool,
+    at: Date,
+  ): Promise<void>;
   deleteByUserEmail(userEmail: string): Promise<number>;
 };

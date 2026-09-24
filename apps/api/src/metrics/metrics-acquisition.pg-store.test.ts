@@ -1,4 +1,5 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { emptySearchProject } from "@cvforge/types";
 import { LEAD_OFFER_SOURCE_LABEL } from "../applications/applications.types";
 import {
   acquisitionEvents,
@@ -10,6 +11,7 @@ import {
   createTestDatabase,
   type TestDatabase,
 } from "../database/testing/test-database";
+import { PgSearchProjectsStore } from "../search-projects/search-projects.pg-store";
 import { PgMetricsStore } from "./metrics.pg-store";
 
 const WINDOW_START = new Date("2026-09-01T00:00:00.000Z");
@@ -161,5 +163,50 @@ describe("PgMetricsStore — acquisition funnels", () => {
     await expect(store.readKeywordMatchActivations(WINDOW_START)).resolves.toBe(
       1,
     );
+  });
+
+  /** The tool keeps no address: the search it wrote is the proof (US-137). */
+  it("counts the accounts whose job market link wrote their search", async () => {
+    const searches = new PgSearchProjectsStore(testDatabase.db);
+    const inWindow = new Date("2026-09-10T00:00:00.000Z");
+
+    for (const [email, profileId] of [
+      ["lead@example.com", "p1"],
+      ["lead@example.com", "p2"],
+      ["old@example.com", "p1"],
+      ["user@example.com", "p1"],
+    ] as const) {
+      await searches.save(email, emptySearchProject(profileId));
+    }
+    await searches.markLeadOrigin("lead@example.com", "p1", "job_market", inWindow);
+    // A second profile of the same person: still one account.
+    await searches.markLeadOrigin("lead@example.com", "p2", "job_market", inWindow);
+    await searches.markLeadOrigin(
+      "old@example.com",
+      "p1",
+      "job_market",
+      new Date("2026-08-01T00:00:00.000Z"),
+    );
+
+    await expect(store.readJobMarketActivations(WINDOW_START)).resolves.toBe(1);
+  });
+
+  it("keeps the first origin of a search", async () => {
+    const searches = new PgSearchProjectsStore(testDatabase.db);
+    await searches.save("lead@example.com", emptySearchProject("p1"));
+    await searches.markLeadOrigin(
+      "lead@example.com",
+      "p1",
+      "job_market",
+      new Date("2026-08-01T00:00:00.000Z"),
+    );
+    await searches.markLeadOrigin(
+      "lead@example.com",
+      "p1",
+      "job_market",
+      new Date("2026-09-10T00:00:00.000Z"),
+    );
+
+    await expect(store.readJobMarketActivations(WINDOW_START)).resolves.toBe(0);
   });
 });

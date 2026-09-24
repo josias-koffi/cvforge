@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { departmentLabel, regionNeighbours, regionOf } from "./departments";
+import { departmentLabel, regionNeighbours, regionOf } from "@cvforge/types";
 import {
   medianSalary,
   notableChange,

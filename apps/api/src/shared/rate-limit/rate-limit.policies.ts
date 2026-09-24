@@ -22,6 +22,14 @@ const DEFAULT_KEYWORD_MATCH_DAILY_BUDGET = 2_000;
 const DEFAULT_KEYWORD_MATCH_LEAD_HOURLY_LIMIT = 5;
 const DEFAULT_KEYWORD_MATCH_LEAD_DAILY_LIMIT = 20;
 
+const DEFAULT_JOB_MARKET_HOURLY_LIMIT = 120;
+const DEFAULT_JOB_MARKET_DAILY_LIMIT = 600;
+const DEFAULT_JOB_MARKET_DAILY_BUDGET = 50_000;
+const DEFAULT_JOB_MARKET_LEAD_HOURLY_LIMIT = 5;
+const DEFAULT_JOB_MARKET_LEAD_DAILY_LIMIT = 20;
+
+export const JOB_MARKET_UNAVAILABLE_MESSAGE =
+  "L'outil marche de l'emploi est momentanement indisponible. Reessayez demain.";
 export const KEYWORD_MATCH_UNAVAILABLE_MESSAGE =
   "Le comparateur gratuit est momentanement indisponible. Reessayez demain.";
 
@@ -116,6 +124,48 @@ export function resolveRateLimitPolicies(
         DEFAULT_KEYWORD_MATCH_DAILY_LIMIT,
       ),
       routes: ["public/keyword-match"],
+    },
+    {
+      budgetMessage: JOB_MARKET_UNAVAILABLE_MESSAGE,
+      // Sends a magic link: capped per address like the comparator's (US-137).
+      globalBudget: null,
+      limitedMessage: RATE_LIMITED_MESSAGE,
+      matches: (path) => /\/public\/job-market\/lead\/?$/i.test(path),
+      name: "job-market-lead",
+      perIp: perIpRules(
+        env.PUBLIC_JOB_MARKET_LEAD_HOURLY_LIMIT,
+        DEFAULT_JOB_MARKET_LEAD_HOURLY_LIMIT,
+        env.PUBLIC_JOB_MARKET_LEAD_DAILY_LIMIT,
+        DEFAULT_JOB_MARKET_LEAD_DAILY_LIMIT,
+      ),
+      routes: ["public/job-market/{*splat}"],
+    },
+    {
+      budgetMessage: JOB_MARKET_UNAVAILABLE_MESSAGE,
+      // Reads of our own copies, the autocomplete included, so the per-address
+      // allowance is wide. The budget caps the database reads and the pairs a
+      // crowd could queue for the monthly refresh (US-137).
+      globalBudget: {
+        key: "global:job-market",
+        rule: {
+          limit: readPositiveInt(
+            env.PUBLIC_JOB_MARKET_DAILY_BUDGET,
+            DEFAULT_JOB_MARKET_DAILY_BUDGET,
+          ),
+          windowMs: DAY_MS,
+        },
+      },
+      limitedMessage: RATE_LIMITED_MESSAGE,
+      matches: (path) =>
+        /\/public\/job-market(\/appellations)?\/?$/i.test(path),
+      name: "job-market",
+      perIp: perIpRules(
+        env.PUBLIC_JOB_MARKET_HOURLY_LIMIT,
+        DEFAULT_JOB_MARKET_HOURLY_LIMIT,
+        env.PUBLIC_JOB_MARKET_DAILY_LIMIT,
+        DEFAULT_JOB_MARKET_DAILY_LIMIT,
+      ),
+      routes: ["public/job-market"],
     },
     {
       budgetMessage: BUDGET_EXHAUSTED_MESSAGE,

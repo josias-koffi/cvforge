@@ -8,6 +8,7 @@ import { SmtpModule } from "./smtp/smtp.module";
 import { OpenRouterModule } from "./ai/openrouter.module";
 import { ApplicationsModule } from "./applications/applications.module";
 import { AtsModule } from "./ats/ats.module";
+import { JobMarketModule } from "./job-market/job-market.module";
 import { KeywordMatchModule } from "./keyword-match/keyword-match.module";
 import { BillingModule } from "./billing/billing.module";
 import { CvGenerationModule } from "./cv-generation/cv-generation.module";
@@ -42,6 +43,7 @@ import { rateLimitedRoutes } from "./shared/rate-limit/rate-limit.policies";
     ApplicationsModule,
     AtsModule,
     KeywordMatchModule,
+    JobMarketModule,
     BillingModule,
     CvGenerationModule,
     CreditsModule,

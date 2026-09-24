@@ -8,7 +8,7 @@
 export type LeadIntent =
   | { kind: "ats_scan"; scanId: string }
   | { kind: "offer"; offerText: string }
-  | { kind: "job_search"; romeCode: string; department: string }
+  | { kind: "job_search"; appellationCode: string; department: string }
   | { kind: "company"; siren: string };
 
 /** Same cap as the offer pasted into the public ATS scan. */
@@ -16,7 +16,8 @@ export const LEAD_OFFER_TEXT_MAX = 8000;
 
 const UUID =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-const ROME_CODE = /^[A-N]\d{4}$/;
+/** ROME 4.0 appellation codes are numbers, 5 or 6 digits today. */
+const APPELLATION_CODE = /^\d{1,8}$/;
 const DEPARTMENT = /^(\d{2}|2A|2B|97\d)$/;
 const SIREN = /^\d{9}$/;
 
@@ -47,11 +48,12 @@ export function parseLeadIntent(raw: unknown): LeadIntent | null {
         : null;
     }
     case "job_search": {
-      const romeCode = text(value.romeCode).toUpperCase();
+      const appellationCode = text(value.appellationCode);
       const department = text(value.department).toUpperCase();
 
-      return ROME_CODE.test(romeCode) && DEPARTMENT.test(department)
-        ? { department, kind: "job_search", romeCode }
+      return APPELLATION_CODE.test(appellationCode) &&
+        DEPARTMENT.test(department)
+        ? { appellationCode, department, kind: "job_search" }
         : null;
     }
     case "company": {
@@ -76,6 +78,10 @@ export function leadIntentPath(intent: LeadIntent): string | null {
     // so the list is the screen that is sure to show it (US-136).
     case "offer":
       return "/candidatures";
+    // The search is written on redemption too; its tab shows the job and the
+    // department the visitor picked (US-137).
+    case "job_search":
+      return "/ma-recherche";
     default:
       return null;
   }

@@ -60,6 +60,20 @@ describe("resolveRateLimitPolicies", () => {
     expect(lead.globalBudget).toBeNull();
   });
 
+  /** Reads of our own copies, autocomplete included; the lead route sends mail. */
+  it("meters the job market tool and its lead route apart (US-137)", () => {
+    const market = policy("job-market", { PUBLIC_JOB_MARKET_DAILY_BUDGET: "900" });
+    const lead = policy("job-market-lead");
+
+    expect(market.perIp.map((rule) => rule.limit)).toEqual([120, 600]);
+    expect(market.globalBudget).toEqual({
+      key: "global:job-market",
+      rule: { limit: 900, windowMs: DAY_MS },
+    });
+    expect(lead.perIp.map((rule) => rule.limit)).toEqual([5, 20]);
+    expect(lead.globalBudget).toBeNull();
+  });
+
   it("falls back to the default for an unusable event limit", () => {
     expect(
       policy("events", { PUBLIC_EVENTS_HOURLY_LIMIT: "-1" }).perIp[0]?.limit,
@@ -75,6 +89,9 @@ describe("resolveRateLimitPolicies", () => {
     ["/public/keyword-match", "keyword-match"],
     ["/Public/Keyword-Match/", "keyword-match"],
     ["/public/keyword-match/lead", "keyword-match-lead"],
+    ["/public/job-market", "job-market"],
+    ["/public/job-market/appellations", "job-market"],
+    ["/Public/Job-Market/Lead/", "job-market-lead"],
   ])("sends %s to the %s policy", (path, name) => {
     const matched = resolveRateLimitPolicies({}).find((entry) =>
       entry.matches(path),
@@ -99,6 +116,8 @@ describe("rateLimitedRoutes", () => {
       "public/events",
       "public/keyword-match/{*splat}",
       "public/keyword-match",
+      "public/job-market/{*splat}",
+      "public/job-market",
       "public/ats-scan/{*splat}",
       "public/ats-scan",
     ]);

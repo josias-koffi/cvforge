@@ -14,8 +14,8 @@ describe("parseLeadIntent", () => {
       { kind: "offer", offerText: "Développeur" },
     ],
     [
-      { department: "2a", kind: "job_search", romeCode: "m1805" },
-      { department: "2A", kind: "job_search", romeCode: "M1805" },
+      { appellationCode: " 38874 ", department: "2a", kind: "job_search" },
+      { appellationCode: "38874", department: "2A", kind: "job_search" },
     ],
     [
       { kind: "company", siren: "552100554" },
@@ -36,12 +36,12 @@ describe("parseLeadIntent", () => {
       { kind: "offer", offerText: "x".repeat(LEAD_OFFER_TEXT_MAX + 1) },
     ],
     [
-      "a bad ROME code",
-      { department: "75", kind: "job_search", romeCode: "1805" },
+      "a ROME job code instead of an appellation",
+      { appellationCode: "M1805", department: "75", kind: "job_search" },
     ],
     [
       "a bad department",
-      { department: "750", kind: "job_search", romeCode: "M1805" },
+      { appellationCode: "38874", department: "750", kind: "job_search" },
     ],
     [
       "a SIRET instead of a SIREN",
@@ -74,6 +74,16 @@ describe("leadIntentPath", () => {
     expect(leadIntentPath({ kind: "offer", offerText: "Un poste" })).toBe(
       "/candidatures",
     );
+  });
+
+  it("opens the search, where the job and the department now sit", () => {
+    expect(
+      leadIntentPath({
+        appellationCode: "38874",
+        department: "44",
+        kind: "job_search",
+      }),
+    ).toBe("/ma-recherche");
   });
 
   it("keeps the default screen for tools that have none yet", () => {

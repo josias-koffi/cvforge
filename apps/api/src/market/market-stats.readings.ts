@@ -1,4 +1,5 @@
 import {
+  MARKET_MIN_SALARY_SAMPLE,
   MARKET_TENSION_LABELS,
   type MarketFigure,
   type MarketSalary,
@@ -110,8 +111,6 @@ function isTensionLevel(value: number): value is MarketTensionLevel {
   return Number.isInteger(value) && value >= 1 && value <= 5;
 }
 
-/** Below this, a median says more about three adverts than about a job. */
-const MIN_SALARY_SAMPLE = 5;
 /** Outside this, a yearly figure is a misread label, not a salary. */
 const PLAUSIBLE_YEARLY = { max: 300_000, min: 12_000 };
 const FOREIGN_CURRENCY = /\$|£|usd|gbp|chf/i;
@@ -135,7 +134,8 @@ export function medianSalary(
     )
     .sort((left, right) => left - right);
 
-  if (yearly.length < MIN_SALARY_SAMPLE) return null;
+  // Below this, a median says more about three adverts than about a job.
+  if (yearly.length < MARKET_MIN_SALARY_SAMPLE) return null;
 
   const middle = Math.floor(yearly.length / 2);
   const median =

@@ -67,6 +67,12 @@ export const searchProjects = pgTable(
     digestEnabled: boolean("digest_enabled").notNull().default(false),
     emailEnabled: boolean("email_enabled").notNull().default(true),
     aiRerankEnabled: boolean("ai_rerank_enabled").notNull().default(false),
+    /**
+     * The free tool that wrote this search, if one did (US-137): how
+     * `/admin/metrics` counts the accounts a tool activated. Set once.
+     */
+    leadOrigin: text("lead_origin"),
+    leadOriginAt: timestamp("lead_origin_at", { withTimezone: true }),
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

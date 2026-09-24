@@ -54,6 +54,7 @@ function createService(profileIds = ["profile-1"]) {
       saved.find((project) => project.profileId === profileId) ?? null,
     findRomeCodes: async () => [],
     listByUserEmail: async () => saved,
+    markLeadOrigin: async () => undefined,
     listAll: async () => [],
     listDigestEnabled: async () =>
       saved

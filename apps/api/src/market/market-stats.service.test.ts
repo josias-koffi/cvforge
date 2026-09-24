@@ -50,6 +50,7 @@ function createHarness(options: {
   unavailable?: boolean;
   failing?: string[];
   salaryLabels?: string[];
+  demand?: Array<{ romeCode: string; department: string }>;
 }) {
   const rows = new Map(
     (options.stored ?? []).map((row) => [
@@ -58,6 +59,12 @@ function createHarness(options: {
     ]),
   );
   const reads: Array<{ key: string; jobseekers: boolean }> = [];
+  const demand = new Map(
+    (options.demand ?? []).map((pair) => [
+      marketKey(pair.romeCode, pair.department),
+      { ...pair, at: new Date(NOW) },
+    ]),
+  );
   const store: MarketStatsStore = {
     find: async (romeCode, department) =>
       rows.get(marketKey(romeCode, department)) ?? null,
@@ -68,6 +75,13 @@ function createHarness(options: {
     refreshedAt: async () =>
       new Map([...rows].map(([key, row]) => [key, row.refreshedAt])),
     salaryLabels: async () => options.salaryLabels ?? [],
+    recordDemand: async (romeCode, department, at) => {
+      demand.set(marketKey(romeCode, department), { at, department, romeCode });
+    },
+    listDemand: async (since) =>
+      [...demand.values()]
+        .filter((pair) => pair.at >= since)
+        .map(({ romeCode, department }) => ({ department, romeCode })),
     save: async (reading: MarketReading, change, at) => {
       const key = marketKey(reading.romeCode, reading.department);
       const previous = rows.get(key);
@@ -98,6 +112,7 @@ function createHarness(options: {
   ];
 
   return {
+    demand,
     reads,
     rows,
     service: new MarketStatsService(
@@ -139,6 +154,68 @@ describe("wantedTargets", () => {
     expect(
       targets.filter((target) => !target.own).map((t) => t.department).sort(),
     ).toEqual(["53", "72", "85"]);
+  });
+
+  it("adds the pairs visitors asked for, without their region", () => {
+    const targets = wantedTargets(
+      [{ project: project(["44"]), romeCodes: ["M1805"] }],
+      [
+        { department: "44", romeCode: "M1805" },
+        { department: "13", romeCode: "K2204" },
+      ],
+    );
+
+    expect(targets.find((t) => t.department === "44")).toMatchObject({
+      demanded: true,
+      own: true,
+    });
+    expect(targets.filter((t) => t.romeCode === "K2204")).toEqual([
+      { demanded: true, department: "13", own: false, romeCode: "K2204" },
+    ]);
+  });
+});
+
+describe("MarketStatsService.lookup", () => {
+  it("answers from the copy, and queues nothing for a pair already read", async () => {
+    const harness = createHarness({ stored: [stored("44")] });
+
+    expect(await harness.service.lookup("M1805", "44")).toMatchObject({
+      department: "44",
+      romeCode: "M1805",
+    });
+    expect(harness.demand.size).toBe(0);
+    expect(harness.reads).toEqual([]);
+  });
+
+  it("queues a pair never read, and never calls the API for it", async () => {
+    const harness = createHarness({ searches: [] });
+
+    expect(await harness.service.lookup("K2204", "13")).toBeNull();
+    expect(harness.reads).toEqual([]);
+    expect([...harness.demand.keys()]).toEqual(["K2204|13"]);
+  });
+
+  it("reads a queued pair at the next refresh, job seekers included", async () => {
+    const harness = createHarness({ searches: [] });
+
+    await harness.service.lookup("K2204", "13");
+    await harness.service.refreshDue();
+
+    expect(harness.reads).toEqual([{ jobseekers: true, key: "K2204|13" }]);
+    expect(harness.rows.get("K2204|13")).toMatchObject({ region: "93" });
+  });
+
+  it("forgets a demand after ninety days", async () => {
+    const harness = createHarness({ searches: [] });
+    harness.demand.set("K2204|13", {
+      at: new Date(NOW - 91 * DAY_MS),
+      department: "13",
+      romeCode: "K2204",
+    });
+
+    await harness.service.refreshDue();
+
+    expect(harness.reads).toEqual([]);
   });
 });
 

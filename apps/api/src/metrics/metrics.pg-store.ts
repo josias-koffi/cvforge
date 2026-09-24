@@ -11,6 +11,7 @@ import {
   creditLedgerEntries,
   creditOrders,
   interviewSessions,
+  searchProjects,
 } from "../database/schema";
 import type {
   AcquisitionStepCount,
@@ -209,6 +210,22 @@ export class PgMetricsStore implements MetricsStore {
         and(
           eq(applications.sourceLabel, LEAD_OFFER_SOURCE_LABEL),
           gte(applications.createdAt, since),
+        ),
+      );
+
+    return toNumber(row?.activated ?? 0);
+  }
+
+  async readJobMarketActivations(since: Date): Promise<number> {
+    const [row] = await this.db
+      .select({
+        activated: sql<string>`count(distinct ${searchProjects.userEmail})`,
+      })
+      .from(searchProjects)
+      .where(
+        and(
+          eq(searchProjects.leadOrigin, "job_market"),
+          gte(searchProjects.leadOriginAt, since),
         ),
       );
 

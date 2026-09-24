@@ -16,6 +16,8 @@ export const publicErrorCodes = [
   "SCAN_EXPIRED",
   "RATE_LIMITED",
   "BUDGET_EXHAUSTED",
+  "ROME_APPELLATION_UNKNOWN",
+  "DEPARTMENT_UNKNOWN",
 ] as const;
 export type PublicErrorCode = (typeof publicErrorCodes)[number];
 

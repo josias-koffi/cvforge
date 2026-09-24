@@ -41,3 +41,23 @@ export const marketStats = pgTable(
     index("market_stats_rome_region_idx").on(table.romeCode, table.region),
   ],
 );
+
+/**
+ * The (job, department) pairs a visitor of the free job market tool asked
+ * for and the radar had never read (US-137). The monthly refresh reads them
+ * after the candidates' own: the page itself never calls France Travail.
+ */
+export const marketDemand = pgTable(
+  "market_demand",
+  {
+    romeCode: text("rome_code").notNull(),
+    department: text("department").notNull(),
+    requestedAt: timestamp("requested_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.romeCode, table.department] }),
+    index("market_demand_requested_idx").on(table.requestedAt),
+  ],
+);

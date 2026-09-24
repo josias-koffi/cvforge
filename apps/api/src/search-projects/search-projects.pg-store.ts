@@ -1,5 +1,5 @@
-import type { SearchProject } from "@cvforge/types";
-import { and, eq, sql } from "drizzle-orm";
+import type { AcquisitionTool, SearchProject } from "@cvforge/types";
+import { and, eq, isNull, sql } from "drizzle-orm";
 import type { Database } from "../database/database.types";
 import {
   romeAppellations,
@@ -165,6 +165,24 @@ export class PgSearchProjectsStore implements SearchProjectsStore {
       .returning();
 
     return toProject(row!);
+  }
+
+  async markLeadOrigin(
+    userEmail: string,
+    profileId: string,
+    tool: AcquisitionTool,
+    at: Date,
+  ) {
+    await this.db
+      .update(searchProjects)
+      .set({ leadOrigin: tool, leadOriginAt: at })
+      .where(
+        and(
+          eq(searchProjects.userEmail, userEmail),
+          eq(searchProjects.profileId, profileId),
+          isNull(searchProjects.leadOrigin),
+        ),
+      );
   }
 
   /**

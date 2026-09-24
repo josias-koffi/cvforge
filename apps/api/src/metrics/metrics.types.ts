@@ -77,6 +77,11 @@ export type MetricsStore = {
    * carrying the comparator's source label each (US-136).
    */
   readKeywordMatchActivations: (since: Date) => Promise<number>;
+  /**
+   * Accounts that redeemed a job market tool link: the search it wrote
+   * carries the tool's origin (US-137).
+   */
+  readJobMarketActivations: (since: Date) => Promise<number>;
 };
 
 export type AdminMetrics = {

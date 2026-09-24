@@ -6,6 +6,7 @@ import type { AcquisitionFunnel } from "@/lib/metrics"
 const TOOL_LABELS: Record<AcquisitionTool, string> = {
   ats: "Analyse ATS",
   keyword_match: "Comparateur CV ↔ offre",
+  job_market: "Ce métier recrute-t-il ?",
 }
 
 function countOf(value: number) {

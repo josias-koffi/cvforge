@@ -1,7 +1,7 @@
 import type { MarketTensionLevel } from "@cvforge/types";
 import { and, eq, gte, inArray, ne } from "drizzle-orm";
 import type { Database } from "../database/database.types";
-import { jobs, marketStats } from "../database/schema";
+import { jobs, marketDemand, marketStats } from "../database/schema";
 import type { MarketReading } from "./market-stats.readings";
 
 /** DI token for the market radar's store. */
@@ -33,6 +33,10 @@ export interface MarketStatsStore {
     department: string,
     since: Date,
   ): Promise<string[]>;
+  /** A visitor asked for a pair never read (US-137): the next refresh reads it. */
+  recordDemand(romeCode: string, department: string, at: Date): Promise<void>;
+  /** The pairs visitors asked for since this date. */
+  listDemand(since: Date): Promise<Array<{ romeCode: string; department: string }>>;
 }
 
 export function marketKey(romeCode: string, department: string): string {
@@ -176,5 +180,25 @@ export class PgMarketStatsStore implements MarketStatsStore {
       );
 
     return rows.map((row) => row.label);
+  }
+
+  async recordDemand(romeCode: string, department: string, at: Date) {
+    await this.db
+      .insert(marketDemand)
+      .values({ department, requestedAt: at, romeCode })
+      .onConflictDoUpdate({
+        set: { requestedAt: at },
+        target: [marketDemand.romeCode, marketDemand.department],
+      });
+  }
+
+  async listDemand(since: Date) {
+    return this.db
+      .select({
+        department: marketDemand.department,
+        romeCode: marketDemand.romeCode,
+      })
+      .from(marketDemand)
+      .where(gte(marketDemand.requestedAt, since));
   }
 }
