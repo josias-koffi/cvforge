@@ -1,5 +1,11 @@
-import type { PublicCreditOffer, PublicMarketPage } from "@cvforge/types"
+import {
+  ANNUAIRE_COMPANY_URL,
+  type PublicCompanyPage,
+  type PublicCreditOffer,
+  type PublicMarketPage,
+} from "@cvforge/types"
 
+import type { Crumb } from "@/components/breadcrumbs"
 import type { LandingDictionary } from "@/content/types"
 import { homePath, type Locale } from "@/lib/i18n"
 import { freeTools, toolsPath } from "@/lib/tools"
@@ -130,22 +136,14 @@ export function marketPageStructuredData({
   title: string
   description: string
   /** Name and path of each level, the page itself last. */
-  crumbs: Array<{ name: string; path: string }>
+  crumbs: Crumb[]
 }) {
   const url = `${base}${crumbs[crumbs.length - 1]!.path}`
 
   return {
     "@context": "https://schema.org",
     "@graph": [
-      {
-        "@type": "BreadcrumbList",
-        itemListElement: crumbs.map(({ name, path }, index) => ({
-          "@type": "ListItem",
-          position: index + 1,
-          name,
-          item: `${base}${path}`,
-        })),
-      },
+      breadcrumbList(base, crumbs),
       {
         "@type": "Dataset",
         name: title,
@@ -172,6 +170,71 @@ export function marketPageStructuredData({
         ],
       },
     ],
+  }
+}
+
+/**
+ * schema.org graph of a company page (US-140): where it sits, and the
+ * company as an organisation named by its SIREN, its public record linked.
+ */
+export function companyPageStructuredData({
+  base,
+  locale,
+  page,
+  description,
+  crumbs,
+}: {
+  base: string
+  locale: Locale
+  page: PublicCompanyPage
+  description: string
+  crumbs: Crumb[]
+}) {
+  const url = `${base}${crumbs[crumbs.length - 1]!.path}`
+  const { company } = page
+
+  return {
+    "@context": "https://schema.org",
+    "@graph": [
+      breadcrumbList(base, crumbs),
+      {
+        "@type": "WebPage",
+        name: crumbs[crumbs.length - 1]!.name,
+        description,
+        url,
+        inLanguage: locale,
+        dateModified: page.refreshedAt,
+        publisher: { "@id": `${base}/#organization` },
+        about: {
+          "@type": "Organization",
+          name: company.legalName,
+          taxID: company.siren,
+          identifier: {
+            "@type": "PropertyValue",
+            propertyID: "SIREN",
+            value: company.siren,
+          },
+          sameAs: [
+            `${ANNUAIRE_COMPANY_URL}/${company.siren}`,
+            ...(company.employerPage ? [company.employerPage.url] : []),
+          ],
+          ...(company.createdOn && { foundingDate: company.createdOn }),
+        },
+      },
+    ],
+  }
+}
+
+/** Name and path of each level, the page itself last. */
+function breadcrumbList(base: string, crumbs: Crumb[]) {
+  return {
+    "@type": "BreadcrumbList",
+    itemListElement: crumbs.map(({ name, path }, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      name,
+      item: `${base}${path}`,
+    })),
   }
 }
 

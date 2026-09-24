@@ -23,7 +23,7 @@ import { jobMarketPath, toolsPath } from "@/lib/tools"
  * day. Nothing is built ahead: the pairs follow the radar's data, which the
  * build cannot see, and a pair without enough data is a 404.
  */
-// Literal, as Next reads it statically: MARKET_PAGE_REVALIDATE_SECONDS.
+// Literal, as Next reads it statically: SEO_PAGE_REVALIDATE_SECONDS.
 export const revalidate = 86400
 export const dynamicParams = true
 

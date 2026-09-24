@@ -7,8 +7,8 @@ import {
   fetchMarketPages,
   marketPagePath,
   parseMarketPageSegments,
-  slugify,
 } from "@/lib/market-pages"
+import { slugify } from "@/lib/seo-pages"
 
 const COMPTABLE_44 = {
   department: "44",
@@ -101,10 +101,12 @@ describe("sitemap and the job × department pages", () => {
   it("lists each page in both languages, with alternates and its reading date", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn().mockResolvedValue(
+      vi.fn(async (url: string) =>
         new Response(
           JSON.stringify({
-            pages: [{ ...COMPTABLE_44, refreshedAt: "2026-09-20T08:00:00.000Z" }],
+            pages: url.endsWith("/public/market-pages")
+              ? [{ ...COMPTABLE_44, refreshedAt: "2026-09-20T08:00:00.000Z" }]
+              : [],
           })
         )
       )

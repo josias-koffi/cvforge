@@ -172,6 +172,27 @@ describe("landing next config", () => {
     })
   })
 
+  /** And the company pages, below the employer check's slugs (US-140). */
+  it("serves the company pages under each language's slug", async () => {
+    const redirects = await nextConfig.redirects!()
+    const rewrites = await nextConfig.rewrites!()
+
+    expect(rewrites).toContainEqual({
+      source: "/fr/verifier-employeur/:path+",
+      destination: "/fr/employer-check/:path+",
+    })
+    expect(redirects).toContainEqual({
+      source: "/fr/employer-check/:path+",
+      destination: "/fr/verifier-employeur/:path+",
+      permanent: true,
+    })
+    expect(redirects).toContainEqual({
+      source: "/en/verifier-employeur/:path+",
+      destination: "/en/employer-check/:path+",
+      permanent: true,
+    })
+  })
+
   /** The free tools hub, same arrangement as the ATS check (US-135). */
   describe("the free tools hub", () => {
     it("redirects each language away from the other's slug", async () => {

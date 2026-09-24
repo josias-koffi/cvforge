@@ -10,6 +10,11 @@ import { format, type Locale } from "@/lib/i18n"
 
 type Sheet = CompanyCheckDictionary["sheet"]
 
+/** "381 983 568", as the Annuaire prints it. */
+export function formatSiren(siren: string) {
+  return siren.replace(/^(\d{3})(\d{3})(\d{3})$/, "$1 $2 $3")
+}
+
 /** Headcount, activity, age, establishments and revenue, in cards. */
 export function CompanyFigures({
   company,

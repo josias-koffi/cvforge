@@ -59,6 +59,31 @@ export interface CompanyCheckDictionary {
     sources: { annuaire: string; egapro: string; employerPage: string }
     again: string
   }
+  /** A company's own page (US-140), from the refresh's copy. */
+  page: {
+    breadcrumbLabel: string
+    /** "{name} : fiche employeur" */
+    title: string
+    /** "{name} : effectif, activité, engagements" */
+    metaTitle: string
+    /** "{name}, SIREN {siren}. {summary}" and a closing phrase. */
+    metaDescription: string
+    /** "Secteur : {sector} (NAF {naf})." */
+    summaryActivity: string
+    /** "Effectif : {headcount}." */
+    summaryHeadcount: string
+    /** "Créée en {year}." */
+    summaryCreated: string
+    sheetTitle: string
+    hiringTitle: string
+    /** "{job}, {city} ({department})" */
+    hiringItem: string
+    hiringSource: string
+    sameSectorTitle: string
+    /** "Données relues le {date}." */
+    refreshed: string
+    toolLink: string
+  }
   cta: { title: string; body: string; button: string }
   lead: {
     body: string

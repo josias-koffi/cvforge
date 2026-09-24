@@ -73,6 +73,9 @@ const nextConfig: NextConfig = {
       // And for the employer check (US-139).
       { source: "/fr/employer-check", destination: "/fr/verifier-employeur", permanent: true },
       { source: "/en/verifier-employeur", destination: "/en/employer-check", permanent: true },
+      // Its company pages (US-140), under the same slugs.
+      { source: "/fr/employer-check/:path+", destination: "/fr/verifier-employeur/:path+", permanent: true },
+      { source: "/en/verifier-employeur/:path+", destination: "/en/employer-check/:path+", permanent: true },
       ...legalRedirects(),
     ]
   },
@@ -85,6 +88,7 @@ const nextConfig: NextConfig = {
       { source: "/fr/metier-recrute", destination: "/fr/job-market" },
       { source: "/fr/metier-recrute/:path+", destination: "/fr/job-market/:path+" },
       { source: "/fr/verifier-employeur", destination: "/fr/employer-check" },
+      { source: "/fr/verifier-employeur/:path+", destination: "/fr/employer-check/:path+" },
     ]
   },
 }

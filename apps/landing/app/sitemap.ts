@@ -4,10 +4,14 @@ import type { MetadataRoute } from "next"
 import { homePath, locales, storyPath, type Locale } from "@/lib/i18n"
 import { legalPath } from "@/lib/legal"
 import { siteUrl } from "@/lib/site"
+import { companyPagePath, fetchCompanyPages } from "@/lib/company-pages"
 import { fetchMarketPages, marketPagePath } from "@/lib/market-pages"
 import { freeTools, toolsPath } from "@/lib/tools"
 
-/** Regenerated as often as the job × department pages it lists (US-138). */
+/**
+ * Regenerated as often as the job × department pages (US-138) and the
+ * company pages (US-140) it lists.
+ */
 export const revalidate = 86400
 
 type LocalizedPage = {
@@ -18,6 +22,10 @@ type LocalizedPage = {
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = siteUrl()
+  const [marketPages, companyPages] = await Promise.all([
+    fetchMarketPages(),
+    fetchCompanyPages(),
+  ])
   const pages: LocalizedPage[] = [
     { path: homePath, priority: 1 },
     // The free tools are the top of the acquisition funnel, so they rank
@@ -29,11 +37,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       path: (locale: Locale) => legalPath(locale, slug),
       priority: 0.3,
     })),
-    // Only pairs with a page: an API that cannot answer lists none, and the
+    // Only pages that exist: an API that cannot answer lists none, and the
     // rest of the sitemap is served all the same.
-    ...(await fetchMarketPages()).map((page) => ({
+    ...marketPages.map((page) => ({
       path: (locale: Locale) => marketPagePath(locale, page),
       priority: 0.6,
+      lastModified: page.refreshedAt,
+    })),
+    ...companyPages.map((page) => ({
+      path: (locale: Locale) => companyPagePath(locale, page),
+      priority: 0.5,
       lastModified: page.refreshedAt,
     })),
   ]

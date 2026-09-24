@@ -4,17 +4,17 @@ import { forwardRef } from "react"
 import { ArrowLeftIcon, Building2Icon, RotateCcwIcon, TriangleAlertIcon } from "lucide-react"
 import type { PublicCompanyCheckResponse } from "@cvforge/types"
 
+import { CompanyLeadCta } from "@/components/company-check/company-lead-cta"
 import {
   CompanyCommitments,
   CompanyEmployerPage,
   CompanyFigures,
   CompanySources,
+  formatSiren,
 } from "@/components/company-check/company-sheet-sections"
-import { ToolLeadCta } from "@/components/tools/tool-lead-cta"
 import { Button } from "@/components/ui/button"
 import type { CompanyCheckDictionary } from "@/content/company-check/types"
 import type { LandingDictionary } from "@/content/types"
-import { postCompanyCheckLead } from "@/lib/company-check-client"
 import { format, type Locale } from "@/lib/i18n"
 
 /**
@@ -95,15 +95,12 @@ export const CompanySheet = forwardRef<
       </div>
 
       {result.status === "found" ? (
-        <ToolLeadCta
+        <CompanyLeadCta
           dictionary={dictionary}
           errors={errors}
-          icon={<Building2Icon />}
           onCtaClick={onCtaClick}
           onLeadSent={onLeadSent}
-          submit={(email, consent) =>
-            postCompanyCheckLead(email, consent, result.company.siren)
-          }
+          siren={result.company.siren}
         />
       ) : null}
 
@@ -122,8 +119,3 @@ export const CompanySheet = forwardRef<
     </div>
   )
 })
-
-/** "381 983 568", as the Annuaire prints it. */
-function formatSiren(siren: string) {
-  return siren.replace(/^(\d{3})(\d{3})(\d{3})$/, "$1 $2 $3")
-}

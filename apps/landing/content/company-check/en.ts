@@ -91,6 +91,24 @@ export const companyCheckEn: CompanyCheckDictionary = {
     },
     again: "Check another employer",
   },
+  page: {
+    breadcrumbLabel: "Breadcrumb",
+    title: "{name}: employer profile",
+    metaTitle: "{name}: headcount, activity, gender pay index, commitments",
+    metaDescription:
+      "{name}, SIREN {siren}. {summary} Gender equality index, commitments and public sources, before you apply.",
+    summaryActivity: "Sector: {sector} (NAF {naf}).",
+    summaryHeadcount: "Headcount: {headcount}.",
+    summaryCreated: "Founded in {year}.",
+    sheetTitle: "The company's record",
+    hiringTitle: "Where it hires",
+    hiringItem: "{job}, {city} ({department})",
+    hiringSource:
+      "Hiring establishments: La Bonne Boîte (France Travail). A link leads to the job's figures in the department when we have them.",
+    sameSectorTitle: "Other employers in the same sector",
+    refreshed: "Data read on {date}.",
+    toolLink: "Check another employer",
+  },
   cta: {
     title: "What about the companies hiring in your field?",
     body: "Those hiring near you, even without a job ad, each with its record. Create your account: all it takes is an email.",

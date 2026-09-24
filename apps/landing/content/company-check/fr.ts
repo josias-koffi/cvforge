@@ -91,6 +91,24 @@ export const companyCheckFr: CompanyCheckDictionary = {
     },
     again: "Vérifier un autre employeur",
   },
+  page: {
+    breadcrumbLabel: "Fil d'Ariane",
+    title: "{name} : fiche employeur",
+    metaTitle: "{name} : effectif, activité, égalité F/H, engagements",
+    metaDescription:
+      "{name}, SIREN {siren}. {summary} Index égalité femmes-hommes, engagements et sources publiques, avant de postuler.",
+    summaryActivity: "Secteur : {sector} (NAF {naf}).",
+    summaryHeadcount: "Effectif : {headcount}.",
+    summaryCreated: "Créée en {year}.",
+    sheetTitle: "La fiche de l'entreprise",
+    hiringTitle: "Où elle recrute",
+    hiringItem: "{job}, {city} ({department})",
+    hiringSource:
+      "Établissements qui recrutent : La Bonne Boîte (France Travail). Un lien mène aux chiffres du métier dans le département quand nous les avons.",
+    sameSectorTitle: "D'autres employeurs du même secteur",
+    refreshed: "Données relues le {date}.",
+    toolLink: "Vérifier un autre employeur",
+  },
   cta: {
     title: "Et les entreprises qui recrutent dans votre métier ?",
     body: "Celles qui embauchent près de chez vous, même sans annonce, avec leur fiche. Créez votre compte : il suffit d'un email.",
