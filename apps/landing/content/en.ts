@@ -1,6 +1,7 @@
 import { WELCOME_APPLICATIONS } from "@cvforge/types"
 
 import { companyCheckEn } from "./company-check/en"
+import { interviewQuestionsEn } from "./interview-questions/en"
 import type { LandingDictionary } from "./types"
 
 /** Copy source: .project/marketing/cvspark-storytelling.md (English adaptation) */
@@ -482,6 +483,8 @@ export const en: LandingDictionary = {
         "Enter at least 3 characters of the company name, or its SIREN.",
       companySourceUnavailable:
         "The French company directory is not answering right now. Try again in a moment.",
+      questionsUnavailable:
+        "The question generator is not answering right now. Try again in a moment.",
       offerNotUsable:
         "This offer does not have enough specific terms to compare. Paste the full ad.",
     },
@@ -532,9 +535,16 @@ export const en: LandingDictionary = {
           "A French company's headcount, activity, gender equality index, social economy status and carbon report.",
         tags: ["No account", "Government open data"],
       },
+      interview_questions: {
+        name: "Likely interview questions",
+        description:
+          "The 5 questions a recruiter will ask you about an offer, and what they want to find out with each.",
+        tags: ["No account", "AI"],
+      },
     },
   },
   companyCheck: companyCheckEn,
+  interviewQuestions: interviewQuestionsEn,
   jobMarket: {
     metaTitle: "Is this job hiring near me? Demand, openings, salary",
     metaDescription:

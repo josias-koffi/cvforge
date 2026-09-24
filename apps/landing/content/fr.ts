@@ -1,6 +1,7 @@
 import { WELCOME_APPLICATIONS } from "@cvforge/types"
 
 import { companyCheckFr } from "./company-check/fr"
+import { interviewQuestionsFr } from "./interview-questions/fr"
 import type { LandingDictionary } from "./types"
 
 /** Copy source: .project/marketing/cvspark-storytelling.md */
@@ -490,6 +491,8 @@ export const fr: LandingDictionary = {
         "Saisissez au moins 3 caractères du nom de l'entreprise, ou son SIREN.",
       companySourceUnavailable:
         "L'Annuaire des entreprises ne répond pas pour le moment. Réessayez dans un instant.",
+      questionsUnavailable:
+        "Le générateur de questions ne répond pas pour le moment. Réessayez dans un instant.",
       offerNotUsable:
         "Cette offre ne contient pas assez de termes précis pour être comparée. Collez l'annonce complète.",
     },
@@ -540,9 +543,16 @@ export const fr: LandingDictionary = {
           "Effectif, activité, égalité femmes-hommes, ESS, société à mission et bilan carbone d'une entreprise.",
         tags: ["Sans compte", "Données publiques"],
       },
+      interview_questions: {
+        name: "Questions d'entretien probables",
+        description:
+          "Les 5 questions qu'un recruteur vous posera sur une offre, et ce qu'il cherche à savoir avec chacune.",
+        tags: ["Sans compte", "IA"],
+      },
     },
   },
   companyCheck: companyCheckFr,
+  interviewQuestions: interviewQuestionsFr,
   jobMarket: {
     metaTitle: "Ce métier recrute-t-il près de chez moi ? Tension, offres, salaire",
     metaDescription:

@@ -1,6 +1,7 @@
 import type { AiCreditAction, LegalDocumentSlug } from "@cvforge/types"
 
 import type { CompanyCheckDictionary } from "./company-check/types"
+import type { InterviewQuestionsDictionary } from "./interview-questions/types"
 
 /** Screens captured from apps/web and stored under public/screenshots/{light,dark}. */
 export type ScreenshotName =
@@ -14,7 +15,12 @@ export type ScreenshotName =
   | "interview-progress"
 
 /** The free tools that are live on the landing (US-135). */
-export type FreeToolKey = "ats" | "keyword_match" | "job_market" | "company_check"
+export type FreeToolKey =
+  | "ats"
+  | "keyword_match"
+  | "job_market"
+  | "company_check"
+  | "interview_questions"
 
 interface TitledText {
   title: string
@@ -259,6 +265,7 @@ export interface LandingDictionary {
       /** The employer check's own refusals (US-139). */
       companyQueryInvalid: string
       companySourceUnavailable: string
+      questionsUnavailable: string
     }
     cta: string
   }
@@ -280,6 +287,8 @@ export interface LandingDictionary {
   }
   /** The free "check an employer" tool (US-139). */
   companyCheck: CompanyCheckDictionary
+  /** The free "likely interview questions" tool (US-141). */
+  interviewQuestions: InterviewQuestionsDictionary
   /**
    * The free "does this job hire near me?" tool (US-137). Its refusals are
    * worded in `ats.errors`, with every other tool's.

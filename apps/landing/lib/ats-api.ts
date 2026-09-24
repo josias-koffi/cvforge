@@ -85,6 +85,13 @@ export function companyCheckEndpoint(env: NodeJS.ProcessEnv = process.env) {
   return `${apiUrl(env)}/public/company-check`
 }
 
+/** The likely interview questions (US-141): its questions, its lead. */
+export function interviewQuestionsEndpoint(
+  env: NodeJS.ProcessEnv = process.env
+) {
+  return `${apiUrl(env)}/public/interview-questions`
+}
+
 export function unlockEndpoint(
   scanId: string,
   env: NodeJS.ProcessEnv = process.env

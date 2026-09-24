@@ -3,6 +3,7 @@ import {
   FileSearchIcon,
   ListChecksIcon,
   MapPinnedIcon,
+  MessagesSquareIcon,
   type LucideIcon,
 } from "lucide-react"
 
@@ -10,6 +11,7 @@ import type { FreeToolKey } from "@/content/types"
 import { atsPath } from "@/lib/ats"
 import {
   companyCheckSlugs,
+  interviewQuestionsSlugs,
   jobMarketSlugs,
   keywordMatchSlugs,
   toolsSlugs,
@@ -34,6 +36,11 @@ export const freeTools: FreeTool[] = [
   { key: "keyword_match", path: keywordMatchPath, icon: ListChecksIcon },
   { key: "job_market", path: jobMarketPath, icon: MapPinnedIcon },
   { key: "company_check", path: companyCheckPath, icon: Building2Icon },
+  {
+    key: "interview_questions",
+    path: interviewQuestionsPath,
+    icon: MessagesSquareIcon,
+  },
 ]
 
 export function keywordMatchPath(locale: Locale) {
@@ -46,6 +53,10 @@ export function jobMarketPath(locale: Locale) {
 
 export function companyCheckPath(locale: Locale) {
   return `/${locale}/${companyCheckSlugs[locale]}`
+}
+
+export function interviewQuestionsPath(locale: Locale) {
+  return `/${locale}/${interviewQuestionsSlugs[locale]}`
 }
 
 export function toolsPath(locale: Locale) {

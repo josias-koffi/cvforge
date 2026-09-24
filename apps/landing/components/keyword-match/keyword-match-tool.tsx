@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useId, useMemo, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { CircleAlertIcon, ListChecksIcon } from "lucide-react"
 import type { PublicKeywordMatchResponse } from "@cvforge/types"
 
@@ -10,16 +10,15 @@ import {
   sparkPendingClassName,
 } from "@/components/ats/spark-pending"
 import { KeywordMatchResult } from "@/components/keyword-match/keyword-match-result"
+import {
+  OfferTextField,
+  offerTextReady,
+} from "@/components/tools/offer-text-field"
 import { Button } from "@/components/ui/button"
 import type { LandingDictionary } from "@/content/types"
 import { scanErrorMessage } from "@/lib/ats-client"
 import { toolFunnel } from "@/lib/ats-funnel"
-import { format } from "@/lib/i18n"
-import {
-  MAX_OFFER_CHARS,
-  MIN_OFFER_CHARS,
-  postKeywordMatch,
-} from "@/lib/keyword-match-client"
+import { postKeywordMatch } from "@/lib/keyword-match-client"
 import { cn } from "@/lib/utils"
 
 /**
@@ -43,9 +42,6 @@ export function KeywordMatchTool({
   const [result, setResult] = useState<PublicKeywordMatchResponse | null>(null)
 
   const resultRef = useRef<HTMLDivElement>(null)
-  const offerId = useId()
-  const offerHintId = useId()
-  const counterId = useId()
 
   const funnel = useMemo(() => toolFunnel("keyword_match", locale), [locale])
 
@@ -61,9 +57,7 @@ export function KeywordMatchTool({
     if (result) resultRef.current?.focus()
   }, [result])
 
-  const offerLength = offerText.trim().length
-  const offerReady = offerLength >= MIN_OFFER_CHARS
-  const ready = file !== null && offerReady && !comparing
+  const ready = file !== null && offerTextReady(offerText) && !comparing
 
   async function compare() {
     if (!file || !ready) return
@@ -121,37 +115,14 @@ export function KeywordMatchTool({
         }}
       />
 
-      <label className="mt-6 block font-medium" htmlFor={offerId}>
-        {dictionary.offer.label}
-      </label>
-      <p className="mt-1 text-sm text-muted-foreground" id={offerHintId}>
-        {dictionary.offer.hint}
-      </p>
-      <textarea
-        aria-describedby={`${offerHintId} ${counterId}`}
-        className="mt-2 w-full rounded-lg border bg-background p-3 text-sm transition-shadow focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-        disabled={comparing}
-        id={offerId}
-        maxLength={MAX_OFFER_CHARS}
-        onChange={(event) => setOfferText(event.target.value)}
-        placeholder={dictionary.offer.placeholder}
-        rows={8}
-        value={offerText}
-      />
-      <p
-        className={cn(
-          "mt-1 text-right text-xs",
-          offerReady ? "text-muted-foreground" : "text-foreground"
-        )}
-        id={counterId}
-      >
-        {offerReady
-          ? format(dictionary.offer.counterReady, { count: offerLength })
-          : format(dictionary.offer.counter, {
-              count: offerLength,
-              min: MIN_OFFER_CHARS,
-            })}
-      </p>
+      <div className="mt-6">
+        <OfferTextField
+          disabled={comparing}
+          labels={dictionary.offer}
+          onChange={setOfferText}
+          value={offerText}
+        />
+      </div>
 
       <p aria-live="polite" className="text-sm text-destructive" role="status">
         {/* Kept mounted and empty: a live region that appears with its

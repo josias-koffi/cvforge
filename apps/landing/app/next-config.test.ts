@@ -4,7 +4,12 @@ import { describe, expect, it } from "vitest"
 import nextConfig, { legalRedirects, resolveNextDistDir } from "../next.config"
 import { locales } from "../lib/i18n"
 import { atsPath } from "../lib/ats"
-import { jobMarketPath, keywordMatchPath, toolsPath } from "../lib/tools"
+import {
+  interviewQuestionsPath,
+  jobMarketPath,
+  keywordMatchPath,
+  toolsPath,
+} from "../lib/tools"
 import { legalPath } from "../lib/legal"
 
 describe("landing next config", () => {
@@ -127,6 +132,27 @@ describe("landing next config", () => {
     expect(rewrites).toContainEqual({
       source: keywordMatchPath("fr"),
       destination: "/fr/cv-job-match",
+    })
+  })
+
+  /** The likely interview questions, same arrangement again (US-141). */
+  it("serves the interview questions under each language's slug", async () => {
+    const redirects = await nextConfig.redirects!()
+    const rewrites = await nextConfig.rewrites!()
+
+    expect(redirects).toContainEqual({
+      source: "/fr/interview-questions",
+      destination: "/fr/questions-entretien",
+      permanent: true,
+    })
+    expect(redirects).toContainEqual({
+      source: "/en/questions-entretien",
+      destination: "/en/interview-questions",
+      permanent: true,
+    })
+    expect(rewrites).toContainEqual({
+      source: interviewQuestionsPath("fr"),
+      destination: "/fr/interview-questions",
     })
   })
 

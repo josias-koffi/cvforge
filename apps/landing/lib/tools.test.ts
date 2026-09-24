@@ -10,6 +10,7 @@ import { localizedPath, locales } from "@/lib/i18n"
 import {
   companyCheckPath,
   freeTools,
+  interviewQuestionsPath,
   jobMarketPath,
   keywordMatchPath,
   toolsPath,
@@ -58,6 +59,19 @@ describe("companyCheckPath", () => {
     )
     expect(localizedPath("/en/employer-check", "fr")).toBe(
       "/fr/verifier-employeur"
+    )
+  })
+})
+
+describe("interviewQuestionsPath", () => {
+  it("gives the interview questions an address per language, both switchable", () => {
+    expect(interviewQuestionsPath("fr")).toBe("/fr/questions-entretien")
+    expect(interviewQuestionsPath("en")).toBe("/en/interview-questions")
+    expect(localizedPath("/fr/questions-entretien", "en")).toBe(
+      "/en/interview-questions"
+    )
+    expect(localizedPath("/en/interview-questions", "fr")).toBe(
+      "/fr/questions-entretien"
     )
   })
 })

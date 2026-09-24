@@ -8,6 +8,7 @@ const TOOL_LABELS: Record<AcquisitionTool, string> = {
   keyword_match: "Comparateur CV ↔ offre",
   job_market: "Ce métier recrute-t-il ?",
   company_check: "Vérifier un employeur",
+  interview_questions: "Questions d'entretien",
 }
 
 function countOf(value: number) {
