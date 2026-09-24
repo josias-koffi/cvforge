@@ -5,8 +5,10 @@
  *
  * `CLIENT_IP_HEADER` names the header the edge guarantees, when there is one.
  * Behind Cloudflare that is `cf-connecting-ip`: the first hop of
- * `X-Forwarded-For` is then either Cloudflare's own node, shared by many
- * visitors, or a value the visitor wrote themselves (US-132, ADR-022).
+ * `X-Forwarded-For` is then Cloudflare's own node, shared by many visitors
+ * (US-132, ADR-022). It must stay unset while nothing sits in front of
+ * Traefik: a visitor can send `cf-connecting-ip` themselves, and it was
+ * shown on staging to dodge every per-IP limit.
  *
  * In production this server reaches the API through its public host, and
  * Traefik overwrites `X-Forwarded-For` on the way in. The address is therefore

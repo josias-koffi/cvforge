@@ -126,3 +126,10 @@ Deux politiques s'ajoutent avant celle du scan ATS, qui reste la politique par d
 Le coût de l'extraction offerte à l'inscription a été validé par le propriétaire le 2026-09-24.
 
 La règle « aucun texte de CV persisté » est vérifiée par `apps/api/src/leads/public-tools.rgpd.test.ts`. Le test fait tourner tous les outils publics sur Postgres (scan ATS, déblocage, événements, comparateur, lead, consommation des liens), puis relit chaque table.
+
+## Amendement 2026-09-24 (ter) — `CLIENT_IP_HEADER` devient opt-in
+
+Constat sur la staging après le déploiement du sprint 029. Les enregistrements DNS sont en nuage gris (`cloudflare_proxied = false` dans `infra/terraform`, le temps de l'émission des certificats), mais la landing croyait par défaut `cf-connecting-ip`. Un visiteur qui envoie cet en-tête lui-même, avec une valeur différente à chaque appel, n'était jamais limité (8 réponses 400 au lieu de 429). Un `X-Forwarded-For` forgé, lui, est bien écrasé par Traefik (429, en direct comme via la landing).
+
+Le défaut est désormais vide : la landing lit le `X-Forwarded-For` réécrit par Traefik. `cf-connecting-ip` ne s'active qu'avec la variable d'environnement GitHub `CLIENT_IP_HEADER` (puis `TF_VAR_client_ip_header`), à poser **uniquement** quand `cloudflare_proxied = true` **et** que l'origine n'accepte que les plages Cloudflare.
+

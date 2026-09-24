@@ -344,6 +344,18 @@ variable "landing_proxy_secret" {
   default     = ""
 }
 
+variable "client_ip_header" {
+  type        = string
+  description = <<-EOT
+    Header the landing reads the visitor's address from, for the per-IP
+    limits. Empty uses the X-Forwarded-For Traefik rewrites, which a visitor
+    cannot forge. Set "cf-connecting-ip" only while the records are proxied
+    by Cloudflare (cloudflare_proxied in infra/terraform): with a grey cloud,
+    anyone can send that header and dodge every per-IP limit (ADR-022).
+  EOT
+  default     = ""
+}
+
 variable "ats_public_hourly_limit" {
   type        = number
   description = "Public ATS scans allowed per IP and per hour."

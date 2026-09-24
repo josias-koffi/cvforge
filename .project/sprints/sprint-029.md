@@ -100,6 +100,10 @@ Critères communs aux outils : voir `backlog.md`, « Critères d'acceptation dé
       (PGlite), puis relecture de chaque table ; une fuite injectée est bien détectée.
 - [ ] Exploitation : en production, l'en-tête `CF-Connecting-IP` arrive à la landing et l'origine
       n'accepte que Cloudflare ; Traefik (Dokploy) ne déclare ni `trustedIPs` ni `insecure` (US-132)
+      → 2026-09-24 : Traefik vérifié (pas de `forwardedHeaders`, seul `api.insecure`). Les DNS sont
+      en nuage gris : `CLIENT_IP_HEADER` est désormais vide par défaut (un `cf-connecting-ip` forgé
+      contournait les limites sur la staging, ADR-022 ter). À poser à `cf-connecting-ip` avec le
+      passage en orange.
 - [ ] Exploitation : le secret GitHub `LANDING_PROXY_SECRET` est créé (production et staging), et
       un scan depuis deux IP différentes compte sur deux compteurs distincts (US-132)
 

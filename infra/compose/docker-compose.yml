@@ -40,10 +40,11 @@ services:
       NODE_ENV: production
       # The landing only links to the app; /login redirects to this origin.
       APP_URL: https://${WEB_DOMAIN}
-      # Who the visitor is, for the per-IP limits: behind Cloudflare the first
-      # hop of X-Forwarded-For is Cloudflare's node or a value the visitor
-      # wrote (US-132, ADR-022). Empty falls back to X-Forwarded-For.
-      CLIENT_IP_HEADER: ${CLIENT_IP_HEADER-cf-connecting-ip}
+      # Who the visitor is, for the per-IP limits (US-132, ADR-022). Empty,
+      # the default, uses the X-Forwarded-For Traefik rewrites. Set it to
+      # cf-connecting-ip only once the records are orange-clouded: without
+      # Cloudflare in front, any visitor can write that header themselves.
+      CLIENT_IP_HEADER: ${CLIENT_IP_HEADER:-}
       # Signs the visitor's address relayed to the API (US-132). Same value as
       # the API's; empty relays nothing.
       LANDING_PROXY_SECRET: ${LANDING_PROXY_SECRET:-}

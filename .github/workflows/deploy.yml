@@ -326,6 +326,9 @@ jobs:
       # Optional too: without it the landing's visitors share one rate-limit
       # counter at the API (US-132).
       TF_VAR_landing_proxy_secret: ${{ secrets.LANDING_PROXY_SECRET }}
+      # Not a secret: an environment variable, set to cf-connecting-ip only
+      # once Cloudflare proxies the records. Unset keeps the safe default.
+      TF_VAR_client_ip_header: ${{ vars.CLIENT_IP_HEADER }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
