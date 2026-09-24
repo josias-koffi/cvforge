@@ -59,7 +59,9 @@ describe("CompanyProfileView", () => {
     expect(html).toContain("2 000 à 4 999 salariés")
     expect(html).toContain("Chiffre d'affaires 2025")
     expect(html).toContain("211,1 M €")
-    expect(html).toContain("annuaire-entreprises.data.gouv.fr/entreprise/381983568")
+    expect(html).toContain(
+      "annuaire-entreprises.data.gouv.fr/entreprise/381983568"
+    )
   })
 
   it("names every source, Egapro when its index is shown", () => {
@@ -79,7 +81,9 @@ describe("CompanyProfileView", () => {
     expect(html).toContain(
       'href="https://recrute.francetravail.fr/page-employeur/helpline-913"'
     )
-    expect(html).toContain("8 offres publiées · présentée par l'entreprise elle-même")
+    expect(html).toContain(
+      "8 offres publiées · présentée par l'entreprise elle-même"
+    )
     expect(html).toContain("Page employeur : France Travail")
     expect(
       render({ ...DETAIL, profile: { ...DETAIL.profile!, employerPage: null } })
@@ -87,7 +91,9 @@ describe("CompanyProfileView", () => {
   })
 
   it("says the company is still to be read, and when it is closed", () => {
-    expect(render({ ...DETAIL, profile: null })).toContain("arrive dans l'heure")
+    expect(render({ ...DETAIL, profile: null })).toContain(
+      "arrive dans l'heure"
+    )
     expect(
       render({ ...DETAIL, profile: { ...DETAIL.profile!, closed: true } })
     ).toContain("déclarée fermée")

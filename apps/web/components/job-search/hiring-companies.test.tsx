@@ -7,9 +7,8 @@ vi.mock("@/app/(app)/entreprises/actions", () => ({
 }))
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }))
 
-const { HiringCompanies } = await import(
-  "@/components/job-search/hiring-companies"
-)
+const { HiringCompanies } =
+  await import("@/components/job-search/hiring-companies")
 
 const EVERIENCE: HiringCompany = {
   badges: [],
@@ -30,10 +29,7 @@ const EVERIENCE: HiringCompany = {
 function render(view: HiringCompaniesView) {
   return renderToStaticMarkup(
     <HiringCompanies profileId="p1" view={view} />
-  ).replace(
-    /&#x27;/g,
-    "'"
-  )
+  ).replace(/&#x27;/g, "'")
 }
 
 describe("HiringCompanies", () => {
@@ -61,7 +57,9 @@ describe("HiringCompanies", () => {
     expect(html).toContain("Nantes")
     expect(html).toContain("100 à 199 salariés")
     expect(html).not.toContain("Nantes · ")
-    expect(html).toContain("Recrute dans : Développeur / Développeuse informatique")
+    expect(html).toContain(
+      "Recrute dans : Développeur / Développeuse informatique"
+    )
     // The badge only for La Bonne Boîte's high potential.
     expect(html.match(/Fort potentiel/g)).toHaveLength(1)
   })
@@ -83,7 +81,9 @@ describe("HiringCompanies", () => {
       companies: [
         {
           ...EVERIENCE,
-          badges: [{ key: "egapro", label: "Index égalité F/H : 94/100 (2025)" }],
+          badges: [
+            { key: "egapro", label: "Index égalité F/H : 94/100 (2025)" },
+          ],
         },
       ],
       refreshedAt: "2026-09-24T10:00:00.000Z",
