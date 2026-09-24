@@ -3,7 +3,7 @@
  *
  * Each API has its own OAuth scope and its own quota. `verified: true` means
  * `ft:smoke <api>` got a real answer with this scope, path and payload
- * (2026-09-23 for all but La Bonne Boîte). Quotas outside Offres d'emploi are
+ * (2026-09-23 for all but La Bonne Boîte and ROME Substitutions). Quotas outside Offres d'emploi are
  * still unknown. A wrong scope is not an exception here, it is `invalid_scope`
  * at token time — which is why each one can be overridden from the
  * environment without a release.
@@ -20,6 +20,7 @@ export type FtApiId =
   | "rome-metiers"
   | "rome-competences"
   | "rome-fiches-metiers"
+  | "rome-substitutions"
   | "la-bonne-boite";
 
 /** A read-only call `ft:smoke` makes to prove the scope, the path and the payload. */
@@ -105,12 +106,21 @@ export const FT_APIS: Record<FtApiId, FtApiDefinition> = {
     verified: true,
     smoke: { method: "GET", path: "/fiches-rome/fiche-metier/M1805" },
   },
-  // The token is issued, then every call answers 403 "Invalid scope": this
-  // API needs a manual grant from France Travail on top of the subscription.
+  // Scopes given by the France Travail support (INC2741452, 2026-09-24). With
+  // them the token is issued, yet every call still answers 403
+  // `insufficient_scope`: the grant is pending on their side.
+  "rome-substitutions": {
+    label: "ROME 4.0 — Substitutions",
+    baseUrl: `${FT_API_ROOT}/rome-substitutions/v1`,
+    scope: "api_rome-substitutionsv1 nomenclatureRomeSubstitutions",
+    requestsPerSecond: UNKNOWN_QUOTA_RPS,
+    verified: false,
+    smoke: { method: "GET", path: "/substitutions" },
+  },
   "la-bonne-boite": {
     label: "La Bonne Boîte v2",
     baseUrl: `${FT_API_ROOT}/labonneboite/v2`,
-    scope: "api_labonneboitev2",
+    scope: "api_labonneboitev2 search office",
     requestsPerSecond: UNKNOWN_QUOTA_RPS,
     verified: false,
     smoke: {

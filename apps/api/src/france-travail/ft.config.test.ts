@@ -18,8 +18,9 @@ describe("FT_APIS", () => {
     );
   });
 
-  it("does not claim La Bonne Boîte works: its calls are refused until granted", () => {
+  it("does not claim La Bonne Boîte or ROME Substitutions work: their calls are refused until granted", () => {
     expect(FT_APIS["la-bonne-boite"].verified).toBe(false);
+    expect(FT_APIS["rome-substitutions"].verified).toBe(false);
     expect(FT_APIS.offres.verified).toBe(true);
   });
 

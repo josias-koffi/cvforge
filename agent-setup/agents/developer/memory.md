@@ -1326,3 +1326,8 @@
 ### 2026-09-24 — US-118 (developer · [[workflows/runs/analyze-design-dev-review-20260923233426]])
 - **Context** : [[sprints/sprint-026#^us-118]]
 - **Learned** : Classer au seul score laisse un texte prendre toutes les places : on prend les réponses tour à tour entre les textes. Un textarea contrôlé qui se reconstruit à chaque frappe à partir de lignes nettoyées avale espaces et retours à la ligne : il faut garder le texte brut. En développement, un clic avant l'hydratation ne fait rien ; vérifier la requête POST, pas seulement le toast.
+
+## 2026-09-24 — Scopes France Travail corrigés (INC2741452)
+- Scopes donnés par le support : La Bonne Boîte `api_labonneboitev2 search office`, ROME Substitutions `api_rome-substitutionsv1 nomenclatureRomeSubstitutions` (ajoutée au catalogue `ft.config.ts`, non vérifiée).
+- Avec ces scopes le jeton est délivré, mais les appels répondent toujours 403 `WWW-Authenticate: insufficient_scope` : habilitation à obtenir côté France Travail, incident à rouvrir.
+- **Leçon** : `source .env` altère le secret FT (caractère interprété par le shell → `invalid_client`) ; utiliser `node --env-file=../../.env --import tsx src/france-travail/ft-smoke.main.ts <api>`.

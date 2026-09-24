@@ -359,7 +359,7 @@ describe("warnAboutInertApis", () => {
     expect(warn).toHaveBeenCalledWith(expect.stringContaining('"romeoo"'));
     expect(warn).toHaveBeenCalledWith(
       expect.stringContaining(
-        "rome-metiers, rome-competences, rome-fiches-metiers, la-bonne-boite",
+        "rome-metiers, rome-competences, rome-fiches-metiers, rome-substitutions, la-bonne-boite",
       ),
     );
   });
