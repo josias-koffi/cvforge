@@ -477,3 +477,10 @@
 - **Why**: Tests de bout en bout du lead, `fetch` réel limité à deux hôtes publics, axe en deux thèmes, 429 vu en vrai.
 - **Learned**: « Page employeur » ne peut venir que de la copie locale : l'afficher « si connue » est le comportement voulu, pas un manque.
 - **Open**: dette de découpage de `content/{fr,en,types}.ts`.
+
+## 2026-09-24 — US-140 review (stage 04 · [[workflows/runs/analyze-design-dev-review-20260924232418]])
+- **Context**: [[sprints/sprint-030#US-140]] · [[workflows/runs/analyze-design-dev-review-20260924232418/04-review]]
+- **Did**: Critères vérifiés par tests PGlite, landing servie (200/308/404, canonical, hreflang, sitemap) et axe avec mutation ; PASS.
+- **Why**: « Seules les entreprises en base » et « pas de contenu mince » se prouvent sur la vraie base après relecture.
+- **Learned**: Tester l'accord entre un filtre SQL et son jumeau TS, sinon sitemap et page divergent.
+- **Open**: sitemap à découper au-delà de 4 500 entreprises.

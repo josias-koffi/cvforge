@@ -174,3 +174,9 @@ Deux politiques de plus, ajoutées par configuration :
 Les couples « lecture + lead » des outils sont désormais décrits par un seul assistant, `freeToolPolicies`. Les clés, les variables et les valeurs du comparateur et de l'outil marché ne changent pas, et leurs tests restent verts.
 
 Vérifié sur l'API lancée : 60 appels passent, le 61ᵉ reçoit un 429 avec `Retry-After`.
+
+## Amendement 2026-09-24 (septies) — pages entreprises (US-140)
+
+`GET public/company-pages` et `GET public/company-pages/:siren` restent **hors rate limit**, comme `public/market-pages` (quinquies), et pour la même raison : c'est le serveur de la landing qui les appelle en ISR, toujours depuis la même adresse.
+
+Ces routes ne lisent que la copie de `companies`, `hiring_companies` et `market_stats`. Elles n'appellent ni l'Annuaire, ni Egapro, ni France Travail, et n'écrivent rien : aucun quota externe n'est en jeu, contrairement à `public/company-check`.

@@ -465,3 +465,10 @@
 - **Why**: Chaque frappe coûterait un appel à l'Annuaire, limité à ~5/s par IP partagés.
 - **Learned**: « Aucun résultat » est un état, pas une erreur : encart neutre dans la région live.
 - **Open**: none
+
+## 2026-09-24 — US-140 design (stage 02 · [[workflows/runs/analyze-design-dev-review-20260924232418]])
+- **Context**: [[sprints/sprint-030#US-140]] · [[workflows/runs/analyze-design-dev-review-20260924232418/02-design]]
+- **Did**: Fiche d'US-139 réutilisée sous un H2, « Où elle recrute » lié aux pages métier existantes, voisins de secteur, CTA partagé.
+- **Why**: Une page unique et utile sans texte inventé ; les blocs gardent leurs H3.
+- **Learned**: Une phrase par parties (secteur, effectif, création) évite le « inconnu ».
+- **Open**: none

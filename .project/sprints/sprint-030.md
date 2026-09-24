@@ -44,11 +44,13 @@ outil d'entretien qui mène vers l'entretien vocal.
     - [x] Entreprise inconnue : message clair, pas d'erreur.
     - [x] CTA vers les entreprises qui recrutent (E20) → service lead.
   - Quotas vérifiés le 2026-09-24 : 7 appels/s documentés, 429 vu à 5/s ; l'outil a son propre limiteur à 2/s (ADR-022, amendement sexies).
-- [ ] **[US-140]** Pages SEO entreprises
+- [x] **[US-140]** Pages SEO entreprises
   - Agent: `developer`
+  - Workflow: `analyze-design-dev-review`
   - Critères d'acceptation :
-    - [ ] Pages ISR avec sources citées, sitemap, canonical et hreflang.
-    - [ ] Seules les entreprises déjà en base sont générées.
+    - [x] Pages ISR avec sources citées, sitemap, canonical et hreflang.
+    - [x] Seules les entreprises déjà en base sont générées.
+  - Décidé le 2026-09-24 : entreprises publiables (ni entrepreneur individuel ni diffusion partielle), ouvertes, avec au moins un fait au-delà du NAF ; plafond de 4 500 (ADR-022, amendement septies).
 - [ ] **[US-141]** Questions d'entretien probables
   - Agent: `developer`
   - Critères d'acceptation :
@@ -74,3 +76,4 @@ Critères communs aux outils : voir `backlog.md`, « Critères d'acceptation dé
 - 2026-09-24 — [[workflows/runs/analyze-design-dev-review-20260924211657|analyze-design-dev-review]] (US-137) — passed
 - 2026-09-24 — [[workflows/runs/analyze-design-dev-review-20260924215644|analyze-design-dev-review]] (US-138) — passed
 - 2026-09-24 — [[workflows/runs/analyze-design-dev-review-20260924222645|analyze-design-dev-review]] (US-139) — passed
+- 2026-09-24 — [[workflows/runs/analyze-design-dev-review-20260924232418|analyze-design-dev-review]] (US-140) — passed

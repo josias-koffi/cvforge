@@ -1531,3 +1531,13 @@
   - Les nouvelles routes Next demandent `next typegen` avant `tsc` (`PageProps`/`RouteContext`).
   - axe lancé pendant un `Reveal` donne de faux `color-contrast` : forcer l'opacité avant.
 - **Open**: none
+
+## 2026-09-24 — US-140 implement (stage 03 · [[workflows/runs/analyze-design-dev-review-20260924232418]])
+- **Context**: [[sprints/sprint-030#US-140]] · [[workflows/runs/analyze-design-dev-review-20260924232418/03-implement]]
+- **Did**: `publishable` (migration 0044), `company-pages` (store + service + contrôleur), route ISR `employer-check/[company]` ; extraits `seo-pages`, `Breadcrumbs`, `PageLinks`, `CompanyLeadCta`.
+- **Why**: Filtrer les personnes physiques ; ne pas dupliquer US-138.
+- **Learned**:
+  - `drizzle-kit generate` produit tout le schéma (snapshot périmé) : écrire la migration à la main et ajouter l'entrée du journal.
+  - Un mock `fetch` qui renvoie la même `Response` à deux appels « passe » par accident (corps déjà lu) : rendre le mock sensible à l'URL.
+  - Ni l'API ni la landing ne sont formatées par prettier à HEAD : ne formater que les nouveaux fichiers.
+- **Open**: none

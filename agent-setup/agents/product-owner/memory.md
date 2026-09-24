@@ -509,3 +509,10 @@
 - **Why**: « Sans clé API » exclut un appel France Travail à la requête ; l'Annuaire tolère ~5/s par IP, partagé avec le job horaire.
 - **Learned**: Une réponse `/search` de l'Annuaire contient déjà tout le dossier : inutile de rappeler par SIREN.
 - **Open**: none
+
+## 2026-09-24 — US-140 analyze (stage 01 · [[workflows/runs/analyze-design-dev-review-20260924232418]])
+- **Context**: [[sprints/sprint-030#US-140]] · [[workflows/runs/analyze-design-dev-review-20260924232418/01-analyze]]
+- **Did**: Pages pour les entreprises de `companies` publiables, ouvertes, avec NAF et un fait de plus ; plafond 4 500 (sitemap < 50 000).
+- **Why**: La table contient un entrepreneur individuel (nom d'une personne) : le statut n'était pas stocké, d'où une colonne `publishable`.
+- **Learned**: Avant d'indexer une donnée publique, vérifier qu'elle ne nomme pas une personne.
+- **Open**: none
