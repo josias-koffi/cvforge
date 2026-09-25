@@ -64,11 +64,18 @@ on the application. It is never scraped from the open web.
 
 ## Credits
 
-A session costs **one credit per minute** — 10, 20 or 30 — charged when it is
+A session costs **1.5 credits per minute** — 15, 30 or 45 — charged when it is
 created, not when it ends. Billing by the minute rather than a flat fee follows
 the cost: one speech call and one transcription per answer, and a session fits
 roughly one answer per three-quarters of a minute whatever its length. The
 scored report at the end is inside that price and is never charged separately.
+
+The rate was one credit a minute until 2026-09-25. The live Realtime voice
+costs about €0.24 for ten minutes, which left the Intensif pack (€0.034 a
+credit) with about a quarter of margin on an interview. At 1.5 the margin is
+about 50 % on Intensif, 60 % on Recherche active and 75 % on Essentiel. The
+packs keep their prices and credits: a complete application is now 22 credits,
+so they promise 4, 15 and 38 applications instead of 5, 20 and 50.
 
 The cost is committed as soon as the session runs, so charging at the end would
 let an abandoned tab run up a bill for free. `finishSession` never touches

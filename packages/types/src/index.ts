@@ -481,11 +481,16 @@ export interface InterviewProgressSummary {
  * `AI_CREDIT_COSTS` below can read it: a `const` stays in its temporal dead
  * zone until its own line runs, and the map would throw on import.
  */
-export const CREDITS_PER_INTERVIEW_MINUTE = 1;
+/**
+ * 1.5, not 1: a live Realtime interview costs about €0.24 for ten minutes
+ * (2026-09-25), which at one credit a minute left the Intensif pack with about
+ * a quarter of margin on it. Every offered duration still costs whole credits.
+ */
+export const CREDITS_PER_INTERVIEW_MINUTE = 1.5;
 
 /** What a session of that length costs, charged when it is created. */
 export function interviewSessionCost(minutes: InterviewDurationMinutes) {
-  return CREDITS_PER_INTERVIEW_MINUTE * minutes;
+  return Math.ceil(CREDITS_PER_INTERVIEW_MINUTE * minutes);
 }
 
 export const AI_CREDIT_COSTS: Record<AiCreditAction, number> = {
@@ -522,11 +527,13 @@ export function estimateApplications(credits: number) {
 }
 
 /**
- * Granted once on account creation: a CV import plus two complete applications,
- * interviews included — the mock interview is the thing to try before paying.
+ * Granted once on account creation: the onboarding's CV import plus one
+ * complete application, interview included — the mock interview is the thing
+ * to try before paying. One, not two, since the interview became the costly
+ * part of an application (2026-09-25).
  */
 export const WELCOME_CREDITS =
-  AI_CREDIT_COSTS[AI_CREDIT_ACTION_CV_IMPORT] + 2 * CREDITS_PER_APPLICATION;
+  AI_CREDIT_COSTS[AI_CREDIT_ACTION_CV_IMPORT] + CREDITS_PER_APPLICATION;
 export const WELCOME_APPLICATIONS = estimateApplications(WELCOME_CREDITS);
 
 export interface CreditLedgerEntry {

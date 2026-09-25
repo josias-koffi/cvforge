@@ -1,5 +1,5 @@
 # Stage 1: Install dependencies
-FROM node:20-alpine AS deps
+FROM node:22-alpine AS deps
 WORKDIR /workspace
 RUN corepack enable
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
@@ -23,7 +23,7 @@ RUN pnpm --filter @cvforge/document-renderer build
 RUN pnpm --filter @cvforge/api build
 
 # Stage 3: Production runner
-FROM node:20-alpine AS runner
+FROM node:22-alpine AS runner
 WORKDIR /workspace
 RUN corepack enable
 ENV NODE_ENV=production

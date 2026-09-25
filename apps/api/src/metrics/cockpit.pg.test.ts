@@ -78,7 +78,7 @@ describe("CockpitService on Postgres", () => {
       ledger("cv_generation", -3),
       ledger("cv_generation", -3),
       ledger("letter_generation", -3),
-      ledger("interview_session", -10),
+      ledger("interview_session", -15),
     ]);
     const call = (feature: string, costUsd: number, status: "ok" | "error" = "ok") => ({
       costUsd,

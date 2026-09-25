@@ -120,14 +120,14 @@ describe("CreditsService", () => {
   });
 
   it("falls back to the action's base price without an amount", async () => {
-    await grant(10);
+    await grant(15);
 
     const entry = await service.consumeCredits({
       action: "interview_session",
       userEmail: USER,
     });
 
-    expect(entry.amount).toBe(-10);
+    expect(entry.amount).toBe(-15);
   });
 
   it.each([0, -5, 2.5])("rejects a variable charge of %s", async (amount) => {

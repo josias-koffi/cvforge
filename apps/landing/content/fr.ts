@@ -1,4 +1,4 @@
-import { WELCOME_APPLICATIONS } from "@cvforge/types"
+import { welcomeApplications } from "./welcome"
 
 import { companyCheckFr } from "./company-check/fr"
 import { featurePagesFr } from "./feature-pages/fr"
@@ -40,7 +40,7 @@ export const fr: LandingDictionary = {
     atsPrompt: "Pas encore prêt ?",
     atsLink: "Testez votre CV gratuitement",
     highlights: [
-      `${WELCOME_APPLICATIONS} candidatures offertes`,
+      welcomeApplications("candidature offerte", "candidatures offertes"),
       "Sans abonnement",
       "Offres du jour gratuites",
     ],
@@ -277,7 +277,7 @@ export const fr: LandingDictionary = {
     subtitle:
       "Un pack, payé une seule fois, utilisé à votre rythme. Pas d'abonnement, pas de renouvellement automatique, et vos crédits n'expirent jamais.",
     popular: "Le plus choisi",
-    welcome: `${WELCOME_APPLICATIONS} candidatures complètes offertes à l'inscription, entretien simulé compris, sans carte bancaire.`,
+    welcome: `${welcomeApplications("candidature complète offerte", "candidatures complètes offertes")} à l'inscription, entretien simulé compris, sans carte bancaire.`,
     applicationsLabel: "{count} candidatures",
     creditsDetail: "{credits} crédits · {unitPrice} la candidature",
     buy: "Choisir {pack}",
@@ -290,7 +290,7 @@ export const fr: LandingDictionary = {
     creditUnit: "crédits",
     actions: {
       cv_import: "Import d'un CV existant",
-      interview_session: "Entretien simulé et rapport (1 crédit la minute)",
+      interview_session: "Entretien simulé et rapport (1,5 crédit la minute)",
       offer_enrichment: "Analyse de l'offre et de l'entreprise",
       cv_generation: "Génération d'un CV adapté",
       letter_generation: "Génération d'une lettre",
@@ -361,12 +361,12 @@ export const fr: LandingDictionary = {
       },
       {
         question: "Puis-je essayer gratuitement ?",
-        answer: `Oui. Votre compte est crédité de ${WELCOME_APPLICATIONS} candidatures complètes à l'inscription — import de votre CV, analyse de l'offre, CV, lettre et entretien simulé — sans carte bancaire.`,
+        answer: `Oui. Votre compte est crédité de ${welcomeApplications("candidature complète", "candidatures complètes")} à l'inscription — import de votre CV, analyse de l'offre, CV, lettre et entretien simulé — sans carte bancaire.`,
       },
       {
         question: "Comment fonctionne l'entretien simulé ?",
         answer:
-          "Vous parlez à un recruteur qui connaît l'offre visée et répartit ses questions sur la durée choisie : 10, 20 ou 30 minutes. À la fin, vous recevez un rapport noté — clarté, mots-clés, rythme, hésitations, pertinence — avec ce qu'il faut travailler. L'entretien coûte 1 crédit par minute, rapport compris.",
+          "Vous parlez à un recruteur qui connaît l'offre visée et répartit ses questions sur la durée choisie : 10, 20 ou 30 minutes. À la fin, vous recevez un rapport noté — clarté, mots-clés, rythme, hésitations, pertinence — avec ce qu'il faut travailler. L'entretien coûte 1,5 crédit par minute, rapport compris.",
       },
       {
         question: "Faut-il un abonnement ?",

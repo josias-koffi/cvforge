@@ -112,7 +112,7 @@ export function InterviewSetupForm({
           <CardTitle>Préparer la session</CardTitle>
           <CardDescription>
             Le recruteur s&apos;adapte à l&apos;offre choisie et au style que
-            vous voulez travailler. {interviewCostLabel(durationMinutes)}, soit un
+            vous voulez travailler. {interviewCostLabel(durationMinutes)}, soit 1,5
             crédit par minute.
           </CardDescription>
         </CardHeader>

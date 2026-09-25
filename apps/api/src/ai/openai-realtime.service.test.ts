@@ -167,6 +167,15 @@ describe("OpenAiRealtimeService", () => {
     expect(warn).toHaveBeenCalledTimes(1);
   });
 
+  it("refuses to start on a runtime without WebSocket", () => {
+    vi.stubGlobal("WebSocket", undefined);
+    try {
+      expect(() => new OpenAiRealtimeService(CONFIG)).toThrow(/Node 22/);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it("never throws from a hangup", async () => {
     const service = new OpenAiRealtimeService(CONFIG, {
       fetch: vi.fn().mockRejectedValue(new Error("offline")),

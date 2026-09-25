@@ -46,7 +46,7 @@ export type ConsumeCreditsInput = {
   action: AiCreditAction;
   /**
    * Defaults to `AI_CREDIT_COSTS[action]`. Set it when the price is not fixed
-   * by the action alone — an interview costs one credit per minute.
+   * by the action alone — an interview costs 1.5 credits a minute.
    */
   amount?: number;
   applicationId?: string;

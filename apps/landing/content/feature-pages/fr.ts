@@ -1,4 +1,4 @@
-import { WELCOME_APPLICATIONS } from "@cvforge/types"
+import { welcomeApplications } from "../welcome"
 
 import type { FeaturePagesDictionary } from "./types"
 
@@ -13,7 +13,7 @@ export const featurePagesFr: FeaturePagesDictionary = {
   },
   cta: {
     title: "Votre prochaine candidature commence ici.",
-    body: `${WELCOME_APPLICATIONS} candidatures complètes offertes à l'inscription, sans carte bancaire et sans abonnement.`,
+    body: `${welcomeApplications("candidature complète offerte", "candidatures complètes offertes")} à l'inscription, sans carte bancaire et sans abonnement.`,
     button: "Commencer gratuitement",
   },
   pages: {

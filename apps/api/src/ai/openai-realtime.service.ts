@@ -61,8 +61,9 @@ const CONTEXT_TOKEN_LIMIT = 8_000;
 const CONTEXT_RETENTION_RATIO = 0.7;
 
 /**
- * Node's own WebSocket (undici) accepts headers as a non-standard init field,
- * which is how the API key travels without ever reaching the browser.
+ * Node's own WebSocket (undici, global from Node 22) accepts headers as a
+ * non-standard init field, which is how the API key travels without ever
+ * reaching the browser.
  */
 function openNodeSocket(
   url: string,
@@ -94,6 +95,13 @@ export class OpenAiRealtimeService {
     hooks: Hooks = {},
   ) {
     this.fetchImpl = hooks.fetch ?? ((...args) => fetch(...args));
+    if (!hooks.openSocket && typeof WebSocket === "undefined") {
+      // Node 20 has none: every interview failed on its first call, on
+      // staging, while the API itself looked healthy (2026-09-25).
+      throw new Error(
+        "Interview voice needs Node 22 or later: this runtime has no WebSocket.",
+      );
+    }
     this.openSocket = hooks.openSocket ?? openNodeSocket;
   }
 

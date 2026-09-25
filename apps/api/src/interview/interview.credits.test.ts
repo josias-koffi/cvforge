@@ -94,12 +94,12 @@ describe("interview credits", () => {
     expect(credits.assertSufficientCredits).toHaveBeenCalledWith(
       AI_CREDIT_ACTION_INTERVIEW_SESSION,
       "user@example.com",
-      10,
+      15,
     );
     expect(credits.consumeCredits).toHaveBeenCalledTimes(1);
     expect(credits.consumeCredits).toHaveBeenCalledWith({
       action: AI_CREDIT_ACTION_INTERVIEW_SESSION,
-      amount: 10,
+      amount: 15,
       applicationId: "app-001",
       durationMinutes: 10,
       userEmail: "user@example.com",
@@ -115,11 +115,11 @@ describe("interview credits", () => {
     expect(credits.assertSufficientCredits).toHaveBeenCalledWith(
       AI_CREDIT_ACTION_INTERVIEW_SESSION,
       "user@example.com",
-      30,
+      45,
     );
     expect(credits.consumeCredits).toHaveBeenCalledWith({
       action: AI_CREDIT_ACTION_INTERVIEW_SESSION,
-      amount: 30,
+      amount: 45,
       applicationId: undefined,
       durationMinutes: 30,
       userEmail: "user@example.com",
@@ -133,7 +133,7 @@ describe("interview credits", () => {
     await service.startSession("user@example.com", "fr", "standard", "", 45);
 
     expect(credits.consumeCredits).toHaveBeenCalledWith(
-      expect.objectContaining({ amount: 10, durationMinutes: 10 }),
+      expect.objectContaining({ amount: 15, durationMinutes: 10 }),
     );
   });
 
@@ -189,7 +189,7 @@ describe("interview credits", () => {
     expect(long.sessionId).not.toBe(short.sessionId);
     expect(credits.consumeCredits).toHaveBeenCalledTimes(2);
     expect(credits.consumeCredits).toHaveBeenLastCalledWith(
-      expect.objectContaining({ amount: 30, durationMinutes: 30 }),
+      expect.objectContaining({ amount: 45, durationMinutes: 30 }),
     );
   });
 

@@ -87,8 +87,9 @@ export function formatPrice(cents: number) {
   }).format(cents / 100)
 }
 
+/** e.g. "1 crédit", "1,5 crédit", "15 crédits": French plural starts at 2. */
 export function formatCredits(amount: number) {
-  return `${amount} crédit${Math.abs(amount) > 1 ? "s" : ""}`
+  return `${amount.toLocaleString("fr-FR")} crédit${Math.abs(amount) >= 2 ? "s" : ""}`
 }
 
 /** e.g. "1 candidature", "20 candidatures". */

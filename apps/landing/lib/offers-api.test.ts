@@ -71,13 +71,13 @@ describe("toPackSummaries", () => {
     const [en] = toPackSummaries([offer], "en")
 
     expect(fr).toMatchObject({
-      applications: 20,
+      applications: 15,
       featured: true,
       features: ["Paiement unique, sans abonnement"],
       label: "Recherche active",
     })
     expect(fr.price).toMatch(/14,90\s€/)
-    expect(fr.unitPrice).toMatch(/0,75\s€/)
+    expect(fr.unitPrice).toMatch(/0,99\s€/)
     expect(en.price).toBe("€14.90")
     expect(en.description).toBe("Pour une recherche active.")
   })

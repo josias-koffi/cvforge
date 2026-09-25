@@ -60,7 +60,7 @@ describe("HomePage", () => {
     expect(html).toContain(locale === "fr" ? "Essentiel" : "Essential")
     expect(html).toContain(escapeHtml(dict.pricing.welcome))
     expect(html).toContain(
-      locale === "fr" ? "20 candidatures" : "20 applications"
+      locale === "fr" ? "15 candidatures" : "15 applications"
     )
     expect(html).toContain(dict.pricing.popular)
     expect(html).toContain(

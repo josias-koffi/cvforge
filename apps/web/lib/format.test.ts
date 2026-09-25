@@ -37,8 +37,8 @@ describe("format helpers", () => {
   })
 
   it("prices an interview by the length the candidate picked", () => {
-    expect(interviewCostLabel(10)).toBe("Coût : 10 crédits")
-    expect(interviewCostLabel(30)).toBe("Coût : 30 crédits")
+    expect(interviewCostLabel(10)).toBe("Coût : 15 crédits")
+    expect(interviewCostLabel(30)).toBe("Coût : 45 crédits")
   })
 
   it("gives each application status a distinct semantic badge", () => {

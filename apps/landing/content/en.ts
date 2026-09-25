@@ -1,4 +1,4 @@
-import { WELCOME_APPLICATIONS } from "@cvforge/types"
+import { welcomeApplications } from "./welcome"
 
 import { companyCheckEn } from "./company-check/en"
 import { featurePagesEn } from "./feature-pages/en"
@@ -40,7 +40,7 @@ export const en: LandingDictionary = {
     atsPrompt: "Not ready yet?",
     atsLink: "Test your resume for free",
     highlights: [
-      `${WELCOME_APPLICATIONS} free applications`,
+      welcomeApplications("free application", "free applications"),
       "No subscription",
       "Free daily offers",
     ],
@@ -276,7 +276,7 @@ export const en: LandingDictionary = {
     subtitle:
       "One pack, paid once, used at your own pace. No subscription, no automatic renewal, and your credits never expire.",
     popular: "Most popular",
-    welcome: `${WELCOME_APPLICATIONS} complete applications free when you sign up, mock interview included, no card required.`,
+    welcome: `${welcomeApplications("complete application", "complete applications")} free when you sign up, mock interview included, no card required.`,
     applicationsLabel: "{count} applications",
     creditsDetail: "{credits} credits · {unitPrice} per application",
     buy: "Choose {pack}",
@@ -289,7 +289,7 @@ export const en: LandingDictionary = {
     creditUnit: "credits",
     actions: {
       cv_import: "Importing an existing resume",
-      interview_session: "Mock interview and report (1 credit a minute)",
+      interview_session: "Mock interview and report (1.5 credits a minute)",
       offer_enrichment: "Offer and company analysis",
       cv_generation: "Tailored resume generation",
       letter_generation: "Cover letter generation",
@@ -360,12 +360,12 @@ export const en: LandingDictionary = {
       },
       {
         question: "Can I try it for free?",
-        answer: `Yes. Your account gets ${WELCOME_APPLICATIONS} complete applications when you sign up — resume import, offer analysis, resume, letter and a mock interview — no card required.`,
+        answer: `Yes. Your account gets ${welcomeApplications("complete application", "complete applications")} when you sign up — resume import, offer analysis, resume, letter and a mock interview — no card required.`,
       },
       {
         question: "How does the mock interview work?",
         answer:
-          "You speak with a recruiter that knows the offer you are targeting and spreads its questions over the length you pick: 10, 20 or 30 minutes. At the end you get a scored report — clarity, keywords, pacing, hesitations, relevance — and what to work on. An interview costs 1 credit a minute, report included.",
+          "You speak with a recruiter that knows the offer you are targeting and spreads its questions over the length you pick: 10, 20 or 30 minutes. At the end you get a scored report — clarity, keywords, pacing, hesitations, relevance — and what to work on. An interview costs 1.5 credits a minute, report included.",
       },
       {
         question: "Do I need a subscription?",

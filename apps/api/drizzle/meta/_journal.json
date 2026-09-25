@@ -337,6 +337,13 @@
       "when": 1793200000000,
       "tag": "0047_interview_pause",
       "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "7",
+      "when": 1793300000000,
+      "tag": "0048_interview_minute_price",
+      "breakpoints": true
     }
   ]
 }

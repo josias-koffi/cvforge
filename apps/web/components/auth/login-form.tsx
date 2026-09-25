@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { ConsentField } from "@/components/auth/consent-field"
+import { formatApplications } from "@/lib/format"
 import { Spinner } from "@/components/ui/spinner"
 
 export function LoginForm({ notice }: { notice?: string }) {
@@ -59,7 +60,8 @@ export function LoginForm({ notice }: { notice?: string }) {
               </Button>
               <FieldDescription className="text-center">
                 Première visite ? Votre compte se crée à la connexion, avec{" "}
-                {WELCOME_APPLICATIONS} candidatures offertes.
+                {formatApplications(WELCOME_APPLICATIONS)}{" "}
+                {WELCOME_APPLICATIONS > 1 ? "offertes" : "offerte"}.
               </FieldDescription>
             </Field>
           </FieldGroup>
