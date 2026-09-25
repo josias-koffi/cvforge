@@ -1580,3 +1580,10 @@
 - Pages fonctionnalités = registre `apps/landing/lib/features.ts` + gabarit `components/feature-page*.tsx` + route d'une ligne via `lib/feature-route.tsx`. Slugs dans `lib/i18n.ts` (`featureSlugs`) et dupliqués dans `next.config.ts` (`FEATURE_SLUGS`, test d'accord).
 - Captures : gros plans à 3x recadrés par union de cartes (`rounded-xl`), tailles réelles dans `lib/screenshot-sizes.json` ; JPEG des cartes de partage dans `assets/og/`.
 - Ne pas builder la landing avec `NEXT_DIST_DIR` sans restaurer ensuite `tsconfig.json` et `next-env.d.ts`.
+
+## 2026-09-25 — E25 onboarding guidé (sprint-032)
+- État d'onboarding sur `auth_accounts` (migration 0045) + module API `src/onboarding/`. Côté web : `lib/onboarding.ts` (appels serveur), `lib/onboarding-steps.ts` (étapes, textes, `initialStep`), `components/onboarding/*` (wizard = formulaires existants réutilisés).
+- La redirection se fait seulement dans `/login/success` (l'invitation y passe aussi) ; le tableau de bord ne redirige jamais, sinon « Terminer plus tard » boucle.
+- Le projet de recherche exige un profil enregistré : le wizard enregistre le profil en quittant Identité et Parcours, les critères en quittant Lieu (ROMEO tourne à ce moment).
+- `@cvforge/types` : après avoir ajouté un type, lancer `pnpm --filter @cvforge/types build`, sinon le typecheck web ne le voit pas.
+- Test navigateur sans e-mail : insérer une ligne dans `auth_magic_links` (sha256 du jeton) puis appeler `/auth/passwordless/consume` ; Playwright de `apps/landing` avec l'exécutable `~/.cache/ms-playwright/chromium-1234`.

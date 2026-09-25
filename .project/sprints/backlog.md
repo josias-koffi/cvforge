@@ -29,6 +29,7 @@
 | E18 ✅ | 024 | Score ATS (produit d'appel + in-app) | Un visiteur non authentifié scanne son CV sur la landing, obtient un score et 3 points gratuitement, et déverrouille le rapport contre son email — ce qui lui crée un compte ; en in-app, chaque CV généré porte un badge de score gratuit | 024 | Complète vision `§7.1`, `§7.4`, `§12.2`, `§12.3`, `§8.1` ; **la page publique est hors vision** — décision produit du 2026-09-22 |
 | E23 | 029-030 | Outils gratuits d'acquisition sur la landing | Quatre outils sans compte en plus du scan ATS (comparateur CV ↔ offre, métier qui recrute + salaire, vérification d'employeur, questions d'entretien probables) ; chacun donne un résultat utile, puis convertit par email en un compte pré-rempli avec ce que le visiteur a saisi ; le tunnel de chaque outil est mesuré de la vue à l'activation du compte | 029-030 | **Hors vision** — décision produit du 2026-09-24 ; prolonge E18 (ADR-022) et exploite E19-E21 (ADR-024 §3 : les données France Travail restent gratuites) |
 | E24 | 031 | Landing : vitrine complète et pages fonctionnalités | L'accueil présente toute la recherche (offres du jour, CV et lettre, entretien, entreprises et marché) ; quatre pages dédiées indexables, illustrées par des captures de l'app, avec métadonnées, JSON-LD et sitemap | 031 | Pages marketing sur des fonctionnalités livrées — décision produit du 2026-09-25 |
+| E25 | 032 | Onboarding guidé à la première connexion | Une page plein écran `/bienvenue` en 7 étapes réutilise les formulaires existants (profil, critères, métiers ROME, alertes) avec un texte « pourquoi » par étape, puis une checklist « Bien démarrer » sur le tableau de bord | 032 | Vision §4 ; remplace l'ancien wizard US-013 perdu à la réécriture v2 — décision produit du 2026-09-25 |
 
 ## Estimate Scale
 
@@ -159,6 +160,10 @@ Référence de gate: le spec impose des branches courtes et des PRs <= 400 ligne
 | US-147 | Nouvelle page d'accueil « toute la recherche » et menu Fonctionnalités | E24 | L | P0 | 031 | Décision produit du 2026-09-25 |
 | US-148 | Captures d'écran v2 : nouveaux écrans et captures de détail depuis le compte de démo | E24 | M | P0 | 031 | Décision produit du 2026-09-25 |
 | US-153 | Analyse ATS d'un CV généré dans l'app : le badge ouvre un panneau avec les points relevés, un conseil par point, la note par critère et le plafonnement ; lien depuis la liste des candidatures | E18 | M | P1 | 031 | Complète vision `§7.1` ; décision produit du 2026-09-25 (aligner l'app sur la landing) |
+| US-149 | API onboarding : colonnes `onboarding_completed_at` et `getting_started_dismissed_at`, migration 0045 avec reprise des comptes au profil prêt, module `/onboarding` | E25 | S | P0 | 032 | Décision produit du 2026-09-25 |
+| US-150 | Page `/bienvenue` : cadre plein écran, étapes Bienvenue (import CV), Identité, Parcours ; redirection des premières connexions | E25 | M | P0 | 032 | Décision produit du 2026-09-25 |
+| US-151 | Étapes Poste visé, Lieu, Métiers, Offres du jour et récapitulatif ; fin sur le tableau de bord | E25 | M | P0 | 032 | Décision produit du 2026-09-25 |
+| US-152 | Checklist « Bien démarrer » du tableau de bord : six étapes lues dans les données, reprise et masquage | E25 | S | P1 | 032 | Décision produit du 2026-09-25 |
 
 ## Critères d'acceptation détaillés — E16
 
