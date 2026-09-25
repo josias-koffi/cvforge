@@ -1,3 +1,11 @@
+import {
+  NOOP_AI_USAGE_RECORDER,
+  NO_USAGE,
+  readUsageFrame,
+  recordUsage,
+  type AiUsageRecorder,
+  type UsageFigures,
+} from "./ai-usage";
 import { buildChain, runModelChain } from "./openrouter.chain";
 import type { OpenRouterVoiceConfig } from "./openrouter-voice.config";
 import { OpenRouterRequestError, buildOpenRouterError } from "./openrouter.error";
@@ -53,6 +61,7 @@ export class OpenRouterVoiceService {
   constructor(
     private readonly config: OpenRouterVoiceConfig,
     private readonly retryHooks: RetryHooks = {},
+    private readonly usageRecorder: AiUsageRecorder = NOOP_AI_USAGE_RECORDER,
   ) {}
 
   /**
@@ -63,13 +72,16 @@ export class OpenRouterVoiceService {
   async *streamTurn(
     request: VoiceTurnRequest,
   ): AsyncGenerator<VoiceTurnEvent, void, undefined> {
-    const response = await this.openStream(request);
+    const startedAt = Date.now();
+    const { response, model, fellBack } = await this.openStream(request);
     const body = response.body;
     if (!body) throw new Error("OpenRouter voice reply had no body");
 
     const reader = body.getReader();
     const decoder = new TextDecoder();
     let buffer = "";
+    // The usage rides on the last chunk of the stream (US-154).
+    let usage: UsageFigures | null = null;
 
     try {
       for (;;) {
@@ -82,12 +94,21 @@ export class OpenRouterVoiceService {
         buffer = lines.pop() ?? "";
 
         for (const line of lines) {
+          usage = readUsageFrame(line) ?? usage;
           const event = parseFrame(line);
           if (event) yield event;
         }
       }
     } finally {
       reader.releaseLock();
+      recordUsage(this.usageRecorder, {
+        ...(usage ?? NO_USAGE),
+        durationMs: Date.now() - startedAt,
+        feature: "interview_voice",
+        fellBack,
+        model,
+        status: "ok",
+      });
     }
   }
 
@@ -98,7 +119,19 @@ export class OpenRouterVoiceService {
     const attempts: ChainAttempt[] = [];
 
     try {
-      return await this.runChain(chain, request, attempts);
+      const response = await this.runChain(chain, request, attempts);
+      const model = attempts.at(-1)?.model ?? chain[0];
+      return { fellBack: model !== chain[0], model, response };
+    } catch (error) {
+      recordUsage(this.usageRecorder, {
+        ...NO_USAGE,
+        durationMs: attempts.reduce((total, a) => total + a.durationMs, 0),
+        feature: "interview_voice",
+        fellBack: attempts.length > 1,
+        model: attempts.at(-1)?.model ?? chain[0],
+        status: "error",
+      });
+      throw error;
     } finally {
       request.onTelemetry?.(summarizeAttempts(attempts));
     }

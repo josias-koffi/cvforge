@@ -12,6 +12,7 @@ import type {
   PublicCompanyCheckResponse,
   PublicCompanyCheckSearch,
 } from "@cvforge/types";
+import { ToolQueriesService } from "../acquisition/tool-queries.service";
 import { LeadCaptureService } from "../leads/lead-capture.service";
 import { CompanyCheckService } from "./company-check.service";
 
@@ -24,6 +25,7 @@ export class PublicCompanyCheckController {
   constructor(
     @Inject(CompanyCheckService) private readonly companies: CompanyCheckService,
     @Inject(LeadCaptureService) private readonly leads: LeadCaptureService,
+    @Inject(ToolQueriesService) private readonly queries: ToolQueriesService,
   ) {}
 
   @Get()
@@ -31,9 +33,14 @@ export class PublicCompanyCheckController {
     return this.companies.search(query);
   }
 
+  /** A company opened, not typed in the search box, is what gets counted. */
   @Get(":siren")
-  read(@Param("siren") siren: string): Promise<PublicCompanyCheckResponse> {
-    return this.companies.read(siren);
+  async read(
+    @Param("siren") siren: string,
+  ): Promise<PublicCompanyCheckResponse> {
+    const response = await this.companies.read(siren);
+    this.queries.countCompany(response);
+    return response;
   }
 
   /**

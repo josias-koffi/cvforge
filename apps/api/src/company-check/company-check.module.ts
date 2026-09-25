@@ -1,4 +1,5 @@
 import { Module } from "@nestjs/common";
+import { AcquisitionModule } from "../acquisition/acquisition.module";
 import {
   COMPANIES_STORE,
   type CompaniesStore,
@@ -25,7 +26,7 @@ import { CompanyPagesService } from "./company-pages.service";
  */
 @Module({
   controllers: [PublicCompanyCheckController, PublicCompanyPagesController],
-  imports: [CompaniesModule, LeadsModule],
+  imports: [AcquisitionModule, CompaniesModule, LeadsModule],
   providers: [
     {
       inject: [COMPANIES_STORE],

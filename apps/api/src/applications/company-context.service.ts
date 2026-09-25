@@ -111,6 +111,7 @@ export class CompanyContextService {
           },
         ],
         {
+          feature: "company_context",
           maxTokens: 300,
           provider: PROVIDER,
           responseFormat: RESPONSE_FORMAT,

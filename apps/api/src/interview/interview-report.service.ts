@@ -131,6 +131,7 @@ export class InterviewReportService {
           },
         ],
         {
+          feature: "interview_report",
           maxTokens: REPORT_MAX_TOKENS,
           provider: INTERVIEW_CHAT_PROVIDER,
           responseFormat: REPORT_RESPONSE_FORMAT,

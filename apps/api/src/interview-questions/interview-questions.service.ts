@@ -60,6 +60,7 @@ export class InterviewQuestionsService {
           { role: "user", content: JSON.stringify({ offerText }) },
         ],
         {
+          feature: "interview_questions",
           maxTokens: QUESTIONS_MAX_TOKENS,
           provider: QUESTIONS_PROVIDER,
           responseFormat: LIKELY_QUESTIONS_RESPONSE_FORMAT,

@@ -54,3 +54,24 @@ describe("AcquisitionPurgeService", () => {
     );
   });
 });
+
+describe("AcquisitionPurgeService — free-tool searches", () => {
+  it("keeps a year of search counters on top of 90 days of events", async () => {
+    const store: AcquisitionEventStore = {
+      deleteBefore: vi.fn().mockResolvedValue(3),
+      record: vi.fn(),
+    };
+    const toolQueries = {
+      deleteBefore: vi.fn().mockResolvedValue(2),
+      increment: vi.fn(),
+    };
+    const service = new AcquisitionPurgeService(
+      store,
+      () => Date.parse("2026-09-24T10:00:00.000Z"),
+      toolQueries,
+    );
+
+    await expect(service.purge()).resolves.toBe(5);
+    expect(toolQueries.deleteBefore).toHaveBeenCalledWith("2025-09-24");
+  });
+});

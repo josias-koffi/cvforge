@@ -1,3 +1,10 @@
+import {
+  NOOP_AI_USAGE_RECORDER,
+  NO_USAGE,
+  readUsage,
+  recordUsage,
+  type AiUsageRecorder,
+} from "./ai-usage";
 import { buildChain, runModelChain } from "./openrouter.chain";
 import type { OpenRouterTranscriptionConfig } from "./openrouter-transcription.config";
 import { buildOpenRouterError } from "./openrouter.error";
@@ -42,6 +49,7 @@ export class OpenRouterTranscriptionService {
   constructor(
     private readonly config: OpenRouterTranscriptionConfig,
     private readonly retryHooks: RetryHooks = {},
+    private readonly usageRecorder: AiUsageRecorder = NOOP_AI_USAGE_RECORDER,
   ) {}
 
   /**
@@ -52,10 +60,22 @@ export class OpenRouterTranscriptionService {
    */
   async transcribe(request: TranscribeRequest): Promise<string> {
     const chain = buildChain(this.config.model, this.config.fallbackModels);
+    const startedAt = Date.now();
+    let answeredBy = chain[0];
+    const track = (payload: unknown, status: "ok" | "error") =>
+      recordUsage(this.usageRecorder, {
+        ...(readUsage(payload) ?? NO_USAGE),
+        durationMs: Date.now() - startedAt,
+        feature: "interview_transcription",
+        fellBack: answeredBy !== chain[0],
+        model: answeredBy,
+        status,
+      });
 
     const response = await runModelChain(
       chain,
       async (model) => {
+        answeredBy = model;
         const attempt = await fetchWithOpenTimeout(
           `${this.config.baseUrl}/audio/transcriptions`,
           {
@@ -91,9 +111,13 @@ export class OpenRouterTranscriptionService {
       },
       { ...DEFAULT_RETRY_POLICY, maxAttempts: this.config.maxAttempts },
       this.retryHooks,
-    );
+    ).catch((error: unknown) => {
+      track(null, "error");
+      throw error;
+    });
 
     const payload = (await response.json()) as { text?: unknown };
+    track(payload, "ok");
 
     return typeof payload.text === "string" ? payload.text.trim() : "";
   }

@@ -224,7 +224,7 @@ export class CvImportService {
             }),
           },
         ],
-        { temperature: 0.2 },
+        { feature: "cv_import", temperature: 0.2 },
       ),
     );
 

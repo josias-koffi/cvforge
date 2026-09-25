@@ -8,6 +8,7 @@ import {
   Query,
 } from "@nestjs/common";
 import type { PublicJobMarketResponse } from "@cvforge/types";
+import { ToolQueriesService } from "../acquisition/tool-queries.service";
 import { LeadCaptureService } from "../leads/lead-capture.service";
 import { JobMarketService } from "./job-market.service";
 
@@ -20,6 +21,7 @@ export class PublicJobMarketController {
   constructor(
     @Inject(JobMarketService) private readonly jobMarket: JobMarketService,
     @Inject(LeadCaptureService) private readonly leads: LeadCaptureService,
+    @Inject(ToolQueriesService) private readonly queries: ToolQueriesService,
   ) {}
 
   /** The job autocomplete, from the local ROME copy. */
@@ -29,11 +31,13 @@ export class PublicJobMarketController {
   }
 
   @Get()
-  read(
+  async read(
     @Query("appellation") appellation: unknown,
     @Query("department") department: unknown,
   ): Promise<PublicJobMarketResponse> {
-    return this.jobMarket.read({ appellation, department });
+    const response = await this.jobMarket.read({ appellation, department });
+    this.queries.countJob(response);
+    return response;
   }
 
   /**

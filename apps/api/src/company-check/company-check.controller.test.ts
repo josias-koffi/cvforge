@@ -9,6 +9,7 @@ function controller() {
     egaproScore: vi.fn(),
     search: vi.fn().mockResolvedValue([]),
   };
+  const queries = { countCompany: vi.fn() };
 
   return {
     controller: new PublicCompanyCheckController(
@@ -17,7 +18,9 @@ function controller() {
         { requestMagicLink } as never,
         { sendMagicLinkEmail: vi.fn().mockResolvedValue(undefined) } as never,
       ),
+      queries as never,
     ),
+    queries,
     requestMagicLink,
     sources,
   };
@@ -25,11 +28,13 @@ function controller() {
 
 describe("PublicCompanyCheckController", () => {
   it("searches and reads through the service", async () => {
-    const { controller: check, sources } = controller();
+    const { controller: check, queries, sources } = controller();
 
     await expect(check.search("helpline")).resolves.toEqual({ matches: [] });
     await expect(check.read("381983568")).resolves.toEqual({ status: "unknown" });
     expect(sources.search).toHaveBeenCalledTimes(2);
+    // The counter decides what is worth counting (US-155).
+    expect(queries.countCompany).toHaveBeenCalledWith({ status: "unknown" });
   });
 
   it("sends a magic link carrying the SIREN, without asking the Annuaire", async () => {

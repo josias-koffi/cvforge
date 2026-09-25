@@ -48,6 +48,7 @@ export class AtsImpactService {
           { role: "user", content: buildUserMessage(text, offer) },
         ],
         {
+          feature: "ats_impact",
           maxTokens: IMPACT_MAX_TOKENS,
           provider: IMPACT_PROVIDER,
           responseFormat: ATS_IMPACT_RESPONSE_FORMAT,

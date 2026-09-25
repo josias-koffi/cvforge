@@ -9,6 +9,9 @@ import {
   ACQUISITION_EVENT_STORE,
   type AcquisitionEventStore,
 } from "./acquisition.types";
+import { PgToolQueryStore } from "./tool-queries.pg-store";
+import { ToolQueriesService } from "./tool-queries.service";
+import { TOOL_QUERY_STORE, type ToolQueryStore } from "./tool-queries.types";
 
 @Module({
   controllers: [PublicAcquisitionEventsController],
@@ -25,11 +28,23 @@ import {
         new AcquisitionEventsService(store, resolveIpHashSecret()),
     },
     {
+      provide: TOOL_QUERY_STORE,
+      inject: [DATABASE],
+      useFactory: (db: Database) => new PgToolQueryStore(db),
+    },
+    {
+      provide: ToolQueriesService,
+      inject: [TOOL_QUERY_STORE],
+      useFactory: (store: ToolQueryStore) => new ToolQueriesService(store),
+    },
+    {
       provide: AcquisitionPurgeService,
-      inject: [ACQUISITION_EVENT_STORE],
-      useFactory: (store: AcquisitionEventStore) =>
-        new AcquisitionPurgeService(store),
+      inject: [ACQUISITION_EVENT_STORE, TOOL_QUERY_STORE],
+      useFactory: (store: AcquisitionEventStore, toolQueries: ToolQueryStore) =>
+        new AcquisitionPurgeService(store, Date.now, toolQueries),
     },
   ],
+  // The free tools count their searches through it (US-155).
+  exports: [ToolQueriesService],
 })
 export class AcquisitionModule {}

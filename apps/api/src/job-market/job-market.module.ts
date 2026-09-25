@@ -1,4 +1,5 @@
 import { Module } from "@nestjs/common";
+import { AcquisitionModule } from "../acquisition/acquisition.module";
 import { LeadsModule } from "../leads/leads.module";
 import { MarketModule } from "../market/market.module";
 import {
@@ -22,7 +23,7 @@ import { MarketPagesService } from "./market-pages.service";
  */
 @Module({
   controllers: [PublicJobMarketController, PublicMarketPagesController],
-  imports: [LeadsModule, MarketModule, RomeModule],
+  imports: [AcquisitionModule, LeadsModule, MarketModule, RomeModule],
   providers: [
     {
       inject: [ROME_APPELLATIONS, MarketStatsService],

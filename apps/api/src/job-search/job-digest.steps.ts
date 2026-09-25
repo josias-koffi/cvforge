@@ -126,7 +126,7 @@ export async function rerankSelection(
           role: "user",
         },
       ],
-      { temperature: 0.2 },
+      { feature: "job_digest_rerank", temperature: 0.2 },
     ),
   );
 

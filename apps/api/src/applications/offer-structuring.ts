@@ -49,7 +49,7 @@ export async function structureOffer(
           }),
         },
       ],
-      { temperature: 0 },
+      { feature: "offer_structuring", temperature: 0 },
     ),
   );
 

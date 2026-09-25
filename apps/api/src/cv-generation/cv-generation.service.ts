@@ -111,7 +111,7 @@ export class CvGenerationService {
             ),
           },
         ],
-        { temperature: 0.1 },
+        { feature: "cv_generation", temperature: 0.1 },
       ),
     );
 
@@ -216,7 +216,7 @@ export class CvGenerationService {
             ),
           },
         ],
-        { temperature: 0.25 },
+        { feature: "letter_generation", temperature: 0.25 },
       ),
     );
 

@@ -323,6 +323,13 @@
       "when": 1793000000000,
       "tag": "0045_onboarding",
       "breakpoints": true
+    },
+    {
+      "idx": 46,
+      "version": "7",
+      "when": 1793100000000,
+      "tag": "0046_cockpit",
+      "breakpoints": true
     }
   ]
 }

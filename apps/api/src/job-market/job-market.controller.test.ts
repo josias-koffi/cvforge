@@ -31,6 +31,7 @@ describe("PublicJobMarketController — lead", () => {
         { requestMagicLink } as never,
         { sendMagicLinkEmail } as never,
       ),
+      { countJob: vi.fn() } as never,
     );
     vi.spyOn(console, "error").mockImplementation(() => undefined);
   });
@@ -86,7 +87,12 @@ describe("PublicJobMarketController — reads", () => {
       read: vi.fn().mockResolvedValue({ status: "collecting" }),
       suggest: vi.fn().mockResolvedValue([DEV]),
     } as unknown as JobMarketService;
-    const controller = new PublicJobMarketController(service, {} as never);
+    const queries = { countJob: vi.fn() };
+    const controller = new PublicJobMarketController(
+      service,
+      {} as never,
+      queries as never,
+    );
 
     expect(await controller.suggest("dév")).toEqual({ appellations: [DEV] });
     expect(await controller.read("38874", "44")).toEqual({
@@ -96,5 +102,6 @@ describe("PublicJobMarketController — reads", () => {
       appellation: "38874",
       department: "44",
     });
+    expect(queries.countJob).toHaveBeenCalledWith({ status: "collecting" });
   });
 });

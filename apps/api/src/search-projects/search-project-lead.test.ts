@@ -94,9 +94,11 @@ function createHarness() {
       sent.push(magicLink);
     },
   } as never);
+  const toolQueries = { countCompany: vi.fn(), countJob: vi.fn() } as never;
   const controller = new PublicJobMarketController(
     new JobMarketService(appellations, { lookup: async () => null }),
     leadCapture,
+    toolQueries,
   );
   const companyCheck = new PublicCompanyCheckController(
     new CompanyCheckService(
@@ -104,6 +106,7 @@ function createHarness() {
       { findMany: vi.fn() },
     ),
     leadCapture,
+    toolQueries,
   );
   const romeo = { predict: vi.fn() };
   const searchProjects = new PgSearchProjectsStore(db);
@@ -271,6 +274,7 @@ describe("employer check lead → companies that hire, end to end", () => {
           { findMany: vi.fn() },
         ),
         { acceptedEmail: () => LEAD, sendLink: vi.fn() } as never,
+        { countCompany: vi.fn() } as never,
       ).lead({ consentAccepted: true, email: LEAD, siren: "123" }),
     ).rejects.toMatchObject({ status: 400 });
     expect(await harness.profiles.findByUserEmail(LEAD)).toBeNull();
