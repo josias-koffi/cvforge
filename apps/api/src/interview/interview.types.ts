@@ -66,6 +66,7 @@ export function summarizeInterviewSession(
     durationMinutes:
       session.durationMinutes ?? INTERVIEW_DEFAULT_DURATION_MINUTES,
     startedAt: session.startedAt ?? null,
+    pausedAt: session.pausedAt ?? null,
     context: session.context ?? null,
   };
 }

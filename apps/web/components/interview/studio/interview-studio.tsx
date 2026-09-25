@@ -9,6 +9,7 @@ import { VoiceOrb } from "@/components/interview/studio/voice-orb"
 import { StudioToolbar } from "@/components/interview/studio/studio-toolbar"
 import { TranscriptPanel } from "@/components/interview/studio/transcript-panel"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Button } from "@/components/ui/button"
 import type { ActionResult } from "@/lib/api"
 import { orbState, orbVolumes } from "@/lib/interview/orb"
 import {
@@ -16,35 +17,25 @@ import {
   resolveCountdown,
   shouldAutoFinish,
 } from "@/lib/interview/countdown"
-import { useAudioRecorder } from "@/hooks/interview/use-audio-recorder"
-import { useInterviewTurn } from "@/hooks/interview/use-interview-turn"
-import { useMicStream } from "@/hooks/interview/use-mic-stream"
-import { useVad } from "@/hooks/interview/use-vad"
+import { useRealtimeCall } from "@/hooks/interview/use-realtime-call"
 import {
   initialStudioState,
   studioReducer,
   type StudioMessage,
 } from "@/lib/interview/studio-machine"
 
-/**
- * Phases where the detector runs.
- *
- * `speaking` is in the set so the candidate can cut the interviewer off, which
- * is what the detector's barge-in branch is for. `processing` is not: nothing
- * is coming out of the speakers yet, so there is nothing to interrupt, and a
- * door slamming while the model thinks would throw the turn away.
- */
-const DETECTING_PHASES = new Set(["listening", "recording", "speaking"])
+/** Where a pause makes sense: the call is up. */
+const LIVE_PHASES = new Set(["listening", "recording", "processing", "speaking"])
 
 function toStudioMessages(session: InterviewSessionSummary): StudioMessage[] {
   return session.messages.map((message) => ({ ...message }))
 }
 
 /**
- * The live interview: microphone, voice detection, transcript and reply.
+ * The live interview: one call with the recruiter, and its transcript.
  *
- * All of the behaviour lives in `studioReducer` and the hooks; this wires them
- * together and renders. The session is passed in from the server component, so
+ * All of the behaviour lives in `studioReducer` and the call hook; this wires
+ * them together and renders. The session is passed in from the server component, so
  * a reload resumes where it left off with no client-side storage.
  */
 export function InterviewStudio({
@@ -67,6 +58,9 @@ export function InterviewStudio({
   const [state, dispatch] = React.useReducer(studioReducer, {
     ...initialStudioState,
     messages: toStudioMessages(session),
+    // A paused interview reopens paused: the candidate resumes when ready.
+    pausedAt: session.pausedAt ?? null,
+    phase: session.pausedAt ? "paused" : initialStudioState.phase,
     startedAt: session.startedAt,
   })
   // Zero, not `Date.now()`: this component renders on the server too, and a
@@ -77,76 +71,22 @@ export function InterviewStudio({
   const [nowMs, setNowMs] = React.useState(0)
   const [finishing, setFinishing] = React.useState(false)
 
-  const micRef = useMicStream({
-    onError: (message) => dispatch({ message, type: "MIC_FAILED" }),
-    onReady: () => dispatch({ type: "MIC_READY" }),
-  })
-
-  const { beginAnswer, interrupt, open, submit, uploadPart } =
-    useInterviewTurn({ dispatch, sessionId: session.id })
-
-  const recorder = useAudioRecorder({
-    micRef,
-    ready: state.phase !== "booting" && state.phase !== "error",
-    onError: (message) => dispatch({ message, type: "TRANSCRIBE_FAILED" }),
-    onPart: uploadPart,
-    onSegment: (segment) => void submit(segment),
-  })
-
-  useVad({
-    active: DETECTING_PHASES.has(state.phase),
-    micRef,
+  const { connect, hangup, pause } = useRealtimeCall({
+    dispatch,
     muted: state.muted,
-    // Cutting in: the reply stops where it is and the answer starts recording
-    // immediately, with no echo tail — the candidate is already mid-word.
-    onBargeIn: () => {
-      dispatch({ type: "BARGE_IN" })
-      interrupt()
-      beginAnswer()
-      recorder.start()
-    },
-    onLevel: (level) => dispatch({ level, type: "LEVEL" }),
-    // Too short to be an answer: the floor goes straight back to the
-    // candidate, with nothing sent and no turn spent.
-    onSpeechAbort: () => {
-      dispatch({ type: "SPEECH_ABORTED" })
-      recorder.cancel()
-    },
-    onSpeechEnd: () => {
-      // Stamped before the recorder stops: encoding and uploading the answer
-      // are part of the silence the candidate sits through, so the latency
-      // shown has to include them.
-      dispatch({ atMs: Date.now(), type: "SPEECH_END" })
-      recorder.stop()
-    },
-    onSpeechStart: () => {
-      dispatch({ type: "SPEECH_START" })
-      // The id comes first: the pieces start going up a quarter of a second
-      // later, long before anyone knows how the answer ends.
-      beginAnswer()
-      recorder.start()
-    },
-    status: state.vadStatus,
-    voiceRms: state.voiceRms,
+    sessionId: session.id,
   })
 
-  // Muting mid-sentence drops the half-spoken answer. Without this the
-  // recorder stayed alive and the microphone never worked again.
-  const cancelRecording = recorder.cancel
+  // The call opens with the page: the candidate chose to start the interview
+  // on the previous screen, and the recruiter speaks first. Hung up on
+  // unmount — and in development React unmounts once straight away, so the
+  // call has to open again on the second mount rather than be skipped.
+  const startPausedRef = React.useRef(Boolean(session.pausedAt))
   React.useEffect(() => {
-    if (state.muted) cancelRecording()
-  }, [cancelRecording, state.muted])
+    if (!startPausedRef.current) void connect()
 
-  // The recruiter opens the interview, not the candidate. Held until the
-  // microphone is live so that the greeting cannot play while the VAD is
-  // still off — the candidate's reply would be missed.
-  const openedRef = React.useRef(state.messages.length > 0)
-  React.useEffect(() => {
-    if (openedRef.current || state.phase !== "listening") return
-
-    openedRef.current = true
-    void open()
-  }, [open, state.phase])
+    return hangup
+  }, [connect, hangup])
 
   // Ticks a wall clock rather than a counter, so the countdown is derived
   // from the session's own start and a reload resumes instead of restarting.
@@ -170,8 +110,9 @@ export function InterviewStudio({
 
   const finish = React.useCallback(async () => {
     setFinishing(true)
-    // Shuts the microphone for the analysis, so a stray noise cannot open a
-    // turn against a session that is being closed.
+    // The call ends before scoring, so nothing said after this point is lost
+    // to a report that has already been written.
+    hangup()
     dispatch({ type: "FINISHED" })
 
     try {
@@ -186,12 +127,16 @@ export function InterviewStudio({
     } finally {
       setFinishing(false)
     }
-  }, [onFinish, session.id])
+  }, [hangup, onFinish, session.id])
 
   const hasAnswered = state.messages.some((message) => message.role === "user")
   // From the reducer, not the prop: the prop was fetched before the first
   // turn existed, and the server stamps the start only when someone speaks.
-  const elapsed = elapsedSeconds(state.startedAt, nowMs)
+  // Frozen while paused: the server moves the start forward on resume.
+  const elapsed = elapsedSeconds(
+    state.startedAt,
+    state.pausedAt ? Date.parse(state.pausedAt) : nowMs
+  )
   const countdown = resolveCountdown(elapsed, session.durationMinutes)
 
   // Scores the interview on its own once the time is spent, and the redirect
@@ -225,10 +170,7 @@ export function InterviewStudio({
       {/* The stage: one thing to look at, the full width of the page. */}
       <section className="flex min-h-72 flex-col items-center justify-center gap-4 rounded-xl border bg-card p-6">
         <VoiceOrb input={volumes.input} output={volumes.output} state={orb} />
-        <LatencyStrip
-          firstTokenMs={state.firstTokenMs}
-          playback={state.playback}
-        />
+        <LatencyStrip firstTokenMs={state.firstTokenMs} />
 
         {countdown.tone === "overtime" && state.phase !== "completed" ? (
           // Nothing is cut off mid-turn: the studio waits for a gap before
@@ -240,9 +182,31 @@ export function InterviewStudio({
             </AlertDescription>
           </Alert>
         ) : null}
-        {state.phase === "error" ? (
-          <Alert className="max-w-lg" variant="destructive">
-            <AlertDescription>{state.error}</AlertDescription>
+        {state.phase === "paused" ? (
+          <Alert className="max-w-lg">
+            <AlertDescription className="flex flex-col items-start gap-3">
+              Entretien en pause — le chronomètre est arrêté. Reprenez quand
+              vous êtes prêt : le recruteur repartira là où vous en étiez.
+              <Button onClick={() => void connect()} size="sm">
+                Reprendre l’entretien
+              </Button>
+            </AlertDescription>
+          </Alert>
+        ) : null}
+        {state.phase === "error" ||
+        (state.phase === "ended" && !state.concluded && !autoFinish) ? (
+          <Alert
+            className="max-w-lg"
+            variant={state.phase === "error" ? "destructive" : "default"}
+          >
+            <AlertDescription className="flex flex-col items-start gap-3">
+              {state.phase === "error"
+                ? state.error
+                : "L’appel avec le recruteur a été coupé. Vous pouvez le reprendre là où vous en étiez."}
+              <Button onClick={() => void connect()} size="sm" variant="outline">
+                Reprendre l’appel
+              </Button>
+            </AlertDescription>
           </Alert>
         ) : null}
       </section>
@@ -253,6 +217,8 @@ export function InterviewStudio({
         finishing={finishing}
         muted={state.muted}
         onFinish={() => void finish()}
+        canPause={LIVE_PHASES.has(state.phase)}
+        onPause={() => void pause()}
         onToggleMute={() => dispatch({ type: "MUTE_TOGGLED" })}
         profile={session.profile}
       />
@@ -260,7 +226,7 @@ export function InterviewStudio({
       {/* A height of its own, so new turns scroll the thread and not the page. */}
       <TranscriptPanel
         className="h-96 @4xl/main:h-[28rem]"
-        messages={state.messages}
+        messages={state.messages.filter((message) => message.content.length > 0)}
         streamingReply={state.streamingReply}
       />
     </div>

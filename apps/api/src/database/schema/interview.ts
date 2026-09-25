@@ -53,6 +53,8 @@ export const interviewSessions = pgTable(
     // the session opens, which can be minutes before anyone reaches the
     // studio, and the agenda must not burn its budget on that gap.
     startedAt: timestamp("started_at", { withTimezone: true }),
+    // Set while the candidate has paused the interview; the clock is stopped.
+    pausedAt: timestamp("paused_at", { withTimezone: true }),
     context: jsonb("context").$type<InterviewContextSnapshot | null>(),
   },
   (table) => [

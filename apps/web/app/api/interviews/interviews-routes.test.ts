@@ -8,20 +8,8 @@ vi.mock("@/lib/api", () => ({ apiRequest }))
 
 import { POST as createSession } from "./sessions/route"
 import { GET as getSession } from "./sessions/[sessionId]/route"
-import { POST as turn } from "./sessions/[sessionId]/turn/route"
-import { POST as opening } from "./sessions/[sessionId]/opening/route"
-import { POST as turnChunk } from "./sessions/[sessionId]/turn/chunk/route"
-
-const CHUNK = {
-  chunkBase64: "AAAA",
-  chunkId: "c1",
-  endedAt: "2026-04-24T13:00:05.000Z",
-  format: "wav",
-  isFinal: false,
-  mimeType: "audio/wav",
-  sequence: 1,
-  startedAt: "2026-04-24T13:00:00.000Z",
-}
+import { POST as realtime } from "./sessions/[sessionId]/realtime/route"
+import { POST as pause } from "./sessions/[sessionId]/pause/route"
 
 function postRequest(url: string, body: unknown) {
   return new NextRequest(`http://localhost${url}`, {
@@ -151,141 +139,71 @@ describe("interview route handlers", () => {
     })
   })
 
-  describe("POST /sessions/[sessionId]/turn", () => {
-    it("forwards a complete segment", async () => {
+  describe("POST /sessions/[sessionId]/pause", () => {
+    it("forwards the pause and returns when the clock stopped", async () => {
       apiRequest.mockResolvedValue(
-        new Response(new ReadableStream<Uint8Array>(), {
-          headers: { "content-type": "text/event-stream" },
-        })
+        jsonResponse({ pausedAt: "2026-09-25T10:04:00.000Z" })
       )
 
-      const response = await turn(
-        postRequest("/api/interviews/sessions/s1/turn", CHUNK),
-        context("s1")
-      )
-
-      expect(response.status).toBe(200)
-      expect(apiRequest).toHaveBeenCalledWith(
-        "/interviews/sessions/s1/turn",
-        expect.objectContaining({ body: CHUNK, method: "POST" })
-      )
-    })
-
-    it("refuses an incomplete segment without calling the API", async () => {
-      const response = await turn(
-        postRequest("/api/interviews/sessions/s1/turn", {
-          ...CHUNK,
-          sequence: "first",
-        }),
-        context("s1")
-      )
-
-      expect(response.status).toBe(400)
-      expect(apiRequest).not.toHaveBeenCalled()
-    })
-
-    it("hands the upstream stream through without reading it", async () => {
-      const body = new ReadableStream<Uint8Array>({
-        start(controller) {
-          controller.enqueue(new TextEncoder().encode("data: {}\n\n"))
-          controller.close()
-        },
-      })
-      apiRequest.mockResolvedValue(
-        new Response(body, { headers: { "content-type": "text/event-stream" } })
-      )
-
-      const response = await turn(
-        postRequest("/api/interviews/sessions/s1/turn", CHUNK),
-        context("s1")
-      )
-
-      // Same stream object: reading it here would hold the whole reply back
-      // and the voice would arrive in one lump, so the identity is the
-      // assertion that matters.
-      expect(response.body).toBe(body)
-      expect(response.headers.get("content-type")).toContain("text/event-stream")
-      expect(response.headers.get("cache-control")).toContain("no-transform")
-      expect(response.headers.get("x-accel-buffering")).toBe("no")
-    })
-
-    it("answers JSON when the interviewer cannot be reached", async () => {
-      apiRequest.mockResolvedValue(new Response("nope", { status: 503 }))
-
-      const response = await turn(
-        postRequest("/api/interviews/sessions/s1/turn", CHUNK),
-        context("s1")
-      )
-
-      expect(response.status).toBe(503)
-      expect(response.headers.get("content-type")).toContain("application/json")
-    })
-  })
-
-  describe("POST /sessions/[sessionId]/turn/chunk", () => {
-    const PART = { audioBase64: "AAAA", chunkId: "c1", part: 0 }
-
-    it("forwards one piece of an answer and returns the count", async () => {
-      apiRequest.mockResolvedValue(jsonResponse({ parts: 4 }))
-
-      const response = await turnChunk(
-        postRequest("/api/interviews/sessions/s1/turn/chunk", PART),
-        context("s1")
-      )
-
-      expect(await response.json()).toEqual({ parts: 4 })
-      expect(apiRequest).toHaveBeenCalledWith(
-        "/interviews/sessions/s1/turn/chunk",
-        expect.objectContaining({ body: PART, method: "POST" })
-      )
-    })
-
-    it("refuses an incomplete piece without calling the API", async () => {
-      const response = await turnChunk(
-        postRequest("/api/interviews/sessions/s1/turn/chunk", {
-          ...PART,
-          part: "first",
-        }),
-        context("s1")
-      )
-
-      expect(response.status).toBe(400)
-      expect(apiRequest).not.toHaveBeenCalled()
-    })
-
-    it("passes the API's own refusal through", async () => {
-      // A piece past the ceiling has to reach the studio as such, so it can
-      // fall back to sending the answer whole.
-      apiRequest.mockResolvedValue(jsonResponse({ message: "trop long" }, 413))
-
-      const response = await turnChunk(
-        postRequest("/api/interviews/sessions/s1/turn/chunk", PART),
-        context("s1")
-      )
-
-      expect(response.status).toBe(413)
-    })
-  })
-
-  describe("POST /sessions/[sessionId]/opening", () => {
-    it("streams the greeting with no body of its own", async () => {
-      const body = new ReadableStream<Uint8Array>()
-      apiRequest.mockResolvedValue(
-        new Response(body, { headers: { "content-type": "text/event-stream" } })
-      )
-
-      const response = await opening(
-        new NextRequest("http://localhost/api/interviews/sessions/s1/opening", {
+      const response = await pause(
+        new NextRequest("http://localhost/api/interviews/sessions/s1/pause", {
           method: "POST",
         }),
         context("s1")
       )
 
-      expect(response.body).toBe(body)
-      expect(apiRequest).toHaveBeenCalledWith(
-        "/interviews/sessions/s1/opening",
-        expect.objectContaining({ method: "POST" })
+      expect(await response.json()).toEqual({ pausedAt: "2026-09-25T10:04:00.000Z" })
+      expect(apiRequest).toHaveBeenCalledWith("/interviews/sessions/s1/pause", {
+        method: "POST",
+      })
+    })
+  })
+
+  describe("POST /sessions/[sessionId]/realtime", () => {
+    it("forwards the WebRTC offer and returns the answer", async () => {
+      apiRequest.mockResolvedValue(
+        jsonResponse({ sdp: "v=0 answer", startedAt: "2026-09-25T10:00:00.000Z" })
       )
+
+      const response = await realtime(
+        postRequest("/api/interviews/sessions/s1/realtime", { sdp: "v=0 offer" }),
+        context("s1")
+      )
+
+      expect(await response.json()).toEqual({
+        sdp: "v=0 answer",
+        startedAt: "2026-09-25T10:00:00.000Z",
+      })
+      expect(apiRequest).toHaveBeenCalledWith("/interviews/sessions/s1/realtime", {
+        body: { sdp: "v=0 offer" },
+        method: "POST",
+      })
+    })
+
+    it("refuses a missing offer without calling the API", async () => {
+      const response = await realtime(
+        postRequest("/api/interviews/sessions/s1/realtime", { sdp: 42 }),
+        context("s1")
+      )
+
+      expect(response.status).toBe(400)
+      expect(apiRequest).not.toHaveBeenCalled()
+    })
+
+    it("passes the API's own refusal through, message included", async () => {
+      apiRequest.mockResolvedValue(
+        jsonResponse({ message: "Le temps de cet entretien est écoulé." }, 400)
+      )
+
+      const response = await realtime(
+        postRequest("/api/interviews/sessions/s1/realtime", { sdp: "v=0" }),
+        context("s1")
+      )
+
+      expect(response.status).toBe(400)
+      expect(await response.json()).toEqual({
+        message: "Le temps de cet entretien est écoulé.",
+      })
     })
   })
 })

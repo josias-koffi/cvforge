@@ -1,6 +1,6 @@
 "use client"
 
-import { MicOffIcon, MicIcon, SquareIcon } from "lucide-react"
+import { MicOffIcon, MicIcon, PauseIcon, SquareIcon } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -30,6 +30,8 @@ export function StudioToolbar({
   finishing,
   onToggleMute,
   onFinish,
+  canPause,
+  onPause,
 }: {
   countdown: CountdownState
   muted: boolean
@@ -38,6 +40,8 @@ export function StudioToolbar({
   finishing: boolean
   onToggleMute: () => void
   onFinish: () => void
+  canPause: boolean
+  onPause: () => void
 }) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-3">
@@ -66,6 +70,15 @@ export function StudioToolbar({
         >
           {muted ? <MicOffIcon /> : <MicIcon />}
           {muted ? "Réactiver le micro" : "Couper le micro"}
+        </Button>
+        <Button
+          disabled={!canPause || finishing}
+          onClick={onPause}
+          type="button"
+          variant="outline"
+        >
+          <PauseIcon />
+          Pause
         </Button>
         <Button
           disabled={!canFinish || finishing}

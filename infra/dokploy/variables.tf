@@ -116,64 +116,49 @@ variable "openrouter_max_attempts" {
   default     = "3"
 }
 
-# Every interview model below defaults to blank, which keeps the value
-# compiled into the application. Pinning one here is how the transcription
-# chain ended up on voxtral-small: OpenRouter has no route to it under this
-# account's privacy settings (ADR-013), so the IaC was overriding the very
-# default that fixed it. A blank cannot drift from the code; a name can.
+# Every interview setting below defaults to blank, which keeps the value
+# compiled into the application: a blank cannot drift from the code, a name
+# can (see ADR-013 for the time it did).
 
-variable "interview_stt_model" {
+variable "openai_api_key" {
   type        = string
-  description = "OpenRouter model for interview speech-to-text. Blank keeps the application default."
+  description = "OpenAI API key for the live interview voice (Realtime API, ADR-026)"
+  sensitive   = true
+}
+
+variable "interview_realtime_model" {
+  type        = string
+  description = "OpenAI Realtime model the interviewer speaks with. Blank keeps the application default."
   default     = ""
 }
 
-variable "interview_stt_fallback_models" {
+variable "interview_realtime_voice" {
   type        = string
-  description = <<-EOT
-    Comma-separated speech-to-text models tried once every provider of
-    interview_stt_model is exhausted. Blank keeps the application defaults;
-    "none" disables fallbacks altogether.
-  EOT
+  description = "Realtime preset voice of the interviewer. Blank keeps the application default."
   default     = ""
 }
 
-variable "interview_voice_model" {
+variable "interview_realtime_eagerness" {
   type        = string
-  description = "OpenRouter speech-to-speech model answering a spoken turn. Blank keeps the application default."
+  description = "Semantic turn detection eagerness: low, medium, high or auto. Blank keeps the application default."
   default     = ""
 }
 
-variable "interview_voice" {
+variable "interview_realtime_noise_reduction" {
   type        = string
-  description = "Voice the interviewer speaks with. Blank keeps the application default."
+  description = "Input noise reduction: far_field (laptop microphone), near_field (headset) or off. Blank keeps the application default."
   default     = ""
 }
 
-variable "interview_voice_fallback_models" {
+variable "interview_realtime_turn_detection" {
   type        = string
-  description = <<-EOT
-    Comma-separated speech-to-speech models tried once every provider of
-    interview_voice_model is exhausted. Blank keeps the application defaults;
-    "none" disables fallbacks altogether.
-  EOT
+  description = "semantic, or server for a thresholded detector in a noisy room. Blank keeps the application default."
   default     = ""
 }
 
-variable "interview_voice_max_attempts" {
+variable "interview_realtime_vad_threshold" {
   type        = string
-  description = <<-EOT
-    Attempts per voice turn, first call included. Deliberately separate from
-    openrouter_max_attempts: a spoken turn has about a second of perceived
-    budget, so it fails over to the next model rather than waiting out a
-    throttle (ADR-016). Blank keeps the application default.
-  EOT
-  default     = ""
-}
-
-variable "interview_voice_max_tokens" {
-  type        = string
-  description = "Token ceiling for one spoken reply. Blank keeps the application default."
+  description = "Server detection only: how loud speech must be, between 0 and 1. Blank keeps the application default."
   default     = ""
 }
 

@@ -90,12 +90,13 @@ const CLOSING_DIRECTIVE: Record<Locale, string> = {
   fr: "Le temps est presque ecoule. Remercie le candidat, annonce les prochaines etapes et conclus en une ou deux phrases. Ne pose pas de nouvelle question.",
 };
 
-function minutes(ms: number) {
-  return Math.max(1, Math.round(ms / 60_000));
-}
-
 /**
  * Where we are, what to do here, and when to move on.
+ *
+ * No clock in it: the text becomes the call's instructions, and instructions
+ * that change with every reply throw away OpenAI's prompt cache, so each reply
+ * re-read the whole interview — slower as it went on, and dearer. The server
+ * moves the phase on; the recruiter does not need to watch the time.
  *
  * Deliberately says not to recite the plan: a candidate hearing "we are now
  * in the competencies phase" is talking to a form, not a recruiter.
@@ -114,7 +115,6 @@ export function buildAgendaDirective(
   return locale === "en"
     ? [
         `Current phase: ${copy.name}. Goal: ${copy.goal}`,
-        `About ${minutes(state.remainingInPhaseMs)} min left on this phase, and ${minutes(state.remainingMs)} min of interview.`,
         nextPhase
           ? `Stay on this phase until it is covered, then move on to: ${nextPhase}.`
           : "Stay on this phase until it is covered.",
@@ -122,7 +122,6 @@ export function buildAgendaDirective(
       ].join(" ")
     : [
         `Phase actuelle: ${copy.name}. Objectif: ${copy.goal}`,
-        `Il reste environ ${minutes(state.remainingInPhaseMs)} min sur cette phase et ${minutes(state.remainingMs)} min d'entretien.`,
         nextPhase
           ? `Reste sur cette phase tant qu'elle n'est pas couverte, puis enchaine sur: ${nextPhase}.`
           : "Reste sur cette phase tant qu'elle n'est pas couverte.",

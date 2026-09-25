@@ -14,7 +14,6 @@ import {
   scoreVerdict,
   sessionStatusLabels,
   sessionStatusVariants,
-  vadStatusLabels,
 } from "@/lib/interview/labels"
 
 const STATUSES: InterviewSessionStatus[] = [
@@ -56,15 +55,6 @@ describe("interview labels", () => {
       "pacing",
       "hesitations",
       "relevance",
-    ])
-  })
-
-  it("names every microphone state", () => {
-    expect(Object.keys(vadStatusLabels)).toEqual([
-      "listening",
-      "recording",
-      "processing",
-      "muted",
     ])
   })
 })

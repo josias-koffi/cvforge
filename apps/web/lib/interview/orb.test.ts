@@ -18,7 +18,7 @@ describe("orbState", () => {
   })
 
   it("rests before the first turn and after the last", () => {
-    for (const phase of ["booting", "completed", "error"] as const) {
+    for (const phase of ["booting", "connecting", "ended", "completed", "error"] as const) {
       expect(orbState({ muted: false, phase })).toBe("idle")
     }
   })

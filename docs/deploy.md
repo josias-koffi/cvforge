@@ -49,7 +49,7 @@ Repository secrets: `DOKPLOY_API_KEY`, `VPS20_IP` (the DNS record target),
 
 Per-environment (`staging`, `production`) secrets — unchanged, and the only
 per-environment configuration left: `POSTGRES_PASSWORD`, `MINIO_ACCESS_KEY`,
-`MINIO_SECRET_KEY`, `OPENROUTER_API_KEY`, `STRIPE_SECRET_KEY`,
+`MINIO_SECRET_KEY`, `OPENROUTER_API_KEY`, `OPENAI_API_KEY`, `STRIPE_SECRET_KEY`,
 `STRIPE_WEBHOOK_SECRET`, `AUTH_SESSION_SECRET`, `SMTP_USER`, `SMTP_PASSWORD`,
 `NEXT_SERVER_ACTIONS_ENCRYPTION_KEY` (fixed value, or every redeploy invalidates
 in-flight server actions).

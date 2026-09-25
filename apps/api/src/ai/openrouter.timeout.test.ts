@@ -1,12 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { OpenRouterRequestError } from "./openrouter.error";
 import { isRetryableStatus } from "./openrouter.error";
-import {
-  CHAT_OPEN_TIMEOUT_MS,
-  TRANSCRIPTION_OPEN_TIMEOUT_MS,
-  VOICE_OPEN_TIMEOUT_MS,
-  fetchWithOpenTimeout,
-} from "./openrouter.timeout";
+import { fetchWithOpenTimeout } from "./openrouter.timeout";
 
 const ORIGINAL_FETCH = globalThis.fetch;
 
@@ -109,11 +104,5 @@ describe("fetchWithOpenTimeout", () => {
     await new Promise((resolve) => setTimeout(resolve, 30));
 
     expect(abortedDuringBody).toBe(false);
-  });
-
-  it("budgets the voice turn far tighter than the calls nobody waits on", () => {
-    // A spoken turn is perceived in about a second; the report is not.
-    expect(VOICE_OPEN_TIMEOUT_MS).toBeLessThan(TRANSCRIPTION_OPEN_TIMEOUT_MS);
-    expect(TRANSCRIPTION_OPEN_TIMEOUT_MS).toBeLessThan(CHAT_OPEN_TIMEOUT_MS);
   });
 });

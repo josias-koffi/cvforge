@@ -55,6 +55,7 @@ function makeSession(
     userEmail: "user@example.com",
     durationMinutes: 10,
     startedAt: null,
+    pausedAt: null,
     context: null,
     ...overrides,
   };

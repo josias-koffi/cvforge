@@ -2,8 +2,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { AiUsageEvent, AiUsageRecorder } from "./ai-usage";
 import type { OpenRouterConfig } from "./openrouter.config";
 import { OpenRouterService } from "./openrouter.service";
-import { OpenRouterTranscriptionService } from "./openrouter-transcription.service";
-import { OpenRouterVoiceService } from "./openrouter-voice.service";
 
 /**
  * Every AI call files its cost (US-154): what it was for, which model
@@ -155,67 +153,5 @@ describe("AI usage recording", () => {
 
     expect(chunks).toEqual(["Hi"]);
     expect(events[0]).toMatchObject({ costUsd: 0.0042, promptTokens: 500 });
-  });
-
-  it("files a spoken interview turn", async () => {
-    fetchMock.mockImplementation(() =>
-      sse([
-        `data: ${JSON.stringify({ choices: [{ delta: { audio: { data: "AAAA" } } }] })}\n`,
-        `data: ${JSON.stringify({ choices: [], usage: USAGE })}\n`,
-      ]),
-    );
-    const { events, recorder } = collector();
-    const voice = new OpenRouterVoiceService(
-      {
-        apiKey: "k",
-        baseUrl: "https://openrouter.ai/api/v1",
-        fallbackModels: [],
-        maxAttempts: 1,
-        maxTokens: 100,
-        model: "primary/voice",
-        voice: "alloy",
-      },
-      NO_SLEEP_HOOKS,
-      recorder,
-    );
-
-    for await (const event of voice.streamTurn({
-      history: [],
-      instruction: "Commence.",
-      systemPrompt: "Recruteur",
-    })) {
-      expect(event.type).toBe("audio");
-    }
-
-    expect(events[0]).toMatchObject({
-      costUsd: 0.0042,
-      feature: "interview_voice",
-      model: "primary/voice",
-    });
-  });
-
-  it("files a transcription", async () => {
-    fetchMock.mockImplementation(() => json({ text: " Bonjour ", usage: USAGE }));
-    const { events, recorder } = collector();
-    const transcription = new OpenRouterTranscriptionService(
-      {
-        apiKey: "k",
-        baseUrl: "https://openrouter.ai/api/v1",
-        fallbackModels: [],
-        maxAttempts: 1,
-        model: "primary/stt",
-      } as never,
-      NO_SLEEP_HOOKS,
-      recorder,
-    );
-
-    await expect(
-      transcription.transcribe({ audioBase64: "AAAA", format: "wav" }),
-    ).resolves.toBe("Bonjour");
-    expect(events[0]).toMatchObject({
-      feature: "interview_transcription",
-      model: "primary/stt",
-      status: "ok",
-    });
   });
 });

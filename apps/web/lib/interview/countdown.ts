@@ -47,9 +47,11 @@ export const AUTO_FINISH_GRACE_SECONDS = 20
 /**
  * Whether the studio should end and score the interview without being asked.
  *
- * Only ever in a gap. `listening` is the one phase where nobody is talking:
- * the candidate is not mid-answer and the recruiter is not mid-sentence.
- * Ending anywhere else throws away an answer and the credit that paid for it.
+ * Never while someone is talking — the candidate mid-answer, or the recruiter
+ * mid-sentence — which would throw away an answer and the credit that paid
+ * for it, and never during a pause. Waiting for the recruiter's reply is not
+ * such a moment: after the goodbye, a "merci" from the candidate may never
+ * get one.
  *
  * Two things end an interview. The recruiter running out of things to ask is
  * the ordinary one, and it does not wait for the clock: leaving the candidate
@@ -57,10 +59,12 @@ export const AUTO_FINISH_GRACE_SECONDS = 20
  * interview's worst moment. The deadline is the backstop for a session that
  * never reached its closing.
  */
+const AUTO_FINISH_PHASES = new Set(["listening", "processing", "ended"])
+
 export function shouldAutoFinish(input: {
   elapsed: number
   durationMinutes: number
-  /** The studio's phase; only `listening` is a safe moment to stop. */
+  /** The studio's phase; `recording`, `speaking` and `paused` hold it off. */
   phase: string
   /** An interview nobody answered is not worth a report. */
   hasAnswered: boolean
@@ -69,7 +73,7 @@ export function shouldAutoFinish(input: {
   concluded: boolean
 }): boolean {
   if (input.finishing || !input.hasAnswered) return false
-  if (input.phase !== "listening") return false
+  if (!AUTO_FINISH_PHASES.has(input.phase)) return false
   if (input.concluded) return true
 
   return (

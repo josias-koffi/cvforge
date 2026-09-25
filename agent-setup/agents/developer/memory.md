@@ -1594,3 +1594,10 @@
 - Recherches des outils gratuits : `tool_queries` (compteur par jour, sans IP), écrit par `ToolQueriesService` exporté du module acquisition ; purge 365 j.
 - API cockpit : `src/metrics/<domaine>/` (store SQL + service), `shared/metrics-window.ts` (période, précédente, `readKpi`), `shared/time-series.ts` (buckets UTC, zero-fill), `CockpitService` câble le tout. Économie unitaire : `ai-costs/unit-economics.ts` (`BILLED_FEATURES`).
 - Web : `app/(app)/admin/metrics/*` + `components/admin/metrics/*` + `lib/admin-metrics/*` ; les sections serveur passent le bucket à `MetricsTrendCard` (client) au lieu d'une fonction de formatage.
+
+## 2026-09-25 — Entretien vocal via OpenAI Realtime (ADR-026, US-160)
+- La voix d'entretien ne passe plus par OpenRouter : WebRTC direct navigateur ↔ OpenAI. Nest fait la poignée de main SDP (`POST /interviews/sessions/:id/realtime` → `POST /v1/realtime/calls` en multipart, call id dans `Location`) puis rejoint l'appel en sideband (WebSocket natif de Node, clé en en-tête).
+- `InterviewCall` (api/src/interview/interview-call.ts) : ordonne les items (la transcription du candidat arrive souvent après la réponse), `session.update` de l'agenda après chaque `response.done`, raccroche sur `output_audio_buffer.stopped` après l'au revoir (secours 15 s) ou à durée + 90 s.
+- `/finish` appelle `endCall` avant le scoring pour sauver les derniers mots. `getSession` renvoie `concluded` : le studio le lit quand l'appel se coupe (au revoir vs coupure réseau).
+- Coût : `openai-realtime.pricing.ts` (tarifs en dur, les prix cachés du mini sont estimés — à recaler sur facture) → cockpit `interview_voice`.
+- Nouveau secret `OPENAI_API_KEY` (deploy.yml, Terraform `openai_api_key`, set-secrets.sh, boot test). Les variables `INTERVIEW_VOICE_*`/`INTERVIEW_STT_*` sont supprimées.

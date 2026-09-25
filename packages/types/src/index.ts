@@ -345,43 +345,20 @@ export interface InterviewSessionStartResponse {
   session: InterviewSessionSummary;
 }
 
-export interface InterviewTranscriptionChunkRequest {
-  /**
-   * The answer as a complete audio file, base64.
-   *
-   * Empty when the studio streamed it up in pieces while it was being spoken
-   * — see `InterviewAnswerPartRequest` — in which case the server assembles
-   * what it buffered instead.
-   */
-  chunkBase64: string;
-  chunkId: string;
-  endedAt: string;
-  format: string;
-  isFinal: boolean;
-  mimeType: string;
-  sequence: number;
-  startedAt: string;
-}
-
 /**
- * One piece of an answer, sent while the candidate is still talking.
- *
- * Raw PCM16, 16 kHz, mono, base64 — no container. A WAV cannot be cut into
- * readable pieces and neither can WebM, whose header only exists on the first
- * fragment; raw samples can be cut anywhere and joined back in order.
+ * The browser's WebRTC offer for a live interview call (ADR-026). The server
+ * forwards it to OpenAI with the recruiter's brief, so neither the API key
+ * nor the prompt ever reaches the page.
  */
-export interface InterviewAnswerPartRequest {
-  /** Raw little-endian 16-bit samples, base64. */
-  audioBase64: string;
-  /** The turn these pieces belong to, matching the eventual turn request. */
-  chunkId: string;
-  /** Position within the answer. Order of arrival is not guaranteed. */
-  part: number;
+export interface InterviewRealtimeCallRequest {
+  sdp: string;
 }
 
-export interface InterviewAnswerPartResponse {
-  /** How many pieces of this answer the server is holding. */
-  parts: number;
+export interface InterviewRealtimeCallResponse {
+  /** OpenAI's SDP answer, to be set as the peer connection's remote description. */
+  sdp: string;
+  /** When the interview began, stamped by the server on the first call. */
+  startedAt: string;
 }
 
 export interface InterviewTranscriptChunk {
@@ -429,39 +406,18 @@ export interface InterviewSessionSummary {
    * and that gap must not eat into the interview.
    */
   startedAt: string | null;
-  context: InterviewContextSnapshot | null;
-}
-
-/**
- * What the browser receives while one spoken turn plays out.
- *
- * The candidate's own transcription and the interviewer's reply are produced
- * by two calls running side by side, so `candidate` can arrive at any point
- * among the audio frames rather than strictly before them.
- */
-export type InterviewTurnEvent =
-  /** What the candidate said, once transcription lands. */
-  | { type: "candidate"; text: string }
-  /** Base64 PCM16 at 24 kHz, to be played in arrival order. */
-  | { type: "audio"; data: string }
-  /** What the interviewer is saying, as it is spoken. */
-  | { type: "reply"; text: string }
   /**
-   * End of turn. Carries when the interview actually began: the server stamps
-   * it on the first spoken turn, long after the session was created, so it is
-   * not in the summary the studio was opened with.
+   * Set while the candidate has paused the interview. The clock is stopped:
+   * on resume, `startedAt` moves forward by the length of the pause.
    */
-  | {
-      type: "done";
-      startedAt?: string | null;
-      /**
-       * The interview is over: every phase has had its exchanges and the
-       * recruiter has said goodbye. The studio scores it without waiting for
-       * the clock to run out.
-       */
-      closed?: boolean;
-    }
-  | { type: "error"; message: string };
+  pausedAt?: string | null;
+  context: InterviewContextSnapshot | null;
+  /**
+   * The recruiter has nothing left to ask and has said goodbye. Only set on a
+   * single-session read, which is what the studio checks when a call ends.
+   */
+  concluded?: boolean;
+}
 
 /**
  * One row of the session history. Deliberately carries neither `chunks` nor

@@ -150,6 +150,7 @@ Référence de gate: le spec impose des branches courtes et des PRs <= 400 ligne
 | US-139 | « Vérifier un employeur » : recherche par nom ou SIREN, fiche (effectif, NAF, Egapro, ESS, société à mission, bilan carbone, page employeur France Travail) ; CTA entreprises qui recrutent | E23 | M | P1 | 030 | Hors vision — décision produit du 2026-09-24 ; ADR-024 §3 |
 | US-140 | Pages SEO entreprises (ISR, sitemap) avec sources citées | E23 | M | P2 | 030 | Hors vision — décision produit du 2026-09-24 |
 | US-141 | Questions d'entretien probables : 5 questions pour un texte d'offre, un appel LLM court sous budget global quotidien et limite par IP ; CTA entretien vocal | E23 | M | P2 | 030 | Hors vision — décision produit du 2026-09-24 ; ADR-022 |
+| US-160 | Entretien vocal en direct via OpenAI Realtime (WebRTC) : coupure native du recruteur, fin de tour sémantique, suivi serveur (agenda, transcription, raccrochage), coût par appel — ADR-026 | E12 | L | P0 | — | Demande propriétaire du 2026-09-25 |
 
 ## Critères d'acceptation détaillés — E16
 

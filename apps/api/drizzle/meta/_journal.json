@@ -330,6 +330,13 @@
       "when": 1793100000000,
       "tag": "0046_cockpit",
       "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1793200000000,
+      "tag": "0047_interview_pause",
+      "breakpoints": true
     }
   ]
 }

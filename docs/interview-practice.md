@@ -9,11 +9,12 @@ reporting, and this document describes what actually runs.
 1. `/entretiens/new` — pick a candidature (or free practice), a recruiter
    profile, a language and a duration. The credit cost is shown before the
    click.
-2. `/entretiens/[sessionId]` — the studio. **The recruiter opens**: as soon as
-   the microphone is live it greets the candidate and asks its first question.
-   Voice detection then records when the candidate speaks and stops after a
-   pause; there is no push-to-talk. Each answer goes up as audio and the reply
-   comes back as audio, one call, playing as it arrives.
+2. `/entretiens/[sessionId]` — the studio. It is a live call with the
+   recruiter over WebRTC (`ADR-026`). **The recruiter opens**: as soon as the
+   call connects, it greets the candidate and asks its first question. The
+   call itself hears when the candidate has finished a sentence, and the
+   candidate can talk over the recruiter at any point. There is no
+   push-to-talk.
 3. `/entretiens/[sessionId]/rapport` — score out of ten, five scored
    dimensions, the advice, the transcript, and the facts counted from it.
 4. `/entretiens/progression` — how the scores move across recent sessions,
@@ -81,105 +82,91 @@ session would silently ignore the duration just picked.
 
 ## Voice
 
-One speech-to-speech call per turn: the candidate's WAV in, PCM16 out over SSE,
-playing as it arrives (`ADR-014`). This replaced transcribe → chat → speak,
-whose three round trips came to six to eight seconds per turn.
+A live call with OpenAI's Realtime API over WebRTC (`ADR-026`), which replaced
+one speech-to-speech request per turn through OpenRouter (`ADR-014`, `ADR-018`
+to `ADR-020`).
 
-| Rank | Model | first audio | $/turn |
-|---|---|---|---|
-| 1 | `openai/gpt-audio-mini` | 1129 ms | 0.00044 |
-| 2 | `openai/gpt-audio` | 751 ms | 0.00822 |
+The browser's microphone goes up as a media track, and the recruiter's voice
+comes back as one. Three things are the call's own job:
 
-Override with `INTERVIEW_VOICE_MODEL`, `INTERVIEW_VOICE_FALLBACK_MODELS`,
-`INTERVIEW_VOICE` (the preset voice), `INTERVIEW_VOICE_MAX_ATTEMPTS` and
-`INTERVIEW_VOICE_MAX_TOKENS`. The attempts budget is deliberately separate from
-`OPENROUTER_MAX_ATTEMPTS`: a turn has about a second, so it fails over rather
-than waiting out a throttle (`ADR-016`).
+- **Turn detection** is semantic (`semantic_vad`). The model hears that a
+  sentence is finished instead of waiting out a fixed silence.
+- **Interruption** is native. When the candidate talks, generation stops on
+  OpenAI's side and the reply is truncated where it was heard.
+- **Playback** needs no jitter buffer or PCM decoding on our side.
 
-Every call has a deadline on **opening** — 8 s for the voice, 45 s for
-transcription, 90 s for chat — and never on the stream that follows: a reply
-legitimately streams audio for a minute, and a blanket `AbortSignal.timeout`
-would cut the interviewer off mid-sentence. The timer is cleared the moment the
-response headers arrive. Without it a stalled socket cost one staging turn
-**34.6 seconds**; the retry that followed answered in 1.3 s.
+The browser never holds the key or the brief:
 
-A timeout is reported as `408`, which `isRetryable` already lists, so the chain
-retries a dead connection instead of treating it as a permanent failure.
+1. `useRealtimeCall` posts its SDP offer to
+   `POST /interviews/sessions/:id/realtime`.
+2. Nest forwards the offer to `POST /v1/realtime/calls`, with the session
+   (model, voice, instructions, transcription), and returns OpenAI's answer.
+3. Nest then joins the same call through a server-side WebSocket, the
+   sideband (`InterviewCall`).
 
-Every turn writes one JSON log line naming the model that actually served it,
-the attempt count and the time to first audio — without it, a fall back to the
-pricier model is indistinguishable from a slow cheap one. `failures` lists each
-attempt that did not serve, as `model:status` (`model:no-reply` when nothing came
-back at all): a retried failure is invisible otherwise, because the turn
-succeeded and `withRetry` swallowed the reason.
+Through the sideband, Nest:
 
-`waitedMs` is everything outside the voice call: backoff between attempts, the
-wait on transcription, and the cost of streaming frames out. Read it with
-`attempts` and `transcriptionWaitMs` beside it, never as backoff on its own.
+- records the conversation, in order, for the report;
+- pushes the agenda into the instructions after every reply;
+- hangs up once the goodbye has played, or once the paid duration plus 90 s
+  is spent.
 
-`transcriptionMs` is the transcription call's own duration and
-`transcriptionWaitMs` is what the turn waited on it *after* the voice stream
-ended. The second is the one that matters: zero means running transcription
-beside the voice cost the turn nothing.
+| Setting | Default | Variable |
+|---|---|---|
+| Model | `gpt-realtime-2.1-mini` | `INTERVIEW_REALTIME_MODEL` |
+| Voice | `marin` | `INTERVIEW_REALTIME_VOICE` |
+| Turn eagerness | `medium` | `INTERVIEW_REALTIME_EAGERNESS` |
+| Noise reduction | `far_field` (laptop microphone) | `INTERVIEW_REALTIME_NOISE_REDUCTION` |
+| Turn detection | `semantic` (or `server`, thresholded) | `INTERVIEW_REALTIME_TURN_DETECTION` |
+| Server detection threshold | 0.7 | `INTERVIEW_REALTIME_VAD_THRESHOLD` |
+| Reply cap | 1500 tokens (audio, ~1 min) | `INTERVIEW_REALTIME_MAX_OUTPUT_TOKENS` |
+| Candidate transcription | `gpt-4o-mini-transcribe` | `INTERVIEW_REALTIME_TRANSCRIPTION_MODEL` |
 
-**No barge-in.** OpenRouter is request/response with no bidirectional socket,
-so the candidate cannot interrupt mid-sentence. That needs a realtime API.
+`OPENAI_API_KEY` is required.
+
+The mini costs roughly $0.15–0.30 for ten minutes, against the €0.34–0.66
+that ten credits sell for. The full `gpt-realtime-2.1` is about three times
+that and does not fit the price.
+
+Every reply is priced from its `usage` (`openai-realtime.pricing.ts`) and
+filed in the AI cockpit as `interview_voice`. Each call ends with one log line:
+`interview.call session=… endedBy=… responses=… interrupted=… costUsd=…`.
+
+**How the interview ends.** The recruiter has one tool, `end_interview`,
+which it calls once it has said goodbye: when the interview is over, or when
+the candidate asks to stop. The server then hangs up once the goodbye has
+played, and the studio sees the call on its data channel and scores the
+session. The agenda counts answers, which is not enough on its own: an
+interview of few, long answers never reached the count, the recruiter said
+goodbye on the clock, and the report never ran.
+
+**Pause.** "Pause" hangs the call up and stops the clock (`paused_at`,
+migration 0047). Resuming opens a new call, with the start moved forward by
+the length of the pause. A paused interview reopens paused after a reload.
+
+A dropped call can be resumed with the "Reprendre l'appel" button. The
+conversation so far is replayed into the new call as text, and the recruiter
+picks up the thread without greeting again.
 
 ## Speech to text
 
-Transcription runs *beside* the voice call, never in front of it: the report is
-built from the candidate's own words, and nothing is waiting on it. Through
-OpenRouter's dedicated `/audio/transcriptions` endpoint, over a
-fallback chain CVForge walks itself (that endpoint applies no routing controls
-of its own). See `ADR-013` for the decision and the measurements.
+The candidate is transcribed inside the call, by `gpt-4o-mini-transcribe`, and
+only to build the report: the recruiter hears the audio itself and never waits
+on the transcript. The transcript often lands after the reply has started, so
+`InterviewCall` holds each item in conversation order and writes it only once
+everything before it is known.
 
-| Rank | Model | $/h of audio |
-|---|---|---|
-| 1 | `openai/whisper-large-v3-turbo` | 0.012 |
-| 2 | `mistralai/voxtral-mini-3b-2507` | 0.060 |
-| 3 | `nvidia/nemotron-3.5-asr-streaming-multilingual-0.6b` | 0.012 |
-
-Override with `INTERVIEW_STT_MODEL` and `INTERVIEW_STT_FALLBACK_MODELS` (CSV;
-blank means the defaults, the literal `none` disables failover).
-
-**The account's privacy settings decide what resolves at all.** As of
-2026-09-21, `mistralai/voxtral-mini-transcribe` and `qwen/qwen3-asr-flash`
-return `404 — ZDR violation (account settings)`, as do all first-party OpenAI
-transcription models, Deepgram, Parakeet, Grok and Fish Audio. Re-probe the
-catalogue before changing the chain, and after any change at
-<https://openrouter.ai/settings/privacy>.
-
-The report and the company-context derivation use the shared chat chain
-(`OPENROUTER_MODEL` plus its fallbacks), like the rest of the application.
-
-## Voice detection
-
-Amplitude over `getByteTimeDomainData`, with hysteresis and an adaptive noise
-floor: the onset threshold sits above the measured room tone rather than at a
-fixed value.
-
-The silence that ends an answer is **1.5 s once the candidate is under way,
-2.8 s before that** — an interview question is not chat, and "alors… euh…"
-while someone gathers an example is how a considered answer starts. Measured in
-milliseconds rather than animation frames, and capped at 90 seconds. A burst
-under 400 ms is dropped as a cough rather than sent.
-
-`autoGainControl` is off on purpose — it lifts room tone into the speech band
-during exactly the pauses the detector needs to hear.
-
-Sampled on a **25 ms timer, never `requestAnimationFrame`**, through a 43 ms
-analyser window. `getByteTimeDomainData` returns only the most recent
-`fftSize` samples, so the window must be at least as long as the gap between
-two reads. It was 5.3 ms read on rAF: at 60 fps the detector listened to a
-third of the time, and once the WebGL orb pulled the page to 5 fps it listened
-to 3% of it and went deaf. What the microphone hears cannot depend on what the
-GPU is doing.
+The report and the company-context derivation use the shared chat chain on
+OpenRouter (`OPENROUTER_MODEL` plus its fallbacks), like the rest of the
+application.
 
 ## Audio and retention
 
-**Recorded audio is never persisted.** Segments are re-encoded to 16 kHz mono
-WAV in the browser, uploaded, transcribed, and dropped; only the text is
-stored. That is why the report has no playback control.
+**Recorded audio is never persisted.** It flows to OpenAI during the call and
+nowhere else; only the text is stored. That is why the report has no playback
+control. The audio is processed in the US, a gap with vision §15.2 that the
+product owner accepted (`ADR-026`); zero data retention is to be requested from
+OpenAI.
 
 Sessions and their transcript segments are purged 30 days after completion
 (`InterviewPurgeService`), and removed immediately on account deletion
@@ -194,26 +181,25 @@ Sessions and their transcript segments are purged 30 days after completion
   function of elapsed time, answers given, profile and duration
 - `apps/api/src/interview/interview.context.ts` — the frozen offer/CV snapshot,
   shared by the interview prompt and the report prompt
-- `apps/api/src/ai/openrouter-voice.service.ts` — the speech-to-speech turn
-- `apps/api/src/ai/openrouter-transcription.service.ts` — speech to text
-- `apps/web/lib/interview/` — the studio's logic with no React in it: WAV
-  encoding, voice detection, SSE parsing, sentence draining, and the reducer
-  that holds every state transition
-- `apps/web/hooks/interview/` — the browser plumbing over those modules
+- `apps/api/src/ai/openai-realtime.service.ts` — opening, joining and hanging
+  up a Realtime call; `openai-realtime.pricing.ts` prices its usage
+- `apps/api/src/interview/interview-call.ts` — one live call as the server
+  follows it: recording, agenda steering, hanging up
+- `apps/api/src/interview/interview-realtime.service.ts` — one call per session
+- `apps/web/lib/interview/` — the studio's logic with no React in it: the
+  mapping of call events and the reducer that holds every state transition
+- `apps/web/hooks/interview/use-realtime-call.ts` — the WebRTC call itself
 - `apps/web/app/api/interviews/` — BFF route handlers; the session cookie is
   httpOnly, so the studio cannot call the API directly
 
 ## Known limits
 
-- French transcription accuracy has not been measured against a reference —
-  price, latency and reachability have. If Whisper Turbo disappoints in
-  French, promoting `mistralai/voxtral-mini-3b-2507` is an environment change.
+- No fallback model for the voice: if OpenAI refuses the call, the studio
+  says so and offers to retry.
+- A call lives in the process that opened it; the sideband does not survive
+  a redeploy, and the candidate has to resume the call.
 - There is no replay: without stored audio, a candidate cannot listen back.
 - The progress window is the last ten finished sessions, which the 30-day
   retention effectively caps anyway.
-- The candidate's recording is uploaded twice in parallel, once for the voice
-  call and once for transcription. It does not delay the first audio frame,
-  only the end of the turn; `transcriptionMs` against `totalMs` in the turn log
-  will say whether that is worth changing.
 - Company context comes from the offer alone. Sector, culture and pay are what
   the company says about itself, not what anyone else does.

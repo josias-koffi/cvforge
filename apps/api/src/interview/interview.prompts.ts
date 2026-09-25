@@ -158,6 +158,21 @@ export function buildOpeningInstruction(language: Locale) {
 }
 
 /**
+ * What the interviewer is told when the call comes back, after a pause or a
+ * drop. The
+ * conversation so far is replayed as text, so it picks up the thread rather
+ * than greeting the candidate a second time.
+ */
+const RESUME_INSTRUCTIONS: Record<Locale, string> = {
+  en: "The interview resumes after a break. Do not greet the candidate again: in one short sentence, pick up where you left off.",
+  fr: "L'entretien reprend apres une interruption. Ne salue pas le candidat a nouveau: en une phrase courte, reprends la ou vous en etiez.",
+};
+
+export function buildResumeInstruction(language: Locale) {
+  return RESUME_INSTRUCTIONS[language === "en" ? "en" : "fr"];
+}
+
+/**
  * The whole brief for one turn: who the interviewer is, what job it is
  * interviewing for, and where in the interview it currently stands.
  *

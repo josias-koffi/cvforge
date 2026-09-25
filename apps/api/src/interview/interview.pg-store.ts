@@ -54,6 +54,7 @@ function toSession(
     userEmail: row.userEmail,
     durationMinutes: row.durationMinutes,
     startedAt: row.startedAt?.toISOString() ?? null,
+    pausedAt: row.pausedAt?.toISOString() ?? null,
     context: row.context ?? null,
   };
 }
@@ -83,6 +84,7 @@ function toRow(session: StoredInterviewSession) {
     durationMinutes:
       session.durationMinutes ?? INTERVIEW_DEFAULT_DURATION_MINUTES,
     startedAt: session.startedAt ? new Date(session.startedAt) : null,
+    pausedAt: session.pausedAt ? new Date(session.pausedAt) : null,
     context: session.context ?? null,
   };
 }

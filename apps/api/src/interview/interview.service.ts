@@ -26,6 +26,7 @@ import type { InterviewReportService } from "./interview-report.service";
 import { nowIso } from "./interview.stats";
 import type { InterviewStore, StoredInterviewSession } from "./interview.types";
 import { summarizeInterviewSession } from "./interview.types";
+import { isInterviewOver } from "./interview.session-prompt";
 
 /** How long an unused session stays reusable, so a double-click costs once. */
 const REUSE_WINDOW_MS = 30 * 60 * 1000;
@@ -165,9 +166,12 @@ export class InterviewService {
   }
 
   async getSession(userEmail: string, sessionId: string) {
-    return summarizeInterviewSession(
-      await this.getOwnedSession(userEmail, sessionId),
-    );
+    const session = await this.getOwnedSession(userEmail, sessionId);
+
+    return {
+      ...summarizeInterviewSession(session),
+      concluded: isInterviewOver(session),
+    };
   }
 
   finishSession(userEmail: string, sessionId: string) {

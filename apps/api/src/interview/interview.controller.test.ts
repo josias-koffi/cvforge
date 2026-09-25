@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { InterviewSessionSummary } from "@cvforge/types";
 import { AuthService } from "../auth/auth.service";
 import type { InterviewProgressService } from "./interview-progress.service";
-import type { InterviewTurnService } from "./interview-turn.service";
+import type { InterviewRealtimeService } from "./interview-realtime.service";
 import { InterviewController } from "./interview.controller";
 import { InterviewService } from "./interview.service";
 
@@ -61,21 +61,24 @@ function makeController(sessionOverride: unknown = { email: "user@test.example" 
     readSessionFromCookieHeader: vi.fn().mockReturnValue(sessionOverride),
   } as unknown as AuthService;
 
-  const turnService = {
-    appendAnswerPart: vi.fn().mockResolvedValue({ parts: 3 }),
-    streamTurn: vi.fn(),
-  } as unknown as InterviewTurnService;
+  const realtimeService = {
+    endCall: vi.fn().mockResolvedValue(undefined),
+    pauseCall: vi.fn().mockResolvedValue({ pausedAt: "2026-09-25T10:05:00.000Z" }),
+    startCall: vi
+      .fn()
+      .mockResolvedValue({ sdp: "v=0 answer", startedAt: "2026-04-24T13:00:00.000Z" }),
+  } as unknown as InterviewRealtimeService;
 
   const controller = new InterviewController(
     interviewService,
     progressService,
-    turnService,
+    realtimeService,
     authService,
   );
 
   // The mocks come back too: a test that asserts what the controller passed on
   // needs the service it passed it to.
-  return { authService, controller, interviewService, turnService };
+  return { authService, controller, interviewService, realtimeService };
 }
 
 describe("InterviewController", () => {
@@ -137,7 +140,7 @@ describe("InterviewController", () => {
     const controller = new InterviewController(
       interviewService,
       {} as unknown as InterviewProgressService,
-      {} as unknown as InterviewTurnService,
+      {} as unknown as InterviewRealtimeService,
       authService,
     );
 
@@ -147,33 +150,63 @@ describe("InterviewController", () => {
   });
 });
 
-describe("streamed answer pieces", () => {
-  const PART = { audioBase64: "AAAA", chunkId: "c1", part: 2 };
+describe("live call", () => {
   const COOKIE = { headers: { cookie: "cvforge_session=abc" } };
 
-  it("passes the piece on under the signed-in candidate's own email", async () => {
-    // The turn id comes from the browser; who it belongs to does not.
-    const { controller, turnService } = makeController();
+  it("opens the call under the signed-in candidate's own email", async () => {
+    // The session id comes from the browser; who it belongs to does not.
+    const { controller, realtimeService } = makeController();
 
-    const result = await controller.appendTurnChunk(
+    const result = await controller.startRealtimeCall(
       "session-001",
-      PART,
+      { sdp: "v=0 offer" },
       COOKIE,
     );
 
-    expect(result).toEqual({ parts: 3 });
-    expect(turnService.appendAnswerPart).toHaveBeenCalledWith(
+    expect(result).toEqual({
+      sdp: "v=0 answer",
+      startedAt: "2026-04-24T13:00:00.000Z",
+    });
+    expect(realtimeService.startCall).toHaveBeenCalledWith(
       "user@test.example",
       "session-001",
-      PART,
+      "v=0 offer",
     );
   });
 
-  it("refuses a piece from nobody", async () => {
+  it("refuses a call from nobody", () => {
     const { controller } = makeController(null);
 
-    await expect(
-      controller.appendTurnChunk("session-001", PART, COOKIE),
-    ).rejects.toThrow(UnauthorizedException);
+    expect(() =>
+      controller.startRealtimeCall("session-001", { sdp: "v=0" }, COOKIE),
+    ).toThrow(UnauthorizedException);
+  });
+
+  it("pauses the signed-in candidate's own session", async () => {
+    const { controller, realtimeService } = makeController();
+
+    await expect(controller.pauseSession("session-001", COOKIE)).resolves.toEqual({
+      pausedAt: "2026-09-25T10:05:00.000Z",
+    });
+    expect(realtimeService.pauseCall).toHaveBeenCalledWith(
+      "user@test.example",
+      "session-001",
+    );
+  });
+
+  it("ends the call before scoring, so the last words are in the report", async () => {
+    const { controller, interviewService, realtimeService } = makeController();
+
+    await controller.finishSession("session-001", COOKIE);
+
+    expect(realtimeService.endCall).toHaveBeenCalledWith(
+      "user@test.example",
+      "session-001",
+    );
+    expect(
+      vi.mocked(realtimeService.endCall).mock.invocationCallOrder[0],
+    ).toBeLessThan(
+      vi.mocked(interviewService.finishSession).mock.invocationCallOrder[0]!,
+    );
   });
 });

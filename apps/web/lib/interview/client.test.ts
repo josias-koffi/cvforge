@@ -3,22 +3,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import {
   InterviewRequestError,
   fetchSession,
-  openOpeningStream,
-  openTurnStream,
+  openRealtimeCall,
+  pauseSession,
   startSession,
-  uploadAnswerPart,
 } from "@/lib/interview/client"
-
-const CHUNK = {
-  chunkBase64: "AAAA",
-  chunkId: "c1",
-  endedAt: "2026-04-24T13:00:05.000Z",
-  format: "wav",
-  isFinal: false,
-  mimeType: "audio/wav",
-  sequence: 1,
-  startedAt: "2026-04-24T13:00:00.000Z",
-}
 
 const fetchMock = vi.fn()
 
@@ -101,85 +89,38 @@ describe("interview client", () => {
 
 
 
-  it("posts the answer and returns the spoken reply stream", async () => {
-    const body = new ReadableStream<Uint8Array>()
-    fetchMock.mockResolvedValue(new Response(body))
-    const controller = new AbortController()
-
-    await expect(
-      openTurnStream("s1", CHUNK, controller.signal)
-    ).resolves.toBe(body)
-
-    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit]
-    expect(url).toBe("/api/interviews/sessions/s1/turn")
-    expect(init.method).toBe("POST")
-    expect(JSON.parse(String(init.body))).toEqual(CHUNK)
-    // Without it, an abandoned turn keeps generating server-side.
-    expect(init.signal).toBe(controller.signal)
-  })
-
-  it("reports an interviewer that could not answer", async () => {
-    fetchMock.mockResolvedValue(new Response("", { status: 503 }))
-
-    await expect(
-      openTurnStream("s1", CHUNK, new AbortController().signal)
-    ).rejects.toThrow("Le recruteur n'a pas pu répondre.")
-  })
-
-  it("opens the interview with no body: there is no answer yet", async () => {
-    const body = new ReadableStream<Uint8Array>()
-    fetchMock.mockResolvedValue(new Response(body))
-    const controller = new AbortController()
-
-    await expect(
-      openOpeningStream("s1", controller.signal)
-    ).resolves.toBe(body)
-
-    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit]
-    expect(url).toBe("/api/interviews/sessions/s1/opening")
-    expect(init.method).toBe("POST")
-    expect(init.body).toBeUndefined()
-    expect(init.signal).toBe(controller.signal)
-  })
-
-  it("reports a recruiter that could not open the interview", async () => {
-    fetchMock.mockResolvedValue(new Response("", { status: 503 }))
-
-    await expect(
-      openOpeningStream("s1", new AbortController().signal)
-    ).rejects.toThrow("Le recruteur n'a pas pu répondre.")
-  })
-
-})
-
-describe("uploadAnswerPart", () => {
-  const PART = { audioBase64: "AAAA", chunkId: "c1", part: 2 }
-
-  beforeEach(() => {
-    fetchMock.mockReset()
-    vi.stubGlobal("fetch", fetchMock)
-  })
-
-  afterEach(() => {
-    vi.unstubAllGlobals()
-  })
-
-  it("posts one piece to the session's own chunk route", async () => {
-    fetchMock.mockResolvedValue(jsonResponse({ parts: 3 }))
-
-    await uploadAnswerPart("s1", PART)
-
-    expect(fetchMock).toHaveBeenCalledWith(
-      "/api/interviews/sessions/s1/turn/chunk",
-      expect.objectContaining({ body: JSON.stringify(PART), method: "POST" })
+  it("posts the WebRTC offer and returns the recruiter's answer", async () => {
+    fetchMock.mockResolvedValue(
+      jsonResponse({ sdp: "v=0 answer", startedAt: "2026-09-25T10:00:00.000Z" })
     )
+
+    const result = await openRealtimeCall("s1", "v=0 offer")
+
+    expect(result.sdp).toBe("v=0 answer")
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit]
+    expect(url).toBe("/api/interviews/sessions/s1/realtime")
+    expect(init.method).toBe("POST")
+    expect(JSON.parse(String(init.body))).toEqual({ sdp: "v=0 offer" })
   })
 
-  it("throws so the turn knows to send the answer whole instead", async () => {
-    fetchMock.mockResolvedValue(jsonResponse({ message: "trop long" }, 413))
+  it("pauses the session on the server", async () => {
+    fetchMock.mockResolvedValue(jsonResponse({ pausedAt: "2026-09-25T10:04:00.000Z" }))
 
-    await expect(uploadAnswerPart("s1", PART)).rejects.toBeInstanceOf(
-      InterviewRequestError
+    await expect(pauseSession("s1")).resolves.toEqual({
+      pausedAt: "2026-09-25T10:04:00.000Z",
+    })
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit]
+    expect(url).toBe("/api/interviews/sessions/s1/pause")
+    expect(init.method).toBe("POST")
+  })
+
+  it("reports a recruiter that could not be reached", async () => {
+    fetchMock.mockResolvedValue(
+      jsonResponse({ message: "Le temps de cet entretien est écoulé." }, 400)
+    )
+
+    await expect(openRealtimeCall("s1", "v=0")).rejects.toThrow(
+      "Le temps de cet entretien est écoulé."
     )
   })
 })

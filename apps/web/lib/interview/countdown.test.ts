@@ -117,9 +117,22 @@ describe("shouldAutoFinish", () => {
 
   it("never stops a turn in progress", () => {
     // Ending here would throw away the answer and the credit that paid for it.
-    for (const phase of ["recording", "processing", "speaking"]) {
+    for (const phase of ["recording", "speaking"]) {
       expect(ready({ phase })).toBe(false)
     }
+  })
+
+  it("scores once the call is over, since nobody can be mid-turn", () => {
+    expect(ready({ phase: "ended" })).toBe(true)
+  })
+
+  it("does not wait for a reply that may never come", () => {
+    // After the goodbye, a "merci" from the candidate can go unanswered.
+    expect(ready({ concluded: true, elapsed: 60, phase: "processing" })).toBe(true)
+  })
+
+  it("never scores a paused interview", () => {
+    expect(ready({ phase: "paused" })).toBe(false)
   })
 
   it("does not score an interview nobody answered", () => {
@@ -157,7 +170,6 @@ describe("an interview the recruiter has finished", () => {
 
   it("still waits for the goodbye to finish playing", () => {
     expect(early({ phase: "speaking" })).toBe(false)
-    expect(early({ phase: "processing" })).toBe(false)
     expect(early({ phase: "recording" })).toBe(false)
   })
 

@@ -4,20 +4,16 @@ import type { AiUsageRecorder } from './ai-usage';
 import { PgAiUsageRecorder } from './ai-usage.pg-recorder';
 import { resolveOpenRouterBalanceConfig } from './openrouter-balance.config';
 import { OpenRouterBalanceService } from './openrouter-balance.service';
-import { resolveTranscriptionConfig } from './openrouter-transcription.config';
-import { resolveVoiceConfig } from './openrouter-voice.config';
-import { OpenRouterVoiceService } from './openrouter-voice.service';
-import { OpenRouterTranscriptionService } from './openrouter-transcription.service';
+import { resolveOpenAiRealtimeConfig } from './openai-realtime.config';
+import { OpenAiRealtimeService } from './openai-realtime.service';
 import { resolveOpenRouterConfig } from './openrouter.config';
 import { OpenRouterService } from './openrouter.service';
 
 export const OPENROUTER_SERVICE = Symbol('OPENROUTER_SERVICE');
 export const OPENROUTER_BALANCE_SERVICE = Symbol('OPENROUTER_BALANCE_SERVICE');
-export const OPENROUTER_TRANSCRIPTION_SERVICE = Symbol(
-  'OPENROUTER_TRANSCRIPTION_SERVICE',
-);
-export const OPENROUTER_VOICE_SERVICE = Symbol('OPENROUTER_VOICE_SERVICE');
-const AI_USAGE_RECORDER = Symbol('AI_USAGE_RECORDER');
+/** The live interview's voice, straight to OpenAI rather than via OpenRouter (ADR-026). */
+export const OPENAI_REALTIME_SERVICE = Symbol('OPENAI_REALTIME_SERVICE');
+export const AI_USAGE_RECORDER = Symbol('AI_USAGE_RECORDER');
 
 @Module({
   providers: [
@@ -41,27 +37,15 @@ const AI_USAGE_RECORDER = Symbol('AI_USAGE_RECORDER');
         ),
     },
     {
-      provide: OPENROUTER_TRANSCRIPTION_SERVICE,
-      inject: [AI_USAGE_RECORDER],
-      useFactory: (recorder: AiUsageRecorder) =>
-        new OpenRouterTranscriptionService(
-          resolveTranscriptionConfig(),
-          {},
-          recorder,
-        ),
-    },
-    {
-      provide: OPENROUTER_VOICE_SERVICE,
-      inject: [AI_USAGE_RECORDER],
-      useFactory: (recorder: AiUsageRecorder) =>
-        new OpenRouterVoiceService(resolveVoiceConfig(), {}, recorder),
+      provide: OPENAI_REALTIME_SERVICE,
+      useFactory: () => new OpenAiRealtimeService(resolveOpenAiRealtimeConfig()),
     },
   ],
   exports: [
     OPENROUTER_SERVICE,
     OPENROUTER_BALANCE_SERVICE,
-    OPENROUTER_TRANSCRIPTION_SERVICE,
-    OPENROUTER_VOICE_SERVICE,
+    OPENAI_REALTIME_SERVICE,
+    AI_USAGE_RECORDER,
   ],
 })
 export class OpenRouterModule {}
