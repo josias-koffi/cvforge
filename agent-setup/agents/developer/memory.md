@@ -1563,3 +1563,15 @@
   - `contact.courriel`/`coordonnees*` FT contiennent souvent « Pour postuler, utiliser le lien suivant : … » : à filtrer.
   - Ne jamais lancer `prettier --write` sur un dossier : l'API n'est pas formatée à HEAD, ça touche des dizaines de fichiers.
 - **Open**: les nouvelles infos ne sont pas encore utilisées par le scoring (salaire Lever, exigences FT).
+
+## 2026-09-25 — Refonte de /credits (ad hoc, demande utilisateur, hors US)
+- **Context**: `/credits` empilait solde, barème, packs, achats et un historique non paginé (tout le ledger renvoyé par `/credits/me`).
+- **Did**: API — `GET /credits/me/history?page&pageSize&kind=spent|earned` (`listEntriesPageForUser`, `shared/pagination.ts`), type `CreditHistoryPage`. Web — `credits/layout.tsx` (solde en en-tête, onglets), `/credits` = packs + `CreditCosts`, `/credits/historique` = `CreditHistoryTable` + filtre en liens + pagination ; `TabNav` partagé avec `SearchNav` ; `OfferPagination`/`job-pagination` renommés `PagePagination`/`lib/pagination` ; `PurchasesTable` supprimé.
+- **Why**: un achat payé figurait deux fois (commande + ligne `stripe_purchase`) ; les notes du ledger sont écrites pour le support (sans accents), seules la durée d'entretien, le pack et la raison d'un don sont montrés.
+- **Learned**:
+  - `api()` accepte `query` : inutile de construire la chaîne à la main.
+  - L'API résout `@cvforge/types` via `dist` : rebâtir le paquet après y avoir ajouté une valeur (pas seulement un type).
+  - Une nouvelle route typée (`PageProps<"/x">`) exige `next typegen` avant `tsc`.
+  - Le fil d'Ariane nomme « Détail » tout sous-chemin inconnu : ajouter la route à `pathLabels`.
+- **Then**: `/credits/me` ne renvoie plus que le solde (`CreditBalanceSummary`, `getBalanceSummaryForUser`) ; côté web `getCreditBalance` (React `cache`) partagé par le layout, le dashboard et l'en-tête des crédits. Les écrans admin gardent `getSummaryForUser` et tout le ledger.
+- **Open**: `buildAdminUserDirectory` charge encore tout le ledger de chaque compte pour un solde, une date et un compteur.

@@ -67,6 +67,11 @@ outil d'entretien qui mène vers l'entretien vocal.
   `/offres-du-jour` enrichi (profil, avantages, contact, site de l'entreprise, lien direct
   « Postuler sur … », source toujours citée), texte en pleine largeur, ouverture sans requête
   serveur. Livré sans US ni workflow.
+- Hors sprint, 2026-09-25, à la demande du propriétaire : `/credits` en deux onglets
+  (« Recharger » : packs et barème ; « Historique » : opérations paginées par 20, filtre
+  Tout / Dépenses / Recharges), solde dans l'en-tête. Le tableau « Achats » est fusionné dans
+  l'historique ; seules les commandes en attente restent signalées. API `GET
+  /credits/me/history` ; `/credits/me` ne renvoie plus que le solde. Livré sans US ni workflow.
 
 Critères communs aux outils : voir `backlog.md`, « Critères d'acceptation détaillés — E23 ».
 
