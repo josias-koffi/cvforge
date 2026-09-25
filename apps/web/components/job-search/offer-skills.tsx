@@ -39,7 +39,7 @@ export function OfferSkills({
       <SkillList title="Vous avez" skills={matched} variant="outline" />
       <SkillList
         title="À mettre en avant"
-        hint="Ce que l'offre demande et que votre CV ne montre pas. Si vous le maîtrisez, « Postuler avec CVForge » le proposera à la génération de votre CV — sans jamais l'inventer."
+        hint="Ce que l'offre demande et que votre CV ne montre pas. Si vous le maîtrisez, « Postuler avec CVSpark » le proposera à la génération de votre CV — sans jamais l'inventer."
         skills={missing}
         variant="secondary"
       />
