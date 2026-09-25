@@ -58,6 +58,14 @@ describe("OnboardingWizard", () => {
     }
   })
 
+  it("keeps the candidate in the flow on the identity step", () => {
+    const html = render("identite")
+
+    expect(html).toContain("Disponibilité")
+    expect(html).not.toContain("Ce que je cherche")
+    expect(html).not.toContain('href="/ma-recherche"')
+  })
+
   it("ends on the dashboard", () => {
     expect(render("alertes")).toContain("Accéder à mon tableau de bord")
     expect(render("lieu")).toContain("Enregistrer et trouver mes métiers")

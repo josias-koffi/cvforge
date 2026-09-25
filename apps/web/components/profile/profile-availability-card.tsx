@@ -16,9 +16,12 @@ import type { ProfilePreferences } from "@/lib/profile-model"
 export function ProfileAvailabilityCard({
   preferences,
   onChange,
+  showSearchLink = true,
 }: {
   preferences: ProfilePreferences
   onChange: (next: ProfilePreferences) => void
+  /** Off in the onboarding, whose next steps are the search itself. */
+  showSearchLink?: boolean
 }) {
   const immediate = preferences.availabilityMode === "immediate"
 
@@ -28,12 +31,14 @@ export function ProfileAvailabilityCard({
       title="Disponibilité"
       description="Quand vous pouvez commencer : elle apparaît sur vos candidatures."
       action={
-        <Button asChild size="sm" variant="ghost">
-          <Link href="/ma-recherche">
-            <SearchIcon />
-            Ce que je cherche
-          </Link>
-        </Button>
+        showSearchLink ? (
+          <Button asChild size="sm" variant="ghost">
+            <Link href="/ma-recherche">
+              <SearchIcon />
+              Ce que je cherche
+            </Link>
+          </Button>
+        ) : null
       }
     >
       <label className="flex items-center gap-3 text-sm">
@@ -65,10 +70,12 @@ export function ProfileAvailabilityCard({
           />
         </FieldGrid>
       )}
-      <FieldHint>
-        Postes, contrats, lieux et secteurs visés se règlent dans « Ma recherche
-        ».
-      </FieldHint>
+      {showSearchLink ? (
+        <FieldHint>
+          Postes, contrats, lieux et secteurs visés se règlent dans « Ma
+          recherche ».
+        </FieldHint>
+      ) : null}
     </SectionCard>
   )
 }

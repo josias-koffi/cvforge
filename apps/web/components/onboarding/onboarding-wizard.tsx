@@ -65,6 +65,7 @@ export function OnboardingWizard({
       <>
         <ProfileIdentityCard profile={profile} onChange={setProfile} />
         <ProfileAvailabilityCard
+          showSearchLink={false}
           preferences={profile.preferences}
           onChange={(preferences) =>
             setProfile((current) => ({ ...current, preferences }))
