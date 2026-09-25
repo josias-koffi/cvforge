@@ -1,3 +1,5 @@
+import type { FeatureKey } from "@/content/feature-pages/types"
+
 export const locales = ["fr", "en"] as const
 export type Locale = (typeof locales)[number]
 export const defaultLocale: Locale = "fr"
@@ -56,6 +58,20 @@ export const toolsSlugs: Record<Locale, string> = {
   en: "tools",
 }
 
+/** Localised slug of each feature page (US-142); the route folder carries the English one. */
+export const featureSlugs: Record<FeatureKey, Record<Locale, string>> = {
+  daily_offers: { fr: "offres-du-jour", en: "daily-job-offers" },
+  tailored_documents: {
+    fr: "cv-lettre-sur-mesure",
+    en: "tailored-resume-cover-letter",
+  },
+  interview: { fr: "simulation-entretien", en: "mock-interview" },
+  companies_market: {
+    fr: "entreprises-qui-recrutent",
+    en: "companies-hiring",
+  },
+}
+
 /**
  * Maps a landing path to its equivalent in another locale.
  *
@@ -80,6 +96,7 @@ function translateSlug(segment: string, target: Locale) {
     jobMarketSlugs,
     companyCheckSlugs,
     interviewQuestionsSlugs,
+    ...Object.values(featureSlugs),
   ]) {
     if (Object.values(slugs).includes(segment)) {
       return slugs[target]

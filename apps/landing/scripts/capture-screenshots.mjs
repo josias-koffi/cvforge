@@ -15,7 +15,7 @@
  *   node apps/landing/scripts/capture-screenshots.mjs dashboard cv-editor
  */
 import { createHmac } from "node:crypto"
-import { mkdir, writeFile } from "node:fs/promises"
+import { mkdir, readFile, writeFile } from "node:fs/promises"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
 
@@ -39,8 +39,28 @@ const DATABASE_URL =
 /** Matches `SCREENSHOT_WIDTH`/`SCREENSHOT_HEIGHT` in components/screenshot.tsx. */
 const VIEWPORT = { width: 1440, height: 900 }
 const SCALE = 2
+/**
+ * Close-ups crop one component out of the page, so they are shot at 3x: once
+ * enlarged on the landing page they still have a pixel per device pixel.
+ */
+const DETAIL_SCALE = 3
+/** Room left around a close-up, so the component does not touch the crop. */
+const DETAIL_PADDING = 24
 /** WebP stays visually lossless on flat UI at this quality. */
-const WEBP = { quality: 92, effort: 6 }
+const WEBP = { quality: 95, effort: 6, smartSubsample: true }
+/**
+ * Intrinsic size of every capture, read by components/screenshot.tsx: a
+ * close-up is as big as the component it shows, so no single constant fits.
+ */
+const SIZES_FILE = path.join(HERE, "..", "lib", "screenshot-sizes.json")
+/**
+ * The captures the share cards show (lib/og-image.tsx): the home page's and
+ * each feature page's hero. ImageResponse cannot decode WebP, so they are
+ * also written as JPEG, on the dark theme the card is drawn on.
+ */
+const OG_SHOTS = ["daily-offers", "cv-editor", "interview-studio", "companies"]
+const OG_DIR = path.join(HERE, "..", "assets", "og")
+const OG_SHOT_SIZE = { width: 1000, height: 625 }
 
 const THEMES = ["light", "dark"]
 
@@ -80,6 +100,17 @@ async function api(cookie, route) {
 async function resolveTargets(cookie) {
   const { applications } = await api(cookie, "/applications")
   const { sessions } = await api(cookie, "/interviews/sessions")
+  const { scans } = await api(cookie, "/ats/scans")
+  const { registry } = await api(cookie, "/profiles")
+  const profileId = registry.activeProfileId
+  const { companies } = await api(
+    cookie,
+    `/profiles/${encodeURIComponent(profileId)}/hiring-companies`
+  )
+  // The company page is shot for its commitments: the one showing most.
+  const company = [...companies].sort(
+    (a, b) => b.badges.length - a.badges.length || b.hiringPotential - a.hiringPotential
+  )[0]
 
   const withCv = applications.find((item) => item.cvVersions?.length || item.cvGeneratedAt)
   const withLetter = applications.find(
@@ -96,7 +127,20 @@ async function resolveTargets(cookie) {
     )
   }
 
-  return { cvId: withCv.id, letterId: withLetter.id, reportId: report.id }
+  if (!scans[0] || !company) {
+    throw new Error(
+      "The demo account is missing an ATS scan or hiring companies — see the Screenshots section of AGENTS.md."
+    )
+  }
+
+  return {
+    cvId: withCv.id,
+    letterId: withLetter.id,
+    reportId: report.id,
+    scanId: scans[0].scanId,
+    siret: company.siret,
+    profileId,
+  }
 }
 
 /**
@@ -133,7 +177,7 @@ async function withLiveSession(sessionId, shoot) {
   )
 
   try {
-    await shoot()
+    return await shoot()
   } finally {
     await client.query(
       "update interview_sessions set status = $2, started_at = $3, completed_at = $4 where id = $1",
@@ -174,7 +218,23 @@ async function settle(page) {
   await page.waitForTimeout(600)
 }
 
-function screens({ cvId, letterId, reportId }) {
+/** Opens the first offer of the morning selection in its side panel. */
+async function openFirstOffer(page) {
+  // The card's title sits under a full-size button that takes the click.
+  await page.locator("main button.absolute.inset-0").first().click()
+  await page.waitForSelector('[role="dialog"]')
+  await page.waitForTimeout(700)
+}
+
+/** The closest rounded box around a piece of text: a card, in apps/web. */
+function cardAround(page, text) {
+  return page
+    .getByText(text)
+    .first()
+    .locator("xpath=ancestor::*[contains(concat(' ', @class, ' '), ' rounded-xl ')][1]")
+}
+
+function screens({ cvId, letterId, reportId, scanId, siret, profileId }) {
   return [
     { name: "dashboard", url: "/dashboard", wait: "main" },
     { name: "candidatures", url: "/candidatures", wait: "main" },
@@ -194,6 +254,61 @@ function screens({ cvId, letterId, reportId }) {
     { name: "interview-studio", url: `/entretiens/${reportId}`, wait: "main", live: reportId },
     { name: "interview-report", url: `/entretiens/${reportId}/rapport`, wait: "main" },
     { name: "interview-progress", url: "/entretiens/progression", wait: "main" },
+    { name: "daily-offers", url: "/offres-du-jour", wait: "main" },
+    {
+      name: "offer-panel",
+      url: "/offres-du-jour",
+      wait: "main",
+      act: openFirstOffer,
+    },
+    {
+      // Close-up of the AI's line on the first offer (E19).
+      name: "offer-ai",
+      url: "/offres-du-jour",
+      wait: "main",
+      act: openFirstOffer,
+      detail: (page) => [cardAround(page, /^Pourquoi cette offre/)],
+    },
+    {
+      // Searched as the persona would, rather than the whole base unsorted.
+      name: "job-search",
+      url: "/offres?q=d%C3%A9veloppeur&departement=75",
+      wait: "main",
+    },
+    {
+      name: "search-alerts",
+      url: "/ma-recherche/alertes",
+      wait: "main",
+      // The switches alone: the summary beside them is too wide to read once shrunk.
+      detail: (page) => [cardAround(page, /^Vos offres du jour$/)],
+    },
+    { name: "companies", url: "/entreprises", wait: "main" },
+    {
+      name: "company-page",
+      url: `/entreprises/${siret}?profileId=${encodeURIComponent(profileId)}`,
+      wait: "main",
+    },
+    {
+      name: "market-radar",
+      url: "/ma-recherche/marche",
+      wait: "main",
+      detail: (page) => [
+        cardAround(page, /^Repères publics/),
+        cardAround(page, /^Salaire médian observé/),
+        page.getByText(/^Salaires : offres collectées/),
+      ],
+    },
+    {
+      // The page's breadcrumb has no parent to show, so only the report is kept.
+      name: "ats-report",
+      url: `/analyses-ats/${scanId}`,
+      wait: "main",
+      detail: (page) => [
+        page.getByRole("heading", { level: 1 }),
+        cardAround(page, /^Critère par critère$/),
+        cardAround(page, /^Points relevés$/),
+      ],
+    },
   ]
 }
 
@@ -202,7 +317,7 @@ function screens({ cvId, letterId, reportId }) {
  * the shutter would freeze mid-page, and the demo address in the sidebar footer.
  */
 const CHROME_CLEANUP = `
-  nextjs-portal, [data-nextjs-toast], #__next-build-watcher { display: none !important; }
+  nextjs-portal, [data-nextjs-toast], #__next-build-watcher, [data-sonner-toaster] { display: none !important; }
   *::-webkit-scrollbar { width: 0 !important; height: 0 !important; }
   * { scrollbar-width: none !important; }
 `
@@ -210,7 +325,7 @@ const CHROME_CLEANUP = `
 async function capture(browser, theme, screen) {
   const context = await browser.newContext({
     viewport: VIEWPORT,
-    deviceScaleFactor: SCALE,
+    deviceScaleFactor: screen.detail ? DETAIL_SCALE : SCALE,
     colorScheme: theme,
     locale: "fr-FR",
     timezoneId: "Europe/Paris",
@@ -242,7 +357,8 @@ async function capture(browser, theme, screen) {
   await screen.act?.(page)
   await anonymise(page, DEMO_EMAIL, DISPLAY_EMAIL)
 
-  const png = await page.screenshot({ type: "png" })
+  const clip = screen.detail ? await detailClip(screen.detail(page)) : undefined
+  const png = await page.screenshot({ type: "png", clip })
   await context.close()
 
   const target = path.join(OUT_DIR, theme, `${screen.name}.webp`)
@@ -251,6 +367,55 @@ async function capture(browser, theme, screen) {
 
   const { width, height } = await sharp(target).metadata()
   console.log(`  ${theme}/${screen.name}.webp — ${width}×${height}`)
+
+  return { width, height }
+}
+
+/** The box around every target of a close-up, padded and kept on screen. */
+async function detailClip(targets) {
+  const boxes = await Promise.all(
+    targets.map(async (target) => {
+      const box = await target.boundingBox()
+
+      if (!box) {
+        throw new Error(`Close-up target not found: ${target}`)
+      }
+
+      return box
+    })
+  )
+  const left = Math.max(0, Math.min(...boxes.map((box) => box.x)) - DETAIL_PADDING)
+  const top = Math.max(0, Math.min(...boxes.map((box) => box.y)) - DETAIL_PADDING)
+  const right = Math.min(
+    VIEWPORT.width,
+    Math.max(...boxes.map((box) => box.x + box.width)) + DETAIL_PADDING
+  )
+  const bottom = Math.min(
+    VIEWPORT.height,
+    Math.max(...boxes.map((box) => box.y + box.height)) + DETAIL_PADDING
+  )
+
+  return { x: left, y: top, width: right - left, height: bottom - top }
+}
+
+async function writeOgShot(name) {
+  const target = path.join(OG_DIR, `${name}.jpg`)
+
+  await mkdir(OG_DIR, { recursive: true })
+  await sharp(path.join(OUT_DIR, "dark", `${name}.webp`))
+    .resize(OG_SHOT_SIZE)
+    .jpeg({ quality: 86, mozjpeg: true })
+    .toFile(target)
+  console.log(`  og/${name}.jpg`)
+}
+
+/** Both themes share a size; a close-up whose themes differ would crop badly. */
+async function writeSizes(shot) {
+  const sizes = JSON.parse(await readFile(SIZES_FILE, "utf8").catch(() => "{}"))
+  const next = { ...sizes, ...shot }
+  const sorted = Object.fromEntries(Object.keys(next).sort().map((key) => [key, next[key]]))
+
+  await writeFile(SIZES_FILE, `${JSON.stringify(sorted, null, 2)}\n`)
 }
 
 async function main() {
@@ -272,19 +437,30 @@ async function main() {
     args: ["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream"],
   })
 
+  const sizes = {}
+
   try {
     for (const theme of THEMES) {
       console.log(theme)
       for (const screen of wanted) {
-        if (screen.live) {
-          await withLiveSession(screen.live, () => capture(browser, theme, screen))
-        } else {
-          await capture(browser, theme, screen)
-        }
+        const size = screen.live
+          ? await withLiveSession(screen.live, () => capture(browser, theme, screen))
+          : await capture(browser, theme, screen)
+
+        // Light is the reference; dark is the same layout in other colours.
+        sizes[screen.name] ??= [size.width, size.height]
       }
     }
   } finally {
     await browser.close()
+  }
+
+  await writeSizes(sizes)
+
+  for (const name of wanted.map((screen) => screen.name)) {
+    if (OG_SHOTS.includes(name)) {
+      await writeOgShot(name)
+    }
   }
 }
 

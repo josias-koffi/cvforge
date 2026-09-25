@@ -20,15 +20,18 @@ export function pageMetadata({
   title,
   description,
   path,
+  image: imagePath = `/${locale}/opengraph-image`,
 }: {
   locale: Locale
   title: string
   description: string
   /** The page's path in each language, e.g. `atsPath`. */
   path: (locale: Locale) => string
+  /** The page's own share card, when it has one; the home page's otherwise. */
+  image?: string
 }): Metadata {
   const image = {
-    url: `/${locale}/opengraph-image`,
+    url: imagePath,
     width: 1200,
     height: 630,
     alt: getDictionary(locale).meta.ogAlt,

@@ -6,6 +6,7 @@ vi.mock("next/navigation", () => ({ usePathname: () => "/fr" }))
 import { HomePage } from "@/components/home-page"
 import { SiteFooter } from "@/components/site-footer"
 import { SiteHeader } from "@/components/site-header"
+import { featurePages } from "@/lib/features"
 import { StoryPage } from "@/components/story-page"
 import { ToolsPage } from "@/components/tools-page"
 import { en } from "@/content/en"
@@ -82,14 +83,14 @@ describe("HomePage", () => {
     expect(html).toContain('id="interview"')
     expect(html).toContain(escapeHtml(dict.interview.title))
 
-    // The five recruiter styles and the five scored dimensions are the
-    // substance of the section; a half-filled dictionary would show neither.
+    // The five recruiter styles are the substance of the section; the rest
+    // of the story is on the interview page it links to.
     for (const profile of dict.interview.profiles) {
       expect(html).toContain(profile.title)
     }
-    for (const metric of dict.interview.report.metrics) {
-      expect(html).toContain(metric)
-    }
+    expect(html).toContain(
+      `href="${locale === "fr" ? "/fr/simulation-entretien" : "/en/mock-interview"}"`
+    )
 
     // Audio retention is a promise, not decoration: it must reach the page.
     expect(html).toContain(escapeHtml(dict.interview.privacyNote))
@@ -151,7 +152,7 @@ describe("SiteHeader", () => {
    * decide on — the price and the free check, which is the top of the funnel.
    */
   it("keeps pricing and the free tools one click away", () => {
-    const html = renderToStaticMarkup(<SiteHeader locale="fr" nav={fr.nav} />)
+    const html = renderToStaticMarkup(<SiteHeader locale="fr" nav={fr.nav} features={fr.featurePages} />)
 
     expect(html).toContain('href="/fr#pricing"')
     expect(html).toContain('href="/fr/outils"')
@@ -160,7 +161,7 @@ describe("SiteHeader", () => {
   })
 
   it("groups the rest behind a labelled trigger", () => {
-    const html = renderToStaticMarkup(<SiteHeader locale="fr" nav={fr.nav} />)
+    const html = renderToStaticMarkup(<SiteHeader locale="fr" nav={fr.nav} features={fr.featurePages} />)
 
     expect(html).toContain(fr.nav.product)
     // Radix renders the menu in a portal, so its items are absent until it is
@@ -169,7 +170,7 @@ describe("SiteHeader", () => {
   })
 
   it("does not crowd the bar: at most three navigation entries", () => {
-    const html = renderToStaticMarkup(<SiteHeader locale="fr" nav={fr.nav} />)
+    const html = renderToStaticMarkup(<SiteHeader locale="fr" nav={fr.nav} features={fr.featurePages} />)
     const nav = html.slice(html.indexOf('aria-label="Main"'))
     const entries = nav.slice(0, nav.indexOf("</nav>")).split("<li").length - 1
 
@@ -177,10 +178,53 @@ describe("SiteHeader", () => {
   })
 
   it("translates the grouping label", () => {
-    const html = renderToStaticMarkup(<SiteHeader locale="en" nav={en.nav} />)
+    const html = renderToStaticMarkup(<SiteHeader locale="en" nav={en.nav} features={en.featurePages} />)
 
     expect(html).toContain(en.nav.product)
     expect(html).toContain('href="/en/tools"')
+  })
+})
+
+/** The whole search on the home page, each feature leading to its page (US-147). */
+describe("the feature pages from the home page", () => {
+  it.each([
+    ["fr", fr],
+    ["en", en],
+  ] as const)("links every feature page in %s", (locale, dict) => {
+    const html = renderToStaticMarkup(
+      <HomePage locale={locale} offers={offers} withTestimonials={false} />
+    )
+
+    for (const { path } of featurePages) {
+      expect(html).toContain(`href="${path(locale)}"`)
+    }
+    expect(html).toContain(escapeHtml(dict.journey.title))
+    for (const step of dict.journey.steps) {
+      expect(html).toContain(escapeHtml(step.title))
+    }
+  })
+
+  it.each([
+    ["fr", fr],
+    ["en", en],
+  ] as const)("puts the daily offers and the AI's reason in focus in %s", (locale, dict) => {
+    const html = renderToStaticMarkup(
+      <HomePage locale={locale} offers={offers} withTestimonials={false} />
+    )
+    const section = html.slice(html.indexOf('id="daily-offers"'))
+
+    expect(section).toContain(escapeHtml(dict.spotlight.title))
+    expect(section).toContain("%2Fscreenshots%2Flight%2Foffer-ai.webp")
+    expect(section).toContain(escapeHtml(dict.spotlight.detailAlt))
+  })
+
+  it("lists the feature pages in the footer", () => {
+    const html = renderToStaticMarkup(<SiteFooter locale="en" dict={en} />)
+
+    expect(html).toContain(en.footer.features)
+    for (const { path } of featurePages) {
+      expect(html).toContain(`href="${path("en")}"`)
+    }
   })
 })
 
@@ -190,15 +234,15 @@ describe("the free tools", () => {
     ["fr", fr, "/fr/outils", "/fr/analyse-ats"],
     ["en", en, "/en/tools", "/en/ats-check"],
   ] as const)(
-    "gets a section on the %s home page, between how it works and features",
+    "gets a section on the %s home page, after the interview and before pricing",
     (locale, dict, hubHref, atsHref) => {
       const html = renderToStaticMarkup(
         <HomePage locale={locale} offers={offers} withTestimonials={false} />
       )
       const section = html.indexOf('id="free-tools"')
 
-      expect(section).toBeGreaterThan(html.indexOf('id="how-it-works"'))
-      expect(section).toBeLessThan(html.indexOf('id="features"'))
+      expect(section).toBeGreaterThan(html.indexOf('id="interview"'))
+      expect(section).toBeLessThan(html.indexOf('id="pricing"'))
       expect(html).toContain(escapeHtml(dict.tools.home.title))
       expect(html).toContain(escapeHtml(dict.tools.items.ats.name))
       expect(html).toContain(`href="${hubHref}"`)

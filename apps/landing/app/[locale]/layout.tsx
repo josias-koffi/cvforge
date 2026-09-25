@@ -64,7 +64,11 @@ export default async function LocaleLayout({
     >
       <body className="flex min-h-svh flex-col">
         <ThemeProvider>
-          <SiteHeader locale={locale} nav={dict.nav} />
+          <SiteHeader
+            locale={locale}
+            nav={dict.nav}
+            features={dict.featurePages}
+          />
           <main className="flex-1">{children}</main>
           <SiteFooter locale={locale} dict={dict} />
         </ThemeProvider>

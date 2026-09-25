@@ -1,24 +1,24 @@
 import { WELCOME_APPLICATIONS } from "@cvforge/types"
 
 import { companyCheckFr } from "./company-check/fr"
+import { featurePagesFr } from "./feature-pages/fr"
 import { interviewQuestionsFr } from "./interview-questions/fr"
 import type { LandingDictionary } from "./types"
 
 /** Copy source: .project/marketing/cvspark-storytelling.md */
 export const fr: LandingDictionary = {
   meta: {
-    title: "CVSpark — Un profil. Une offre. Une étincelle.",
+    title: "CVSpark — Les bonnes offres, le bon CV, l'entretien préparé",
     description:
-      "CVSpark adapte votre CV et votre lettre de motivation à chaque offre, prêts pour l'ATS en quelques secondes. Sans abonnement.",
+      "CVSpark trouve chaque matin les offres qui vous correspondent, adapte votre CV et votre lettre à chacune, et vous entraîne à l'entretien avec un recruteur IA. Sans abonnement.",
     ogAlt: "CVSpark, l'étincelle entre votre profil et l'offre",
   },
   nav: {
-    product: "Produit",
-    features: "Fonctionnalités",
+    product: "Fonctionnalités",
+    features: "Vue d'ensemble",
     howItWorks: "Comment ça marche",
     pricing: "Tarifs",
     faq: "FAQ",
-    interview: "Entretien",
     ats: "Test ATS gratuit",
     tools: "Outils gratuits",
     story: "Notre histoire",
@@ -30,106 +30,143 @@ export const fr: LandingDictionary = {
     home: "Accueil CVSpark",
   },
   hero: {
-    badge: "Nouveau · Entraînez-vous à l'entretien, à l'oral",
-    title: "Un profil. Une offre.",
+    badge: "Nouveau · Vos offres du jour, classées par l'IA",
+    title: "Les bonnes offres. Le bon CV.",
     titleAccent: "Une étincelle.",
     subtitle:
-      "Arrêtez de passer vos soirées à réécrire le même CV. CVSpark lit l'offre, reprend votre profil et génère un CV et une lettre prêts pour l'ATS, en quelques secondes.",
-    primaryCta: "Créer mon CV",
+      "Chaque matin, CVSpark trouve les offres qui vous correspondent et vous dit pourquoi. Un clic, et votre CV et votre lettre sont adaptés à l'offre. Il ne reste qu'à répéter l'entretien, à voix haute.",
+    primaryCta: "Commencer gratuitement",
     secondaryCta: "Voir comment ça marche",
     atsPrompt: "Pas encore prêt ?",
     atsLink: "Testez votre CV gratuitement",
     highlights: [
       `${WELCOME_APPLICATIONS} candidatures offertes`,
       "Sans abonnement",
-      "Prêt pour l'ATS",
+      "Offres du jour gratuites",
     ],
     screenshotAlt:
-      "Éditeur de CV CVSpark : formulaire à gauche, aperçu A4 du CV adapté à droite",
+      "Offres du jour dans CVSpark : offres classées pour le profil, avec score de correspondance",
   },
   problem: {
     eyebrow: "Le constat",
     title: "Le problème n'est pas votre profil. C'est le temps.",
-    body: "Relire l'offre, repérer ce qui compte, reformuler chaque expérience, refaire la lettre… À chaque candidature, le même travail mécanique. CVSpark s'en charge, vous gardez le jugement.",
+    body: "Fouiller dix sites d'annonces, trier ce qui vous correspond, réécrire le CV, refaire la lettre, préparer l'entretien… À chaque candidature, le même travail mécanique. CVSpark s'en charge, vous gardez le jugement.",
     before: {
       label: "Sans CVSpark",
       items: [
+        "Des alertes qui déversent cent annonces",
         "Une soirée par candidature",
-        "Copier-coller entre dix versions du CV",
-        "Des mots-clés de l'offre oubliés",
         "Une lettre générique, faute de temps",
+        "L'entretien découvert le jour J",
       ],
     },
     after: {
       label: "Avec CVSpark",
       items: [
-        "Quelques secondes par candidature",
-        "Un profil de base, décliné à l'infini",
-        "Un CV aligné sur les attentes de l'offre",
-        "Une lettre personnalisée, à relire et ajuster",
+        "Dix offres choisies chaque matin, avec leur raison",
+        "Un CV adapté en quelques secondes",
+        "Une lettre qui cite le poste et l'entreprise",
+        "Un entretien répété à voix haute, avec un rapport noté",
       ],
     },
   },
-  howItWorks: {
+  journey: {
     eyebrow: "Comment ça marche",
-    title: "De l'offre au CV prêt, en trois étapes",
+    title: "Toute votre recherche, au même endroit",
     subtitle:
-      "L'IA rationalise la partie répétitive. Vous relisez, ajustez, envoyez.",
+      "De l'offre repérée au matin à l'entretien réussi, sans jongler entre dix outils.",
+    learnMore: "En savoir plus",
     steps: [
       {
-        title: "Importez votre profil",
-        body: "Déposez votre CV actuel en PDF ou Word, même scanné. CVSpark en extrait expériences, formations et compétences.",
+        label: "Trouver",
+        title: "Les offres viennent à vous",
+        body: "Chaque matin, une sélection d'offres qui vous correspondent, classée par l'IA avec une phrase par offre. Et les entreprises qui recrutent sans annonce.",
+        alt: "Offres du jour classées avec leur score de correspondance",
       },
       {
-        title: "Ajoutez une offre",
-        body: "Collez le lien de l'annonce ou son PDF. L'offre et le contexte de l'entreprise sont analysés automatiquement.",
+        label: "Postuler",
+        title: "Un CV et une lettre adaptés en un clic",
+        body: "Depuis une offre, CVSpark reprend votre profil, fait remonter ce qui compte et rédige CV et lettre, prêts pour l'ATS.",
+        alt: "Éditeur de CV avec l'aperçu A4 du document adapté",
       },
       {
-        title: "Récupérez CV et lettre",
-        body: "Un CV et une lettre adaptés à l'offre, modifiables en direct, exportables en PDF ou Word.",
+        label: "S'entraîner",
+        title: "L'entretien, répété à voix haute",
+        body: "Un recruteur IA qui connaît l'offre vous interroge à l'oral. À la fin, un rapport noté et votre progression.",
+        alt: "Rapport d'entretien avec note globale et radar des dimensions",
+      },
+      {
+        label: "Suivre",
+        title: "Chaque candidature à sa place",
+        body: "Statuts, documents, relances et tableau de bord : vous savez toujours où vous en êtes.",
+        alt: "Liste des candidatures avec leurs statuts",
       },
     ],
-    diagram: {
-      profile: "Votre profil",
-      offer: "L'offre",
-      ai: "CVSpark",
-      cv: "CV adapté",
-      letter: "Lettre",
-    },
+  },
+  spotlight: {
+    eyebrow: "Offres du jour",
+    title: "Au réveil, dix offres. Et la raison de chacune.",
+    subtitle:
+      "CVSpark lit les offres publiées chaque nuit, les compare à votre profil et ne garde que les meilleures. Avec le classement IA, chaque offre arrive avec une phrase qui vous dit pourquoi elle est pour vous.",
+    points: [
+      {
+        title: "Des sources officielles",
+        body: "France Travail, La bonne alternance et les sites carrière des entreprises, sans doublons.",
+      },
+      {
+        title: "Un score qui s'explique",
+        body: "Intitulé, compétences, lieu, expérience, salaire, fraîcheur : le détail de chaque note.",
+      },
+      {
+        title: "Postuler en un clic",
+        body: "L'offre devient une candidature, le CV adapté se lance aussitôt.",
+      },
+    ],
+    cta: "Recevoir mes offres du jour",
+    learnMore: "Tout sur les offres du jour",
+    screenshotAlt:
+      "Panneau d'une offre du jour avec son score, la phrase de l'IA et le bouton postuler",
+    detailAlt:
+      "Phrase de l'IA expliquant pourquoi l'offre correspond au profil, avec le détail du score",
   },
   features: {
     eyebrow: "Fonctionnalités",
-    title: "Tout le parcours de candidature, au même endroit",
+    title: "Tout ce qu'il faut pour décrocher le poste",
     subtitle:
-      "De l'import de votre CV au suivi des réponses, sans jongler entre dix outils.",
+      "Chercher, postuler, se préparer, suivre : chaque étape a son outil, et ils se parlent.",
+    learnMore: "En savoir plus",
     items: {
-      import: {
-        title: "Import intelligent",
-        body: "PDF, Word ou scan : votre CV devient un profil structuré, réutilisable pour toutes vos candidatures.",
+      offers: {
+        title: "Offres du jour",
+        body: "Une sélection chaque matin, classée par l'IA, et toutes les offres des trente derniers jours à portée de recherche.",
+      },
+      market: {
+        title: "Radar du marché",
+        body: "Tension, volume d'offres et salaires de votre métier, dans votre département.",
       },
       tailor: {
         title: "CV adapté à chaque offre",
-        body: "Les expériences et compétences pertinentes remontent, formulées avec le vocabulaire de l'offre.",
+        body: "Les expériences utiles remontent, formulées avec le vocabulaire de l'offre. Rien d'inventé.",
+      },
+      ats: {
+        title: "Score ATS à chaque sauvegarde",
+        body: "Votre CV noté sur ce que regardent les logiciels de tri, avec ce qu'il faut corriger.",
+      },
+      interview: {
+        title: "Entretien vocal et progression",
+        body: "Un recruteur IA à l'oral, un rapport noté, et vos scores qui montent d'une session à l'autre.",
       },
       letter: {
         title: "Lettre de motivation",
-        body: "Une lettre qui cite l'entreprise et le poste, pas un modèle recyclé.",
+        body: "Une lettre qui cite l'entreprise et le poste, traduisible en anglais en un clic.",
       },
-      translate: {
-        title: "Français ⇄ anglais",
-        body: "Traduisez un CV ou une lettre en un clic pour postuler à l'international.",
+      companies: {
+        title: "Entreprises qui recrutent",
+        body: "Celles qui embauchent dans votre métier près de chez vous, même sans annonce, avec leurs engagements.",
       },
       tracking: {
         title: "Suivi des candidatures",
         body: "Brouillon, envoyée, entretien, offre reçue : chaque candidature a son statut et ses documents.",
-      },
-      export: {
-        title: "Export PDF et Word",
-        body: "Des documents propres et lisibles par les ATS, prêts à être envoyés.",
-      },
-      interview: {
-        title: "Entretien simulé",
-        body: "Un recruteur qui vous répond à l'oral, et un rapport noté à la fin.",
       },
     },
   },
@@ -160,24 +197,35 @@ export const fr: LandingDictionary = {
         body: "Questions STAR sur des situations vécues.",
       },
     ],
-    durationsTitle: "Le temps que vous avez",
-    durations: [
-      "10 minutes — entretien de filtrage",
-      "20 minutes — entretien RH complet",
-      "30 minutes — entretien approfondi",
-    ],
-    report: {
-      title: "Un rapport, pas une impression",
-      body: "Une note sur dix, cinq dimensions évaluées, les points à travailler en priorité, et la transcription complète de l'échange. Session après session, votre progression se lit sur une courbe.",
-      metrics: ["Clarté", "Mots-clés", "Rythme", "Hésitations", "Pertinence"],
-    },
     privacyNote:
       "Votre voix n'est jamais conservée : chaque passage est transcrit puis abandonné. Seul le texte reste, et il est supprimé au bout de trente jours.",
     cta: "Passer un entretien",
+    learnMore: "Tout sur l'entretien",
     screenshotAlt:
       "Studio d'entretien CVSpark : sphère vocale animée, compte à rebours et transcription en cours",
-    reportScreenshotAlt:
-      "Rapport d'entretien CVSpark : note globale et radar des cinq dimensions évaluées",
+  },
+  trust: {
+    eyebrow: "Confiance",
+    title: "Votre recherche vous appartient",
+    subtitle: "",
+    items: [
+      {
+        title: "Données pseudonymisées",
+        body: "Votre nom et vos coordonnées sont retirés avant tout appel au modèle, qui ne conserve rien.",
+      },
+      {
+        title: "Sources officielles",
+        body: "Offres, entreprises et chiffres du marché viennent de France Travail et des données publiques de l'État.",
+      },
+      {
+        title: "Voix jamais enregistrée",
+        body: "À l'entretien, chaque réponse est transcrite puis abandonnée.",
+      },
+      {
+        title: "Sans abonnement",
+        body: "Des crédits payés une fois, qui n'expirent jamais. Les offres du jour sont gratuites.",
+      },
+    ],
   },
   showcase: {
     eyebrow: "L'application",
@@ -185,17 +233,10 @@ export const fr: LandingDictionary = {
     subtitle: "Chaque document reste modifiable. L'IA propose, vous décidez.",
     tabs: [
       {
-        id: "dashboard",
-        label: "Tableau de bord",
-        caption:
-          "Vos candidatures, vos crédits et votre activité en un coup d'œil.",
-        alt: "Tableau de bord CVSpark avec indicateurs et graphique d'activité",
-      },
-      {
-        id: "candidatures",
-        label: "Candidatures",
-        caption: "Toutes vos candidatures et leur statut, filtrables.",
-        alt: "Liste des candidatures avec statuts brouillon, envoyée et entretien",
+        id: "daily-offers",
+        label: "Offres du jour",
+        caption: "Votre sélection du matin, chaque offre avec son score.",
+        alt: "Offres du jour avec leur score de correspondance",
       },
       {
         id: "cv-editor",
@@ -204,23 +245,29 @@ export const fr: LandingDictionary = {
         alt: "Éditeur de CV avec aperçu en temps réel",
       },
       {
-        id: "letter-editor",
-        label: "Lettre",
-        caption: "Une lettre adaptée à l'offre, à relire et personnaliser.",
-        alt: "Éditeur de lettre de motivation avec aperçu",
-      },
-      {
         id: "interview-studio",
         label: "Studio d'entretien",
         caption: "Vous parlez, le recruteur répond. Sans bouton à maintenir.",
         alt: "Studio d'entretien avec sphère vocale, compte à rebours et transcription",
       },
       {
-        id: "interview-report",
-        label: "Rapport d'entretien",
+        id: "company-page",
+        label: "Fiche entreprise",
+        caption: "Taille, finances, engagements : savoir chez qui vous postulez.",
+        alt: "Fiche entreprise avec effectif, finances et badges d'engagement",
+      },
+      {
+        id: "dashboard",
+        label: "Tableau de bord",
         caption:
-          "Une note sur dix, cinq dimensions, et ce qu'il faut travailler.",
-        alt: "Rapport d'entretien avec note globale, radar des dimensions et conseils",
+          "Vos candidatures, vos entretiens et votre activité en un coup d'œil.",
+        alt: "Tableau de bord CVSpark avec indicateurs et graphique d'activité",
+      },
+      {
+        id: "candidatures",
+        label: "Candidatures",
+        caption: "Toutes vos candidatures et leur statut, filtrables.",
+        alt: "Liste des candidatures avec statuts brouillon, envoyée et entretien",
       },
     ],
   },
@@ -298,6 +345,16 @@ export const fr: LandingDictionary = {
           "Non. Elle rationalise le travail mécanique : repérer ce qui compte dans l'offre et reformuler votre parcours. Tout reste modifiable, et c'est vous qui validez avant d'envoyer.",
       },
       {
+        question: "Comment CVSpark trouve-t-il les offres du jour ?",
+        answer:
+          "Chaque nuit, CVSpark lit les offres publiées sur France Travail, La bonne alternance et les sites carrière des entreprises, les compare à votre recherche et à votre CV, et garde les meilleures. La sélection est gratuite ; le classement IA, qui explique chaque offre en une phrase, coûte un crédit par matin.",
+      },
+      {
+        question: "Puis-je postuler dans une entreprise qui n'a pas publié d'offre ?",
+        answer:
+          "Oui. CVSpark liste les entreprises qui recrutent dans votre métier près de chez vous, d'après le potentiel d'embauche calculé par France Travail, et prépare une candidature spontanée avec un CV adapté.",
+      },
+      {
         question: "Que deviennent mes données ?",
         answer:
           "À l'import d'un CV, votre nom est pseudonymisé avant d'être transmis à l'IA. Vous pouvez exporter ou supprimer vos données à tout moment.",
@@ -321,11 +378,6 @@ export const fr: LandingDictionary = {
         answer:
           "En français et en anglais. Un CV ou une lettre peut être traduit dans l'autre langue en un clic.",
       },
-      {
-        question: "Quels formats d'export sont disponibles ?",
-        answer:
-          "PDF et Word (DOCX), pour envoyer directement ou retoucher dans votre traitement de texte.",
-      },
     ],
   },
   cta: {
@@ -337,6 +389,7 @@ export const fr: LandingDictionary = {
   },
   footer: {
     tagline: "L'étincelle entre votre profil et l'offre.",
+    features: "Fonctionnalités",
     product: "Produit",
     legal: "Légal",
     company: "CVSpark",
@@ -551,6 +604,7 @@ export const fr: LandingDictionary = {
       },
     },
   },
+  featurePages: featurePagesFr,
   companyCheck: companyCheckFr,
   interviewQuestions: interviewQuestionsFr,
   jobMarket: {

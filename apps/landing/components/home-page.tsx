@@ -1,14 +1,16 @@
 import { Cta } from "@/components/sections/cta"
+import { DailyOffersSpotlight } from "@/components/sections/daily-offers-spotlight"
 import { Faq } from "@/components/sections/faq"
 import { FeaturesBento } from "@/components/sections/features-bento"
 import { FreeTools } from "@/components/sections/free-tools"
 import { Hero } from "@/components/sections/hero"
 import { Interview } from "@/components/sections/interview"
-import { HowItWorks } from "@/components/sections/how-it-works"
+import { Journey } from "@/components/sections/journey"
 import { Pricing } from "@/components/sections/pricing"
 import { Problem } from "@/components/sections/problem"
 import { ProductShowcase } from "@/components/sections/product-showcase"
 import { Testimonials } from "@/components/sections/testimonials"
+import { Trust } from "@/components/sections/trust"
 import { getDictionary } from "@/lib/dictionaries"
 import type { PublicCreditOffer } from "@cvforge/types"
 
@@ -29,11 +31,13 @@ export function HomePage({
     <>
       <Hero hero={dict.hero} locale={locale} />
       <Problem problem={dict.problem} />
-      <HowItWorks howItWorks={dict.howItWorks} />
-      <FreeTools locale={locale} tools={dict.tools} />
-      <FeaturesBento features={dict.features} />
-      <Interview interview={dict.interview} />
+      <Journey journey={dict.journey} locale={locale} />
+      <DailyOffersSpotlight spotlight={dict.spotlight} locale={locale} />
+      <FeaturesBento features={dict.features} locale={locale} />
       <ProductShowcase showcase={dict.showcase} />
+      <Interview interview={dict.interview} locale={locale} />
+      <FreeTools locale={locale} tools={dict.tools} />
+      <Trust trust={dict.trust} />
       {withTestimonials ? (
         <Testimonials testimonials={dict.testimonials} />
       ) : null}

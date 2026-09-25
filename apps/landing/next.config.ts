@@ -42,6 +42,33 @@ export function legalRedirects() {
   ])
 }
 
+/**
+ * The feature pages (US-142), [fr, en], the route folder carrying the English
+ * slug. Kept in step with `featureSlugs` in lib/i18n.ts, which a test
+ * enforces, for the same reason as the legal slugs above.
+ */
+const FEATURE_SLUGS: [fr: string, en: string][] = [
+  ["offres-du-jour", "daily-job-offers"],
+  ["cv-lettre-sur-mesure", "tailored-resume-cover-letter"],
+  ["simulation-entretien", "mock-interview"],
+  ["entreprises-qui-recrutent", "companies-hiring"],
+]
+
+export function featureRedirects() {
+  return FEATURE_SLUGS.flatMap(([fr, en]) => [
+    { source: `/fr/${en}`, destination: `/fr/${fr}`, permanent: true },
+    { source: `/en/${fr}`, destination: `/en/${en}`, permanent: true },
+  ])
+}
+
+/** The page and what hangs below it, such as its share card. */
+export function featureRewrites() {
+  return FEATURE_SLUGS.flatMap(([fr, en]) => [
+    { source: `/fr/${fr}`, destination: `/fr/${en}` },
+    { source: `/fr/${fr}/:path+`, destination: `/fr/${en}/:path+` },
+  ])
+}
+
 const nextConfig: NextConfig = {
   output: "standalone",
   outputFileTracingRoot: new URL("../../", import.meta.url).pathname,
@@ -79,6 +106,7 @@ const nextConfig: NextConfig = {
       // And for the likely interview questions (US-141).
       { source: "/fr/interview-questions", destination: "/fr/questions-entretien", permanent: true },
       { source: "/en/questions-entretien", destination: "/en/interview-questions", permanent: true },
+      ...featureRedirects(),
       ...legalRedirects(),
     ]
   },
@@ -93,6 +121,7 @@ const nextConfig: NextConfig = {
       { source: "/fr/verifier-employeur", destination: "/fr/employer-check" },
       { source: "/fr/verifier-employeur/:path+", destination: "/fr/employer-check/:path+" },
       { source: "/fr/questions-entretien", destination: "/fr/interview-questions" },
+      ...featureRewrites(),
     ]
   },
 }

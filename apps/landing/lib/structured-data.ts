@@ -6,6 +6,7 @@ import {
 } from "@cvforge/types"
 
 import type { Crumb } from "@/components/breadcrumbs"
+import type { FeaturePageDictionary } from "@/content/feature-pages/types"
 import type { LandingDictionary } from "@/content/types"
 import { homePath, type Locale } from "@/lib/i18n"
 import { freeTools, toolsPath } from "@/lib/tools"
@@ -220,6 +221,57 @@ export function companyPageStructuredData({
           ],
           ...(company.createdOn && { foundingDate: company.createdOn }),
         },
+      },
+    ],
+  }
+}
+
+/**
+ * schema.org graph of a feature page (US-142): where it sits, the page as a
+ * view of the CVSpark application, and its FAQ — the answers are in the
+ * server HTML, so search engines read what they announce.
+ */
+export function featurePageStructuredData({
+  base,
+  locale,
+  page,
+  crumbs,
+}: {
+  base: string
+  locale: Locale
+  page: FeaturePageDictionary
+  crumbs: Crumb[]
+}) {
+  const url = `${base}${crumbs[crumbs.length - 1]!.path}`
+
+  return {
+    "@context": "https://schema.org",
+    "@graph": [
+      breadcrumbList(base, crumbs),
+      {
+        "@type": "WebPage",
+        name: page.metaTitle,
+        description: page.metaDescription,
+        url,
+        inLanguage: locale,
+        publisher: { "@id": `${base}/#organization` },
+        about: {
+          "@type": "SoftwareApplication",
+          name: "CVSpark",
+          url: `${base}${homePath(locale)}`,
+          applicationCategory: "BusinessApplication",
+          operatingSystem: "Web",
+          featureList: page.card.name,
+        },
+      },
+      {
+        "@type": "FAQPage",
+        url: `${url}#faq`,
+        mainEntity: page.faq.items.map(({ question, answer }) => ({
+          "@type": "Question",
+          name: question,
+          acceptedAnswer: { "@type": "Answer", text: answer },
+        })),
       },
     ],
   }

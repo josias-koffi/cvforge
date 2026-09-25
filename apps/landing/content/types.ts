@@ -1,6 +1,7 @@
 import type { AiCreditAction, LegalDocumentSlug } from "@cvforge/types"
 
 import type { CompanyCheckDictionary } from "./company-check/types"
+import type { FeaturePagesDictionary } from "./feature-pages/types"
 import type { InterviewQuestionsDictionary } from "./interview-questions/types"
 
 /** Screens captured from apps/web and stored under public/screenshots/{light,dark}. */
@@ -13,6 +14,15 @@ export type ScreenshotName =
   | "interview-studio"
   | "interview-report"
   | "interview-progress"
+  | "daily-offers"
+  | "offer-panel"
+  | "offer-ai"
+  | "job-search"
+  | "search-alerts"
+  | "companies"
+  | "company-page"
+  | "market-radar"
+  | "ats-report"
 
 /** The free tools that are live on the landing (US-135). */
 export type FreeToolKey =
@@ -36,13 +46,13 @@ interface SectionHeading {
 export interface LandingDictionary {
   meta: { title: string; description: string; ogAlt: string }
   nav: {
-    /** Label of the header dropdown grouping everything one reads before deciding. */
+    /** Label of the header menu listing the feature pages (US-147). */
     product: string
+    /** The whole features overview on the home page. */
     features: string
     howItWorks: string
     pricing: string
     faq: string
-    interview: string
     /** The free ATS check: the top of the acquisition funnel. */
     ats: string
     /** The hub listing every free tool (US-135). */
@@ -75,44 +85,47 @@ export interface LandingDictionary {
     before: { label: string; items: string[] }
     after: { label: string; items: string[] }
   }
-  howItWorks: SectionHeading & {
-    steps: TitledText[]
-    diagram: {
-      profile: string
-      offer: string
-      ai: string
-      cv: string
-      letter: string
-    }
+  /**
+   * The search told in four steps — find, apply, rehearse, follow up. Each
+   * step but the last leads to its feature page.
+   */
+  journey: SectionHeading & {
+    steps: (TitledText & { label: string; alt: string })[]
+    learnMore: string
+  }
+  /** The daily offers and their AI ranking, the home page's feature in focus. */
+  spotlight: SectionHeading & {
+    points: TitledText[]
+    cta: string
+    learnMore: string
+    screenshotAlt: string
+    detailAlt: string
   }
   features: SectionHeading & {
     items: Record<
-      | "import"
+      | "offers"
+      | "market"
       | "tailor"
+      | "ats"
+      | "interview"
       | "letter"
-      | "translate"
-      | "tracking"
-      | "export"
-      | "interview",
+      | "companies"
+      | "tracking",
       TitledText
     >
+    learnMore: string
   }
   interview: SectionHeading & {
     /** The five recruiter styles, named as the product names them. */
     profiles: TitledText[]
-    durationsTitle: string
-    /** One line per available length; the product names them, not just times. */
-    durations: string[]
-    report: TitledText & {
-      /** The five scored dimensions of the report. */
-      metrics: string[]
-    }
     /** Audio is never stored: worth saying where people decide to speak. */
     privacyNote: string
     cta: string
+    learnMore: string
     screenshotAlt: string
-    reportScreenshotAlt: string
   }
+  /** Why the product can be trusted with a CV and a job search. */
+  trust: SectionHeading & { items: TitledText[] }
   showcase: SectionHeading & {
     tabs: { id: ScreenshotName; label: string; caption: string; alt: string }[]
   }
@@ -152,6 +165,7 @@ export interface LandingDictionary {
   }
   footer: {
     tagline: string
+    features: string
     product: string
     legal: string
     company: string
@@ -285,6 +299,8 @@ export interface LandingDictionary {
     /** One entry per tool that is live. A tool is added the day its page ships. */
     items: Record<FreeToolKey, { name: string; description: string; tags: string[] }>
   }
+  /** The product feature pages (US-142 to US-146). */
+  featurePages: FeaturePagesDictionary
   /** The free "check an employer" tool (US-139). */
   companyCheck: CompanyCheckDictionary
   /** The free "likely interview questions" tool (US-141). */

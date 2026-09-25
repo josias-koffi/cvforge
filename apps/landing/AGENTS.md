@@ -28,13 +28,17 @@ Public showcase site. Same stack as `apps/web` (Next 16, Tailwind v4, shadcn `ra
 `public/screenshots/{light,dark}/<name>.webp`, named after `ScreenshotName` in `content/types.ts`. **Never re-shoot them by hand — run the script:**
 
 ```bash
-pnpm --filter @cvforge/landing capture              # all sixteen
+pnpm --filter @cvforge/landing capture              # all seventeen, both themes
 pnpm --filter @cvforge/landing capture cv-editor    # one screen, both themes
 ```
 
 `scripts/capture-screenshots.mjs` needs the local stack up (`docker compose up -d postgres redis`, `pnpm dev`) and the `cvspark-demo@yopmail.com` account seeded. It signs its own session cookie with `AUTH_SESSION_SECRET` instead of going through a magic link, resolves the records to shoot from the API so a re-seed does not break it, hides the dev overlay and the scrollbars, and swaps the demo address for `lea.moreau@example.com` before the shutter — nothing that identifies the mailbox reaches the landing page.
 
 Captures are 1440×900 at `deviceScaleFactor: 2`, so 2880×1800 on disk. That is deliberate: the widest slot on the page is 1152 CSS px, which needs 2304 source pixels on a retina screen. The 1x captures this replaced were upscaled by the browser and looked soft. `SCREENSHOT_WIDTH`/`SCREENSHOT_HEIGHT` in `components/screenshot.tsx` must match.
+
+Close-ups (`offer-ai`, `search-alerts`, `market-radar`, `ats-report`) crop one or a few cards out of the page at `deviceScaleFactor: 3`, so they stay sharp once enlarged. Their size depends on the component, so the script records every capture's size in `lib/screenshot-sizes.json`, which `components/screenshot.tsx` reads; a close-up wider than 1.9:1 is shown full width on the feature pages. The script also writes `assets/og/<name>.jpg` for the captures the share cards show (`lib/og-image.tsx`): ImageResponse cannot decode WebP.
+
+The job-search screens need the demo account's search to be set up once — search project on the developer profile (Paris, AI ranking on, e-mail off), then a digest run (`pnpm --filter @cvforge/api job-digest:run -- --force`), `hiring-companies:refresh` and `market:refresh`. The ATS report needs one scan unlocked with the demo address (the public `POST /public/ats-scan` with the demo CV exported as DOCX, then `/unlock`).
 
 The studio (`interview-studio`) only renders while a session is unfinished, and the seeded interviews are all completed — so the script rewinds one row in `interview_sessions` for the length of that single shot and restores it afterwards, with a fake microphone so the orb reaches "je vous écoute".
 

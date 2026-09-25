@@ -13,6 +13,15 @@ const SCREEN_PATHS: Record<ScreenshotName, string> = {
   "interview-studio": "/entretiens",
   "interview-report": "/entretiens/rapport",
   "interview-progress": "/entretiens/progression",
+  "daily-offers": "/offres-du-jour",
+  "offer-panel": "/offres-du-jour",
+  "offer-ai": "/offres-du-jour",
+  "job-search": "/offres",
+  "search-alerts": "/ma-recherche/alertes",
+  companies: "/entreprises",
+  "company-page": "/entreprises/fiche",
+  "market-radar": "/ma-recherche/marche",
+  "ats-report": "/analyses-ats",
 }
 
 export function ProductShowcase({

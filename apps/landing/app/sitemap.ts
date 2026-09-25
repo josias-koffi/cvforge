@@ -6,6 +6,7 @@ import { legalPath } from "@/lib/legal"
 import { siteUrl } from "@/lib/site"
 import { companyPagePath, fetchCompanyPages } from "@/lib/company-pages"
 import { fetchMarketPages, marketPagePath } from "@/lib/market-pages"
+import { featurePages } from "@/lib/features"
 import { freeTools, toolsPath } from "@/lib/tools"
 
 /**
@@ -28,6 +29,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ])
   const pages: LocalizedPage[] = [
     { path: homePath, priority: 1 },
+    // The feature pages carry the product's search queries, just under home.
+    ...featurePages.map(({ path }) => ({ path, priority: 0.9 })),
     // The free tools are the top of the acquisition funnel, so they rank
     // just below the home page rather than alongside the story.
     ...freeTools.map(({ path }) => ({ path, priority: 0.8 })),
