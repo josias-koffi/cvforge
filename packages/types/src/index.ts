@@ -4,6 +4,7 @@ export * from "./departments";
 export * from "./documents";
 export * from "./grounding";
 export * from "./acquisition";
+export * from "./admin-metrics";
 export * from "./ai-usage";
 export * from "./companies";
 export * from "./company-check";

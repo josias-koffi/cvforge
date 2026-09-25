@@ -1,37 +1,85 @@
-import { Controller, Get, Header, Inject, Req, StreamableFile } from "@nestjs/common";
+import {
+  Controller,
+  Get,
+  Header,
+  Inject,
+  Query,
+  Req,
+  StreamableFile,
+} from "@nestjs/common";
+import type {
+  AcquisitionMetrics,
+  AiCostMetrics,
+  MarketMetrics,
+  OverviewMetrics,
+  RevenueMetrics,
+  UsageMetrics,
+} from "@cvforge/types";
 import { OPENROUTER_BALANCE_SERVICE } from "../ai/openrouter.module";
 import type { OpenRouterBalanceService } from "../ai/openrouter-balance.service";
 import { AuthService } from "../auth/auth.service";
 import { requireAdminSession, type CookieRequest } from "../auth/request-session";
+import { CockpitService } from "./cockpit.service";
 import { buildMetricsCsv, buildMetricsCsvFilename } from "./metrics-csv";
-import { MetricsService } from "./metrics.service";
-import type { AdminMetrics, OpenRouterBalanceResponse } from "./metrics.types";
+import type { OpenRouterBalanceResponse } from "./metrics.types";
+import { parsePeriod, resolveWindow } from "./shared/metrics-window";
 
+/**
+ * The admin cockpit (E26): one route per tab, each over `?period=`. Every
+ * route checks the admin session itself, as the rest of the admin API does.
+ */
 @Controller("admin/metrics")
 export class AdminMetricsController {
   constructor(
     @Inject(AuthService) private readonly authService: AuthService,
     @Inject(OPENROUTER_BALANCE_SERVICE)
     private readonly balanceService: OpenRouterBalanceService,
-    @Inject(MetricsService) private readonly metricsService: MetricsService,
+    @Inject(CockpitService) private readonly cockpit: CockpitService,
   ) {}
 
-  @Get()
-  async readMetrics(@Req() request: CookieRequest): Promise<AdminMetrics> {
+  private windowFor(request: CookieRequest, period: unknown) {
     requireAdminSession(this.authService, request);
+    return resolveWindow(parsePeriod(period));
+  }
 
-    return this.metricsService.readAdminMetrics();
+  @Get("overview")
+  async readOverview(@Req() request: CookieRequest, @Query("period") period?: string): Promise<OverviewMetrics> {
+    return this.cockpit.overview.read(this.windowFor(request, period));
+  }
+
+  @Get("revenue")
+  async readRevenue(@Req() request: CookieRequest, @Query("period") period?: string): Promise<RevenueMetrics> {
+    return this.cockpit.revenue.read(this.windowFor(request, period));
+  }
+
+  @Get("ai-costs")
+  async readAiCosts(@Req() request: CookieRequest, @Query("period") period?: string): Promise<AiCostMetrics> {
+    return this.cockpit.aiCosts.read(this.windowFor(request, period));
+  }
+
+  @Get("usage")
+  async readUsage(@Req() request: CookieRequest, @Query("period") period?: string): Promise<UsageMetrics> {
+    return this.cockpit.usage.read(this.windowFor(request, period));
+  }
+
+  @Get("market")
+  async readMarket(@Req() request: CookieRequest, @Query("period") period?: string): Promise<MarketMetrics> {
+    return this.cockpit.market.read(this.windowFor(request, period));
+  }
+
+  @Get("acquisition")
+  async readAcquisition(@Req() request: CookieRequest, @Query("period") period?: string): Promise<AcquisitionMetrics> {
+    return this.cockpit.acquisition.read(this.windowFor(request, period));
   }
 
   @Get("export.csv")
   @Header("Cache-Control", "no-store")
-  async exportMetricsCsv(@Req() request: CookieRequest) {
-    requireAdminSession(this.authService, request);
+  async exportMetricsCsv(@Req() request: CookieRequest, @Query("period") period?: string) {
+    const window = this.windowFor(request, period);
+    const snapshot = await this.cockpit.snapshot(window);
 
-    const metrics = await this.metricsService.readAdminMetrics();
-
-    return new StreamableFile(Buffer.from(buildMetricsCsv(metrics), "utf8"), {
-      disposition: `attachment; filename="${buildMetricsCsvFilename(metrics.generatedAt)}"`,
+    return new StreamableFile(Buffer.from(buildMetricsCsv(snapshot), "utf8"), {
+      disposition: `attachment; filename="${buildMetricsCsvFilename(snapshot.overview.window.generatedAt, window.period)}"`,
       type: "text/csv; charset=utf-8",
     });
   }
