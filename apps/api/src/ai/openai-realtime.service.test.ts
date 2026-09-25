@@ -78,6 +78,7 @@ describe("OpenAiRealtimeService", () => {
       },
       instructions: "Brief",
       model: "gpt-realtime-2.1-mini",
+      truncation: { token_limits: { post_instructions: 8_000 }, type: "retention_ratio" },
       tools: [expect.objectContaining({ name: "end_interview", type: "function" })],
       type: "realtime",
     });

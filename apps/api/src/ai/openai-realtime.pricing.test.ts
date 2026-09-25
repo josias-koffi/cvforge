@@ -55,10 +55,30 @@ describe("priceResponseUsage", () => {
 });
 
 describe("priceTranscriptionUsage", () => {
+  it("prices the tokens the GPT-4o transcribers report", () => {
+    // What gpt-4o-mini-transcribe actually sends: no duration at all.
+    expect(
+      priceTranscriptionUsage("gpt-4o-mini-transcribe", {
+        input_tokens: 1_000,
+        output_tokens: 200,
+        type: "tokens",
+      }),
+    ).toEqual({ costUsd: 0.00225, inputTokens: 1_000, outputTokens: 200 });
+  });
+
   it("prices a duration by the minute", () => {
-    expect(priceTranscriptionUsage({ seconds: 30, type: "duration" })).toBeCloseTo(
-      0.0015,
-    );
-    expect(priceTranscriptionUsage({ input_tokens: 10, type: "tokens" })).toBe(0);
+    expect(
+      priceTranscriptionUsage("whisper-1", { seconds: 30, type: "duration" })
+        .costUsd,
+    ).toBeCloseTo(0.003);
+  });
+
+  it("counts an unknown model's tokens at zero dollars", () => {
+    expect(
+      priceTranscriptionUsage("new-transcriber", {
+        input_tokens: 10,
+        type: "tokens",
+      }),
+    ).toEqual({ costUsd: 0, inputTokens: 10, outputTokens: 0 });
   });
 });

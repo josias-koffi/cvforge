@@ -176,6 +176,7 @@ export function useRealtimeCall({
       track.enabled = !mutedRef.current
       peer.addTrack(track, stream)
     }
+    preferRedundantAudio(peer)
 
     const mic = watchMicrophone(stream)
     call.context = mic?.context ?? null
@@ -288,6 +289,32 @@ export function useRealtimeCall({
   React.useEffect(() => hangup, [hangup])
 
   return { connect, hangup, pause }
+}
+
+/**
+ * Asks for redundant audio (RED, RFC 2198): each packet also carries the one
+ * before it, so a lost packet is rebuilt from the next instead of invented.
+ * Measured on 2026-09-25: 1.4% of the voice's packets lost at 1 ms jitter —
+ * loss, not lateness, which a deeper jitter buffer cannot fix. Opus alone
+ * stays in the list: a far side without RED answers with plain Opus.
+ */
+function preferRedundantAudio(peer: RTCPeerConnection) {
+  const capabilities = RTCRtpReceiver.getCapabilities?.("audio")
+  const [transceiver] = peer.getTransceivers()
+  if (!capabilities || !transceiver?.setCodecPreferences) return
+
+  const isRed = (codec: RTCRtpCodec) => codec.mimeType.toLowerCase() === "audio/red"
+  const red = capabilities.codecs.filter(isRed)
+  if (red.length === 0) return
+
+  try {
+    transceiver.setCodecPreferences([
+      ...red,
+      ...capabilities.codecs.filter((codec) => !isRed(codec)),
+    ])
+  } catch {
+    // An unusual codec list is no reason to lose the call.
+  }
 }
 
 /**

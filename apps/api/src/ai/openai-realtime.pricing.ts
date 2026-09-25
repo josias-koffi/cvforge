@@ -35,8 +35,15 @@ const RATES: Record<string, Rates> = {
   },
 };
 
-/** `gpt-4o-mini-transcribe`, billed on the audio it hears. */
-const TRANSCRIPTION_USD_PER_MINUTE = 0.003;
+/**
+ * The candidate's transcription, dollars per million tokens. The GPT-4o
+ * transcribers report tokens; Whisper reports a duration, billed by the minute.
+ */
+const TRANSCRIPTION_RATES: Record<string, { in: number; out: number }> = {
+  "gpt-4o-mini-transcribe": { in: 1.25, out: 5 },
+  "gpt-4o-transcribe": { in: 2.5, out: 10 },
+};
+const WHISPER_USD_PER_MINUTE = 0.006;
 
 export type RealtimeUsage = {
   inputTokens: number;
@@ -106,13 +113,30 @@ export function priceResponseUsage(
   return { costUsd, inputTokens, outputTokens };
 }
 
-/** The candidate's transcription, when the event reports it as a duration. */
-export function priceTranscriptionUsage(usage: unknown): number {
+/** One transcription's `usage` to tokens and dollars, whichever shape it has. */
+export function priceTranscriptionUsage(
+  model: string,
+  usage: unknown,
+): RealtimeUsage {
   const raw = record(usage);
+  if (raw.type === "duration") {
+    return {
+      ...NO_REALTIME_USAGE,
+      costUsd: (count(raw.seconds) / 60) * WHISPER_USD_PER_MINUTE,
+    };
+  }
 
-  return raw.type === "duration"
-    ? (count(raw.seconds) / 60) * TRANSCRIPTION_USD_PER_MINUTE
-    : 0;
+  const inputTokens = count(raw.input_tokens);
+  const outputTokens = count(raw.output_tokens);
+  const rates = TRANSCRIPTION_RATES[model];
+
+  return {
+    costUsd: rates
+      ? (inputTokens * rates.in + outputTokens * rates.out) / 1_000_000
+      : 0,
+    inputTokens,
+    outputTokens,
+  };
 }
 
 export function addUsage(

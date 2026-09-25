@@ -17,7 +17,7 @@ import {
 } from "../ai/ai-usage";
 import type { OpenAiRealtimeService } from "../ai/openai-realtime.service";
 import { InterviewCall, OVERTIME_GRACE_MS } from "./interview-call";
-import { buildSessionPrompt } from "./interview.session-prompt";
+import { buildSessionPrompt, coveredGroundOf } from "./interview.session-prompt";
 import { nowIso } from "./interview.stats";
 import type { InterviewStore } from "./interview.types";
 
@@ -88,7 +88,7 @@ export class InterviewRealtimeService {
       offerSdp,
       safetyIdentifier: createHash("sha256").update(userEmail).digest("hex").slice(0, 32),
       session: this.realtime.buildSession({
-        instructions: buildSessionPrompt(session),
+        instructions: buildSessionPrompt(session, coveredGroundOf(session)),
         language: session.language === "en" ? "en" : "fr",
       }),
     });
@@ -96,6 +96,7 @@ export class InterviewRealtimeService {
     const call = new InterviewCall(session, {
       hangup: () => this.realtime.hangup(callId),
       model: this.realtime.model,
+      transcriptionModel: this.realtime.transcriptionModel,
       onUsage: ({ feature, usage }) => {
         if (usage.costUsd === 0 && usage.inputTokens === 0) return;
         recordUsage(this.usageRecorder, {

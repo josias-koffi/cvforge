@@ -16,10 +16,15 @@ export type AudioQuality = {
   jitterMs: number
   /** Share of the voice the browser had to invent, in percent. */
   concealedPct: number
+  /** "audio/red" when lost packets can be rebuilt, "audio/opus" otherwise. */
+  codec: string | null
 }
 
 type InboundAudio = {
+  id?: string
   type?: string
+  codecId?: string
+  mimeType?: string
   kind?: string
   mediaType?: string
   packetsReceived?: number
@@ -36,24 +41,28 @@ const percent = (part: number, whole: number) =>
 export function readAudioQuality(
   reports: Iterable<InboundAudio>
 ): AudioQuality | null {
-  for (const report of reports) {
-    if (report.type !== "inbound-rtp") continue
-    if ((report.kind ?? report.mediaType) !== "audio") continue
+  const all = [...reports]
+  const report = all.find(
+    (entry) =>
+      entry.type === "inbound-rtp" && (entry.kind ?? entry.mediaType) === "audio"
+  )
+  if (!report) return null
 
-    const received = report.packetsReceived ?? 0
-    const lost = Math.max(0, report.packetsLost ?? 0)
+  const received = report.packetsReceived ?? 0
+  const lost = Math.max(0, report.packetsLost ?? 0)
+  const codec = all.find(
+    (entry) => entry.type === "codec" && entry.id === report.codecId
+  )
 
-    return {
-      concealedPct: percent(
-        report.concealedSamples ?? 0,
-        report.totalSamplesReceived ?? 0
-      ),
-      jitterMs: Math.round((report.jitter ?? 0) * 1000),
-      lossPct: percent(lost, received + lost),
-      packetsLost: lost,
-      packetsReceived: received,
-    }
+  return {
+    codec: codec?.mimeType ?? null,
+    concealedPct: percent(
+      report.concealedSamples ?? 0,
+      report.totalSamplesReceived ?? 0
+    ),
+    jitterMs: Math.round((report.jitter ?? 0) * 1000),
+    lossPct: percent(lost, received + lost),
+    packetsLost: lost,
+    packetsReceived: received,
   }
-
-  return null
 }

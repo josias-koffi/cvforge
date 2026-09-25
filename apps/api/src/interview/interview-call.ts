@@ -15,7 +15,11 @@ import {
   type RealtimeUsage,
 } from "../ai/openai-realtime.pricing";
 import { buildOpeningInstruction, buildResumeInstruction } from "./interview.prompts";
-import { buildSessionPrompt, isInterviewOver } from "./interview.session-prompt";
+import {
+  buildSessionPrompt,
+  coveredGroundOf,
+  isInterviewOver,
+} from "./interview.session-prompt";
 import {
   appendMessage,
   joinTranscript,
@@ -48,6 +52,7 @@ type Item = {
 
 export type InterviewCallDeps = {
   model: string;
+  transcriptionModel: string;
   save: (session: StoredInterviewSession) => Promise<unknown>;
   hangup: () => Promise<void>;
   onUsage: (entry: {
@@ -93,6 +98,8 @@ export class InterviewCall {
   private truncated = 0;
   private closing = false;
   private ended = false;
+  /** Held for the whole call: see `coveredGroundOf`. */
+  private readonly coveredGround: string | null;
   private endedBy: InterviewCallSummary["endedBy"] = "server";
   /** Why this side is hanging up, set before the hangup echoes back as a close. */
   private hangingUpBy: InterviewCallSummary["endedBy"] | null = null;
@@ -112,6 +119,7 @@ export class InterviewCall {
     this.clearTimer =
       deps.clearTimer ?? ((timer) => clearTimeout(timer as NodeJS.Timeout));
     this.callStartedMs = this.now();
+    this.coveredGround = coveredGroundOf(session);
     this.scheduleOvertime();
   }
 
@@ -124,7 +132,7 @@ export class InterviewCall {
    * after a drop is handed the conversation so far instead of a greeting.
    */
   open() {
-    const instructions = buildSessionPrompt(this.session);
+    const instructions = buildSessionPrompt(this.session, this.coveredGround);
     this.instructions = instructions;
 
     if (this.session.messages.length === 0) {
@@ -182,10 +190,10 @@ export class InterviewCall {
         this.resolve(event.item_id, "user", stringOf(event.transcript));
         this.deps.onUsage({
           feature: "interview_transcription",
-          usage: {
-            ...NO_REALTIME_USAGE,
-            costUsd: priceTranscriptionUsage(event.usage),
-          },
+          usage: priceTranscriptionUsage(
+            this.deps.transcriptionModel,
+            event.usage,
+          ),
         });
         break;
 
@@ -277,7 +285,7 @@ export class InterviewCall {
     // Steered after a reply only when the agenda has actually moved: new
     // instructions void the prompt cache, and the next reply has to re-read
     // the whole conversation before it can speak.
-    const instructions = buildSessionPrompt(this.session);
+    const instructions = buildSessionPrompt(this.session, this.coveredGround);
     if (instructions !== this.instructions) {
       this.instructions = instructions;
       this.send({

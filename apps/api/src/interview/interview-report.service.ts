@@ -2,7 +2,7 @@ import type {
   InterviewReport,
   InterviewReportMetric,
 } from "@cvforge/types";
-import { Injectable, ServiceUnavailableException } from "@nestjs/common";
+import { Injectable, Logger, ServiceUnavailableException } from "@nestjs/common";
 import { withOpenRouterHttpErrors } from "../ai/openrouter.exception";
 import type { OpenRouterService } from "../ai/openrouter.service";
 import type { StoredApplication } from "../applications/applications.types";
@@ -27,8 +27,16 @@ const INTERVIEW_CHAT_PROVIDER = {
  * was cut mid-string and `JSON.parse` threw, so finishing an interview failed
  * outright — seven times in one afternoon, always around 2 300 characters.
  * The candidate had already paid for the session and could not get a report.
+ *
+ * A report that fits takes 300 to 900 tokens. The ones cut at 1200 and then
+ * at 2500 on 2026-09-25 were runaways — the same transcript, asked again,
+ * came back whole in 325 to 858 — so the ceiling now only cuts a runaway
+ * short, and the answer is asked for once more (`REPORT_ATTEMPTS`).
  */
-const REPORT_MAX_TOKENS = 1200;
+const REPORT_MAX_TOKENS = 1500;
+
+/** A runaway is rare and does not repeat: one more ask costs $0.0005. */
+const REPORT_ATTEMPTS = 2;
 
 const METRIC_KEYS = new Set([
   "clarity",
@@ -61,20 +69,15 @@ type ParsedReport = {
 };
 
 /**
- * A malformed answer is a failed call, not a crash.
- *
- * Raw `JSON.parse` surfaced as `SyntaxError: Unterminated string in JSON at
- * position 2300` — a 500 with no bearing on what the candidate should do. The
- * session stays unfinished either way, so the credit is not lost and they can
- * try again; this only says so in words they can act on.
+ * A malformed answer is a failed call, not a crash: null, asked again, and
+ * past that a 503 in words the candidate can act on. Raw `JSON.parse` used to
+ * surface as `SyntaxError: Unterminated string in JSON at position 2300`.
  */
-function parseReport(raw: string): ParsedReport {
+function parseReport(raw: string): ParsedReport | null {
   try {
     return JSON.parse(raw) as ParsedReport;
   } catch {
-    throw new ServiceUnavailableException(
-      "L'analyse de l'entretien n'a pas abouti. Reessayez dans un instant.",
-    );
+    return null;
   }
 }
 
@@ -94,6 +97,8 @@ function trimmed(value: unknown) {
  */
 @Injectable()
 export class InterviewReportService {
+  private readonly logger = new Logger(InterviewReportService.name);
+
   constructor(private readonly openRouter: OpenRouterService) {}
 
   async generate(
@@ -103,7 +108,40 @@ export class InterviewReportService {
     const createdAt = nowIso();
     const transcriptStats = buildTranscriptStats(session, application);
 
-    const raw = await withOpenRouterHttpErrors(() =>
+    let parsed: ParsedReport | null = null;
+    for (let attempt = 1; !parsed && attempt <= REPORT_ATTEMPTS; attempt += 1) {
+      parsed = parseReport(await this.ask(session, application, transcriptStats));
+      if (!parsed) {
+        this.logger.warn(
+          `interview.report unreadable session=${session.id} attempt=${attempt}`,
+        );
+      }
+    }
+    if (!parsed) {
+      // The session stays unfinished, so the credit is not lost.
+      throw new ServiceUnavailableException(
+        "L'analyse de l'entretien n'a pas abouti. Reessayez dans un instant.",
+      );
+    }
+
+    return {
+      createdAt,
+      improvements: Array.isArray(parsed.improvements)
+        ? parsed.improvements.map(trimmed).filter((item) => item.length > 0)
+        : [],
+      metrics: normalizeMetrics(parsed.metrics),
+      overallScore: clampScore(parsed.overallScore),
+      summary: trimmed(parsed.summary),
+      transcriptStats,
+    };
+  }
+
+  private ask(
+    session: StoredInterviewSession,
+    application: StoredApplication | null,
+    transcriptStats: InterviewReport["transcriptStats"],
+  ) {
+    return withOpenRouterHttpErrors(() =>
       this.openRouter.chat(
         [
           {
@@ -139,19 +177,6 @@ export class InterviewReportService {
         },
       ),
     );
-
-    const parsed = parseReport(raw);
-
-    return {
-      createdAt,
-      improvements: Array.isArray(parsed.improvements)
-        ? parsed.improvements.map(trimmed).filter((item) => item.length > 0)
-        : [],
-      metrics: normalizeMetrics(parsed.metrics),
-      overallScore: clampScore(parsed.overallScore),
-      summary: trimmed(parsed.summary),
-      transcriptStats,
-    };
   }
 }
 

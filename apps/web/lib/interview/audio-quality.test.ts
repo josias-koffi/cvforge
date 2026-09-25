@@ -7,7 +7,9 @@ describe("readAudioQuality", () => {
     expect(
       readAudioQuality([
         { kind: "audio", type: "outbound-rtp", packetsLost: 99 },
+        { id: "c1", mimeType: "audio/red", type: "codec" },
         {
+          codecId: "c1",
           concealedSamples: 4_800,
           jitter: 0.034,
           kind: "audio",
@@ -18,6 +20,7 @@ describe("readAudioQuality", () => {
         },
       ])
     ).toEqual({
+      codec: "audio/red",
       concealedPct: 5,
       jitterMs: 34,
       lossPct: 2,

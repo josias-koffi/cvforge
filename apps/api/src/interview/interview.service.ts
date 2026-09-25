@@ -9,6 +9,7 @@ import {
   isInterviewDuration,
   type Locale,
   type InterviewRecruiterProfile,
+  type InterviewSessionSummary,
 } from "@cvforge/types";
 import { randomUUID } from "node:crypto";
 import {
@@ -42,6 +43,8 @@ export class InterviewService {
   ) {}
 
   private readonly logger = new Logger(InterviewService.name);
+  /** Reports being written, so a second ask joins the first. */
+  private readonly finishing = new Map<string, Promise<InterviewSessionSummary>>();
 
   /**
    * The most recent session this user opened and never used, if it is still
@@ -174,12 +177,31 @@ export class InterviewService {
     };
   }
 
+  /**
+   * Scores the session, once. The studio can ask twice — the clock and the
+   * recruiter's goodbye both finish it, and a candidate can click too — and
+   * each ask used to pay for its own report: a second one in flight joins the
+   * first, and a scored session returns the report it has.
+   */
   finishSession(userEmail: string, sessionId: string) {
-    return this.finishSessionInternal(userEmail, sessionId);
+    const key = `${userEmail}\u0000${sessionId}`;
+    const pending = this.finishing.get(key);
+    if (pending) return pending;
+
+    const finishing = this.finishSessionInternal(userEmail, sessionId).finally(
+      () => this.finishing.delete(key),
+    );
+    this.finishing.set(key, finishing);
+
+    return finishing;
   }
 
   private async finishSessionInternal(userEmail: string, sessionId: string) {
     const session = await this.getOwnedSession(userEmail, sessionId);
+
+    if (session.status === INTERVIEW_SESSION_STATUS_COMPLETED && session.report) {
+      return summarizeInterviewSession(session);
+    }
 
     if (!session.transcript.trim()) {
       throw new BadRequestException(

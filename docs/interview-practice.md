@@ -95,6 +95,11 @@ comes back as one. Three things are the call's own job:
   OpenAI's side and the reply is truncated where it was heard.
 - **Playback** needs no jitter buffer or PCM decoding on our side.
 
+The browser asks for redundant audio (RED) ahead of plain Opus: each packet
+also carries the previous one, so a lost packet is rebuilt rather than
+invented, which is what makes the voice crackle. When a call ends, the console
+prints `[interview] audio {codec, lossPct, jitterMs, concealedPct, …}`.
+
 The browser never holds the key or the brief:
 
 1. `useRealtimeCall` posts its SDP offer to
@@ -128,8 +133,17 @@ The mini costs roughly $0.15–0.30 for ten minutes, against the €0.34–0.66
 that ten credits sell for. The full `gpt-realtime-2.1` is about three times
 that and does not fit the price.
 
+Every reply re-reads the whole conversation, so the prompt cache is what keeps
+it affordable. Anything that changes the instructions voids that cache. They
+are therefore resent only when the agenda phase changes, and the "already
+covered" line is worked out once per call. Recomputed after every reply, that
+line pushed a ten-minute interview to $0.39. Past 8,000 tokens of conversation
+(about eight minutes), the oldest 30% are dropped in one cut, so that 20- and
+30-minute interviews cost no more per reply than a 10-minute one.
+
 Every reply is priced from its `usage` (`openai-realtime.pricing.ts`) and
-filed in the AI cockpit as `interview_voice`. Each call ends with one log line:
+filed in the AI cockpit as `interview_voice`, and each transcription of the
+candidate as `interview_transcription`. Each call ends with one log line:
 `interview.call session=… endedBy=… responses=… interrupted=… costUsd=…`.
 
 **How the interview ends.** The recruiter has one tool, `end_interview`,

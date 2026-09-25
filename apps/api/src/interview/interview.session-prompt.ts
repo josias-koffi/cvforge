@@ -26,22 +26,39 @@ const END_TOOL_INSTRUCTIONS = {
 } as const;
 
 /**
- * The recruiter's brief as it stands now: who it is, the job, and where the
- * interview has got to. Recomputed after every reply, because the phase moves.
+ * What fell out of the replayed history, so it is not asked twice.
+ *
+ * Only a call that comes back after a pause or a drop needs it: a live call
+ * holds the whole conversation at OpenAI. It is worked out once per call and
+ * held: recomputed after every reply, it changed with every message past the
+ * window, the instructions changed with it, and each change voided the prompt
+ * cache — every reply re-read the whole conversation at full audio price.
  */
-export function buildSessionPrompt(session: StoredInterviewSession): string {
+export function coveredGroundOf(session: StoredInterviewSession): string | null {
   const window = selectPromptMessages(session.messages);
   const dropped = session.messages.filter(
     (message) => !window.includes(message),
   );
 
+  return summarizeCoveredGround(dropped, session.language === "en" ? "en" : "fr");
+}
+
+/**
+ * The recruiter's brief as it stands now: who it is, the job, and where the
+ * interview has got to. Recomputed after every reply, because the phase moves;
+ * it only changes when the phase does.
+ */
+export function buildSessionPrompt(
+  session: StoredInterviewSession,
+  coveredGround: string | null,
+): string {
   const locale = session.language === "en" ? "en" : "fr";
 
   return [
     buildTurnPrompt({
       agendaState: agendaStateOf(session),
       context: session.context,
-      coveredGround: summarizeCoveredGround(dropped, locale),
+      coveredGround,
       language: session.language,
       profile: session.profile,
     }),

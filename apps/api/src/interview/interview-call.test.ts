@@ -4,7 +4,8 @@ import { CLOSING_GRACE_MS, InterviewCall, OVERTIME_GRACE_MS } from "./interview-
 import type { StoredInterviewSession } from "./interview.types";
 
 const sessionPrompt = vi.hoisted(() => ({
-  buildSessionPrompt: vi.fn(() => "BRIEF"),
+  buildSessionPrompt: vi.fn((_session: unknown, _covered: string | null) => "BRIEF"),
+  coveredGroundOf: vi.fn((): string | null => null),
   isInterviewOver: vi.fn(() => false),
 }));
 vi.mock("./interview.session-prompt", () => sessionPrompt);
@@ -50,6 +51,7 @@ function setup(session = makeSession()) {
     clearTimer: vi.fn(),
     hangup: vi.fn().mockResolvedValue(undefined),
     model: "gpt-realtime-2.1-mini",
+    transcriptionModel: "gpt-4o-mini-transcribe",
     now: () => new Date("2026-09-25T10:00:00.000Z").getTime(),
     onUsage: vi.fn(),
     save: vi.fn().mockResolvedValue(undefined),
@@ -95,6 +97,7 @@ const heard = (id: string, transcript: string) => ({
 
 describe("InterviewCall", () => {
   beforeEach(() => {
+    vi.clearAllMocks();
     sessionPrompt.isInterviewOver.mockReturnValue(false);
   });
 
@@ -183,6 +186,24 @@ describe("InterviewCall", () => {
       session: { instructions: "NEXT PHASE", type: "realtime" },
       type: "session.update",
     });
+  });
+
+  it("keeps what was already covered fixed for the whole call", () => {
+    // Recomputed per reply, it moved with every message past the window and
+    // voided the cache on every single reply.
+    sessionPrompt.coveredGroundOf.mockReturnValueOnce("Deja aborde: parcours");
+    const { call } = setup();
+    call.open();
+
+    call.handle(added("a1", "assistant"));
+    call.handle(replied("a1", "Bonjour."));
+    call.handle(added("a2", "assistant"));
+    call.handle(replied("a2", "Et ensuite ?"));
+
+    expect(sessionPrompt.coveredGroundOf).toHaveBeenCalledTimes(1);
+    for (const [, covered] of sessionPrompt.buildSessionPrompt.mock.calls) {
+      expect(covered).toBe("Deja aborde: parcours");
+    }
   });
 
   it("counts interruptions apart from replies the token ceiling cut", async () => {

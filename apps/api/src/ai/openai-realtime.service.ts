@@ -45,6 +45,22 @@ const SOCKET_OPEN = 1;
 const CREATE_CALL_TIMEOUT_MS = 10_000;
 
 /**
+ * How much conversation each reply may re-read, in tokens after the
+ * instructions — about eight minutes of talk. Every reply pays for the whole
+ * conversation again, so a 30-minute interview would otherwise cost several
+ * times a 10-minute one. Past it, the oldest turns go; the recruiter still
+ * knows what was covered from the agenda.
+ */
+const CONTEXT_TOKEN_LIMIT = 8_000;
+
+/**
+ * The share kept when that limit is hit. Dropping turns voids the prompt
+ * cache, so a cut goes deep enough not to come round again for minutes,
+ * rather than a turn at a time on every reply.
+ */
+const CONTEXT_RETENTION_RATIO = 0.7;
+
+/**
  * Node's own WebSocket (undici) accepts headers as a non-standard init field,
  * which is how the API key travels without ever reaching the browser.
  */
@@ -130,6 +146,11 @@ export class OpenAiRealtimeService {
       instructions: input.instructions,
       max_output_tokens: this.config.maxOutputTokens,
       tool_choice: "auto",
+      truncation: {
+        retention_ratio: CONTEXT_RETENTION_RATIO,
+        token_limits: { post_instructions: CONTEXT_TOKEN_LIMIT },
+        type: "retention_ratio",
+      },
       tools: [
         {
           description:
