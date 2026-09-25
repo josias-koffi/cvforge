@@ -28,6 +28,7 @@
 | E17 ✅ | 023 | Gestion utilisateurs avancée (admin) | Recherche/filtres/pagination serveur, fiche utilisateur complète, suspension, suppression RGPD vérifiée, rétrogradation admin→user uniquement, journal d'audit, révocation de session | 023 | Complète vision `§13.2`/`§15.1` ; US-093 contraint par vision `§3.2` |
 | E18 ✅ | 024 | Score ATS (produit d'appel + in-app) | Un visiteur non authentifié scanne son CV sur la landing, obtient un score et 3 points gratuitement, et déverrouille le rapport contre son email — ce qui lui crée un compte ; en in-app, chaque CV généré porte un badge de score gratuit | 024 | Complète vision `§7.1`, `§7.4`, `§12.2`, `§12.3`, `§8.1` ; **la page publique est hors vision** — décision produit du 2026-09-22 |
 | E23 | 029-030 | Outils gratuits d'acquisition sur la landing | Quatre outils sans compte en plus du scan ATS (comparateur CV ↔ offre, métier qui recrute + salaire, vérification d'employeur, questions d'entretien probables) ; chacun donne un résultat utile, puis convertit par email en un compte pré-rempli avec ce que le visiteur a saisi ; le tunnel de chaque outil est mesuré de la vue à l'activation du compte | 029-030 | **Hors vision** — décision produit du 2026-09-24 ; prolonge E18 (ADR-022) et exploite E19-E21 (ADR-024 §3 : les données France Travail restent gratuites) |
+| E24 | 031 | Landing : vitrine complète et pages fonctionnalités | L'accueil présente toute la recherche (offres du jour, CV et lettre, entretien, entreprises et marché) ; quatre pages dédiées indexables, illustrées par des captures de l'app, avec métadonnées, JSON-LD et sitemap | 031 | Pages marketing sur des fonctionnalités livrées — décision produit du 2026-09-25 |
 
 ## Estimate Scale
 
@@ -150,6 +151,13 @@ Référence de gate: le spec impose des branches courtes et des PRs <= 400 ligne
 | US-139 | « Vérifier un employeur » : recherche par nom ou SIREN, fiche (effectif, NAF, Egapro, ESS, société à mission, bilan carbone, page employeur France Travail) ; CTA entreprises qui recrutent | E23 | M | P1 | 030 | Hors vision — décision produit du 2026-09-24 ; ADR-024 §3 |
 | US-140 | Pages SEO entreprises (ISR, sitemap) avec sources citées | E23 | M | P2 | 030 | Hors vision — décision produit du 2026-09-24 |
 | US-141 | Questions d'entretien probables : 5 questions pour un texte d'offre, un appel LLM court sous budget global quotidien et limite par IP ; CTA entretien vocal | E23 | M | P2 | 030 | Hors vision — décision produit du 2026-09-24 ; ADR-022 |
+| US-142 | Socle des pages fonctionnalités : registre `lib/features.ts`, slugs FR/EN, gabarit commun, métadonnées, JSON-LD, image OG, sitemap | E24 | M | P0 | 031 | Décision produit du 2026-09-25 |
+| US-143 | Page « Offres du jour » : sources, score de correspondance, classement IA avec une phrase par offre, captures | E24 | M | P0 | 031 | Décision produit du 2026-09-25 |
+| US-144 | Page « CV et lettre sur mesure » : import, génération ancrée, score ATS, éditeur, traduction, export | E24 | M | P1 | 031 | Décision produit du 2026-09-25 |
+| US-145 | Page « Simulation d'entretien » : voix temps réel, styles de recruteur, rapport, progression | E24 | M | P1 | 031 | Décision produit du 2026-09-25 |
+| US-146 | Page « Entreprises qui recrutent et marché » : potentiel d'embauche, fiche entreprise, radar marché | E24 | M | P1 | 031 | Décision produit du 2026-09-25 |
+| US-147 | Nouvelle page d'accueil « toute la recherche » et menu Fonctionnalités | E24 | L | P0 | 031 | Décision produit du 2026-09-25 |
+| US-148 | Captures d'écran v2 : nouveaux écrans et captures de détail depuis le compte de démo | E24 | M | P0 | 031 | Décision produit du 2026-09-25 |
 
 ## Critères d'acceptation détaillés — E16
 

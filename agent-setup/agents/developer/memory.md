@@ -1575,3 +1575,8 @@
   - Le fil d'Ariane nomme « Détail » tout sous-chemin inconnu : ajouter la route à `pathLabels`.
 - **Then**: `/credits/me` ne renvoie plus que le solde (`CreditBalanceSummary`, `getBalanceSummaryForUser`) ; côté web `getCreditBalance` (React `cache`) partagé par le layout, le dashboard et l'en-tête des crédits. Les écrans admin gardent `getSummaryForUser` et tout le ledger.
 - **Open**: `buildAdminUserDirectory` charge encore tout le ledger de chaque compte pour un solde, une date et un compteur.
+
+## 2026-09-25 — E24 landing (sprint-031)
+- Pages fonctionnalités = registre `apps/landing/lib/features.ts` + gabarit `components/feature-page*.tsx` + route d'une ligne via `lib/feature-route.tsx`. Slugs dans `lib/i18n.ts` (`featureSlugs`) et dupliqués dans `next.config.ts` (`FEATURE_SLUGS`, test d'accord).
+- Captures : gros plans à 3x recadrés par union de cartes (`rounded-xl`), tailles réelles dans `lib/screenshot-sizes.json` ; JPEG des cartes de partage dans `assets/og/`.
+- Ne pas builder la landing avec `NEXT_DIST_DIR` sans restaurer ensuite `tsconfig.json` et `next-env.d.ts`.
