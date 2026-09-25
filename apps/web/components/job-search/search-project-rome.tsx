@@ -52,9 +52,12 @@ type Decide = (code: string, decision: "confirm" | "dismiss") => void
 export function SearchProjectRome({
   profileId,
   initialAppellations,
+  onChange,
 }: {
   profileId: string
   initialAppellations: SearchProjectRomeAppellation[]
+  /** Told of every decision, for a parent that sums the jobs up. */
+  onChange?: (appellations: SearchProjectRomeAppellation[]) => void
 }) {
   const [appellations, setAppellations] = useState(initialAppellations)
   const [pending, startDeciding] = useTransition()
@@ -63,8 +66,13 @@ export function SearchProjectRome({
     startDeciding(async () => {
       const result = await decideRomeAppellation(profileId, code, decision)
 
-      if (result.ok) setAppellations(result.rome)
-      else toast.error(result.message)
+      if (!result.ok) {
+        toast.error(result.message)
+        return
+      }
+
+      setAppellations(result.rome)
+      onChange?.(result.rome)
     })
 
   // Visible overflow: the picker's list drops below the card's edge.

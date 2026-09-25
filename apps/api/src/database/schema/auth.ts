@@ -29,6 +29,14 @@ export const authAccounts = pgTable(
      * invalid without a session table or a write per sign-in.
      */
     sessionsValidFrom: timestamp("sessions_valid_from", { withTimezone: true }),
+    /** The guided first-login onboarding was finished (US-149). */
+    onboardingCompletedAt: timestamp("onboarding_completed_at", {
+      withTimezone: true,
+    }),
+    /** The dashboard's "Bien démarrer" checklist was hidden (US-149). */
+    gettingStartedDismissedAt: timestamp("getting_started_dismissed_at", {
+      withTimezone: true,
+    }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

@@ -6,7 +6,6 @@ import { UploadIcon } from "lucide-react"
 import { toast } from "sonner"
 
 import { saveProfile } from "@/app/(app)/profile/actions"
-import { cleanLines } from "@/components/documents/list-editor"
 import { SectionOutline } from "@/components/layout/section-outline"
 import { UnsavedChangesGuard } from "@/components/layout/unsaved-changes-guard"
 import { CvDropzone } from "@/components/profile/cv-dropzone"
@@ -14,6 +13,7 @@ import { ProfileAvailabilityCard } from "@/components/profile/profile-availabili
 import { useProfileEditState } from "@/components/profile/profile-edit-state"
 import { ProfileIdentityCard } from "@/components/profile/profile-identity-card"
 import { ProfileListCards } from "@/components/profile/profile-list-cards"
+import { normalizeProfile } from "@/components/profile/normalize-profile"
 import { ProfileSaveBar } from "@/components/profile/profile-save-bar"
 import { profileOutline } from "@/components/profile/profile-sections"
 import { ProfileSummaryCard } from "@/components/profile/profile-summary-card"
@@ -35,17 +35,6 @@ function hasContent(profile: BaseProfile) {
   return Boolean(
     summary.trim() || experiences.length > 0 || technicalSkills.length > 0
   )
-}
-
-function normalizeProfile(profile: BaseProfile): BaseProfile {
-  return {
-    ...profile,
-    sections: {
-      ...profile.sections,
-      softSkills: cleanLines(profile.sections.softSkills),
-      technicalSkills: cleanLines(profile.sections.technicalSkills),
-    },
-  }
 }
 
 /**

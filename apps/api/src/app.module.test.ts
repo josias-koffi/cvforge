@@ -19,6 +19,7 @@ import { DatabaseModule } from "./database/database.module";
 import { NotificationsModule } from "./notifications/notifications.module";
 import { LegalDocumentsModule } from "./legal/legal.module";
 import { CreditOffersModule } from "./offers/offers.module";
+import { OnboardingModule } from "./onboarding/onboarding.module";
 import { PrivacyModule } from "./privacy/privacy.module";
 import { JobSearchModule } from "./job-search/job-search.module";
 import { HiringCompaniesModule } from "./hiring-companies/hiring-companies.module";
@@ -58,6 +59,7 @@ describe("AppModule", () => {
       NotificationsModule,
       CreditOffersModule,
       LegalDocumentsModule,
+      OnboardingModule,
       PrivacyModule,
       ProfilesModule,
       SearchProjectsModule,

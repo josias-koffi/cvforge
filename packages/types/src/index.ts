@@ -12,6 +12,7 @@ export * from "./lead";
 export * from "./locale";
 export * from "./market";
 export * from "./match-score";
+export * from "./onboarding";
 export * from "./profile";
 export * from "./public-errors";
 export * from "./rome";
