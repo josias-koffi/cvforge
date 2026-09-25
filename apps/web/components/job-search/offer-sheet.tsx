@@ -1,35 +1,32 @@
 "use client"
 
-import { useRouter } from "next/navigation"
-import { useTransition } from "react"
-import {
-  BookmarkIcon,
-  ExternalLinkIcon,
-  SparklesIcon,
-  ThumbsDownIcon,
-} from "lucide-react"
-import { toast } from "sonner"
+import { useState } from "react"
+import { ExternalLinkIcon } from "lucide-react"
 
-import {
-  applyToMatch,
-  setMatchStatus,
-} from "@/app/(app)/offres-du-jour/actions"
 import { AiReason, MatchScoreDetail } from "@/components/job-search/match-score"
 import { CompanyMark } from "@/components/job-search/company-mark"
+import { OfferActions } from "@/components/job-search/offer-actions"
+import {
+  CompanyWebsiteLink,
+  OfferBenefits,
+  OfferCompany,
+  OfferContact,
+  OfferProfile,
+  OfferSections,
+  OfferSource,
+} from "@/components/job-search/offer-details"
 import { companyLabel, companyName } from "@/components/job-search/offer-card"
 import { OfferMeta } from "@/components/job-search/offer-meta"
 import { OfferSkills } from "@/components/job-search/offer-skills"
-import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import {
   Sheet,
   SheetContent,
   SheetDescription,
-  SheetFooter,
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
-import { Spinner } from "@/components/ui/spinner"
 import { formatDate } from "@/lib/format"
 import { SOURCE_LABELS } from "@/lib/job-labels"
 import type { JobCardOffer } from "@/lib/job-search"
@@ -38,9 +35,7 @@ import type { JobCardOffer } from "@/lib/job-search"
  * The full offer, beside the list.
  *
  * Everything shown here already travels in the page's payload — description
- * included, cleaned at collection time — so opening the panel costs no
- * request. That is why the open offer is read from the URL on the client: a
- * server read would re-fetch the whole page on every open and close.
+ * and structured details included — so opening the panel costs no request.
  *
  * At least 45% of the screen: the advert is the one long text of the page,
  * and it has to be read, not scrolled through a slot. The width classes carry
@@ -57,15 +52,21 @@ export function OfferSheet({
   onDismissed: (jobId: string) => void
   onSaved: (jobId: string) => void
 }) {
+  // The last offer stays on screen while the panel slides out, instead of
+  // the panel emptying itself before it has left.
+  const [last, setLast] = useState(offer)
+  if (offer && offer !== last) setLast(offer)
+  const shown = offer ?? last
+
   return (
     <Sheet
       open={offer !== null}
       onOpenChange={(open) => (open ? null : onClose())}
     >
       <SheetContent className="@container gap-0 overflow-y-auto data-[side=right]:w-full data-[side=right]:sm:w-[max(45vw,36rem)] data-[side=right]:sm:max-w-full">
-        {offer ? (
+        {shown ? (
           <OfferDetail
-            offer={offer}
+            offer={shown}
             onDismissed={onDismissed}
             onSaved={onSaved}
           />
@@ -84,40 +85,8 @@ function OfferDetail({
   onDismissed: (jobId: string) => void
   onSaved: (jobId: string) => void
 }) {
-  const router = useRouter()
-  const [applying, startApplying] = useTransition()
-  const [updating, startUpdating] = useTransition()
-  const { job } = offer
-  const applied = offer.status === "applied"
-  const saved = offer.status === "saved"
+  const { job, details } = offer
   const openListings = offer.listings.filter((listing) => !listing.closedAt)
-
-  const apply = () =>
-    startApplying(async () => {
-      const result = await applyToMatch(job.id)
-
-      if (!result.ok) {
-        toast.error(result.message)
-        return
-      }
-
-      toast.success("Candidature créée. À vous de jouer.")
-      router.push(`/candidatures/${result.applicationId}`)
-    })
-
-  const update = (status: "saved" | "dismissed") =>
-    startUpdating(async () => {
-      const result = await setMatchStatus(job.id, status)
-
-      if (!result.ok) {
-        toast.error(result.message)
-        return
-      }
-
-      toast.success(result.message)
-      if (status === "dismissed") onDismissed(job.id)
-      else onSaved(job.id)
-    })
 
   return (
     <>
@@ -127,14 +96,34 @@ function OfferDetail({
             name={companyName(offer)}
             logoUrl={offer.job.companyLogoUrl}
           />
-          <SheetDescription className="text-sm font-medium text-foreground">
-            {companyLabel(offer)}
-          </SheetDescription>
+          <div className="flex min-w-0 flex-col gap-0.5">
+            <SheetDescription className="text-sm font-medium text-foreground">
+              {companyLabel(offer)}
+            </SheetDescription>
+            {details?.companyWebsite ? (
+              <CompanyWebsiteLink url={details.companyWebsite} />
+            ) : null}
+          </div>
         </div>
         <SheetTitle className="text-xl leading-snug font-semibold">
           {job.title}
         </SheetTitle>
-        <OfferMeta job={job} />
+        <OfferMeta
+          job={{
+            ...job,
+            // Some boards give their pay only in the structured fields.
+            salaryLabel: job.salaryLabel || (details?.salary?.label ?? ""),
+          }}
+        />
+        <div className="flex flex-wrap items-center gap-2">
+          <OfferSource
+            source={details?.source ?? offer.listings[0]?.source ?? ""}
+            via={details?.via}
+          />
+          {details?.lacksCandidates ? (
+            <Badge variant="secondary">Peu de candidats</Badge>
+          ) : null}
+        </div>
       </SheetHeader>
 
       <div className="flex flex-col gap-6 p-6">
@@ -153,7 +142,12 @@ function OfferDetail({
         <OfferSkills offer={offer} />
 
         {/* The place itself is in the header; here, what helps to place it. */}
-        <dl className="grid grid-cols-2 gap-4 rounded-xl border p-4 text-sm @lg:grid-cols-4">
+        <dl className="grid grid-cols-2 gap-4 rounded-xl border p-4 text-sm @lg:grid-cols-3">
+          {details?.facts.map((fact) => (
+            <Detail key={fact.label} label={fact.label}>
+              {fact.value}
+            </Detail>
+          ))}
           <Detail label="Publiée le">{formatDate(job.publishedAt)}</Detail>
           <Detail label="Vue pour la première fois">
             {formatDate(job.firstSeenAt)}
@@ -175,6 +169,9 @@ function OfferDetail({
           ) : null}
         </dl>
 
+        {details ? <OfferBenefits details={details} /> : null}
+        {details ? <OfferProfile details={details} /> : null}
+
         <Separator />
 
         <section className="flex flex-col gap-3">
@@ -182,7 +179,8 @@ function OfferDetail({
           {job.description ? (
             // Collected as plain text, so the line breaks are all the shape
             // there is — and nothing from a third party is rendered as HTML.
-            <p className="max-w-prose text-sm leading-relaxed whitespace-pre-line text-foreground/85">
+            // The panel's full width: it is already sized to be read.
+            <p className="text-sm leading-relaxed whitespace-pre-line text-foreground/85">
               {job.description}
             </p>
           ) : (
@@ -192,6 +190,10 @@ function OfferDetail({
             </p>
           )}
         </section>
+
+        {details ? <OfferSections details={details} /> : null}
+        {details ? <OfferCompany details={details} /> : null}
+        {details ? <OfferContact details={details} /> : null}
 
         {openListings.length > 0 ? (
           <section className="flex flex-col gap-2">
@@ -215,39 +217,7 @@ function OfferDetail({
         ) : null}
       </div>
 
-      <SheetFooter className="sticky bottom-0 mt-auto flex-row flex-wrap items-center justify-between gap-2 border-t bg-popover px-6 py-4">
-        <div className="flex flex-wrap gap-2">
-          <Button disabled={applying || applied} onClick={apply}>
-            {applying ? <Spinner /> : <SparklesIcon />}
-            {applied ? "Candidature créée" : "Postuler avec CVForge"}
-          </Button>
-          <Button asChild variant="outline">
-            <a href={job.primaryUrl} target="_blank" rel="noreferrer">
-              <ExternalLinkIcon />
-              Voir l&apos;offre
-            </a>
-          </Button>
-        </div>
-        <div className="flex flex-wrap gap-1">
-          <Button
-            variant="ghost"
-            disabled={updating || saved || applied}
-            onClick={() => update("saved")}
-          >
-            <BookmarkIcon />
-            {saved ? "Gardée" : "Garder"}
-          </Button>
-          <Button
-            className="text-muted-foreground"
-            variant="ghost"
-            disabled={updating}
-            onClick={() => update("dismissed")}
-          >
-            <ThumbsDownIcon />
-            Pas pour moi
-          </Button>
-        </div>
-      </SheetFooter>
+      <OfferActions offer={offer} onDismissed={onDismissed} onSaved={onSaved} />
     </>
   )
 }

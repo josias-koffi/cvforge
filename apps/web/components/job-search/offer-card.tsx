@@ -1,6 +1,7 @@
 "use client"
 
 import { BookmarkIcon, ThumbsDownIcon } from "lucide-react"
+import { memo } from "react"
 
 import { CompanyMark } from "@/components/job-search/company-mark"
 import { MatchScoreSummary } from "@/components/job-search/match-score"
@@ -30,8 +31,11 @@ export function companyLabel(offer: JobCardOffer) {
  *
  * Keeping and discarding stay here, in words rather than a bare icon: they are
  * the two actions worth doing without opening anything.
+ *
+ * Memoised, with handlers that take the offer's id: a page holds up to sixty
+ * cards, and opening one offer must not re-render the others.
  */
-export function OfferCard({
+export const OfferCard = memo(function OfferCard({
   offer,
   onOpen,
   onSave,
@@ -39,9 +43,9 @@ export function OfferCard({
   pending,
 }: {
   offer: JobCardOffer
-  onOpen: () => void
-  onSave: () => void
-  onDismiss: () => void
+  onOpen: (jobId: string) => void
+  onSave: (jobId: string) => void
+  onDismiss: (jobId: string) => void
   pending: boolean
 }) {
   const { job } = offer
@@ -99,7 +103,7 @@ export function OfferCard({
                 size="sm"
                 variant="ghost"
                 disabled={pending}
-                onClick={onSave}
+                onClick={() => onSave(job.id)}
               >
                 <BookmarkIcon />
                 Garder
@@ -110,7 +114,7 @@ export function OfferCard({
               size="sm"
               variant="ghost"
               disabled={pending}
-              onClick={onDismiss}
+              onClick={() => onDismiss(job.id)}
             >
               <ThumbsDownIcon />
               Pas pour moi
@@ -123,7 +127,7 @@ export function OfferCard({
         <button
           type="button"
           className="absolute inset-0 rounded-xl focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
-          onClick={onOpen}
+          onClick={() => onOpen(job.id)}
         >
           <span className="sr-only">
             Voir le détail de l&apos;offre {job.title}
@@ -132,4 +136,4 @@ export function OfferCard({
       </CardContent>
     </Card>
   )
-}
+})

@@ -37,6 +37,44 @@ export interface JobOffer {
 
 export type JobMatchStatus = "new" | "seen" | "saved" | "dismissed" | "applied"
 
+export interface OfferRequirement {
+  label: string
+  required: boolean
+}
+
+/**
+ * What an advert says beyond its text, read by the API from the payload each
+ * source publishes. Every field is empty when the source does not give it.
+ */
+export interface OfferDetails {
+  /** The source these details come from, always named to the candidate. */
+  source: string
+  /** The job board France Travail relays the offer from, "" when none. */
+  via: string
+  /** Where the candidate actually applies — often not France Travail. */
+  apply: {
+    url: string
+    target: "employer" | "partner" | "source"
+    host: string
+    /** The partner board's name, e.g. "Meteojob"; "" otherwise. */
+    name?: string
+  } | null
+  /** The employer's careers page or website, "" when unknown. */
+  companyWebsite: string
+  companyDescription: string
+  companyBadges: string[]
+  facts: Array<{ label: string; value: string }>
+  salary: { label: string; comment: string; benefits: string[] } | null
+  experience: { label: string; required: boolean; comment: string } | null
+  education: OfferRequirement[]
+  languages: OfferRequirement[]
+  licences: OfferRequirement[]
+  softSkills: Array<{ label: string; description: string }>
+  sections: Array<{ title: string; text: string }>
+  contact: { name: string; email: string; lines: string[] } | null
+  lacksCandidates: boolean
+}
+
 /**
  * One offer as the cards and the detail panel need it, wherever it comes from.
  *
@@ -47,6 +85,8 @@ export type JobMatchStatus = "new" | "seen" | "saved" | "dismissed" | "applied"
 export interface JobCardOffer {
   job: JobOffer
   listings: JobListingSummary[]
+  /** Absent from pages served before the API sent it. */
+  details?: OfferDetails | null
   status: JobMatchStatus | null
   score: number | null
   /** Points per criterion behind `score`; absent on older selections. */
@@ -72,6 +112,7 @@ export interface JobMatch {
   applicationId: string | null
   job: JobOffer
   listings: JobListingSummary[]
+  details?: OfferDetails | null
 }
 
 export interface JobDigest {
@@ -88,6 +129,7 @@ export async function loadDigest(date?: string): Promise<JobDigest> {
 export interface OfferSearchResult {
   job: JobOffer
   listings: JobListingSummary[]
+  details?: OfferDetails | null
   status: JobMatchStatus | null
   /** Only set when the offer came from a morning selection. */
   score: number | null

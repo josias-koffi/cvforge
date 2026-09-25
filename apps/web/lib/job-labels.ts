@@ -39,3 +39,25 @@ export const SOURCE_LABELS: Record<string, string> = {
   welcomekit: "Welcome to the Jungle",
   workable: "Site de l'entreprise",
 }
+
+/**
+ * The software behind a company's own board, named next to "Site de
+ * l'entreprise" so the candidate always knows where an offer was read.
+ */
+export const PROVIDER_LABELS: Record<string, string> = {
+  ashby: "Ashby",
+  greenhouse: "Greenhouse",
+  lever: "Lever",
+  personio: "Personio",
+  recruitee: "Recruitee",
+  smartrecruiters: "SmartRecruiters",
+  workable: "Workable",
+}
+
+/** "France Travail", or "Site de l'entreprise (Lever)". */
+export function sourceName(source: string): string {
+  const label = SOURCE_LABELS[source] ?? source
+  const provider = PROVIDER_LABELS[source]
+
+  return provider ? `${label} (${provider})` : label
+}
