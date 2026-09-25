@@ -3,11 +3,12 @@ import { CircleAlertIcon, InfoIcon, TriangleAlertIcon } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   ATS_DIMENSION_LABELS,
+  ATS_FINDING_FIXES,
   ATS_FINDING_LABELS,
   ATS_SEVERITY_LABELS,
   sortFindings,
   type AtsReportFinding,
-  type AtsScanReport,
+  type AtsReportResult,
 } from "@/lib/ats-report"
 import { cn } from "@/lib/utils"
 
@@ -24,11 +25,19 @@ const SEVERITY_TEXT: Record<AtsReportFinding["severity"], string> = {
 }
 
 /**
- * The detail of a landing scan, criterion by criterion then point by point.
- * The value is always written out: the bars are decoration.
+ * The detail of a score — a landing scan or a generated CV — criterion by
+ * criterion then point by point, each point with what to change. The value
+ * is always written out: the bars are decoration.
  */
-export function AtsReport({ report }: { report: AtsScanReport }) {
-  const findings = sortFindings(report.result.findings)
+export function AtsReport({
+  result,
+  findingsFirst = false,
+}: {
+  result: AtsReportResult
+  /** Where the next step is fixing the CV, the points come before the scores. */
+  findingsFirst?: boolean
+}) {
+  const findings = sortFindings(result.findings)
 
   return (
     <div className="grid gap-4 @4xl/main:grid-cols-2">
@@ -40,7 +49,7 @@ export function AtsReport({ report }: { report: AtsScanReport }) {
         </CardHeader>
         <CardContent>
           <dl className="space-y-4">
-            {report.result.dimensions.map((dimension) => (
+            {result.dimensions.map((dimension) => (
               <div key={dimension.key}>
                 <div className="flex justify-between gap-4 text-sm">
                   <dt>
@@ -71,7 +80,7 @@ export function AtsReport({ report }: { report: AtsScanReport }) {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className={cn(findingsFirst && "order-first")}>
         <CardHeader>
           <CardTitle aria-level={2} role="heading">
             Points relevés
@@ -100,6 +109,11 @@ export function AtsReport({ report }: { report: AtsScanReport }) {
                         {ATS_SEVERITY_LABELS[finding.severity]} :
                       </span>{" "}
                       {ATS_FINDING_LABELS[finding.code] ?? finding.code}
+                      {ATS_FINDING_FIXES[finding.code] ? (
+                        <span className="mt-0.5 block text-muted-foreground">
+                          {ATS_FINDING_FIXES[finding.code]}
+                        </span>
+                      ) : null}
                     </span>
                   </li>
                 )

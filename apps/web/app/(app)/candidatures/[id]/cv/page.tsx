@@ -25,6 +25,7 @@ async function loadCv(offerId: string) {
 
 export default async function CvPage(props: PageProps<"/candidatures/[id]/cv">) {
   const { id } = await props.params
+  const { analyse } = await props.searchParams
   const [{ application }, cv] = await Promise.all([loadOffer(id), loadCv(id)])
 
   return (
@@ -37,6 +38,7 @@ export default async function CvPage(props: PageProps<"/candidatures/[id]/cv">) 
         <CvEditor
           key={latestAiVersionId(cv.versions)}
           atsScore={application.atsScore}
+          openAtsReport={analyse === "ats"}
           offerId={id}
           cvContent={cv.cvContent}
           versions={cv.versions}

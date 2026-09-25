@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest"
 
 import { AtsReport } from "@/components/ats/ats-report"
 import { AtsScansPanel } from "@/components/ats/ats-scans-panel"
-import type { AtsScanReport } from "@/lib/ats-report"
+import { ATS_FINDING_FIXES, type AtsScanReport } from "@/lib/ats-report"
 
 const REPORT: AtsScanReport = {
   band: "good",
@@ -34,7 +34,7 @@ const REPORT: AtsScanReport = {
 
 describe("AtsReport", () => {
   it("writes each criterion's score, and says when one was not evaluated", () => {
-    const markup = renderToStaticMarkup(<AtsReport report={REPORT} />)
+    const markup = renderToStaticMarkup(<AtsReport result={REPORT.result} />)
 
     expect(markup).toContain("Structure et sections")
     expect(markup).toContain("80 / 100")
@@ -43,23 +43,29 @@ describe("AtsReport", () => {
 
   /** A criterion nobody could measure is not a zero. */
   it("draws no bar for a criterion that was not evaluated", () => {
-    const markup = renderToStaticMarkup(<AtsReport report={REPORT} />)
+    const markup = renderToStaticMarkup(<AtsReport result={REPORT.result} />)
 
     expect(markup.match(/aria-hidden="true" class="mt-1.5/g)).toHaveLength(1)
   })
 
   it("lists the critical points first, with their severity in words", () => {
-    const markup = renderToStaticMarkup(<AtsReport report={REPORT} />)
+    const markup = renderToStaticMarkup(<AtsReport result={REPORT.result} />)
 
     expect(markup.indexOf("Critique")).toBeLessThan(markup.indexOf("À savoir"))
     expect(markup).toContain("Aucun profil LinkedIn détecté")
   })
 
+  it("says what to change under each point", () => {
+    const markup = renderToStaticMarkup(<AtsReport result={REPORT.result} />)
+
+    expect(markup).toContain(
+      ATS_FINDING_FIXES.MISSING_LINKEDIN.replaceAll("'", "&#x27;")
+    )
+  })
+
   it("says so when nothing was found", () => {
     const markup = renderToStaticMarkup(
-      <AtsReport
-        report={{ ...REPORT, result: { ...REPORT.result, findings: [] } }}
-      />
+      <AtsReport result={{ ...REPORT.result, findings: [] }} />
     )
 
     expect(markup).toContain("Aucun point à corriger")

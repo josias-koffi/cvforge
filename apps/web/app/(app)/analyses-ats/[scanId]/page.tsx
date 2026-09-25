@@ -69,7 +69,7 @@ export default async function AtsScanPage({
             </p>
           </CardContent>
         </Card>
-        <AtsReport report={report} />
+        <AtsReport result={report.result} />
       </div>
     </>
   )

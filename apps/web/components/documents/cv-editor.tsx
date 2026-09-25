@@ -2,7 +2,7 @@
 
 import { renderCvPdfHtml } from "@cvforge/document-renderer"
 import type {
-  AtsScoreSummary,
+  AtsScoreDetail,
   CVDocumentContent,
   CVDocumentVersionEntry,
   CertificationItemProps,
@@ -145,11 +145,14 @@ export function CvEditor({
   atsScore,
   cvContent,
   offerId,
+  openAtsReport = false,
   versions,
 }: {
-  atsScore?: AtsScoreSummary | null
+  atsScore?: AtsScoreDetail | null
   cvContent: CVDocumentContent
   offerId: string
+  /** Opens the ATS analysis on arrival (`?analyse=ats`). */
+  openAtsReport?: boolean
   versions: CVDocumentVersionEntry[]
 }) {
   const editor = useDocumentEditor(
@@ -168,6 +171,7 @@ export function CvEditor({
       dirty={editor.dirty}
       saving={editor.saving}
       score={atsScore}
+      openAtsReport={openAtsReport}
       onSave={editor.save}
       onRestore={editor.restore}
       versions={versions}

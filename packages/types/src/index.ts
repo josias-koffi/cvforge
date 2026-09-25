@@ -769,10 +769,36 @@ export interface AtsScoreSummary {
   engineVersion: string;
 }
 
+/** One criterion of a CV's ATS score; a score is never shown when unavailable. */
+export interface AtsScoreDimensionDetail {
+  key: string;
+  status: "scored" | "unavailable";
+  score: number | null;
+}
+
+/** One point the engine raised, worded by its code on the client. */
+export interface AtsScoreFindingDetail {
+  code: string;
+  severity: "critical" | "warning" | "info";
+  dimension: string;
+}
+
+/**
+ * The whole score of a generated CV, as an application carries it: the
+ * engine's result without its internals, so the candidate can read what to
+ * fix criterion by criterion (US-153).
+ */
+export interface AtsScoreDetail extends AtsScoreSummary {
+  dimensions: AtsScoreDimensionDetail[];
+  findings: AtsScoreFindingDetail[];
+  /** The critical finding that held the score down, when one did. */
+  cappedBy?: string;
+}
+
 export interface DraftApplication {
   createdAt: string;
   /** Absent or null when the CV has never been scored; never zero. */
-  atsScore?: AtsScoreSummary | null;
+  atsScore?: AtsScoreDetail | null;
   cvGeneratedAt: string | null;
   cvTemplateId?: string | null;
   id: string;

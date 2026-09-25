@@ -5,9 +5,9 @@ import type { DocumentVersionSource } from "@cvforge/types"
 import { DownloadIcon, HistoryIcon, SaveIcon } from "lucide-react"
 
 import { DocumentPreview } from "@/components/documents/document-preview"
-import type { AtsScoreSummary } from "@cvforge/types"
+import type { AtsScoreDetail } from "@cvforge/types"
 
-import { AtsScoreBadge } from "@/components/applications/ats-score-badge"
+import { AtsScoreSheet } from "@/components/applications/ats-score-sheet"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -43,7 +43,9 @@ type EditorLayoutProps<T> = {
   previewHtml: string
   saving: boolean
   /** The ATS score of the last saved version; absent on letters and unscored CVs. */
-  score?: AtsScoreSummary | null
+  score?: AtsScoreDetail | null
+  /** Opens the score's analysis on arrival (`?analyse=ats`). */
+  openAtsReport?: boolean
   toolbar?: React.ReactNode
   versions: VersionEntry<T>[]
 }
@@ -58,6 +60,7 @@ export function EditorLayout<T>({
   previewHtml,
   saving,
   score,
+  openAtsReport = false,
   toolbar,
   versions,
 }: EditorLayoutProps<T>) {
@@ -75,8 +78,13 @@ export function EditorLayout<T>({
           {dirty ? "Modifications non enregistrées" : "À jour"}
         </span>
         {/* Describes the last saved version, so it is dimmed and says so while
-            edits are pending rather than looking like it scores the screen. */}
-        <AtsScoreBadge score={score} stale={dirty} />
+            edits are pending rather than looking like it scores the screen.
+            It opens the analysis: what the engine found, and what to change. */}
+        <AtsScoreSheet
+          score={score}
+          stale={dirty}
+          defaultOpen={openAtsReport}
+        />
         <div className="ml-auto flex flex-wrap gap-2">
           {toolbar}
           {versions.length > 0 ? (

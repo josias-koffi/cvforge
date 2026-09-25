@@ -96,8 +96,18 @@ function buildColumns(onToggleSort: () => void) {
       id: "atsScore",
       header: "Score ATS",
       // Renders nothing when the CV has never been scored: an empty cell says
-      // "not measured", a zero would say "terrible".
-      cell: ({ row }) => <AtsScoreBadge score={row.original.atsScore} />,
+      // "not measured", a zero would say "terrible". A score opens its
+      // analysis in the CV editor (US-153).
+      cell: ({ row }) =>
+        row.original.atsScore ? (
+          <Link
+            href={`/candidatures/${row.original.id}/cv?analyse=ats`}
+            className="inline-flex rounded-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+            title="Voir l'analyse ATS du CV"
+          >
+            <AtsScoreBadge score={row.original.atsScore} />
+          </Link>
+        ) : null,
     }),
     columnHelper.display({
       id: "createdAt",
