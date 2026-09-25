@@ -1587,3 +1587,10 @@
 - Le projet de recherche exige un profil enregistré : le wizard enregistre le profil en quittant Identité et Parcours, les critères en quittant Lieu (ROMEO tourne à ce moment).
 - `@cvforge/types` : après avoir ajouté un type, lancer `pnpm --filter @cvforge/types build`, sinon le typecheck web ne le voit pas.
 - Test navigateur sans e-mail : insérer une ligne dans `auth_magic_links` (sha256 du jeton) puis appeler `/auth/passwordless/consume` ; Playwright de `apps/landing` avec l'exécutable `~/.cache/ms-playwright/chromium-1234`.
+
+## 2026-09-25 — E26 cockpit de pilotage (sprint-033)
+- Coûts IA : `ai_usage_events` (migration 0046) alimentée par `OpenRouterService`, la voix et la transcription via un `AiUsageRecorder` injecté (ai/ai-usage.ts). Tout nouvel appel IA passe `feature` dans `ChatOptions` (union `AiFeature` de `@cvforge/types`), sinon il compte en « other ».
+- OpenRouter renvoie toujours `usage.cost` (USD), y compris dans le dernier chunk d'un stream : rien à activer.
+- Recherches des outils gratuits : `tool_queries` (compteur par jour, sans IP), écrit par `ToolQueriesService` exporté du module acquisition ; purge 365 j.
+- API cockpit : `src/metrics/<domaine>/` (store SQL + service), `shared/metrics-window.ts` (période, précédente, `readKpi`), `shared/time-series.ts` (buckets UTC, zero-fill), `CockpitService` câble le tout. Économie unitaire : `ai-costs/unit-economics.ts` (`BILLED_FEATURES`).
+- Web : `app/(app)/admin/metrics/*` + `components/admin/metrics/*` + `lib/admin-metrics/*` ; les sections serveur passent le bucket à `MetricsTrendCard` (client) au lieu d'une fonction de formatage.

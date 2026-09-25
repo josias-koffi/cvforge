@@ -30,6 +30,7 @@
 | E23 | 029-030 | Outils gratuits d'acquisition sur la landing | Quatre outils sans compte en plus du scan ATS (comparateur CV ↔ offre, métier qui recrute + salaire, vérification d'employeur, questions d'entretien probables) ; chacun donne un résultat utile, puis convertit par email en un compte pré-rempli avec ce que le visiteur a saisi ; le tunnel de chaque outil est mesuré de la vue à l'activation du compte | 029-030 | **Hors vision** — décision produit du 2026-09-24 ; prolonge E18 (ADR-022) et exploite E19-E21 (ADR-024 §3 : les données France Travail restent gratuites) |
 | E24 | 031 | Landing : vitrine complète et pages fonctionnalités | L'accueil présente toute la recherche (offres du jour, CV et lettre, entretien, entreprises et marché) ; quatre pages dédiées indexables, illustrées par des captures de l'app, avec métadonnées, JSON-LD et sitemap | 031 | Pages marketing sur des fonctionnalités livrées — décision produit du 2026-09-25 |
 | E25 | 032 | Onboarding guidé à la première connexion | Une page plein écran `/bienvenue` en 7 étapes réutilise les formulaires existants (profil, critères, métiers ROME, alertes) avec un texte « pourquoi » par étape, puis une checklist « Bien démarrer » sur le tableau de bord | 032 | Vision §4 ; remplace l'ancien wizard US-013 perdu à la réécriture v2 — décision produit du 2026-09-25 |
+| E26 | 033 | Cockpit de pilotage admin | `/admin/metrics` devient un cockpit à onglets (vue d'ensemble, revenus et conversion, coûts IA, produit, marché, acquisition), avec une période, des graphiques et des insights ; le coût réel de chaque appel IA et les recherches des outils gratuits sont désormais enregistrés | 033 | Remplace le tableau US-086 ; précédent US-054 — demande propriétaire du 2026-09-25 |
 
 ## Estimate Scale
 
@@ -164,6 +165,12 @@ Référence de gate: le spec impose des branches courtes et des PRs <= 400 ligne
 | US-150 | Page `/bienvenue` : cadre plein écran, étapes Bienvenue (import CV), Identité, Parcours ; redirection des premières connexions | E25 | M | P0 | 032 | Décision produit du 2026-09-25 |
 | US-151 | Étapes Poste visé, Lieu, Métiers, Offres du jour et récapitulatif ; fin sur le tableau de bord | E25 | M | P0 | 032 | Décision produit du 2026-09-25 |
 | US-152 | Checklist « Bien démarrer » du tableau de bord : six étapes lues dans les données, reprise et masquage | E25 | S | P1 | 032 | Décision produit du 2026-09-25 |
+| US-154 | Journal des coûts IA : table `ai_usage_events` (fonctionnalité, modèle, tokens, coût USD OpenRouter, durée, fallback, statut), écrit par les clients texte, voix et transcription sans jamais faire échouer l'appel | E26 | M | P0 | 033 | Demande propriétaire du 2026-09-25 |
+| US-155 | Journal agrégé des recherches des outils gratuits (entreprise vérifiée, métier × département), sans IP, purgé à 365 jours | E26 | S | P1 | 033 | Demande propriétaire du 2026-09-25 |
+| US-156 | API cockpit découpée par domaine : période, séries, écarts avec la période précédente, insights, types partagés, export CSV | E26 | L | P0 | 033 | Demande propriétaire du 2026-09-25 |
+| US-157 | Cockpit web : onglets, sélecteur de période, vue d'ensemble et insights | E26 | M | P0 | 033 | Demande propriétaire du 2026-09-25 |
+| US-158 | Onglets Revenus & conversion et Coûts IA | E26 | M | P0 | 033 | Demande propriétaire du 2026-09-25 |
+| US-159 | Onglets Produit, Marché et Acquisition ; fil d'Ariane et retrait de l'ancienne grille | E26 | M | P1 | 033 | Demande propriétaire du 2026-09-25 |
 
 ## Critères d'acceptation détaillés — E16
 
