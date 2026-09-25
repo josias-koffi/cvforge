@@ -42,7 +42,7 @@ const adminItems = [
   { href: "/admin/users", icon: UsersIcon, title: "Utilisateurs" },
   { href: "/admin/offers", icon: PackageIcon, title: "Offres de crédits" },
   { href: "/admin/job-search", icon: RadarIcon, title: "Collecte d'offres" },
-  { href: "/admin/metrics", icon: ChartColumnIcon, title: "Métriques" },
+  { href: "/admin/metrics", icon: ChartColumnIcon, title: "Pilotage" },
   { href: "/admin/audit-log", icon: ScrollTextIcon, title: "Journal d'audit" },
   { href: "/admin/legal", icon: ScaleIcon, title: "Documents légaux" },
 ]

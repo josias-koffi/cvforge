@@ -29,9 +29,12 @@ const pathLabels: Record<string, string> = {
 }
 
 const segmentLabels: Record<string, string> = {
+  acquisition: "Acquisition",
   admin: "Administration",
+  "audit-log": "Journal d'audit",
   candidatures: "Candidatures",
   compte: "Mon compte",
+  "couts-ia": "Coûts IA",
   credits: "Crédits",
   cv: "CV",
   dashboard: "Tableau de bord",
@@ -40,8 +43,11 @@ const segmentLabels: Record<string, string> = {
   entretiens: "Entretiens",
   legal: "Documents légaux",
   letter: "Lettre de motivation",
+  marche: "Marché",
+  metrics: "Pilotage",
   new: "Nouveau",
   notifications: "Notifications",
+  offers: "Offres",
   "job-search": "Collecte d'offres",
   "ma-recherche": "Ma recherche",
   offres: "Rechercher une offre",
@@ -49,6 +55,8 @@ const segmentLabels: Record<string, string> = {
   profile: "Mes profils",
   progression: "Progression",
   rapport: "Rapport",
+  revenus: "Revenus",
+  usage: "Produit",
   users: "Utilisateurs",
 }
 
