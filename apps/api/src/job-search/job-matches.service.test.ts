@@ -140,6 +140,13 @@ function createService(options: {
             job: makeJob(),
             listings: options.listings ?? [makeListing()],
           },
+    findAdvertsByJobIds: async (jobIds: readonly string[]) =>
+      new Map(
+        jobIds.map((jobId) => [
+          jobId,
+          { details: null, listings: options.listings ?? [makeListing()] },
+        ]),
+      ),
     searchJobs: async () => ({
       jobs: options.searchResults ?? [makeJob()],
       total: (options.searchResults ?? [makeJob()]).length,

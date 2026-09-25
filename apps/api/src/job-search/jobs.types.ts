@@ -5,6 +5,7 @@ import type {
   NormalizedJobListing,
 } from "./job-search.types";
 import type { MatchCandidate, MatchMethod } from "./dedup/match-job";
+import type { OfferDetails } from "./offer-details.types";
 
 /** One offer as the candidate sees it, with every source that publishes it. */
 export interface StoredJob {
@@ -58,6 +59,12 @@ export interface JobWithListings {
   listings: StoredJobListing[];
 }
 
+/** A job's adverts, and what the best of them says beyond its text. */
+export interface JobAdverts {
+  listings: StoredJobListing[];
+  details: OfferDetails | null;
+}
+
 /** What a candidate can narrow their own search by. */
 export interface JobSearchFilters {
   /** Words looked for in the title and the advert. */
@@ -96,6 +103,10 @@ export type JobsStore = {
   }): Promise<StoredJobListing>;
   addLinks(jobId: string, urlKeys: readonly string[]): Promise<number>;
   findById(jobId: string): Promise<JobWithListings | null>;
+  /** The adverts of a page of jobs, in one read. */
+  findAdvertsByJobIds(
+    jobIds: readonly string[],
+  ): Promise<Map<string, JobAdverts>>;
   /**
    * The open jobs a search could match: in one of its departments, or remote.
    * Scoring then happens in memory — it depends on the candidate, and asking

@@ -6,6 +6,7 @@ import { dateInParis } from "./job-digest.service";
 import type { JobSourceAdapter } from "./job-search.types";
 import type { JobSourcesStore } from "./job-sources.types";
 import type {
+  JobAdverts,
   JobSearchFilters,
   JobsStore,
   StoredJob,
@@ -17,19 +18,22 @@ import type {
   JobMatchesStore,
   StoredJobMatch,
 } from "./matches.types";
+import type { OfferDetails } from "./offer-details.types";
 
 /** Enough text for the offer analysis to have something to read. */
 const MIN_OFFER_TEXT_LENGTH = 160;
 
 export interface DigestView {
   digestDate: string;
-  matches: Array<JobMatchWithJob & { listings: StoredJobListing[] }>;
+  matches: Array<JobMatchWithJob & JobAdverts>;
 }
 
 /** One result of a candidate's own search, with what they already did with it. */
 export interface OfferSearchResult {
   job: StoredJob;
   listings: StoredJobListing[];
+  /** What the advert says beyond its text: profile, pay, where to apply. */
+  details: OfferDetails | null;
   status: JobMatchStatus | null;
   /** Only set when the offer came from a morning selection. */
   score: number | null;
@@ -95,19 +99,21 @@ export class JobMatchesService {
       userEmail,
       found.jobs.map((job) => job.id),
     );
+    const adverts = await this.jobs.findAdvertsByJobIds(
+      found.jobs.map((job) => job.id),
+    );
     const offers: OfferSearchResult[] = [];
 
     for (const job of found.jobs) {
       const match = statuses.get(job.id) ?? null;
-      const detailed = await this.jobs.findById(job.id);
-
       const ranked = match !== null && match.score > 0;
 
       offers.push({
         aiReason: match?.aiReason ?? null,
         applicationId: match?.applicationId ?? null,
+        details: adverts.get(job.id)?.details ?? null,
         job,
-        listings: detailed?.listings ?? [],
+        listings: adverts.get(job.id)?.listings ?? [],
         // A score means "we ranked this for you"; a hand-picked offer has none.
         score: ranked ? match.score : null,
         scoreBreakdown: ranked ? match.scoreBreakdown : null,
@@ -289,14 +295,17 @@ export class JobMatchesService {
     return this.applications.importFromUrl(userEmail, match.job.primaryUrl);
   }
 
-  private async withListings(matches: JobMatchWithJob[]) {
-    const detailed = [];
+  private async withListings(
+    matches: JobMatchWithJob[],
+  ): Promise<Array<JobMatchWithJob & JobAdverts>> {
+    const adverts = await this.jobs.findAdvertsByJobIds(
+      matches.map((match) => match.jobId),
+    );
 
-    for (const match of matches) {
-      const found = await this.jobs.findById(match.jobId);
-      detailed.push({ ...match, listings: found?.listings ?? [] });
-    }
-
-    return detailed;
+    return matches.map((match) => ({
+      ...match,
+      details: adverts.get(match.jobId)?.details ?? null,
+      listings: adverts.get(match.jobId)?.listings ?? [],
+    }));
   }
 }

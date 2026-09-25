@@ -10,6 +10,7 @@ import {
 } from "./dedup/job-keys";
 import type { MatchCandidate, MatchMethod } from "./dedup/match-job";
 import type { JobSource, NormalizedJobListing } from "./job-search.types";
+import { findAdvertsByJobIds } from "./jobs.adverts";
 import {
   newJobValues,
   olderOf,
@@ -238,6 +239,10 @@ export class PgJobsStore implements JobsStore {
       .orderBy(desc(jobListings.lastSeenAt));
 
     return { job: toJob(row), listings: listings.map(toListing) };
+  }
+
+  findAdvertsByJobIds(jobIds: readonly string[]) {
+    return findAdvertsByJobIds(this.db, jobIds);
   }
 
   findOpenJobs(input: {
