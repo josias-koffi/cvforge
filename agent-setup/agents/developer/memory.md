@@ -1553,3 +1553,13 @@
   - Les 400 comptent dans le budget (middleware avant contrôleur) : pratique pour tester le 503 sans payer d'appels.
   - `pkill -f` a encore tué le shell : tuer par PID via `ss -ltnp`.
 - **Open**: none
+
+## 2026-09-25 — Panneau d'offre enrichi (ad hoc, demande utilisateur, hors US)
+- **Context**: `/offres` et `/offres-du-jour` — panneau latéral trop pauvre, texte limité en largeur, 1 s+ à l'ouverture/fermeture.
+- **Did**: API — `OfferDetails` lu à la lecture depuis `job_listings.raw` (aucune migration) : `sources/france-travail.details.ts`, `sources/boards/boards.details.ts`, `listing-details.ts` (fusion des annonces d'une même offre), `jobs.adverts.ts` (une requête par page au lieu d'un `findById` par offre). Web — `pushState` au lieu de `router.push`, `OfferCard` mémoïsée, `offer-details.tsx`, `offer-actions.tsx` extrait de `offer-sheet.tsx`, bouton « Postuler sur … » direct, mention de la source toujours visible, `max-w-prose` retiré.
+- **Why**: `router.push` sur une page non cachée relançait le `page.tsx` serveur et l'API à chaque ouverture ; `raw` contenait déjà tout le payload FT/boards.
+- **Learned**:
+  - 1283/1873 offres FT sont relayées par un partenaire (`origineOffre.partenaires`) : c'est là que mène le « Postuler » de FT ; seules 255 ont `contact.urlPostulation`. Nommer le partenaire par `nom`, pas par l'hôte (aplitrak, xtramile = multidiffuseurs).
+  - `contact.courriel`/`coordonnees*` FT contiennent souvent « Pour postuler, utiliser le lien suivant : … » : à filtrer.
+  - Ne jamais lancer `prettier --write` sur un dossier : l'API n'est pas formatée à HEAD, ça touche des dizaines de fichiers.
+- **Open**: les nouvelles infos ne sont pas encore utilisées par le scoring (salaire Lever, exigences FT).

@@ -63,6 +63,11 @@ outil d'entretien qui mène vers l'entretien vocal.
     - [x] CTA « S'entraîner à l'oral avec un recruteur IA » → service lead.
   - Vérifié le 2026-09-25 : 3/h et 10/j par IP, 300/j global (ADR-022, amendement octies) ; 429 et 503 + `Retry-After` vus sur l'API lancée.
 
+- Hors sprint, 2026-09-25, à la demande du propriétaire : panneau d'offre de `/offres` et
+  `/offres-du-jour` enrichi (profil, avantages, contact, site de l'entreprise, lien direct
+  « Postuler sur … », source toujours citée), texte en pleine largeur, ouverture sans requête
+  serveur. Livré sans US ni workflow.
+
 Critères communs aux outils : voir `backlog.md`, « Critères d'acceptation détaillés — E23 ».
 
 ## 📊 Sprint DoD
