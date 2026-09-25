@@ -179,11 +179,11 @@ export const featurePagesEn: FeaturePagesDictionary = {
           title: "An ATS score recalculated on every save",
           body: "Recruiters' screening software reads your resume before a human does. CVSpark scores yours on what they look at and tells you what to fix, for free.",
           points: [
-            "The offer's keywords, covered and missing",
-            "Machine readability: structure, sections, format",
+            "Every point raised, with what to change",
+            "A score per criterion: fit with the offer, content, structure, contact details",
             "PDF export stripped of personal metadata, and Word",
           ],
-          alt: "ATS analysis report with an overall score and a breakdown by criterion",
+          alt: "ATS analysis of a tailored resume: score, points to fix with their advice, then the breakdown by criterion",
         },
         {
           eyebrow: "International",

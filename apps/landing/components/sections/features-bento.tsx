@@ -59,7 +59,7 @@ const TILES: BentoTile[] = [
     icon: GaugeIcon,
     className: "md:col-span-4",
     feature: "tailored_documents",
-    screenshot: { name: "ats-report", position: "object-[0%_0%]" },
+    screenshot: { name: "cv-ats", position: "object-[0%_0%]" },
   },
   {
     key: "interview",

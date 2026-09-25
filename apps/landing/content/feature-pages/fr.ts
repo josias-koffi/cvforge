@@ -180,11 +180,11 @@ export const featurePagesFr: FeaturePagesDictionary = {
           title: "Un score ATS recalculé à chaque sauvegarde",
           body: "Les logiciels de tri des recruteurs lisent votre CV avant un humain. CVSpark note le vôtre sur les critères qu'ils regardent et vous dit quoi corriger, gratuitement.",
           points: [
-            "Mots-clés de l'offre couverts et manquants",
-            "Lisibilité machine : structure, sections, format",
+            "Chaque point relevé, avec ce qu'il faut changer",
+            "Note par critère : adéquation à l'offre, contenu, structure, coordonnées",
             "Export PDF sans métadonnées personnelles, et Word",
           ],
-          alt: "Rapport d'analyse ATS avec score global et détail par critère",
+          alt: "Analyse ATS d'un CV adapté : score, points à corriger avec leur conseil, puis détail par critère",
         },
         {
           eyebrow: "International",

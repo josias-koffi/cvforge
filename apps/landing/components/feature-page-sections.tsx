@@ -45,11 +45,13 @@ export function FeatureShot({
           className
         )}
       >
+        {/* A tall panel is cut at the height of the text beside it: the
+            top holds what it says. */}
         <Screenshot
           name={name}
           alt={alt}
           sizes={sizes}
-          className="h-auto w-full rounded-xl"
+          className="h-auto max-h-[36rem] w-full rounded-xl object-cover object-top"
         />
       </div>
     )

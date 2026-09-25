@@ -21,7 +21,7 @@ const SCREEN_PATHS: Record<ScreenshotName, string> = {
   companies: "/entreprises",
   "company-page": "/entreprises/fiche",
   "market-radar": "/ma-recherche/marche",
-  "ats-report": "/analyses-ats",
+  "cv-ats": "/candidatures/cv",
 }
 
 export function ProductShowcase({

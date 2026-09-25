@@ -22,7 +22,7 @@ export type ScreenshotName =
   | "companies"
   | "company-page"
   | "market-radar"
-  | "ats-report"
+  | "cv-ats"
 
 /** The free tools that are live on the landing (US-135). */
 export type FreeToolKey =

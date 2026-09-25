@@ -158,6 +158,7 @@ Référence de gate: le spec impose des branches courtes et des PRs <= 400 ligne
 | US-146 | Page « Entreprises qui recrutent et marché » : potentiel d'embauche, fiche entreprise, radar marché | E24 | M | P1 | 031 | Décision produit du 2026-09-25 |
 | US-147 | Nouvelle page d'accueil « toute la recherche » et menu Fonctionnalités | E24 | L | P0 | 031 | Décision produit du 2026-09-25 |
 | US-148 | Captures d'écran v2 : nouveaux écrans et captures de détail depuis le compte de démo | E24 | M | P0 | 031 | Décision produit du 2026-09-25 |
+| US-153 | Analyse ATS d'un CV généré dans l'app : le badge ouvre un panneau avec les points relevés, un conseil par point, la note par critère et le plafonnement ; lien depuis la liste des candidatures | E18 | M | P1 | 031 | Complète vision `§7.1` ; décision produit du 2026-09-25 (aligner l'app sur la landing) |
 
 ## Critères d'acceptation détaillés — E16
 

@@ -100,7 +100,6 @@ async function api(cookie, route) {
 async function resolveTargets(cookie) {
   const { applications } = await api(cookie, "/applications")
   const { sessions } = await api(cookie, "/interviews/sessions")
-  const { scans } = await api(cookie, "/ats/scans")
   const { registry } = await api(cookie, "/profiles")
   const profileId = registry.activeProfileId
   const { companies } = await api(
@@ -127,9 +126,9 @@ async function resolveTargets(cookie) {
     )
   }
 
-  if (!scans[0] || !company) {
+  if (!company) {
     throw new Error(
-      "The demo account is missing an ATS scan or hiring companies — see the Screenshots section of AGENTS.md."
+      "The demo account has no hiring companies — see the Screenshots section of AGENTS.md."
     )
   }
 
@@ -137,7 +136,6 @@ async function resolveTargets(cookie) {
     cvId: withCv.id,
     letterId: withLetter.id,
     reportId: report.id,
-    scanId: scans[0].scanId,
     siret: company.siret,
     profileId,
   }
@@ -234,7 +232,7 @@ function cardAround(page, text) {
     .locator("xpath=ancestor::*[contains(concat(' ', @class, ' '), ' rounded-xl ')][1]")
 }
 
-function screens({ cvId, letterId, reportId, scanId, siret, profileId }) {
+function screens({ cvId, letterId, reportId, siret, profileId }) {
   return [
     { name: "dashboard", url: "/dashboard", wait: "main" },
     { name: "candidatures", url: "/candidatures", wait: "main" },
@@ -299,15 +297,18 @@ function screens({ cvId, letterId, reportId, scanId, siret, profileId }) {
       ],
     },
     {
-      // The page's breadcrumb has no parent to show, so only the report is kept.
-      name: "ats-report",
-      url: `/analyses-ats/${scanId}`,
-      wait: "main",
-      detail: (page) => [
-        page.getByRole("heading", { level: 1 }),
-        cardAround(page, /^Critère par critère$/),
-        cardAround(page, /^Points relevés$/),
-      ],
+      // The analysis a generated CV opens from its badge (US-153).
+      name: "cv-ats",
+      url: `/candidatures/${cvId}/cv?analyse=ats`,
+      wait: '[role="dialog"]',
+      // The panel is the crop: no margin, or the page behind shows at its edge.
+      padding: 0,
+      async act(page) {
+        // The sheet focuses its close button on opening; the ring is noise.
+        await page.evaluate(() => document.activeElement?.blur())
+        await page.waitForTimeout(300)
+      },
+      detail: (page) => [page.getByRole("dialog")],
     },
   ]
 }
@@ -357,7 +358,9 @@ async function capture(browser, theme, screen) {
   await screen.act?.(page)
   await anonymise(page, DEMO_EMAIL, DISPLAY_EMAIL)
 
-  const clip = screen.detail ? await detailClip(screen.detail(page)) : undefined
+  const clip = screen.detail
+    ? await detailClip(screen.detail(page), screen.padding ?? DETAIL_PADDING)
+    : undefined
   const png = await page.screenshot({ type: "png", clip })
   await context.close()
 
@@ -372,7 +375,7 @@ async function capture(browser, theme, screen) {
 }
 
 /** The box around every target of a close-up, padded and kept on screen. */
-async function detailClip(targets) {
+async function detailClip(targets, padding) {
   const boxes = await Promise.all(
     targets.map(async (target) => {
       const box = await target.boundingBox()
@@ -384,15 +387,15 @@ async function detailClip(targets) {
       return box
     })
   )
-  const left = Math.max(0, Math.min(...boxes.map((box) => box.x)) - DETAIL_PADDING)
-  const top = Math.max(0, Math.min(...boxes.map((box) => box.y)) - DETAIL_PADDING)
+  const left = Math.max(0, Math.min(...boxes.map((box) => box.x)) - padding)
+  const top = Math.max(0, Math.min(...boxes.map((box) => box.y)) - padding)
   const right = Math.min(
     VIEWPORT.width,
-    Math.max(...boxes.map((box) => box.x + box.width)) + DETAIL_PADDING
+    Math.max(...boxes.map((box) => box.x + box.width)) + padding
   )
   const bottom = Math.min(
     VIEWPORT.height,
-    Math.max(...boxes.map((box) => box.y + box.height)) + DETAIL_PADDING
+    Math.max(...boxes.map((box) => box.y + box.height)) + padding
   )
 
   return { x: left, y: top, width: right - left, height: bottom - top }

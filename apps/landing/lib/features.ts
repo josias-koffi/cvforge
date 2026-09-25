@@ -55,7 +55,7 @@ export const featurePages: FeaturePage[] = [
     path: featurePath("tailored_documents"),
     icon: FileTextIcon,
     hero: { name: "cv-editor", path: "/candidatures/cv" },
-    blocks: ["cv-editor", "letter-editor", "ats-report", "translate"],
+    blocks: ["cv-editor", "letter-editor", "cv-ats", "translate"],
     actions: [
       AI_CREDIT_ACTION_CV_IMPORT,
       AI_CREDIT_ACTION_OFFER_ENRICHMENT,

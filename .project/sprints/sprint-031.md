@@ -42,3 +42,10 @@ par des captures de l'app.
     - [x] Nouveaux écrans : offres du jour, recherche, alertes, entreprises, fiche entreprise,
           radar marché, rapport ATS, en clair et en sombre, depuis le compte de démo uniquement.
     - [x] Captures de détail (composant seul, 3x) pour les gros plans.
+- [x] **[US-153]** Analyse ATS d'un CV généré, dans l'app
+  - Ajoutée le 2026-09-25 : la landing promettait un rapport que seul l'outil gratuit affichait.
+  - Critères d'acceptation :
+    - [x] Le badge de l'éditeur de CV ouvre un panneau : score, plafonnement, points relevés avec un conseil chacun, note par critère.
+    - [x] `?analyse=ats` ouvre le panneau à l'arrivée ; le badge de la liste des candidatures y mène.
+    - [x] Aucune nouvelle API : le résultat complet du moteur transitait déjà (`AtsScoreDetail`).
+    - [x] Un conseil pour chaque code du moteur (test), capture de la landing refaite depuis ce panneau.
