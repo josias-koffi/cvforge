@@ -63,8 +63,14 @@ const TURN_DETECTION: readonly RealtimeTurnDetection[] = ["semantic", "server"];
  * with `near_field`, a chair or a keyboard was enough to cut the recruiter off.
  */
 const DEFAULT_NOISE_REDUCTION: RealtimeNoiseReduction = "far_field";
-/** Above OpenAI's 0.5, so a noise in the room does not read as speech. */
-const DEFAULT_VAD_THRESHOLD = 0.7;
+/**
+ * Above OpenAI's 0.5, so a noise in the room does not read as speech. Tried
+ * live on 2026-09-25: semantic detection took five noises in one interview
+ * for the candidate, each cutting the recruiter off and paying for a reply;
+ * `server` at 0.8 took one.
+ */
+const DEFAULT_TURN_DETECTION: RealtimeTurnDetection = "server";
+const DEFAULT_VAD_THRESHOLD = 0.8;
 const DEFAULT_VAD_SILENCE_MS = 700;
 
 function parseChoice<T extends string>(
@@ -113,7 +119,7 @@ export function resolveOpenAiRealtimeConfig(
     turnDetection: parseChoice(
       env.INTERVIEW_REALTIME_TURN_DETECTION,
       TURN_DETECTION,
-      "semantic",
+      DEFAULT_TURN_DETECTION,
     ),
     vadSilenceMs: parsePositiveInt(
       env.INTERVIEW_REALTIME_VAD_SILENCE_MS,

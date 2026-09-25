@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { resolveOpenAiRealtimeConfig } from "./openai-realtime.config";
 
 describe("resolveOpenAiRealtimeConfig", () => {
-  it("defaults to the mini model, a Realtime voice and semantic turns", () => {
+  it("defaults to the mini model, a Realtime voice and a thresholded detector", () => {
     expect(resolveOpenAiRealtimeConfig({ OPENAI_API_KEY: "sk" })).toEqual({
       apiKey: "sk",
       baseUrl: "https://api.openai.com/v1",
@@ -11,9 +11,9 @@ describe("resolveOpenAiRealtimeConfig", () => {
       model: "gpt-realtime-2.1-mini",
       noiseReduction: "far_field",
       transcriptionModel: "gpt-4o-mini-transcribe",
-      turnDetection: "semantic",
+      turnDetection: "server",
       vadSilenceMs: 700,
-      vadThreshold: 0.7,
+      vadThreshold: 0.8,
       voice: "marin",
     });
   });
@@ -22,21 +22,21 @@ describe("resolveOpenAiRealtimeConfig", () => {
     expect(
       resolveOpenAiRealtimeConfig({
         INTERVIEW_REALTIME_NOISE_REDUCTION: "near_field",
-        INTERVIEW_REALTIME_TURN_DETECTION: "server",
-        INTERVIEW_REALTIME_VAD_THRESHOLD: "0.8",
+        INTERVIEW_REALTIME_TURN_DETECTION: "semantic",
+        INTERVIEW_REALTIME_VAD_THRESHOLD: "0.6",
         OPENAI_API_KEY: "sk",
       }),
     ).toMatchObject({
       noiseReduction: "near_field",
-      turnDetection: "server",
-      vadThreshold: 0.8,
+      turnDetection: "semantic",
+      vadThreshold: 0.6,
     });
     expect(
       resolveOpenAiRealtimeConfig({
         INTERVIEW_REALTIME_VAD_THRESHOLD: "3",
         OPENAI_API_KEY: "sk",
       }).vadThreshold,
-    ).toBe(0.7);
+    ).toBe(0.8);
   });
 
   it("reads overrides and treats blank as unset", () => {

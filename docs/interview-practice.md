@@ -89,8 +89,10 @@ to `ADR-020`).
 The browser's microphone goes up as a media track, and the recruiter's voice
 comes back as one. Three things are the call's own job:
 
-- **Turn detection** is semantic (`semantic_vad`). The model hears that a
-  sentence is finished instead of waiting out a fixed silence.
+- **Turn detection** is a thresholded loudness detector (`server_vad`, 0.8)
+  by default. Semantic detection (`semantic_vad`) hears that a sentence is
+  finished, but it mistook five room noises for the candidate in one live
+  test, against one at 0.8.
 - **Interruption** is native. When the candidate talks, generation stops on
   OpenAI's side and the reply is truncated where it was heard.
 - **Playback** needs no jitter buffer or PCM decoding on our side.
@@ -122,8 +124,8 @@ Through the sideband, Nest:
 | Voice | `marin` | `INTERVIEW_REALTIME_VOICE` |
 | Turn eagerness | `medium` | `INTERVIEW_REALTIME_EAGERNESS` |
 | Noise reduction | `far_field` (laptop microphone) | `INTERVIEW_REALTIME_NOISE_REDUCTION` |
-| Turn detection | `semantic` (or `server`, thresholded) | `INTERVIEW_REALTIME_TURN_DETECTION` |
-| Server detection threshold | 0.7 | `INTERVIEW_REALTIME_VAD_THRESHOLD` |
+| Turn detection | `server`, thresholded (or `semantic`) | `INTERVIEW_REALTIME_TURN_DETECTION` |
+| Server detection threshold | 0.8 | `INTERVIEW_REALTIME_VAD_THRESHOLD` |
 | Reply cap | 1500 tokens (audio, ~1 min) | `INTERVIEW_REALTIME_MAX_OUTPUT_TOKENS` |
 | Candidate transcription | `gpt-4o-mini-transcribe` | `INTERVIEW_REALTIME_TRANSCRIPTION_MODEL` |
 
