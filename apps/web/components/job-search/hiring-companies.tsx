@@ -16,7 +16,7 @@ import {
 import { CompanyBadges } from "@/components/job-search/company-badges"
 import { CompanyMark } from "@/components/job-search/company-mark"
 import { MetaItem, MetaList } from "@/components/job-search/offer-meta"
-import { OfferPagination } from "@/components/job-search/offer-pagination"
+import { PagePagination } from "@/components/data-table/page-pagination"
 import { SpontaneousApplyButton } from "@/components/job-search/spontaneous-apply-button"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -127,7 +127,7 @@ export function HiringCompanies({
       </ul>
       {lastPage > 1 ? (
         <footer className="flex flex-col items-center gap-2">
-          <OfferPagination
+          <PagePagination
             page={current}
             lastPage={lastPage}
             path="/entreprises"

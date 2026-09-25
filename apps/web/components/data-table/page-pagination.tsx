@@ -7,7 +7,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination"
-import { pageHref, paginationSlots } from "@/lib/job-pagination"
+import { pageHref, paginationSlots } from "@/lib/pagination"
 
 /**
  * Real pagination: numbers, not two arrows.
@@ -16,7 +16,7 @@ import { pageHref, paginationSlots } from "@/lib/job-pagination"
  * `disabled`: that attribute means nothing on a link, and both arrows used to
  * stay clickable — the first page had a working "previous".
  */
-export function OfferPagination({
+export function PagePagination({
   page,
   lastPage,
   params,

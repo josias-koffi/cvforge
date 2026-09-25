@@ -54,6 +54,39 @@ describe("PgCreditLedgerStore", () => {
     await expect(store.listEntriesForUser("user@example.com")).resolves.toHaveLength(1);
   });
 
+  it("pages the history newest first and filters it by direction", async () => {
+    await store.applyEntry(adminGrant("user@example.com", 10, "admin@example.com"));
+    await store.applyEntry({
+      action: "cv_generation",
+      amount: -3,
+      metadata: {},
+      note: "Generation CV",
+      type: "ai_usage",
+      userEmail: "user@example.com",
+    });
+    await store.applyEntry(adminGrant("user@example.com", 5, "admin@example.com"));
+    await store.applyEntry(adminGrant("other@example.com", 7, "admin@example.com"));
+
+    const firstPage = await store.listEntriesPageForUser("user@example.com", {
+      limit: 2,
+      offset: 0,
+    });
+    const lastPage = await store.listEntriesPageForUser("user@example.com", {
+      limit: 2,
+      offset: 2,
+    });
+
+    expect(firstPage.totalItems).toBe(3);
+    expect(firstPage.entries.map((entry) => entry.amount)).toEqual([5, -3]);
+    expect(lastPage.entries.map((entry) => entry.amount)).toEqual([10]);
+    await expect(
+      store.listEntriesPageForUser("user@example.com", { kind: "spent", limit: 10, offset: 0 }),
+    ).resolves.toMatchObject({ entries: [{ amount: -3 }], totalItems: 1 });
+    await expect(
+      store.listEntriesPageForUser("user@example.com", { kind: "earned", limit: 10, offset: 0 }),
+    ).resolves.toMatchObject({ totalItems: 2 });
+  });
+
   it("returns the first entry for a reused idempotency key", async () => {
     const first = await store.applyEntry(
       adminGrant("user@example.com", 5, "admin@example.com"),

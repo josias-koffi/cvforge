@@ -1,11 +1,11 @@
 import { renderToStaticMarkup } from "react-dom/server"
 import { describe, expect, it } from "vitest"
 
-import { OfferPagination } from "@/components/job-search/offer-pagination"
+import { PagePagination } from "@/components/data-table/page-pagination"
 
 function render(page: number, lastPage: number) {
   return renderToStaticMarkup(
-    <OfferPagination
+    <PagePagination
       page={page}
       lastPage={lastPage}
       path="/offres"
@@ -14,7 +14,7 @@ function render(page: number, lastPage: number) {
   )
 }
 
-describe("OfferPagination", () => {
+describe("PagePagination", () => {
   it("shows nothing when there is a single page", () => {
     expect(render(1, 1)).toBe("")
   })

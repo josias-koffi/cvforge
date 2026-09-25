@@ -19,6 +19,7 @@ import {
  * cannot say so.
  */
 const pathLabels: Record<string, string> = {
+  "/credits/historique": "Historique",
   "/ma-recherche/alertes": "Alertes",
   "/ma-recherche/marche": "Marché",
   "/ma-recherche/metiers": "Métiers & compétences",

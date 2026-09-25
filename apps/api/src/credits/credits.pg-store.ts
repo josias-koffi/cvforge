@@ -1,5 +1,5 @@
-import type { CreditLedgerEntry } from "@cvforge/types";
-import { and, desc, eq, ne, sql } from "drizzle-orm";
+import type { CreditHistoryKind, CreditLedgerEntry } from "@cvforge/types";
+import { and, count, desc, eq, gt, lt, ne, sql } from "drizzle-orm";
 import type { Database } from "../database/database.types";
 import { creditBalances, creditLedgerEntries } from "../database/schema";
 import type {
@@ -91,6 +91,32 @@ export class PgCreditLedgerStore implements CreditLedgerStore {
       .orderBy(desc(creditLedgerEntries.seq));
 
     return rows.map(toEntry);
+  }
+
+  async listEntriesPageForUser(
+    userEmail: string,
+    query: { kind?: CreditHistoryKind; limit: number; offset: number },
+  ) {
+    const where = and(
+      eq(creditLedgerEntries.userEmail, userEmail),
+      query.kind === "spent" ? lt(creditLedgerEntries.amount, 0) : undefined,
+      query.kind === "earned" ? gt(creditLedgerEntries.amount, 0) : undefined,
+    );
+    const [rows, totals] = await Promise.all([
+      this.db
+        .select()
+        .from(creditLedgerEntries)
+        .where(where)
+        .orderBy(desc(creditLedgerEntries.seq))
+        .limit(query.limit)
+        .offset(query.offset),
+      this.db.select({ total: count() }).from(creditLedgerEntries).where(where),
+    ]);
+
+    return {
+      entries: rows.map(toEntry),
+      totalItems: Number(totals[0]?.total ?? 0),
+    };
   }
 
   async listEntriesByAdminEmail(adminEmail: string) {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { pageHref, paginationSlots } from "@/lib/job-pagination"
+import { pageHref, paginationSlots } from "@/lib/pagination"
 
 describe("paginationSlots", () => {
   it("writes out every page when they all fit", () => {

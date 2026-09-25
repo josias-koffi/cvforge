@@ -32,8 +32,26 @@ export class CreditsController {
     const session = requireSession(this.authService, request);
 
     return {
-      credits: await this.creditsService.getSummaryForUser(session.email),
+      credits: await this.creditsService.getBalanceSummaryForUser(
+        session.email,
+      ),
     };
+  }
+
+  @Get("me/history")
+  async getMyHistory(
+    @Query("page") page: string | undefined,
+    @Query("pageSize") pageSize: string | undefined,
+    @Query("kind") kind: string | undefined,
+    @Req() request: CookieRequest,
+  ) {
+    const session = requireSession(this.authService, request);
+
+    return this.creditsService.getHistoryPageForUser(session.email, {
+      kind,
+      page,
+      pageSize,
+    });
   }
 
   @Get("users/:userEmail")

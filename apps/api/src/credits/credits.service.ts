@@ -11,6 +11,10 @@ import {
   CREDIT_EVENT_STRIPE_PURCHASE,
   CREDIT_EVENT_WELCOME_GRANT,
   WELCOME_CREDITS,
+  creditHistoryKinds,
+  type CreditBalanceSummary,
+  type CreditHistoryKind,
+  type CreditHistoryPage,
   type CreditLedgerEntry,
   type CreditLedgerSummary,
 } from "@cvforge/types";
@@ -20,6 +24,7 @@ import {
   HttpStatus,
   UnprocessableEntityException,
 } from "@nestjs/common";
+import { countPages, resolvePageWindow } from "../shared/pagination";
 import type {
   ConsumeCreditsInput,
   CreditLedgerEntryDraft,
@@ -74,6 +79,16 @@ function resolveCost(action: ConsumeCreditsInput["action"], amount?: number) {
   return amount;
 }
 
+const HISTORY_PAGE_SIZE = 20;
+const HISTORY_MAX_PAGE_SIZE = 50;
+
+/** An unknown filter shows everything rather than failing the page. */
+function normalizeKind(value: string | undefined) {
+  return creditHistoryKinds.includes(value as CreditHistoryKind)
+    ? (value as CreditHistoryKind)
+    : undefined;
+}
+
 export class InsufficientCreditsException extends HttpException {
   constructor(action: ConsumeCreditsInput["action"]) {
     super(
@@ -90,18 +105,58 @@ export class CreditsService {
     private readonly config: CreditsConfig,
   ) {}
 
-  async getSummaryForUser(userEmail: string): Promise<CreditLedgerSummary> {
-    const [balance, history] = await Promise.all([
-      this.store.getBalance(userEmail),
-      this.store.listEntriesForUser(userEmail),
-    ]);
+  /**
+   * The balance alone. Every page of the app shows it, so it must not drag
+   * the whole ledger along: the history has its own paginated endpoint.
+   */
+  async getBalanceSummaryForUser(
+    userEmail: string,
+  ): Promise<CreditBalanceSummary> {
+    const balance = await this.store.getBalance(userEmail);
 
     return {
       balance,
-      history,
       isLowBalance: balance < this.config.lowBalanceThreshold,
       lowBalanceThreshold: this.config.lowBalanceThreshold,
       userEmail,
+    };
+  }
+
+  /** The balance and the whole ledger, for the admin screens. */
+  async getSummaryForUser(userEmail: string): Promise<CreditLedgerSummary> {
+    const [summary, history] = await Promise.all([
+      this.getBalanceSummaryForUser(userEmail),
+      this.store.listEntriesForUser(userEmail),
+    ]);
+
+    return { ...summary, history };
+  }
+
+  async getHistoryPageForUser(
+    userEmail: string,
+    query: { kind?: string; page?: string; pageSize?: string },
+  ): Promise<CreditHistoryPage> {
+    const kind = normalizeKind(query.kind);
+    const { limit, offset, page, pageSize } = resolvePageWindow({
+      defaultPageSize: HISTORY_PAGE_SIZE,
+      maxPageSize: HISTORY_MAX_PAGE_SIZE,
+      page: query.page,
+      pageSize: query.pageSize,
+    });
+    const { entries, totalItems } = await this.store.listEntriesPageForUser(
+      userEmail,
+      { kind, limit, offset },
+    );
+
+    return {
+      entries,
+      filters: { kind: kind ?? null },
+      pagination: {
+        page,
+        pageSize,
+        totalItems,
+        totalPages: countPages(totalItems, pageSize),
+      },
     };
   }
 

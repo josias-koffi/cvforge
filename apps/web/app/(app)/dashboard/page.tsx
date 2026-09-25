@@ -2,7 +2,6 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import type {
   ApplicationsKpiSummary,
-  CreditLedgerSummary,
   DraftApplication,
   InterviewProgressSummary,
   InterviewSessionListItem,
@@ -19,6 +18,7 @@ import { OffersTable } from "@/components/offers/offers-table"
 import { Button } from "@/components/ui/button"
 import { buildActivitySeries } from "@/lib/activity"
 import { api } from "@/lib/api"
+import { getCreditBalance } from "@/lib/credits"
 import type { AtsScanSummary } from "@/lib/ats-report"
 import { hasProgressData } from "@/lib/interview/progress"
 
@@ -59,7 +59,7 @@ export default async function DashboardPage() {
     await Promise.all([
       api<{ summary: ApplicationsKpiSummary }>("/applications/summary"),
       api<{ applications: DraftApplication[] }>("/applications"),
-      api<{ credits: CreditLedgerSummary }>("/credits/me").catch(() => null),
+      getCreditBalance().catch(() => null),
       api<{ progress: InterviewProgressSummary }>("/interviews/progress").catch(
         () => null
       ),
@@ -91,7 +91,7 @@ export default async function DashboardPage() {
       />
 
       <SectionCards
-        balance={credits?.credits.balance ?? null}
+        balance={credits?.balance ?? null}
         interviews={progress}
         summary={summary}
       />

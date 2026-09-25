@@ -3,7 +3,7 @@ import Link from "next/link"
 import { SearchIcon, SparklesIcon } from "lucide-react"
 
 import { OfferGrid } from "@/components/job-search/offer-grid"
-import { OfferPagination } from "@/components/job-search/offer-pagination"
+import { PagePagination } from "@/components/data-table/page-pagination"
 import { OfferSearchForm } from "@/components/job-search/offer-search-form"
 import { PageHeader } from "@/components/layout/page-header"
 import { Button } from "@/components/ui/button"
@@ -94,7 +94,7 @@ export default async function OfferSearchPage(props: PageProps<"/offres">) {
         {lastPage > 1 ? (
           <footer className="flex flex-col gap-4 pb-4">
             <Separator />
-            <OfferPagination
+            <PagePagination
               page={page}
               lastPage={lastPage}
               path="/offres"

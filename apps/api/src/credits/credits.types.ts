@@ -1,5 +1,6 @@
 import type {
   AiCreditAction,
+  CreditHistoryKind,
   CreditLedgerEntry,
   CreditLedgerSummary,
 } from "@cvforge/types";
@@ -31,6 +32,11 @@ export type CreditLedgerStore = {
   ) => Promise<ApplyLedgerEntryResult>;
   getBalance: (userEmail: string) => Promise<number>;
   listEntriesForUser: (userEmail: string) => Promise<CreditLedgerEntry[]>;
+  /** Newest first, with the total the filter matches so a pager can be drawn. */
+  listEntriesPageForUser: (
+    userEmail: string,
+    query: { kind?: CreditHistoryKind; limit: number; offset: number },
+  ) => Promise<{ entries: CreditLedgerEntry[]; totalItems: number }>;
   listEntriesByAdminEmail: (adminEmail: string) => Promise<CreditLedgerEntry[]>;
   deleteByUserEmail: (userEmail: string) => Promise<number>;
   anonymizeAdminReferences: (adminEmail: string) => Promise<number>;

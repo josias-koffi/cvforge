@@ -51,13 +51,39 @@ describe("CreditsService", () => {
     });
   });
 
-  it("flags a balance under the threshold as low", async () => {
+  it("pages the history and falls back on bad paging values", async () => {
+    for (const credits of [1, 2, 3]) await grant(credits);
+
+    await expect(
+      service.getHistoryPageForUser(USER, { page: "2", pageSize: "2" }),
+    ).resolves.toMatchObject({
+      entries: [{ amount: 1 }],
+      filters: { kind: null },
+      pagination: { page: 2, pageSize: 2, totalItems: 3, totalPages: 2 },
+    });
+    await expect(
+      service.getHistoryPageForUser(USER, { kind: "stolen", page: "-1", pageSize: "500" }),
+    ).resolves.toMatchObject({
+      filters: { kind: null },
+      pagination: { page: 1, pageSize: 50, totalPages: 1 },
+    });
+    await expect(
+      service.getHistoryPageForUser("nobody@example.com", { kind: "spent" }),
+    ).resolves.toMatchObject({
+      entries: [],
+      filters: { kind: "spent" },
+      pagination: { page: 1, pageSize: 20, totalItems: 0, totalPages: 1 },
+    });
+  });
+
+  it("flags a balance under the threshold as low, without reading the ledger", async () => {
     await grant(5);
 
-    await expect(service.getSummaryForUser(USER)).resolves.toMatchObject({
+    await expect(service.getBalanceSummaryForUser(USER)).resolves.toEqual({
       balance: 5,
       isLowBalance: true,
       lowBalanceThreshold: 20,
+      userEmail: USER,
     });
   });
 

@@ -687,12 +687,32 @@ export interface CreateCheckoutSessionResponse {
   sessionId: string;
 }
 
-export interface CreditLedgerSummary {
+/** What a user's own pages need: the balance, not the ledger behind it. */
+export interface CreditBalanceSummary {
   userEmail: string;
   balance: number;
   lowBalanceThreshold: number;
   isLowBalance: boolean;
+}
+
+export interface CreditLedgerSummary extends CreditBalanceSummary {
   history: CreditLedgerEntry[];
+}
+
+/** Which way the credits moved: spent on the AI, or added by a grant or a purchase. */
+export const creditHistoryKinds = ["spent", "earned"] as const;
+export type CreditHistoryKind = (typeof creditHistoryKinds)[number];
+
+/** One page of a user's ledger, newest first. */
+export interface CreditHistoryPage {
+  entries: CreditLedgerEntry[];
+  filters: { kind: CreditHistoryKind | null };
+  pagination: {
+    page: number;
+    pageSize: number;
+    totalItems: number;
+    totalPages: number;
+  };
 }
 
 export interface InAppNotification {

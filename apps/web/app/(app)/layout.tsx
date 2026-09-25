@@ -1,4 +1,4 @@
-import type { CreditLedgerSummary, NotificationSummary } from "@cvforge/types"
+import type { NotificationSummary } from "@cvforge/types"
 
 import { Suspense } from "react"
 
@@ -7,17 +7,17 @@ import { AppSidebar } from "@/components/layout/app-sidebar"
 import { SiteHeader } from "@/components/layout/site-header"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { api } from "@/lib/api"
+import { getCreditBalance } from "@/lib/credits"
 import { requireSession } from "@/lib/session"
 
 async function loadSidebarCounters() {
   const [credits, notifications] = await Promise.allSettled([
-    api<{ credits: CreditLedgerSummary }>("/credits/me"),
+    getCreditBalance(),
     api<{ summary: NotificationSummary }>("/notifications/summary"),
   ])
 
   return {
-    balance:
-      credits.status === "fulfilled" ? credits.value.credits.balance : null,
+    balance: credits.status === "fulfilled" ? credits.value.balance : null,
     unreadCount:
       notifications.status === "fulfilled"
         ? notifications.value.summary.unreadCount
