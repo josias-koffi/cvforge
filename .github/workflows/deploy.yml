@@ -235,6 +235,12 @@ jobs:
       TF_VAR_smtp_user: ${{ secrets.SMTP_USER }}
       TF_VAR_smtp_password: ${{ secrets.SMTP_PASSWORD }}
       TF_VAR_next_server_actions_encryption_key: ${{ secrets.NEXT_SERVER_ACTIONS_ENCRYPTION_KEY }}
+      # Off-site backups (R2) — reuses the state backend's endpoint (same
+      # Cloudflare account) but a token scoped to the backups bucket only,
+      # never the one that can touch the state bucket.
+      TF_VAR_r2_backup_endpoint: ${{ secrets.R2_ENDPOINT }}
+      TF_VAR_r2_backup_access_key: ${{ secrets.R2_BACKUP_ACCESS_KEY_ID }}
+      TF_VAR_r2_backup_secret_access_key: ${{ secrets.R2_BACKUP_SECRET_ACCESS_KEY }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4

@@ -203,11 +203,18 @@ pipeline's file and nothing references it any more.
 ## Operations
 
 - Logs and shells: the Dokploy UI, per service, in the `cvspark` project.
-- Backups: nightly `pg_dump` in the `cvforge_db_backups` volume (7 daily, 4
-  weekly, 6 monthly). The pre-deploy dump disappeared with the SSH job; restoring
-  an off-site copy means adding `dokploy_backup` + `dokploy_destination` to
-  `infra/dokploy/`. **What remains lives on the VPS only** — copy it off-site for
-  real durability.
+- Backups, two independent copies per environment:
+  1. On-VPS: nightly `pg_dump` in the `${VOLUME_PREFIX}_db_backups` volume (7
+     daily, 4 weekly, 6 monthly). **Does not survive VPS destruction.**
+  2. Off-site (`infra/dokploy/backup.tf`): Dokploy's own `dokploy_backup`
+     (Postgres dump, 03:00) and `dokploy_volume_backup` (the `api_data`
+     volume — JSON state pg_dump does not cover — 04:00), both to the
+     `koklo-db-backups` R2 bucket via `dokploy_destination`, under
+     `db/<environment>/` and `api-data/<environment>/`. Needs the
+     `R2_BACKUP_ACCESS_KEY_ID` / `R2_BACKUP_SECRET_ACCESS_KEY` repo secrets —
+     a token scoped to that bucket only, never the state bucket's token.
+     Keeps the last 14 of each. Check a run from the Dokploy UI's Backups tab
+     on the compose, or trigger one manually there.
 - The API stores credits, offers and orders in Postgres and everything else as
   JSON files in the `api_data` volume (`/workspace/.data`). Never recreate either
   volume. Migrations run automatically before the API starts; `GET /ready`
