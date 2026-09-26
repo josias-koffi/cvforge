@@ -107,8 +107,8 @@ describe("AuthMailerService", () => {
     expect(sendMail).toHaveBeenCalledWith(
       expect.objectContaining({
         from: "hello@example.com",
-        replyTo: "support@cvspark.test",
-        subject: "Votre lien de connexion CVSpark",
+        replyTo: "support@jobspark.test",
+        subject: "Votre lien de connexion Jobspark",
         to: "user@example.com",
       }),
     );
@@ -136,7 +136,7 @@ describe("AuthMailerService", () => {
     });
 
     expect(sendMail.mock.calls[0]![0].subject).toBe(
-      "Votre résultat CVSpark est prêt",
+      "Votre résultat Jobspark est prêt",
     );
     expect(sendMail.mock.calls[0]![0].html).toContain("Voir mon résultat");
   });

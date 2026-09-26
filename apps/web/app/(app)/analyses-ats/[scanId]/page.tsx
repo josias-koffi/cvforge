@@ -65,7 +65,7 @@ export default async function AtsScanPage({
             <AtsScoreBadge score={scoreOf(report)} />
             <p className="basis-full text-sm text-muted-foreground">
               Un CV adapté à chaque offre reprend son vocabulaire : c’est ce que
-              CVSpark génère à partir de votre profil.
+              Jobspark génère à partir de votre profil.
             </p>
           </CardContent>
         </Card>

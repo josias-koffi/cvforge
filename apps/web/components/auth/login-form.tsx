@@ -32,7 +32,7 @@ export function LoginForm({ notice }: { notice?: string }) {
   return (
     <Card>
       <CardHeader className="text-center">
-        <CardTitle className="text-xl">Bienvenue sur CVSpark</CardTitle>
+        <CardTitle className="text-xl">Bienvenue sur Jobspark</CardTitle>
         <CardDescription>
           Recevez votre lien de connexion par e-mail. Pas de mot de passe à retenir.
         </CardDescription>

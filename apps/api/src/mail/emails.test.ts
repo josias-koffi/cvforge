@@ -21,16 +21,16 @@ describe("renderEmail", () => {
     title: "Titre",
   };
 
-  it("frames every message with the CVSpark logo, footer and legal links", () => {
+  it("frames every message with the Jobspark logo, footer and legal links", () => {
     const { html, text } = renderEmail(brand, content);
 
-    expect(html).toContain('src="https://cvspark.test/email/cvspark-mark.png"');
-    expect(html).toContain('alt="CVSpark"');
+    expect(html).toContain('src="https://jobspark.test/email/jobspark-mark.png"');
+    expect(html).toContain('alt="Jobspark"');
     expect(html).toContain("Les bonnes offres. Le bon CV. Une étincelle.");
-    expect(html).toContain("mailto:support@cvspark.test");
-    expect(html).toContain("https://cvspark.test/fr/legal/cgu");
-    expect(html).toContain("https://cvspark.test/fr/legal/confidentialite");
-    expect(text).toContain("Une question ? support@cvspark.test");
+    expect(html).toContain("mailto:support@jobspark.test");
+    expect(html).toContain("https://jobspark.test/fr/legal/cgu");
+    expect(html).toContain("https://jobspark.test/fr/legal/confidentialite");
+    expect(text).toContain("Une question ? support@jobspark.test");
   });
 
   it("escapes the content it is given", () => {
@@ -45,11 +45,11 @@ describe("renderEmail", () => {
 
     const withPreferences = renderEmail(brand, {
       ...content,
-      preferencesUrl: "https://app.cvspark.test/notifications",
+      preferencesUrl: "https://app.jobspark.test/notifications",
     });
-    expect(withPreferences.html).toContain("https://app.cvspark.test/notifications");
+    expect(withPreferences.html).toContain("https://app.jobspark.test/notifications");
     expect(withPreferences.text).toContain(
-      "Ne plus recevoir ces e-mails : https://app.cvspark.test/notifications",
+      "Ne plus recevoir ces e-mails : https://app.jobspark.test/notifications",
     );
   });
 
@@ -79,15 +79,15 @@ describe("composeApplicationFollowUpEmail", () => {
     const email = composeApplicationFollowUpEmail(brand, {
       companyName: "Doctolib",
       delayDays: 10,
-      followUpUrl: "https://app.cvspark.test/candidatures?applicationId=a1",
+      followUpUrl: "https://app.jobspark.test/candidatures?applicationId=a1",
       jobTitle: "Développeur",
-      preferencesUrl: "https://app.cvspark.test/notifications",
+      preferencesUrl: "https://app.jobspark.test/notifications",
     });
 
     expect(email.subject).toBe("Relancer Doctolib ?");
     expect(email.text).toContain("envoyée depuis 10 jours");
     expect(email.html).toContain(
-      'href="https://app.cvspark.test/candidatures?applicationId=a1"',
+      'href="https://app.jobspark.test/candidatures?applicationId=a1"',
     );
   });
 });
@@ -98,7 +98,7 @@ describe("composeCreditPurchaseEmail", () => {
       amountCents: 1200,
       credits: 50,
       offerName: "Essentiel",
-      preferencesUrl: "https://app.cvspark.test/notifications",
+      preferencesUrl: "https://app.jobspark.test/notifications",
     });
 
     expect(email.subject).toBe("Achat confirmé : 50 crédits ajoutés");
@@ -123,17 +123,17 @@ describe("resolveMailConfig", () => {
   it("reads the sender, the reply address and the public URLs", () => {
     expect(
       resolveMailConfig({
-        EMAIL_FROM: "CVSpark <no-reply@cvspark.koklo.dev>",
-        EMAIL_REPLY_TO: "CVSpark <support@cvspark.koklo.dev>",
-        LANDING_URL: "https://cvspark.koklo.dev/",
-        NEXT_PUBLIC_APP_URL: "https://cvspark-app.koklo.dev",
+        EMAIL_FROM: "Jobspark <no-reply@jobspark.koklo.dev>",
+        EMAIL_REPLY_TO: "Jobspark <support@jobspark.koklo.dev>",
+        LANDING_URL: "https://jobspark.koklo.dev/",
+        NEXT_PUBLIC_APP_URL: "https://jobspark-app.koklo.dev",
       }),
     ).toEqual({
-      appUrl: "https://cvspark-app.koklo.dev",
-      from: "CVSpark <no-reply@cvspark.koklo.dev>",
-      landingUrl: "https://cvspark.koklo.dev",
-      replyTo: "CVSpark <support@cvspark.koklo.dev>",
-      supportEmail: "support@cvspark.koklo.dev",
+      appUrl: "https://jobspark-app.koklo.dev",
+      from: "Jobspark <no-reply@jobspark.koklo.dev>",
+      landingUrl: "https://jobspark.koklo.dev",
+      replyTo: "Jobspark <support@jobspark.koklo.dev>",
+      supportEmail: "support@jobspark.koklo.dev",
     });
   });
 

@@ -41,7 +41,7 @@ describe("OnboardingWizard", () => {
     const html = render("bienvenue")
 
     expect(html).toContain("Étape 1 sur 7")
-    expect(html).toContain("Bienvenue sur CVSpark")
+    expect(html).toContain("Bienvenue sur Jobspark")
     expect(html).toContain("importez votre CV")
     expect(html).toContain("Remplir à la main")
     expect(html).toContain("Terminer plus tard")

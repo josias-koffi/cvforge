@@ -10,10 +10,10 @@ locals {
   }
 }
 
-resource "dokploy_domain" "cvspark" {
+resource "dokploy_domain" "jobspark" {
   for_each = local.routes
 
-  compose_id       = dokploy_compose.cvspark.id
+  compose_id       = dokploy_compose.jobspark.id
   service_name     = each.key
   host             = each.value.host
   port             = each.value.port

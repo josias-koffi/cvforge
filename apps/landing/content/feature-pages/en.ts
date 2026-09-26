@@ -20,7 +20,7 @@ export const featurePagesEn: FeaturePagesDictionary = {
     daily_offers: {
       metaTitle: "Personalized job offers every morning",
       metaDescription:
-        "Every morning, CVSpark picks the job offers that match your profile, explains each score and, with AI ranking, tells you in one sentence why the offer fits you.",
+        "Every morning, Jobspark picks the job offers that match your profile, explains each score and, with AI ranking, tells you in one sentence why the offer fits you.",
       card: {
         name: "Daily job offers",
         description: "Ten offers picked for you every morning, ranked by AI.",
@@ -29,10 +29,10 @@ export const featurePagesEn: FeaturePagesDictionary = {
       title: "Every morning, the offers",
       titleAccent: "that truly fit you.",
       subtitle:
-        "No more alerts dumping a hundred ads on you. CVSpark reads the offers published, compares them with your profile and keeps only the best, with the reason for each pick.",
+        "No more alerts dumping a hundred ads on you. Jobspark reads the offers published, compares them with your profile and keeps only the best, with the reason for each pick.",
       primaryCta: "Get my daily offers",
       heroAlt:
-        "Daily offers in CVSpark: ranked job offers with a match score and the AI's one-line explanation",
+        "Daily offers in Jobspark: ranked job offers with a match score and the AI's one-line explanation",
       stats: [
         { value: "6 am", label: "your selection is ready" },
         { value: "10", label: "offers picked, not a hundred" },
@@ -48,7 +48,7 @@ export const featurePagesEn: FeaturePagesDictionary = {
             "One short, concrete sentence per offer, no empty superlatives",
             "Charged only when the ranking succeeds",
           ],
-          alt: "CVSpark offer card with the AI's sentence explaining why the offer fits the profile",
+          alt: "Jobspark offer card with the AI's sentence explaining why the offer fits the profile",
         },
         {
           eyebrow: "A score that explains itself",
@@ -57,13 +57,13 @@ export const featurePagesEn: FeaturePagesDictionary = {
           points: [
             "Skills you have and skills to highlight, offer by offer",
             "Requirements, contract, salary and apply link in one place",
-            "“Apply with CVSpark” creates the application and starts the tailored resume",
+            "“Apply with Jobspark” creates the application and starts the tailored resume",
           ],
           alt: "Offer panel with the score breakdown, the matching skills and the apply button",
         },
         {
           eyebrow: "Set once",
-          title: "Describe your search, CVSpark searches every morning",
+          title: "Describe your search, Jobspark searches every morning",
           body: "Target jobs, locations, contract, remote work, companies to avoid: you set your search once. The selection lands in the app and, if you like, in your inbox.",
           points: [
             "Jobs mapped to France Travail's ROME job directory",
@@ -80,7 +80,7 @@ export const featurePagesEn: FeaturePagesDictionary = {
             "France Travail, La bonne alternance and company career sites",
             "An offer posted in several places shows up once",
           ],
-          alt: "CVSpark job search with the results list and the detail panel",
+          alt: "Jobspark job search with the results list and the detail panel",
         },
       ],
       difference: {
@@ -134,7 +134,7 @@ export const featurePagesEn: FeaturePagesDictionary = {
     tailored_documents: {
       metaTitle: "Tailored resume for every job offer, cover letter included",
       metaDescription:
-        "CVSpark writes a resume tailored to the job offer and a personalised cover letter in seconds, with an ATS score on every save, French-English translation and PDF or Word export.",
+        "Jobspark writes a resume tailored to the job offer and a personalised cover letter in seconds, with an ATS score on every save, French-English translation and PDF or Word export.",
       card: {
         name: "Tailored resume and letter",
         description: "A resume and a letter tailored to the offer, ATS score included.",
@@ -143,10 +143,10 @@ export const featurePagesEn: FeaturePagesDictionary = {
       title: "A resume tailored to every offer,",
       titleAccent: "the letter too.",
       subtitle:
-        "Paste an offer: CVSpark takes your profile, brings forward what matters for this job and writes the resume and the letter. You review, adjust, send.",
+        "Paste an offer: Jobspark takes your profile, brings forward what matters for this job and writes the resume and the letter. You review, adjust, send.",
       primaryCta: "Create my tailored resume",
       heroAlt:
-        "CVSpark resume editor: form on the left, A4 preview of the resume tailored to the offer on the right",
+        "Jobspark resume editor: form on the left, A4 preview of the resume tailored to the offer on the right",
       stats: [
         { value: "Seconds", label: "instead of an evening" },
         { value: "ATS score", label: "on every save" },
@@ -156,7 +156,7 @@ export const featurePagesEn: FeaturePagesDictionary = {
         {
           eyebrow: "Tailored, not recycled",
           title: "The offer's vocabulary, your background",
-          body: "The experience and skills that matter for the job come first, reworded with the offer's words. CVSpark shows what it relied on, and nothing is made up: it all comes from your profile.",
+          body: "The experience and skills that matter for the job come first, reworded with the offer's words. Jobspark shows what it relied on, and nothing is made up: it all comes from your profile.",
           points: [
             "Import your current resume as PDF or Word, even scanned",
             "Several base profiles, one per kind of job",
@@ -177,7 +177,7 @@ export const featurePagesEn: FeaturePagesDictionary = {
         {
           eyebrow: "ATS-ready",
           title: "An ATS score recalculated on every save",
-          body: "Recruiters' screening software reads your resume before a human does. CVSpark scores yours on what they look at and tells you what to fix, for free.",
+          body: "Recruiters' screening software reads your resume before a human does. Jobspark scores yours on what they look at and tells you what to fix, for free.",
           points: [
             "Every point raised, with what to change",
             "A score per criterion: fit with the offer, content, structure, contact details",
@@ -199,7 +199,7 @@ export const featurePagesEn: FeaturePagesDictionary = {
         items: [
           {
             title: "Nothing made up",
-            body: "The resume is built from your profile. CVSpark shows you what it relies on.",
+            body: "The resume is built from your profile. Jobspark shows you what it relies on.",
           },
           {
             title: "Your data protected",
@@ -226,7 +226,7 @@ export const featurePagesEn: FeaturePagesDictionary = {
           {
             question: "How do I add an offer?",
             answer:
-              "Paste the ad's link, its text or its PDF. From the daily offers, one click on “Apply with CVSpark” is enough.",
+              "Paste the ad's link, its text or its PDF. From the daily offers, one click on “Apply with Jobspark” is enough.",
           },
           {
             question: "Will my resume be readable by ATS software?",
@@ -256,7 +256,7 @@ export const featurePagesEn: FeaturePagesDictionary = {
         "Talk to a recruiter who has read the offer you are after. They listen, follow up, and let you cut in. At the end, a scored report tells you what landed and what was missing.",
       primaryCta: "Take an interview",
       heroAlt:
-        "CVSpark interview studio: animated voice orb, countdown and live transcript",
+        "Jobspark interview studio: animated voice orb, countdown and live transcript",
       stats: [
         { value: "5", label: "recruiter styles" },
         { value: "10 to 30 min", label: "depending on your time" },
@@ -346,7 +346,7 @@ export const featurePagesEn: FeaturePagesDictionary = {
     companies_market: {
       metaTitle: "Companies hiring near you, even without a job ad",
       metaDescription:
-        "CVSpark finds the companies hiring in your line of work near you, even with no job ad published, with their profile (headcount, commitments, gender equality) and the state of the market: demand and salaries.",
+        "Jobspark finds the companies hiring in your line of work near you, even with no job ad published, with their profile (headcount, commitments, gender equality) and the state of the market: demand and salaries.",
       card: {
         name: "Companies and market",
         description: "Who is hiring near you, and what your job is worth.",
@@ -355,10 +355,10 @@ export const featurePagesEn: FeaturePagesDictionary = {
       title: "The companies that are hiring,",
       titleAccent: "even without an ad.",
       subtitle:
-        "Most hires never go through a job ad. CVSpark shows you the companies hiring in your line of work around you, what they are, and whether the market works in your favour.",
+        "Most hires never go through a job ad. Jobspark shows you the companies hiring in your line of work around you, what they are, and whether the market works in your favour.",
       primaryCta: "See who is hiring",
       heroAlt:
-        "List of hiring companies in CVSpark with hiring potential, size and distance",
+        "List of hiring companies in Jobspark with hiring potential, size and distance",
       stats: [
         { value: "No ad needed", label: "the hidden job market" },
         { value: "5 badges", label: "of verified commitments" },
@@ -415,7 +415,7 @@ export const featurePagesEn: FeaturePagesDictionary = {
           {
             question: "How do you know a company is hiring without an ad?",
             answer:
-              "CVSpark relies on the hiring potential France Travail computes (La Bonne Boîte) from past hires in your line of work and your area.",
+              "Jobspark relies on the hiring potential France Travail computes (La Bonne Boîte) from past hires in your line of work and your area.",
           },
           {
             question: "Where does the company information come from?",

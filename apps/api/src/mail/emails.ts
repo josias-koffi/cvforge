@@ -14,7 +14,7 @@ import { renderEmail } from "./mail-layout";
 import type { MailConfig } from "./mail.config";
 
 /**
- * The content of every CVSpark e-mail. Pure functions: the mailers add the
+ * The content of every Jobspark e-mail. Pure functions: the mailers add the
  * sender and the transport, the preview script (`email:preview`) renders
  * them with made-up data.
  */
@@ -43,19 +43,19 @@ export function composeMagicLinkEmail(
   input: MagicLinkEmailInput,
 ): ComposedEmail {
   const toolResult = input.purpose === "tool-result";
-  const heading = toolResult ? "Votre résultat vous attend" : "Connectez-vous à CVSpark";
+  const heading = toolResult ? "Votre résultat vous attend" : "Connectez-vous à Jobspark";
   const expiresAt = formatParisDateTime(input.expiresAt);
 
   return {
     subject: toolResult
-      ? "Votre résultat CVSpark est prêt"
-      : "Votre lien de connexion CVSpark",
+      ? "Votre résultat Jobspark est prêt"
+      : "Votre lien de connexion Jobspark",
     ...renderEmail(brand, {
       blocks: [
         paragraph("Bonjour,"),
         paragraph(
           toolResult
-            ? "Votre résultat est enregistré. Ce lien vous connecte à CVSpark et l'ouvre directement, sans mot de passe."
+            ? "Votre résultat est enregistré. Ce lien vous connecte à Jobspark et l'ouvre directement, sans mot de passe."
             : "Voici votre lien de connexion. Un clic suffit, sans mot de passe.",
         ),
         button(toolResult ? "Voir mon résultat" : "Me connecter", input.magicLink),
@@ -71,7 +71,7 @@ export function composeMagicLinkEmail(
       ],
       heading,
       preheader: `Lien valable jusqu'au ${expiresAt}.`,
-      reason: "Vous recevez cet e-mail parce que votre adresse a été saisie sur CVSpark.",
+      reason: "Vous recevez cet e-mail parce que votre adresse a été saisie sur Jobspark.",
       title: heading,
     }),
   };
@@ -97,7 +97,7 @@ export type JobDigestEmailInput = {
  * The morning selection.
  *
  * Deliberately short: the offers are named, the reasons are the ones already
- * shown in the app, and the links go to CVSpark rather than to the adverts —
+ * shown in the app, and the links go to Jobspark rather than to the adverts —
  * applying goes through the product, and the sources are credited there.
  *
  * The unsubscribe link is in the footer and in the `List-Unsubscribe` header:
@@ -145,7 +145,7 @@ export function composeJobDigestEmail(
       preheader: input.offers[0]
         ? `${input.offers[0].title}${input.offers[0].companyName ? ` chez ${input.offers[0].companyName}` : ""} et votre sélection du matin.`
         : "Votre sélection du matin.",
-      reason: "Vous recevez cet e-mail parce que l'envoi quotidien des offres est activé sur votre recherche CVSpark.",
+      reason: "Vous recevez cet e-mail parce que l'envoi quotidien des offres est activé sur votre recherche Jobspark.",
       title: "Vos offres du jour",
     }),
   };
@@ -184,7 +184,7 @@ export function composeApplicationFollowUpEmail(
       heading: "Le bon moment pour relancer",
       preferencesUrl: input.preferencesUrl,
       preheader: `${input.jobTitle} chez ${input.companyName} : toujours sans nouvelles ?`,
-      reason: "Vous recevez cet e-mail parce que les rappels de relance sont activés sur votre compte CVSpark.",
+      reason: "Vous recevez cet e-mail parce que les rappels de relance sont activés sur votre compte Jobspark.",
       title: "Le bon moment pour relancer",
     }),
   };
@@ -215,13 +215,13 @@ export function composeCreditPurchaseEmail(
           ["Crédits ajoutés", credits],
           ["Montant payé", formatEuros(input.amountCents)],
         ]),
-        button("Reprendre sur CVSpark", brand.appUrl),
+        button("Reprendre sur Jobspark", brand.appUrl),
         note("Vos crédits n'expirent jamais : utilisez-les à votre rythme."),
       ],
       heading: "Achat confirmé",
       preferencesUrl: input.preferencesUrl,
       preheader: `${credits} ${added} à votre solde.`,
-      reason: "Vous recevez cet e-mail pour confirmer un achat effectué sur votre compte CVSpark.",
+      reason: "Vous recevez cet e-mail pour confirmer un achat effectué sur votre compte Jobspark.",
       title: "Achat confirmé",
     }),
   };

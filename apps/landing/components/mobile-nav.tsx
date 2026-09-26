@@ -44,7 +44,7 @@ export function MobileNav({
         </Button>
       </SheetTrigger>
       <SheetContent side="right" className="gap-6 p-6">
-        <SheetTitle className="text-base">CVSpark</SheetTitle>
+        <SheetTitle className="text-base">Jobspark</SheetTitle>
         <nav aria-label="Mobile">
           <ul className="flex flex-col gap-1">
             {links.map((link) => (

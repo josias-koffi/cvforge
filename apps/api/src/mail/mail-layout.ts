@@ -27,7 +27,7 @@ export type EmailContent = {
 type Brand = Pick<MailConfig, "landingUrl" | "replyTo" | "supportEmail">;
 
 /**
- * The shared frame of every CVSpark e-mail: logo and wordmark, a white card
+ * The shared frame of every Jobspark e-mail: logo and wordmark, a white card
  * holding the message, then the footer — why you get it, how to stop it,
  * who to write to, the legal pages.
  *
@@ -82,14 +82,14 @@ function renderHtml(brand: Brand, content: EmailContent) {
     // blocked images.
     `<tr><td style="padding:0 4px 20px;">`,
     `<a href="${landing}" target="_blank" style="text-decoration:none;">`,
-    `<img src="${escapeHtml(mailLogoUrl(brand.landingUrl))}" width="32" height="32" alt="CVSpark" style="display:inline-block;vertical-align:middle;border:0;border-radius:8px;" />`,
+    `<img src="${escapeHtml(mailLogoUrl(brand.landingUrl))}" width="32" height="32" alt="Jobspark" style="display:inline-block;vertical-align:middle;border:0;border-radius:8px;" />`,
     `<span class="cs-text" style="display:inline-block;vertical-align:middle;padding-left:10px;font-family:${MAIL_FONT};font-size:20px;font-weight:600;letter-spacing:-0.01em;color:${C.text};">CV<span class="cs-brand-accent" style="color:${C.primary};">Spark</span></span>`,
     `</a></td></tr>`,
     // Card.
     `<tr><td class="cs-card" style="background:${C.card};border:1px solid ${C.border};border-radius:16px;padding:40px;">`,
     `<h1 class="cs-text" style="margin:0 0 20px;font-family:${MAIL_FONT};font-size:24px;font-weight:600;line-height:1.3;color:${C.text};">${escapeHtml(content.heading)}</h1>`,
     ...content.blocks.map((block) => block.html),
-    `<p class="cs-text" style="margin:8px 0 0;font-family:${MAIL_FONT};font-size:16px;line-height:1.6;color:${C.text};">L'équipe CVSpark</p>`,
+    `<p class="cs-text" style="margin:8px 0 0;font-family:${MAIL_FONT};font-size:16px;line-height:1.6;color:${C.text};">L'équipe Jobspark</p>`,
     `</td></tr>`,
     // Footer.
     `<tr><td class="cs-muted" style="padding:24px 8px 0;">`,
@@ -100,11 +100,11 @@ function renderHtml(brand: Brand, content: EmailContent) {
       : "",
     `<p class="cs-muted" style="${footerLine}">Une question ? ${brand.replyTo ? "Répondez à cet e-mail ou écrivez à" : "Écrivez-nous à"} <a href="mailto:${support}" style="${link}">${support}</a>.</p>`,
     `<p class="cs-muted" style="${footerLine}">`,
-    `<a href="${landing}" style="${link}">CVSpark</a> · `,
+    `<a href="${landing}" style="${link}">Jobspark</a> · `,
     `<a href="${escapeHtml(legal.terms)}" style="${link}">Conditions d'utilisation</a> · `,
     `<a href="${escapeHtml(legal.privacy)}" style="${link}">Confidentialité</a>`,
     `</p>`,
-    `<p class="cs-muted" style="${footerLine}">© ${new Date().getFullYear()} CVSpark</p>`,
+    `<p class="cs-muted" style="${footerLine}">© ${new Date().getFullYear()} Jobspark</p>`,
     `</td></tr>`,
     `</table>`,
     `</td></tr></table>`,
@@ -116,7 +116,7 @@ function renderText(brand: Brand, content: EmailContent) {
   const legal = mailLegalUrls(brand.landingUrl);
 
   return [
-    "CVSpark",
+    "Jobspark",
     "",
     content.heading,
     "",
@@ -124,7 +124,7 @@ function renderText(brand: Brand, content: EmailContent) {
       .map((block) => block.text)
       .filter((text) => text.length > 0)
       .flatMap((text) => [text, ""]),
-    "L'équipe CVSpark",
+    "L'équipe Jobspark",
     "",
     "—",
     MAIL_TAGLINE,

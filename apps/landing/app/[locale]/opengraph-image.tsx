@@ -4,7 +4,7 @@ import { OG_SIZE, renderOgImage } from "@/lib/og-image"
 
 export const size = OG_SIZE
 export const contentType = "image/png"
-export const alt = "CVSpark"
+export const alt = "Jobspark"
 
 export function generateStaticParams() {
   return locales.map((locale) => ({ locale }))

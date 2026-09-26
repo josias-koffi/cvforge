@@ -1,4 +1,4 @@
-# CVSpark — Design system
+# Jobspark — Design system
 
 Palette retenue : **Étincelle électrique** (bleu tech comme couleur de marque, amber réservé aux moments de "déclic"). Compatible avec les variables CSS shadcn/ui utilisées par `apps/web` (ADR-008) — chaque token ci-dessous a son équivalent `--variable` shadcn.
 
@@ -158,7 +158,7 @@ Règle : ne jamais garder une couleur "light" telle quelle en dark mode sans vé
 - Composition : `CV` en texte principal (couleur `--foreground` / blanc sur fond sombre) + `Spark` en couleur primaire `#2D5FFF`, même graisse (600), pas de séparateur.
 - Variante "étincelle" optionnelle : un point ou une petite forme d'éclair (glyphe Lucide `zap` ou trait simple) accolé au wordmark, en amber `#FFB020` — à utiliser uniquement en favicon ou en avatar d'app, jamais dans le wordmark texte complet du header.
 - Espace de protection minimal : la hauteur du "C" de chaque côté du wordmark.
-- À éviter : dégradé sur le nom, ombre portée, italique, changement de casse (jamais "CVSPARK" ni "cvspark" en usage de marque — toujours "CVSpark").
+- À éviter : dégradé sur le nom, ombre portée, italique, changement de casse (jamais "JOBSPARK" ni "jobspark" en usage de marque — toujours "Jobspark").
 - Favicon : simplifier à l'initiale "S" ou à la forme d'éclair seule, sur fond `--primary`.
 
 ---

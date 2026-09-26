@@ -6,7 +6,7 @@ type FetchLike = typeof globalThis.fetch;
 export const WIKIDATA_API_URL = "https://www.wikidata.org/w/api.php";
 const TIMEOUT_MS = 15_000;
 /** Wikimedia asks for a User-Agent that says who calls. */
-const USER_AGENT = "CVSpark/1.0 (https://cvspark.fr)";
+const USER_AGENT = "Jobspark/1.0 (https://jobspark.fr)";
 /** SIRENs are nine digits: anything else never reaches the search. */
 const SIREN = /^\d{9}$/;
 /**

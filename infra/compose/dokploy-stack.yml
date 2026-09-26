@@ -1,4 +1,4 @@
-# CVSpark stack as Dokploy runs it. Standalone: no build, images only.
+# Jobspark stack as Dokploy runs it. Standalone: no build, images only.
 #
 # Dokploy owns this file's lifecycle through `dokploy_compose` in
 # ../dokploy/compose.tf, which ships it inline (`raw.compose_file`). Dokploy
@@ -15,7 +15,7 @@
 
 services:
   web:
-    image: ghcr.io/josias-koffi/cvspark-web:${IMAGE_TAG}
+    image: ghcr.io/josias-koffi/jobspark-web:${IMAGE_TAG}
     restart: unless-stopped
     environment:
       NODE_ENV: production
@@ -51,7 +51,7 @@ services:
       start_period: 30s
 
   landing:
-    image: ghcr.io/josias-koffi/cvspark-landing:${IMAGE_TAG}
+    image: ghcr.io/josias-koffi/jobspark-landing:${IMAGE_TAG}
     restart: unless-stopped
     environment:
       NODE_ENV: production
@@ -81,7 +81,7 @@ services:
       start_period: 30s
 
   api:
-    image: ghcr.io/josias-koffi/cvspark-api:${IMAGE_TAG}
+    image: ghcr.io/josias-koffi/jobspark-api:${IMAGE_TAG}
     restart: unless-stopped
     environment:
       NODE_ENV: production
@@ -195,7 +195,7 @@ services:
       - minio_data:/data
 
   puppeteer:
-    image: ghcr.io/josias-koffi/cvspark-puppeteer:${IMAGE_TAG}
+    image: ghcr.io/josias-koffi/jobspark-puppeteer:${IMAGE_TAG}
     restart: unless-stopped
 
   # Nightly pg_dump → compressed file in the db_backups volume.

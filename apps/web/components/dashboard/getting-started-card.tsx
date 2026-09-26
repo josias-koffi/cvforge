@@ -45,7 +45,7 @@ export function GettingStartedCard({
       <CardHeader>
         <CardTitle>Bien démarrer</CardTitle>
         <CardDescription>
-          {done} sur {items.length} étapes · chacune rend CVSpark plus utile
+          {done} sur {items.length} étapes · chacune rend Jobspark plus utile
           pour votre recherche.
         </CardDescription>
         <CardAction className="flex items-center gap-2">

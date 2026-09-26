@@ -1,8 +1,8 @@
-# CVSpark — Storytelling de marque
+# Jobspark — Storytelling de marque
 
 ## Le nom
 
-**CVSpark**
+**Jobspark**
 
 - **CV** : ancre le produit dans un usage concret, compréhensible en une seconde.
 - **Spark** (étincelle) : porte la promesse et l'émotion — le déclic instantané entre un profil et une offre, plutôt qu'un long processus manuel.
@@ -24,13 +24,13 @@ De ce constat est née l'idée : et si le passage de *« mon profil »* + *« un
 
 ## Manifeste (version longue — page "Notre histoire")
 
-> On a tous un ami qui cherche du travail et qui refait, chaque soir, le même CV différemment — pas parce qu'il manque de compétences, mais parce qu'il manque de temps pour les reformuler à chaque offre. CVSpark est né de cette frustration-là. L'IA sait aujourd'hui absorber ce travail répétitif d'adaptation ; il ne restait qu'à construire l'outil qui allume cette étincelle entre un profil et une offre — et en sort un CV prêt pour l'ATS, en quelques secondes.
+> On a tous un ami qui cherche du travail et qui refait, chaque soir, le même CV différemment — pas parce qu'il manque de compétences, mais parce qu'il manque de temps pour les reformuler à chaque offre. Jobspark est né de cette frustration-là. L'IA sait aujourd'hui absorber ce travail répétitif d'adaptation ; il ne restait qu'à construire l'outil qui allume cette étincelle entre un profil et une offre — et en sort un CV prêt pour l'ATS, en quelques secondes.
 
 ---
 
 ## Version courte (pitch oral, ~15 secondes)
 
-> CVSpark est né d'une frustration simple : passer des heures à réadapter son CV à chaque offre. On a construit l'outil qui fait ce travail en quelques secondes — un profil, une offre, et un CV prêt pour l'ATS.
+> Jobspark est né d'une frustration simple : passer des heures à réadapter son CV à chaque offre. On a construit l'outil qui fait ce travail en quelques secondes — un profil, une offre, et un CV prêt pour l'ATS.
 
 ---
 

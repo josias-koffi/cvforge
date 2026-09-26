@@ -7,7 +7,7 @@ import type { ScreenshotName } from "@/content/types"
 
 export const OG_SIZE = { width: 1200, height: 630 }
 
-// Brand hex values from .project/marketing/cvspark-design-system.md (ImageResponse has no CSS variables).
+// Brand hex values from .project/marketing/jobspark-design-system.md (ImageResponse has no CSS variables).
 const BRAND = {
   background: "#0B1220",
   primary: "#5B82FF",
@@ -82,7 +82,7 @@ export async function renderOgImage({
           ⚡
         </div>
         <span>
-          CV<span style={{ color: BRAND.primary }}>Spark</span>
+          Job<span style={{ color: BRAND.primary }}>Spark</span>
         </span>
       </div>
       <div

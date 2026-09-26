@@ -851,7 +851,7 @@ export type TemplateUpsertInput = {
 };
 
 /**
- * The four legal documents CVSpark publishes. The slug is the stable key:
+ * The four legal documents Jobspark publishes. The slug is the stable key:
  * the URL each locale serves them under is the landing's business, not this
  * contract's.
  */

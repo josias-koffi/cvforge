@@ -70,10 +70,10 @@ describe("MarketRadar", () => {
     const html = render([ENTRY])
 
     expect(html).toContain("Source : Marché du travail, France Travail")
-    expect(html).toContain("Salaires : offres collectées par CVSpark")
+    expect(html).toContain("Salaires : offres collectées par Jobspark")
     expect(
       render([{ ...ENTRY, local: { ...NANTES, salary: null } }])
-    ).not.toContain("offres collectées par CVSpark")
+    ).not.toContain("offres collectées par Jobspark")
   })
 
   it("claims no tension below the high levels, and shows no figure it lacks", () => {

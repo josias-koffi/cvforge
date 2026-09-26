@@ -9,7 +9,7 @@ import {
 } from "@/lib/structured-data"
 import { freeTools } from "@/lib/tools"
 
-const base = "https://cvspark.example"
+const base = "https://jobspark.example"
 const offer = (priceCents: number) => ({ priceCents }) as PublicCreditOffer
 
 function graphNode(data: ReturnType<typeof homeStructuredData>, type: string) {

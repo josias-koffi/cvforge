@@ -48,7 +48,7 @@ export default async function InvitationPage(
     <AuthLayout>
       <Card>
         <CardHeader className="text-center">
-          <CardTitle className="text-xl">Rejoindre CVSpark</CardTitle>
+          <CardTitle className="text-xl">Rejoindre Jobspark</CardTitle>
           <CardDescription>
             {invitation
               ? `Invitation pour ${invitation.email} (${invitation.role === "admin" ? "administrateur" : "utilisateur"}), valable jusqu'au ${formatDateTime(invitation.expiresAt)}.`

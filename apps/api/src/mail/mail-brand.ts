@@ -1,7 +1,7 @@
 /**
- * The CVSpark identity as an e-mail client can take it: hex colours inline
+ * The Jobspark identity as an e-mail client can take it: hex colours inline
  * (no CSS variables), a system font stack (no web font), a PNG logo (Gmail
- * shows no SVG). Values from `.project/marketing/cvspark-design-system.md`.
+ * shows no SVG). Values from `.project/marketing/jobspark-design-system.md`.
  */
 export const MAIL_COLORS = {
   primary: "#2D5FFF",
@@ -28,7 +28,7 @@ export const MAIL_TAGLINE = "Les bonnes offres. Le bon CV. Une étincelle.";
 
 /** Served by the landing (`apps/landing/public/email/`). */
 export function mailLogoUrl(landingUrl: string) {
-  return `${landingUrl}/email/cvspark-mark.png`;
+  return `${landingUrl}/email/jobspark-mark.png`;
 }
 
 export function mailLegalUrls(landingUrl: string) {

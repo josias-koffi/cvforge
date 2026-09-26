@@ -48,7 +48,7 @@ export function pageMetadata({
     },
     openGraph: {
       type: "website",
-      siteName: "CVSpark",
+      siteName: "Jobspark",
       locale: OG_LOCALES[locale],
       url: path(locale),
       title,

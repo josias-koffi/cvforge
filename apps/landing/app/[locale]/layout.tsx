@@ -30,8 +30,8 @@ export async function generateMetadata({
 
   return {
     metadataBase: new URL(siteUrl()),
-    title: { default: meta.title, template: "%s · CVSpark" },
-    applicationName: "CVSpark",
+    title: { default: meta.title, template: "%s · Jobspark" },
+    applicationName: "Jobspark",
     ...pageMetadata({
       locale,
       title: meta.title,

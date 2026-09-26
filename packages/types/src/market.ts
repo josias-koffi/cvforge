@@ -43,7 +43,7 @@ export interface MarketDepartmentStats {
   offersYear: MarketFigure | null;
   /** Job seekers in category A looking for this job. */
   jobseekers: MarketFigure | null;
-  /** Read from the offers CVSpark collected, not from the API: it has none per job. */
+  /** Read from the offers Jobspark collected, not from the API: it has none per job. */
   salary: MarketSalary | null;
 }
 
@@ -62,7 +62,7 @@ export const MARKET_SOURCE_LABEL = "Source : Marché du travail, France Travail"
 
 /** The salary comes from our own collection; saying so is not optional. */
 export const MARKET_SALARY_SOURCE_LABEL =
-  "Salaires : offres collectées par CVSpark";
+  "Salaires : offres collectées par Jobspark";
 
 /** Below this many offers stating a salary, no median is shown (US-137). */
 export const MARKET_MIN_SALARY_SAMPLE = 5;

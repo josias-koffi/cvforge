@@ -5,13 +5,13 @@ import { featurePagesFr } from "./feature-pages/fr"
 import { interviewQuestionsFr } from "./interview-questions/fr"
 import type { LandingDictionary } from "./types"
 
-/** Copy source: .project/marketing/cvspark-storytelling.md */
+/** Copy source: .project/marketing/jobspark-storytelling.md */
 export const fr: LandingDictionary = {
   meta: {
-    title: "CVSpark — Les bonnes offres, le bon CV, l'entretien préparé",
+    title: "Jobspark — Les bonnes offres, le bon CV, l'entretien préparé",
     description:
-      "CVSpark trouve chaque matin les offres qui vous correspondent, adapte votre CV et votre lettre à chacune, et vous entraîne à l'entretien avec un recruteur IA. Sans abonnement.",
-    ogAlt: "CVSpark, l'étincelle entre votre profil et l'offre",
+      "Jobspark trouve chaque matin les offres qui vous correspondent, adapte votre CV et votre lettre à chacune, et vous entraîne à l'entretien avec un recruteur IA. Sans abonnement.",
+    ogAlt: "Jobspark, l'étincelle entre votre profil et l'offre",
   },
   nav: {
     product: "Fonctionnalités",
@@ -27,14 +27,14 @@ export const fr: LandingDictionary = {
     openMenu: "Ouvrir le menu",
     toggleTheme: "Changer de thème",
     switchLanguage: "Switch to English",
-    home: "Accueil CVSpark",
+    home: "Accueil Jobspark",
   },
   hero: {
     badge: "Nouveau · Vos offres du jour, classées par l'IA",
     title: "Les bonnes offres. Le bon CV.",
     titleAccent: "Une étincelle.",
     subtitle:
-      "Chaque matin, CVSpark trouve les offres qui vous correspondent et vous dit pourquoi. Un clic, et votre CV et votre lettre sont adaptés à l'offre. Il ne reste qu'à répéter l'entretien, à voix haute.",
+      "Chaque matin, Jobspark trouve les offres qui vous correspondent et vous dit pourquoi. Un clic, et votre CV et votre lettre sont adaptés à l'offre. Il ne reste qu'à répéter l'entretien, à voix haute.",
     primaryCta: "Commencer gratuitement",
     secondaryCta: "Voir comment ça marche",
     atsPrompt: "Pas encore prêt ?",
@@ -45,14 +45,14 @@ export const fr: LandingDictionary = {
       "Offres du jour gratuites",
     ],
     screenshotAlt:
-      "Offres du jour dans CVSpark : offres classées pour le profil, avec score de correspondance",
+      "Offres du jour dans Jobspark : offres classées pour le profil, avec score de correspondance",
   },
   problem: {
     eyebrow: "Le constat",
     title: "Le problème n'est pas votre profil. C'est le temps.",
-    body: "Fouiller dix sites d'annonces, trier ce qui vous correspond, réécrire le CV, refaire la lettre, préparer l'entretien… À chaque candidature, le même travail mécanique. CVSpark s'en charge, vous gardez le jugement.",
+    body: "Fouiller dix sites d'annonces, trier ce qui vous correspond, réécrire le CV, refaire la lettre, préparer l'entretien… À chaque candidature, le même travail mécanique. Jobspark s'en charge, vous gardez le jugement.",
     before: {
-      label: "Sans CVSpark",
+      label: "Sans Jobspark",
       items: [
         "Des alertes qui déversent cent annonces",
         "Une soirée par candidature",
@@ -61,7 +61,7 @@ export const fr: LandingDictionary = {
       ],
     },
     after: {
-      label: "Avec CVSpark",
+      label: "Avec Jobspark",
       items: [
         "Dix offres choisies chaque matin, avec leur raison",
         "Un CV adapté en quelques secondes",
@@ -86,7 +86,7 @@ export const fr: LandingDictionary = {
       {
         label: "Postuler",
         title: "Un CV et une lettre adaptés en un clic",
-        body: "Depuis une offre, CVSpark reprend votre profil, fait remonter ce qui compte et rédige CV et lettre, prêts pour l'ATS.",
+        body: "Depuis une offre, Jobspark reprend votre profil, fait remonter ce qui compte et rédige CV et lettre, prêts pour l'ATS.",
         alt: "Éditeur de CV avec l'aperçu A4 du document adapté",
       },
       {
@@ -107,7 +107,7 @@ export const fr: LandingDictionary = {
     eyebrow: "Offres du jour",
     title: "Au réveil, dix offres. Et la raison de chacune.",
     subtitle:
-      "CVSpark lit les offres publiées chaque nuit, les compare à votre profil et ne garde que les meilleures. Avec le classement IA, chaque offre arrive avec une phrase qui vous dit pourquoi elle est pour vous.",
+      "Jobspark lit les offres publiées chaque nuit, les compare à votre profil et ne garde que les meilleures. Avec le classement IA, chaque offre arrive avec une phrase qui vous dit pourquoi elle est pour vous.",
     points: [
       {
         title: "Des sources officielles",
@@ -202,7 +202,7 @@ export const fr: LandingDictionary = {
     cta: "Passer un entretien",
     learnMore: "Tout sur l'entretien",
     screenshotAlt:
-      "Studio d'entretien CVSpark : sphère vocale animée, compte à rebours et transcription en cours",
+      "Studio d'entretien Jobspark : sphère vocale animée, compte à rebours et transcription en cours",
   },
   trust: {
     eyebrow: "Confiance",
@@ -261,7 +261,7 @@ export const fr: LandingDictionary = {
         label: "Tableau de bord",
         caption:
           "Vos candidatures, vos entretiens et votre activité en un coup d'œil.",
-        alt: "Tableau de bord CVSpark avec indicateurs et graphique d'activité",
+        alt: "Tableau de bord Jobspark avec indicateurs et graphique d'activité",
       },
       {
         id: "candidatures",
@@ -298,7 +298,7 @@ export const fr: LandingDictionary = {
     },
   },
   testimonials: {
-    eyebrow: "Ils postulent avec CVSpark",
+    eyebrow: "Ils postulent avec Jobspark",
     title: "Moins de réécriture, plus d'entretiens",
     subtitle: "",
     // TODO: remplacer par de vrais avis avant d'activer NEXT_PUBLIC_SHOW_TESTIMONIALS.
@@ -336,7 +336,7 @@ export const fr: LandingDictionary = {
       {
         question: "Qu'est-ce qu'un CV « prêt pour l'ATS » ?",
         answer:
-          "Les ATS sont les logiciels de tri de candidatures utilisés par les recruteurs. CVSpark produit des documents à la structure simple et lisible, avec les mots-clés de l'offre, pour qu'ils soient correctement analysés.",
+          "Les ATS sont les logiciels de tri de candidatures utilisés par les recruteurs. Jobspark produit des documents à la structure simple et lisible, avec les mots-clés de l'offre, pour qu'ils soient correctement analysés.",
         atsCheckLink: "Tester gratuitement mon CV actuel",
       },
       {
@@ -345,14 +345,14 @@ export const fr: LandingDictionary = {
           "Non. Elle rationalise le travail mécanique : repérer ce qui compte dans l'offre et reformuler votre parcours. Tout reste modifiable, et c'est vous qui validez avant d'envoyer.",
       },
       {
-        question: "Comment CVSpark trouve-t-il les offres du jour ?",
+        question: "Comment Jobspark trouve-t-il les offres du jour ?",
         answer:
-          "Chaque nuit, CVSpark lit les offres publiées sur France Travail, La bonne alternance et les sites carrière des entreprises, les compare à votre recherche et à votre CV, et garde les meilleures. La sélection est gratuite ; le classement IA, qui explique chaque offre en une phrase, coûte un crédit par matin.",
+          "Chaque nuit, Jobspark lit les offres publiées sur France Travail, La bonne alternance et les sites carrière des entreprises, les compare à votre recherche et à votre CV, et garde les meilleures. La sélection est gratuite ; le classement IA, qui explique chaque offre en une phrase, coûte un crédit par matin.",
       },
       {
         question: "Puis-je postuler dans une entreprise qui n'a pas publié d'offre ?",
         answer:
-          "Oui. CVSpark liste les entreprises qui recrutent dans votre métier près de chez vous, d'après le potentiel d'embauche calculé par France Travail, et prépare une candidature spontanée avec un CV adapté.",
+          "Oui. Jobspark liste les entreprises qui recrutent dans votre métier près de chez vous, d'après le potentiel d'embauche calculé par France Travail, et prépare une candidature spontanée avec un CV adapté.",
       },
       {
         question: "Que deviennent mes données ?",
@@ -392,13 +392,13 @@ export const fr: LandingDictionary = {
     features: "Fonctionnalités",
     product: "Produit",
     legal: "Légal",
-    company: "CVSpark",
+    company: "Jobspark",
     rights: "Tous droits réservés.",
   },
   legal: {
     updated: "Dernière mise à jour le",
     metaDescription:
-      "{title} de CVSpark, le service qui adapte votre CV et votre lettre de motivation à chaque offre d'emploi.",
+      "{title} de Jobspark, le service qui adapte votre CV et votre lettre de motivation à chaque offre d'emploi.",
     links: {
       terms: "Conditions d'utilisation",
       "sales-terms": "Conditions de vente",
@@ -471,11 +471,11 @@ export const fr: LandingDictionary = {
     },
     unlock: {
       title: "Recevoir le rapport complet",
-      body: "Indiquez votre adresse : le rapport détaillé s'affiche immédiatement, et vous recevez un lien pour le retrouver dans CVSpark.",
+      body: "Indiquez votre adresse : le rapport détaillé s'affiche immédiatement, et vous recevez un lien pour le retrouver dans Jobspark.",
       emailLabel: "Votre adresse email",
       emailPlaceholder: "vous@exemple.com",
       consent:
-        "J'accepte que CVSpark crée mon compte et m'envoie un lien de connexion.",
+        "J'accepte que Jobspark crée mon compte et m'envoie un lien de connexion.",
       submit: "Afficher le rapport complet",
       submitting: "Envoi…",
       success: "Rapport débloqué",
@@ -666,7 +666,7 @@ export const fr: LandingDictionary = {
       refreshed: "Chiffres lus le {date}",
       sources: {
         market: "Source : Marché du travail, France Travail",
-        salary: "Salaires : offres collectées par CVSpark",
+        salary: "Salaires : offres collectées par Jobspark",
       },
       again: "Chercher un autre métier",
     },
@@ -680,7 +680,7 @@ export const fr: LandingDictionary = {
       emailLabel: "Votre email",
       emailPlaceholder: "vous@exemple.fr",
       consent:
-        "J'accepte que CVSpark crée mon compte et m'envoie un lien de connexion, puis les offres chaque matin.",
+        "J'accepte que Jobspark crée mon compte et m'envoie un lien de connexion, puis les offres chaque matin.",
       submit: "Recevoir mon lien",
       submitting: "Envoi…",
       success: "Vérifiez votre boîte mail",
@@ -760,7 +760,7 @@ export const fr: LandingDictionary = {
       emailLabel: "Votre email",
       emailPlaceholder: "vous@exemple.fr",
       consent:
-        "J'accepte que CVSpark crée mon compte et m'envoie un lien de connexion.",
+        "J'accepte que Jobspark crée mon compte et m'envoie un lien de connexion.",
       submit: "Recevoir mon lien",
       submitting: "Envoi…",
       success: "Vérifiez votre boîte mail",
@@ -771,11 +771,11 @@ export const fr: LandingDictionary = {
   story: {
     metaTitle: "Notre histoire",
     metaDescription:
-      "CVSpark est né d'une frustration simple : passer des heures à réadapter son CV à chaque offre.",
+      "Jobspark est né d'une frustration simple : passer des heures à réadapter son CV à chaque offre.",
     eyebrow: "Notre histoire",
     title: "Né d'une frustration simple",
     manifesto:
-      "On a tous un ami qui cherche du travail et qui refait, chaque soir, le même CV différemment — pas parce qu'il manque de compétences, mais parce qu'il manque de temps pour les reformuler à chaque offre. CVSpark est né de cette frustration-là. L'IA sait aujourd'hui absorber ce travail répétitif d'adaptation ; il ne restait qu'à construire l'outil qui allume cette étincelle entre un profil et une offre — et en sort un CV prêt pour l'ATS, en quelques secondes.",
+      "On a tous un ami qui cherche du travail et qui refait, chaque soir, le même CV différemment — pas parce qu'il manque de compétences, mais parce qu'il manque de temps pour les reformuler à chaque offre. Jobspark est né de cette frustration-là. L'IA sait aujourd'hui absorber ce travail répétitif d'adaptation ; il ne restait qu'à construire l'outil qui allume cette étincelle entre un profil et une offre — et en sort un CV prêt pour l'ATS, en quelques secondes.",
     originTitle: "D'où vient l'idée",
     origin: [
       "Le point de départ n'est pas la technologie, c'est un constat vécu autour de nous : des amis en recherche d'emploi qui perdent des heures à refaire, à la main, le même travail à chaque candidature. Relire une offre, repérer ce qui compte, reformuler son profil en conséquence.",
@@ -801,6 +801,6 @@ export const fr: LandingDictionary = {
         body: "Un profil + une offre → un CV prêt pour l'ATS.",
       },
     ],
-    cta: "Essayer CVSpark",
+    cta: "Essayer Jobspark",
   },
 }

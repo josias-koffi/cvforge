@@ -16,11 +16,11 @@ const fontMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "CVSpark",
-    template: "%s · CVSpark",
+    default: "Jobspark",
+    template: "%s · Jobspark",
   },
   description:
-    "Un profil. Une offre. Une étincelle. CVSpark adapte votre CV et votre lettre à chaque offre, prêts pour l'ATS en quelques secondes.",
+    "Un profil. Une offre. Une étincelle. Jobspark adapte votre CV et votre lettre à chaque offre, prêts pour l'ATS en quelques secondes.",
 }
 
 export default function RootLayout({

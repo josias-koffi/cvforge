@@ -28,7 +28,7 @@ const OUT_DIR = path.join(HERE, "..", "public", "screenshots")
 
 const APP_URL = process.env.CAPTURE_APP_URL ?? "http://localhost:3100"
 const API_URL = process.env.CAPTURE_API_URL ?? "http://localhost:3333"
-const DEMO_EMAIL = process.env.CAPTURE_EMAIL ?? "cvspark-demo@yopmail.com"
+const DEMO_EMAIL = process.env.CAPTURE_EMAIL ?? "jobspark-demo@yopmail.com"
 /** The sidebar footer would otherwise publish the demo mailbox on the landing page. */
 const DISPLAY_EMAIL = "lea.moreau@example.com"
 const SESSION_SECRET = process.env.AUTH_SESSION_SECRET ?? "change-me-for-production"

@@ -20,7 +20,7 @@ export const featurePagesFr: FeaturePagesDictionary = {
     daily_offers: {
       metaTitle: "Offres d'emploi personnalisées chaque matin",
       metaDescription:
-        "Chaque matin, CVSpark sélectionne les offres d'emploi qui correspondent à votre profil, explique chaque score et, avec le classement IA, vous dit en une phrase pourquoi l'offre est pour vous.",
+        "Chaque matin, Jobspark sélectionne les offres d'emploi qui correspondent à votre profil, explique chaque score et, avec le classement IA, vous dit en une phrase pourquoi l'offre est pour vous.",
       card: {
         name: "Offres du jour",
         description:
@@ -30,10 +30,10 @@ export const featurePagesFr: FeaturePagesDictionary = {
       title: "Chaque matin, les offres",
       titleAccent: "qui vous correspondent vraiment.",
       subtitle:
-        "Fini les alertes qui déversent cent annonces. CVSpark lit les offres publiées, les compare à votre profil et ne garde que les meilleures, avec la raison de chaque choix.",
+        "Fini les alertes qui déversent cent annonces. Jobspark lit les offres publiées, les compare à votre profil et ne garde que les meilleures, avec la raison de chaque choix.",
       primaryCta: "Recevoir mes offres du jour",
       heroAlt:
-        "Offres du jour dans CVSpark : liste d'offres classées avec score de correspondance et phrase d'explication de l'IA",
+        "Offres du jour dans Jobspark : liste d'offres classées avec score de correspondance et phrase d'explication de l'IA",
       stats: [
         { value: "6 h", label: "votre sélection est prête" },
         { value: "10", label: "offres choisies, pas cent" },
@@ -49,7 +49,7 @@ export const featurePagesFr: FeaturePagesDictionary = {
             "Une phrase courte et concrète par offre, sans superlatif creux",
             "Débité seulement si le classement réussit",
           ],
-          alt: "Carte d'offre CVSpark avec la phrase de l'IA expliquant pourquoi l'offre correspond au profil",
+          alt: "Carte d'offre Jobspark avec la phrase de l'IA expliquant pourquoi l'offre correspond au profil",
         },
         {
           eyebrow: "Un score qui s'explique",
@@ -58,13 +58,13 @@ export const featurePagesFr: FeaturePagesDictionary = {
           points: [
             "Compétences acquises et compétences à valoriser, offre par offre",
             "Exigences, contrat, salaire et lien de candidature au même endroit",
-            "« Postuler avec CVSpark » crée la candidature et lance le CV adapté",
+            "« Postuler avec Jobspark » crée la candidature et lance le CV adapté",
           ],
           alt: "Panneau d'une offre avec le détail du score, les compétences correspondantes et le bouton postuler",
         },
         {
           eyebrow: "Réglé une fois",
-          title: "Vous décrivez votre recherche, CVSpark cherche tous les matins",
+          title: "Vous décrivez votre recherche, Jobspark cherche tous les matins",
           body: "Métiers visés, lieux, contrat, télétravail, entreprises à éviter : vous réglez votre recherche une fois. La sélection arrive dans l'application et, si vous le souhaitez, par e-mail.",
           points: [
             "Métiers rattachés au référentiel ROME de France Travail",
@@ -81,7 +81,7 @@ export const featurePagesFr: FeaturePagesDictionary = {
             "France Travail, La bonne alternance et les sites carrière des entreprises",
             "Une même offre publiée à plusieurs endroits n'apparaît qu'une fois",
           ],
-          alt: "Recherche d'offres CVSpark avec la liste des résultats et le panneau de détail",
+          alt: "Recherche d'offres Jobspark avec la liste des résultats et le panneau de détail",
         },
       ],
       difference: {
@@ -135,7 +135,7 @@ export const featurePagesFr: FeaturePagesDictionary = {
     tailored_documents: {
       metaTitle: "CV adapté à chaque offre et lettre de motivation",
       metaDescription:
-        "CVSpark génère un CV adapté à l'offre et une lettre de motivation personnalisée en quelques secondes, avec un score ATS à chaque sauvegarde, une traduction français-anglais et l'export PDF ou Word.",
+        "Jobspark génère un CV adapté à l'offre et une lettre de motivation personnalisée en quelques secondes, avec un score ATS à chaque sauvegarde, une traduction français-anglais et l'export PDF ou Word.",
       card: {
         name: "CV et lettre sur mesure",
         description: "Un CV et une lettre adaptés à l'offre, score ATS compris.",
@@ -144,10 +144,10 @@ export const featurePagesFr: FeaturePagesDictionary = {
       title: "Un CV adapté à chaque offre,",
       titleAccent: "la lettre avec.",
       subtitle:
-        "Collez une offre : CVSpark reprend votre profil, fait remonter ce qui compte pour ce poste et rédige le CV et la lettre. Vous relisez, ajustez, envoyez.",
+        "Collez une offre : Jobspark reprend votre profil, fait remonter ce qui compte pour ce poste et rédige le CV et la lettre. Vous relisez, ajustez, envoyez.",
       primaryCta: "Créer mon CV adapté",
       heroAlt:
-        "Éditeur de CV CVSpark : formulaire à gauche, aperçu A4 du CV adapté à l'offre à droite",
+        "Éditeur de CV Jobspark : formulaire à gauche, aperçu A4 du CV adapté à l'offre à droite",
       stats: [
         { value: "Secondes", label: "au lieu d'une soirée" },
         { value: "Score ATS", label: "à chaque sauvegarde" },
@@ -157,7 +157,7 @@ export const featurePagesFr: FeaturePagesDictionary = {
         {
           eyebrow: "Adapté, pas recyclé",
           title: "Le vocabulaire de l'offre, votre parcours",
-          body: "Les expériences et compétences utiles au poste remontent, reformulées avec les mots de l'offre. CVSpark montre sur quoi il s'est appuyé, et rien n'est inventé : tout vient de votre profil.",
+          body: "Les expériences et compétences utiles au poste remontent, reformulées avec les mots de l'offre. Jobspark montre sur quoi il s'est appuyé, et rien n'est inventé : tout vient de votre profil.",
           points: [
             "Import de votre CV actuel en PDF ou Word, même scanné",
             "Plusieurs profils de base, un par type de poste visé",
@@ -178,7 +178,7 @@ export const featurePagesFr: FeaturePagesDictionary = {
         {
           eyebrow: "Prêt pour l'ATS",
           title: "Un score ATS recalculé à chaque sauvegarde",
-          body: "Les logiciels de tri des recruteurs lisent votre CV avant un humain. CVSpark note le vôtre sur les critères qu'ils regardent et vous dit quoi corriger, gratuitement.",
+          body: "Les logiciels de tri des recruteurs lisent votre CV avant un humain. Jobspark note le vôtre sur les critères qu'ils regardent et vous dit quoi corriger, gratuitement.",
           points: [
             "Chaque point relevé, avec ce qu'il faut changer",
             "Note par critère : adéquation à l'offre, contenu, structure, coordonnées",
@@ -200,7 +200,7 @@ export const featurePagesFr: FeaturePagesDictionary = {
         items: [
           {
             title: "Rien d'inventé",
-            body: "Le CV se construit à partir de votre profil. CVSpark vous montre sur quoi il s'appuie.",
+            body: "Le CV se construit à partir de votre profil. Jobspark vous montre sur quoi il s'appuie.",
           },
           {
             title: "Vos données protégées",
@@ -227,7 +227,7 @@ export const featurePagesFr: FeaturePagesDictionary = {
           {
             question: "Comment ajouter une offre ?",
             answer:
-              "Collez le lien de l'annonce, son texte ou son PDF. Depuis les offres du jour, un clic sur « Postuler avec CVSpark » suffit.",
+              "Collez le lien de l'annonce, son texte ou son PDF. Depuis les offres du jour, un clic sur « Postuler avec Jobspark » suffit.",
           },
           {
             question: "Mon CV sera-t-il lisible par les ATS ?",
@@ -257,7 +257,7 @@ export const featurePagesFr: FeaturePagesDictionary = {
         "Parlez à un recruteur qui a lu l'offre que vous visez. Il vous écoute, relance, vous laisse l'interrompre. À la fin, un rapport noté vous dit ce qui a porté et ce qui a manqué.",
       primaryCta: "Passer un entretien",
       heroAlt:
-        "Studio d'entretien CVSpark : sphère vocale animée, compte à rebours et transcription en cours",
+        "Studio d'entretien Jobspark : sphère vocale animée, compte à rebours et transcription en cours",
       stats: [
         { value: "5", label: "styles de recruteur" },
         { value: "10 à 30 min", label: "selon le temps que vous avez" },
@@ -347,7 +347,7 @@ export const featurePagesFr: FeaturePagesDictionary = {
     companies_market: {
       metaTitle: "Entreprises qui recrutent près de chez vous, même sans offre",
       metaDescription:
-        "CVSpark repère les entreprises qui recrutent dans votre métier près de chez vous, même sans annonce publiée, avec leur fiche (effectif, engagements, égalité femmes-hommes) et l'état du marché : tension et salaires.",
+        "Jobspark repère les entreprises qui recrutent dans votre métier près de chez vous, même sans annonce publiée, avec leur fiche (effectif, engagements, égalité femmes-hommes) et l'état du marché : tension et salaires.",
       card: {
         name: "Entreprises et marché",
         description:
@@ -357,10 +357,10 @@ export const featurePagesFr: FeaturePagesDictionary = {
       title: "Les entreprises qui recrutent,",
       titleAccent: "même sans annonce.",
       subtitle:
-        "La plupart des embauches ne passent pas par une annonce. CVSpark vous montre les entreprises qui recrutent dans votre métier autour de vous, ce qu'elles sont, et si le marché joue pour vous.",
+        "La plupart des embauches ne passent pas par une annonce. Jobspark vous montre les entreprises qui recrutent dans votre métier autour de vous, ce qu'elles sont, et si le marché joue pour vous.",
       primaryCta: "Voir qui recrute",
       heroAlt:
-        "Liste des entreprises qui recrutent dans CVSpark avec potentiel d'embauche, taille et distance",
+        "Liste des entreprises qui recrutent dans Jobspark avec potentiel d'embauche, taille et distance",
       stats: [
         { value: "Sans annonce", label: "les recruteurs du marché caché" },
         { value: "5 badges", label: "d'engagement vérifiés" },
@@ -417,7 +417,7 @@ export const featurePagesFr: FeaturePagesDictionary = {
           {
             question: "Comment savoir qu'une entreprise recrute sans annonce ?",
             answer:
-              "CVSpark s'appuie sur le potentiel d'embauche calculé par France Travail (La Bonne Boîte) à partir des recrutements passés dans votre métier et votre zone.",
+              "Jobspark s'appuie sur le potentiel d'embauche calculé par France Travail (La Bonne Boîte) à partir des recrutements passés dans votre métier et votre zone.",
           },
           {
             question: "D'où viennent les informations des fiches ?",

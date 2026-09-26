@@ -43,7 +43,7 @@ export const interviewQuestionsEn: InterviewQuestionsDictionary = {
     emailLabel: "Your email",
     emailPlaceholder: "you@example.com",
     consent:
-      "I agree to create a CVSpark account and receive this sign-in link.",
+      "I agree to create a Jobspark account and receive this sign-in link.",
     submit: "Get my link",
     submitting: "Sending…",
     success: "Check your inbox",

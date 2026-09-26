@@ -4,14 +4,14 @@
 # An apply of `dokploy_compose` rewrites the source and the whole operational
 # configuration of the service. Anything changed in the Dokploy UI — the compose
 # file, the environment variables, the build settings — is replaced on the next
-# apply, silently. Every change to the CVSpark stack goes through this repository
+# apply, silently. Every change to the Jobspark stack goes through this repository
 # and the CI apply, never through the UI.
 # ==============================================================================
 
-resource "dokploy_compose" "cvspark" {
+resource "dokploy_compose" "jobspark" {
   name           = local.project_name
-  description    = "CVSpark ${var.environment} stack — managed by OpenTofu"
-  environment_id = dokploy_project.cvspark.production_environment_id
+  description    = "Jobspark ${var.environment} stack — managed by OpenTofu"
+  environment_id = dokploy_project.jobspark.production_environment_id
   compose_type   = "docker-compose"
 
   # Shipped inline: Dokploy clones nothing, so no GitHub App has to be

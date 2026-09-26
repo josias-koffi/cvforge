@@ -118,7 +118,7 @@ describe("marketPageSummary", () => {
 describe("marketPageStructuredData", () => {
   it("gives the breadcrumb and a dataset whose creator is France Travail", () => {
     const data = marketPageStructuredData({
-      base: "https://cvspark.test",
+      base: "https://jobspark.test",
       crumbs: CRUMBS,
       description: "Une phrase",
       locale: "fr",
@@ -130,10 +130,10 @@ describe("marketPageStructuredData", () => {
     expect(breadcrumb).toMatchObject({
       "@type": "BreadcrumbList",
       itemListElement: [
-        { item: "https://cvspark.test/fr/outils", position: 1 },
+        { item: "https://jobspark.test/fr/outils", position: 1 },
         { position: 2 },
         {
-          item: "https://cvspark.test/fr/metier-recrute/comptable-m1203/loire-atlantique-44",
+          item: "https://jobspark.test/fr/metier-recrute/comptable-m1203/loire-atlantique-44",
           position: 3,
         },
       ],
@@ -142,7 +142,7 @@ describe("marketPageStructuredData", () => {
       "@type": "Dataset",
       creator: { name: "France Travail" },
       dateModified: PAGE.refreshedAt,
-      url: "https://cvspark.test/fr/metier-recrute/comptable-m1203/loire-atlantique-44",
+      url: "https://jobspark.test/fr/metier-recrute/comptable-m1203/loire-atlantique-44",
     })
   })
 })

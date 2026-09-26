@@ -1,11 +1,11 @@
-# Deployed stack for CVSpark (VPS20). Standalone: no build, images only.
+# Deployed stack for Jobspark (VPS20). Standalone: no build, images only.
 # Copied to /opt/apps/${STACK_NAME}/ by .github/workflows/deploy.yml alongside a
 # generated .env. Dev compose lives at the repository root instead.
 name: ${STACK_NAME}
 
 services:
   web:
-    image: ghcr.io/josias-koffi/cvspark-web:${IMAGE_TAG}
+    image: ghcr.io/josias-koffi/jobspark-web:${IMAGE_TAG}
     restart: unless-stopped
     environment:
       NODE_ENV: production
@@ -34,7 +34,7 @@ services:
       - "traefik.http.services.${STACK_NAME}-web.loadbalancer.server.port=3100"
 
   landing:
-    image: ghcr.io/josias-koffi/cvspark-landing:${IMAGE_TAG}
+    image: ghcr.io/josias-koffi/jobspark-landing:${IMAGE_TAG}
     restart: unless-stopped
     environment:
       NODE_ENV: production
@@ -71,7 +71,7 @@ services:
       - "traefik.http.services.${STACK_NAME}-landing.loadbalancer.server.port=3001"
 
   api:
-    image: ghcr.io/josias-koffi/cvspark-api:${IMAGE_TAG}
+    image: ghcr.io/josias-koffi/jobspark-api:${IMAGE_TAG}
     restart: unless-stopped
     environment:
       NODE_ENV: production
@@ -183,7 +183,7 @@ services:
       - minio_data:/data
 
   puppeteer:
-    image: ghcr.io/josias-koffi/cvspark-puppeteer:${IMAGE_TAG}
+    image: ghcr.io/josias-koffi/jobspark-puppeteer:${IMAGE_TAG}
     restart: unless-stopped
 
   # Nightly pg_dump → compressed file in the db_backups volume.

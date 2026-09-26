@@ -11,7 +11,7 @@ export function createStripeClient(secretKey: string): StripeClient {
   }
 
   return new Stripe(secretKey, {
-    appInfo: { name: "CVSpark" },
+    appInfo: { name: "Jobspark" },
     maxNetworkRetries: 2,
   });
 }

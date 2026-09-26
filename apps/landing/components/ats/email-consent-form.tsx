@@ -21,7 +21,7 @@ export type EmailConsentLabels = {
 /**
  * An email and an explicit consent, the conversion step of every free tool.
  *
- * The consent box is not decoration: submitting creates a CVSpark account and
+ * The consent box is not decoration: submitting creates a Jobspark account and
  * sends a sign-in link, so it carries the same explicit agreement the login
  * form asks for — and the API refuses the request without it.
  */

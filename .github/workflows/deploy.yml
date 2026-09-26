@@ -63,13 +63,13 @@ jobs:
           # Only the smoke test reads these. The stack name, the volume prefix
           # and the domains Traefik serves are owned by infra/dokploy.
           if [ "${ENVIRONMENT}" = "production" ]; then
-            LANDING_DOMAIN="cvspark.koklo.dev"
-            WEB_DOMAIN="cvspark-app.koklo.dev"
-            API_DOMAIN="cvspark-api.koklo.dev"
+            LANDING_DOMAIN="jobspark.koklo.dev"
+            WEB_DOMAIN="jobspark-app.koklo.dev"
+            API_DOMAIN="jobspark-api.koklo.dev"
           else
-            LANDING_DOMAIN="cvspark-staging.koklo.dev"
-            WEB_DOMAIN="cvspark-app-staging.koklo.dev"
-            API_DOMAIN="cvspark-api-staging.koklo.dev"
+            LANDING_DOMAIN="jobspark-staging.koklo.dev"
+            WEB_DOMAIN="jobspark-app-staging.koklo.dev"
+            API_DOMAIN="jobspark-api-staging.koklo.dev"
           fi
 
           {
@@ -92,13 +92,13 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - service: cvspark-web
+          - service: jobspark-web
             dockerfile: docker/web.Dockerfile
-          - service: cvspark-landing
+          - service: jobspark-landing
             dockerfile: docker/landing.Dockerfile
-          - service: cvspark-api
+          - service: jobspark-api
             dockerfile: docker/api.Dockerfile
-          - service: cvspark-puppeteer
+          - service: jobspark-puppeteer
             dockerfile: docker/puppeteer.Dockerfile
     steps:
       - name: Checkout repository
@@ -182,7 +182,7 @@ jobs:
       # the test suite uses.
       - name: Start the image against a disposable PostgreSQL
         env:
-          IMAGE: ${{ env.REGISTRY }}/${{ env.OWNER }}/cvspark-api:${{ needs.resolve.outputs.image_tag }}
+          IMAGE: ${{ env.REGISTRY }}/${{ env.OWNER }}/jobspark-api:${{ needs.resolve.outputs.image_tag }}
         run: |
           set -euo pipefail
           docker run -d --name api-verify --network host \
@@ -227,7 +227,7 @@ jobs:
     if: ${{ !failure() && !cancelled() }}
     runs-on: ubuntu-latest
     concurrency:
-      group: cvspark-tofu
+      group: jobspark-tofu
       cancel-in-progress: false
     defaults:
       run:
@@ -286,7 +286,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: ${{ needs.resolve.outputs.environment }}
     concurrency:
-      group: cvspark-deploy-${{ needs.resolve.outputs.environment }}
+      group: jobspark-deploy-${{ needs.resolve.outputs.environment }}
       cancel-in-progress: false
     defaults:
       run:

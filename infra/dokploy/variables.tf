@@ -28,7 +28,7 @@ variable "dokploy_insecure" {
 
 variable "image_tag" {
   type        = string
-  description = "Tag of the ghcr.io/josias-koffi/cvspark-* images to run. CI passes the short commit sha."
+  description = "Tag of the ghcr.io/josias-koffi/jobspark-* images to run. CI passes the short commit sha."
   default     = "latest"
 }
 
@@ -182,18 +182,18 @@ variable "smtp_port" {
 
 # Only koklo.dev is a verified sender in Resend: it carries the DKIM record at
 # resend._domainkey.koklo.dev and the send.koklo.dev MX and SPF. Neither
-# cvspark.koklo.dev nor cvforge.koklo.dev does, and Resend verifies each
+# jobspark.koklo.dev nor cvforge.koklo.dev does, and Resend verifies each
 # subdomain independently — a From on an unverified one is rejected with a 403
 # domain mismatch, so no magic link goes out and nobody can sign in.
 #
-# To move to no-reply@cvspark.koklo.dev, add that subdomain in Resend, publish
+# To move to no-reply@jobspark.koklo.dev, add that subdomain in Resend, publish
 # the records it issues into the koklo.dev zone, wait for "verified", and only
 # then change this default. Resend recommends a subdomain over the apex, to keep
 # the sending reputation of each product separate.
 variable "email_from" {
   type        = string
   description = "From header of every outgoing email. The domain must be verified in Resend, on its own."
-  default     = "CVSpark <no-reply@koklo.dev>"
+  default     = "Jobspark <no-reply@koklo.dev>"
 }
 
 # Where a reply to no-reply@ goes, also printed in every e-mail footer. The
@@ -202,7 +202,7 @@ variable "email_from" {
 variable "email_reply_to" {
   type        = string
   description = "Reply-To header of every outgoing email; empty sends none."
-  default     = "CVSpark <support@cvspark.koklo.dev>"
+  default     = "Jobspark <support@jobspark.koklo.dev>"
 }
 
 # Secrets ---------------------------------------------------------------------

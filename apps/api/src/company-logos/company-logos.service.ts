@@ -25,7 +25,7 @@ const IMAGE_TYPES = new Set([
   "image/gif",
 ]);
 /** Wikimedia asks for a User-Agent that says who calls. */
-const USER_AGENT = "CVSpark/1.0 (https://cvspark.fr)";
+const USER_AGENT = "Jobspark/1.0 (https://jobspark.fr)";
 const KEY_PREFIX = "company-logo:v1:";
 
 /**

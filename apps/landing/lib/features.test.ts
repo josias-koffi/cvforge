@@ -134,11 +134,11 @@ describe("featurePageStructuredData", () => {
   it("announces the page's own FAQ and where it sits", () => {
     const page = fr.featurePages.pages.daily_offers
     const graph = featurePageStructuredData({
-      base: "https://cvspark.test",
+      base: "https://jobspark.test",
       locale: "fr",
       page,
       crumbs: [
-        { name: "CVSpark", path: "/fr" },
+        { name: "Jobspark", path: "/fr" },
         { name: page.card.name, path: "/fr/offres-du-jour" },
       ],
     })["@graph"]
@@ -146,7 +146,7 @@ describe("featurePageStructuredData", () => {
     expect(graph[0]).toMatchObject({ "@type": "BreadcrumbList" })
     expect(graph[1]).toMatchObject({
       "@type": "WebPage",
-      url: "https://cvspark.test/fr/offres-du-jour",
+      url: "https://jobspark.test/fr/offres-du-jour",
     })
     expect(graph[2]).toMatchObject({ "@type": "FAQPage" })
     expect((graph[2] as { mainEntity: unknown[] }).mainEntity).toHaveLength(

@@ -1,4 +1,4 @@
-# CVSpark landing site (Next.js standalone output)
+# Jobspark landing site (Next.js standalone output)
 
 # Stage 1: Install dependencies
 FROM node:20-alpine AS deps

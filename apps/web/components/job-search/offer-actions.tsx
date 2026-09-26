@@ -72,7 +72,7 @@ export function OfferActions({
       <div className="flex flex-wrap gap-2">
         <Button disabled={applying || applied} onClick={apply}>
           {applying ? <Spinner /> : <SparklesIcon />}
-          {applied ? "Candidature créée" : "Postuler avec CVSpark"}
+          {applied ? "Candidature créée" : "Postuler avec Jobspark"}
         </Button>
         {details?.apply ? (
           <Button asChild variant="outline">

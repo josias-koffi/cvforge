@@ -118,7 +118,7 @@ export const companyCheckEn: CompanyCheckDictionary = {
     body: "We'll send you a sign-in link: it opens the list of companies that are hiring.",
     emailLabel: "Your email",
     emailPlaceholder: "you@example.com",
-    consent: "I agree to create a CVSpark account and receive this sign-in link.",
+    consent: "I agree to create a Jobspark account and receive this sign-in link.",
     submit: "Get my link",
     submitting: "Sending…",
     success: "Check your inbox",

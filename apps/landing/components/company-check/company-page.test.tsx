@@ -179,7 +179,7 @@ describe("companyPageSummary", () => {
 describe("companyPageStructuredData", () => {
   it("gives the breadcrumb and the company as an organisation named by its SIREN", () => {
     const data = companyPageStructuredData({
-      base: "https://cvspark.test",
+      base: "https://jobspark.test",
       crumbs: CRUMBS,
       description: "Une phrase",
       locale: "fr",
@@ -192,9 +192,9 @@ describe("companyPageStructuredData", () => {
     expect(breadcrumb).toMatchObject({
       "@type": "BreadcrumbList",
       itemListElement: [
-        { item: "https://cvspark.test/fr/outils", position: 1 },
+        { item: "https://jobspark.test/fr/outils", position: 1 },
         { position: 2 },
-        { item: `https://cvspark.test${PATH}`, position: 3 },
+        { item: `https://jobspark.test${PATH}`, position: 3 },
       ],
     })
     expect(webPage).toMatchObject({
@@ -210,7 +210,7 @@ describe("companyPageStructuredData", () => {
         taxID: "381983568",
       },
       dateModified: PAGE.refreshedAt,
-      url: `https://cvspark.test${PATH}`,
+      url: `https://jobspark.test${PATH}`,
     })
   })
 })

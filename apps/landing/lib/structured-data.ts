@@ -37,20 +37,20 @@ export function homeStructuredData({
       {
         "@type": "Organization",
         ...organization,
-        name: "CVSpark",
+        name: "Jobspark",
         url: base,
       },
       {
         "@type": "WebSite",
         "@id": `${base}/#website`,
-        name: "CVSpark",
+        name: "Jobspark",
         url: base,
         inLanguage: locale,
         publisher: organization,
       },
       {
         "@type": "SoftwareApplication",
-        name: "CVSpark",
+        name: "Jobspark",
         url,
         description: dict.meta.description,
         applicationCategory: "BusinessApplication",
@@ -228,7 +228,7 @@ export function companyPageStructuredData({
 
 /**
  * schema.org graph of a feature page (US-142): where it sits, the page as a
- * view of the CVSpark application, and its FAQ — the answers are in the
+ * view of the Jobspark application, and its FAQ — the answers are in the
  * server HTML, so search engines read what they announce.
  */
 export function featurePageStructuredData({
@@ -257,7 +257,7 @@ export function featurePageStructuredData({
         publisher: { "@id": `${base}/#organization` },
         about: {
           "@type": "SoftwareApplication",
-          name: "CVSpark",
+          name: "Jobspark",
           url: `${base}${homePath(locale)}`,
           applicationCategory: "BusinessApplication",
           operatingSystem: "Web",

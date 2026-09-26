@@ -34,7 +34,7 @@ export function createMailTransport(smtpConfig: SmtpConfig): MailTransport | nul
   });
 }
 
-/** What every mailer sends: the composed e-mail, from CVSpark, replies to support. */
+/** What every mailer sends: the composed e-mail, from Jobspark, replies to support. */
 export function toMailMessage(
   sender: { from: string; replyTo: string | null },
   to: string,

@@ -24,7 +24,7 @@ export function featureCrumbs(
   dict: Pick<LandingDictionary, "featurePages">
 ): Crumb[] {
   return [
-    { name: "CVSpark", path: homePath(locale) },
+    { name: "Jobspark", path: homePath(locale) },
     {
       name: dict.featurePages.pages[feature.key].card.name,
       path: feature.path(locale),

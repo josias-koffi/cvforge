@@ -5,22 +5,22 @@ output "environment" {
 
 output "project_id" {
   description = "Id of the Dokploy project"
-  value       = dokploy_project.cvspark.id
+  value       = dokploy_project.jobspark.id
 }
 
 output "environment_id" {
   description = "Id of the default environment inside the project, which holds the stack"
-  value       = dokploy_project.cvspark.production_environment_id
+  value       = dokploy_project.jobspark.production_environment_id
 }
 
 output "compose_id" {
   description = "Compose service id, for terraform import and for the Dokploy UI"
-  value       = dokploy_compose.cvspark.id
+  value       = dokploy_compose.jobspark.id
 }
 
 output "compose_status" {
   description = "Last status Dokploy reported for the stack"
-  value       = dokploy_compose.cvspark.status
+  value       = dokploy_compose.jobspark.status
 }
 
 output "urls" {

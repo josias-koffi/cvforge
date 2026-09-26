@@ -2,7 +2,7 @@ export const MAIL_CONFIG = Symbol("MAIL_CONFIG");
 
 const DEFAULT_APP_URL = "http://localhost:3000";
 const DEFAULT_LANDING_URL = "http://localhost:3101";
-const DEFAULT_SUPPORT_EMAIL = "support@cvspark.koklo.dev";
+const DEFAULT_SUPPORT_EMAIL = "support@jobspark.koklo.dev";
 
 /**
  * What every e-mail needs besides its own content: who sends it, where a
@@ -44,7 +44,7 @@ export function resolveMailConfig(env: NodeJS.ProcessEnv): MailConfig {
   };
 }
 
-/** `CVSpark <support@x>` → `support@x`; a bare address is returned as is. */
+/** `Jobspark <support@x>` → `support@x`; a bare address is returned as is. */
 function extractAddress(value: string) {
   return /<([^>]+)>/.exec(value)?.[1]?.trim() ?? value;
 }

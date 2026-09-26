@@ -174,15 +174,15 @@ echo
 for name in "${APP_SECRETS[@]}"; do
   value=""
   case "$name" in
-    # Nothing constrains these: the cvspark-staging_* volumes do not exist yet,
+    # Nothing constrains these: the jobspark-staging_* volumes do not exist yet,
     # so the values are created along with them. Generate rather than ask.
     POSTGRES_PASSWORD|MINIO_SECRET_KEY|AUTH_SESSION_SECRET|NEXT_SERVER_ACTIONS_ENCRYPTION_KEY)
       value="$(openssl rand -base64 24 | tr -d '/+=' | cut -c1-32)"
       printf '     %s → généré\n' "$name"
       ;;
     MINIO_ACCESS_KEY)
-      value="cvspark-staging"
-      printf '     %s → cvspark-staging\n' "$name"
+      value="jobspark-staging"
+      printf '     %s → jobspark-staging\n' "$name"
       ;;
     *)
       value="$(read_hidden "$name")"

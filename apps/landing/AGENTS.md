@@ -8,14 +8,14 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 <!-- END:nextjs-agent-rules -->
 
-# CVSpark landing (`@cvforge/landing`)
+# Jobspark landing (`@cvforge/landing`)
 
 Public showcase site. Same stack as `apps/web` (Next 16, Tailwind v4, shadcn `radix-nova`, lucide) — see `.project/decisions/ADR-010-landing-nextjs16-motion.md`.
 
 ## Rules
 
 - **All copy lives in `content/fr.ts` and `content/en.ts`**, typed by `content/types.ts`. Never hard-code user-facing text in a component. Both dictionaries must keep the same keys (a test enforces it).
-- **Wording and identity come from `.project/marketing/`**: CVSpark is never written CVSPARK, no gradient on the wordmark, no font weight 700, sentence case, amber (`--spark`) only for the primary "generate" call to action.
+- **Wording and identity come from `.project/marketing/`**: Jobspark is never written JOBSPARK, no gradient on the wordmark, no font weight 700, sentence case, amber (`--spark`) only for the primary "generate" call to action.
 - **Prices are never hard-coded**: packs come from the API (`GET /public/credit-offers`, managed in the back-office) through `lib/offers-api.ts`; action costs come from `AI_CREDIT_COSTS` in `@cvforge/types`. When the API is unreachable the section shows no price at all.
 - **Links to the product** go through `/login` (a route handler reading `APP_URL` at request time), never a build-time `NEXT_PUBLIC_APP_URL`.
 - **Legal documents are not copy**: CGU, CGV, legal notice and privacy policy come from the API (`GET /public/legal/:slug`, edited in the back-office at `/admin/legal`) through `lib/legal-api.ts`. Only their navigation labels live in the dictionaries. When the API cannot serve one, the page answers 404 — never an empty contract. Their bodies are plain text parsed by `parseLegalBody` (`@cvforge/types`), never HTML.
@@ -32,7 +32,7 @@ pnpm --filter @cvforge/landing capture              # all seventeen, both themes
 pnpm --filter @cvforge/landing capture cv-editor    # one screen, both themes
 ```
 
-`scripts/capture-screenshots.mjs` needs the local stack up (`docker compose up -d postgres redis`, `pnpm dev`) and the `cvspark-demo@yopmail.com` account seeded. It signs its own session cookie with `AUTH_SESSION_SECRET` instead of going through a magic link, resolves the records to shoot from the API so a re-seed does not break it, hides the dev overlay and the scrollbars, and swaps the demo address for `lea.moreau@example.com` before the shutter — nothing that identifies the mailbox reaches the landing page.
+`scripts/capture-screenshots.mjs` needs the local stack up (`docker compose up -d postgres redis`, `pnpm dev`) and the `jobspark-demo@yopmail.com` account seeded. It signs its own session cookie with `AUTH_SESSION_SECRET` instead of going through a magic link, resolves the records to shoot from the API so a re-seed does not break it, hides the dev overlay and the scrollbars, and swaps the demo address for `lea.moreau@example.com` before the shutter — nothing that identifies the mailbox reaches the landing page.
 
 Captures are 1440×900 at `deviceScaleFactor: 2`, so 2880×1800 on disk. That is deliberate: the widest slot on the page is 1152 CSS px, which needs 2304 source pixels on a retina screen. The 1x captures this replaced were upscaled by the browser and looked soft. `SCREENSHOT_WIDTH`/`SCREENSHOT_HEIGHT` in `components/screenshot.tsx` must match.
 

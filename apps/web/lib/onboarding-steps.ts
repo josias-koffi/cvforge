@@ -7,9 +7,9 @@ export const ONBOARDING_STEPS = [
   {
     id: "bienvenue",
     label: "Bienvenue",
-    title: "Bienvenue sur CVSpark",
+    title: "Bienvenue sur Jobspark",
     lede: "Cinq minutes pour poser les bases : votre profil, ce que vous cherchez, et vos offres du jour arrivent dès demain matin.",
-    why: "Tout ce que CVSpark produit — CV sur mesure, lettres, offres classées, entretiens — part de ces informations. Les renseigner une fois vous évite de les retaper à chaque candidature.",
+    why: "Tout ce que Jobspark produit — CV sur mesure, lettres, offres classées, entretiens — part de ces informations. Les renseigner une fois vous évite de les retaper à chaque candidature.",
     tip: "Vous avez un CV sous la main ? Importez-le : l'IA remplit votre profil, vous n'avez plus qu'à vérifier.",
   },
   {
@@ -57,7 +57,7 @@ export const ONBOARDING_STEPS = [
     label: "C'est parti",
     title: "Vos offres du jour",
     lede: "Dernière étape : choisissez comment recevoir votre sélection du matin.",
-    why: "Chaque matin, CVSpark sélectionne les offres qui correspondent à vos critères et à vos métiers. Rien ne vous oblige à les recevoir par e-mail.",
+    why: "Chaque matin, Jobspark sélectionne les offres qui correspondent à vos critères et à vos métiers. Rien ne vous oblige à les recevoir par e-mail.",
     tip: "Tout ce que vous venez de remplir se modifie plus tard depuis « Profil » et « Ma recherche ».",
   },
 ] as const

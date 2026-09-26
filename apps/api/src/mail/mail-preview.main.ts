@@ -16,7 +16,7 @@ import { resolveMailConfig } from "./mail.config";
  *   pnpm --filter @cvforge/api email:preview
  *
  * The logo is loaded from `LANDING_URL` (default: the local landing on
- * :3101); point it at https://cvspark.koklo.dev to preview without it.
+ * :3101); point it at https://jobspark.koklo.dev to preview without it.
  */
 const brand = resolveMailConfig(process.env);
 const inOneQuarter = new Date(Date.now() + 15 * 60_000).toISOString();
@@ -25,12 +25,12 @@ const preferencesUrl = `${brand.appUrl}/notifications`;
 const emails: Record<string, ComposedEmail> = {
   "magic-link": composeMagicLinkEmail(brand, {
     expiresAt: inOneQuarter,
-    magicLink: "https://cvspark-api.koklo.dev/auth/passwordless/consume?token=preview",
+    magicLink: "https://jobspark-api.koklo.dev/auth/passwordless/consume?token=preview",
     sessionDurationDays: 7,
   }),
   "magic-link-tool-result": composeMagicLinkEmail(brand, {
     expiresAt: inOneQuarter,
-    magicLink: "https://cvspark-api.koklo.dev/auth/passwordless/consume?token=preview",
+    magicLink: "https://jobspark-api.koklo.dev/auth/passwordless/consume?token=preview",
     purpose: "tool-result",
     sessionDurationDays: 7,
   }),

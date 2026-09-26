@@ -5,13 +5,13 @@ import { featurePagesEn } from "./feature-pages/en"
 import { interviewQuestionsEn } from "./interview-questions/en"
 import type { LandingDictionary } from "./types"
 
-/** Copy source: .project/marketing/cvspark-storytelling.md (English adaptation) */
+/** Copy source: .project/marketing/jobspark-storytelling.md (English adaptation) */
 export const en: LandingDictionary = {
   meta: {
-    title: "CVSpark — The right offers, the right resume, the interview rehearsed",
+    title: "Jobspark — The right offers, the right resume, the interview rehearsed",
     description:
-      "CVSpark finds the job offers that fit you every morning, tailors your resume and cover letter to each one, and trains you for the interview with an AI recruiter. No subscription.",
-    ogAlt: "CVSpark, the spark between your profile and the job",
+      "Jobspark finds the job offers that fit you every morning, tailors your resume and cover letter to each one, and trains you for the interview with an AI recruiter. No subscription.",
+    ogAlt: "Jobspark, the spark between your profile and the job",
   },
   nav: {
     product: "Features",
@@ -27,14 +27,14 @@ export const en: LandingDictionary = {
     openMenu: "Open menu",
     toggleTheme: "Toggle theme",
     switchLanguage: "Passer en français",
-    home: "CVSpark home",
+    home: "Jobspark home",
   },
   hero: {
     badge: "New · Your daily job offers, ranked by AI",
     title: "The right offers. The right resume.",
     titleAccent: "One spark.",
     subtitle:
-      "Every morning, CVSpark finds the offers that fit you and tells you why. One click, and your resume and cover letter are tailored to the offer. All that's left is to rehearse the interview, out loud.",
+      "Every morning, Jobspark finds the offers that fit you and tells you why. One click, and your resume and cover letter are tailored to the offer. All that's left is to rehearse the interview, out loud.",
     primaryCta: "Start for free",
     secondaryCta: "See how it works",
     atsPrompt: "Not ready yet?",
@@ -45,14 +45,14 @@ export const en: LandingDictionary = {
       "Free daily offers",
     ],
     screenshotAlt:
-      "Daily offers in CVSpark: offers ranked for the profile, with a match score",
+      "Daily offers in Jobspark: offers ranked for the profile, with a match score",
   },
   problem: {
     eyebrow: "The problem",
     title: "Your profile isn't the problem. Time is.",
-    body: "Digging through ten job boards, sorting what fits, rewriting the resume, redoing the letter, preparing the interview… Every application, the same mechanical work. CVSpark handles it, you keep the judgement.",
+    body: "Digging through ten job boards, sorting what fits, rewriting the resume, redoing the letter, preparing the interview… Every application, the same mechanical work. Jobspark handles it, you keep the judgement.",
     before: {
-      label: "Without CVSpark",
+      label: "Without Jobspark",
       items: [
         "Alerts dumping a hundred ads on you",
         "An evening per application",
@@ -61,7 +61,7 @@ export const en: LandingDictionary = {
       ],
     },
     after: {
-      label: "With CVSpark",
+      label: "With Jobspark",
       items: [
         "Ten offers picked every morning, with their reason",
         "A tailored resume in seconds",
@@ -86,7 +86,7 @@ export const en: LandingDictionary = {
       {
         label: "Apply",
         title: "A tailored resume and letter in one click",
-        body: "From an offer, CVSpark takes your profile, brings forward what matters and writes the resume and letter, ATS-ready.",
+        body: "From an offer, Jobspark takes your profile, brings forward what matters and writes the resume and letter, ATS-ready.",
         alt: "Resume editor with the A4 preview of the tailored document",
       },
       {
@@ -107,7 +107,7 @@ export const en: LandingDictionary = {
     eyebrow: "Daily job offers",
     title: "When you wake up, ten offers. And the reason for each.",
     subtitle:
-      "CVSpark reads the offers published every night, compares them with your profile and keeps only the best. With AI ranking, each offer arrives with one sentence telling you why it is for you.",
+      "Jobspark reads the offers published every night, compares them with your profile and keeps only the best. With AI ranking, each offer arrives with one sentence telling you why it is for you.",
     points: [
       {
         title: "Official sources",
@@ -202,7 +202,7 @@ export const en: LandingDictionary = {
     cta: "Take an interview",
     learnMore: "All about the interview",
     screenshotAlt:
-      "CVSpark interview studio: animated voice orb, countdown and live transcript",
+      "Jobspark interview studio: animated voice orb, countdown and live transcript",
   },
   trust: {
     eyebrow: "Trust",
@@ -260,7 +260,7 @@ export const en: LandingDictionary = {
         id: "dashboard",
         label: "Dashboard",
         caption: "Your applications, interviews and activity at a glance.",
-        alt: "CVSpark dashboard with key figures and activity chart",
+        alt: "Jobspark dashboard with key figures and activity chart",
       },
       {
         id: "candidatures",
@@ -297,7 +297,7 @@ export const en: LandingDictionary = {
     },
   },
   testimonials: {
-    eyebrow: "They apply with CVSpark",
+    eyebrow: "They apply with Jobspark",
     title: "Less rewriting, more interviews",
     subtitle: "",
     // TODO: replace with real reviews before enabling NEXT_PUBLIC_SHOW_TESTIMONIALS.
@@ -335,7 +335,7 @@ export const en: LandingDictionary = {
       {
         question: 'What is an "ATS-ready" resume?',
         answer:
-          "An ATS is the screening software recruiters use to sort applications. CVSpark produces documents with a simple, readable structure and the offer's keywords, so they are parsed correctly.",
+          "An ATS is the screening software recruiters use to sort applications. Jobspark produces documents with a simple, readable structure and the offer's keywords, so they are parsed correctly.",
         atsCheckLink: "Test my current CV for free",
       },
       {
@@ -344,14 +344,14 @@ export const en: LandingDictionary = {
           "No. It streamlines the mechanical work: spotting what matters in the offer and rephrasing your background. Everything stays editable, and you approve before sending.",
       },
       {
-        question: "How does CVSpark find the daily offers?",
+        question: "How does Jobspark find the daily offers?",
         answer:
-          "Every night, CVSpark reads the offers published on France Travail, La bonne alternance and company career sites, compares them with your search and your resume, and keeps the best. The selection is free; AI ranking, which explains each offer in one sentence, costs one credit a morning.",
+          "Every night, Jobspark reads the offers published on France Travail, La bonne alternance and company career sites, compares them with your search and your resume, and keeps the best. The selection is free; AI ranking, which explains each offer in one sentence, costs one credit a morning.",
       },
       {
         question: "Can I apply to a company that has not posted an offer?",
         answer:
-          "Yes. CVSpark lists the companies hiring in your line of work near you, based on the hiring potential France Travail computes, and prepares an unsolicited application with a tailored resume.",
+          "Yes. Jobspark lists the companies hiring in your line of work near you, based on the hiring potential France Travail computes, and prepares an unsolicited application with a tailored resume.",
       },
       {
         question: "What happens to my data?",
@@ -390,13 +390,13 @@ export const en: LandingDictionary = {
     features: "Features",
     product: "Product",
     legal: "Legal",
-    company: "CVSpark",
+    company: "Jobspark",
     rights: "All rights reserved.",
   },
   legal: {
     updated: "Last updated on",
     metaDescription:
-      "{title} of CVSpark, the service that tailors your resume and cover letter to every job offer.",
+      "{title} of Jobspark, the service that tailors your resume and cover letter to every job offer.",
     links: {
       terms: "Terms of use",
       "sales-terms": "Terms of sale",
@@ -469,11 +469,11 @@ export const en: LandingDictionary = {
     },
     unlock: {
       title: "Get the full report",
-      body: "Enter your address: the detailed report appears straight away, and you get a link to find it again in CVSpark.",
+      body: "Enter your address: the detailed report appears straight away, and you get a link to find it again in Jobspark.",
       emailLabel: "Your email address",
       emailPlaceholder: "you@example.com",
       consent:
-        "I agree that CVSpark creates my account and sends me a sign-in link.",
+        "I agree that Jobspark creates my account and sends me a sign-in link.",
       submit: "Show the full report",
       submitting: "Sending…",
       success: "Report unlocked",
@@ -659,7 +659,7 @@ export const en: LandingDictionary = {
       refreshed: "Figures read on {date}",
       sources: {
         market: "Source: Marché du travail, France Travail",
-        salary: "Salaries: openings collected by CVSpark",
+        salary: "Salaries: openings collected by Jobspark",
       },
       again: "Look up another job",
     },
@@ -673,7 +673,7 @@ export const en: LandingDictionary = {
       emailLabel: "Your email",
       emailPlaceholder: "you@example.com",
       consent:
-        "I agree that CVSpark creates my account and sends me a sign-in link, then the openings every morning.",
+        "I agree that Jobspark creates my account and sends me a sign-in link, then the openings every morning.",
       submit: "Get my link",
       submitting: "Sending…",
       success: "Check your inbox",
@@ -753,7 +753,7 @@ export const en: LandingDictionary = {
       emailLabel: "Your email",
       emailPlaceholder: "you@example.com",
       consent:
-        "I agree that CVSpark creates my account and sends me a sign-in link.",
+        "I agree that Jobspark creates my account and sends me a sign-in link.",
       submit: "Get my link",
       submitting: "Sending…",
       success: "Check your inbox",
@@ -764,11 +764,11 @@ export const en: LandingDictionary = {
   story: {
     metaTitle: "Our story",
     metaDescription:
-      "CVSpark was born from a simple frustration: spending hours re-tailoring a resume for every job offer.",
+      "Jobspark was born from a simple frustration: spending hours re-tailoring a resume for every job offer.",
     eyebrow: "Our story",
     title: "Born from a simple frustration",
     manifesto:
-      "We all have a friend looking for work who rewrites the same resume differently every evening — not because they lack skills, but because they lack the time to rephrase them for every offer. CVSpark was born from that frustration. AI can now absorb this repetitive tailoring work; all that was left was to build the tool that lights the spark between a profile and a job offer — and turns out an ATS-ready resume in seconds.",
+      "We all have a friend looking for work who rewrites the same resume differently every evening — not because they lack skills, but because they lack the time to rephrase them for every offer. Jobspark was born from that frustration. AI can now absorb this repetitive tailoring work; all that was left was to build the tool that lights the spark between a profile and a job offer — and turns out an ATS-ready resume in seconds.",
     originTitle: "Where the idea came from",
     origin: [
       "The starting point wasn't technology, it was something we saw around us: friends looking for work, losing hours redoing the same work by hand for every application. Reading an offer, spotting what matters, rephrasing their profile accordingly.",
@@ -794,6 +794,6 @@ export const en: LandingDictionary = {
         body: "One profile + one offer → an ATS-ready resume.",
       },
     ],
-    cta: "Try CVSpark",
+    cta: "Try Jobspark",
   },
 }

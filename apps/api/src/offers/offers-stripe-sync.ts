@@ -9,7 +9,7 @@ type StripeCatalogApi = {
 
 /**
  * Stripe Managed Payments refuses a checkout whose product has no tax code.
- * CVSpark sells access to a cloud-hosted AI used from a browser, by job
+ * Jobspark sells access to a cloud-hosted AI used from a browser, by job
  * seekers rather than companies: "AIaaS - Cloud Based - Personal Use".
  */
 export const CREDIT_OFFER_TAX_CODE = "txcd_10105001";
@@ -19,7 +19,7 @@ function productFields(offer: AdminCreditOffer) {
     active: offer.status === "active",
     description: offer.description.fr || undefined,
     metadata: { offerId: offer.id, slug: offer.slug },
-    name: `CVSpark ${offer.name.fr} — ${offer.credits} crédits`,
+    name: `Jobspark ${offer.name.fr} — ${offer.credits} crédits`,
     tax_code: CREDIT_OFFER_TAX_CODE,
   };
 }

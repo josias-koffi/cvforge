@@ -8,7 +8,7 @@ function createMailer() {
   const sent: SentMail[] = [];
   const service = new NotificationsMailerService(
     { enabled: true, provider: "smtp" } as never,
-    testMailConfig({ appUrl: "https://app.cvspark.test" }),
+    testMailConfig({ appUrl: "https://app.jobspark.test" }),
     {
       sendMail: async (options: SentMail) => {
         sent.push(options);
@@ -32,10 +32,10 @@ describe("sendApplicationFollowUpEmail", () => {
     });
 
     expect(sent[0]!.html).toContain(
-      'href="https://app.cvspark.test/candidatures?applicationId=app-001"',
+      'href="https://app.jobspark.test/candidatures?applicationId=app-001"',
     );
-    expect(sent[0]!.html).toContain("https://app.cvspark.test/notifications");
-    expect(sent[0]!.replyTo).toBe("support@cvspark.test");
+    expect(sent[0]!.html).toContain("https://app.jobspark.test/notifications");
+    expect(sent[0]!.replyTo).toBe("support@jobspark.test");
   });
 });
 

@@ -1,10 +1,10 @@
 /**
- * The CVSpark logo in the forms e-mail needs, generated from the SVG sources:
+ * The Jobspark logo in the forms e-mail needs, generated from the SVG sources:
  *
- * - `public/email/cvspark-mark.png`: the favicon mark (`app/icon.svg`) at 3x,
+ * - `public/email/jobspark-mark.png`: the favicon mark (`app/icon.svg`) at 3x,
  *   shown at 32 px in every e-mail header. Gmail shows no SVG.
- * - `public/email/cvspark-avatar.png`: the sender avatar (Gravatar, Google
- *   account) from `public/bimi/cvspark.svg`, the full-bleed variant whose bolt
+ * - `public/email/jobspark-avatar.png`: the sender avatar (Gravatar, Google
+ *   account) from `public/bimi/jobspark.svg`, the full-bleed variant whose bolt
  *   and spark survive a round crop. That SVG is also the BIMI logo, in the
  *   SVG Tiny-PS profile BIMI requires: edit it by hand, keep it tiny-ps.
  *
@@ -20,8 +20,8 @@ import sharp from "sharp"
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..")
 
 const outputs = [
-  { source: "app/icon.svg", target: "public/email/cvspark-mark.png", size: 96 },
-  { source: "public/bimi/cvspark.svg", target: "public/email/cvspark-avatar.png", size: 512 },
+  { source: "app/icon.svg", target: "public/email/jobspark-mark.png", size: 96 },
+  { source: "public/bimi/jobspark.svg", target: "public/email/jobspark-avatar.png", size: 512 },
 ]
 
 await mkdir(resolve(root, "public/email"), { recursive: true })

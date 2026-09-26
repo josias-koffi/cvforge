@@ -94,7 +94,7 @@ export function BrowserFrame({
         </div>
         <div className="mx-auto flex h-6 w-full max-w-xs items-center justify-center gap-1.5 rounded-md bg-background px-3 font-mono text-[11px] text-muted-foreground">
           <LockIcon className="size-3" strokeWidth={1.75} aria-hidden />
-          <span className="truncate">cvspark{path}</span>
+          <span className="truncate">jobspark{path}</span>
         </div>
         <div className="w-10" aria-hidden />
       </div>
