@@ -129,6 +129,10 @@ services:
       SMTP_USER: ${SMTP_USER}
       SMTP_PASSWORD: ${SMTP_PASSWORD}
       EMAIL_FROM: ${EMAIL_FROM}
+      # Replies to the no-reply sender land here; the footer names it too.
+      EMAIL_REPLY_TO: ${EMAIL_REPLY_TO:-}
+      # Serves the logo and the legal pages every e-mail links to.
+      LANDING_URL: https://${LANDING_DOMAIN}
       # Public routes (ADR-022). Listed one by one: a container only receives
       # what this list names, so a value set only in the stack's .env would
       # never reach the process.

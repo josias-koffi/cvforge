@@ -26,3 +26,34 @@ variable "cloudflare_proxied" {
   description = "Route the records through the Cloudflare proxy (orange cloud)."
   default     = false
 }
+
+# Mail ------------------------------------------------------------------------
+
+variable "resend_cvspark_dkim" {
+  type        = string
+  description = "DKIM TXT value Resend issues for cvspark.koklo.dev (p=...). Empty: the sending records are not created."
+  default     = ""
+}
+
+variable "resend_feedback_mx" {
+  type        = string
+  description = "Bounce MX Resend gives for send.cvspark, region included."
+  default     = "feedback-smtp.eu-west-1.amazonses.com"
+}
+
+variable "dmarc_policy" {
+  type        = string
+  description = "DMARC policy of cvspark.koklo.dev: none while reading reports, then quarantine (required for BIMI)."
+  default     = "none"
+
+  validation {
+    condition     = contains(["none", "quarantine", "reject"], var.dmarc_policy)
+    error_message = "dmarc_policy must be none, quarantine or reject."
+  }
+}
+
+variable "dmarc_report_email" {
+  type        = string
+  description = "Mailbox receiving the aggregate DMARC reports."
+  default     = "support@cvspark.koklo.dev"
+}

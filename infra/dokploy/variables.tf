@@ -196,6 +196,15 @@ variable "email_from" {
   default     = "CVSpark <no-reply@koklo.dev>"
 }
 
+# Where a reply to no-reply@ goes, also printed in every e-mail footer. The
+# address only receives once Cloudflare Email Routing forwards it
+# (docs/deploy.md §4b).
+variable "email_reply_to" {
+  type        = string
+  description = "Reply-To header of every outgoing email; empty sends none."
+  default     = "CVSpark <support@cvspark.koklo.dev>"
+}
+
 # Secrets ---------------------------------------------------------------------
 # One value each: this state manages a single environment, so CI can pass the
 # GitHub Environment secrets of that environment directly as TF_VAR_<name>.

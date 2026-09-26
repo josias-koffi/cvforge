@@ -16,6 +16,7 @@
     "boards:probe": "tsx src/job-search/sources/boards/boards-probe.main.ts",
     "job-digest:run": "tsx src/job-search/job-digest.main.ts",
     "job-digest:status": "tsx src/job-search/job-digest-status.main.ts",
+    "email:preview": "tsx src/mail/mail-preview.main.ts",
     "rome:sync": "tsx src/rome/rome-sync.main.ts",
     "market:refresh": "tsx src/market/market-refresh.main.ts",
     "hiring-companies:refresh": "tsx src/hiring-companies/hiring-companies-refresh.main.ts",

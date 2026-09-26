@@ -76,6 +76,7 @@ resource "dokploy_compose" "cvspark" {
     "SMTP_USER=${var.smtp_user}",
     "SMTP_PASSWORD=${var.smtp_password}",
     "EMAIL_FROM=${local.email_from}",
+    "EMAIL_REPLY_TO=${var.email_reply_to}",
     "NEXT_SERVER_ACTIONS_ENCRYPTION_KEY=${var.next_server_actions_encryption_key}",
     "ATS_IP_HASH_SECRET=${var.ats_ip_hash_secret}",
     "ATS_PUBLIC_HOURLY_LIMIT=${var.ats_public_hourly_limit}",

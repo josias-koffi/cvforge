@@ -152,6 +152,13 @@ describe("NotificationsService", () => {
     expect(notifications[0]?.metadata.applicationId).toBe("app-001");
     expect(notifications[0]?.createdAt).toBe("2026-04-17T08:00:00.000Z");
     expect(notificationsMailer.sendApplicationFollowUpEmail).toHaveBeenCalledTimes(1);
+    // The mailer makes the app path absolute; the delay is the configured one.
+    expect(notificationsMailer.sendApplicationFollowUpEmail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        delayDays: config.followUpDelayDays,
+        followUpUrl: "/candidatures?applicationId=app-001",
+      }),
+    );
   });
 
   it("does not duplicate reminders when listing multiple times", async () => {

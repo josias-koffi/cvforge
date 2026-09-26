@@ -52,6 +52,7 @@ function findSentStatusEntry(
 function buildReminderNotification(
   application: StoredApplication,
   reminderCreatedAt: string,
+  delayDays: number,
 ): InAppNotification {
   const company = application.extracted.companyName ?? "cette entreprise";
 
@@ -59,7 +60,7 @@ function buildReminderNotification(
     createdAt: reminderCreatedAt,
     id: randomUUID(),
     linkHref: `/candidatures?applicationId=${application.id}`,
-    message: `Sept jours se sont ecoules depuis l'envoi de votre candidature ${application.extracted.title} chez ${company}. Pensez a relancer si vous n'avez toujours pas de retour.`,
+    message: `${delayDays} jour(s) se sont écoulés depuis l'envoi de votre candidature ${application.extracted.title} chez ${company}. Pensez à relancer si vous n'avez toujours pas de retour.`,
     metadata: {
       applicationId: application.id,
     },
@@ -252,7 +253,7 @@ export class NotificationsService {
   }) {
     const notification = await this.createOncePerDay({
       linkHref: "/offres-du-jour",
-      message: `${input.totalCount} offre(s) correspondent a votre recherche ce matin.`,
+      message: `${input.totalCount} offre(s) correspondent à votre recherche ce matin.`,
       metadata: {
         digestDate: input.digestDate,
         matchCount: input.totalCount,
@@ -330,13 +331,18 @@ export class NotificationsService {
       }
 
       const notification = await this.notificationsStore.add(
-        buildReminderNotification(application, reminderAt.toISOString()),
+        buildReminderNotification(
+          application,
+          reminderAt.toISOString(),
+          this.config.followUpDelayDays,
+        ),
       );
       existingApplicationReminderIds.add(application.id);
 
       if (preferences.email.applicationFollowUp) {
         await this.notificationsMailer.sendApplicationFollowUpEmail({
           companyName: application.extracted.companyName ?? "cette entreprise",
+          delayDays: this.config.followUpDelayDays,
           followUpUrl: notification.linkHref,
           jobTitle: application.extracted.title,
           to: userEmail,

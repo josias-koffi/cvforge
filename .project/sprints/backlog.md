@@ -172,6 +172,7 @@ Référence de gate: le spec impose des branches courtes et des PRs <= 400 ligne
 | US-158 | Onglets Revenus & conversion et Coûts IA | E26 | M | P0 | 033 | Demande propriétaire du 2026-09-25 |
 | US-159 | Onglets Produit, Marché et Acquisition ; fil d'Ariane et retrait de l'ancienne grille | E26 | M | P1 | 033 | Demande propriétaire du 2026-09-25 |
 | US-160 | Entretien vocal en direct via OpenAI Realtime (WebRTC) : coupure native du recruteur, fin de tour sémantique, suivi serveur (agenda, transcription, raccrochage), coût par appel — ADR-026 | E12 | L | P0 | — | Demande propriétaire du 2026-09-25 |
+| US-161 | E-mails aux couleurs de CVSpark : gabarit commun (logo, carte, bouton, pied de page avec préférences, support et liens légaux), les 4 e-mails réécrits, Reply-To support, aperçu `email:preview` ; logo d'expéditeur via DMARC + BIMI (sans certificat), Gravatar et compte Google | — | M | P1 | — | Demande propriétaire du 2026-09-26 |
 
 ## Critères d'acceptation détaillés — E16
 

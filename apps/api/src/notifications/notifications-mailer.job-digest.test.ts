@@ -1,13 +1,20 @@
 import { describe, expect, it } from "vitest";
+import { testMailConfig } from "../mail/mail.testing";
 import { NotificationsMailerService } from "./notifications-mailer.service";
 
-type SentMail = { html: string; subject: string; text: string; to: string };
+type SentMail = {
+  headers?: Record<string, string>;
+  html: string;
+  subject: string;
+  text: string;
+  to: string;
+};
 
 function createMailer() {
   const sent: SentMail[] = [];
   const service = new NotificationsMailerService(
     { enabled: true, provider: "smtp" } as never,
-    "CVForge <no-reply@cvforge.fr>",
+    testMailConfig(),
     {
       sendMail: async (options: SentMail) => {
         sent.push(options);
@@ -42,7 +49,7 @@ describe("sendJobDigestEmail", () => {
     await service.sendJobDigestEmail(BASE_INPUT);
 
     const mail = sent[0]!;
-    expect(mail.subject).toContain("1 offre(s)");
+    expect(mail.subject).toBe("1 offre pour vous aujourd'hui");
     expect(mail.text).toContain("Développeur Full Stack");
     expect(mail.text).toContain("86/100");
     expect(mail.html).toContain("https://app.cvforge.fr/offres-du-jour");
@@ -54,8 +61,11 @@ describe("sendJobDigestEmail", () => {
     await service.sendJobDigestEmail(BASE_INPUT);
 
     // Findable in two seconds, in both parts of the message.
-    expect(sent[0]!.text).toContain("Ne plus recevoir cet e-mail");
+    expect(sent[0]!.text).toContain("Ne plus recevoir ces e-mails");
     expect(sent[0]!.html).toContain("https://app.cvforge.fr/notifications");
+    expect(sent[0]!.headers).toEqual({
+      "List-Unsubscribe": "<https://app.cvforge.fr/notifications>",
+    });
   });
 
   it("escapes what a third party wrote", async () => {
@@ -83,7 +93,8 @@ describe("sendJobDigestEmail", () => {
 
     await service.sendJobDigestEmail({ ...BASE_INPUT, totalCount: 7 });
 
-    expect(sent[0]!.text).toContain("Et 6 autre(s) dans l'application.");
+    expect(sent[0]!.subject).toBe("7 offres pour vous aujourd'hui");
+    expect(sent[0]!.text).toContain("Et 6 autres dans l'application.");
   });
 
   it("names an anonymous employer as such rather than leaving a hole", async () => {
@@ -94,7 +105,7 @@ describe("sendJobDigestEmail", () => {
       offers: [{ ...BASE_INPUT.offers[0]!, companyName: "" }],
     });
 
-    expect(sent[0]!.text).toContain("entreprise non communiquee");
+    expect(sent[0]!.text).toContain("Entreprise non communiquée");
   });
 
   it("adds the market changes with their source, and nothing when there are none (US-128)", async () => {

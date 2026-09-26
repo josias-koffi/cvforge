@@ -9,7 +9,8 @@
     "lint": "eslint . --max-warnings=0",
     "typecheck": "next typegen && tsc --noEmit",
     "test": "vitest run",
-    "capture": "node scripts/capture-screenshots.mjs"
+    "capture": "node scripts/capture-screenshots.mjs",
+    "email-assets": "node scripts/build-email-assets.mjs"
   },
   "dependencies": {
     "@cvforge/types": "workspace:*",

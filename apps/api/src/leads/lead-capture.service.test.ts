@@ -92,8 +92,10 @@ describe("LeadCaptureService", () => {
         true,
         INTENT,
       );
+      // The e-mail says the link reopens a result, not a bare sign-in.
       expect(sendMagicLinkEmail).toHaveBeenCalledWith({
         magicLink: "https://x",
+        purpose: "tool-result",
       });
     });
 

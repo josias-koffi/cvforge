@@ -69,7 +69,10 @@ export class LeadCaptureService {
         checked,
       );
 
-      await this.authMailer.sendMagicLinkEmail(link);
+      await this.authMailer.sendMagicLinkEmail({
+        ...link,
+        purpose: "tool-result",
+      });
     } catch (error: unknown) {
       console.error(
         `[leads] magic link delivery failed (${intent.kind})`,

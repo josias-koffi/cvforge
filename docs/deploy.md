@@ -186,6 +186,34 @@ over the apex, to keep each product's sending reputation separate — add that
 subdomain in Resend, publish the records it issues into the `koklo.dev` zone,
 wait for *verified*, then change `email_from` in `infra/dokploy/variables.tf`.
 
+Checklist for that move, and for the CVSpark logo next to the sender:
+
+1. **Resend**: add `cvspark.koklo.dev`, copy the DKIM value it issues into
+   `resend_cvspark_dkim` (and the bounce MX region into `resend_feedback_mx`
+   if it is not `eu-west-1`) in `infra/terraform`, apply, wait for *verified*.
+   Then set `email_from` to `CVSpark <no-reply@cvspark.koklo.dev>`.
+2. **Receive mail** with Cloudflare Email Routing on `koklo.dev`: forward
+   `support@cvspark.koklo.dev` (the Reply-To, the footer address and the DMARC
+   report mailbox) and `no-reply@cvspark.koklo.dev` (needed once, to verify the
+   accounts below) to a real inbox.
+3. **Sender picture without a certificate**: create a Gravatar and a Google
+   account on `no-reply@cvspark.koklo.dev`, both with
+   `apps/landing/public/email/cvspark-avatar.png`. Gmail shows the Google
+   account's picture; a few clients read Gravatar.
+4. **BIMI**: `default._bimi.cvspark` already points at
+   `https://cvspark.koklo.dev/bimi/cvspark.svg` (SVG Tiny-PS). Yahoo, AOL and
+   Fastmail show it once DMARC is enforced: after a week of clean reports, set
+   `dmarc_policy = "quarantine"`. BIMI also checks the organisational domain,
+   so `_dmarc.koklo.dev` must be at quarantine or reject too — it covers every
+   koklo.dev sender, check them first. Gmail and Apple Mail additionally need a
+   VMC or CMC certificate (paid, yearly), referenced by the record's `a=` tag.
+5. **Check**: `dig TXT _dmarc.cvspark.koklo.dev default._bimi.cvspark.koklo.dev`,
+   the BIMI Group inspector, and a mail-tester.com score.
+
+The e-mails themselves are built in `apps/api/src/mail/` (one layout, one
+function per e-mail). `pnpm --filter @cvforge/api email:preview` writes them
+to `apps/api/.email-previews/` to check the design in a browser.
+
 **4c. Expect the first apply of a fresh environment to serve 404.** The three
 `dokploy_domain` resources take `compose_id`, so Terraform creates them *after*
 the compose has deployed. Dokploy injects the Traefik labels into the stack at
