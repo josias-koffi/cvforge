@@ -21,7 +21,7 @@ The module manages **one** environment, chosen by `var.environment`
 |---|---|---|
 | Dokploy project | `jobspark` | `jobspark-staging` |
 | state key | `cvspark/dokploy-production.tfstate` (kept, see note below) | `cvspark/dokploy-staging.tfstate` (kept, see note below) |
-| volume prefix | `cvforge` (legacy, kept on purpose) | `jobspark-staging` |
+| volume prefix | `cvforge` (legacy, kept on purpose) | `cvspark-staging` (legacy, kept on purpose) |
 | cookie name | `jobspark_session` | `jobspark_staging_session` |
 | landing | `jobspark.koklo.dev` | `jobspark-staging.koklo.dev` |
 | app (web) | `jobspark-app.koklo.dev` | `jobspark-app-staging.koklo.dev` |

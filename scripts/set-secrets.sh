@@ -174,15 +174,16 @@ echo
 for name in "${APP_SECRETS[@]}"; do
   value=""
   case "$name" in
-    # Nothing constrains these: the jobspark-staging_* volumes do not exist yet,
-    # so the values are created along with them. Generate rather than ask.
+    # Staging's volume prefix is kept as the legacy `cvspark-staging` (see
+    # infra/dokploy/main.tf) so existing data survives the Jobspark rebrand —
+    # only generate fresh values here for an environment that never existed.
     POSTGRES_PASSWORD|MINIO_SECRET_KEY|AUTH_SESSION_SECRET|NEXT_SERVER_ACTIONS_ENCRYPTION_KEY)
       value="$(openssl rand -base64 24 | tr -d '/+=' | cut -c1-32)"
       printf '     %s → généré\n' "$name"
       ;;
     MINIO_ACCESS_KEY)
-      value="jobspark-staging"
-      printf '     %s → jobspark-staging\n' "$name"
+      value="cvspark-staging"
+      printf '     %s → cvspark-staging\n' "$name"
       ;;
     *)
       value="$(read_hidden "$name")"
