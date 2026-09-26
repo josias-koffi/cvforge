@@ -392,3 +392,38 @@ variable "enable_zdr_stt" {
   description = "Same filter for speech-to-text. See enable_zdr_chat."
   default     = true
 }
+
+# Off-site backups (R2) ---------------------------------------------------------
+# The nightly `db_backup` sidecar in the compose (docker-compose.yml /
+# dokploy-stack.yml) is on-VPS only — it does not survive VPS destruction. These
+# resources (backup.tf) add a second, independent copy in Cloudflare R2, driven
+# by Dokploy itself rather than a sidecar container.
+
+variable "r2_backup_endpoint" {
+  type        = string
+  description = "R2 S3-compatible endpoint for the backups bucket. Same Cloudflare account as the Terraform state backend, different bucket — reuses R2_ENDPOINT."
+}
+
+variable "r2_backup_bucket" {
+  type        = string
+  description = "R2 bucket that receives database dumps and volume archives."
+  default     = "koklo-db-backups"
+}
+
+variable "r2_backup_region" {
+  type        = string
+  description = "Bucket region. R2 is region-agnostic; Dokploy still requires a value."
+  default     = "auto"
+}
+
+variable "r2_backup_access_key" {
+  type        = string
+  description = "R2 access key id for a token scoped to r2_backup_bucket only (not the state bucket's token)."
+  sensitive   = true
+}
+
+variable "r2_backup_secret_access_key" {
+  type        = string
+  description = "R2 secret access key matching r2_backup_access_key."
+  sensitive   = true
+}
