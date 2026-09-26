@@ -21,6 +21,30 @@ resource "cloudflare_record" "jobspark" {
   proxied = var.cloudflare_proxied
 }
 
+# EMERGENCY RESTORE (2026-09-27): production is already running on Dokploy
+# under the OLD "cvspark" project (`cvspark-aosltd-*`, live for ~10 days, 437
+# real applications) — docs/deploy.md was stale, this was not discovered until
+# after the Jobspark rename destroyed these three records and took production
+# offline for several hours. Re-added here, separately from `local.records`
+# above, so a future cleanup can remove exactly these three once the
+# Terraform state for the `cvspark` Dokploy project has been properly
+# `state mv`'d to `jobspark` (never just re-point DNS and call it done: the
+# infra/dokploy resource addresses were renamed the same way and would destroy
+# this same project on the next production apply — see infra/dokploy/main.tf).
+resource "cloudflare_record" "cvspark_prod_restore" {
+  for_each = {
+    landing = "cvspark"
+    app     = "cvspark-app"
+    api     = "cvspark-api"
+  }
+
+  zone_id = var.cf_zone_id
+  name    = each.value
+  type    = "A"
+  content = var.vps20_ip
+  proxied = var.cloudflare_proxied
+}
+
 # Mail from no-reply@jobspark.koklo.dev --------------------------------------
 # Resend verifies each subdomain on its own (docs/deploy.md §4b). Its records
 # exist only once the DKIM key Resend issues for jobspark.koklo.dev is set:
