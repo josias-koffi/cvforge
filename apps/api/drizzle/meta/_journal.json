@@ -344,6 +344,13 @@
       "when": 1793300000000,
       "tag": "0048_interview_minute_price",
       "breakpoints": true
+    },
+    {
+      "idx": 49,
+      "version": "7",
+      "when": 1793400000000,
+      "tag": "0049_admin_audit_legal_published",
+      "breakpoints": true
     }
   ]
 }
