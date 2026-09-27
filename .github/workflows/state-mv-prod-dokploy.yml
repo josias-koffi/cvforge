@@ -64,11 +64,12 @@ jobs:
         run: tofu state list
 
       - name: Move project/compose/domain to the jobspark addresses
+        # Tolerates "already moved" (source address not found) so this step
+        # is safe to re-run after a partial or repeated execution.
         run: |
-          set -e
-          tofu state mv 'dokploy_project.cvspark' 'dokploy_project.jobspark'
-          tofu state mv 'dokploy_compose.cvspark' 'dokploy_compose.jobspark'
-          tofu state mv 'dokploy_domain.cvspark' 'dokploy_domain.jobspark'
+          tofu state mv 'dokploy_project.cvspark' 'dokploy_project.jobspark' || true
+          tofu state mv 'dokploy_compose.cvspark' 'dokploy_compose.jobspark' || true
+          tofu state mv 'dokploy_domain.cvspark' 'dokploy_domain.jobspark' || true
 
       - name: Plan (review only — no apply)
         run: tofu plan -input=false -lock-timeout=5m -out=tfplan || true
