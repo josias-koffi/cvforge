@@ -235,6 +235,31 @@ describe("InterviewService", () => {
     expect(completed.report?.overallScore).toBe(8);
   });
 
+  it("writes one report however many times finishing is asked", async () => {
+    const chat = vi.fn().mockResolvedValue(
+      JSON.stringify({
+        improvements: ["Structurer les reponses."],
+        metrics: [],
+        overallScore: 7,
+        summary: "Correct.",
+      }),
+    );
+    const store = createStore();
+    const service = makeService({ chat }, store, createApplicationsService());
+    const { sessionId } = await service.startSession("user@example.com", "fr");
+    await seedTranscript(store, sessionId, "Bonjour");
+
+    // The clock and the goodbye at once, then a click on a finished session.
+    await Promise.all([
+      service.finishSession("user@example.com", sessionId),
+      service.finishSession("user@example.com", sessionId),
+    ]);
+    const again = await service.finishSession("user@example.com", sessionId);
+
+    expect(chat).toHaveBeenCalledTimes(1);
+    expect(again.report?.overallScore).toBe(7);
+  });
+
 
 
 

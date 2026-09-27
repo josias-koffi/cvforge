@@ -20,6 +20,7 @@ import {
   DataTable,
 } from "@/components/data-table/data-table"
 import { StatusBadge } from "@/components/offers/status-badge"
+import { AtsScoreBadge } from "@/components/applications/ats-score-badge"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -90,6 +91,23 @@ function buildColumns(onToggleSort: () => void) {
           />
         </div>
       ),
+    }),
+    columnHelper.display({
+      id: "atsScore",
+      header: "Score ATS",
+      // Renders nothing when the CV has never been scored: an empty cell says
+      // "not measured", a zero would say "terrible". A score opens its
+      // analysis in the CV editor (US-153).
+      cell: ({ row }) =>
+        row.original.atsScore ? (
+          <Link
+            href={`/candidatures/${row.original.id}/cv?analyse=ats`}
+            className="inline-flex rounded-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+            title="Voir l'analyse ATS du CV"
+          >
+            <AtsScoreBadge score={row.original.atsScore} />
+          </Link>
+        ) : null,
     }),
     columnHelper.display({
       id: "createdAt",

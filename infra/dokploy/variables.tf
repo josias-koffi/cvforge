@@ -28,7 +28,7 @@ variable "dokploy_insecure" {
 
 variable "image_tag" {
   type        = string
-  description = "Tag of the ghcr.io/josias-koffi/cvspark-* images to run. CI passes the short commit sha."
+  description = "Tag of the ghcr.io/josias-koffi/jobspark-* images to run. CI passes the short commit sha."
   default     = "latest"
 }
 
@@ -116,64 +116,49 @@ variable "openrouter_max_attempts" {
   default     = "3"
 }
 
-# Every interview model below defaults to blank, which keeps the value
-# compiled into the application. Pinning one here is how the transcription
-# chain ended up on voxtral-small: OpenRouter has no route to it under this
-# account's privacy settings (ADR-013), so the IaC was overriding the very
-# default that fixed it. A blank cannot drift from the code; a name can.
+# Every interview setting below defaults to blank, which keeps the value
+# compiled into the application: a blank cannot drift from the code, a name
+# can (see ADR-013 for the time it did).
 
-variable "interview_stt_model" {
+variable "openai_api_key" {
   type        = string
-  description = "OpenRouter model for interview speech-to-text. Blank keeps the application default."
+  description = "OpenAI API key for the live interview voice (Realtime API, ADR-026)"
+  sensitive   = true
+}
+
+variable "interview_realtime_model" {
+  type        = string
+  description = "OpenAI Realtime model the interviewer speaks with. Blank keeps the application default."
   default     = ""
 }
 
-variable "interview_stt_fallback_models" {
+variable "interview_realtime_voice" {
   type        = string
-  description = <<-EOT
-    Comma-separated speech-to-text models tried once every provider of
-    interview_stt_model is exhausted. Blank keeps the application defaults;
-    "none" disables fallbacks altogether.
-  EOT
+  description = "Realtime preset voice of the interviewer. Blank keeps the application default."
   default     = ""
 }
 
-variable "interview_voice_model" {
+variable "interview_realtime_eagerness" {
   type        = string
-  description = "OpenRouter speech-to-speech model answering a spoken turn. Blank keeps the application default."
+  description = "Semantic turn detection eagerness: low, medium, high or auto. Blank keeps the application default."
   default     = ""
 }
 
-variable "interview_voice" {
+variable "interview_realtime_noise_reduction" {
   type        = string
-  description = "Voice the interviewer speaks with. Blank keeps the application default."
+  description = "Input noise reduction: far_field (laptop microphone), near_field (headset) or off. Blank keeps the application default."
   default     = ""
 }
 
-variable "interview_voice_fallback_models" {
+variable "interview_realtime_turn_detection" {
   type        = string
-  description = <<-EOT
-    Comma-separated speech-to-speech models tried once every provider of
-    interview_voice_model is exhausted. Blank keeps the application defaults;
-    "none" disables fallbacks altogether.
-  EOT
+  description = "semantic, or server for a thresholded detector in a noisy room. Blank keeps the application default."
   default     = ""
 }
 
-variable "interview_voice_max_attempts" {
+variable "interview_realtime_vad_threshold" {
   type        = string
-  description = <<-EOT
-    Attempts per voice turn, first call included. Deliberately separate from
-    openrouter_max_attempts: a spoken turn has about a second of perceived
-    budget, so it fails over to the next model rather than waiting out a
-    throttle (ADR-016). Blank keeps the application default.
-  EOT
-  default     = ""
-}
-
-variable "interview_voice_max_tokens" {
-  type        = string
-  description = "Token ceiling for one spoken reply. Blank keeps the application default."
+  description = "Server detection only: how loud speech must be, between 0 and 1. Blank keeps the application default."
   default     = ""
 }
 
@@ -197,18 +182,27 @@ variable "smtp_port" {
 
 # Only koklo.dev is a verified sender in Resend: it carries the DKIM record at
 # resend._domainkey.koklo.dev and the send.koklo.dev MX and SPF. Neither
-# cvspark.koklo.dev nor cvforge.koklo.dev does, and Resend verifies each
+# jobspark.koklo.dev nor cvforge.koklo.dev does, and Resend verifies each
 # subdomain independently — a From on an unverified one is rejected with a 403
 # domain mismatch, so no magic link goes out and nobody can sign in.
 #
-# To move to no-reply@cvspark.koklo.dev, add that subdomain in Resend, publish
+# To move to no-reply@jobspark.koklo.dev, add that subdomain in Resend, publish
 # the records it issues into the koklo.dev zone, wait for "verified", and only
 # then change this default. Resend recommends a subdomain over the apex, to keep
 # the sending reputation of each product separate.
 variable "email_from" {
   type        = string
   description = "From header of every outgoing email. The domain must be verified in Resend, on its own."
-  default     = "CVSpark <no-reply@koklo.dev>"
+  default     = "Jobspark <no-reply@koklo.dev>"
+}
+
+# Where a reply to no-reply@ goes, also printed in every e-mail footer. The
+# address only receives once Cloudflare Email Routing forwards it
+# (docs/deploy.md §4b).
+variable "email_reply_to" {
+  type        = string
+  description = "Reply-To header of every outgoing email; empty sends none."
+  default     = "Jobspark <support@jobspark.koklo.dev>"
 }
 
 # Secrets ---------------------------------------------------------------------
@@ -241,6 +235,42 @@ variable "openrouter_api_key" {
   type        = string
   description = "OpenRouter API key"
   sensitive   = true
+}
+
+# Offer collection (France Travail "Offres d'emploi v2"). Optional: an empty
+# pair leaves the source inert instead of failing the deploy, exactly like the
+# OpenRouter management key.
+variable "france_travail_client_id" {
+  type        = string
+  description = "France Travail application client id"
+  sensitive   = true
+  default     = ""
+}
+
+variable "france_travail_client_secret" {
+  type        = string
+  description = "France Travail application client secret"
+  sensitive   = true
+  default     = ""
+}
+
+# The France Travail APIs the key is subscribed to (ADR-024). One is added here
+# only after `ft:smoke <api>` succeeded; an API left out is never called. The
+# three ROME ones feed the weekly `rome:sync`, Substitutions rewrites the
+# retired codes users hold, Marché du travail feeds the monthly market radar
+# (US-128), La Bonne Boîte the weekly "Entreprises qui recrutent" (US-119).
+variable "france_travail_apis" {
+  type        = string
+  description = "Comma-separated France Travail APIs to call (offres, romeo, rome-metiers...)"
+  default     = "offres,romeo,rome-metiers,rome-competences,rome-fiches-metiers,rome-substitutions,marche-travail,la-bonne-boite,pages-employeurs"
+}
+
+# La bonne alternance. Same rule: an empty key leaves the source inert.
+variable "la_bonne_alternance_api_key" {
+  type        = string
+  description = "La bonne alternance API key. Empty disables the source."
+  sensitive   = true
+  default     = ""
 }
 
 # Stripe is not configured on any environment yet — both values were CHANGE_ME
@@ -282,6 +312,85 @@ variable "next_server_actions_encryption_key" {
   type        = string
   description = "Next.js server-actions encryption key. Must stay fixed: a new value invalidates every in-flight server action on redeploy."
   sensitive   = true
+}
+
+variable "ats_ip_hash_secret" {
+  type        = string
+  description = <<-EOT
+    Salt for the hashed visitor address kept on a public ATS scan. Optional:
+    an empty value makes the API mint a random salt per process, which leaks
+    nothing but stops hashes being comparable across restarts, so abuse
+    forensics become useless. Never the raw address, either way.
+  EOT
+  sensitive   = true
+  default     = ""
+}
+
+variable "landing_proxy_secret" {
+  type        = string
+  description = <<-EOT
+    Shared by the landing and the API: the landing signs the visitor's address
+    it relays, since Traefik overwrites X-Forwarded-For on the way in. Optional:
+    empty means the relay is ignored and every visitor of the landing shares
+    one rate-limit counter (US-132, ADR-022).
+  EOT
+  sensitive   = true
+  default     = ""
+}
+
+variable "client_ip_header" {
+  type        = string
+  description = <<-EOT
+    Header the landing reads the visitor's address from, for the per-IP
+    limits. Empty uses the X-Forwarded-For Traefik rewrites, which a visitor
+    cannot forge. Set "cf-connecting-ip" only while the records are proxied
+    by Cloudflare (cloudflare_proxied in infra/terraform): with a grey cloud,
+    anyone can send that header and dodge every per-IP limit (ADR-022).
+  EOT
+  default     = ""
+}
+
+variable "ats_public_hourly_limit" {
+  type        = number
+  description = "Public ATS scans allowed per IP and per hour."
+  default     = 3
+}
+
+variable "ats_public_daily_limit" {
+  type        = number
+  description = "Public ATS scans allowed per IP and per rolling day."
+  default     = 10
+}
+
+variable "ats_public_daily_budget" {
+  type        = number
+  description = <<-EOT
+    Public ATS scans allowed across every visitor per rolling day — the cost
+    stop-loss. Per-IP limits alone do not survive a botnet and every scan
+    spends a model call; past this the route answers 503 until the window
+    slides. Counters live in the API process: a restart resets the day.
+  EOT
+  default     = 300
+}
+
+variable "enable_zdr_chat" {
+  type        = bool
+  description = <<-EOT
+    Sends `data_collection: "deny"` on every chat completion, which the vision
+    (§15.3) requires of production.
+
+    It is a routing filter, not a header: OpenRouter then only considers
+    providers advertising zero data retention. If none of them serves the
+    configured model, generation fails outright — so a change here must be
+    watched on staging before it reaches production.
+  EOT
+  default     = true
+}
+
+variable "enable_zdr_stt" {
+  type        = bool
+  description = "Same filter for speech-to-text. See enable_zdr_chat."
+  default     = true
 }
 
 # Off-site backups (R2) ---------------------------------------------------------

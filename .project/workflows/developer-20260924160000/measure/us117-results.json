@@ -1,0 +1,1111 @@
+[
+ {
+  "siret": "40921424400025",
+  "name": "ERESIS",
+  "naf": "Conseil en systèmes et logiciels informatiques",
+  "headcount": "",
+  "step": "no_site"
+ },
+ {
+  "siret": "33894650200287",
+  "name": "FONCIA LA ROCHELLE",
+  "naf": "Administration d'immeubles et autres biens immobiliers",
+  "headcount": "",
+  "step": "no_site"
+ },
+ {
+  "siret": "41505068100220",
+  "name": "CHEOPS TECHNOLOGY FRANCE",
+  "naf": "Conseil en systèmes et logiciels informatiques",
+  "headcount": "49",
+  "siteVia": "guess:cheopstechnology.fr",
+  "site": "https://www.cheops-technology.com/",
+  "career": "https://www.cheops-technology.com/carriere",
+  "other": [],
+  "step": "career_no_ats",
+  "supported": []
+ },
+ {
+  "siret": "42869200800157",
+  "name": "UGECAM BRPL",
+  "naf": "Activités générales de sécurité sociale",
+  "headcount": "99",
+  "step": "no_site"
+ },
+ {
+  "siret": "41922342500044",
+  "name": "KOSMOS",
+  "naf": "Conseil en systèmes et logiciels informatiques",
+  "headcount": "99",
+  "siteVia": "guess:kosmos.fr",
+  "site": "https://www.kosmos-education.com/",
+  "career": "https://www.kosmos-education.com/fr/emploi",
+  "other": [],
+  "step": "career_no_ats",
+  "supported": []
+ },
+ {
+  "siret": "40496048600029",
+  "name": "EURO SERVICES FLEURS",
+  "naf": "Autres activités de soutien aux entreprises n.c.a.",
+  "headcount": "49",
+  "siteVia": "guess:euro.com",
+  "site": "https://www.euro.com/",
+  "career": null,
+  "other": [],
+  "step": "site_no_career",
+  "supported": []
+ },
+ {
+  "siret": "42390899500024",
+  "name": "SECOM",
+  "naf": "Conseil pour les affaires et autres conseils de gestion",
+  "headcount": "99",
+  "siteVia": "guess:secom.fr",
+  "site": "https://secom.fr/",
+  "career": "https://recrutement.fetis.group/fr",
+  "other": [
+   "werecruit"
+  ],
+  "step": "career_no_ats",
+  "supported": []
+ },
+ {
+  "siret": "43212373500305",
+  "name": "ADP GSI FRANCE",
+  "naf": "Conseil pour les affaires et autres conseils de gestion",
+  "headcount": "499",
+  "step": "no_site"
+ },
+ {
+  "siret": "34828497700140",
+  "name": "ASYS",
+  "naf": "Edition de logiciels applicatifs",
+  "headcount": "99",
+  "siteVia": "guess:asys.fr",
+  "site": "https://www.asys.fr/",
+  "career": "https://www.asys.fr/services/accompagnement-projet",
+  "other": [],
+  "step": "career_no_ats",
+  "supported": []
+ },
+ {
+  "siret": "42870497700043",
+  "name": "SANTECLAIR",
+  "naf": "Conseil pour les affaires et autres conseils de gestion",
+  "headcount": "499",
+  "siteVia": "guess:santeclair.fr",
+  "site": "https://www.santeclair.fr/fr/",
+  "career": "https://www.santeclair.fr/fr/travailler-chez-santeclair",
+  "other": [
+   "linkedin-jobs"
+  ],
+  "step": "career_no_ats",
+  "supported": []
+ },
+ {
+  "siret": "43800482200013",
+  "name": "BT LEC OUEST",
+  "naf": "Commerce de gros (commerce interentreprises) d'appareils électroménagers",
+  "headcount": "99",
+  "step": "no_site"
+ },
+ {
+  "siret": "35290570700332",
+  "name": "RANDSTAD DIGITAL FRANCE",
+  "naf": "Conseil en systèmes et logiciels informatiques",
+  "headcount": "",
+  "siteVia": "wikidata",
+  "site": "https://www.randstaddigital.fr/fr/",
+  "career": "https://www.randstaddigital.fr/fr/carrieres/",
+  "other": [],
+  "step": "career_no_ats",
+  "supported": []
+ },
+ {
+  "siret": "30550806100036",
+  "name": "ESTUAIRE NOTAIRES",
+  "naf": "Activités juridiques",
+  "headcount": "99",
+  "siteVia": "guess:estuaire.fr",
+  "site": "https://estuaire.fr/",
+  "career": null,
+  "other": [],
+  "step": "site_no_career",
+  "supported": []
+ },
+ {
+  "siret": "42415167800051",
+  "name": "CADRES EN MISSION",
+  "naf": "Conseil pour les affaires et autres conseils de gestion",
+  "headcount": "199",
+  "siteVia": "guess:cadresenmission.com",
+  "site": "https://www.cadresenmission.com/",
+  "career": "https://www.cadresenmission.com/offres-de-missions/",
+  "other": [],
+  "step": "career_no_ats",
+  "supported": []
+ },
+ {
+  "siret": "32045908400093",
+  "name": "VIF",
+  "naf": "Edition de logiciels applicatifs",
+  "headcount": "499",
+  "step": "no_site"
+ },
+ {
+  "siret": "43300201100099",
+  "name": "EVIDEN FRANCE",
+  "naf": "Conseil en systèmes et logiciels informatiques",
+  "headcount": "",
+  "siteVia": "guess:eviden.com",
+  "site": "https://eviden.com/",
+  "career": "https://eviden.com/careers/",
+  "other": [],
+  "step": "career_no_ats",
+  "supported": []
+ },
+ {
+  "siret": "34160485800082",
+  "name": "SITACI",
+  "naf": "Edition de logiciels applicatifs",
+  "headcount": "49",
+  "siteVia": "guess:sitaci.fr",
+  "site": "https://www.sitaci.fr/",
+  "career": null,
+  "other": [
+   "welcometothejungle"
+  ],
+  "step": "site_no_career",
+  "supported": []
+ },
+ {
+  "siret": "43830994000049",
+  "name": "CADRES EN MISSION SERVICES",
+  "naf": "Conseil pour les affaires et autres conseils de gestion",
+  "headcount": "49",
+  "step": "no_site"
+ },
+ {
+  "siret": "38079451101265",
+  "name": "CENTRAKOR",
+  "naf": "Commerce de gros (commerce interentreprises) d'autres biens domestiques",
+  "headcount": "",
+  "siteVia": "wikidata",
+  "site": "https://www.centrakor.com/",
+  "career": "https://www.centrakor.com/recrutement/",
+  "other": [],
+  "step": "career_no_ats",
+  "supported": []
+ },
+ {
+  "siret": "38536571301000",
+  "name": "INETUM",
+  "naf": "Conseil en systèmes et logiciels informatiques",
+  "headcount": "",
+  "siteVia": "wikidata",
+  "site": "https://www.inetum.com/global/en.html",
+  "career": "https://www.inetum.com/global/en/careers/why-join-us.html",
+  "other": [],
+  "step": "career_no_ats",
+  "supported": []
+ },
+ {
+  "siret": "34312278400048",
+  "name": "GEIREC NANTES",
+  "naf": "Activités comptables",
+  "headcount": "49",
+  "siteVia": "guess:geirec.com",
+  "site": "https://www.geirec.com/",
+  "career": "https://www.geirec.com/nos-solutions/offres-complementaires-geirec-academie/",
+  "other": [
+   "werecruit"
+  ],
+  "step": "career_no_ats",
+  "supported": []
+ },
+ {
+  "siret": "13002068800029",
+  "name": "DELEGATION DE LOIRE ATLANTIQUE",
+  "naf": "Activités des organisations patronales et consulaires",
+  "headcount": "99",
+  "step": "no_site"
+ },
+ {
+  "siret": "44163769100136",
+  "name": "LUCCA",
+  "naf": "Edition de logiciels applicatifs",
+  "headcount": "199",
+  "siteVia": "guess:lucca.fr",
+  "site": "https://www.lucca.fr/",
+  "career": "https://jobs.luccasoftware.com/",
+  "other": [],
+  "step": "career_no_ats",
+  "supported": []
+ },
+ {
+  "siret": "45133523600050",
+  "name": "HERCULEPRO",
+  "naf": "Edition de logiciels applicatifs",
+  "headcount": "49",
+  "siteVia": "guess:herculepro.com",
+  "site": "https://www.herculepro.com/",
+  "career": "https://www.herculepro.com/les-offres-demploi/",
+  "other": [],
+  "step": "career_no_ats",
+  "supported": []
+ },
+ {
+  "siret": "34888467700199",
+  "name": "NOVEOCARE",
+  "naf": "Services administratifs combinés de bureau",
+  "headcount": "99",
+  "siteVia": "guess:noveocare.com",
+  "site": "https://www.noveocare.com/",
+  "career": "https://noveocare.taleez.com/",
+  "other": [
+   "taleez"
+  ],
+  "step": "career_no_ats",
+  "supported": []
+ },
+ {
+  "siret": "44249030600200",
+  "name": "CATALYS CONSEIL",
+  "naf": "Conseil pour les affaires et autres conseils de gestion",
+  "headcount": "19",
+  "siteVia": "guess:catalys-conseil.fr",
+  "site": "https://www.catalys-conseil.fr/",
+  "career": "https://www.catalys-conseil.fr/expertises_app/accompagnement-vers-emploi/",
+  "other": [
+   "teamtailor"
+  ],
+  "step": "career_no_ats",
+  "supported": []
+ },
+ {
+  "siret": "47890686000059",
+  "name": "ILIADE CONSULTING",
+  "naf": "Conseil en systèmes et logiciels informatiques",
+  "headcount": "",
+  "siteVia": "guess:iliadeconsulting.com",
+  "site": "https://www.iliadeconsulting.com/",
+  "career": "https://www.iliadeconsulting.com/nousrejoindre/pagevide_vifx_iebd/",
+  "other": [],
+  "step": "career_no_ats",
+  "supported": []
+ },
+ {
+  "siret": "39909133900255",
+  "name": "SULLY GROUP",
+  "naf": "Conseil en systèmes et logiciels informatiques",
+  "headcount": "19",
+  "siteVia": "guess:sully.fr",
+  "site": "https://www.sully.fr/",
+  "career": null,
+  "other": [],
+  "step": "site_no_career",
+  "supported": []
+ },
+ {
+  "siret": "37755024900116",
+  "name": "WAVESTONE",
+  "naf": "Conseil en systèmes et logiciels informatiques",
+  "headcount": "99",
+  "siteVia": "wikidata",
+  "site": "https://www.wavestone.com/en/",
+  "career": "https://www.wavestone.com/en/careers/",
+  "other": [],
+  "step": "career_no_ats",
+  "supported": []
+ },
+ {
+  "siret": "45180436300047",
+  "name": "ARTISS",
+  "naf": "Conseil en systèmes et logiciels informatiques",
+  "headcount": "49",
+  "step": "no_site"
+ },
+ {
+  "siret": "39086574900126",
+  "name": "ASI",
+  "naf": "Conseil en systèmes et logiciels informatiques",
+  "headcount": "249",
+  "step": "no_site"
+ },
+ {
+  "siret": "40350374100031",
+  "name": "PROGINOV",
+  "naf": "Edition de logiciels applicatifs",
+  "headcount": "499",
+  "siteVia": "wikidata",
+  "site": "https://www.proginov.com/",
+  "career": "https://www.proginov.com/carrieres/",
+  "other": [],
+  "step": "career_no_ats",
+  "supported": []
+ },
+ {
+  "siret": "48381561900117",
+  "name": "SNCF CONNECT & TECH SERVICES",
+  "naf": "Edition de logiciels applicatifs",
+  "headcount": "499",
+  "step": "no_site"
+ },
+ {
+  "siret": "47976684201003",
+  "name": "CAPGEMINI TECHNOLOGY SERVICES",
+  "naf": "Conseil en systèmes et logiciels informatiques",
+  "headcount": "99",
+  "siteVia": "guess:capgemini.fr",
+  "site": "https://www.capgemini.com/fr-fr//",
+  "career": "https://www.capgemini.com/fr-fr/carrieres/",
+  "other": [],
+  "step": "career_no_ats",
+  "supported": []
+ },
+ {
+  "siret": "34503941600846",
+  "name": "ORANGE BUSINESS SERVICES",
+  "naf": "Conseil en systèmes et logiciels informatiques",
+  "headcount": "",
+  "siteVia": "guess:orange.fr",
+  "site": "https://www.orange.fr/portail",
+  "career": "https://www.orange.fr/portail",
+  "other": [],
+  "step": "career_no_ats",
+  "supported": []
+ },
+ {
+  "siret": "00728036500136",
+  "name": "ATLAGEL",
+  "naf": "Commerce de gros (commerce interentreprises) de produits surgelés",
+  "headcount": "99",
+  "siteVia": "guess:atlagel.fr",
+  "site": "https://atlagel.fr/identification.html",
+  "career": "https://atlagel.fr/identification.html",
+  "other": [],
+  "step": "career_no_ats",
+  "supported": []
+ },
+ {
+  "siret": "50295859800117",
+  "name": "CREATIVE INGENIERIE",
+  "naf": "Conseil en systèmes et logiciels informatiques",
+  "headcount": "99",
+  "siteVia": "guess:creative.com",
+  "site": "https://fr.creative.com/",
+  "career": "https://fr.creative.com/p/bundled-offers",
+  "other": [],
+  "step": "career_no_ats",
+  "supported": []
+ },
+ {
+  "siret": "44281257400139",
+  "name": "SCALIAN OP",
+  "naf": "Conseil pour les affaires et autres conseils de gestion",
+  "headcount": "99",
+  "siteVia": "guess:scalian.com",
+  "site": "https://www.scalian.com/",
+  "career": "https://careers.scalian.com/",
+  "other": [],
+  "step": "career_no_ats",
+  "supported": []
+ },
+ {
+  "siret": "48824794100047",
+  "name": "NUMERI WAN",
+  "naf": "Conseil en systèmes et logiciels informatiques",
+  "headcount": "9",
+  "siteVia": "guess:numeriwan.com",
+  "site": "https://numeriwan.com/",
+  "career": null,
+  "other": [],
+  "step": "site_no_career",
+  "supported": []
+ },
+ {
+  "siret": "38783703200144",
+  "name": "CELAD",
+  "naf": "Conseil en systèmes et logiciels informatiques",
+  "headcount": "19",
+  "siteVia": "guess:celad.com",
+  "site": "https://www.celad.com/",
+  "career": "https://www.celad.com/carriere/",
+  "other": [],
+  "step": "career_no_ats",
+  "supported": []
+ },
+ {
+  "siret": "38103128500616",
+  "name": "OPEN",
+  "naf": "Conseil en systèmes et logiciels informatiques",
+  "headcount": "499",
+  "step": "no_site"
+ },
+ {
+  "siret": "39150469300071",
+  "name": "AUBAY",
+  "naf": "Conseil en systèmes et logiciels informatiques",
+  "headcount": "199",
+  "siteVia": "wikidata",
+  "site": "https://aubay.com/",
+  "career": "https://aubay.com/carriere-accueil/",
+  "other": [
+   "indeed"
+  ],
+  "step": "career_no_ats",
+  "supported": []
+ },
+ {
+  "siret": "50752502000073",
+  "name": "INGENIERIE TOUT CORPS D'ETAT",
+  "naf": "Activité des économistes de la construction",
+  "headcount": "19",
+  "siteVia": "guess:ingenierie.fr",
+  "site": "https://www.ingenierie.fr/",
+  "career": null,
+  "other": [],
+  "step": "site_no_career",
+  "supported": []
+ },
+ {
+  "siret": "30127528500015",
+  "name": "THIERRY THOMAS, ARNAUD HOUIS, ARNAUD GIR",
+  "naf": "Activités juridiques",
+  "headcount": "99",
+  "siteVia": "guess:thierry.fr",
+  "site": "https://thierry.fr/",
+  "career": null,
+  "other": [],
+  "step": "site_no_career",
+  "supported": []
+ },
+ {
+  "siret": "51256811400031",
+  "name": "KEY CONSULTING OUEST",
+  "naf": "Conseil en systèmes et logiciels informatiques",
+  "headcount": "49",
+  "siteVia": "guess:keyconsulting.com",
+  "site": "https://www.keyconsulting.com/",
+  "career": null,
+  "other": [],
+  "step": "site_no_career",
+  "supported": []
+ },
+ {
+  "siret": "40103292500026",
+  "name": "SOCIETE D V",
+  "naf": "Commerce de gros (commerce interentreprises) de sucre, chocolat et confiserie",
+  "headcount": "99",
+  "siteVia": "guess:societe.com",
+  "site": "https://www.societe.com/",
+  "career": "https://www.societe.com/offres.html",
+  "other": [],
+  "step": "career_no_ats",
+  "supported": []
+ },
+ {
+  "siret": "51338143400085",
+  "name": "LENGOW",
+  "naf": "Conseil en systèmes et logiciels informatiques",
+  "headcount": "199",
+  "siteVia": "guess:lengow.fr",
+  "site": "https://www.lengow.com/fr/",
+  "career": "https://www.lengow.com/careers/",
+  "other": [],
+  "step": "ats",
+  "supported": [
+   "workable:lengow"
+  ]
+ },
+ {
+  "siret": "33248402100149",
+  "name": "ECRITEL",
+  "naf": "Conseil en systèmes et logiciels informatiques",
+  "headcount": "49",
+  "siteVia": "guess:ecritel.fr",
+  "site": "https://www.ecritel.fr/fr/",
+  "career": "https://www.ecritel.fr/fr/carriere/nos-offres-demploi/",
+  "other": [],
+  "step": "career_no_ats",
+  "supported": []
+ },
+ {
+  "siret": "52983026700033",
+  "name": "YPRESIA",
+  "naf": "Edition de logiciels applicatifs",
+  "headcount": "",
+  "siteVia": "guess:ypresia.fr",
+  "site": "https://www.ypresia.com/",
+  "career": "https://www.ypresia.com/recrutement/",
+  "other": [],
+  "step": "career_no_ats",
+  "supported": []
+ },
+ {
+  "siret": "40356113700213",
+  "name": "PHARMAGEST INTERACTIVE CIP",
+  "naf": "Conseil en systèmes et logiciels informatiques",
+  "headcount": "49",
+  "siteVia": "wikidata",
+  "site": "https://pharmagest.com/",
+  "career": "https://pharmagest.com/carrieres/",
+  "other": [],
+  "step": "career_no_ats",
+  "supported": []
+ },
+ {
+  "siret": "52167615500026",
+  "name": "CAISSE MSA LOIRE ATLANTIQUE VENDEE",
+  "naf": "Activités générales de sécurité sociale",
+  "headcount": "499",
+  "siteVia": "guess:caisse.com",
+  "site": "https://www.caisse.com/",
+  "career": "https://www.caisse.com/recrutement",
+  "other": [],
+  "step": "career_no_ats",
+  "supported": []
+ },
+ {
+  "siret": "34227069100021",
+  "name": "OFFICE DU DOME - NOTAIRES",
+  "naf": "Activités juridiques",
+  "headcount": "99",
+  "siteVia": "guess:office.com",
+  "site": "https://m365.cloud.microsoft/",
+  "career": "https://careers.microsoft.com/v2/global/en/home.html",
+  "other": [],
+  "step": "career_no_ats",
+  "supported": []
+ },
+ {
+  "siret": "05480774800022",
+  "name": "EDITIONS QUO VADIS",
+  "naf": "Fabrication d'articles de papeterie",
+  "headcount": "249",
+  "siteVia": "guess:editionsquovadis.com",
+  "site": "https://quovadis1954.com/",
+  "career": "https://quovadis1954.com/recrutement/",
+  "other": [],
+  "step": "career_no_ats",
+  "supported": []
+ },
+ {
+  "siret": "52129516200098",
+  "name": "IDEOLYS",
+  "naf": "Conseil en systèmes et logiciels informatiques",
+  "headcount": "",
+  "step": "no_site"
+ },
+ {
+  "siret": "53525706700061",
+  "name": "4 CAD ERP",
+  "naf": "Conseil en systèmes et logiciels informatiques",
+  "headcount": "49",
+  "step": "no_site"
+ },
+ {
+  "siret": "42469062600033",
+  "name": "MERCURIA",
+  "naf": "Edition de logiciels applicatifs",
+  "headcount": "49",
+  "siteVia": "guess:mercuria.fr",
+  "site": "https://www.mercuria.fr/",
+  "career": "https://recrutement.mercuria.fr/",
+  "other": [
+   "hellowork"
+  ],
+  "step": "career_no_ats",
+  "supported": []
+ },
+ {
+  "siret": "60206248102287",
+  "name": "GENERALI VIE",
+  "naf": "Assurance vie",
+  "headcount": "199",
+  "siteVia": "wikidata",
+  "site": "https://www.generali.fr/",
+  "career": null,
+  "other": [],
+  "step": "site_no_career",
+  "supported": []
+ },
+ {
+  "siret": "32519287000039",
+  "name": "LIEU UNIQUE SCENE NATIONALE DE NANTES AS",
+  "naf": "Gestion de salles de spectacles",
+  "headcount": "49",
+  "step": "no_site"
+ },
+ {
+  "siret": "54208445400678",
+  "name": "PRIMAGAZ",
+  "naf": "Commerce de gros (commerce interentreprises) de combustibles et de produits annexes",
+  "headcount": "199",
+  "siteVia": "guess:primagaz.fr",
+  "site": "https://www.primagaz.fr/",
+  "career": "https://www.primagaz.fr/citernes/nos-offres",
+  "other": [
+   "indeed"
+  ],
+  "step": "career_no_ats",
+  "supported": []
+ },
+ {
+  "siret": "55204499202267",
+  "name": "POMONA PASSIONFROID",
+  "naf": "Commerce de gros (commerce interentreprises) de produits surgelés",
+  "headcount": "499",
+  "siteVia": "guess:pomona.fr",
+  "site": "https://www.pomona.fr/",
+  "career": "https://www.pomona.fr/votre-carriere",
+  "other": [
+   "successfactors"
+  ],
+  "step": "career_no_ats",
+  "supported": []
+ },
+ {
+  "siret": "53978196300035",
+  "name": "DGSYS",
+  "naf": "Edition de logiciels applicatifs",
+  "headcount": "",
+  "siteVia": "guess:dgsys.fr",
+  "site": "https://www.dgsys.fr/",
+  "career": null,
+  "other": [],
+  "step": "site_no_career",
+  "supported": []
+ },
+ {
+  "siret": "34219149100063",
+  "name": "IRIS RESSOURCES HUMAINES",
+  "naf": "Autres activités de soutien aux entreprises n.c.a.",
+  "headcount": "199",
+  "step": "no_site"
+ },
+ {
+  "siret": "64201783401059",
+  "name": "CREDIT MUTUEL LEASING",
+  "naf": "Crédit-bail",
+  "headcount": "99",
+  "siteVia": "wikidata",
+  "site": "https://www.creditmutuel-leasing.fr/fr/index.html",
+  "career": null,
+  "other": [],
+  "step": "site_no_career",
+  "supported": []
+ },
+ {
+  "siret": "65202396100798",
+  "name": "AVIS LOCATION DE VOITURES",
+  "naf": "Location de courte durée de voitures et de véhicules automobiles légers",
+  "headcount": "19",
+  "siteVia": "wikidata",
+  "site": "https://www.avis.com/en/home",
+  "career": "https://www.avis.com/en/avis-preferred/enrollment",
+  "other": [
+   "workday"
+  ],
+  "step": "career_no_ats",
+  "supported": []
+ },
+ {
+  "siret": "78621897400024",
+  "name": "SEENOVIA",
+  "naf": "Activités des organisations professionnelles",
+  "headcount": "199",
+  "siteVia": "guess:seenovia.fr",
+  "site": "https://www.seenovia.fr/",
+  "career": "https://www.seenovia.fr/nous-recrutons/",
+  "other": [],
+  "step": "career_no_ats",
+  "supported": []
+ },
+ {
+  "siret": "44388458000020",
+  "name": "TRANQUIL I.T. SYSTEMS",
+  "naf": "Conseil en systèmes et logiciels informatiques",
+  "headcount": "49",
+  "step": "no_site"
+ },
+ {
+  "siret": "31680701501324",
+  "name": "SYSCO FRANCE SAS",
+  "naf": "Commerce de gros (commerce interentreprises) de produits surgelés",
+  "headcount": "199",
+  "siteVia": "wikidata",
+  "site": "https://sysco.fr/",
+  "career": null,
+  "other": [],
+  "step": "site_no_career",
+  "supported": []
+ },
+ {
+  "siret": "70204275500844",
+  "name": "CGI FRANCE",
+  "naf": "Conseil en systèmes et logiciels informatiques",
+  "headcount": "",
+  "step": "no_site"
+ },
+ {
+  "siret": "77568873212140",
+  "name": "CGM PAYS DE LOIRE",
+  "naf": "Services administratifs combinés de bureau",
+  "headcount": "",
+  "siteVia": "wikidata",
+  "site": "https://www.apf-francehandicap.org/",
+  "career": "https://recrutement.apf-francehandicap.org/",
+  "other": [],
+  "step": "career_no_ats",
+  "supported": []
+ },
+ {
+  "siret": "75305003800037",
+  "name": "LOGIROAD",
+  "naf": "Edition de logiciels applicatifs",
+  "headcount": "49",
+  "siteVia": "guess:logiroad.fr",
+  "site": "https://logiroad.fr/",
+  "career": "https://logiroad.fr/nous-rejoindre/",
+  "other": [],
+  "step": "career_no_ats",
+  "supported": []
+ },
+ {
+  "siret": "43986958700139",
+  "name": "BPCE FINANCEMENT",
+  "naf": "Autre distribution de crédit",
+  "headcount": "99",
+  "siteVia": "guess:bpce.fr",
+  "site": "https://www.groupebpce.com/",
+  "career": "https://www.groupebpce.com/toute-l-actualite/linspection-generale-du-groupe-bpce-lance-sa-campagne-de-recrutement-dautomne-2026/",
+  "other": [],
+  "step": "career_no_ats",
+  "supported": []
+ },
+ {
+  "siret": "45262598100140",
+  "name": "4 CAD PLM",
+  "naf": "Conseil en systèmes et logiciels informatiques",
+  "headcount": "49",
+  "step": "no_site"
+ },
+ {
+  "siret": "79067258800031",
+  "name": "AKENEO",
+  "naf": "Edition de logiciels applicatifs",
+  "headcount": "249",
+  "siteVia": "guess:akeneo.com",
+  "site": "https://www.akeneo.com/",
+  "career": "https://careers.akeneo.com/",
+  "other": [
+   "teamtailor"
+  ],
+  "step": "career_no_ats",
+  "supported": []
+ },
+ {
+  "siret": "42998754800162",
+  "name": "DAWAN",
+  "naf": "Programmation informatique",
+  "headcount": "99",
+  "siteVia": "guess:dawan.fr",
+  "site": "https://www.dawan.fr/",
+  "career": "https://www.dawan.fr/carriere",
+  "other": [],
+  "step": "career_no_ats",
+  "supported": []
+ },
+ {
+  "siret": "80045609700032",
+  "name": "MOBIAPPS",
+  "naf": "Programmation informatique",
+  "headcount": "99",
+  "siteVia": "guess:mobiapps.fr",
+  "site": "https://www.mobiapps.fr/",
+  "career": "https://www.mobiapps.fr/nos-offres/creative-factory",
+  "other": [],
+  "step": "career_no_ats",
+  "supported": []
+ },
+ {
+  "siret": "79142876600020",
+  "name": "AMARRIS IMMO",
+  "naf": "Activités comptables",
+  "headcount": "",
+  "siteVia": "guess:amarris-immo.fr",
+  "site": "https://www.amarris-immo.fr/",
+  "career": "https://www.amarris-immo.fr/nos-offres-et-tarifs-lmp-lmnp/",
+  "other": [
+   "taleez"
+  ],
+  "step": "career_no_ats",
+  "supported": []
+ },
+ {
+  "siret": "79018432900056",
+  "name": "FIZEN",
+  "naf": "Édition de logiciels système et de réseau",
+  "headcount": "9",
+  "siteVia": "guess:fizen.fr",
+  "site": "https://www.fizen.fr/",
+  "career": null,
+  "other": [],
+  "step": "site_no_career",
+  "supported": []
+ },
+ {
+  "siret": "79325371700037",
+  "name": "AVISIA OUEST",
+  "naf": "Conseil en systèmes et logiciels informatiques",
+  "headcount": "49",
+  "siteVia": "guess:avisia.fr",
+  "site": "https://www.avisia.fr/",
+  "career": "https://www.avisia.fr/carriere",
+  "other": [],
+  "step": "career_no_ats",
+  "supported": []
+ },
+ {
+  "siret": "79328801000143",
+  "name": "VISEO",
+  "naf": "Conseil en systèmes et logiciels informatiques",
+  "headcount": "",
+  "siteVia": "guess:viseo.com",
+  "site": "https://www.viseo.com/fr/",
+  "career": "https://www.viseo.com/fr/nos-offres-demploi/",
+  "other": [],
+  "step": "career_no_ats",
+  "supported": []
+ },
+ {
+  "siret": "38444088900044",
+  "name": "EXCO AVEC",
+  "naf": "Activités comptables",
+  "headcount": "99",
+  "siteVia": "guess:exco.fr",
+  "site": "https://exco.fr/",
+  "career": "https://exco.fr/carrieres/",
+  "other": [
+   "flatchr"
+  ],
+  "step": "career_no_ats",
+  "supported": []
+ },
+ {
+  "siret": "40343177800055",
+  "name": "ADOC SOLUTIONS",
+  "naf": "Conseil en systèmes et logiciels informatiques",
+  "headcount": "49",
+  "siteVia": "guess:adocsolutions.com",
+  "site": "https://www.adocsolutions.com/",
+  "career": null,
+  "other": [],
+  "step": "site_no_career",
+  "supported": []
+ },
+ {
+  "siret": "81196279400046",
+  "name": "SYD APPS",
+  "naf": "Conseil en systèmes et logiciels informatiques",
+  "headcount": "49",
+  "step": "no_site"
+ },
+ {
+  "siret": "82262022500018",
+  "name": "KEREIS SERVICES",
+  "naf": "Conseil en systèmes et logiciels informatiques",
+  "headcount": "249",
+  "siteVia": "guess:kereisservices.fr",
+  "site": "https://www.kereis.com/",
+  "career": "https://www.kereis.com/talents-et-carrieres/",
+  "other": [
+   "werecruit"
+  ],
+  "step": "career_no_ats",
+  "supported": []
+ },
+ {
+  "siret": "48060951000056",
+  "name": "SD20",
+  "naf": "Edition de logiciels applicatifs",
+  "headcount": "19",
+  "step": "no_site"
+ },
+ {
+  "siret": "39513965200097",
+  "name": "KERSEA",
+  "naf": "Transports maritimes et côtiers de passagers",
+  "headcount": "19",
+  "step": "no_site"
+ },
+ {
+  "siret": "81476832100022",
+  "name": "MR SURICATE",
+  "naf": "Programmation informatique",
+  "headcount": "49",
+  "siteVia": "guess:mrsuricate.com",
+  "site": "https://www.mrsuricate.com/",
+  "career": "https://fr.linkedin.com/company/mr-suricate",
+  "other": [
+   "linkedin-jobs"
+  ],
+  "step": "career_no_ats",
+  "supported": []
+ },
+ {
+  "siret": "81772368700122",
+  "name": "EY & ASSOCIES",
+  "naf": "Activités comptables",
+  "headcount": "199",
+  "step": "no_site"
+ },
+ {
+  "siret": "81499447100039",
+  "name": "EPSIGHT",
+  "naf": "Autres activités informatiques",
+  "headcount": "",
+  "siteVia": "guess:epsight.fr",
+  "site": "https://www.epsight.fr/",
+  "career": "https://www.epsight.fr/nous-rejoindre/",
+  "other": [],
+  "step": "career_no_ats",
+  "supported": []
+ },
+ {
+  "siret": "80813014000045",
+  "name": "VYV ECOUTE & SOLUTIONS",
+  "naf": "Conseil pour les affaires et autres conseils de gestion",
+  "headcount": "",
+  "siteVia": "guess:vyv-ecoute-solutions.fr",
+  "site": "https://www.vyv-ecoute-solutions.fr/",
+  "career": "https://www.vyv-ecoute-solutions.fr/nos-offres/",
+  "other": [
+   "talentsoft/cegid"
+  ],
+  "step": "career_no_ats",
+  "supported": []
+ },
+ {
+  "siret": "40315426300038",
+  "name": "GROUPE LACOUR",
+  "naf": "Édition de logiciels système et de réseau",
+  "headcount": "49",
+  "step": "no_site"
+ },
+ {
+  "siret": "48377254700038",
+  "name": "PALISSEA",
+  "naf": "Conseil en systèmes et logiciels informatiques",
+  "headcount": "49",
+  "siteVia": "guess:gingerminds.fr",
+  "site": "https://www.gingerminds.fr/",
+  "career": "https://www.gingerminds.fr/nous-rejoindre/",
+  "other": [],
+  "step": "career_no_ats",
+  "supported": []
+ },
+ {
+  "siret": "35142130000036",
+  "name": "ARPEGE",
+  "naf": "Edition de logiciels applicatifs",
+  "headcount": "499",
+  "siteVia": "guess:arpege.fr",
+  "site": "https://arpege.fr/",
+  "career": "https://recrutement.arpege.fr/fr/arpege",
+  "other": [
+   "werecruit"
+  ],
+  "step": "career_no_ats",
+  "supported": []
+ },
+ {
+  "siret": "82509817100036",
+  "name": "ELEPHANT TECHNOLOGIES",
+  "naf": "Conseil en systèmes et logiciels informatiques",
+  "headcount": "",
+  "siteVia": "guess:elephant-technologies.fr",
+  "site": "https://www.elephant-technologies.fr/",
+  "career": "https://www.elephant-technologies.fr/carriere",
+  "other": [],
+  "step": "career_no_ats",
+  "supported": []
+ },
+ {
+  "siret": "83747207500014",
+  "name": "CADRES EN MISSION & CO",
+  "naf": "Autres activités de soutien aux entreprises n.c.a.",
+  "headcount": "",
+  "step": "no_site"
+ },
+ {
+  "siret": "82501589400033",
+  "name": "WEMOOV",
+  "naf": "Programmation informatique",
+  "headcount": "19",
+  "siteVia": "guess:wemoov.fr",
+  "site": "https://www.wemoov.fr/",
+  "career": "https://recrutement.wemoov.fr/",
+  "other": [
+   "hellowork"
+  ],
+  "step": "career_no_ats",
+  "supported": []
+ },
+ {
+  "siret": "82887169900033",
+  "name": "HERA-MI",
+  "naf": "Conseil en systèmes et logiciels informatiques",
+  "headcount": "49",
+  "siteVia": "guess:hera-mi.com",
+  "site": "https://www.hera-mi.com/",
+  "career": "https://www.hera-mi.com/recrutement/",
+  "other": [],
+  "step": "career_no_ats",
+  "supported": []
+ },
+ {
+  "siret": "82895279600021",
+  "name": "UMR",
+  "naf": "Assurance vie",
+  "headcount": "",
+  "step": "no_site"
+ },
+ {
+  "siret": "53752632900033",
+  "name": "CONSEPT SERVICES",
+  "naf": "Conseil en systèmes et logiciels informatiques",
+  "headcount": "19",
+  "siteVia": "guess:consept.fr",
+  "site": "https://www.consept.fr/",
+  "career": "https://www.consept.fr/jobs",
+  "other": [
+   "hellowork"
+  ],
+  "step": "career_no_ats",
+  "supported": []
+ },
+ {
+  "siret": "43399417500225",
+  "name": "SA EXAKIS",
+  "naf": "Conseil en systèmes et logiciels informatiques",
+  "headcount": "",
+  "siteVia": "guess:exakis-nelite.com",
+  "site": "https://www.exakis-nelite.com/",
+  "career": "https://www.magellangroup.eu/fr/carrieres/offres-emploi/?pays_detecte=france",
+  "other": [],
+  "step": "ats",
+  "supported": [
+   "smartrecruiters:company"
+  ]
+ },
+ {
+  "siret": "51351906600049",
+  "name": "INOVAXO",
+  "naf": "Programmation informatique",
+  "headcount": "99",
+  "step": "no_site"
+ }
+]

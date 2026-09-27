@@ -1,3 +1,5 @@
+import type { FeatureKey } from "@/content/feature-pages/types"
+
 export const locales = ["fr", "en"] as const
 export type Locale = (typeof locales)[number]
 export const defaultLocale: Locale = "fr"
@@ -20,13 +22,88 @@ export function storyPath(locale: Locale) {
   return `/${locale}/${storySlugs[locale]}`
 }
 
-/** Maps a landing path to its equivalent in another locale. */
+/** Localised slug of the free ATS check; FR is rewritten to the shared route. */
+export const atsSlugs: Record<Locale, string> = {
+  fr: "analyse-ats",
+  en: "ats-check",
+}
+
+/** Localised slug of the free CV ↔ offer comparator (US-136). */
+export const keywordMatchSlugs: Record<Locale, string> = {
+  fr: "comparateur-cv-offre",
+  en: "cv-job-match",
+}
+
+/** The free "does this job hire near me?" tool (US-137). */
+export const jobMarketSlugs: Record<Locale, string> = {
+  fr: "metier-recrute",
+  en: "job-market",
+}
+
+/** The free "check an employer" tool (US-139). */
+export const companyCheckSlugs: Record<Locale, string> = {
+  fr: "verifier-employeur",
+  en: "employer-check",
+}
+
+/** The free "likely interview questions" tool (US-141). */
+export const interviewQuestionsSlugs: Record<Locale, string> = {
+  fr: "questions-entretien",
+  en: "interview-questions",
+}
+
+/** Localised slug of the free tools hub (US-135); FR is rewritten to the shared route. */
+export const toolsSlugs: Record<Locale, string> = {
+  fr: "outils",
+  en: "tools",
+}
+
+/** Localised slug of each feature page (US-142); the route folder carries the English one. */
+export const featureSlugs: Record<FeatureKey, Record<Locale, string>> = {
+  daily_offers: { fr: "offres-du-jour", en: "daily-job-offers" },
+  tailored_documents: {
+    fr: "cv-lettre-sur-mesure",
+    en: "tailored-resume-cover-letter",
+  },
+  interview: { fr: "simulation-entretien", en: "mock-interview" },
+  companies_market: {
+    fr: "entreprises-qui-recrutent",
+    en: "companies-hiring",
+  },
+}
+
+/**
+ * Maps a landing path to its equivalent in another locale.
+ *
+ * Every page with a localised slug has to be listed here: without it the
+ * language switcher keeps the current language's slug and lands on a 404.
+ */
 export function localizedPath(pathname: string, target: Locale) {
   const [, , ...rest] = pathname.split("/")
-  const isStory = Object.values(storySlugs).includes(rest[0] ?? "")
-  const tail = isStory ? [storySlugs[target], ...rest.slice(1)] : rest
+  const head = rest[0] ?? ""
+  const translated = translateSlug(head, target)
+  const tail = translated ? [translated, ...rest.slice(1)] : rest
 
   return ["", target, ...tail].join("/").replace(/\/$/, "")
+}
+
+function translateSlug(segment: string, target: Locale) {
+  for (const slugs of [
+    storySlugs,
+    atsSlugs,
+    toolsSlugs,
+    keywordMatchSlugs,
+    jobMarketSlugs,
+    companyCheckSlugs,
+    interviewQuestionsSlugs,
+    ...Object.values(featureSlugs),
+  ]) {
+    if (Object.values(slugs).includes(segment)) {
+      return slugs[target]
+    }
+  }
+
+  return null
 }
 
 /**

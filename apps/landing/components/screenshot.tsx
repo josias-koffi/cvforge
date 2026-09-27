@@ -3,11 +3,33 @@ import { LockIcon } from "lucide-react"
 import type { ReactNode } from "react"
 
 import type { ScreenshotName } from "@/content/types"
+import screenshotSizes from "@/lib/screenshot-sizes.json"
 import { cn } from "@/lib/utils"
 
-/** Capture size used for every apps/web screenshot (1440×900 viewport). */
-export const SCREENSHOT_WIDTH = 1440
-export const SCREENSHOT_HEIGHT = 900
+/**
+ * Intrinsic size of a full-screen apps/web capture: a 1440×900 viewport shot
+ * at `deviceScaleFactor: 2`, so the widest slot on the page (1152 CSS px)
+ * still has a 1:1 source on a retina screen.
+ */
+export const SCREENSHOT_WIDTH = 2880
+export const SCREENSHOT_HEIGHT = 1800
+
+/**
+ * The size the capture script recorded: close-ups are as big as the
+ * component they show, so only full screens share the constant above.
+ */
+export function screenshotSize(name: ScreenshotName) {
+  const size = (screenshotSizes as Partial<Record<string, number[]>>)[name]
+
+  return size
+    ? { width: size[0]!, height: size[1]! }
+    : { width: SCREENSHOT_WIDTH, height: SCREENSHOT_HEIGHT }
+}
+
+/** A close-up crops one component: it is framed as a card, not as a browser. */
+export function isCloseUp(name: ScreenshotName) {
+  return screenshotSize(name).width !== SCREENSHOT_WIDTH
+}
 
 /** Renders the light and dark captures; CSS shows the one matching the theme. */
 export function Screenshot({
@@ -24,8 +46,7 @@ export function Screenshot({
   className?: string
 }) {
   const shared = {
-    width: SCREENSHOT_WIDTH,
-    height: SCREENSHOT_HEIGHT,
+    ...screenshotSize(name),
     sizes,
     priority,
   }
@@ -73,7 +94,7 @@ export function BrowserFrame({
         </div>
         <div className="mx-auto flex h-6 w-full max-w-xs items-center justify-center gap-1.5 rounded-md bg-background px-3 font-mono text-[11px] text-muted-foreground">
           <LockIcon className="size-3" strokeWidth={1.75} aria-hidden />
-          <span className="truncate">cvspark{path}</span>
+          <span className="truncate">jobspark{path}</span>
         </div>
         <div className="w-10" aria-hidden />
       </div>

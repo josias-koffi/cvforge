@@ -56,6 +56,30 @@ export function formatDateTime(value: string | null | undefined) {
   return value ? dateTimeFormatter.format(new Date(value)) : "—"
 }
 
+const relativeFormatter = new Intl.RelativeTimeFormat("fr-FR", {
+  numeric: "auto",
+})
+const MS_PER_DAY = 86_400_000
+
+/**
+ * "aujourd'hui", "hier", "il y a 5 jours": on a list of offers, how fresh one
+ * is matters more than its date. Past a month, the date says it better.
+ */
+export function formatRelativeDays(
+  value: string | null | undefined,
+  now: number = Date.now()
+) {
+  if (!value) return "—"
+
+  const time = new Date(value).getTime()
+  if (Number.isNaN(time)) return "—"
+
+  const days = Math.max(0, Math.floor((now - time) / MS_PER_DAY))
+  if (days > 30) return dateFormatter.format(new Date(value))
+
+  return relativeFormatter.format(-days, "day")
+}
+
 export function formatPrice(cents: number) {
   return new Intl.NumberFormat("fr-FR", {
     currency: "EUR",
@@ -63,8 +87,9 @@ export function formatPrice(cents: number) {
   }).format(cents / 100)
 }
 
+/** e.g. "1 crédit", "1,5 crédit", "15 crédits": French plural starts at 2. */
 export function formatCredits(amount: number) {
-  return `${amount} crédit${Math.abs(amount) > 1 ? "s" : ""}`
+  return `${amount.toLocaleString("fr-FR")} crédit${Math.abs(amount) >= 2 ? "s" : ""}`
 }
 
 /** e.g. "1 candidature", "20 candidatures". */

@@ -1,11 +1,9 @@
 import {
   type CVDocumentContent,
-  type CVDocumentVersionEntry,
   type CvContentUpdateRequest,
   type CvGenerationRequest,
   type LetterContentUpdateRequest,
   type LetterDocumentContent,
-  type LetterDocumentVersionEntry,
   type LetterGenerationRequest,
   type Locale,
   AI_CREDIT_ACTION_CV_GENERATION,
@@ -13,23 +11,38 @@ import {
   TEMPLATE_KIND_CV,
   TEMPLATE_KIND_LETTER,
 } from "@cvforge/types";
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 import { withOpenRouterHttpErrors } from "../ai/openrouter.exception";
 import type { OpenRouterService } from "../ai/openrouter.service";
 import type { ApplicationsStore } from "../applications/applications.types";
 import type { CreditsService } from "../credits/credits.service";
+import { formatContractSearch } from "../search-projects/search-projects.format";
+import type { SearchProjectsStore } from "../search-projects/search-projects.types";
 import type { TemplatesStore } from "../templates/templates.types";
 
 import { groundCvContent } from "./grounding";
-import { buildGroundedUserMessage } from "./cv-generation.payload";
+import {
+  buildGroundedUserMessage,
+  offerContextOf,
+} from "./cv-generation.payload";
 import {
   assertLocalFieldsProvided,
   assertProfileIsGroundable,
   assertTargetLanguage,
 } from "./cv-generation.guards";
 import {
+  loadApplication,
+  readCvContent,
+  readCvVersions,
+  readLetterContent,
+  readLetterVersions,
+} from "./cv-generation.reads";
+import { scoreGeneratedCvSafely } from "./cv-generation.scoring";
+import {
   appendCvVersion,
   appendLetterVersion,
+  defaultTemplateId,
+  withScore,
 } from "./cv-generation.versions";
 
 import {
@@ -63,6 +76,10 @@ export class CvGenerationService {
     private readonly openRouterService: OpenRouterService,
     private readonly creditsService: CreditsService,
     private readonly templatesStore?: Pick<TemplatesStore, "list">,
+    private readonly searchProjectsStore?: Pick<
+      SearchProjectsStore,
+      "findByProfileId"
+    >,
   ) {}
 
   async generateCv(
@@ -72,11 +89,11 @@ export class CvGenerationService {
   ): Promise<CVDocumentContent> {
     assertProfileIsGroundable(request.promptProfile);
     assertLocalFieldsProvided(request.localFields);
-    const application = await this.getApplicationForUser(
+    const application = await loadApplication(this.store, 
       userEmail,
       applicationId,
     );
-    const offerContext = this.buildOfferContext(application);
+    const offerContext = offerContextOf(application);
     await this.creditsService.assertSufficientCredits(
       AI_CREDIT_ACTION_CV_GENERATION,
       userEmail,
@@ -94,7 +111,7 @@ export class CvGenerationService {
             ),
           },
         ],
-        { temperature: 0.1 },
+        { feature: "cv_generation", temperature: 0.1 },
       ),
     );
 
@@ -106,7 +123,7 @@ export class CvGenerationService {
       ),
       language: offerContext.language,
     };
-    const cvTemplateId = await this.resolveDefaultTemplateId(TEMPLATE_KIND_CV);
+    const cvTemplateId = await defaultTemplateId(this.templatesStore, TEMPLATE_KIND_CV);
 
     // Charged only once the output has been parsed, normalised and grounded.
     await this.creditsService.consumeCredits({
@@ -117,22 +134,48 @@ export class CvGenerationService {
 
     const timestamp = new Date().toISOString();
     const resolvedTemplateId = cvTemplateId ?? application.cvTemplateId ?? null;
+    // Free: no credit, no model call. Never throws, so a scoring bug cannot
+    // cost the candidate a CV they have already paid for.
+    const atsScore = scoreGeneratedCvSafely(cvContent, application.extracted);
     await this.store.save({
       ...application,
+      atsScore,
       cvContent,
       cvGeneratedAt: timestamp,
       cvTemplateId: resolvedTemplateId,
-      cvVersions: appendCvVersion(
-        application,
-        cvContent,
-        timestamp,
-        "generation",
-        resolvedTemplateId,
+      cvVersions: withScore(
+        appendCvVersion(
+          application,
+          cvContent,
+          timestamp,
+          "generation",
+          resolvedTemplateId,
+        ),
+        atsScore,
       ),
       updatedAt: timestamp,
     });
 
     return cvContent;
+  }
+
+  /**
+   * The contracts the candidate is looking for, read from their own search
+   * project. The lookup is keyed on the session's email, so a `profileId`
+   * belonging to somebody else simply finds nothing.
+   */
+  private async readContractSearch(
+    userEmail: string,
+    profileId: string | undefined,
+  ): Promise<string> {
+    if (!profileId || !this.searchProjectsStore) return "";
+
+    const project = await this.searchProjectsStore.findByProfileId(
+      userEmail,
+      profileId,
+    );
+
+    return project ? formatContractSearch(project) : "";
   }
 
   async generateLetter(
@@ -142,16 +185,20 @@ export class CvGenerationService {
   ): Promise<LetterDocumentContent> {
     assertProfileIsGroundable(request.promptProfile);
     assertLocalFieldsProvided(request.localFields);
-    const application = await this.getApplicationForUser(
+    const application = await loadApplication(this.store, 
       userEmail,
       applicationId,
     );
-    const offerContext = this.buildOfferContext(application);
+    const offerContext = offerContextOf(application);
     await this.creditsService.assertSufficientCredits(
       AI_CREDIT_ACTION_LETTER_GENERATION,
       userEmail,
     );
 
+    const contractSearch = await this.readContractSearch(
+      userEmail,
+      request.profileId,
+    );
     const rawResponse = await withOpenRouterHttpErrors(() =>
       this.openRouterService.chat(
         [
@@ -161,11 +208,15 @@ export class CvGenerationService {
             content: buildGroundedUserMessage(
               request.promptProfile,
               offerContext,
-              { includePreferences: true, refinement: request.refinement },
+              {
+                contractSearch,
+                includePreferences: true,
+                refinement: request.refinement,
+              },
             ),
           },
         ],
-        { temperature: 0.25 },
+        { feature: "letter_generation", temperature: 0.25 },
       ),
     );
 
@@ -184,7 +235,7 @@ export class CvGenerationService {
       language: offerContext.language,
     };
     const letterTemplateId =
-      await this.resolveDefaultTemplateId(TEMPLATE_KIND_LETTER);
+      await defaultTemplateId(this.templatesStore, TEMPLATE_KIND_LETTER);
 
     // Charged only once the output has been parsed and normalised.
     await this.creditsService.consumeCredits({
@@ -220,7 +271,7 @@ export class CvGenerationService {
     targetLanguage: unknown,
   ): Promise<CVDocumentContent> {
     const language = assertTargetLanguage(targetLanguage);
-    const application = await this.getApplicationForUser(
+    const application = await loadApplication(this.store, 
       userEmail,
       applicationId,
     );
@@ -234,7 +285,7 @@ export class CvGenerationService {
     targetLanguage: unknown,
   ): Promise<LetterDocumentContent> {
     const language = assertTargetLanguage(targetLanguage);
-    const application = await this.getApplicationForUser(
+    const application = await loadApplication(this.store, 
       userEmail,
       applicationId,
     );
@@ -260,32 +311,35 @@ export class CvGenerationService {
     applicationId: string,
     request: CvContentUpdateRequest,
   ): Promise<CVDocumentContent> {
-    const application = await this.store.findByIdForUserEmail(
+    const application = await loadApplication(
+      this.store,
       userEmail,
       applicationId,
     );
-
-    if (!application) {
-      throw new NotFoundException("La candidature est introuvable.");
-    }
-
     const cvContent = normalizeUpdatedCvContent(request.cvContent);
     const timestamp = new Date().toISOString();
     const cvTemplateId =
       application.cvTemplateId ??
-      (await this.resolveDefaultTemplateId(TEMPLATE_KIND_CV));
+      (await defaultTemplateId(this.templatesStore, TEMPLATE_KIND_CV));
 
+    // Recomputed on every save, which is affordable precisely because the
+    // deterministic rules need no model call.
+    const atsScore = scoreGeneratedCvSafely(cvContent, application.extracted);
     await this.store.save({
       ...application,
+      atsScore,
       cvContent,
       cvGeneratedAt: application.cvGeneratedAt ?? timestamp,
       cvTemplateId,
-      cvVersions: appendCvVersion(
-        application,
-        cvContent,
-        timestamp,
-        "manual_save",
-        cvTemplateId ?? null,
+      cvVersions: withScore(
+        appendCvVersion(
+          application,
+          cvContent,
+          timestamp,
+          "manual_save",
+          cvTemplateId ?? null,
+        ),
+        atsScore,
       ),
       updatedAt: timestamp,
     });
@@ -293,28 +347,12 @@ export class CvGenerationService {
     return cvContent;
   }
 
-  async getCvContent(
-    userEmail: string,
-    applicationId: string,
-  ): Promise<CVDocumentContent | null> {
-    const application = await this.getApplicationForUser(
-      userEmail,
-      applicationId,
-    );
-    return application.cvContent ?? null;
+  getCvContent(userEmail: string, applicationId: string) {
+    return readCvContent(this.store, userEmail, applicationId);
   }
 
-  async listCvVersions(
-    userEmail: string,
-    applicationId: string,
-  ): Promise<CVDocumentVersionEntry[]> {
-    const application = await this.getApplicationForUser(
-      userEmail,
-      applicationId,
-    );
-    return [...(application.cvVersions ?? [])].sort(
-      (left, right) => right.versionNumber - left.versionNumber,
-    );
+  listCvVersions(userEmail: string, applicationId: string) {
+    return readCvVersions(this.store, userEmail, applicationId);
   }
 
   async updateLetterContent(
@@ -322,7 +360,7 @@ export class CvGenerationService {
     applicationId: string,
     request: LetterContentUpdateRequest,
   ): Promise<LetterDocumentContent> {
-    const application = await this.getApplicationForUser(
+    const application = await loadApplication(this.store, 
       userEmail,
       applicationId,
     );
@@ -330,7 +368,7 @@ export class CvGenerationService {
     const timestamp = new Date().toISOString();
     const letterTemplateId =
       application.letterTemplateId ??
-      (await this.resolveDefaultTemplateId(TEMPLATE_KIND_LETTER));
+      (await defaultTemplateId(this.templatesStore, TEMPLATE_KIND_LETTER));
 
     await this.store.save({
       ...application,
@@ -350,68 +388,11 @@ export class CvGenerationService {
     return letterContent;
   }
 
-  async getLetterContent(
-    userEmail: string,
-    applicationId: string,
-  ): Promise<LetterDocumentContent | null> {
-    const application = await this.getApplicationForUser(
-      userEmail,
-      applicationId,
-    );
-    return application.letterContent ?? null;
+  getLetterContent(userEmail: string, applicationId: string) {
+    return readLetterContent(this.store, userEmail, applicationId);
   }
 
-  async listLetterVersions(
-    userEmail: string,
-    applicationId: string,
-  ): Promise<LetterDocumentVersionEntry[]> {
-    const application = await this.getApplicationForUser(
-      userEmail,
-      applicationId,
-    );
-    return [...(application.letterVersions ?? [])].sort(
-      (left, right) => right.versionNumber - left.versionNumber,
-    );
-  }
-
-  private async getApplicationForUser(userEmail: string, applicationId: string) {
-    const application = await this.store.findByIdForUserEmail(
-      userEmail,
-      applicationId,
-    );
-
-    if (!application) {
-      throw new NotFoundException("La candidature est introuvable.");
-    }
-
-    return application;
-  }
-
-  private buildOfferContext(
-    application: NonNullable<
-      Awaited<ReturnType<ApplicationsStore["findByIdForUserEmail"]>>
-    >,
-  ) {
-    return {
-      title: application.extracted.title,
-      companyName: application.extracted.companyName,
-      requirements: application.extracted.requirements,
-      responsibilities: application.extracted.responsibilities,
-      summary: application.extracted.summary,
-      language: application.extracted.language,
-      rawOfferText: application.rawOfferText.slice(0, 4000),
-    };
-  }
-
-  private async resolveDefaultTemplateId(
-    kind: typeof TEMPLATE_KIND_CV | typeof TEMPLATE_KIND_LETTER,
-  ) {
-    const templates = (await this.templatesStore?.list()) ?? [];
-    const defaultTemplate =
-      templates.find(
-        (template) => template.kind === kind && template.isDefault,
-      ) ?? templates.find((template) => template.kind === kind);
-
-    return defaultTemplate?.id ?? null;
+  listLetterVersions(userEmail: string, applicationId: string) {
+    return readLetterVersions(this.store, userEmail, applicationId);
   }
 }

@@ -9,7 +9,7 @@ export function Brand({ href = "/dashboard" }: { href?: string }) {
         <span className="absolute -top-0.5 -right-0.5 size-2 rounded-full bg-spark ring-2 ring-sidebar motion-safe:group-hover/brand:animate-ping" />
       </span>
       <span className="text-base tracking-tight">
-        CV<span className="text-primary">Spark</span>
+        Job<span className="text-primary">Spark</span>
       </span>
     </Link>
   )

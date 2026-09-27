@@ -3,7 +3,7 @@ import Link from "next/link"
 import type { ReactNode } from "react"
 
 import { Brand } from "@/components/brand"
-import { buildNavLinks } from "@/components/site-header"
+import { buildFeatureLinks, buildNavLinks } from "@/components/site-header"
 import type { LandingDictionary } from "@/content/types"
 import { homePath, type Locale } from "@/lib/i18n"
 import { legalPath } from "@/lib/legal"
@@ -21,7 +21,7 @@ export function SiteFooter({
   dict,
 }: {
   locale: Locale
-  dict: Pick<LandingDictionary, "nav" | "footer" | "legal">
+  dict: Pick<LandingDictionary, "nav" | "footer" | "legal" | "featurePages">
 }) {
   return (
     <footer className="border-t bg-card">
@@ -30,7 +30,13 @@ export function SiteFooter({
           <Brand href={homePath(locale)} label={dict.nav.home} />
           <p className="text-sm text-muted-foreground">{dict.footer.tagline}</p>
         </div>
-        <div className="flex flex-col gap-10 sm:flex-row sm:gap-16">
+        <div className="flex flex-col gap-10 sm:flex-row sm:gap-12 lg:gap-16">
+          <FooterNav title={dict.footer.features}>
+            <LinkList
+              links={buildFeatureLinks(locale, dict.featurePages)}
+              columns={1}
+            />
+          </FooterNav>
           <FooterNav title={dict.footer.product}>
             <LinkList links={buildNavLinks(locale, dict.nav)} columns={2} />
           </FooterNav>

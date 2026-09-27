@@ -1,0 +1,124 @@
+import { describe, expect, it } from "vitest";
+import { testMailConfig } from "../mail/mail.testing";
+import { NotificationsMailerService } from "./notifications-mailer.service";
+
+type SentMail = {
+  headers?: Record<string, string>;
+  html: string;
+  subject: string;
+  text: string;
+  to: string;
+};
+
+function createMailer() {
+  const sent: SentMail[] = [];
+  const service = new NotificationsMailerService(
+    { enabled: true, provider: "smtp" } as never,
+    testMailConfig(),
+    {
+      sendMail: async (options: SentMail) => {
+        sent.push(options);
+      },
+    } as never,
+  );
+
+  return { sent, service };
+}
+
+const BASE_INPUT = {
+  digestUrl: "https://app.cvforge.fr/offres-du-jour",
+  offers: [
+    {
+      companyName: "Doctolib",
+      locationLabel: "Nantes, France",
+      reason: "Même stack que vos trois dernières expériences.",
+      score: 86,
+      title: "Développeur Full Stack",
+    },
+  ],
+  preferencesUrl: "https://app.cvforge.fr/notifications",
+  marketNotes: [] as string[],
+  to: "candidat@example.com",
+  totalCount: 1,
+};
+
+describe("sendJobDigestEmail", () => {
+  it("names the offers and links to the selection", async () => {
+    const { sent, service } = createMailer();
+
+    await service.sendJobDigestEmail(BASE_INPUT);
+
+    const mail = sent[0]!;
+    expect(mail.subject).toBe("1 offre pour vous aujourd'hui");
+    expect(mail.text).toContain("Développeur Full Stack");
+    expect(mail.text).toContain("86/100");
+    expect(mail.html).toContain("https://app.cvforge.fr/offres-du-jour");
+  });
+
+  it("always carries the way out of the e-mail", async () => {
+    const { sent, service } = createMailer();
+
+    await service.sendJobDigestEmail(BASE_INPUT);
+
+    // Findable in two seconds, in both parts of the message.
+    expect(sent[0]!.text).toContain("Ne plus recevoir ces e-mails");
+    expect(sent[0]!.html).toContain("https://app.cvforge.fr/notifications");
+    expect(sent[0]!.headers).toEqual({
+      "List-Unsubscribe": "<https://app.cvforge.fr/notifications>",
+    });
+  });
+
+  it("escapes what a third party wrote", async () => {
+    const { sent, service } = createMailer();
+
+    await service.sendJobDigestEmail({
+      ...BASE_INPUT,
+      offers: [
+        {
+          ...BASE_INPUT.offers[0]!,
+          companyName: "Doctolib & Cie",
+          title: "Développeur <script>alert(1)</script>",
+        },
+      ],
+    });
+
+    // Job titles come from job boards; they never reach the body as markup.
+    expect(sent[0]!.html).not.toContain("<script>");
+    expect(sent[0]!.html).toContain("&lt;script&gt;");
+    expect(sent[0]!.html).toContain("Doctolib &amp; Cie");
+  });
+
+  it("says how many offers are left in the app", async () => {
+    const { sent, service } = createMailer();
+
+    await service.sendJobDigestEmail({ ...BASE_INPUT, totalCount: 7 });
+
+    expect(sent[0]!.subject).toBe("7 offres pour vous aujourd'hui");
+    expect(sent[0]!.text).toContain("Et 6 autres dans l'application.");
+  });
+
+  it("names an anonymous employer as such rather than leaving a hole", async () => {
+    const { sent, service } = createMailer();
+
+    await service.sendJobDigestEmail({
+      ...BASE_INPUT,
+      offers: [{ ...BASE_INPUT.offers[0]!, companyName: "" }],
+    });
+
+    expect(sent[0]!.text).toContain("Entreprise non communiquée");
+  });
+
+  it("adds the market changes with their source, and nothing when there are none (US-128)", async () => {
+    const { sent, service } = createMailer();
+    const note =
+      "Développeur informatique en Loire-Atlantique : offres en hausse, 2 910 sur douze mois contre 2 100 (1er trimestre 2026).";
+
+    await service.sendJobDigestEmail(BASE_INPUT);
+    await service.sendJobDigestEmail({ ...BASE_INPUT, marketNotes: [note] });
+
+    expect(sent[0]!.text).not.toContain("Le marché de votre métier");
+    expect(sent[1]!.text).toContain(`Le marché de votre métier :\n${note}`);
+    expect(sent[1]!.text).toContain("Source : Marché du travail, France Travail");
+    expect(sent[1]!.html).toContain("Source : Marché du travail, France Travail");
+  });
+});

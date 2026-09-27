@@ -12,6 +12,13 @@ terraform {
   # a staging apply can never touch production. The `key` is deliberately absent:
   # it is supplied at init time, which is what makes the two states distinct.
   #
+  # NOTE (Jobspark rename): the state key below still says `cvspark/...` on
+  # purpose. It is just the object path in R2, unrelated to any Dokploy/DNS
+  # resource name — renaming it here would make Tofu init against an empty
+  # state and lose track of the resources below. Change it only alongside a
+  # deliberate `key=jobspark/...` migration (copy the state object in R2 first,
+  # or `tofu init -reconfigure` after copying).
+  #
   #   tofu init -backend-config="key=cvspark/dokploy-production.tfstate"
   #   tofu init -backend-config="key=cvspark/dokploy-staging.tfstate"
   #
@@ -44,28 +51,32 @@ locals {
   # One Dokploy project per environment. Each project brings its own default
   # `production` environment, so no dokploy_environment resource is needed and
   # the two states share no resource at all.
-  project_name = local.is_production ? "cvspark" : "cvspark-staging"
+  project_name = local.is_production ? "jobspark" : "jobspark-staging"
 
-  # Production keeps the legacy `cvforge` volume prefix so the existing data
-  # survives the move to Dokploy. Changing it points the stack at empty volumes.
+  # Both environments keep their legacy volume prefix so existing data survives
+  # a rename. Changing either one points the stack at empty volumes: production
+  # kept `cvforge` from the CVForge->Dokploy move; staging kept `cvspark-staging`
+  # after the Jobspark rebrand orphaned its data under the new prefix once
+  # (2026-09-26) — restored here rather than migrated, since the old volumes
+  # were still on disk.
   volume_prefix = local.is_production ? "cvforge" : "cvspark-staging"
 
   # Both environments live under .koklo.dev, so an identical cookie name would
   # make the two sessions collide.
-  auth_cookie_name = local.is_production ? "cvspark_session" : "cvspark_staging_session"
+  auth_cookie_name = local.is_production ? "jobspark_session" : "jobspark_staging_session"
 
   # Staging shares the Resend account with production, so it sends from the same
   # verified domain. Only the display name differs, which is enough to tell a
   # staging magic link from a real one in an inbox.
-  email_from = local.is_production ? var.email_from : "CVSpark staging <no-reply@koklo.dev>"
+  email_from = local.is_production ? var.email_from : "Jobspark staging <no-reply@koklo.dev>"
 
   domains = local.is_production ? {
-    landing = "cvspark.koklo.dev"
-    web     = "cvspark-app.koklo.dev"
-    api     = "cvspark-api.koklo.dev"
+    landing = "jobspark.koklo.dev"
+    web     = "jobspark-app.koklo.dev"
+    api     = "jobspark-api.koklo.dev"
     } : {
-    landing = "cvspark-staging.koklo.dev"
-    web     = "cvspark-app-staging.koklo.dev"
-    api     = "cvspark-api-staging.koklo.dev"
+    landing = "jobspark-staging.koklo.dev"
+    web     = "jobspark-app-staging.koklo.dev"
+    api     = "jobspark-api-staging.koklo.dev"
   }
 }

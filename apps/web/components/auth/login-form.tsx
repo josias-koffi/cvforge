@@ -13,7 +13,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { Checkbox } from "@/components/ui/checkbox"
 import {
   Field,
   FieldDescription,
@@ -22,7 +21,8 @@ import {
   FieldLabel,
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
-import { ConsentLabel } from "@/components/auth/consent-label"
+import { ConsentField } from "@/components/auth/consent-field"
+import { formatApplications } from "@/lib/format"
 import { Spinner } from "@/components/ui/spinner"
 
 export function LoginForm({ notice }: { notice?: string }) {
@@ -32,7 +32,7 @@ export function LoginForm({ notice }: { notice?: string }) {
   return (
     <Card>
       <CardHeader className="text-center">
-        <CardTitle className="text-xl">Bienvenue sur CVSpark</CardTitle>
+        <CardTitle className="text-xl">Bienvenue sur Jobspark</CardTitle>
         <CardDescription>
           Recevez votre lien de connexion par e-mail. Pas de mot de passe à retenir.
         </CardDescription>
@@ -51,12 +51,7 @@ export function LoginForm({ notice }: { notice?: string }) {
                 required
               />
             </Field>
-            <Field orientation="horizontal">
-              <Checkbox id="consent" name="consent" required />
-              <FieldLabel htmlFor="consent" className="font-normal">
-                <ConsentLabel />
-              </FieldLabel>
-            </Field>
+            <ConsentField />
             {error ? <FieldError>{error}</FieldError> : null}
             <Field>
               <Button type="submit" disabled={pending}>
@@ -65,7 +60,8 @@ export function LoginForm({ notice }: { notice?: string }) {
               </Button>
               <FieldDescription className="text-center">
                 Première visite ? Votre compte se crée à la connexion, avec{" "}
-                {WELCOME_APPLICATIONS} candidatures offertes.
+                {formatApplications(WELCOME_APPLICATIONS)}{" "}
+                {WELCOME_APPLICATIONS > 1 ? "offertes" : "offerte"}.
               </FieldDescription>
             </Field>
           </FieldGroup>

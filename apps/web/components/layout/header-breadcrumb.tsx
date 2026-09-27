@@ -19,26 +19,44 @@ import {
  * cannot say so.
  */
 const pathLabels: Record<string, string> = {
+  "/credits/historique": "Historique",
+  "/ma-recherche/alertes": "Alertes",
+  "/ma-recherche/marche": "Marché",
+  "/ma-recherche/metiers": "Métiers & compétences",
+  "/profile/new": "Nouveau profil",
   "/candidatures/new": "Nouvelle candidature",
   "/entretiens/new": "Nouvel entretien",
 }
 
 const segmentLabels: Record<string, string> = {
+  acquisition: "Acquisition",
   admin: "Administration",
+  "audit-log": "Journal d'audit",
   candidatures: "Candidatures",
   compte: "Mon compte",
+  "couts-ia": "Coûts IA",
   credits: "Crédits",
   cv: "CV",
   dashboard: "Tableau de bord",
   edit: "Modifier",
+  entreprises: "Entreprises qui recrutent",
   entretiens: "Entretiens",
   legal: "Documents légaux",
   letter: "Lettre de motivation",
+  marche: "Marché",
+  metrics: "Pilotage",
   new: "Nouveau",
   notifications: "Notifications",
+  offers: "Offres",
+  "job-search": "Collecte d'offres",
+  "ma-recherche": "Ma recherche",
+  offres: "Rechercher une offre",
+  "offres-du-jour": "Offres du jour",
   profile: "Mes profils",
   progression: "Progression",
   rapport: "Rapport",
+  revenus: "Revenus",
+  usage: "Produit",
   users: "Utilisateurs",
 }
 
@@ -48,7 +66,9 @@ const segmentLabels: Record<string, string> = {
  */
 const parentFallbacks: Record<string, string> = {
   candidatures: "Détail de la candidature",
+  entreprises: "Fiche entreprise",
   entretiens: "Détail de l'entretien",
+  profile: "Modifier le profil",
   users: "Détail du compte",
 }
 

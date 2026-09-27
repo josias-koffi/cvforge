@@ -4,27 +4,14 @@ import {
   InternalServerErrorException,
   ServiceUnavailableException,
 } from "@nestjs/common";
+import { composeMagicLinkEmail, type MagicLinkEmailInput } from "../mail/emails";
+import { MAIL_CONFIG, type MailConfig } from "../mail/mail.config";
+import {
+  MAIL_TRANSPORT,
+  toMailMessage,
+  type MailTransport,
+} from "../mail/mail-transport";
 import { SMTP_CONFIG, type SmtpConfig } from "../smtp/smtp.config";
-
-export const AUTH_MAIL_TRANSPORT = Symbol("AUTH_MAIL_TRANSPORT");
-export const AUTH_EMAIL_FROM = Symbol("AUTH_EMAIL_FROM");
-
-type AuthMailTransport = {
-  sendMail: (options: {
-    from: string;
-    html: string;
-    subject: string;
-    text: string;
-    to: string;
-  }) => Promise<unknown>;
-};
-
-type MagicLinkEmailInput = {
-  email: string;
-  expiresAt: string;
-  magicLink: string;
-  sessionDurationDays: number;
-};
 
 type AuthEmailHealth = {
   emailFromConfigured: boolean;
@@ -36,20 +23,21 @@ type AuthEmailHealth = {
 export class AuthMailerService {
   constructor(
     @Inject(SMTP_CONFIG) private readonly smtpConfig: SmtpConfig,
-    @Inject(AUTH_EMAIL_FROM) private readonly emailFrom: string | null,
-    @Inject(AUTH_MAIL_TRANSPORT)
-    private readonly transport: AuthMailTransport | null,
+    @Inject(MAIL_CONFIG) private readonly mailConfig: MailConfig,
+    @Inject(MAIL_TRANSPORT)
+    private readonly transport: MailTransport | null,
   ) {}
 
   getHealth(): AuthEmailHealth {
     return {
-      emailFromConfigured: this.emailFrom !== null,
+      emailFromConfigured: this.mailConfig.from !== null,
       ready:
-        this.smtpConfig.enabled && this.transport !== null && this.emailFrom !== null,
+        this.smtpConfig.enabled &&
+        this.transport !== null &&
+        this.mailConfig.from !== null,
       smtpEnabled: this.smtpConfig.enabled,
     };
   }
-
   assertDeliveryReady() {
     const health = this.getHealth();
 
@@ -72,19 +60,18 @@ export class AuthMailerService {
     }
   }
 
-  async sendMagicLinkEmail(input: MagicLinkEmailInput) {
+  async sendMagicLinkEmail(input: MagicLinkEmailInput & { email: string }) {
     this.assertDeliveryReady();
-    const transport = this.transport;
-    const emailFrom = this.emailFrom;
+    const email = composeMagicLinkEmail(this.mailConfig, input);
 
     try {
-      await transport!.sendMail({
-        from: emailFrom!,
-        html: this.buildHtmlBody(input),
-        subject: "Votre lien de connexion CVforge",
-        text: this.buildTextBody(input),
-        to: input.email,
-      });
+      await this.transport!.sendMail(
+        toMailMessage(
+          { from: this.mailConfig.from!, replyTo: this.mailConfig.replyTo },
+          input.email,
+          email,
+        ),
+      );
     } catch (error) {
       throw new InternalServerErrorException(
         error instanceof Error
@@ -92,30 +79,5 @@ export class AuthMailerService {
           : "Magic-link email sending failed.",
       );
     }
-  }
-
-  private buildTextBody(input: MagicLinkEmailInput) {
-    return [
-      "Bonjour,",
-      "",
-      "Voici votre lien de connexion CVforge :",
-      input.magicLink,
-      "",
-      `Ce lien expire le ${input.expiresAt}.`,
-      `La session ouverte restera valide ${input.sessionDurationDays} jours selon la configuration actuelle.`,
-      "",
-      "Si vous n'etes pas a l'origine de cette demande, ignorez cet email.",
-    ].join("\n");
-  }
-
-  private buildHtmlBody(input: MagicLinkEmailInput) {
-    return [
-      "<p>Bonjour,</p>",
-      "<p>Voici votre lien de connexion CVforge :</p>",
-      `<p><a href="${input.magicLink}">Se connecter a CVforge</a></p>`,
-      `<p>Ce lien expire le ${input.expiresAt}.</p>`,
-      `<p>La session ouverte restera valide ${input.sessionDurationDays} jours selon la configuration actuelle.</p>`,
-      "<p>Si vous n'etes pas a l'origine de cette demande, ignorez cet email.</p>",
-    ].join("");
   }
 }

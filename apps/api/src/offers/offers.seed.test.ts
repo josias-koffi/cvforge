@@ -37,7 +37,7 @@ describe("seeded credit offers", () => {
         priceCents: 1490,
         slug: "recherche-active",
       },
-      { credits: 870, isFeatured: false, priceCents: 2900, slug: "intensif" },
+      { credits: 850, isFeatured: false, priceCents: 2900, slug: "intensif" },
     ]);
   });
 

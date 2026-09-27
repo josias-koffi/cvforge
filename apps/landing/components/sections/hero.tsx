@@ -3,10 +3,19 @@ import { ArrowRightIcon, CheckIcon, SparklesIcon, ZapIcon } from "lucide-react"
 import { BrowserFrame, Screenshot } from "@/components/screenshot"
 import { BorderBeam } from "@/components/ui/border-beam"
 import { Button } from "@/components/ui/button"
-import type { LandingDictionary } from "@/content/types"
+import type { LandingDictionary, ScreenshotName } from "@/content/types"
+import { atsPath } from "@/lib/ats"
+import type { Locale } from "@/lib/i18n"
 import { LOGIN_PATH } from "@/lib/links"
+import { cn } from "@/lib/utils"
 
-export function Hero({ hero }: { hero: LandingDictionary["hero"] }) {
+export function Hero({
+  hero,
+  locale,
+}: {
+  hero: LandingDictionary["hero"]
+  locale: Locale
+}) {
   return (
     <section className="relative isolate overflow-hidden pt-16 md:pt-24">
       <HeroBackdrop />
@@ -62,6 +71,20 @@ export function Hero({ hero }: { hero: LandingDictionary["hero"] }) {
           </Button>
         </div>
 
+        {/* A line, not a third button: the hero keeps one main action. */}
+        <p
+          className="mt-4 rise-in text-sm text-muted-foreground"
+          style={{ "--stagger": 3 } as React.CSSProperties}
+        >
+          {hero.atsPrompt}{" "}
+          <a
+            className="rounded-sm font-medium text-foreground underline underline-offset-4 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+            href={atsPath(locale)}
+          >
+            {hero.atsLink}
+          </a>
+        </p>
+
         <ul
           className="mt-6 flex rise-in flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-muted-foreground"
           style={{ "--stagger": 4 } as React.CSSProperties}
@@ -82,8 +105,8 @@ export function Hero({ hero }: { hero: LandingDictionary["hero"] }) {
             aria-hidden
             className="absolute inset-x-10 -top-10 -z-10 h-2/3 rounded-full bg-primary/20 blur-3xl"
           />
-          <BrowserFrame path="/candidatures/cv">
-            <Screenshot name="cv-editor" alt={hero.screenshotAlt} priority />
+          <BrowserFrame path="/offres-du-jour">
+            <Screenshot name="daily-offers" alt={hero.screenshotAlt} priority />
             <BorderBeam
               size={220}
               duration={9}
@@ -92,6 +115,13 @@ export function Hero({ hero }: { hero: LandingDictionary["hero"] }) {
               colorTo="var(--spark)"
             />
           </BrowserFrame>
+          {/* A close-up floating over the capture: the AI's reason for the
+              first offer. Decorative — the capture's alt text already says
+              what the page shows. */}
+          <FloatingShot
+            name="offer-ai"
+            className="-right-4 bottom-[14%] w-[48%] rotate-1 lg:-right-12"
+          />
           <div
             aria-hidden
             className="pointer-events-none absolute inset-x-0 bottom-0 h-1/3 bg-linear-to-t from-background to-transparent"
@@ -102,8 +132,38 @@ export function Hero({ hero }: { hero: LandingDictionary["hero"] }) {
   )
 }
 
+function FloatingShot({
+  name,
+  className,
+}: {
+  name: ScreenshotName
+  className: string
+}) {
+  return (
+    <div
+      aria-hidden
+      className={cn(
+        "absolute z-10 hidden rounded-2xl border bg-card p-1.5 shadow-overlay md:block",
+        className
+      )}
+    >
+      <div
+        className="animate-float"
+        style={{ animationDuration: "6s" }}
+      >
+        <Screenshot
+          name={name}
+          alt=""
+          sizes="(min-width: 1152px) 520px, 45vw"
+          className="h-auto w-full rounded-xl"
+        />
+      </div>
+    </div>
+  )
+}
+
 /** Faint grid fading out from the top, behind the hero copy. */
-function HeroBackdrop() {
+export function HeroBackdrop() {
   return (
     <div
       aria-hidden

@@ -99,6 +99,13 @@ export default async function NotificationsPage() {
               disabled={!preferences.emailDeliveryReady}
             />
             <PreferenceSwitch
+              preference="jobDigest"
+              label="Offres du jour"
+              description="Votre sélection d'offres chaque matin. Désactivé, elle reste visible dans l'application."
+              enabled={preferences.preferences.email.jobDigest}
+              disabled={!preferences.emailDeliveryReady}
+            />
+            <PreferenceSwitch
               preference="creditPurchaseConfirmed"
               label="Confirmation d'achat"
               description="Reçu après un achat de crédits."

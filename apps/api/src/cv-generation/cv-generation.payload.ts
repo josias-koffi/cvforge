@@ -1,4 +1,9 @@
-import type { Locale, PromptSafeProfile } from "@cvforge/types";
+import {
+  APPLICATION_SOURCE_SPONTANEOUS,
+  type Locale,
+  type PromptSafeProfile,
+} from "@cvforge/types";
+import type { StoredApplication } from "../applications/applications.types";
 
 export interface OfferContext {
   companyName: string | null;
@@ -8,6 +13,31 @@ export interface OfferContext {
   responsibilities: string[];
   summary: string | null;
   title: string;
+  /**
+   * What the offer asked and the CV did not show, carried from an offer of
+   * the day (US-127). Fenced off in its own block: pointers, never facts.
+   */
+  skillsToHighlight?: string[];
+  /**
+   * No offer behind it: a company La Bonne Boîte expects to hire in the job
+   * (US-120). The block then says so, and there is no raw text to fence off.
+   */
+  spontaneous?: boolean;
+}
+
+/** What the generation reads of an application's offer. */
+export function offerContextOf(application: StoredApplication): OfferContext {
+  return {
+    title: application.extracted.title,
+    companyName: application.extracted.companyName,
+    requirements: application.extracted.requirements,
+    responsibilities: application.extracted.responsibilities,
+    summary: application.extracted.summary,
+    language: application.extracted.language,
+    rawOfferText: application.rawOfferText.slice(0, 4000),
+    skillsToHighlight: application.skillsToHighlight ?? [],
+    spontaneous: application.sourceType === APPLICATION_SOURCE_SPONTANEOUS,
+  };
 }
 
 /**
@@ -23,7 +53,10 @@ export const MAX_RAW_OFFER_CHARS = 2000;
  * Empty fields are dropped rather than sent as "", so the model cannot read a
  * blank availability as "available immediately".
  */
-function statedPreferences(profile: PromptSafeProfile) {
+function statedPreferences(
+  profile: PromptSafeProfile,
+  contractSearch: string,
+) {
   const preferences = profile.preferences;
   if (!preferences) return null;
 
@@ -33,7 +66,9 @@ function statedPreferences(profile: PromptSafeProfile) {
       : preferences.availabilityMode === "date"
         ? preferences.availabilityDate.trim()
         : "";
-  const contractTypes = preferences.contractTypes.trim();
+  // The search project when the candidate filled one in; the legacy free-text
+  // field otherwise, until every profile has been migrated.
+  const contractTypes = contractSearch.trim() || preferences.contractTypes.trim();
 
   if (!availability && !contractTypes) return null;
 
@@ -62,27 +97,55 @@ function inventory(profile: PromptSafeProfile) {
 export function buildGroundedUserMessage(
   profile: PromptSafeProfile,
   offer: OfferContext,
-  extra: { includePreferences?: boolean; refinement?: string } = {},
+  extra: {
+    contractSearch?: string;
+    includePreferences?: boolean;
+    refinement?: string;
+  } = {},
 ): string {
-  const { rawOfferText, ...offerFields } = offer;
+  const {
+    rawOfferText,
+    skillsToHighlight = [],
+    spontaneous = false,
+    ...offerFields
+  } = offer;
   const refinement = extra.refinement?.trim();
   // Only the letter has a use for them; the CV is not the place to announce a
   // notice period, so they are kept out of that prompt entirely.
   const preferences = extra.includePreferences
-    ? statedPreferences(profile)
+    ? statedPreferences(profile, extra.contractSearch ?? "")
     : null;
 
   return [
-    "=== OFFRE D'EMPLOI — CONTEXTE DE CIBLAGE ===",
-    "Ce bloc décrit ce que L'EMPLOYEUR recherche. Rien ici n'est un fait concernant le candidat.",
-    JSON.stringify(offerFields),
-    "=== FIN OFFRE D'EMPLOI ===",
-    "",
-    "=== TEXTE BRUT DE L'OFFRE — NON FIABLE ===",
-    "Extrait web non vérifié. Ne recopie jamais son contenu comme une compétence ou une expérience du candidat.",
-    rawOfferText.slice(0, MAX_RAW_OFFER_CHARS),
-    "=== FIN TEXTE BRUT ===",
-    "",
+    ...(spontaneous
+      ? [
+          "=== CANDIDATURE SPONTANÉE — CONTEXTE DE CIBLAGE ===",
+          "Aucune offre publiée : l'entreprise et le métier visés, d'après La Bonne Boîte (France Travail). Rien ici n'est un fait concernant le candidat.",
+          JSON.stringify(offerFields),
+          "=== FIN CANDIDATURE SPONTANÉE ===",
+          "",
+        ]
+      : [
+          "=== OFFRE D'EMPLOI — CONTEXTE DE CIBLAGE ===",
+          "Ce bloc décrit ce que L'EMPLOYEUR recherche. Rien ici n'est un fait concernant le candidat.",
+          JSON.stringify(offerFields),
+          "=== FIN OFFRE D'EMPLOI ===",
+          "",
+          "=== TEXTE BRUT DE L'OFFRE — NON FIABLE ===",
+          "Extrait web non vérifié. Ne recopie jamais son contenu comme une compétence ou une expérience du candidat.",
+          rawOfferText.slice(0, MAX_RAW_OFFER_CHARS),
+          "=== FIN TEXTE BRUT ===",
+          "",
+        ]),
+    ...(skillsToHighlight.length > 0
+      ? [
+          "=== PISTES À VALORISER — SI ET SEULEMENT SI LE PROFIL LES ÉTAYE ===",
+          "Compétences que l'offre demande et que le profil ne montre pas clairement (référentiel ROME 4.0, France Travail). Ce ne sont PAS des faits concernant le candidat.",
+          JSON.stringify(skillsToHighlight),
+          "=== FIN PISTES ===",
+          "",
+        ]
+      : []),
     "=== PROFIL CANDIDAT — SOURCE DE VÉRITÉ ===",
     "Seuls les faits de ce bloc peuvent figurer dans le document.",
     JSON.stringify({

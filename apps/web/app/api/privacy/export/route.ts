@@ -24,7 +24,7 @@ export async function GET() {
 
   return new NextResponse(payload, {
     headers: {
-      "content-disposition": `attachment; filename="cvspark-donnees-${day}.json"`,
+      "content-disposition": `attachment; filename="jobspark-donnees-${day}.json"`,
       "content-type": "application/json; charset=utf-8",
     },
   })

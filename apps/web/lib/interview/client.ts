@@ -1,10 +1,9 @@
 import type {
-  InterviewAnswerPartRequest,
   InterviewDurationMinutes,
+  InterviewRealtimeCallResponse,
   InterviewRecruiterProfile,
   InterviewSessionStartResponse,
   InterviewSessionSummary,
-  InterviewTranscriptionChunkRequest,
   Locale,
 } from "@cvforge/types"
 
@@ -75,81 +74,47 @@ export async function fetchSession(
 }
 
 /**
- * Sends the candidate's answer and opens the spoken reply.
- *
- * One request for the whole turn: the audio goes up, the interviewer's voice
- * comes back as it is generated. The caller must pass an `AbortSignal` and
- * fire it on unmount — the API streams from a generator that only stops when
- * the connection drops, so an abandoned response keeps a turn running.
+ * Pauses the interview: the server hangs the call up and stops the clock.
+ * Resuming is simply opening the call again.
  */
-export async function openTurnStream(
-  sessionId: string,
-  chunk: InterviewTranscriptionChunkRequest,
-  signal: AbortSignal
-): Promise<ReadableStream<Uint8Array>> {
-  const response = await fetch(`${BASE}/sessions/${sessionId}/turn`, {
-    body: JSON.stringify(chunk),
-    headers: { accept: "text/event-stream", "content-type": "application/json" },
+export async function pauseSession(
+  sessionId: string
+): Promise<{ pausedAt: string | null }> {
+  const response = await fetch(`${BASE}/sessions/${sessionId}/pause`, {
     method: "POST",
-    signal,
-  })
-
-  if (!response.ok || !response.body) {
-    throw new InterviewRequestError(
-      response.status,
-      await readMessage(response, "Le recruteur n'a pas pu répondre.")
-    )
-  }
-
-  return response.body
-}
-
-/**
- * Sends one piece of the answer while the candidate is still speaking.
- *
- * Deliberately not awaited in order by the caller: the server keys each piece
- * by its position, so what matters is that they all arrive, not when.
- */
-export async function uploadAnswerPart(
-  sessionId: string,
-  part: InterviewAnswerPartRequest,
-  signal?: AbortSignal
-): Promise<void> {
-  const response = await fetch(`${BASE}/sessions/${sessionId}/turn/chunk`, {
-    body: JSON.stringify(part),
-    headers: { "content-type": "application/json" },
-    method: "POST",
-    signal,
   })
 
   if (!response.ok) {
     throw new InterviewRequestError(
       response.status,
-      await readMessage(response, "Le micro n'a pas pu être envoyé.")
+      await readMessage(response, "Impossible de mettre l'entretien en pause.")
     )
   }
+
+  return (await response.json()) as { pausedAt: string | null }
 }
 
 /**
- * The interviewer's opening words. Carries no body: the session is all the
- * server needs, and the greeting depends only on its language and profile.
+ * Opens the live call: the browser's WebRTC offer goes to the API, which
+ * forwards it to OpenAI with the recruiter's brief and returns the answer.
+ * The API key and the prompt never reach the page (ADR-026).
  */
-export async function openOpeningStream(
+export async function openRealtimeCall(
   sessionId: string,
-  signal: AbortSignal
-): Promise<ReadableStream<Uint8Array>> {
-  const response = await fetch(`${BASE}/sessions/${sessionId}/opening`, {
-    headers: { accept: "text/event-stream" },
+  offerSdp: string
+): Promise<InterviewRealtimeCallResponse> {
+  const response = await fetch(`${BASE}/sessions/${sessionId}/realtime`, {
+    body: JSON.stringify({ sdp: offerSdp }),
+    headers: { "content-type": "application/json" },
     method: "POST",
-    signal,
   })
 
-  if (!response.ok || !response.body) {
+  if (!response.ok) {
     throw new InterviewRequestError(
       response.status,
-      await readMessage(response, "Le recruteur n'a pas pu répondre.")
+      await readMessage(response, "Impossible de joindre le recruteur.")
     )
   }
 
-  return response.body
+  return (await response.json()) as InterviewRealtimeCallResponse
 }

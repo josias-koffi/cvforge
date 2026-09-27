@@ -1,127 +1,172 @@
-import { WELCOME_APPLICATIONS } from "@cvforge/types"
+import { welcomeApplications } from "./welcome"
 
+import { companyCheckEn } from "./company-check/en"
+import { featurePagesEn } from "./feature-pages/en"
+import { interviewQuestionsEn } from "./interview-questions/en"
 import type { LandingDictionary } from "./types"
 
-/** Copy source: .project/marketing/cvspark-storytelling.md (English adaptation) */
+/** Copy source: .project/marketing/jobspark-storytelling.md (English adaptation) */
 export const en: LandingDictionary = {
   meta: {
-    title: "CVSpark — Where your profile meets the job, instantly",
+    title: "Jobspark — The right offers, the right resume, the interview rehearsed",
     description:
-      "CVSpark tailors your resume and cover letter to every job offer, ATS-ready in seconds. No subscription.",
-    ogAlt: "CVSpark, the spark between your profile and the job",
+      "Jobspark finds the job offers that fit you every morning, tailors your resume and cover letter to each one, and trains you for the interview with an AI recruiter. No subscription.",
+    ogAlt: "Jobspark, the spark between your profile and the job",
   },
   nav: {
-    features: "Features",
+    product: "Features",
+    features: "Overview",
     howItWorks: "How it works",
     pricing: "Pricing",
     faq: "FAQ",
-    interview: "Interview",
+    ats: "Free ATS test",
+    tools: "Free tools",
     story: "Our story",
     login: "Log in",
     start: "Get started",
     openMenu: "Open menu",
     toggleTheme: "Toggle theme",
     switchLanguage: "Passer en français",
-    home: "CVSpark home",
+    home: "Jobspark home",
   },
   hero: {
-    badge: "New · Practise the interview out loud",
-    title: "Where your profile meets the job,",
-    titleAccent: "instantly.",
+    badge: "New · Your daily job offers, ranked by AI",
+    title: "The right offers. The right resume.",
+    titleAccent: "One spark.",
     subtitle:
-      "Stop spending your evenings rewriting the same resume. CVSpark reads the offer, takes your profile and generates an ATS-ready resume and cover letter in seconds.",
-    primaryCta: "Create my resume",
+      "Every morning, Jobspark finds the offers that fit you and tells you why. One click, and your resume and cover letter are tailored to the offer. All that's left is to rehearse the interview, out loud.",
+    primaryCta: "Start for free",
     secondaryCta: "See how it works",
+    atsPrompt: "Not ready yet?",
+    atsLink: "Test your resume for free",
     highlights: [
-      `${WELCOME_APPLICATIONS} free applications`,
+      welcomeApplications("free application", "free applications"),
       "No subscription",
-      "ATS-ready",
+      "Free daily offers",
     ],
     screenshotAlt:
-      "CVSpark resume editor: form on the left, A4 preview of the tailored resume on the right",
+      "Daily offers in Jobspark: offers ranked for the profile, with a match score",
   },
   problem: {
     eyebrow: "The problem",
-    title: "It's not your profile. It's the time.",
-    body: "Read the offer, spot what matters, rephrase every experience, redo the letter… Every application, the same mechanical work. CVSpark handles it, you keep the judgment.",
+    title: "Your profile isn't the problem. Time is.",
+    body: "Digging through ten job boards, sorting what fits, rewriting the resume, redoing the letter, preparing the interview… Every application, the same mechanical work. Jobspark handles it, you keep the judgement.",
     before: {
-      label: "Without CVSpark",
+      label: "Without Jobspark",
       items: [
+        "Alerts dumping a hundred ads on you",
         "An evening per application",
-        "Copy-pasting between ten resume versions",
-        "Missed keywords from the offer",
         "A generic letter, for lack of time",
+        "The interview discovered on the day",
       ],
     },
     after: {
-      label: "With CVSpark",
+      label: "With Jobspark",
       items: [
-        "A few seconds per application",
-        "One base profile, endlessly tailored",
-        "A resume aligned with what the offer asks",
-        "A personal letter, ready to review",
+        "Ten offers picked every morning, with their reason",
+        "A tailored resume in seconds",
+        "A letter that names the job and the company",
+        "An interview rehearsed out loud, with a scored report",
       ],
     },
   },
-  howItWorks: {
+  journey: {
     eyebrow: "How it works",
-    title: "From job offer to ready resume, in three steps",
-    subtitle: "AI streamlines the repetitive part. You review, adjust, send.",
+    title: "Your whole job search, in one place",
+    subtitle:
+      "From the offer spotted in the morning to the interview nailed, without juggling ten tools.",
+    learnMore: "Learn more",
     steps: [
       {
-        title: "Import your profile",
-        body: "Drop your current resume as PDF or Word, even scanned. CVSpark extracts experience, education and skills.",
+        label: "Find",
+        title: "The offers come to you",
+        body: "Every morning, a selection of offers that fit you, ranked by AI with one line per offer. And the companies hiring without an ad.",
+        alt: "Daily offers ranked with their match score",
       },
       {
-        title: "Add a job offer",
-        body: "Paste the job link or its PDF. The offer and company context are analysed automatically.",
+        label: "Apply",
+        title: "A tailored resume and letter in one click",
+        body: "From an offer, Jobspark takes your profile, brings forward what matters and writes the resume and letter, ATS-ready.",
+        alt: "Resume editor with the A4 preview of the tailored document",
       },
       {
-        title: "Get resume and letter",
-        body: "A resume and cover letter tailored to the offer, editable live, exportable as PDF or Word.",
+        label: "Rehearse",
+        title: "The interview, rehearsed out loud",
+        body: "An AI recruiter who knows the offer interviews you out loud. At the end, a scored report and your progress.",
+        alt: "Interview report with overall score and a radar of the dimensions",
+      },
+      {
+        label: "Follow up",
+        title: "Every application in its place",
+        body: "Statuses, documents, reminders and a dashboard: you always know where you stand.",
+        alt: "List of applications with their statuses",
       },
     ],
-    diagram: {
-      profile: "Your profile",
-      offer: "The offer",
-      ai: "CVSpark",
-      cv: "Tailored resume",
-      letter: "Letter",
-    },
+  },
+  spotlight: {
+    eyebrow: "Daily job offers",
+    title: "When you wake up, ten offers. And the reason for each.",
+    subtitle:
+      "Jobspark reads the offers published every night, compares them with your profile and keeps only the best. With AI ranking, each offer arrives with one sentence telling you why it is for you.",
+    points: [
+      {
+        title: "Official sources",
+        body: "France Travail, La bonne alternance and company career sites, with no duplicates.",
+      },
+      {
+        title: "A score that explains itself",
+        body: "Job title, skills, location, experience, salary, freshness: the breakdown of every score.",
+      },
+      {
+        title: "Apply in one click",
+        body: "The offer becomes an application, and the tailored resume starts right away.",
+      },
+    ],
+    cta: "Get my daily offers",
+    learnMore: "All about daily offers",
+    screenshotAlt:
+      "Panel of a daily offer with its score, the AI's sentence and the apply button",
+    detailAlt:
+      "The AI's sentence explaining why the offer fits the profile, with the score breakdown",
   },
   features: {
     eyebrow: "Features",
-    title: "Your whole application flow, in one place",
+    title: "Everything you need to land the job",
     subtitle:
-      "From importing your resume to tracking replies, without juggling ten tools.",
+      "Search, apply, prepare, follow up: each step has its tool, and they talk to each other.",
+    learnMore: "Learn more",
     items: {
-      import: {
-        title: "Smart import",
-        body: "PDF, Word or scan: your resume becomes a structured profile you reuse for every application.",
+      offers: {
+        title: "Daily job offers",
+        body: "A selection every morning, ranked by AI, and every offer from the last thirty days one search away.",
+      },
+      market: {
+        title: "Market radar",
+        body: "Demand, number of offers and salaries for your job, in your area.",
       },
       tailor: {
-        title: "A resume for every offer",
-        body: "Relevant experience and skills rise to the top, phrased with the offer's own vocabulary.",
+        title: "Resume tailored to every offer",
+        body: "The relevant experience comes first, worded with the offer's vocabulary. Nothing made up.",
+      },
+      ats: {
+        title: "ATS score on every save",
+        body: "Your resume scored on what screening software looks at, with what to fix.",
+      },
+      interview: {
+        title: "Voice interview and progress",
+        body: "An AI recruiter out loud, a scored report, and your scores rising from one session to the next.",
       },
       letter: {
         title: "Cover letter",
-        body: "A letter that names the company and the role, not a recycled template.",
+        body: "A letter that names the company and the job, translatable into French in one click.",
       },
-      translate: {
-        title: "French ⇄ English",
-        body: "Translate a resume or letter in one click to apply abroad.",
+      companies: {
+        title: "Companies hiring",
+        body: "Those hiring in your line of work near you, even without an ad, with their commitments.",
       },
       tracking: {
         title: "Application tracking",
-        body: "Draft, sent, interview, offer received: each application keeps its status and documents.",
-      },
-      export: {
-        title: "PDF and Word export",
-        body: "Clean, ATS-readable documents, ready to send.",
-      },
-      interview: {
-        title: "Mock interview",
-        body: "A recruiter that answers out loud, and a scored report at the end.",
+        body: "Draft, sent, interview, offer received: each application has its status and its documents.",
       },
     },
   },
@@ -152,24 +197,35 @@ export const en: LandingDictionary = {
         body: "STAR questions on situations you have lived.",
       },
     ],
-    durationsTitle: "The time you have",
-    durations: [
-      "10 minutes — screening interview",
-      "20 minutes — full HR interview",
-      "30 minutes — in-depth interview",
-    ],
-    report: {
-      title: "A report, not an impression",
-      body: "A score out of ten, five scored dimensions, what to work on first, and the full transcript of the conversation. Session after session, your progress reads as a curve.",
-      metrics: ["Clarity", "Keywords", "Pacing", "Hesitations", "Relevance"],
-    },
     privacyNote:
       "Your voice is never kept: every passage is transcribed, then dropped. Only the text remains, and it is deleted after thirty days.",
     cta: "Take an interview",
+    learnMore: "All about the interview",
     screenshotAlt:
-      "CVSpark interview studio: animated voice orb, countdown and live transcript",
-    reportScreenshotAlt:
-      "CVSpark interview report: overall score and radar of the five scored dimensions",
+      "Jobspark interview studio: animated voice orb, countdown and live transcript",
+  },
+  trust: {
+    eyebrow: "Trust",
+    title: "Your job search belongs to you",
+    subtitle: "",
+    items: [
+      {
+        title: "Pseudonymised data",
+        body: "Your name and contact details are removed before the model is called, and the model keeps nothing.",
+      },
+      {
+        title: "Official sources",
+        body: "Offers, companies and market figures come from France Travail and French government open data.",
+      },
+      {
+        title: "Voice never recorded",
+        body: "In the interview, each answer is transcribed then discarded.",
+      },
+      {
+        title: "No subscription",
+        body: "Credits paid once that never expire. Daily offers are free.",
+      },
+    ],
   },
   showcase: {
     eyebrow: "The app",
@@ -177,16 +233,10 @@ export const en: LandingDictionary = {
     subtitle: "Every document stays editable. AI suggests, you decide.",
     tabs: [
       {
-        id: "dashboard",
-        label: "Dashboard",
-        caption: "Your applications, credits and activity at a glance.",
-        alt: "CVSpark dashboard with key figures and activity chart",
-      },
-      {
-        id: "candidatures",
-        label: "Applications",
-        caption: "Every application and its status, filterable.",
-        alt: "Application list with draft, sent and interview statuses",
+        id: "daily-offers",
+        label: "Daily offers",
+        caption: "Your morning selection, each offer with its score.",
+        alt: "Daily offers with their match score",
       },
       {
         id: "cv-editor",
@@ -195,23 +245,28 @@ export const en: LandingDictionary = {
         alt: "Resume editor with live preview",
       },
       {
-        id: "letter-editor",
-        label: "Letter",
-        caption:
-          "A letter tailored to the offer, ready to review and personalise.",
-        alt: "Cover letter editor with preview",
-      },
-      {
         id: "interview-studio",
         label: "Interview studio",
         caption: "You speak, the recruiter answers. No button to hold down.",
         alt: "Interview studio with voice orb, countdown and live transcript",
       },
       {
-        id: "interview-report",
-        label: "Interview report",
-        caption: "A score out of ten, five dimensions, and what to work on.",
-        alt: "Interview report with overall score, dimension radar and advice",
+        id: "company-page",
+        label: "Company profile",
+        caption: "Size, finances, commitments: know who you are applying to.",
+        alt: "Company profile with headcount, finances and commitment badges",
+      },
+      {
+        id: "dashboard",
+        label: "Dashboard",
+        caption: "Your applications, interviews and activity at a glance.",
+        alt: "Jobspark dashboard with key figures and activity chart",
+      },
+      {
+        id: "candidatures",
+        label: "Applications",
+        caption: "Every application and its status, filterable.",
+        alt: "Application list with draft, sent and interview statuses",
       },
     ],
   },
@@ -221,7 +276,7 @@ export const en: LandingDictionary = {
     subtitle:
       "One pack, paid once, used at your own pace. No subscription, no automatic renewal, and your credits never expire.",
     popular: "Most popular",
-    welcome: `${WELCOME_APPLICATIONS} complete applications free when you sign up, mock interview included, no card required.`,
+    welcome: `${welcomeApplications("complete application", "complete applications")} free when you sign up, mock interview included, no card required.`,
     applicationsLabel: "{count} applications",
     creditsDetail: "{credits} credits · {unitPrice} per application",
     buy: "Choose {pack}",
@@ -234,14 +289,15 @@ export const en: LandingDictionary = {
     creditUnit: "credits",
     actions: {
       cv_import: "Importing an existing resume",
-      interview_session: "Mock interview and report (1 credit a minute)",
+      interview_session: "Mock interview and report (1.5 credits a minute)",
       offer_enrichment: "Offer and company analysis",
       cv_generation: "Tailored resume generation",
       letter_generation: "Cover letter generation",
+      job_digest_rerank: "AI ranking of your daily job matches",
     },
   },
   testimonials: {
-    eyebrow: "They apply with CVSpark",
+    eyebrow: "They apply with Jobspark",
     title: "Less rewriting, more interviews",
     subtitle: "",
     // TODO: replace with real reviews before enabling NEXT_PUBLIC_SHOW_TESTIMONIALS.
@@ -279,12 +335,23 @@ export const en: LandingDictionary = {
       {
         question: 'What is an "ATS-ready" resume?',
         answer:
-          "An ATS is the screening software recruiters use to sort applications. CVSpark produces documents with a simple, readable structure and the offer's keywords, so they are parsed correctly.",
+          "An ATS is the screening software recruiters use to sort applications. Jobspark produces documents with a simple, readable structure and the offer's keywords, so they are parsed correctly.",
+        atsCheckLink: "Test my current CV for free",
       },
       {
         question: "Does the AI write for me?",
         answer:
           "No. It streamlines the mechanical work: spotting what matters in the offer and rephrasing your background. Everything stays editable, and you approve before sending.",
+      },
+      {
+        question: "How does Jobspark find the daily offers?",
+        answer:
+          "Every night, Jobspark reads the offers published on France Travail, La bonne alternance and company career sites, compares them with your search and your resume, and keeps the best. The selection is free; AI ranking, which explains each offer in one sentence, costs one credit a morning.",
+      },
+      {
+        question: "Can I apply to a company that has not posted an offer?",
+        answer:
+          "Yes. Jobspark lists the companies hiring in your line of work near you, based on the hiring potential France Travail computes, and prepares an unsolicited application with a tailored resume.",
       },
       {
         question: "What happens to my data?",
@@ -293,12 +360,12 @@ export const en: LandingDictionary = {
       },
       {
         question: "Can I try it for free?",
-        answer: `Yes. Your account gets ${WELCOME_APPLICATIONS} complete applications when you sign up — resume import, offer analysis, resume, letter and a mock interview — no card required.`,
+        answer: `Yes. Your account gets ${welcomeApplications("complete application", "complete applications")} when you sign up — resume import, offer analysis, resume, letter and a mock interview — no card required.`,
       },
       {
         question: "How does the mock interview work?",
         answer:
-          "You speak with a recruiter that knows the offer you are targeting and spreads its questions over the length you pick: 10, 20 or 30 minutes. At the end you get a scored report — clarity, keywords, pacing, hesitations, relevance — and what to work on. An interview costs 1 credit a minute, report included.",
+          "You speak with a recruiter that knows the offer you are targeting and spreads its questions over the length you pick: 10, 20 or 30 minutes. At the end you get a scored report — clarity, keywords, pacing, hesitations, relevance — and what to work on. An interview costs 1.5 credits a minute, report included.",
       },
       {
         question: "Do I need a subscription?",
@@ -309,27 +376,27 @@ export const en: LandingDictionary = {
         answer:
           "French and English. Any resume or letter can be translated into the other language in one click.",
       },
-      {
-        question: "Which export formats are available?",
-        answer:
-          "PDF and Word (DOCX), to send directly or fine-tune in your word processor.",
-      },
     ],
   },
   cta: {
     title: "Stop rewriting. Let it spark.",
     body: "Your next application can be ready before your coffee gets cold.",
     button: "Create my resume",
+    atsPrompt: "Want to see where your CV stands first?",
+    atsLink: "Check it for free",
   },
   footer: {
     tagline: "The spark between your profile and the job.",
+    features: "Features",
     product: "Product",
     legal: "Legal",
-    company: "CVSpark",
+    company: "Jobspark",
     rights: "All rights reserved.",
   },
   legal: {
     updated: "Last updated on",
+    metaDescription:
+      "{title} of Jobspark, the service that tailors your resume and cover letter to every job offer.",
     links: {
       terms: "Terms of use",
       "sales-terms": "Terms of sale",
@@ -337,14 +404,371 @@ export const en: LandingDictionary = {
       privacy: "Privacy",
     },
   },
+  ats: {
+    metaTitle: "Free ATS test: will your CV get past the filters?",
+    metaDescription:
+      "Drop your CV and get an ATS compatibility score in seconds, no sign-up. Your CV is never stored.",
+    eyebrow: "Free check",
+    title: "Will your CV get past the automated filters?",
+    subtitle:
+      "75% of CVs are discarded by software before a human reads them. Drop yours: you get your score in seconds, without creating an account.",
+    privacyNote:
+      "Your CV is never stored. It is analysed in memory and discarded: we keep only the score and the points we found.",
+    trust: {
+      private: "CV never stored",
+      fast: "Score in seconds",
+      noSignup: "No sign-up",
+    },
+    upload: {
+      label: "Drop your CV",
+      hint: "PDF or DOCX, 5 MB maximum",
+      dropTitle: "Drag your CV here",
+      browse: "or browse your files",
+      dropActive: "Release to drop your CV",
+      ready: "Ready to be analysed",
+      remove: "Remove the file",
+      analyse: "Analyse my CV",
+      analysing: "Analysing…",
+      tooLarge:
+        "This file is over 5 MB. Try a PDF exported from your editor rather than a scan.",
+      wrongType: "Unrecognised format. Please drop a PDF or a DOCX.",
+    },
+    offer: {
+      label: "Paste a job ad (optional)",
+      hint: "With an ad, we also measure how well your CV matches the role.",
+      placeholder: "Paste the text of the job ad here…",
+      toggle: "Target a specific role",
+    },
+    progress: {
+      title: "Analysing your CV",
+      steps: [
+        "Reading the file",
+        "Extracting the text",
+        "Checking the ATS criteria",
+        "Computing the score",
+      ],
+    },
+    result: {
+      scoreLabel: "ATS score",
+      outOf: "out of 100",
+      bands: {
+        weak: "Fragile",
+        fair: "Needs work",
+        good: "Solid",
+        excellent: "Excellent",
+      },
+      dimensionsScored: "{count} criteria assessed",
+      partialTitle: "Your PDF is an image",
+      partialBody:
+        "No text could be read from this file: it was most likely scanned or exported as an image. Recruiting software will not read a single line of it. Re-export your CV as a PDF from your word processor.",
+      lockedTitle: "{count} further points found",
+      lockedTitleNone: "See the breakdown, criterion by criterion",
+      lockedBody:
+        "The full breakdown, criterion by criterion, with what to fix first.",
+      again: "Analyse another CV",
+    },
+    unlock: {
+      title: "Get the full report",
+      body: "Enter your address: the detailed report appears straight away, and you get a link to find it again in Jobspark.",
+      emailLabel: "Your email address",
+      emailPlaceholder: "you@example.com",
+      consent:
+        "I agree that Jobspark creates my account and sends me a sign-in link.",
+      submit: "Show the full report",
+      submitting: "Sending…",
+      success: "Report unlocked",
+      successBody:
+        "A sign-in link is on its way to your inbox: it will bring you straight back to this report.",
+    },
+    findings: {
+      NO_TEXT_LAYER: "The file contains no machine-readable text",
+      MULTI_COLUMN_LAYOUT: "A multi-column layout scrambles the reading order",
+      TOO_MANY_PAGES: "The CV runs past two pages",
+      GARBLED_CHARACTERS: "Some characters come out garbled when extracted",
+      MISSING_EXPERIENCE_SECTION: "No \u201cExperience\u201d section found",
+      MISSING_EDUCATION_SECTION: "No \u201cEducation\u201d section found",
+      MISSING_SKILLS_SECTION: "No \u201cSkills\u201d section found",
+      MISSING_SUMMARY_SECTION: "No summary at the top of the CV",
+      MISSING_EMAIL: "No email address found",
+      MISSING_PHONE: "No phone number found",
+      MISSING_LINKEDIN: "No LinkedIn profile found",
+      MISSING_CITY: "No city found",
+      UNPARSABLE_DATES: "The dates are not in a readable format",
+      INCONSISTENT_DATE_FORMATS: "Date formats vary between roles",
+      FEW_BULLETS: "Roles are not broken down into bullet points",
+      TOO_SHORT: "The CV is thin: little content to index",
+      TOO_LONG: "The CV is too long",
+      TABLE_MARKERS: "Tables interfere with text extraction",
+      LOW_KEYWORD_COVERAGE: "Little of the ad's vocabulary appears in the CV",
+      KEYWORD_STUFFING: "The same keyword is repeated excessively",
+      MISSING_ACTION_VERBS: "Bullets do not open on an action verb",
+      MISSING_QUANTIFICATION: "Results are not quantified",
+      UNSUPPORTED_SKILLS: "Some claimed skills are backed by no experience",
+    },
+    dimensions: {
+      machineReadability: "Machine readability",
+      structure: "Structure and sections",
+      keywords: "Match to the ad",
+      impact: "Content and impact",
+      contactability: "Contact details",
+      formatHygiene: "Dates, bullets and length",
+    },
+    errors: {
+      generic: "The analysis did not complete. Try again in a moment.",
+      tooManyRequests:
+        "You have run several analyses in a row. Give it a few minutes.",
+      unavailable:
+        "The free check is temporarily unavailable. Come back tomorrow, or create an account to analyse your CVs right away.",
+      expired:
+        "This analysis has expired. Run a new one for an up-to-date report.",
+      network: "Could not connect. Check your network and try again.",
+      fileRequired: "Choose a PDF or DOCX file to analyse.",
+      notEnoughText:
+        "This CV does not hold enough text to analyse. Export it to PDF from your word processor.",
+      invalidEmail: "This email address is not valid.",
+      consentRequired:
+        "Tick the box to receive your report and your sign-in link.",
+      notFound:
+        "This analysis cannot be found. Run a new one to get your report.",
+      offerRequired: "Paste the full text of the offer: 200 characters at least.",
+      appellationUnknown: "Pick a job from the list.",
+      departmentUnknown: "Pick a département from the list.",
+      companyQueryInvalid:
+        "Enter at least 3 characters of the company name, or its SIREN.",
+      companySourceUnavailable:
+        "The French company directory is not answering right now. Try again in a moment.",
+      questionsUnavailable:
+        "The question generator is not answering right now. Try again in a moment.",
+      offerNotUsable:
+        "This offer does not have enough specific terms to compare. Paste the full ad.",
+    },
+    cta: "Build my optimised CV",
+  },
+  tools: {
+    metaTitle: "Free tools for your job search",
+    metaDescription:
+      "Free tools, no signup, to get your applications ready: check your CV against recruiting software in seconds.",
+    eyebrow: "Free, no account",
+    title: "Free tools to move forward right now",
+    subtitle:
+      "An instant result, no signup. Your CV is analysed then forgotten: nothing is kept.",
+    home: {
+      eyebrow: "Free, no account",
+      title: "Try before you sign up",
+      subtitle:
+        "Tools that give you something useful in seconds, without creating an account.",
+      seeAll: "See all free tools",
+    },
+    open: "Try it",
+    more: {
+      body: "To tailor your CV to each job, write your cover letters and track your applications, you need an account.",
+      link: "Create my free account",
+    },
+    items: {
+      ats: {
+        name: "ATS check for your CV",
+        description:
+          "Does your CV get through the software recruiters use to sort applications? A score and what to fix.",
+        tags: ["No account", "Seconds"],
+      },
+      keyword_match: {
+        name: "CV vs job offer checker",
+        description:
+          "The offer's keywords already in your CV, and the ones missing. No AI, nothing kept.",
+        tags: ["No account", "No AI"],
+      },
+      job_market: {
+        name: "Is this job hiring?",
+        description:
+          "For a job and a French département: hiring difficulty, openings, job seekers and median salary.",
+        tags: ["No account", "France Travail data"],
+      },
+      company_check: {
+        name: "Check an employer",
+        description:
+          "A French company's headcount, activity, gender equality index, social economy status and carbon report.",
+        tags: ["No account", "Government open data"],
+      },
+      interview_questions: {
+        name: "Likely interview questions",
+        description:
+          "The 5 questions a recruiter will ask you about an offer, and what they want to find out with each.",
+        tags: ["No account", "AI"],
+      },
+    },
+  },
+  featurePages: featurePagesEn,
+  companyCheck: companyCheckEn,
+  interviewQuestions: interviewQuestionsEn,
+  jobMarket: {
+    metaTitle: "Is this job hiring near me? Demand, openings, salary",
+    metaDescription:
+      "For a job and a French département: how hard employers find it to hire, the number of openings, job seekers and the median salary. Free, no signup, from France Travail data.",
+    eyebrow: "Free tool",
+    title: "Is this job hiring near you?",
+    subtitle:
+      "Pick a job and a département: see whether employers struggle to hire, how many openings are published and what they pay.",
+    form: {
+      jobLabel: "Job",
+      jobHint: "Type at least 2 letters, then pick from the list. Job titles are in French.",
+      jobPlaceholder: "E.g. comptable, développeur web…",
+      searching: "Looking for jobs…",
+      noMatch: "No job matches. Try another word.",
+      suggestions: "{count} jobs suggested",
+      departmentLabel: "Département",
+      departmentPlaceholder: "Pick a département",
+      submit: "See the market",
+      submitting: "Reading…",
+      privacyNote:
+        "No account, no personal data: only the job and the département are sent.",
+    },
+    result: {
+      title: "{job} in {department}",
+      romeNote: "Figures for ROME job {code}: {label}",
+      tension: {
+        title: "Hiring difficulty",
+        levels: {
+          "1": "Very easy to hire: plenty of candidates",
+          "2": "Fairly easy to hire",
+          "3": "Moderately hard to hire",
+          "4": "Hard to hire: employers are looking",
+          "5": "Very hard to hire: employers struggle to find people",
+        },
+        scale: "Level {value} of 5",
+      },
+      offers: {
+        title: "Openings published this quarter",
+        yearly: "{count} over twelve months",
+      },
+      jobseekers: {
+        title: "Job seekers",
+        note: "Registered in category A and looking for this job",
+      },
+      salary: {
+        title: "Median salary offered",
+        sample: "Gross per year, from {count} openings",
+        masked:
+          "Fewer than {min} openings state a salary here: not enough for a reliable median.",
+      },
+      missing: "Not published",
+      period: "Period: {period}",
+      collecting: {
+        title: "Figures being collected",
+        body: "We had not read this job in this département yet. The figures arrive within 24 hours: come back tomorrow, or get the openings straight by email.",
+      },
+      refreshed: "Figures read on {date}",
+      sources: {
+        market: "Source: Marché du travail, France Travail",
+        salary: "Salaries: openings collected by Jobspark",
+      },
+      again: "Look up another job",
+    },
+    cta: {
+      title: "Get this job's openings every morning",
+      body: "Create your account: your search is ready with this job and this département, and new openings land in your inbox every morning.",
+      button: "Get this job's openings every morning",
+    },
+    lead: {
+      body: "We send you a sign-in link. Clicking it creates your search, and the openings arrive the next morning.",
+      emailLabel: "Your email",
+      emailPlaceholder: "you@example.com",
+      consent:
+        "I agree that Jobspark creates my account and sends me a sign-in link, then the openings every morning.",
+      submit: "Get my link",
+      submitting: "Sending…",
+      success: "Check your inbox",
+      successBody:
+        "The sign-in link opens your account, with your search already set up.",
+    },
+    page: {
+      metaTitle: "{job}, {department}: is this job hiring?",
+      metaDescription:
+        "{job} ({department}, France): hiring difficulty, openings over twelve months, job seekers and median salary. France Travail figures, updated monthly.",
+      title: "{job}, {department}: is this job hiring?",
+      breadcrumbLabel: "Breadcrumb",
+      summary:
+        "Hiring difficulty at level {level} of 5 according to France Travail ({period}), and {offers} openings published over the last twelve months.",
+      summaryJobseekers:
+        "{count} category A job seekers are looking for this job ({period}).",
+      figuresTitle: "Market figures",
+      appellationsTitle: "Job titles this job covers",
+      neighboursTitle: "The same job elsewhere in the region",
+      otherJobsTitle: "Other jobs in this département",
+      toolLink: "Look up another job or another département",
+    },
+  },
+  keywordMatch: {
+    metaTitle: "Free CV vs job offer checker: the missing keywords",
+    metaDescription:
+      "Compare your CV with a job offer: the keywords you already have, the ones you are missing and your coverage rate, free and with no signup.",
+    eyebrow: "Free checker",
+    title: "Does your CV speak the job offer's language?",
+    subtitle:
+      "Drop your CV, paste the offer: see the keywords the recruiter is looking for that your CV is missing.",
+    privacyNote:
+      "Your CV is read for the comparison, then forgotten: nothing is kept. No AI is used.",
+    cvLabel: "Your CV",
+    offer: {
+      label: "The job offer",
+      hint: "Paste the full text of the ad: duties, profile, skills.",
+      placeholder: "Paste the job offer here…",
+      counter: "{count} / {min} characters minimum",
+      counterReady: "{count} characters",
+    },
+    compare: "Compare",
+    comparing: "Comparing…",
+    result: {
+      title: "Your CV against this offer",
+      gauge: {
+        scoreLabel: "Coverage",
+        outOf: "in %",
+        bands: {
+          low: "Low",
+          fair: "Fair",
+          good: "Good",
+        },
+      },
+      verdicts: {
+        low: "Your CV uses few of the offer's terms: screening software may rank it low.",
+        fair: "Your CV uses some of the offer's terms. Add the ones that genuinely apply to you.",
+        good: "Your CV already speaks the offer's language. Check the last missing terms.",
+      },
+      summary: "{count} of the offer's {total} terms appear in your CV.",
+      matchedTitle: "Already in your CV",
+      missingTitle: "Missing from your CV",
+      more: "and {count} more",
+      matchedEmpty: "None of the offer's terms are in your CV yet.",
+      missingEmpty: "Every term of the offer is in your CV.",
+      method:
+        "Words of 4 letters or more, compared regardless of accents and case. Most frequent in the offer first. Only add what is true for you.",
+      again: "Compare another CV or offer",
+    },
+    cta: {
+      title: "Generate a CV tailored to this offer",
+      body: "Create your account: the application for this offer will be waiting, ready to generate your CV and cover letter.",
+      button: "Generate a CV tailored to this offer",
+    },
+    lead: {
+      body: "We send you a sign-in link. Clicking it opens this offer in your applications.",
+      emailLabel: "Your email",
+      emailPlaceholder: "you@example.com",
+      consent:
+        "I agree that Jobspark creates my account and sends me a sign-in link.",
+      submit: "Get my link",
+      submitting: "Sending…",
+      success: "Check your inbox",
+      successBody:
+        "The sign-in link opens your account, with the application for this offer already created.",
+    },
+  },
   story: {
     metaTitle: "Our story",
     metaDescription:
-      "CVSpark was born from a simple frustration: spending hours re-tailoring a resume for every job offer.",
+      "Jobspark was born from a simple frustration: spending hours re-tailoring a resume for every job offer.",
     eyebrow: "Our story",
     title: "Born from a simple frustration",
     manifesto:
-      "We all have a friend looking for work who rewrites the same resume differently every evening — not because they lack skills, but because they lack the time to rephrase them for every offer. CVSpark was born from that frustration. AI can now absorb this repetitive tailoring work; all that was left was to build the tool that lights the spark between a profile and a job offer — and turns out an ATS-ready resume in seconds.",
+      "We all have a friend looking for work who rewrites the same resume differently every evening — not because they lack skills, but because they lack the time to rephrase them for every offer. Jobspark was born from that frustration. AI can now absorb this repetitive tailoring work; all that was left was to build the tool that lights the spark between a profile and a job offer — and turns out an ATS-ready resume in seconds.",
     originTitle: "Where the idea came from",
     origin: [
       "The starting point wasn't technology, it was something we saw around us: friends looking for work, losing hours redoing the same work by hand for every application. Reading an offer, spotting what matters, rephrasing their profile accordingly.",
@@ -370,6 +794,6 @@ export const en: LandingDictionary = {
         body: "One profile + one offer → an ATS-ready resume.",
       },
     ],
-    cta: "Try CVSpark",
+    cta: "Try Jobspark",
   },
 }

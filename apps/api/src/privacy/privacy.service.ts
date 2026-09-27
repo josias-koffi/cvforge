@@ -10,7 +10,11 @@ import type { InterviewStore } from "../interview/interview.types";
 import type { AuthAccountStore } from "../auth/auth.types";
 import type { CreditLedgerStore } from "../credits/credits.types";
 import type { NotificationsStore } from "../notifications/notifications.types";
+import type { ProfileCompetencesStore } from "../profiles/profile-competences.pg-store";
 import type { ProfilesStore } from "../profiles/profiles.types";
+import type { JobMatchesStore } from "../job-search/matches.types";
+import type { SearchProjectRomeStore } from "../search-projects/search-project-rome.pg-store";
+import type { SearchProjectsStore } from "../search-projects/search-projects.types";
 import { PRIVACY_RETENTION_POLICY } from "./privacy-retention-policy";
 import type {
   PrivacyDeletionSummary,
@@ -29,9 +33,16 @@ export class PrivacyService {
     private readonly creditsStore: CreditLedgerStore,
     private readonly notificationsStore: NotificationsStore,
     private readonly profilesStore: ProfilesStore,
+    private readonly searchProjectsStore: SearchProjectsStore,
+    private readonly jobMatchesStore: JobMatchesStore,
     private readonly interviewStore: InterviewStore,
     private readonly creditOrdersStore: CreditOrdersStore,
     private readonly auditStore: AdminAuditStore,
+    private readonly searchJobsStore: Pick<SearchProjectRomeStore, "exportByUserEmail">,
+    private readonly profileCompetencesStore: Pick<
+      ProfileCompetencesStore,
+      "exportByUserEmail"
+    >,
   ) {}
 
   getRetentionPolicy() {
@@ -56,7 +67,13 @@ export class PrivacyService {
       ownedApplications:
         await this.applicationsStore.listByUserEmail(normalizedEmail),
       ownedCredits: await this.creditsStore.listEntriesForUser(normalizedEmail),
+      ownedProfileCompetences:
+        await this.profileCompetencesStore.exportByUserEmail(normalizedEmail),
       ownedProfiles: await this.profilesStore.findByUserEmail(normalizedEmail),
+      ownedSearchJobs:
+        await this.searchJobsStore.exportByUserEmail(normalizedEmail),
+      ownedSearchProjects:
+        await this.searchProjectsStore.listByUserEmail(normalizedEmail),
       retentionPolicy: PRIVACY_RETENTION_POLICY,
       userEmail: normalizedEmail,
     };
@@ -91,6 +108,10 @@ export class PrivacyService {
       await this.notificationsStore.deleteByUserEmail(normalizedEmail);
     const deletedProfiles =
       await this.profilesStore.deleteByUserEmail(normalizedEmail);
+    const deletedJobMatches =
+      await this.jobMatchesStore.deleteByUserEmail(normalizedEmail);
+    const deletedSearchProjects =
+      await this.searchProjectsStore.deleteByUserEmail(normalizedEmail);
     const deletedCreditEntries =
       await this.creditsStore.deleteByUserEmail(normalizedEmail);
     // Sessions carry the interview transcripts; the chunks cascade with them.
@@ -116,6 +137,8 @@ export class PrivacyService {
       deletedInvitations: authSummary.invitationsRemoved,
       deletedNotifications,
       deletedProfiles,
+      deletedJobMatches,
+      deletedSearchProjects,
       scrubbedThirdPartyReferences:
         scrubbedAdminReferences +
         authSummary.invitationsScrubbed +

@@ -11,6 +11,12 @@ terraform {
   # State lives in a Cloudflare R2 bucket (S3-compatible).
   # The endpoint is supplied out of band via AWS_ENDPOINT_URL_S3, and the
   # credentials via AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY (R2 token).
+  #
+  # NOTE (Jobspark rename): `key` stays `cvspark/...` on purpose — it is just
+  # the R2 object path for the existing state, unrelated to the DNS record
+  # names below. Renaming it here would make Tofu init against an empty state
+  # and lose track of the managed records; only change it as a deliberate
+  # migration (copy the state object under the new key first).
   backend "s3" {
     bucket = "koklo-tofu-state"
     key    = "cvspark/terraform.tfstate"

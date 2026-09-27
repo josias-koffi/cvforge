@@ -1,3 +1,13 @@
+import type { AiFeature } from '@cvforge/types';
+import {
+  NOOP_AI_USAGE_RECORDER,
+  NO_USAGE,
+  readUsage,
+  readUsageFrame,
+  recordUsage,
+  type AiUsageRecorder,
+  type UsageFigures,
+} from './ai-usage';
 import { buildChain, runModelChain } from './openrouter.chain';
 import { OpenRouterConfig } from './openrouter.config';
 import { buildOpenRouterError } from './openrouter.error';
@@ -22,6 +32,8 @@ type OpenRouterMessage =
     };
 
 export interface ChatOptions {
+  /** What the call is for, so the cockpit can price each feature (US-154). */
+  feature?: AiFeature;
   model?: string;
   temperature?: number;
   maxTokens?: number;
@@ -44,6 +56,7 @@ export class OpenRouterService {
   constructor(
     private readonly config: OpenRouterConfig,
     private readonly retryHooks: RetryHooks = {},
+    private readonly usageRecorder: AiUsageRecorder = NOOP_AI_USAGE_RECORDER,
   ) {}
 
   private get retryPolicy() {
@@ -95,33 +108,68 @@ export class OpenRouterService {
     };
   }
 
+  /**
+   * Walks the model chain and hands back the response along with `track`,
+   * which files the call's cost once its usage is known (US-154). A call that
+   * fails outright is filed here, at zero cost, so errors show in the cockpit.
+   */
   private async fetchCompletion(
     messages: OpenRouterMessage[],
     options: ChatOptions,
     enableZdr: boolean,
     operation: string,
     extra: Record<string, unknown> = {},
-  ): Promise<Response> {
-    return runModelChain(
-      this.buildModelChain(options),
-      async (model) => {
-        const attempt = await fetchWithOpenTimeout(
-          `${this.config.baseUrl}/chat/completions`,
-          {
-            body: this.buildRequestBody(messages, { ...options, model }, enableZdr, extra),
-            headers: this.buildHeaders(),
-            method: 'POST',
-          },
-          CHAT_OPEN_TIMEOUT_MS,
-          model,
-        );
+  ): Promise<{ response: Response; track: (usage: UsageFigures | null) => void }> {
+    const chain = this.buildModelChain(options);
+    const startedAt = Date.now();
+    let model = chain[0];
+    const track = (usage: UsageFigures | null, status: 'ok' | 'error' = 'ok') =>
+      recordUsage(this.usageRecorder, {
+        ...(usage ?? NO_USAGE),
+        durationMs: Date.now() - startedAt,
+        feature: options.feature ?? 'other',
+        fellBack: model !== chain[0],
+        model,
+        status,
+      });
 
-        if (!attempt.ok) throw await buildOpenRouterError(attempt, operation, model);
-        return attempt;
+    try {
+      const response = await runModelChain(
+        chain,
+        (candidate) => {
+          model = candidate;
+          return this.fetchAttempt(messages, { ...options, model: candidate }, enableZdr, operation, extra);
+        },
+        this.retryPolicy,
+        this.retryHooks,
+      );
+      return { response, track };
+    } catch (error) {
+      track(null, 'error');
+      throw error;
+    }
+  }
+
+  private async fetchAttempt(
+    messages: OpenRouterMessage[],
+    options: ChatOptions & { model: string },
+    enableZdr: boolean,
+    operation: string,
+    extra: Record<string, unknown>,
+  ): Promise<Response> {
+    const attempt = await fetchWithOpenTimeout(
+      `${this.config.baseUrl}/chat/completions`,
+      {
+        body: this.buildRequestBody(messages, options, enableZdr, extra),
+        headers: this.buildHeaders(),
+        method: 'POST',
       },
-      this.retryPolicy,
-      this.retryHooks,
+      CHAT_OPEN_TIMEOUT_MS,
+      options.model,
     );
+
+    if (!attempt.ok) throw await buildOpenRouterError(attempt, operation, options.model);
+    return attempt;
   }
 
   async chat(messages: ChatMessage[], options: ChatOptions = {}): Promise<string> {
@@ -132,7 +180,7 @@ export class OpenRouterService {
     messages: ChatMessage[],
     options: ChatOptions = {},
   ): AsyncGenerator<string, void, undefined> {
-    const response = await this.fetchCompletion(
+    const { response, track } = await this.fetchCompletion(
       messages,
       options,
       this.config.enableZdrChat,
@@ -146,6 +194,8 @@ export class OpenRouterService {
     const decoder = new TextDecoder();
     const reader = body.getReader();
     let buffer = '';
+    // The usage rides on the last chunk, just before [DONE].
+    let usage: UsageFigures | null = null;
 
     try {
       while (true) {
@@ -155,6 +205,7 @@ export class OpenRouterService {
         const lines = buffer.split('\n');
         buffer = lines.pop() ?? '';
         for (const line of lines) {
+          usage = readUsageFrame(line) ?? usage;
           const trimmed = line.trim();
           if (!trimmed.startsWith('data:')) continue;
           const payload = trimmed.slice(5).trim();
@@ -172,6 +223,7 @@ export class OpenRouterService {
       }
     } finally {
       reader.releaseLock();
+      track(usage);
     }
   }
 
@@ -180,7 +232,7 @@ export class OpenRouterService {
     options: ChatOptions,
     enableZdr = this.config.enableZdrChat,
   ): Promise<string> {
-    const response = await this.fetchCompletion(
+    const { response, track } = await this.fetchCompletion(
       messages,
       options,
       enableZdr,
@@ -199,6 +251,7 @@ export class OpenRouterService {
         };
       }>;
     };
+    track(readUsage(data));
 
     const content = this.extractContent(data.choices?.[0]?.message?.content);
     if (content === null) {

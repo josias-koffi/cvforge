@@ -13,17 +13,6 @@ export const DEFAULT_RETRY_POLICY: RetryPolicy = {
   maxDelayMs: 8_000,
 };
 
-/**
- * A spoken turn has a perceived budget of about a second — an eight-second
- * ceiling has no meaning there. Better to fail over to the next voice model
- * than to leave the candidate talking to a silent room.
- */
-export const VOICE_RETRY_POLICY: RetryPolicy = {
-  maxAttempts: 2,
-  baseDelayMs: 200,
-  maxDelayMs: 900,
-};
-
 /** Injected in tests so backoff neither sleeps for real nor picks random delays. */
 export interface RetryHooks {
   sleep?: (delayMs: number) => Promise<void>;

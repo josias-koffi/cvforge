@@ -10,7 +10,7 @@ describe("parseLegalBody", () => {
         "",
         "## Le service",
         "",
-        "CVSpark aide un candidat.",
+        "Jobspark aide un candidat.",
         "",
         "- Sans mot de passe",
         "- Sans abonnement",
@@ -20,7 +20,7 @@ describe("parseLegalBody", () => {
     expect(blocks).toEqual([
       { type: "paragraph", text: "Dernière mise à jour : 21 septembre 2026." },
       { type: "heading", text: "Le service" },
-      { type: "paragraph", text: "CVSpark aide un candidat." },
+      { type: "paragraph", text: "Jobspark aide un candidat." },
       { type: "list", items: ["Sans mot de passe", "Sans abonnement"] },
     ])
   })

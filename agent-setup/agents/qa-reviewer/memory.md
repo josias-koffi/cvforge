@@ -404,3 +404,90 @@
 - **Did**: Accepté les deux stories. Points vérifiés au-delà des critères : l'alerte ne part jamais à un compte `user`, le garde-fou ne laisse aucune commande `pending` orpheline, et `GET /billing/purchase-availability` ne renvoie qu'un booléen + motif (aucune fuite du solde fournisseur vers un acheteur).
 - **Learned**: Sur une dépendance optionnelle (`creditSupply` nullable), tester les **trois** états : garde qui bloque, garde qui autorise, et absence de garde — le troisième est celui qu'on oublie et c'est la configuration de production actuelle (pas de clé de management).
 - **Open**: Toujours aucun test de composant/axe dans `apps/web` (vitest n'y couvre que `lib/**`) : le bandeau et l'état désactivé des boutons ne sont pas couverts automatiquement.
+
+### 2026-09-24 — US-118 (qa-reviewer · [[workflows/runs/analyze-design-dev-review-20260923233426]])
+- **Context** : [[sprints/sprint-026#^us-118]]
+- **Learned** : Chaque décision passe par assertProfile ; un code saisi à la main doit exister dans le référentiel local. La purge est testée sur PGlite avec deux comptes.
+
+## 2026-09-24 — US-131 review (stage 04 · [[workflows/runs/analyze-design-dev-review-20260924143552]])
+- **Context**: [[sprints/sprint-029#US-131]] · [[workflows/runs/analyze-design-dev-review-20260924143552/04-review]]
+- **Did**: Les 4 critères sont vérifiés, verdict PASS. Six remarques, dont une corrigée pendant la revue : la fenêtre des activations est désormais alignée sur le jour UTC.
+- **Why**: Le tunnel doit comparer des unités cohérentes d'une étape à l'autre.
+- **Learned**: Toute limite par IP (rate limit comme dédoublonnage) repose sur le `X-Forwarded-For` réécrit par le proxy. C'est à vérifier à chaque route publique.
+- **Open**: Réécriture de `X-Forwarded-For` par le proxy (US-132) ; test du branchement dans `AtsChecker` (US-134).
+
+## 2026-09-24 — US-132 review (stage 04 · [[workflows/runs/analyze-design-dev-review-20260924145528]])
+- **Context**: [[sprints/sprint-029#US-132]] · [[workflows/runs/analyze-design-dev-review-20260924145528/04-review]]
+- **Did**: PASS en deux passes. La première a révélé que, sur Dokploy, la landing appelle l'API par son domaine public : Traefik y écrase `X-Forwarded-For`, et tous les visiteurs partageaient un seul compteur. La seconde a validé le relais signé.
+- **Why**: Les limites par IP n'ont de sens que si l'IP est celle du visiteur.
+- **Learned**: Pour toute route publique, suivre le chemin réel du déploiement (`API_INTERNAL_URL` de chaque fichier compose), pas celui du compose de dev.
+- **Open**: Origine réservée à Cloudflare ; journaux d'accès de Traefik.
+
+## 2026-09-24 — US-133 review (stage 04 · [[workflows/runs/analyze-design-dev-review-20260924155415]])
+- **Context**: [[sprints/sprint-029#US-133]] · [[workflows/runs/analyze-design-dev-review-20260924155415/04-review]]
+- **Did**: FAIL, puis FAIL, puis PASS. Deux contournements de redirection ouverte sur `next` : `/%09/evil.com` (tabulation) et `/.//evil.com` (segments point). Corrigés et couverts par des tests.
+- **Why**: Un paramètre de redirection sur un lien envoyé par email est une cible classique d'hameçonnage.
+- **Learned**: Pour une redirection, toujours faire les deux contrôles : résoudre comme le navigateur (`new URL`), puis examiner le résultat. Un contrôle sur l'entrée seule ne suffit pas.
+- **Open**: none
+
+## 2026-09-24 — US-134 review (stage 04 · [[workflows/runs/analyze-design-dev-review-20260924162332]])
+- **Context**: [[sprints/sprint-029#US-134]] · [[workflows/runs/analyze-design-dev-review-20260924162332/04-review]]
+- **Did**: FAIL sur un contraste (texte blanc à 85 % sur le bleu primaire, environ 4,06:1), puis PASS une fois corrigé.
+- **Why**: WCAG 2.1 AA bloquant pour toute interface.
+- **Learned**: `opacity-*` s'applique aussi aux liens enfants : calculer le contraste réel sur fond coloré, pas celui de la couleur d'origine.
+- **Open**: `cta.body`, préexistant, noté au backlog.
+
+## 2026-09-24 — US-135 review (stage 04 · [[workflows/runs/analyze-design-dev-review-20260924164112]])
+- **Context**: [[sprints/sprint-029#US-135]] · [[workflows/runs/analyze-design-dev-review-20260924164112/04-review]]
+- **Did**: Les 3 critères sont vérifiés par des tests, par next start (200/308, JSON-LD, hreflang, sitemap) et par la mesure des contrastes au navigateur.
+- **Why**: Critère « pas d'outil non livré » verrouillé par un test qui lie le registre aux dossiers de route.
+- **Learned**: Mesurer les contrastes après la fin des transitions de thème : à 300 ms, les valeurs sont fausses.
+- **Open**: Rendu mobile non capturé.
+
+## 2026-09-24 — US-136 review (stage 04 · [[workflows/runs/analyze-design-dev-review-20260924173554]])
+- **Context**: [[sprints/sprint-029#US-136]] · [[workflows/runs/analyze-design-dev-review-20260924173554/04-review]]
+- **Did**: Critères vérifiés : tests, appels réels à l'API isolée sur le port 3998, build Next, navigateur. Défaut de focus trouvé et corrigé.
+- **Why**: 0 LLM prouvé par la structure (aucune dépendance) plus un espion sur fetch.
+- **Learned**: Tester le focus dans un vrai navigateur : le rendu statique ne le voit pas.
+- **Open**: Gate RGPD sur Postgres.
+
+## 2026-09-24 — Gate RGPD du sprint 029 ([[sprints/sprint-029]])
+- **Did**: Test d'intégration `leads/public-tools.rgpd.test.ts` : chaque outil public de bout en bout sur PGlite, puis `row_to_json` sur toutes les tables et recherche des chaînes propres au CV.
+- **Why**: La gate demandait une preuve sur la vraie base, pas seulement sur des stores en mémoire.
+- **Learned**: Vérifier une gate par mutation. Une première mutation échouait sur le contrôle « le test n'est pas vide », pas sur la recherche : il faut viser l'assertion elle-même.
+- **Open**: none
+
+## 2026-09-24 — US-137 review (stage 04 · [[workflows/runs/analyze-design-dev-review-20260924211657]])
+- **Context**: [[sprints/sprint-030#US-137]] · [[workflows/runs/analyze-design-dev-review-20260924211657/04-review]]
+- **Did**: Critères vérifiés par les tests (dont un test PGlite de bout en bout) et par l'API lancée. axe-core passé en happy-dom, avec un contrôle par mutation.
+- **Why**: Le critère commun demande un axe propre ; les stories précédentes ne l'avaient pas exécuté.
+- **Learned**: Relancer les limites sur l'API lancée : c'est là qu'est apparu le double comptage, invisible aux tests unitaires du middleware.
+- **Open**: La promesse « chiffres sous 24 h » dépend du débit du radar (40 lectures par heure).
+
+## 2026-09-24 — US-138 review (stage 04 · [[workflows/runs/analyze-design-dev-review-20260924215644]])
+- **Context**: [[sprints/sprint-030#US-138]] · [[workflows/runs/analyze-design-dev-review-20260924215644/04-review]]
+- **Did**: Seuil vérifié à trois niveaux (SQL, service, maillage) ; canonical, hreflang et sitemap lus sur la landing servie.
+- **Why**: « Pas de page sans données » vaut aussi pour les liens et le sitemap.
+- **Learned**: Contrôler aussi les liens internes vers des pages absentes, pas seulement les pages.
+- **Open**: none
+
+## 2026-09-24 — US-139 review (stage 04 · [[workflows/runs/analyze-design-dev-review-20260924222645]])
+- **Context**: [[sprints/sprint-030#US-139]] · [[workflows/runs/analyze-design-dev-review-20260924222645/04-review]]
+- **Did**: Quatre critères, les critères E23 et les quotas vérifiés ; PASS.
+- **Why**: Tests de bout en bout du lead, `fetch` réel limité à deux hôtes publics, axe en deux thèmes, 429 vu en vrai.
+- **Learned**: « Page employeur » ne peut venir que de la copie locale : l'afficher « si connue » est le comportement voulu, pas un manque.
+- **Open**: dette de découpage de `content/{fr,en,types}.ts`.
+
+## 2026-09-24 — US-140 review (stage 04 · [[workflows/runs/analyze-design-dev-review-20260924232418]])
+- **Context**: [[sprints/sprint-030#US-140]] · [[workflows/runs/analyze-design-dev-review-20260924232418/04-review]]
+- **Did**: Critères vérifiés par tests PGlite, landing servie (200/308/404, canonical, hreflang, sitemap) et axe avec mutation ; PASS.
+- **Why**: « Seules les entreprises en base » et « pas de contenu mince » se prouvent sur la vraie base après relecture.
+- **Learned**: Tester l'accord entre un filtre SQL et son jumeau TS, sinon sitemap et page divergent.
+- **Open**: sitemap à découper au-delà de 4 500 entreprises.
+
+## 2026-09-25 — US-141 review (stage 04 · [[workflows/runs/analyze-design-dev-review-20260925000215]])
+- **Context**: [[sprints/sprint-030#US-141]] · [[workflows/runs/analyze-design-dev-review-20260925000215/04-review]]
+- **Did**: Les 4 critères et la gate coût de la DoD sont vérifiés en test et sur l'API lancée (429, 503 + `Retry-After`, panne OpenRouter en 503), et le lead racheté bout en bout.
+- **Why**: Première route publique E23 qui dépense : le plafond doit être prouvé avant mise en ligne.
+- **Learned**: Deux 503 distincts (budget avec `Retry-After`, panne sans) : vérifier que la landing les formule différemment.
+- **Open**: Message `BUDGET_EXHAUSTED` générique « analyser vos CV » partagé par tous les outils ; pré-sélection `/entretiens/new` non vue au navigateur.

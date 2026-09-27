@@ -5,15 +5,19 @@ import { usePathname } from "next/navigation"
 import {
   BellIcon,
   BriefcaseBusinessIcon,
+  Building2Icon,
   CoinsIcon,
   LayoutDashboardIcon,
   MicIcon,
   ChartColumnIcon,
   PackageIcon,
+  RadarIcon,
   ScaleIcon,
   SettingsIcon,
   ScrollTextIcon,
   PlusIcon,
+  SearchIcon,
+  SparklesIcon,
   UserRoundIcon,
   UsersIcon,
 } from "lucide-react"
@@ -37,13 +41,21 @@ import {
 const adminItems = [
   { href: "/admin/users", icon: UsersIcon, title: "Utilisateurs" },
   { href: "/admin/offers", icon: PackageIcon, title: "Offres de crédits" },
-  { href: "/admin/metrics", icon: ChartColumnIcon, title: "Métriques" },
+  { href: "/admin/job-search", icon: RadarIcon, title: "Collecte d'offres" },
+  { href: "/admin/metrics", icon: ChartColumnIcon, title: "Pilotage" },
   { href: "/admin/audit-log", icon: ScrollTextIcon, title: "Journal d'audit" },
   { href: "/admin/legal", icon: ScaleIcon, title: "Documents légaux" },
 ]
 
 const mainItems = [
   { href: "/dashboard", icon: LayoutDashboardIcon, title: "Tableau de bord" },
+  { href: "/offres-du-jour", icon: SparklesIcon, title: "Offres du jour" },
+  { href: "/offres", icon: SearchIcon, title: "Rechercher une offre" },
+  {
+    href: "/entreprises",
+    icon: Building2Icon,
+    title: "Entreprises qui recrutent",
+  },
   { href: "/candidatures", icon: BriefcaseBusinessIcon, title: "Candidatures" },
   { href: "/entretiens", icon: MicIcon, title: "Entretiens" },
   { href: "/profile", icon: UserRoundIcon, title: "Mes profils" },

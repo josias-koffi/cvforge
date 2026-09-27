@@ -4,6 +4,7 @@ import type { Metadata } from "next"
 import { InterviewSetupForm } from "@/components/interview/interview-setup-form"
 import { PageHeader } from "@/components/layout/page-header"
 import { api } from "@/lib/api"
+import { preselectedApplicationId } from "@/lib/interview/preselection"
 
 export const metadata: Metadata = { title: "Nouvel entretien" }
 
@@ -15,10 +16,9 @@ export default async function NewInterviewPage({
     searchParams,
   ])
 
-  // `?candidature=` lets the candidature page send the user straight here with
-  // the right offer already chosen.
-  const preselected =
-    typeof query.candidature === "string" ? query.candidature : undefined
+  // `?candidature=` lets the candidature page, and the interview questions'
+  // magic link, send the user straight here with the offer already chosen.
+  const preselected = preselectedApplicationId(query.candidature, applications)
 
   return (
     <>

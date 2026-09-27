@@ -428,3 +428,98 @@
 - **Why**: Le sprint 020 devait couvrir `/notifications`, non traité par les sprints 016-019, sans rouvrir le contrat de notifications déjà livré en US-035/US-041.
 - **Learned**: Les 5 critères d'acceptation sont directement testables sans question produit supplémentaire.
 - **Open**: US-077 (onboarding) est la dernière tâche du sprint 020.
+
+## 2026-09-23 — Plan « API France Travail » (E20 amendé, E21, E22 en brouillon)
+- **Context**: [[sprints/sprint-026]] · [[sprints/sprint-027]] · [[sprints/sprint-028]] · [[decisions/ADR-024-france-travail-platform-rome]]
+- **Did**: Axes retenus par le propriétaire : matching ROME, marché caché (La Bonne Boîte), radar marché et salaires, alternance de bout en bout, salons, fiches entreprises enrichies. Sprint 026 amendé : socle US-122 (couche France Travail) et US-123 (référentiel ROME), US-118 précisée (ROMEO, puis confirmation par le candidat). Sprints 027 et 028 en brouillon.
+- **Why**: Le code ROME est le prérequis commun à La Bonne Boîte, La bonne alternance (qui ne cherche que par ROME ou département), Offres v2 `codeROME` et Marché du travail.
+- **Learned**: L'US-118 d'origine supposait un ROME optionnel dans `targetRoles` ; c'est faux (`string[]`). Vérifier le type avant d'écrire qu'un champ « existe déjà ».
+- **Open**: Le propriétaire doit souscrire ROMEO v2 et ROME 4.0 (puis Marché du travail et Mes évènements emploi). Report dans `vision.md` à faire (E19 à E22). Crédit ou non pour l'envoi de candidature en alternance.
+
+### 2026-09-24 — US-118 (product-owner · [[workflows/runs/analyze-design-dev-review-20260923233426]])
+- **Context** : [[sprints/sprint-026#^us-118]]
+- **Learned** : Les suggestions sont ce que l'IA propose, les confirmées ce que le candidat retient ; une suggestion écartée reste en base pour ne jamais revenir. Reste à ajouter les appellations à l'export RGPD.
+
+## 2026-09-24 — Plan « Outils gratuits d'acquisition » (E23, sprints 029 et 030 en brouillon)
+- **Context**: [[sprints/sprint-029]] · [[sprints/sprint-030]] · [[decisions/ADR-022-public-ai-surface-rate-limiting]]
+- **Did**: Le propriétaire a validé quatre outils sans compte en plus du scan ATS : comparateur CV ↔ offre, métier qui recrute + salaire, vérification d'employeur, questions d'entretien probables. Il a choisi de mesurer par événements côté API, sans outil tiers. US-131 à US-141 écrites, miroir claude-space resynchronisé.
+- **Why**: Le tunnel ATS affichait 7 scans, 3 déverrouillages et 0 compte converti, sans aucune mesure front. Les briques E19-E21 coûtent peu ou rien par appel.
+- **Learned**: Chaque outil convertit vers un compte pré-rempli avec ce que le visiteur a saisi hors CV (offre, ROME + lieu, SIREN). La règle RGPD d'E18 interdit d'y mettre du texte de CV.
+- **Open**: Report de E23 dans `vision.md` (avec E18 à E22). Comparateur : page dédiée ou onglet de la page ATS. Volume de pages SEO métier au lancement.
+
+## 2026-09-24 — US-131 analyze (stage 01 · [[workflows/runs/analyze-design-dev-review-20260924143552]])
+- **Context**: [[sprints/sprint-029#US-131]] · [[workflows/runs/analyze-design-dev-review-20260924143552/01-analyze]]
+- **Did**: Périmètre fixé (outil `ats` seul, 4 étapes, un visiteur par jour et par étape, `ip_hash` salé par jour). Critère « rate-limitée (US-132) » amendé : la route est bornée par des valeurs fermées et le dédoublonnage ; US-132 l'ajoutera au rate limit.
+- **Why**: US-132 vient après US-131 dans le sprint, et le limiteur actuel compterait chaque événement comme un scan ATS.
+- **Learned**: En écrivant un sprint, vérifier que l'ordre des stories suit leurs dépendances.
+- **Open**: Mention de la mesure d'audience dans la politique de confidentialité (propriétaire, via /admin/legal).
+
+## 2026-09-24 — US-132 analyze (stage 01 · [[workflows/runs/analyze-design-dev-review-20260924145528]])
+- **Context**: [[sprints/sprint-029#US-132]] · [[workflows/runs/analyze-design-dev-review-20260924145528/01-analyze]]
+- **Did**: Politique de limitation par route ; `/public/events` à 60 par heure et 300 par jour pour une IP, budget de 20 000 par jour. Critère `X-Forwarded-For` scindé : un en-tête d'IP configurable dans le code, la vérification en production dans le DoD du sprint.
+- **Why**: Derrière Cloudflare, c'est la landing qui voit une IP partagée ou falsifiable. L'API est protégée par le comportement par défaut de Traefik.
+- **Learned**: Un critère qui dépend de l'infrastructure hors dépôt ne se vérifie pas dans une story de code : il va au DoD du sprint.
+- **Open**: Vérification en production (en-tête `CF-Connecting-IP`, origine réservée à Cloudflare).
+
+## 2026-09-24 — US-133 analyze (stage 01 · [[workflows/runs/analyze-design-dev-review-20260924155415]])
+- **Context**: [[sprints/sprint-029#US-133]] · [[workflows/runs/analyze-design-dev-review-20260924155415/01-analyze]]
+- **Did**: L'intention voyage avec le lien magique (colonne `intent`, migration 0041). Types `ats_scan`, `offer`, `job_search` et `company`. Effet livré ici pour `ats_scan` seulement : le rapport dans l'app. Les trois autres arrivent avec leur outil.
+- **Why**: `onAccountCreated` ignore les comptes existants. Et la landing promettait déjà « le lien vous ramènera à ce rapport », ce qui était faux.
+- **Learned**: Vérifier ce que la page publique promet déjà au visiteur : c'est souvent là que se trouve la dette produit.
+- **Open**: Crédit et profil pour les intentions `offer`, `job_search` et `company` (US-136, US-137, US-139).
+
+## 2026-09-24 — US-134 analyze (stage 01 · [[workflows/runs/analyze-design-dev-review-20260924162332]])
+- **Context**: [[sprints/sprint-029#US-134]] · [[workflows/runs/analyze-design-dev-review-20260924162332/01-analyze]]
+- **Did**: Erreurs du tunnel ATS par code (liste partagée), `locale` transmise, liens depuis le Hero et le CTA. Critère « branchement testé » précisé : les quatre appels sont testés dans `atsFunnel`.
+- **Why**: La version EN affichait des messages français.
+- **Learned**: none
+- **Open**: none
+
+## 2026-09-24 — US-135 analyze (stage 01 · [[workflows/runs/analyze-design-dev-review-20260924164112]])
+- **Context**: [[sprints/sprint-029#US-135]] · [[workflows/runs/analyze-design-dev-review-20260924164112/01-analyze]]
+- **Did**: Hub des outils gratuits cadré : un registre des outils livrés alimente le hub, la section home et le JSON-LD.
+- **Why**: Le critère « pas d'outil non livré » se tient par construction plutôt que par drapeau.
+- **Learned**: Un outil entre dans le registre le jour où sa page est livrée ; pas de carte « bientôt ».
+- **Open**: Le hub ne contient qu'un outil jusqu'à US-136.
+
+## 2026-09-24 — US-136 analyze (stage 01 · [[workflows/runs/analyze-design-dev-review-20260924173554]])
+- **Context**: [[sprints/sprint-029#US-136]] · [[workflows/runs/analyze-design-dev-review-20260924173554/01-analyze]]
+- **Did**: Comparateur cadré en deux tranches (API, landing). Candidature offerte à l'inscription, avec extraction payée par la plateforme.
+- **Why**: Le critère « sans crédit consommé » interdisait d'appeler importFromText, qui débite.
+- **Learned**: L'activation d'un outil sans email stocké se mesure par une trace métier (l'étiquette de source de la candidature).
+- **Open**: La gate RGPD du sprint demande encore un test d'intégration sur Postgres.
+
+## 2026-09-24 — US-137 analyze (stage 01 · [[workflows/runs/analyze-design-dev-review-20260924211657]])
+- **Context**: [[sprints/sprint-030#US-137]] · [[workflows/runs/analyze-design-dev-review-20260924211657/01-analyze]]
+- **Did**: Outil cadré en deux tranches. Un couple jamais lu est mis en file (`market_demand`) pour le radar, sans appel à la requête.
+- **Why**: `market_stats` ne couvre que les couples des projets de candidats (25 lignes en dev) ; le critère interdit d'appeler France Travail.
+- **Learned**: L'intention `job_search` doit porter l'appellation, pas le code métier : c'est l'appellation que le projet confirme.
+- **Open**: none
+
+## 2026-09-24 — US-138 analyze (stage 01 · [[workflows/runs/analyze-design-dev-review-20260924215644]])
+- **Context**: [[sprints/sprint-030#US-138]] · [[workflows/runs/analyze-design-dev-review-20260924215644/01-analyze]]
+- **Did**: Volume tranché. On indexe les couples qui ont des données (tension et offres sur 12 mois), plafonnés à 20 000.
+- **Why**: `market_stats` ne contient que des couples demandés : le volume suit la demande sans liste à tenir.
+- **Learned**: Une question « tous ou les plus demandés » se tranche parfois par la donnée elle-même.
+- **Open**: none
+
+## 2026-09-24 — US-139 analyze (stage 01 · [[workflows/runs/analyze-design-dev-review-20260924222645]])
+- **Context**: [[sprints/sprint-030#US-139]] · [[workflows/runs/analyze-design-dev-review-20260924222645/01-analyze]]
+- **Did**: Outil cadré : recherche Annuaire par nom/SIREN, fiche en un appel (+ Egapro), page employeur lue dans la copie locale, CTA → `/entreprises`.
+- **Why**: « Sans clé API » exclut un appel France Travail à la requête ; l'Annuaire tolère ~5/s par IP, partagé avec le job horaire.
+- **Learned**: Une réponse `/search` de l'Annuaire contient déjà tout le dossier : inutile de rappeler par SIREN.
+- **Open**: none
+
+## 2026-09-24 — US-140 analyze (stage 01 · [[workflows/runs/analyze-design-dev-review-20260924232418]])
+- **Context**: [[sprints/sprint-030#US-140]] · [[workflows/runs/analyze-design-dev-review-20260924232418/01-analyze]]
+- **Did**: Pages pour les entreprises de `companies` publiables, ouvertes, avec NAF et un fait de plus ; plafond 4 500 (sitemap < 50 000).
+- **Why**: La table contient un entrepreneur individuel (nom d'une personne) : le statut n'était pas stocké, d'où une colonne `publishable`.
+- **Learned**: Avant d'indexer une donnée publique, vérifier qu'elle ne nomme pas une personne.
+- **Open**: none
+
+## 2026-09-25 — US-141 analyze (stage 01 · [[workflows/runs/analyze-design-dev-review-20260925000215]])
+- **Context**: [[sprints/sprint-030#US-141]] · [[workflows/runs/analyze-design-dev-review-20260925000215/01-analyze]]
+- **Did**: Outil cadré : offre seule → 5 questions (question, intention, type), un appel LLM borné, 3/h·10/j par IP et 300/j global ; lead `interview` → candidature créée + `/entretiens/new` pré-sélectionné.
+- **Why**: Sans CV, pas de donnée personnelle envoyée au modèle ; la candidature donne au recruteur IA l'offre comme contexte.
+- **Learned**: La panne LLM (503 sans `Retry-After`) et le budget épuisé (503 avec) sont deux codes distincts pour la landing.
+- **Open**: none

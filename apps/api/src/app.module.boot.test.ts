@@ -28,6 +28,7 @@ describe("AppModule dependency graph", () => {
       INTERVIEW_STATE_FILE: join(stateDirectory, "interviews.json"),
       NOTIFICATIONS_STATE_FILE: join(stateDirectory, "notifications.json"),
       OPENROUTER_API_KEY: "boot-test-key",
+      OPENAI_API_KEY: "boot-test-key",
       PROFILES_STATE_FILE: join(stateDirectory, "profiles.json"),
       TEMPLATES_STATE_FILE: join(stateDirectory, "templates.json"),
     });

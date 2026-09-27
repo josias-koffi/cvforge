@@ -21,7 +21,7 @@ resource "dokploy_backup" "postgres" {
   destination_id = dokploy_destination.backups.id
 
   service_type          = "compose"
-  service_id            = dokploy_compose.cvspark.id
+  service_id            = dokploy_compose.jobspark.id
   service_name          = "postgres"
   compose_database_type = "postgres"
   compose_database_user = var.postgres_user
@@ -40,7 +40,7 @@ resource "dokploy_volume_backup" "api_data" {
   destination_id = dokploy_destination.backups.id
 
   service_type = "compose"
-  service_id   = dokploy_compose.cvspark.id
+  service_id   = dokploy_compose.jobspark.id
   service_name = "api"
   volume_name  = "${local.volume_prefix}_api_data"
 

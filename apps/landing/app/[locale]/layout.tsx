@@ -7,7 +7,8 @@ import { SiteFooter } from "@/components/site-footer"
 import { SiteHeader } from "@/components/site-header"
 import { ThemeProvider } from "@/components/theme"
 import { getDictionary } from "@/lib/dictionaries"
-import { hasLocale, locales } from "@/lib/i18n"
+import { hasLocale, homePath, locales } from "@/lib/i18n"
+import { pageMetadata } from "@/lib/seo"
 import { siteUrl } from "@/lib/site"
 import { cn } from "@/lib/utils"
 
@@ -29,25 +30,14 @@ export async function generateMetadata({
 
   return {
     metadataBase: new URL(siteUrl()),
-    title: { default: meta.title, template: "%s · CVSpark" },
-    description: meta.description,
-    applicationName: "CVSpark",
-    alternates: {
-      canonical: `/${locale}`,
-      languages: { fr: "/fr", en: "/en", "x-default": "/fr" },
-    },
-    openGraph: {
-      type: "website",
-      siteName: "CVSpark",
-      locale: locale === "fr" ? "fr_FR" : "en_US",
+    title: { default: meta.title, template: "%s · Jobspark" },
+    applicationName: "Jobspark",
+    ...pageMetadata({
+      locale,
       title: meta.title,
       description: meta.description,
-    },
-    twitter: {
-      card: "summary_large_image",
-      title: meta.title,
-      description: meta.description,
-    },
+      path: homePath,
+    }),
   }
 }
 
@@ -74,7 +64,11 @@ export default async function LocaleLayout({
     >
       <body className="flex min-h-svh flex-col">
         <ThemeProvider>
-          <SiteHeader locale={locale} nav={dict.nav} />
+          <SiteHeader
+            locale={locale}
+            nav={dict.nav}
+            features={dict.featurePages}
+          />
           <main className="flex-1">{children}</main>
           <SiteFooter locale={locale} dict={dict} />
         </ThemeProvider>

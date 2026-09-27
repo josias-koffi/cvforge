@@ -56,6 +56,7 @@ export class NotificationsController {
     body: {
       email?: {
         applicationFollowUp?: boolean;
+        jobDigest?: boolean;
         creditPurchaseConfirmed?: boolean;
       };
     },
@@ -65,6 +66,7 @@ export class NotificationsController {
 
     return this.notificationsService.updatePreferences(session.email, {
       applicationFollowUp: body.email?.applicationFollowUp,
+      jobDigest: body.email?.jobDigest,
       creditPurchaseConfirmed: body.email?.creditPurchaseConfirmed,
     });
   }

@@ -48,7 +48,7 @@ export const notificationPreferences = pgTable("notification_preferences", {
   email: jsonb("email")
     .$type<NotificationPreferences["email"]>()
     .notNull()
-    .default(sql`'{"applicationFollowUp": true, "creditPurchaseConfirmed": true}'::jsonb`),
+    .default(sql`'{"applicationFollowUp": true, "creditPurchaseConfirmed": true, "jobDigest": true}'::jsonb`),
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

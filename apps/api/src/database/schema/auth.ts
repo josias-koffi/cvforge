@@ -1,4 +1,4 @@
-import type { AccountStatus } from "@cvforge/types";
+import type { AccountStatus, LeadIntent } from "@cvforge/types";
 import type { AuthConsentRecord, AuthRole } from "../../auth/auth.types";
 import { sql } from "drizzle-orm";
 import {
@@ -29,6 +29,14 @@ export const authAccounts = pgTable(
      * invalid without a session table or a write per sign-in.
      */
     sessionsValidFrom: timestamp("sessions_valid_from", { withTimezone: true }),
+    /** The guided first-login onboarding was finished (US-149). */
+    onboardingCompletedAt: timestamp("onboarding_completed_at", {
+      withTimezone: true,
+    }),
+    /** The dashboard's "Bien démarrer" checklist was hidden (US-149). */
+    gettingStartedDismissedAt: timestamp("getting_started_dismissed_at", {
+      withTimezone: true,
+    }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -60,6 +68,38 @@ export const authInvitations = pgTable(
     ),
     index("auth_invitations_email_idx").on(table.email),
     index("auth_invitations_created_by_idx").on(table.createdBy),
+  ],
+);
+
+/**
+ * Magic links, pending only.
+ *
+ * They used to live in a `Map` on the service, which meant every deployment —
+ * and every Dokploy redeploy — silently invalidated every link already sitting
+ * in someone's inbox. A row survives the restart.
+ *
+ * There is deliberately no `consumed_at`: a link is *deleted* when it is used
+ * or once it expires. Nothing reads a spent link, and the row carries an email
+ * address, so keeping it would only be personal data with no reader. Deleting
+ * is also what makes redemption single-use without a transaction — see
+ * `PgAuthAccountStore.consumeMagicLink`.
+ */
+export const authMagicLinks = pgTable(
+  "auth_magic_links",
+  {
+    tokenHash: text("token_hash").primaryKey(),
+    email: text("email").notNull(),
+    consent: jsonb("consent").$type<AuthConsentRecord | null>(),
+    /** What a free tool's visitor asked for; dies with the link (US-133). */
+    intent: jsonb("intent").$type<LeadIntent | null>(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("auth_magic_links_email_idx").on(table.email),
+    index("auth_magic_links_expires_at_idx").on(table.expiresAt),
   ],
 );
 

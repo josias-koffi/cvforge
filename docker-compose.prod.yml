@@ -47,6 +47,14 @@ services:
     environment:
       # The landing only links to the app; /login redirects to this origin.
       APP_URL: https://${WEB_DOMAIN}
+      # Who the visitor is, for the per-IP limits (US-132, ADR-022). Empty,
+      # the default, uses the X-Forwarded-For Traefik rewrites. Set it to
+      # cf-connecting-ip only once the records are orange-clouded: without
+      # Cloudflare in front, any visitor can write that header themselves.
+      CLIENT_IP_HEADER: ${CLIENT_IP_HEADER:-}
+      # Signs the visitor's address relayed to the API (US-132). Same value as
+      # the API's; empty relays nothing.
+      LANDING_PROXY_SECRET: ${LANDING_PROXY_SECRET:-}
       NODE_ENV: production
     networks:
       - default
@@ -83,14 +91,25 @@ services:
       OPENROUTER_MODEL: ${OPENROUTER_MODEL:-}
       OPENROUTER_FALLBACK_MODELS: ${OPENROUTER_FALLBACK_MODELS:-}
       OPENROUTER_MAX_ATTEMPTS: ${OPENROUTER_MAX_ATTEMPTS:-3}
-      INTERVIEW_STT_MODEL: ${INTERVIEW_STT_MODEL:-}
-      INTERVIEW_STT_FALLBACK_MODELS: ${INTERVIEW_STT_FALLBACK_MODELS:-}
-      INTERVIEW_VOICE_MODEL: ${INTERVIEW_VOICE_MODEL:-}
-      INTERVIEW_VOICE_FALLBACK_MODELS: ${INTERVIEW_VOICE_FALLBACK_MODELS:-}
-      INTERVIEW_VOICE: ${INTERVIEW_VOICE:-}
-      INTERVIEW_VOICE_MAX_ATTEMPTS: ${INTERVIEW_VOICE_MAX_ATTEMPTS:-}
-      INTERVIEW_VOICE_MAX_TOKENS: ${INTERVIEW_VOICE_MAX_TOKENS:-}
+      # Live interview voice, straight to OpenAI (ADR-026). Blank keeps the defaults.
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      INTERVIEW_REALTIME_MODEL: ${INTERVIEW_REALTIME_MODEL:-}
+      INTERVIEW_REALTIME_VOICE: ${INTERVIEW_REALTIME_VOICE:-}
+      INTERVIEW_REALTIME_EAGERNESS: ${INTERVIEW_REALTIME_EAGERNESS:-}
+      INTERVIEW_REALTIME_NOISE_REDUCTION: ${INTERVIEW_REALTIME_NOISE_REDUCTION:-}
+      INTERVIEW_REALTIME_TURN_DETECTION: ${INTERVIEW_REALTIME_TURN_DETECTION:-}
+      INTERVIEW_REALTIME_VAD_THRESHOLD: ${INTERVIEW_REALTIME_VAD_THRESHOLD:-}
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+      # Public routes (ADR-022). Listed one by one: a container only receives
+      # what this list names, so a value set only in the stack's .env would
+      # never reach the process.
+      ATS_IP_HASH_SECRET: ${ATS_IP_HASH_SECRET:-}
+      ATS_PUBLIC_HOURLY_LIMIT: ${ATS_PUBLIC_HOURLY_LIMIT:-}
+      ATS_PUBLIC_DAILY_LIMIT: ${ATS_PUBLIC_DAILY_LIMIT:-}
+      ATS_PUBLIC_DAILY_BUDGET: ${ATS_PUBLIC_DAILY_BUDGET:-}
+      # Lets the landing vouch for the visitor's address, which Traefik
+      # overwrites on the way in (US-132). Empty: the relay is ignored.
+      LANDING_PROXY_SECRET: ${LANDING_PROXY_SECRET:-}
     networks:
       - default
       - traefik-public

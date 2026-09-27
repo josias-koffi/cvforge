@@ -4,7 +4,6 @@ import { describe, expect, it } from "vitest"
 import {
   applyImportedCv,
   buildGenerationRequest,
-  countCompletedSections,
   createEmptyProfile,
   duplicateBaseProfile,
   isProfileReady,
@@ -99,14 +98,5 @@ describe("profile model", () => {
     expect(copy.label).toBe("Back-end (copie)")
     expect(copy.meta.lastSavedAt).toBeNull()
     expect(original.sections.experiences[0].company).toBe("Acme")
-  })
-
-  it("counts the filled editor sections", () => {
-    const profile = createEmptyProfile("me@example.com")
-    expect(countCompletedSections(profile)).toBe(0)
-
-    profile.sections.technicalSkills = ["TypeScript"]
-    profile.sections.certifications = [{ issuer: "AWS", title: "SAA", year: "2025" }]
-    expect(countCompletedSections(profile)).toBe(2)
   })
 })

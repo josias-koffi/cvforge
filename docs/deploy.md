@@ -1,6 +1,6 @@
 # Deployment
 
-CVSpark deploys itself. The repository owns its images, its stack file, its DNS
+Jobspark deploys itself. The repository owns its images, its stack file, its DNS
 records, its Dokploy configuration and its pipeline; `koklo-infra` only provides
 the shared VPS20 host and the Dokploy instance at `https://dokploy.ops.koklo.dev`.
 
@@ -11,7 +11,7 @@ Everything runs in CI. Nothing is applied from a workstation.
 `.github/workflows/deploy.yml` runs on every push to `develop` (→ staging) and
 `main` (→ production):
 
-1. **build** — pushes `ghcr.io/josias-koffi/cvspark-{web,landing,api,puppeteer}`
+1. **build** — pushes `ghcr.io/josias-koffi/jobspark-{web,landing,api,puppeteer}`
    tagged with the short commit sha (plus the branch name, and `latest` on main).
 2. **tofu** — `tofu plan` on `infra/terraform/` (Cloudflare DNS), then `apply`
    only when the plan reports changes. The plan is printed in the job summary.
@@ -28,13 +28,13 @@ re-run with an unchanged tag produces an empty plan and no redeploy.
 
 | | staging | production |
 |---|---|---|
-| Dokploy project | `cvspark-staging` | `cvspark` |
-| Dokploy state | `cvspark/dokploy-staging.tfstate` | `cvspark/dokploy-production.tfstate` |
-| landing | `cvspark-staging.koklo.dev` | `cvspark.koklo.dev` |
-| app (web) | `cvspark-app-staging.koklo.dev` | `cvspark-app.koklo.dev` |
-| api | `cvspark-api-staging.koklo.dev` | `cvspark-api.koklo.dev` |
-| volumes | `cvspark-staging_*` | `cvforge_*` (legacy names, kept on purpose) |
-| cookie name | `cvspark_staging_session` | `cvspark_session` |
+| Dokploy project | `jobspark-staging` | `jobspark` |
+| Dokploy state | `jobspark/dokploy-staging.tfstate` | `jobspark/dokploy-production.tfstate` |
+| landing | `jobspark-staging.koklo.dev` | `jobspark.koklo.dev` |
+| app (web) | `jobspark-app-staging.koklo.dev` | `jobspark-app.koklo.dev` |
+| api | `jobspark-api-staging.koklo.dev` | `jobspark-api.koklo.dev` |
+| volumes | `jobspark-staging_*` | `cvforge_*` (legacy names, kept on purpose) |
+| cookie name | `jobspark_staging_session` | `jobspark_session` |
 
 One state per environment is what lets the deploy job keep
 `environment: staging|production` and see only that environment's secrets. All of
@@ -49,7 +49,7 @@ Repository secrets: `DOKPLOY_API_KEY`, `VPS20_IP` (the DNS record target),
 
 Per-environment (`staging`, `production`) secrets — unchanged, and the only
 per-environment configuration left: `POSTGRES_PASSWORD`, `MINIO_ACCESS_KEY`,
-`MINIO_SECRET_KEY`, `OPENROUTER_API_KEY`, `STRIPE_SECRET_KEY`,
+`MINIO_SECRET_KEY`, `OPENROUTER_API_KEY`, `OPENAI_API_KEY`, `STRIPE_SECRET_KEY`,
 `STRIPE_WEBHOOK_SECRET`, `AUTH_SESSION_SECRET`, `SMTP_USER`, `SMTP_PASSWORD`,
 `NEXT_SERVER_ACTIONS_ENCRYPTION_KEY` (fixed value, or every redeploy invalidates
 in-flight server actions).
@@ -67,6 +67,63 @@ inert (no balance shown, no alert, purchases unaffected). The two thresholds,
 once the account is empty), are non-secret defaults in
 `infra/dokploy/variables.tf` and only need overriding to change them.
 
+Optional, per environment: `FRANCE_TRAVAIL_CLIENT_ID` and
+`FRANCE_TRAVAIL_CLIENT_SECRET`, the credentials of an application declared on
+<https://francetravail.io> and subscribed to *Offres d'emploi v2*. They feed the
+daily offer collection. Left unset, the deploy succeeds and the source stays
+inert — the collection then calls nothing and the offer database stays empty.
+
+The same key serves every France Travail API (ADR-024). `FRANCE_TRAVAIL_APIS`
+lists the ones actually subscribed, comma-separated (default: `offres`); an API
+left out is never called. Check one with `ft:smoke <api>` (`ft:smoke:built` in
+the container) before adding it: an `invalid_scope` there means it is not
+subscribed, or its scope differs from the catalogue and needs
+`FRANCE_TRAVAIL_<ID>_SCOPE`.
+
+With `rome-metiers`, `rome-competences` and `rome-fiches-metiers` enabled (the
+Terraform default), the API copies the ROME 4.0 referential into `rome_*` once
+a week by itself, in three calls. The first copy can be forced right after a
+deploy with `rome:sync:built`; a failed sync keeps the previous copy. With
+`rome-substitutions` enabled too, each sync asks France Travail for the
+successor of every code a user still holds that the referential dropped, and
+rewrites it (`lookups` and `substitutions` in `rome_sync_runs.stats`).
+
+With `marche-travail` enabled, the API reads the labour market figures of every
+confirmed ROME job in each department of the searches (and the other
+departments of their region) into `market_stats`, once a month, forty reads an
+hour. `market:refresh:built` fills it right after a deploy.
+
+With `la-bonne-boite` enabled, it reads once a week the companies La Bonne
+Boîte expects to hire in each confirmed job, near each place of the searches
+(`hiring_companies`, sixty reads an hour). `hiring-companies:refresh:built`
+fills it right after a deploy.
+
+The company behind each of them is then read monthly from two public, keyless
+APIs, the Annuaire des entreprises (`recherche-entreprises.api.gouv.fr`) and
+Egapro (`companies`, a hundred reads an hour). Nothing to configure; outbound
+HTTPS to both hosts must be allowed. `companies:refresh:built` fills it once
+`hiring-companies:refresh:built` has run.
+With `pages-employeurs` enabled as well, the same pass looks up each
+company's France Travail employer page, by name in its department, and links
+it on the company page (29 % of them have one). Enabling it later reads every
+company once at the next passes, without waiting for the month.
+
+Optional too: `LA_BONNE_ALTERNANCE_API_KEY`, a key created on
+<https://api.apprentissage.beta.gouv.fr>. It adds apprenticeship offers, and is
+only called for searches that ask for an alternance. A *sandbox* key is granted
+the route automatically; a production key is requested from their support. Left
+unset, that source stays inert like the one above.
+
+> A **sandbox** key queries their *recette* environment: roughly one offer in
+> thirty then carries a `labonnealternance-recette.*` link, which is not
+> public. It proves the wiring, and must not feed a database candidates read —
+> those links would stay in it until the offers expire.
+
+> Setting them in the Dokploy UI does **not** work, and worse, looks like it
+> does: Terraform rewrites the stack's environment file on every deploy, and a
+> compose service only receives the variables its own `environment:` block
+> names. Both are handled here; the values belong in GitHub secrets.
+
 Generate `DOKPLOY_API_KEY` from the Dokploy UI (*Settings > Profile > API/CLI
 Keys > Generate New Key*) and leave **Enable Rate Limiting off**: a rate-limited
 key answers `401`, not `429`, and the window is 24 hours.
@@ -78,10 +135,10 @@ no longer used by this workflow.
 
 ## Going to production
 
-CVSpark is the evolution of CVForge, so the live production is still the CVForge
+Jobspark is the evolution of CVForge, so the live production is still the CVForge
 stack: `cvforge.koklo.dev`, `cvforge-app.koklo.dev` and `cvforge-api.koklo.dev`,
 proxied by Cloudflare and deployed from `koklo-infra/stacks/cvforge`. The
-`cvspark*.koklo.dev` records do not exist yet. Dokploy runs on VPS20 at
+`jobspark*.koklo.dev` records do not exist yet. Dokploy runs on VPS20 at
 `dokploy.ops.koklo.dev` with a valid Let's Encrypt certificate.
 
 The cutover is therefore a rename *and* a change of deployment mechanism. Do it
@@ -105,7 +162,7 @@ in place as a record.
 Everything downstream depends on this being done.
 
 **4. DNS.** Merging into `develop` runs the `tofu` job, which creates the six
-`cvspark*` records. **Create them unproxied first.** Dokploy resolves
+`jobspark*` records. **Create them unproxied first.** Dokploy resolves
 Let's Encrypt over HTTP-01, and an orange-cloud record with no origin
 certificate yet gives Cloudflare a 526 until issuance completes. Set
 `proxied = false` in `infra/terraform/dns.tf`, apply, let the certificates
@@ -115,19 +172,47 @@ itself unproxied, which is why its certificate issued cleanly.
 **4b. Mail sends from `@koklo.dev`, and only from there.** Resend verifies each
 subdomain independently. Only the apex carries the records — DKIM at
 `resend._domainkey.koklo.dev`, plus the `send.koklo.dev` MX and SPF. Neither
-`cvspark.koklo.dev` nor `cvforge.koklo.dev` is verified, so a From on either is
+`jobspark.koklo.dev` nor `cvforge.koklo.dev` is verified, so a From on either is
 rejected with a 403 domain mismatch. That is why `EMAIL_FROM` is
-`CVSpark <no-reply@koklo.dev>`.
+`Jobspark <no-reply@koklo.dev>`.
 
 Note this means production mail was already failing before the cutover: the
 pre-Dokploy stack sent from `no-reply@cvforge.koklo.dev`, which Resend never
 accepted. Magic links are how people sign in, so this is worth checking after
 the first deploy.
 
-To move to `no-reply@cvspark.koklo.dev` later — Resend recommends a subdomain
+To move to `no-reply@jobspark.koklo.dev` later — Resend recommends a subdomain
 over the apex, to keep each product's sending reputation separate — add that
 subdomain in Resend, publish the records it issues into the `koklo.dev` zone,
 wait for *verified*, then change `email_from` in `infra/dokploy/variables.tf`.
+
+Checklist for that move, and for the Jobspark logo next to the sender:
+
+1. **Resend**: add `jobspark.koklo.dev`, copy the DKIM value it issues into
+   `resend_jobspark_dkim` (and the bounce MX region into `resend_feedback_mx`
+   if it is not `eu-west-1`) in `infra/terraform`, apply, wait for *verified*.
+   Then set `email_from` to `Jobspark <no-reply@jobspark.koklo.dev>`.
+2. **Receive mail** with Cloudflare Email Routing on `koklo.dev`: forward
+   `support@jobspark.koklo.dev` (the Reply-To, the footer address and the DMARC
+   report mailbox) and `no-reply@jobspark.koklo.dev` (needed once, to verify the
+   accounts below) to a real inbox.
+3. **Sender picture without a certificate**: create a Gravatar and a Google
+   account on `no-reply@jobspark.koklo.dev`, both with
+   `apps/landing/public/email/jobspark-avatar.png`. Gmail shows the Google
+   account's picture; a few clients read Gravatar.
+4. **BIMI**: `default._bimi.jobspark` already points at
+   `https://jobspark.koklo.dev/bimi/jobspark.svg` (SVG Tiny-PS). Yahoo, AOL and
+   Fastmail show it once DMARC is enforced: after a week of clean reports, set
+   `dmarc_policy = "quarantine"`. BIMI also checks the organisational domain,
+   so `_dmarc.koklo.dev` must be at quarantine or reject too — it covers every
+   koklo.dev sender, check them first. Gmail and Apple Mail additionally need a
+   VMC or CMC certificate (paid, yearly), referenced by the record's `a=` tag.
+5. **Check**: `dig TXT _dmarc.jobspark.koklo.dev default._bimi.jobspark.koklo.dev`,
+   the BIMI Group inspector, and a mail-tester.com score.
+
+The e-mails themselves are built in `apps/api/src/mail/` (one layout, one
+function per e-mail). `pnpm --filter @cvforge/api email:preview` writes them
+to `apps/api/.email-previews/` to check the design in a browser.
 
 **4c. Expect the first apply of a fresh environment to serve 404.** The three
 `dokploy_domain` resources take `compose_id`, so Terraform creates them *after*
@@ -152,7 +237,7 @@ $ getent hosts api
 
 Production's web app therefore asked *staging's* API for a magic link. The link
 was built from staging's own URLs, so the session cookie was set for
-`cvspark-app-staging.koklo.dev` and production answered "session expirée" to
+`jobspark-app-staging.koklo.dev` and production answered "session expirée" to
 everyone.
 
 `API_INTERNAL_URL` is consequently `https://${API_DOMAIN}`, the public host,
@@ -161,10 +246,10 @@ VPS address and back in through Traefik — at the cost of a TLS hop.
 
 `postgres`, `redis`, `minio` and `puppeteer` collide in exactly the same way.
 Postgres is now read by the API (ADR-011), so it gets a per-environment network
-alias, `${POSTGRES_HOST}` = `<project>-postgres` (`cvspark-postgres` or
-`cvspark-staging-postgres`), declared on the stack's `default` network and used
+alias, `${POSTGRES_HOST}` = `<project>-postgres` (`jobspark-postgres` or
+`jobspark-staging-postgres`), declared on the stack's `default` network and used
 by `DATABASE_URL` and the `db_backup` service. Check it after a deploy from the
-API container: `getent hosts cvspark-staging-postgres` must return a single
+API container: `getent hosts jobspark-staging-postgres` must return a single
 address. `REDIS_URL` and `MINIO_ENDPOINT` are still dead configuration and
 `PUPPETEER_URL` is stateless. **Anything else that starts using a datastore must
 get the same treatment, never the bare service name.**
@@ -177,9 +262,9 @@ service "web" which does not exist in the compose"), and the compose is deployed
 destroyed, the compose applied, then the domains recreated.
 
 **5. Staging.** The same merge deploys staging through Dokploy. Check
-`cvspark-staging.koklo.dev`, `cvspark-app-staging.koklo.dev` and
-`cvspark-api-staging.koklo.dev/health`. Staging uses its own volumes
-(`cvspark-staging_*`) and touches nothing in production. Do not continue until
+`jobspark-staging.koklo.dev`, `jobspark-app-staging.koklo.dev` and
+`jobspark-api-staging.koklo.dev/health`. Staging uses its own volumes
+(`jobspark-staging_*`) and touches nothing in production. Do not continue until
 this is green.
 
 **6. Production cutover — the irreversible step.** The CVForge stack and the
@@ -187,7 +272,7 @@ Dokploy stack share the same volumes (`VOLUME_PREFIX=cvforge`). Two Postgres
 containers on one volume corrupt it, so stop the old stack *before* promoting:
 
 ```bash
-ssh devops@<VPS20_IP> 'cd /opt/apps/cvspark && docker compose down'
+ssh devops@<VPS20_IP> 'cd /opt/apps/jobspark && docker compose down'
 # and, if the pre-self-deploy stack is still up:
 ssh root@<VPS20_IP> 'cd /opt/koklo/stacks/cvforge && docker compose down'
 ```
@@ -195,14 +280,14 @@ ssh root@<VPS20_IP> 'cd /opt/koklo/stacks/cvforge && docker compose down'
 Then merge `develop` into `main`. That triggers the production environment,
 which is restricted to the `main` branch.
 
-**7. Retire the old names.** Once `cvspark*` serves correctly, delete the
+**7. Retire the old names.** Once `jobspark*` serves correctly, delete the
 `cvforge*` records from `koklo-infra`, remove `stacks/cvforge` from its Ansible
 playbook, and delete `infra/compose/docker-compose.yml` here — it is the SSH
 pipeline's file and nothing references it any more.
 
 ## Operations
 
-- Logs and shells: the Dokploy UI, per service, in the `cvspark` project.
+- Logs and shells: the Dokploy UI, per service, in the `jobspark` project.
 - Backups, two independent copies per environment:
   1. On-VPS: nightly `pg_dump` in the `${VOLUME_PREFIX}_db_backups` volume (7
      daily, 4 weekly, 6 monthly). **Does not survive VPS destruction.**
@@ -223,7 +308,7 @@ pipeline's file and nothing references it any more.
 ## Stripe payments
 
 Each environment has its own Stripe account and its own catalogue: staging uses
-the **CvSpark sandbox**, production the live account. Products and prices are
+the **Jobspark sandbox**, production the live account. Products and prices are
 never configured by hand — they are created from the back-office
 (`/admin/offers`), and their ids are stored in that environment's database.
 
@@ -232,7 +317,7 @@ never configured by hand — they are created from the back-office
 1. In the sandbox, create a **restricted key** (`rk_test_…`) with write access
    to Products, Prices and Checkout Sessions. Store it as `STRIPE_SECRET_KEY` in
    the `staging` GitHub Environment.
-2. Add a webhook endpoint `https://cvspark-api-staging.koklo.dev/billing/stripe/webhook`
+2. Add a webhook endpoint `https://jobspark-api-staging.koklo.dev/billing/stripe/webhook`
    for `checkout.session.completed`, `checkout.session.async_payment_succeeded`,
    `checkout.session.async_payment_failed` and `checkout.session.expired`. Store
    its signing secret (`whsec_…`) as `STRIPE_WEBHOOK_SECRET` in `staging`.
@@ -249,7 +334,7 @@ never configured by hand — they are created from the back-office
 
 1. Activate the live account (business details, bank account, tax settings).
 2. Repeat steps 1–2 with a live restricted key and the endpoint
-   `https://cvspark-api.koklo.dev/billing/stripe/webhook`, in the `production`
+   `https://jobspark-api.koklo.dev/billing/stripe/webhook`, in the `production`
    Environment.
 3. Merge `develop` into `main`, then **Synchroniser Stripe** in production's
    back-office.

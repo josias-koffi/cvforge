@@ -10,6 +10,12 @@ import { CreditsService } from "./credits.service";
 
 function makeController(session: unknown) {
   const creditsService = {
+    getBalanceSummaryForUser: vi.fn().mockResolvedValue({
+      balance: 47,
+      isLowBalance: false,
+      lowBalanceThreshold: 20,
+      userEmail: "user@example.com",
+    }),
     getSummaryForUser: vi.fn().mockResolvedValue({
       balance: 47,
       history: [],
@@ -17,6 +23,7 @@ function makeController(session: unknown) {
       lowBalanceThreshold: 20,
       userEmail: "user@example.com",
     }),
+    getHistoryPageForUser: vi.fn().mockResolvedValue({ entries: [] }),
     grantCredits: vi.fn().mockResolvedValue({
       action: "admin_grant",
       amount: 50,
@@ -58,12 +65,15 @@ function makeController(session: unknown) {
     readSessionFromCookieHeader: vi.fn().mockReturnValue(session),
   } as unknown as AuthService;
 
-  return new CreditsController(creditsService, authService, { recordCreditGrant: vi.fn() } as unknown as AdminAuditService);
+  return {
+    controller: new CreditsController(creditsService, authService, { recordCreditGrant: vi.fn() } as unknown as AdminAuditService),
+    creditsService,
+  };
 }
 
 describe("CreditsController", () => {
-  it("returns the authenticated user's credit summary", async () => {
-    const controller = makeController({
+  it("returns the authenticated user's balance, without the ledger", async () => {
+    const { controller } = makeController({
       email: "user@example.com",
       role: "user",
     });
@@ -73,7 +83,6 @@ describe("CreditsController", () => {
     ).resolves.toEqual({
       credits: {
         balance: 47,
-        history: [],
         isLowBalance: false,
         lowBalanceThreshold: 20,
         userEmail: "user@example.com",
@@ -82,15 +91,37 @@ describe("CreditsController", () => {
   });
 
   it("rejects unauthenticated access", async () => {
-    const controller = makeController(null);
+    const { controller } = makeController(null);
 
     await expect(controller.getMyCredits({ headers: {} })).rejects.toThrow(
       UnauthorizedException,
     );
   });
 
+  it("pages the authenticated user's own history", async () => {
+    const { controller, creditsService } = makeController({
+      email: "user@example.com",
+      role: "user",
+    });
+
+    await controller.getMyHistory("2", undefined, "spent", {
+      headers: { cookie: "cvforge_session=abc" },
+    });
+
+    expect(creditsService.getHistoryPageForUser).toHaveBeenCalledWith("user@example.com", {
+      kind: "spent",
+      page: "2",
+      pageSize: undefined,
+    });
+    await expect(
+      makeController(null).controller.getMyHistory(undefined, undefined, undefined, {
+        headers: {},
+      }),
+    ).rejects.toThrow(UnauthorizedException);
+  });
+
   it("requires admin role for grants", async () => {
-    const controller = makeController({
+    const { controller } = makeController({
       email: "user@example.com",
       role: "user",
     });
@@ -108,7 +139,7 @@ describe("CreditsController", () => {
   });
 
   it("lists paginated admin users with filters and latest manual grant metadata", async () => {
-    const controller = makeController({
+    const { controller } = makeController({
       email: "admin@example.com",
       role: "admin",
     });

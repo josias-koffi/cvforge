@@ -25,8 +25,26 @@ import {
   NOTIFICATIONS_STORE,
   type NotificationsStore,
 } from "../notifications/notifications.types";
+import {
+  PROFILE_COMPETENCES_STORE,
+  type ProfileCompetencesStore,
+} from "../profiles/profile-competences.pg-store";
 import { ProfilesModule } from "../profiles/profiles.module";
 import { PROFILES_STORE, type ProfilesStore } from "../profiles/profiles.types";
+import { JobSearchModule } from "../job-search/job-search.module";
+import {
+  JOB_MATCHES_STORE,
+  type JobMatchesStore,
+} from "../job-search/matches.types";
+import {
+  SEARCH_PROJECT_ROME_STORE,
+  type SearchProjectRomeStore,
+} from "../search-projects/search-project-rome.pg-store";
+import { SearchProjectsModule } from "../search-projects/search-projects.module";
+import {
+  SEARCH_PROJECTS_STORE,
+  type SearchProjectsStore,
+} from "../search-projects/search-projects.types";
 import { PrivacyController } from "./privacy.controller";
 import { PrivacyService } from "./privacy.service";
 
@@ -40,6 +58,8 @@ import { PrivacyService } from "./privacy.service";
     InterviewModule,
     NotificationsModule,
     ProfilesModule,
+    JobSearchModule,
+    SearchProjectsModule,
   ],
   controllers: [PrivacyController],
   providers: [
@@ -51,9 +71,13 @@ import { PrivacyService } from "./privacy.service";
         PgCreditLedgerStore,
         NOTIFICATIONS_STORE,
         PROFILES_STORE,
+        SEARCH_PROJECTS_STORE,
+        JOB_MATCHES_STORE,
         INTERVIEW_STORE,
         PgCreditOrdersStore,
         ADMIN_AUDIT_STORE,
+        SEARCH_PROJECT_ROME_STORE,
+        PROFILE_COMPETENCES_STORE,
       ],
       useFactory: (
         authStore: AuthAccountStore,
@@ -61,9 +85,13 @@ import { PrivacyService } from "./privacy.service";
         creditsStore: PgCreditLedgerStore,
         notificationsStore: NotificationsStore,
         profilesStore: ProfilesStore,
+        searchProjectsStore: SearchProjectsStore,
+        jobMatchesStore: JobMatchesStore,
         interviewStore: InterviewStore,
         creditOrdersStore: PgCreditOrdersStore,
         auditStore: AdminAuditStore,
+        searchJobsStore: SearchProjectRomeStore,
+        profileCompetencesStore: ProfileCompetencesStore,
       ) =>
         new PrivacyService(
           authStore,
@@ -71,9 +99,13 @@ import { PrivacyService } from "./privacy.service";
           creditsStore,
           notificationsStore,
           profilesStore,
+          searchProjectsStore,
+          jobMatchesStore,
           interviewStore,
           creditOrdersStore,
           auditStore,
+          searchJobsStore,
+          profileCompetencesStore,
         ),
     },
   ],

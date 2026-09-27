@@ -4,14 +4,14 @@
 # An apply of `dokploy_compose` rewrites the source and the whole operational
 # configuration of the service. Anything changed in the Dokploy UI — the compose
 # file, the environment variables, the build settings — is replaced on the next
-# apply, silently. Every change to the CVSpark stack goes through this repository
+# apply, silently. Every change to the Jobspark stack goes through this repository
 # and the CI apply, never through the UI.
 # ==============================================================================
 
-resource "dokploy_compose" "cvspark" {
+resource "dokploy_compose" "jobspark" {
   name           = local.project_name
-  description    = "CVSpark ${var.environment} stack — managed by OpenTofu"
-  environment_id = dokploy_project.cvspark.production_environment_id
+  description    = "Jobspark ${var.environment} stack — managed by OpenTofu"
+  environment_id = dokploy_project.jobspark.production_environment_id
   compose_type   = "docker-compose"
 
   # Shipped inline: Dokploy clones nothing, so no GitHub App has to be
@@ -24,6 +24,9 @@ resource "dokploy_compose" "cvspark" {
   # ${...} references in dokploy-stack.yml resolve against.
   env = join("\n", [
     "IMAGE_TAG=${var.image_tag}",
+    # Served back by /health (api) and /version (web), so a deploy can assert
+    # the containers really run the tag it just published.
+    "APP_VERSION=${var.image_tag}",
     "VOLUME_PREFIX=${local.volume_prefix}",
     "LANDING_DOMAIN=${local.domains.landing}",
     "WEB_DOMAIN=${local.domains.web}",
@@ -46,19 +49,25 @@ resource "dokploy_compose" "cvspark" {
     "MINIO_SECRET_KEY=${var.minio_secret_key}",
     "PUPPETEER_URL=http://puppeteer:3000",
     "OPENROUTER_API_KEY=${var.openrouter_api_key}",
+    "FRANCE_TRAVAIL_CLIENT_ID=${var.france_travail_client_id}",
+    "FRANCE_TRAVAIL_CLIENT_SECRET=${var.france_travail_client_secret}",
+    "FRANCE_TRAVAIL_APIS=${var.france_travail_apis}",
+    "LA_BONNE_ALTERNANCE_API_KEY=${var.la_bonne_alternance_api_key}",
     "OPENROUTER_MANAGEMENT_API_KEY=${var.openrouter_management_api_key}",
     "OPENROUTER_BALANCE_ALERT_THRESHOLD=${var.openrouter_balance_alert_threshold}",
     "OPENROUTER_BALANCE_CRITICAL_THRESHOLD=${var.openrouter_balance_critical_threshold}",
+    "ENABLE_ZDR_CHAT=${var.enable_zdr_chat}",
+    "ENABLE_ZDR_STT=${var.enable_zdr_stt}",
     "OPENROUTER_MODEL=${var.openrouter_model}",
     "OPENROUTER_FALLBACK_MODELS=${var.openrouter_fallback_models}",
     "OPENROUTER_MAX_ATTEMPTS=${var.openrouter_max_attempts}",
-    "INTERVIEW_STT_MODEL=${var.interview_stt_model}",
-    "INTERVIEW_STT_FALLBACK_MODELS=${var.interview_stt_fallback_models}",
-    "INTERVIEW_VOICE_MODEL=${var.interview_voice_model}",
-    "INTERVIEW_VOICE=${var.interview_voice}",
-    "INTERVIEW_VOICE_FALLBACK_MODELS=${var.interview_voice_fallback_models}",
-    "INTERVIEW_VOICE_MAX_ATTEMPTS=${var.interview_voice_max_attempts}",
-    "INTERVIEW_VOICE_MAX_TOKENS=${var.interview_voice_max_tokens}",
+    "OPENAI_API_KEY=${var.openai_api_key}",
+    "INTERVIEW_REALTIME_MODEL=${var.interview_realtime_model}",
+    "INTERVIEW_REALTIME_VOICE=${var.interview_realtime_voice}",
+    "INTERVIEW_REALTIME_EAGERNESS=${var.interview_realtime_eagerness}",
+    "INTERVIEW_REALTIME_NOISE_REDUCTION=${var.interview_realtime_noise_reduction}",
+    "INTERVIEW_REALTIME_TURN_DETECTION=${var.interview_realtime_turn_detection}",
+    "INTERVIEW_REALTIME_VAD_THRESHOLD=${var.interview_realtime_vad_threshold}",
     "STRIPE_SECRET_KEY=${var.stripe_secret_key}",
     "STRIPE_WEBHOOK_SECRET=${var.stripe_webhook_secret}",
     "SMTP_PROVIDER=${var.smtp_provider}",
@@ -67,6 +76,13 @@ resource "dokploy_compose" "cvspark" {
     "SMTP_USER=${var.smtp_user}",
     "SMTP_PASSWORD=${var.smtp_password}",
     "EMAIL_FROM=${local.email_from}",
+    "EMAIL_REPLY_TO=${var.email_reply_to}",
     "NEXT_SERVER_ACTIONS_ENCRYPTION_KEY=${var.next_server_actions_encryption_key}",
+    "ATS_IP_HASH_SECRET=${var.ats_ip_hash_secret}",
+    "ATS_PUBLIC_HOURLY_LIMIT=${var.ats_public_hourly_limit}",
+    "ATS_PUBLIC_DAILY_LIMIT=${var.ats_public_daily_limit}",
+    "ATS_PUBLIC_DAILY_BUDGET=${var.ats_public_daily_budget}",
+    "LANDING_PROXY_SECRET=${var.landing_proxy_secret}",
+    "CLIENT_IP_HEADER=${var.client_ip_header}",
   ])
 }

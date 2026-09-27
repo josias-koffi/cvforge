@@ -6,66 +6,23 @@ import {
   Param,
   Post,
   Req,
-  Res,
   UnauthorizedException,
 } from "@nestjs/common";
 import {
   INTERVIEW_DEFAULT_DURATION_MINUTES,
   isInterviewDuration,
-  type InterviewAnswerPartRequest,
+  type InterviewRealtimeCallRequest,
   type InterviewRecruiterProfile,
   type InterviewSessionStartRequest,
-  type InterviewTranscriptionChunkRequest,
 } from "@cvforge/types";
 import { AuthService } from "../auth/auth.service";
 import { InterviewProgressService } from "./interview-progress.service";
-import { InterviewTurnService } from "./interview-turn.service";
+import { InterviewRealtimeService } from "./interview-realtime.service";
 import { InterviewService } from "./interview.service";
 
 type RequestLike = {
   headers: { cookie?: string };
 };
-
-/** The slice of the Express response the streamed turn needs. */
-type SseResponse = {
-  setHeader: (name: string, value: string) => void;
-  flushHeaders?: () => void;
-  write: (chunk: string) => boolean;
-  end: () => void;
-};
-
-/**
- * Writes an event stream by hand, frame by frame.
- *
- * `@Sse` is not usable for these two routes: it targets the browser's
- * `EventSource`, which only ever issues GET, while a recorded answer is around
- * a megabyte of base64 and has to travel in a body. The client reads this with
- * `fetch` and a `ReadableStream` instead, which POSTs happily. Frames are
- * flushed as they come, so the voice starts playing while the rest is still
- * being generated.
- */
-async function writeEventStream<T>(
-  response: SseResponse,
-  events: AsyncGenerator<T, void, undefined>,
-): Promise<void> {
-  response.setHeader("Content-Type", "text/event-stream; charset=utf-8");
-  response.setHeader("Cache-Control", "no-cache, no-transform");
-  response.setHeader("Connection", "keep-alive");
-  response.setHeader("X-Accel-Buffering", "no");
-  response.flushHeaders?.();
-
-  try {
-    for await (const event of events) {
-      response.write(`data: ${JSON.stringify(event)}\n\n`);
-    }
-  } catch (error) {
-    // The headers are already sent, so the failure travels as a frame.
-    const message = error instanceof Error ? error.message : "Le tour a echoue.";
-    response.write(`data: ${JSON.stringify({ message, type: "error" })}\n\n`);
-  } finally {
-    response.end();
-  }
-}
 
 @Controller("interviews")
 export class InterviewController {
@@ -74,8 +31,8 @@ export class InterviewController {
     private readonly interviewService: InterviewService,
     @Inject(InterviewProgressService)
     private readonly progressService: InterviewProgressService,
-    @Inject(InterviewTurnService)
-    private readonly turnService: InterviewTurnService,
+    @Inject(InterviewRealtimeService)
+    private readonly realtimeService: InterviewRealtimeService,
     @Inject(AuthService) private readonly authService: AuthService,
   ) {}
 
@@ -119,60 +76,31 @@ export class InterviewController {
     return this.interviewService.getSession(session.email, sessionId);
   }
 
-  /** One spoken turn: the candidate's answer in, the interviewer's voice out. */
-  @Post("sessions/:sessionId/turn")
-  async streamTurn(
-    @Param("sessionId") sessionId: string,
-    @Body() body: InterviewTranscriptionChunkRequest,
-    @Req() request: RequestLike,
-    @Res() response: SseResponse,
-  ): Promise<void> {
-    const session = this.readSession(request);
-
-    await writeEventStream(
-      response,
-      this.turnService.streamTurn(session.email, sessionId, body),
-    );
-  }
-
   /**
-   * One piece of an answer, while the candidate is still speaking.
-   *
-   * Four segments, so it cannot be mistaken for the three-segment turn route
-   * above. Ordinary JSON rather than a stream: each piece is a quarter of a
-   * second of audio and the reply is a count.
+   * Opens the live call: the browser's WebRTC offer in, OpenAI's answer out.
+   * The audio then flows between the browser and OpenAI directly, while the
+   * server follows the call on its own line (ADR-026).
    */
-  @Post("sessions/:sessionId/turn/chunk")
-  async appendTurnChunk(
+  @Post("sessions/:sessionId/realtime")
+  startRealtimeCall(
     @Param("sessionId") sessionId: string,
-    @Body() body: InterviewAnswerPartRequest,
+    @Body() body: InterviewRealtimeCallRequest | undefined,
     @Req() request: RequestLike,
   ) {
     const session = this.readSession(request);
 
-    return this.turnService.appendAnswerPart(session.email, sessionId, body);
+    return this.realtimeService.startCall(session.email, sessionId, body?.sdp);
   }
 
-  /**
-   * The interviewer's opening words, streamed the same way as a turn.
-   *
-   * The candidate used to have to speak first into a silent room. A recruiter
-   * opens the interview, so the studio calls this as soon as the session is
-   * on screen. It carries no body, but stays a POST because it writes: it
-   * appends the greeting to the conversation.
-   */
-  @Post("sessions/:sessionId/opening")
-  async streamOpening(
+  /** Hangs the call up and stops the clock until the candidate resumes. */
+  @Post("sessions/:sessionId/pause")
+  pauseSession(
     @Param("sessionId") sessionId: string,
     @Req() request: RequestLike,
-    @Res() response: SseResponse,
-  ): Promise<void> {
+  ) {
     const session = this.readSession(request);
 
-    await writeEventStream(
-      response,
-      this.turnService.streamOpening(session.email, sessionId),
-    );
+    return this.realtimeService.pauseCall(session.email, sessionId);
   }
 
   @Post("sessions/:sessionId/finish")
@@ -181,6 +109,8 @@ export class InterviewController {
     @Req() request: RequestLike,
   ) {
     const session = this.readSession(request);
+    // What was said in the last seconds of the call is saved before scoring.
+    await this.realtimeService.endCall(session.email, sessionId);
     return this.interviewService.finishSession(session.email, sessionId);
   }
 

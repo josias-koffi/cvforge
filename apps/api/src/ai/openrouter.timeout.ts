@@ -16,19 +16,6 @@ import { OpenRouterRequestError } from "./openrouter.error";
  */
 
 /**
- * The stream starts as soon as the model does, so this covers connecting and
- * routing, not generating. Eight seconds is already six turns' worth of budget.
- */
-export const VOICE_OPEN_TIMEOUT_MS = 8_000;
-
-/**
- * Transcription answers in one payload, so its headers wait on the whole
- * transcript. Generous on purpose: this is a ceiling against a hung socket, not
- * a latency target — nothing is waiting on it inside a turn.
- */
-export const TRANSCRIPTION_OPEN_TIMEOUT_MS = 45_000;
-
-/**
  * Chat is not streamed for the report, so its headers wait on the full
  * completion — 1200 tokens of scored analysis. Deliberately far above anything
  * observed: the point is that "forever" stops being an option.

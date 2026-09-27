@@ -3,6 +3,13 @@ import { describe, expect, it } from "vitest"
 
 import nextConfig, { legalRedirects, resolveNextDistDir } from "../next.config"
 import { locales } from "../lib/i18n"
+import { atsPath } from "../lib/ats"
+import {
+  interviewQuestionsPath,
+  jobMarketPath,
+  keywordMatchPath,
+  toolsPath,
+} from "../lib/tools"
 import { legalPath } from "../lib/legal"
 
 describe("landing next config", () => {
@@ -49,5 +56,193 @@ describe("landing next config", () => {
         })
       }
     }
+  })
+
+  /**
+   * The ATS page follows the story arrangement: the route folder carries the
+   * English slug, the French address is rewritten onto it, and each language
+   * redirects away from the other's wording. A slug renamed here and not in
+   * `lib/ats` would 404 the top of the acquisition funnel.
+   */
+  describe("the ATS check", () => {
+    it("serves each language under its own slug", async () => {
+      const redirects = await nextConfig.redirects!()
+
+      expect(redirects).toContainEqual({
+        source: "/fr/ats-check",
+        destination: "/fr/analyse-ats",
+        permanent: true,
+      })
+      expect(redirects).toContainEqual({
+        source: "/en/analyse-ats",
+        destination: "/en/ats-check",
+        permanent: true,
+      })
+    })
+
+    it("rewrites the French address onto the shared route", async () => {
+      const rewrites = await nextConfig.rewrites!()
+
+      expect(rewrites).toContainEqual({
+        source: "/fr/analyse-ats",
+        destination: "/fr/ats-check",
+      })
+    })
+
+    it("agrees with the paths lib/ats builds", async () => {
+      const rewrites = (await nextConfig.rewrites!()) as {
+        source: string
+        destination: string
+      }[]
+
+      expect(rewrites.map((rewrite) => rewrite.source)).toContain(atsPath("fr"))
+      expect(atsPath("en")).toBe("/en/ats-check")
+    })
+
+    /** A redirect pointing at another redirect's source would loop. */
+    it("does not redirect an address it also redirects away from", async () => {
+      const redirects = (await nextConfig.redirects!()) as {
+        source: string
+        destination: string
+      }[]
+
+      for (const redirect of redirects) {
+        expect(redirects.map((other) => other.source)).not.toContain(
+          redirect.destination
+        )
+      }
+    })
+  })
+
+  /** The comparator, same arrangement again (US-136). */
+  it("serves the comparator under each language's slug", async () => {
+    const redirects = await nextConfig.redirects!()
+    const rewrites = await nextConfig.rewrites!()
+
+    expect(redirects).toContainEqual({
+      source: "/fr/cv-job-match",
+      destination: "/fr/comparateur-cv-offre",
+      permanent: true,
+    })
+    expect(redirects).toContainEqual({
+      source: "/en/comparateur-cv-offre",
+      destination: "/en/cv-job-match",
+      permanent: true,
+    })
+    expect(rewrites).toContainEqual({
+      source: keywordMatchPath("fr"),
+      destination: "/fr/cv-job-match",
+    })
+  })
+
+  /** The likely interview questions, same arrangement again (US-141). */
+  it("serves the interview questions under each language's slug", async () => {
+    const redirects = await nextConfig.redirects!()
+    const rewrites = await nextConfig.rewrites!()
+
+    expect(redirects).toContainEqual({
+      source: "/fr/interview-questions",
+      destination: "/fr/questions-entretien",
+      permanent: true,
+    })
+    expect(redirects).toContainEqual({
+      source: "/en/questions-entretien",
+      destination: "/en/interview-questions",
+      permanent: true,
+    })
+    expect(rewrites).toContainEqual({
+      source: interviewQuestionsPath("fr"),
+      destination: "/fr/interview-questions",
+    })
+  })
+
+  /** The job market tool, same arrangement again (US-137). */
+  it("serves the job market tool under each language's slug", async () => {
+    const redirects = await nextConfig.redirects!()
+    const rewrites = await nextConfig.rewrites!()
+
+    expect(redirects).toContainEqual({
+      source: "/fr/job-market",
+      destination: "/fr/metier-recrute",
+      permanent: true,
+    })
+    expect(redirects).toContainEqual({
+      source: "/en/metier-recrute",
+      destination: "/en/job-market",
+      permanent: true,
+    })
+    expect(rewrites).toContainEqual({
+      source: jobMarketPath("fr"),
+      destination: "/fr/job-market",
+    })
+  })
+
+  /** And its job × department pages, below the same slugs (US-138). */
+  it("serves the job × department pages under each language's slug", async () => {
+    const redirects = await nextConfig.redirects!()
+    const rewrites = await nextConfig.rewrites!()
+
+    expect(rewrites).toContainEqual({
+      source: "/fr/metier-recrute/:path+",
+      destination: "/fr/job-market/:path+",
+    })
+    expect(redirects).toContainEqual({
+      source: "/fr/job-market/:path+",
+      destination: "/fr/metier-recrute/:path+",
+      permanent: true,
+    })
+    expect(redirects).toContainEqual({
+      source: "/en/metier-recrute/:path+",
+      destination: "/en/job-market/:path+",
+      permanent: true,
+    })
+  })
+
+  /** And the company pages, below the employer check's slugs (US-140). */
+  it("serves the company pages under each language's slug", async () => {
+    const redirects = await nextConfig.redirects!()
+    const rewrites = await nextConfig.rewrites!()
+
+    expect(rewrites).toContainEqual({
+      source: "/fr/verifier-employeur/:path+",
+      destination: "/fr/employer-check/:path+",
+    })
+    expect(redirects).toContainEqual({
+      source: "/fr/employer-check/:path+",
+      destination: "/fr/verifier-employeur/:path+",
+      permanent: true,
+    })
+    expect(redirects).toContainEqual({
+      source: "/en/verifier-employeur/:path+",
+      destination: "/en/employer-check/:path+",
+      permanent: true,
+    })
+  })
+
+  /** The free tools hub, same arrangement as the ATS check (US-135). */
+  describe("the free tools hub", () => {
+    it("redirects each language away from the other's slug", async () => {
+      const redirects = await nextConfig.redirects!()
+
+      expect(redirects).toContainEqual({
+        source: "/fr/tools",
+        destination: "/fr/outils",
+        permanent: true,
+      })
+      expect(redirects).toContainEqual({
+        source: "/en/outils",
+        destination: "/en/tools",
+        permanent: true,
+      })
+    })
+
+    it("rewrites the French address onto the shared route", async () => {
+      const rewrites = await nextConfig.rewrites!()
+
+      expect(rewrites).toContainEqual({
+        source: toolsPath("fr"),
+        destination: "/fr/tools",
+      })
+    })
   })
 })
