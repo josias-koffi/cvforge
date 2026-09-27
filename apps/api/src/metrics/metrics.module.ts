@@ -10,10 +10,8 @@ import { DATABASE, type Database } from "../database/database.types";
 import { NotificationsModule } from "../notifications/notifications.module";
 import { NotificationsService } from "../notifications/notifications.service";
 import { AdminMetricsController } from "./admin-metrics.controller";
+import { CockpitService } from "./cockpit.service";
 import { resolveMetricsConfig } from "./metrics.config";
-import { PgMetricsStore } from "./metrics.pg-store";
-import { MetricsService } from "./metrics.service";
-import { METRICS_STORE, type MetricsStore } from "./metrics.types";
 import { OpenRouterBalanceAlertService } from "./openrouter-balance-alert.service";
 
 @Module({
@@ -21,21 +19,13 @@ import { OpenRouterBalanceAlertService } from "./openrouter-balance-alert.servic
   controllers: [AdminMetricsController],
   providers: [
     {
-      provide: METRICS_STORE,
-      inject: [DATABASE],
-      useFactory: (db: Database) => new PgMetricsStore(db),
-    },
-    {
-      provide: MetricsService,
-      inject: [METRICS_STORE, OPENROUTER_BALANCE_SERVICE],
-      useFactory: (
-        store: MetricsStore,
-        balanceService: OpenRouterBalanceService,
-      ) =>
-        new MetricsService(
-          store,
+      provide: CockpitService,
+      inject: [DATABASE, OPENROUTER_BALANCE_SERVICE],
+      useFactory: (db: Database, balanceService: OpenRouterBalanceService) =>
+        new CockpitService(
+          db,
           balanceService,
-          resolveMetricsConfig(process.env),
+          resolveMetricsConfig(process.env).usdToEurRate,
         ),
     },
     {

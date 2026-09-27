@@ -3,25 +3,26 @@ import {
   Injectable,
   InternalServerErrorException,
 } from "@nestjs/common";
+import {
+  composeApplicationFollowUpEmail,
+  composeCreditPurchaseEmail,
+  composeJobDigestEmail,
+  type ComposedEmail,
+  type JobDigestEmailInput,
+} from "../mail/emails";
+import { absoluteAppUrl } from "../mail/mail-brand";
+import { MAIL_CONFIG, type MailConfig } from "../mail/mail.config";
+import {
+  MAIL_TRANSPORT,
+  toMailMessage,
+  type MailTransport,
+} from "../mail/mail-transport";
 import { SMTP_CONFIG, type SmtpConfig } from "../smtp/smtp.config";
-
-export const NOTIFICATIONS_EMAIL_FROM = Symbol("NOTIFICATIONS_EMAIL_FROM");
-export const NOTIFICATIONS_MAIL_TRANSPORT = Symbol(
-  "NOTIFICATIONS_MAIL_TRANSPORT",
-);
-
-type NotificationsMailTransport = {
-  sendMail: (options: {
-    from: string;
-    html: string;
-    subject: string;
-    text: string;
-    to: string;
-  }) => Promise<unknown>;
-};
 
 type ApplicationFollowUpEmailInput = {
   companyName: string;
+  delayDays: number;
+  /** An app path (`/candidatures?…`) or an absolute URL. */
   followUpUrl: string;
   jobTitle: string;
   to: string;
@@ -38,81 +39,69 @@ type CreditPurchaseConfirmationEmailInput = {
 export class NotificationsMailerService {
   constructor(
     @Inject(SMTP_CONFIG) private readonly smtpConfig: SmtpConfig,
-    @Inject(NOTIFICATIONS_EMAIL_FROM)
-    private readonly emailFrom: string | null,
-    @Inject(NOTIFICATIONS_MAIL_TRANSPORT)
-    private readonly transport: NotificationsMailTransport | null,
+    @Inject(MAIL_CONFIG) private readonly mailConfig: MailConfig,
+    @Inject(MAIL_TRANSPORT)
+    private readonly transport: MailTransport | null,
   ) {}
 
   getDeliveryStatus() {
     return {
       provider: this.smtpConfig.provider,
       ready:
-        this.smtpConfig.enabled && this.transport !== null && this.emailFrom !== null,
+        this.smtpConfig.enabled &&
+        this.transport !== null &&
+        this.mailConfig.from !== null,
     };
   }
 
   async sendApplicationFollowUpEmail(input: ApplicationFollowUpEmailInput) {
-    await this.sendMail({
-      html: [
-        "<p>Bonjour,</p>",
-        `<p>Votre candidature pour <strong>${input.jobTitle}</strong> chez <strong>${input.companyName}</strong> est au statut <strong>envoyee</strong> depuis 7 jours.</p>`,
-        `<p><a href="${input.followUpUrl}">Ouvrir la candidature dans CVforge</a></p>`,
-        "<p>Si vous n'avez toujours pas de retour, c'est le bon moment pour planifier une relance.</p>",
-      ].join(""),
-      subject: `Relance candidature ${input.companyName}`,
-      text: [
-        "Bonjour,",
-        "",
-        `Votre candidature pour ${input.jobTitle} chez ${input.companyName} est envoyee depuis 7 jours.`,
-        `Ouvrir dans CVforge : ${input.followUpUrl}`,
-        "",
-        "Si vous n'avez toujours pas de retour, pensez a planifier une relance.",
-      ].join("\n"),
-      to: input.to,
-    });
+    await this.sendMail(
+      input.to,
+      composeApplicationFollowUpEmail(this.mailConfig, {
+        companyName: input.companyName,
+        delayDays: input.delayDays,
+        followUpUrl: absoluteAppUrl(this.mailConfig.appUrl, input.followUpUrl),
+        jobTitle: input.jobTitle,
+        preferencesUrl: this.preferencesUrl(),
+      }),
+    );
+  }
+
+  async sendJobDigestEmail(input: JobDigestEmailInput & { to: string }) {
+    await this.sendMail(input.to, composeJobDigestEmail(this.mailConfig, input));
   }
 
   async sendCreditPurchaseConfirmationEmail(
     input: CreditPurchaseConfirmationEmailInput,
   ) {
-    const amount = (input.amountCents / 100).toFixed(2);
-
-    await this.sendMail({
-      html: [
-        "<p>Bonjour,</p>",
-        `<p>Votre achat du pack <strong>${input.offerName}</strong> a bien ete confirme.</p>`,
-        `<p>${input.credits} credits ont ete ajoutes a votre solde pour un montant de ${amount} EUR.</p>`,
-        "<p>Vous pouvez des maintenant reprendre vos generations CVforge.</p>",
-      ].join(""),
-      subject: `Achat de credits confirme (${input.offerName})`,
-      text: [
-        "Bonjour,",
-        "",
-        `Votre achat du pack ${input.offerName} a bien ete confirme.`,
-        `${input.credits} credits ont ete ajoutes a votre solde pour ${amount} EUR.`,
-        "",
-        "Vous pouvez reprendre vos generations CVforge.",
-      ].join("\n"),
-      to: input.to,
-    });
+    await this.sendMail(
+      input.to,
+      composeCreditPurchaseEmail(this.mailConfig, {
+        amountCents: input.amountCents,
+        credits: input.credits,
+        offerName: input.offerName,
+        preferencesUrl: this.preferencesUrl(),
+      }),
+    );
   }
 
-  private async sendMail(input: {
-    html: string;
-    subject: string;
-    text: string;
-    to: string;
-  }) {
-    if (!this.smtpConfig.enabled || !this.transport || !this.emailFrom) {
+  private preferencesUrl() {
+    return `${this.mailConfig.appUrl}/notifications`;
+  }
+
+  private async sendMail(to: string, email: ComposedEmail) {
+    if (!this.smtpConfig.enabled || !this.transport || !this.mailConfig.from) {
       return;
     }
 
     try {
-      await this.transport.sendMail({
-        from: this.emailFrom,
-        ...input,
-      });
+      await this.transport.sendMail(
+        toMailMessage(
+          { from: this.mailConfig.from, replyTo: this.mailConfig.replyTo },
+          to,
+          email,
+        ),
+      );
     } catch (error) {
       throw new InternalServerErrorException(
         error instanceof Error

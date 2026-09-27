@@ -97,15 +97,116 @@ function normalizeItems<T>(
 }
 
 function normalizeExperiences(raw: unknown[]): ExperienceItemProps[] {
-  return normalizeItems(raw, (item) => ({
-    achievements: toStrArray(item.achievements),
-    company: toStr(item.company),
-    description: toStr(item.description),
-    endDate: toStr(item.endDate),
-    position: toStr(item.position),
-    startDate: toStr(item.startDate),
-  }));
+  return sortMostRecentFirst(
+    normalizeItems(raw, (item) => {
+      const description = toStr(item.description);
+
+      return {
+        achievements: withoutRepetitions(
+          toStrArray(item.achievements),
+          description,
+        ),
+        company: toStr(item.company),
+        description,
+        endDate: toStr(item.endDate),
+        position: toStr(item.position),
+        startDate: toStr(item.startDate),
+      };
+    }),
+  );
 }
+
+/**
+ * Drops an achievement that only restates the role's context sentence, or a
+ * previous achievement.
+ *
+ * Both are built from the same `results` field of the profile, so the collision
+ * is structural rather than accidental: a real generated CV carried
+ * "Développement d'un portail patient utilisé par 40 000 personnes" as its
+ * description *and* as a bullet, and another repeated a line verbatim. The
+ * prompt now forbids it; this makes it impossible, which is the difference
+ * between an instruction and a guarantee.
+ *
+ * Wording is compared, not characters — a reformulation is what the model
+ * produces, and an exact-match check would never fire.
+ */
+function withoutRepetitions(achievements: string[], description: string) {
+  const kept: string[][] = [];
+  const context = meaningfulTokens(description);
+
+  return achievements.filter((achievement) => {
+    const tokens = meaningfulTokens(achievement);
+
+    if (restates(tokens, context)) return false;
+    if (kept.some((previous) => restates(tokens, previous))) return false;
+
+    kept.push(tokens);
+
+    return true;
+  });
+}
+
+/** Share of one line's words the other already contains. */
+const RESTATEMENT_OVERLAP = 0.85;
+/** Below this, two lines are too short for overlap to mean anything. */
+const MIN_COMPARABLE_TOKENS = 4;
+
+function restates(tokens: string[], other: string[]) {
+  if (tokens.length < MIN_COMPARABLE_TOKENS || other.length === 0) return false;
+
+  const haystack = new Set(other);
+  const shared = tokens.filter((token) => haystack.has(token)).length;
+
+  return shared / tokens.length >= RESTATEMENT_OVERLAP;
+}
+
+function meaningfulTokens(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, " ")
+    .split(/\s+/)
+    .filter((token) => token.length > 2);
+}
+
+/**
+ * Most recent experience first, whatever order the profile was captured in.
+ *
+ * Reverse chronology is the convention every ATS and every recruiter reads a
+ * career by, and our own score docks a CV that lacks it — so producing it is
+ * not a liberty, it is consistency. A real generated CV listed a 2021-2024 role
+ * above a role still running, and lost the points for it.
+ *
+ * Sorted server-side rather than asked of the model: ordering is arithmetic, and
+ * the model reorders nothing it was told to copy. Ties and undated entries keep
+ * their original position, so an unparsable date never shuffles a career.
+ */
+function sortMostRecentFirst(
+  experiences: ExperienceItemProps[],
+): ExperienceItemProps[] {
+  return experiences
+    .map((experience, index) => ({ experience, index }))
+    .sort((a, b) => {
+      const delta = endsAt(b.experience) - endsAt(a.experience);
+
+      return delta !== 0 ? delta : a.index - b.index;
+    })
+    .map(({ experience }) => experience);
+}
+
+/** An ongoing role outranks every dated one; an undated one sorts last. */
+function endsAt(experience: ExperienceItemProps) {
+  const value = `${experience.endDate}`.trim();
+
+  if (ONGOING.test(value)) return Number.MAX_SAFE_INTEGER;
+
+  const year = /(19|20)\d{2}/.exec(value);
+
+  return year ? Number(year[0]) : Number.MIN_SAFE_INTEGER;
+}
+
+const ONGOING = /^(present|présent|aujourd|current|now|en cours)/i;
 
 function normalizeEducation(raw: unknown[]): EducationItemProps[] {
   return normalizeItems(raw, (item) => ({

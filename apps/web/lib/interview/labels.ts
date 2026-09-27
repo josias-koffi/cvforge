@@ -7,7 +7,6 @@ import type {
 } from "@cvforge/types"
 
 import type { OrbState } from "@/lib/interview/orb"
-import type { VadStatus } from "@/lib/interview/vad"
 
 export const profileLabels: Record<InterviewRecruiterProfile, string> = {
   standard: "Standard",
@@ -65,14 +64,6 @@ export const metricLabels: Record<InterviewReportMetricKey, string> = {
 export const languageLabels: Record<Locale, string> = {
   fr: "Français",
   en: "Anglais",
-}
-
-/** What the candidate sees about the microphone, at a glance. */
-export const vadStatusLabels: Record<VadStatus, string> = {
-  listening: "À l'écoute",
-  recording: "Enregistrement",
-  processing: "Traitement",
-  muted: "Micro coupé",
 }
 
 /**

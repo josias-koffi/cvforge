@@ -107,21 +107,6 @@ export function duplicateBaseProfile(profile: BaseProfile): BaseProfile {
   }
 }
 
-export const PROFILE_SECTION_COUNT = 6
-
-/** Filled sections among those shown in the editor tabs (summary, experiences, education, projects, languages, certifications). */
-export function countCompletedSections(profile: BaseProfile) {
-  const { sections } = profile
-  return [
-    sections.summary.trim() || sections.technicalSkills.length > 0,
-    sections.experiences.length > 0,
-    sections.education.length > 0,
-    sections.personalProjects.length > 0,
-    sections.languages.length > 0,
-    sections.certifications.length > 0,
-  ].filter(Boolean).length
-}
-
 export function candidateName(profile: BaseProfile) {
   return [profile.identity.firstName, profile.identity.lastName].filter(Boolean).join(" ")
 }

@@ -1,4 +1,4 @@
-# CVSpark stack as Dokploy runs it. Standalone: no build, images only.
+# Jobspark stack as Dokploy runs it. Standalone: no build, images only.
 #
 # Dokploy owns this file's lifecycle through `dokploy_compose` in
 # ../dokploy/compose.tf, which ships it inline (`raw.compose_file`). Dokploy
@@ -15,10 +15,11 @@
 
 services:
   web:
-    image: ghcr.io/josias-koffi/cvspark-web:${IMAGE_TAG}
+    image: ghcr.io/josias-koffi/jobspark-web:${IMAGE_TAG}
     restart: unless-stopped
     environment:
       NODE_ENV: production
+      APP_VERSION: ${APP_VERSION:-}
       # NOT `http://api:3333`. Dokploy puts every stack on the shared
       # `dokploy-network` and registers each compose service name as an alias
       # there, so production and staging both publish the alias `api` on one
@@ -50,12 +51,23 @@ services:
       start_period: 30s
 
   landing:
-    image: ghcr.io/josias-koffi/cvspark-landing:${IMAGE_TAG}
+    image: ghcr.io/josias-koffi/jobspark-landing:${IMAGE_TAG}
     restart: unless-stopped
     environment:
       NODE_ENV: production
       # The landing only links to the app; /login redirects to this origin.
       APP_URL: https://${WEB_DOMAIN}
+      # Who the visitor is, for the per-IP limits (US-132, ADR-022). Empty,
+      # the default, uses the X-Forwarded-For Traefik rewrites. Set it to
+      # cf-connecting-ip only once the records are orange-clouded: without
+      # Cloudflare in front, any visitor can write that header themselves.
+      CLIENT_IP_HEADER: ${CLIENT_IP_HEADER:-}
+      # Signs the visitor's address relayed to the API (US-132). Same value as
+      # the API's; empty relays nothing.
+      LANDING_PROXY_SECRET: ${LANDING_PROXY_SECRET:-}
+      # Canonical URLs and OG images: pages rendered at request time read it
+      # here, not from the value baked in at build.
+      NEXT_PUBLIC_SITE_URL: https://${LANDING_DOMAIN}
       # Credit offers for the pricing section. Public host, never `http://api`:
       # see the web service above.
       API_INTERNAL_URL: https://${API_DOMAIN}
@@ -69,7 +81,7 @@ services:
       start_period: 30s
 
   api:
-    image: ghcr.io/josias-koffi/cvspark-api:${IMAGE_TAG}
+    image: ghcr.io/josias-koffi/jobspark-api:${IMAGE_TAG}
     restart: unless-stopped
     environment:
       NODE_ENV: production
@@ -82,7 +94,14 @@ services:
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
       PUPPETEER_URL: ${PUPPETEER_URL:-http://puppeteer:3000}
+      APP_VERSION: ${APP_VERSION:-}
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
+      # Offer collection. A container only receives what this list names: a
+      # value set anywhere else reaches the stack's .env, never the process.
+      FRANCE_TRAVAIL_CLIENT_ID: ${FRANCE_TRAVAIL_CLIENT_ID:-}
+      FRANCE_TRAVAIL_CLIENT_SECRET: ${FRANCE_TRAVAIL_CLIENT_SECRET:-}
+      FRANCE_TRAVAIL_APIS: ${FRANCE_TRAVAIL_APIS:-offres,romeo,rome-metiers,rome-competences,rome-fiches-metiers,rome-substitutions,marche-travail,la-bonne-boite,pages-employeurs}
+      LA_BONNE_ALTERNANCE_API_KEY: ${LA_BONNE_ALTERNANCE_API_KEY:-}
       # Management key: balance supervision only, inert when empty.
       OPENROUTER_MANAGEMENT_API_KEY: ${OPENROUTER_MANAGEMENT_API_KEY:-}
       OPENROUTER_BALANCE_ALERT_THRESHOLD: ${OPENROUTER_BALANCE_ALERT_THRESHOLD:-5}
@@ -90,13 +109,14 @@ services:
       OPENROUTER_MODEL: ${OPENROUTER_MODEL:-}
       OPENROUTER_FALLBACK_MODELS: ${OPENROUTER_FALLBACK_MODELS:-}
       OPENROUTER_MAX_ATTEMPTS: ${OPENROUTER_MAX_ATTEMPTS:-3}
-      INTERVIEW_STT_MODEL: ${INTERVIEW_STT_MODEL:-}
-      INTERVIEW_STT_FALLBACK_MODELS: ${INTERVIEW_STT_FALLBACK_MODELS:-}
-      INTERVIEW_VOICE_MODEL: ${INTERVIEW_VOICE_MODEL:-}
-      INTERVIEW_VOICE_FALLBACK_MODELS: ${INTERVIEW_VOICE_FALLBACK_MODELS:-}
-      INTERVIEW_VOICE: ${INTERVIEW_VOICE:-}
-      INTERVIEW_VOICE_MAX_ATTEMPTS: ${INTERVIEW_VOICE_MAX_ATTEMPTS:-}
-      INTERVIEW_VOICE_MAX_TOKENS: ${INTERVIEW_VOICE_MAX_TOKENS:-}
+      # Live interview voice, straight to OpenAI (ADR-026). Blank keeps the defaults.
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      INTERVIEW_REALTIME_MODEL: ${INTERVIEW_REALTIME_MODEL:-}
+      INTERVIEW_REALTIME_VOICE: ${INTERVIEW_REALTIME_VOICE:-}
+      INTERVIEW_REALTIME_EAGERNESS: ${INTERVIEW_REALTIME_EAGERNESS:-}
+      INTERVIEW_REALTIME_NOISE_REDUCTION: ${INTERVIEW_REALTIME_NOISE_REDUCTION:-}
+      INTERVIEW_REALTIME_TURN_DETECTION: ${INTERVIEW_REALTIME_TURN_DETECTION:-}
+      INTERVIEW_REALTIME_VAD_THRESHOLD: ${INTERVIEW_REALTIME_VAD_THRESHOLD:-}
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
       STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
       AUTH_SESSION_SECRET: ${AUTH_SESSION_SECRET}
@@ -109,6 +129,20 @@ services:
       SMTP_USER: ${SMTP_USER}
       SMTP_PASSWORD: ${SMTP_PASSWORD}
       EMAIL_FROM: ${EMAIL_FROM}
+      # Replies to the no-reply sender land here; the footer names it too.
+      EMAIL_REPLY_TO: ${EMAIL_REPLY_TO:-}
+      # Serves the logo and the legal pages every e-mail links to.
+      LANDING_URL: https://${LANDING_DOMAIN}
+      # Public routes (ADR-022). Listed one by one: a container only receives
+      # what this list names, so a value set only in the stack's .env would
+      # never reach the process.
+      ATS_IP_HASH_SECRET: ${ATS_IP_HASH_SECRET:-}
+      ATS_PUBLIC_HOURLY_LIMIT: ${ATS_PUBLIC_HOURLY_LIMIT:-}
+      ATS_PUBLIC_DAILY_LIMIT: ${ATS_PUBLIC_DAILY_LIMIT:-}
+      ATS_PUBLIC_DAILY_BUDGET: ${ATS_PUBLIC_DAILY_BUDGET:-}
+      # Lets the landing vouch for the visitor's address, which Traefik
+      # overwrites on the way in (US-132). Empty: the relay is ignored.
+      LANDING_PROXY_SECRET: ${LANDING_PROXY_SECRET:-}
     volumes:
       # Real datastore of the API (JSON state files) — never drop this volume.
       - api_data:/workspace/.data
@@ -161,7 +195,7 @@ services:
       - minio_data:/data
 
   puppeteer:
-    image: ghcr.io/josias-koffi/cvspark-puppeteer:${IMAGE_TAG}
+    image: ghcr.io/josias-koffi/jobspark-puppeteer:${IMAGE_TAG}
     restart: unless-stopped
 
   # Nightly pg_dump → compressed file in the db_backups volume.

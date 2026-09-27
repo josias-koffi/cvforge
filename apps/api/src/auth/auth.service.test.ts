@@ -169,6 +169,41 @@ describe("AuthService", () => {
     ).toBeNull();
   });
 
+  /**
+   * A browser sends one `Cookie` entry per stored cookie, and RFC 6265 puts the
+   * older one first. A leftover of the same name from another domain or path
+   * used to shadow the valid session on every request — indistinguishable from
+   * a genuinely expired one, and unfixable by signing in again.
+   */
+  it("should find the valid session behind a stale cookie of the same name", async () => {
+    const service = new AuthService(config, createInMemoryAccountStore());
+    const consumed = await signIn(service, "user@example.com");
+    const name = consumed.cookie.name;
+    const stale = `${name}=stale.signature`;
+    const valid = `${name}=${consumed.cookie.value}`;
+
+    expect(service.readSessionFromCookieHeader(`${stale}; ${valid}`)).toMatchObject({
+      email: "user@example.com",
+    });
+    expect(service.readSessionFromCookieHeader(`${valid}; ${stale}`)).toMatchObject({
+      email: "user@example.com",
+    });
+    expect(service.readSessionFromCookieHeader(`${stale}; ${stale}`)).toBeNull();
+  });
+
+  it("should not open two sessions from one magic link clicked twice", async () => {
+    const service = new AuthService(config, createInMemoryAccountStore());
+    const { magicLink } = await service.requestMagicLink("user@example.com", true);
+    const token = new URL(magicLink).searchParams.get("token") ?? "";
+
+    await expect(service.consumeMagicLink(token)).resolves.toMatchObject({
+      session: { email: "user@example.com" },
+    });
+    await expect(service.consumeMagicLink(token)).rejects.toThrow(
+      "This magic link is invalid or expired.",
+    );
+  });
+
   it("should only allow redirects back to the configured app origin", async () => {
     const service = new AuthService(config, createInMemoryAccountStore());
     const request = await service.requestMagicLink("user@example.com", true);

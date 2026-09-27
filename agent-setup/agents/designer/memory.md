@@ -398,3 +398,84 @@
 - **Why**: Nouvelle identité CVSpark (`.project/marketing/`) ; l'ancien thème gris neutre produisait du ton sur ton.
 - **Learned**: `--accent` shadcn sert au hover des menus : l'amber de marque doit vivre dans un token séparé (`--spark`), sinon tous les menus deviennent orange. En dark, `primary-foreground` doit être foncé (blanc sur #5B82FF = 3,45:1).
 - **Open**: Pages connectées non vérifiées visuellement (API arrêtée pendant la session) ; messages d'erreur API NestJS non réécrits.
+
+### 2026-09-24 — US-118 (designer · [[workflows/runs/analyze-design-dev-review-20260923233426]])
+- **Context** : [[sprints/sprint-026#^us-118]]
+- **Learned** : Une puce se sauvegarde au clic, sans passer par « Enregistrer » ; le score est affiché en pourcentage, et la source France Travail en pied de carte.
+
+## 2026-09-24 — US-131 design (stage 02 · [[workflows/runs/analyze-design-dev-review-20260924143552]])
+- **Context**: [[sprints/sprint-029#US-131]] · [[workflows/runs/analyze-design-dev-review-20260924143552/02-design]]
+- **Did**: Aucun changement visible côté landing ; une `MetricCard` par outil dans /admin/metrics, avec un taux à chaque étape.
+- **Why**: Avec quelques dizaines de visiteurs, un entonnoir dessiné exagère des écarts d'une ou deux personnes.
+- **Learned**: Pas de taux après une étape vide, même règle que la carte ATS existante.
+- **Open**: none
+
+## 2026-09-24 — US-132 design (stage 02 · [[workflows/runs/analyze-design-dev-review-20260924145528]])
+- **Context**: [[sprints/sprint-029#US-132]] · [[workflows/runs/analyze-design-dev-review-20260924145528/02-design]]
+- **Did**: Pas d'interface : les messages ATS restent les mêmes, les refus d'événements restent invisibles.
+- **Why**: La story porte sur un middleware et un en-tête de proxy.
+- **Learned**: none
+- **Open**: none
+
+## 2026-09-24 — US-133 design (stage 02 · [[workflows/runs/analyze-design-dev-review-20260924155415]])
+- **Context**: [[sprints/sprint-029#US-133]] · [[workflows/runs/analyze-design-dev-review-20260924155415/02-design]]
+- **Did**: Page `/analyses-ats/[scanId]` : score, critère par critère, points relevés, CTA « Créer une candidature ». Section « Vos analyses ATS » sur le tableau de bord.
+- **Why**: La landing promettait que le lien ramènerait au rapport.
+- **Learned**: Afficher la date d'expiration dès qu'une donnée a une durée de vie.
+- **Open**: none
+
+## 2026-09-24 — US-134 design (stage 02 · [[workflows/runs/analyze-design-dev-review-20260924162332]])
+- **Context**: [[sprints/sprint-029#US-134]] · [[workflows/runs/analyze-design-dev-review-20260924162332/02-design]]
+- **Did**: Lien secondaire vers l'outil ATS sous l'action principale du Hero et du CTA ; messages d'erreur qui disent quoi faire.
+- **Why**: Garder une seule action principale par section.
+- **Learned**: none
+- **Open**: none
+
+## 2026-09-24 — US-135 design (stage 02 · [[workflows/runs/analyze-design-dev-review-20260924164112]])
+- **Context**: [[sprints/sprint-029#US-135]] · [[workflows/runs/analyze-design-dev-review-20260924164112/02-design]]
+- **Did**: Carte d'outil à lien étiré (un seul arrêt de tabulation), grille centrée quand il n'y a qu'un outil, section home après « Comment ça marche ».
+- **Why**: Une seule action par carte, lisible au clavier.
+- **Learned**: muted-foreground sur bg-muted en text-xs échoue en clair (4,27:1) ; une bordure sur fond de carte passe (4,75:1).
+- **Open**: none
+
+## 2026-09-24 — US-136 design (stage 02 · [[workflows/runs/analyze-design-dev-review-20260924173554]])
+- **Context**: [[sprints/sprint-029#US-136]] · [[workflows/runs/analyze-design-dev-review-20260924173554/02-design]]
+- **Did**: Page dédiée plutôt qu'un onglet ATS. Jauge et zone de dépôt réutilisées ; termes manquants avant les présents ; verdict en mots.
+- **Why**: Promesse SEO distincte et tunnel mesuré à part.
+- **Learned**: Une offre longue donne un taux bas par nature : trier par fréquence et nommer le verdict.
+- **Open**: none
+
+## 2026-09-24 — US-137 design (stage 02 · [[workflows/runs/analyze-design-dev-review-20260924211657]])
+- **Context**: [[sprints/sprint-030#US-137]] · [[workflows/runs/analyze-design-dev-review-20260924211657/02-design]]
+- **Did**: Combobox ARIA pour le métier, `<select>` natif pour le département. Tension en 5 segments, avec la phrase qui porte le sens. État « en cours de collecte ».
+- **Why**: Seule une appellation du référentiel est acceptée ; un département se choisit mieux qu'il ne se tape.
+- **Learned**: Nommer le métier ROME sous l'appellation : les chiffres sont ceux du métier, plus large.
+- **Open**: none
+
+## 2026-09-24 — US-138 design (stage 02 · [[workflows/runs/analyze-design-dev-review-20260924215644]])
+- **Context**: [[sprints/sprint-030#US-138]] · [[workflows/runs/analyze-design-dev-review-20260924215644/02-design]]
+- **Did**: Fil d'Ariane, H1, phrase tirée des chiffres, blocs d'US-137 réutilisés, CTA partagé, maillage.
+- **Why**: Une page unique et utile sans texte inventé.
+- **Learned**: « en {département} » ne marche pas en français (« en Nord ») : la virgule, oui.
+- **Open**: none
+
+## 2026-09-24 — US-139 design (stage 02 · [[workflows/runs/analyze-design-dev-review-20260924222645]])
+- **Context**: [[sprints/sprint-030#US-139]] · [[workflows/runs/analyze-design-dev-review-20260924222645/02-design]]
+- **Did**: Recherche à la validation (pas de combobox), liste de résultats, fiche en cartes + engagements oui/non, CTA générique.
+- **Why**: Chaque frappe coûterait un appel à l'Annuaire, limité à ~5/s par IP partagés.
+- **Learned**: « Aucun résultat » est un état, pas une erreur : encart neutre dans la région live.
+- **Open**: none
+
+## 2026-09-24 — US-140 design (stage 02 · [[workflows/runs/analyze-design-dev-review-20260924232418]])
+- **Context**: [[sprints/sprint-030#US-140]] · [[workflows/runs/analyze-design-dev-review-20260924232418/02-design]]
+- **Did**: Fiche d'US-139 réutilisée sous un H2, « Où elle recrute » lié aux pages métier existantes, voisins de secteur, CTA partagé.
+- **Why**: Une page unique et utile sans texte inventé ; les blocs gardent leurs H3.
+- **Learned**: Une phrase par parties (secteur, effectif, création) évite le « inconnu ».
+- **Open**: none
+
+## 2026-09-25 — US-141 design (stage 02 · [[workflows/runs/analyze-design-dev-review-20260925000215]])
+- **Context**: [[sprints/sprint-030#US-141]] · [[workflows/runs/analyze-design-dev-review-20260925000215/02-design]]
+- **Did**: Page calquée sur le comparateur (textarea offre), résultat en liste ordonnée de 5 cartes (type, question, intention), CTA micro vers l'entretien vocal.
+- **Why**: Même geste que l'outil voisin ; le badge de type reste du texte.
+- **Learned**: Dire « probables » dès le sous-titre pour un contenu généré.
+- **Open**: none

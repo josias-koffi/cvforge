@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server"
 
-const PUBLIC_PATHS = ["/login", "/register", "/forbidden"]
+const PUBLIC_PATHS = ["/login", "/register", "/forbidden", "/version"]
 
 /** Fast redirect when no session cookie is present; the API still validates it. */
 export function proxy(request: NextRequest) {

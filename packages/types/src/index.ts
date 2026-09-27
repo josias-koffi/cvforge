@@ -1,9 +1,24 @@
 import type { Locale } from "./locale";
 
+export * from "./departments";
 export * from "./documents";
 export * from "./grounding";
+export * from "./acquisition";
+export * from "./admin-metrics";
+export * from "./ai-usage";
+export * from "./companies";
+export * from "./company-check";
+export * from "./company-pages";
+export * from "./hiring-companies";
+export * from "./lead";
 export * from "./locale";
+export * from "./market";
+export * from "./match-score";
+export * from "./onboarding";
 export * from "./profile";
+export * from "./public-errors";
+export * from "./rome";
+export * from "./search-project";
 
 export const TEMPLATE_KIND_CV = "cv" as const;
 export const TEMPLATE_KIND_LETTER = "letter" as const;
@@ -21,11 +36,15 @@ export const APPLICATION_STATUS_REJECTED = "rejected" as const;
 export const APPLICATION_STATUS_OFFER_RECEIVED = "offer_received" as const;
 export const APPLICATION_SOURCE_URL = "url" as const;
 export const APPLICATION_SOURCE_TEXT = "text" as const;
+/** No offer: a company La Bonne Boîte expects to hire (US-120). */
+export const APPLICATION_SOURCE_SPONTANEOUS = "spontaneous" as const;
 export const AI_CREDIT_ACTION_OFFER_ENRICHMENT = "offer_enrichment" as const;
 export const AI_CREDIT_ACTION_CV_GENERATION = "cv_generation" as const;
 export const AI_CREDIT_ACTION_LETTER_GENERATION = "letter_generation" as const;
 export const AI_CREDIT_ACTION_CV_IMPORT = "cv_import" as const;
 export const AI_CREDIT_ACTION_INTERVIEW_SESSION = "interview_session" as const;
+/** The optional AI pass over a morning selection of job offers (E19). */
+export const AI_CREDIT_ACTION_JOB_DIGEST_RERANK = "job_digest_rerank" as const;
 export const CREDIT_EVENT_AI_USAGE = "ai_usage" as const;
 export const CREDIT_EVENT_ADMIN_GRANT = "admin_grant" as const;
 export const CREDIT_EVENT_STRIPE_PURCHASE = "stripe_purchase" as const;
@@ -34,6 +53,8 @@ export const NOTIFICATION_TYPE_APPLICATION_FOLLOW_UP =
   "application_follow_up" as const;
 export const NOTIFICATION_TYPE_CREDIT_PURCHASE_CONFIRMED =
   "credit_purchase_confirmed" as const;
+/** The morning selection of job offers is ready (E19). */
+export const NOTIFICATION_TYPE_JOB_DIGEST = "job_digest" as const;
 /** Admin-only: the OpenRouter account balance fell under the alert threshold. */
 export const NOTIFICATION_TYPE_OPENROUTER_LOW_BALANCE =
   "openrouter_low_balance" as const;
@@ -100,6 +121,7 @@ export const aiCreditActions = [
   AI_CREDIT_ACTION_LETTER_GENERATION,
   AI_CREDIT_ACTION_CV_IMPORT,
   AI_CREDIT_ACTION_INTERVIEW_SESSION,
+  AI_CREDIT_ACTION_JOB_DIGEST_RERANK,
 ] as const;
 export type AiCreditAction = (typeof aiCreditActions)[number];
 export const creditEventTypes = [
@@ -112,6 +134,7 @@ export type CreditEventType = (typeof creditEventTypes)[number];
 export const notificationTypes = [
   NOTIFICATION_TYPE_APPLICATION_FOLLOW_UP,
   NOTIFICATION_TYPE_CREDIT_PURCHASE_CONFIRMED,
+  NOTIFICATION_TYPE_JOB_DIGEST,
   NOTIFICATION_TYPE_OPENROUTER_LOW_BALANCE,
 ] as const;
 export type NotificationType = (typeof notificationTypes)[number];
@@ -143,6 +166,8 @@ export const applicationStatusTransitions = {
 export interface ServiceHealth {
   status: "ok";
   service: string;
+  /** Image tag actually serving the request; empty outside a deployment. */
+  version: string;
 }
 
 
@@ -320,43 +345,20 @@ export interface InterviewSessionStartResponse {
   session: InterviewSessionSummary;
 }
 
-export interface InterviewTranscriptionChunkRequest {
-  /**
-   * The answer as a complete audio file, base64.
-   *
-   * Empty when the studio streamed it up in pieces while it was being spoken
-   * — see `InterviewAnswerPartRequest` — in which case the server assembles
-   * what it buffered instead.
-   */
-  chunkBase64: string;
-  chunkId: string;
-  endedAt: string;
-  format: string;
-  isFinal: boolean;
-  mimeType: string;
-  sequence: number;
-  startedAt: string;
-}
-
 /**
- * One piece of an answer, sent while the candidate is still talking.
- *
- * Raw PCM16, 16 kHz, mono, base64 — no container. A WAV cannot be cut into
- * readable pieces and neither can WebM, whose header only exists on the first
- * fragment; raw samples can be cut anywhere and joined back in order.
+ * The browser's WebRTC offer for a live interview call (ADR-026). The server
+ * forwards it to OpenAI with the recruiter's brief, so neither the API key
+ * nor the prompt ever reaches the page.
  */
-export interface InterviewAnswerPartRequest {
-  /** Raw little-endian 16-bit samples, base64. */
-  audioBase64: string;
-  /** The turn these pieces belong to, matching the eventual turn request. */
-  chunkId: string;
-  /** Position within the answer. Order of arrival is not guaranteed. */
-  part: number;
+export interface InterviewRealtimeCallRequest {
+  sdp: string;
 }
 
-export interface InterviewAnswerPartResponse {
-  /** How many pieces of this answer the server is holding. */
-  parts: number;
+export interface InterviewRealtimeCallResponse {
+  /** OpenAI's SDP answer, to be set as the peer connection's remote description. */
+  sdp: string;
+  /** When the interview began, stamped by the server on the first call. */
+  startedAt: string;
 }
 
 export interface InterviewTranscriptChunk {
@@ -404,39 +406,18 @@ export interface InterviewSessionSummary {
    * and that gap must not eat into the interview.
    */
   startedAt: string | null;
-  context: InterviewContextSnapshot | null;
-}
-
-/**
- * What the browser receives while one spoken turn plays out.
- *
- * The candidate's own transcription and the interviewer's reply are produced
- * by two calls running side by side, so `candidate` can arrive at any point
- * among the audio frames rather than strictly before them.
- */
-export type InterviewTurnEvent =
-  /** What the candidate said, once transcription lands. */
-  | { type: "candidate"; text: string }
-  /** Base64 PCM16 at 24 kHz, to be played in arrival order. */
-  | { type: "audio"; data: string }
-  /** What the interviewer is saying, as it is spoken. */
-  | { type: "reply"; text: string }
   /**
-   * End of turn. Carries when the interview actually began: the server stamps
-   * it on the first spoken turn, long after the session was created, so it is
-   * not in the summary the studio was opened with.
+   * Set while the candidate has paused the interview. The clock is stopped:
+   * on resume, `startedAt` moves forward by the length of the pause.
    */
-  | {
-      type: "done";
-      startedAt?: string | null;
-      /**
-       * The interview is over: every phase has had its exchanges and the
-       * recruiter has said goodbye. The studio scores it without waiting for
-       * the clock to run out.
-       */
-      closed?: boolean;
-    }
-  | { type: "error"; message: string };
+  pausedAt?: string | null;
+  context: InterviewContextSnapshot | null;
+  /**
+   * The recruiter has nothing left to ask and has said goodbye. Only set on a
+   * single-session read, which is what the studio checks when a call ends.
+   */
+  concluded?: boolean;
+}
 
 /**
  * One row of the session history. Deliberately carries neither `chunks` nor
@@ -500,11 +481,16 @@ export interface InterviewProgressSummary {
  * `AI_CREDIT_COSTS` below can read it: a `const` stays in its temporal dead
  * zone until its own line runs, and the map would throw on import.
  */
-export const CREDITS_PER_INTERVIEW_MINUTE = 1;
+/**
+ * 1.5, not 1: a live Realtime interview costs about €0.24 for ten minutes
+ * (2026-09-25), which at one credit a minute left the Intensif pack with about
+ * a quarter of margin on it. Every offered duration still costs whole credits.
+ */
+export const CREDITS_PER_INTERVIEW_MINUTE = 1.5;
 
 /** What a session of that length costs, charged when it is created. */
 export function interviewSessionCost(minutes: InterviewDurationMinutes) {
-  return CREDITS_PER_INTERVIEW_MINUTE * minutes;
+  return Math.ceil(CREDITS_PER_INTERVIEW_MINUTE * minutes);
 }
 
 export const AI_CREDIT_COSTS: Record<AiCreditAction, number> = {
@@ -517,6 +503,10 @@ export const AI_CREDIT_COSTS: Record<AiCreditAction, number> = {
   [AI_CREDIT_ACTION_INTERVIEW_SESSION]: interviewSessionCost(
     INTERVIEW_DEFAULT_DURATION_MINUTES,
   ),
+  // One model call re-ranks a whole morning selection and writes a line per
+  // offer. Charged once a day, to the candidates who asked for it — and only
+  // when the call succeeds.
+  [AI_CREDIT_ACTION_JOB_DIGEST_RERANK]: 1,
 };
 
 /**
@@ -537,11 +527,13 @@ export function estimateApplications(credits: number) {
 }
 
 /**
- * Granted once on account creation: a CV import plus two complete applications,
- * interviews included — the mock interview is the thing to try before paying.
+ * Granted once on account creation: the onboarding's CV import plus one
+ * complete application, interview included — the mock interview is the thing
+ * to try before paying. One, not two, since the interview became the costly
+ * part of an application (2026-09-25).
  */
 export const WELCOME_CREDITS =
-  AI_CREDIT_COSTS[AI_CREDIT_ACTION_CV_IMPORT] + 2 * CREDITS_PER_APPLICATION;
+  AI_CREDIT_COSTS[AI_CREDIT_ACTION_CV_IMPORT] + CREDITS_PER_APPLICATION;
 export const WELCOME_APPLICATIONS = estimateApplications(WELCOME_CREDITS);
 
 export interface CreditLedgerEntry {
@@ -661,12 +653,32 @@ export interface CreateCheckoutSessionResponse {
   sessionId: string;
 }
 
-export interface CreditLedgerSummary {
+/** What a user's own pages need: the balance, not the ledger behind it. */
+export interface CreditBalanceSummary {
   userEmail: string;
   balance: number;
   lowBalanceThreshold: number;
   isLowBalance: boolean;
+}
+
+export interface CreditLedgerSummary extends CreditBalanceSummary {
   history: CreditLedgerEntry[];
+}
+
+/** Which way the credits moved: spent on the AI, or added by a grant or a purchase. */
+export const creditHistoryKinds = ["spent", "earned"] as const;
+export type CreditHistoryKind = (typeof creditHistoryKinds)[number];
+
+/** One page of a user's ledger, newest first. */
+export interface CreditHistoryPage {
+  entries: CreditLedgerEntry[];
+  filters: { kind: CreditHistoryKind | null };
+  pagination: {
+    page: number;
+    pageSize: number;
+    totalItems: number;
+    totalPages: number;
+  };
 }
 
 export interface InAppNotification {
@@ -681,6 +693,9 @@ export interface InAppNotification {
   metadata: {
     applicationId?: string;
     packId?: string;
+    /** The day of the selection this notification announces. */
+    digestDate?: string;
+    matchCount?: number;
   };
 }
 
@@ -691,6 +706,8 @@ export interface NotificationSummary {
 export interface NotificationEmailPreferences {
   applicationFollowUp: boolean;
   creditPurchaseConfirmed: boolean;
+  /** The morning e-mail of job offers. Off here means in-app only. */
+  jobDigest: boolean;
 }
 
 export interface NotificationPreferences {
@@ -703,8 +720,51 @@ export interface NotificationPreferencesResponse {
   provider: string | null;
 }
 
+/**
+ * What a client can rely on about a CV's ATS score.
+ *
+ * Deliberately a subset of `AtsScoreResult` (@cvforge/ats-score) rather than a
+ * re-export: that package already depends on this one, and importing it back
+ * would close a cycle. The full result is what gets stored; this is what the
+ * transport promises.
+ */
+export interface AtsScoreSummary {
+  overallScore: number;
+  band: "weak" | "fair" | "good" | "excellent";
+  /** The scale that produced it — scores from two versions never share an average. */
+  engineVersion: string;
+}
+
+/** One criterion of a CV's ATS score; a score is never shown when unavailable. */
+export interface AtsScoreDimensionDetail {
+  key: string;
+  status: "scored" | "unavailable";
+  score: number | null;
+}
+
+/** One point the engine raised, worded by its code on the client. */
+export interface AtsScoreFindingDetail {
+  code: string;
+  severity: "critical" | "warning" | "info";
+  dimension: string;
+}
+
+/**
+ * The whole score of a generated CV, as an application carries it: the
+ * engine's result without its internals, so the candidate can read what to
+ * fix criterion by criterion (US-153).
+ */
+export interface AtsScoreDetail extends AtsScoreSummary {
+  dimensions: AtsScoreDimensionDetail[];
+  findings: AtsScoreFindingDetail[];
+  /** The critical finding that held the score down, when one did. */
+  cappedBy?: string;
+}
+
 export interface DraftApplication {
   createdAt: string;
+  /** Absent or null when the CV has never been scored; never zero. */
+  atsScore?: AtsScoreDetail | null;
   cvGeneratedAt: string | null;
   cvTemplateId?: string | null;
   id: string;
@@ -716,7 +776,10 @@ export interface DraftApplication {
   /** Base profile picked for this application; null or absent means the default profile. */
   profileId?: string | null;
   sourceLabel: string;
-  sourceType: typeof APPLICATION_SOURCE_URL | typeof APPLICATION_SOURCE_TEXT;
+  sourceType:
+    | typeof APPLICATION_SOURCE_URL
+    | typeof APPLICATION_SOURCE_TEXT
+    | typeof APPLICATION_SOURCE_SPONTANEOUS;
   status: ApplicationStatus;
   statusHistory: ApplicationStatusHistoryEntry[];
   updatedAt: string;
@@ -788,7 +851,7 @@ export type TemplateUpsertInput = {
 };
 
 /**
- * The four legal documents CVSpark publishes. The slug is the stable key:
+ * The four legal documents Jobspark publishes. The slug is the stable key:
  * the URL each locale serves them under is the landing's business, not this
  * contract's.
  */

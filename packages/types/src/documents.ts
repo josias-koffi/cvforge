@@ -123,6 +123,10 @@ export interface CVDocumentVersionEntry {
   source: DocumentVersionSource;
   templateId: string | null;
   versionNumber: number;
+  /** ATS score of this version; absent on versions predating the feature. */
+  atsScore?: number;
+  /** The scale that produced it — scores from two versions never share an average. */
+  atsEngineVersion?: string;
 }
 
 export interface CvContentUpdateRequest {

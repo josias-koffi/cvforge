@@ -11,7 +11,7 @@ variable "cf_zone_id" {
 
 variable "vps20_ip" {
   type        = string
-  description = "Public IPv4 of VPS20, where every CVSpark stack runs"
+  description = "Public IPv4 of VPS20, where every Jobspark stack runs"
 }
 
 # Grey-clouded while Dokploy issues the Let's Encrypt certificates: it resolves
@@ -25,4 +25,35 @@ variable "cloudflare_proxied" {
   type        = bool
   description = "Route the records through the Cloudflare proxy (orange cloud)."
   default     = false
+}
+
+# Mail ------------------------------------------------------------------------
+
+variable "resend_jobspark_dkim" {
+  type        = string
+  description = "DKIM TXT value Resend issues for jobspark.koklo.dev (p=...). Empty: the sending records are not created."
+  default     = ""
+}
+
+variable "resend_feedback_mx" {
+  type        = string
+  description = "Bounce MX Resend gives for send.jobspark, region included."
+  default     = "feedback-smtp.eu-west-1.amazonses.com"
+}
+
+variable "dmarc_policy" {
+  type        = string
+  description = "DMARC policy of jobspark.koklo.dev: none while reading reports, then quarantine (required for BIMI)."
+  default     = "none"
+
+  validation {
+    condition     = contains(["none", "quarantine", "reject"], var.dmarc_policy)
+    error_message = "dmarc_policy must be none, quarantine or reject."
+  }
+}
+
+variable "dmarc_report_email" {
+  type        = string
+  description = "Mailbox receiving the aggregate DMARC reports."
+  default     = "support@jobspark.koklo.dev"
 }

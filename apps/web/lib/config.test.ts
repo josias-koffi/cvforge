@@ -14,9 +14,9 @@ afterEach(() => {
 
 describe("landingUrl", () => {
   it("reads the origin per request and drops its trailing slash", () => {
-    process.env.LANDING_URL = "https://cvspark.example/"
+    process.env.LANDING_URL = "https://jobspark.example/"
 
-    expect(landingUrl("/fr/legal/cgu")).toBe("https://cvspark.example/fr/legal/cgu")
+    expect(landingUrl("/fr/legal/cgu")).toBe("https://jobspark.example/fr/legal/cgu")
   })
 
   it("falls back to the local landing", () => {

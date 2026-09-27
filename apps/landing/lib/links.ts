@@ -4,7 +4,7 @@ const DEFAULT_APP_URL = "http://localhost:3100"
 export const LOGIN_PATH = "/login"
 
 /**
- * Builds an absolute URL on the CVSpark app. The base comes from the runtime
+ * Builds an absolute URL on the Jobspark app. The base comes from the runtime
  * environment so one landing image can target any deployment.
  */
 export function appUrl(path: string, env: NodeJS.ProcessEnv = process.env) {

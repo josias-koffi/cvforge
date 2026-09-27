@@ -20,11 +20,9 @@ describe("buildAgendaDirective", () => {
     expect(directive).toContain("parcours");
   });
 
-  it("gives both clocks: this phase, and the interview", () => {
-    const directive = directiveAt(2);
-
-    expect(directive).toMatch(/\d+ min sur cette phase/);
-    expect(directive).toMatch(/\d+ min d'entretien/);
+  it("stays the same text for the whole phase, so the prompt cache holds", () => {
+    // A clock in here changed the call's instructions after every reply.
+    expect(directiveAt(0.5)).toBe(directiveAt(1.5));
   });
 
   it("caps the self-presentation, which otherwise eats the interview", () => {

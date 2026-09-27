@@ -47,7 +47,7 @@ Rationalisation UI/UX desktop-first (1/2) — écrans d'entrée et de pilotage :
     - [x] WCAG 2.1 AA : `aria-live` sur le compteur non-lu, focus visible
   - Source: `.project/designs/frontend-rationalization-20260709.md` §8, vision `§14`
 
-- [ ] **[US-077]** Scinder et resserrer l'onboarding pour le desktop
+- [ ] **[US-077]** Scinder et resserrer l'onboarding pour le desktop — remplacée par E25 (sprint 032)
   - Agent: `designer` + `developer`
   - Workflow: `analyze-design-dev-review`
   - Acceptance criteria:

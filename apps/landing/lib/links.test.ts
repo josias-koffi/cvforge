@@ -50,9 +50,9 @@ describe("siteUrl", () => {
     expect(
       siteUrl(
         env({
-          NEXT_PUBLIC_SITE_URL: "https://cvspark.example/",
+          NEXT_PUBLIC_SITE_URL: "https://jobspark.example/",
         })
       )
-    ).toBe("https://cvspark.example")
+    ).toBe("https://jobspark.example")
   })
 })

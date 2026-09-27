@@ -62,11 +62,28 @@ describe("InterviewReportService", () => {
   it("reports a truncated answer as a failed call, not a crash", async () => {
     // What the candidate used to get: `SyntaxError: Unterminated string in
     // JSON at position 2300`, as a 500, with nothing they could act on.
-    const service = setup(vi.fn().mockResolvedValue('{"summary":"Entretien so'));
+    const chat = vi.fn().mockResolvedValue('{"summary":"Entretien so');
+    const service = setup(chat);
 
     await expect(service.generate(makeSession(), null)).rejects.toBeInstanceOf(
       ServiceUnavailableException,
     );
+    expect(chat).toHaveBeenCalledTimes(2);
+  });
+
+  it("asks once more when the answer runs away", async () => {
+    // A runaway does not repeat: the same transcript, asked again, came back
+    // whole every time.
+    const chat = vi
+      .fn()
+      .mockResolvedValueOnce('{"summary":"Entretien so')
+      .mockResolvedValueOnce(JSON.stringify(REPORT));
+    const service = setup(chat);
+
+    const report = await service.generate(makeSession(), null);
+
+    expect(report.overallScore).toBe(7);
+    expect(chat).toHaveBeenCalledTimes(2);
   });
 
   it("keeps the measured statistics, which owe the model nothing", async () => {

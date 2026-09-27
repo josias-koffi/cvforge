@@ -1,6 +1,6 @@
-# CVSpark on Dokploy — OpenTofu module
+# Jobspark on Dokploy — OpenTofu module
 
-Declares the CVSpark project, the compose stack that runs in it, and the three
+Declares the Jobspark project, the compose stack that runs in it, and the three
 public domains, on the Dokploy instance at `https://dokploy.ops.koklo.dev`.
 
 > **Terraform owns these services in full.** `dokploy_compose` rewrites the
@@ -19,13 +19,19 @@ The module manages **one** environment, chosen by `var.environment`
 
 | | `production` | `staging` |
 |---|---|---|
-| Dokploy project | `cvspark` | `cvspark-staging` |
-| state key | `cvspark/dokploy-production.tfstate` | `cvspark/dokploy-staging.tfstate` |
-| volume prefix | `cvforge` (legacy, kept on purpose) | `cvspark-staging` |
-| cookie name | `cvspark_session` | `cvspark_staging_session` |
-| landing | `cvspark.koklo.dev` | `cvspark-staging.koklo.dev` |
-| app (web) | `cvspark-app.koklo.dev` | `cvspark-app-staging.koklo.dev` |
-| api | `cvspark-api.koklo.dev` | `cvspark-api-staging.koklo.dev` |
+| Dokploy project | `jobspark` | `jobspark-staging` |
+| state key | `cvspark/dokploy-production.tfstate` (kept, see note below) | `cvspark/dokploy-staging.tfstate` (kept, see note below) |
+| volume prefix | `cvforge` (legacy, kept on purpose) | `cvspark-staging` (legacy, kept on purpose) |
+| cookie name | `jobspark_session` | `jobspark_staging_session` |
+| landing | `jobspark.koklo.dev` | `jobspark-staging.koklo.dev` |
+| app (web) | `jobspark-app.koklo.dev` | `jobspark-app-staging.koklo.dev` |
+| api | `jobspark-api.koklo.dev` | `jobspark-api-staging.koklo.dev` |
+
+> **Jobspark rename note.** The state key stays `cvspark/...` on purpose: it is
+> only the R2 object path, unrelated to the Dokploy project/cookie/domain names
+> above. Changing it means Tofu inits against an empty state and loses track of
+> the resources it already manages — only do it as a deliberate migration
+> (copy the state object under the new key in R2 first).
 
 That split is what lets the CI job keep `environment: staging|production` and
 see only that environment's GitHub secrets. Two states share no resource, hence

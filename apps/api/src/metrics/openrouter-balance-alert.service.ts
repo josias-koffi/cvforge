@@ -30,6 +30,8 @@ export class OpenRouterBalanceAlertService
   implements OnModuleInit, OnModuleDestroy
 {
   private intervalId: ReturnType<typeof setInterval> | null = null;
+  /** The run started at boot, so shutdown can wait for it. */
+  private pending: Promise<unknown> = Promise.resolve();
 
   constructor(
     private readonly balanceService: OpenRouterBalanceService,
@@ -42,11 +44,19 @@ export class OpenRouterBalanceAlertService
     this.intervalId = setInterval(() => this.scheduleCheck(), MS_PER_DAY);
   }
 
-  onModuleDestroy() {
+  /**
+   * Awaiting the run started at boot matters for the one-shot scripts: they
+   * close the database as soon as their own work is done, and a check still
+   * in flight would then fail on a dead pool and print a stack trace that
+   * looks like the script itself failed.
+   */
+  async onModuleDestroy() {
     if (this.intervalId !== null) {
       clearInterval(this.intervalId);
       this.intervalId = null;
     }
+
+    await this.pending;
   }
 
   /**
@@ -54,7 +64,7 @@ export class OpenRouterBalanceAlertService
    * unhandled rejection and take the API down. Logged, and the next run retries.
    */
   private scheduleCheck() {
-    this.checkBalance().catch((error: unknown) => {
+    this.pending = this.checkBalance().catch((error: unknown) => {
       console.error("[openrouter] balance alert failed", error);
     });
   }

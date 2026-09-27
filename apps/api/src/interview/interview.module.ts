@@ -1,10 +1,10 @@
 import { Module } from "@nestjs/common";
-import type { OpenRouterTranscriptionService } from "../ai/openrouter-transcription.service";
-import type { OpenRouterVoiceService } from "../ai/openrouter-voice.service";
+import type { AiUsageRecorder } from "../ai/ai-usage";
+import type { OpenAiRealtimeService } from "../ai/openai-realtime.service";
 import {
+  AI_USAGE_RECORDER,
+  OPENAI_REALTIME_SERVICE,
   OPENROUTER_SERVICE,
-  OPENROUTER_TRANSCRIPTION_SERVICE,
-  OPENROUTER_VOICE_SERVICE,
   OpenRouterModule,
 } from "../ai/openrouter.module";
 import type { OpenRouterService } from "../ai/openrouter.service";
@@ -17,8 +17,7 @@ import { CreditsService } from "../credits/credits.service";
 import { DATABASE, type Database } from "../database/database.types";
 import { InterviewPurgeService } from "./interview-purge.service";
 import { InterviewProgressService } from "./interview-progress.service";
-import { InterviewAnswerBuffer } from "./interview-answer-buffer";
-import { InterviewTurnService } from "./interview-turn.service";
+import { InterviewRealtimeService } from "./interview-realtime.service";
 import { InterviewReportService } from "./interview-report.service";
 import { InterviewController } from "./interview.controller";
 import { InterviewService } from "./interview.service";
@@ -59,23 +58,13 @@ import { INTERVIEW_STORE, type InterviewStore } from "./interview.types";
       ],
     },
     {
-      provide: InterviewTurnService,
+      provide: InterviewRealtimeService,
       useFactory: (
         store: InterviewStore,
-        voice: OpenRouterVoiceService,
-        transcription: OpenRouterTranscriptionService,
-      ) =>
-        new InterviewTurnService(
-          store,
-          voice,
-          transcription,
-          new InterviewAnswerBuffer(),
-        ),
-      inject: [
-        INTERVIEW_STORE,
-        OPENROUTER_VOICE_SERVICE,
-        OPENROUTER_TRANSCRIPTION_SERVICE,
-      ],
+        realtime: OpenAiRealtimeService,
+        recorder: AiUsageRecorder,
+      ) => new InterviewRealtimeService(store, realtime, recorder),
+      inject: [INTERVIEW_STORE, OPENAI_REALTIME_SERVICE, AI_USAGE_RECORDER],
     },
     {
       provide: InterviewProgressService,

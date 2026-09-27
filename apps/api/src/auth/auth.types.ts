@@ -1,4 +1,5 @@
-import type { AccountStatus } from "@cvforge/types";
+import type { AccountStatus, LeadIntent } from "@cvforge/types";
+
 export type AuthConsentRecord = {
   acceptedAt: string;
   source: "invitation" | "passwordless";
@@ -45,6 +46,18 @@ export type AuthInvitation = {
   consumedAt: string | null;
 };
 
+/**
+ * A pending magic link. Only unspent links exist: consuming one deletes it,
+ * so there is no `consumedAt` to read.
+ */
+export type AuthMagicLink = {
+  consent: AuthConsentRecord | null;
+  email: string;
+  expiresAt: string;
+  /** What a free tool's visitor asked for, applied on redemption (US-133). */
+  intent?: LeadIntent | null;
+};
+
 export type AuthSession = {
   email: string;
   role: AuthRole;
@@ -77,6 +90,8 @@ export type PurgedAuthAccountSummary = {
   accountDeleted: boolean;
   invitationsRemoved: number;
   invitationsScrubbed: number;
+  /** Pending links carry the address, so they leave with the account. */
+  magicLinksRemoved: number;
 };
 
 /** DI token for the account store, so services depend on this type, not a class. */
@@ -122,6 +137,18 @@ export type AuthAccountStore = {
     consumedAt: string,
     now: number,
   ) => Promise<AuthInvitation | null>;
+  saveMagicLink: (tokenHash: string, link: AuthMagicLink) => Promise<void>;
+  /**
+   * Redeems a link and removes it in one write, so two simultaneous clicks on
+   * the same link cannot both open a session. Returns null when the link is
+   * unknown or expired.
+   */
+  consumeMagicLink: (
+    tokenHash: string,
+    now: number,
+  ) => Promise<AuthMagicLink | null>;
+  /** Drops links nobody can use any more. Returns how many were removed. */
+  purgeExpiredMagicLinks: (now: number) => Promise<number>;
   exportUserData: (email: string) => Promise<AuthExportSnapshot>;
   purgeUserData: (email: string) => Promise<PurgedAuthAccountSummary>;
 };

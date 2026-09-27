@@ -26,7 +26,12 @@ export async function POST(request: Request) {
     return NextResponse.redirect(errorUrl, 303)
   }
 
-  const success = NextResponse.redirect(new URL("/dashboard", request.url), 303)
+  // Through the sign-in landing, which sends a first sign-in to the
+  // onboarding (US-150).
+  const success = NextResponse.redirect(
+    new URL("/login/success", request.url),
+    303
+  )
   const sessionCookie = response.headers.get("set-cookie")
 
   if (sessionCookie) {

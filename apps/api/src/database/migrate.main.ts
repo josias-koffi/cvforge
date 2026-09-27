@@ -1,5 +1,3 @@
-import { existsSync } from "node:fs";
-import { resolve } from "node:path";
 import { resolveLegacyApplicationsStateFile } from "../applications/applications.config";
 import { resolveLegacyAuthStateFile } from "../auth/auth.config";
 import { resolveLegacyCreditsStateFile } from "../credits/credits.config";
@@ -7,6 +5,7 @@ import { resolveLegacyInterviewStateFile } from "../interview/interview.config";
 import { resolveLegacyNotificationsStateFile } from "../notifications/notifications.config";
 import { resolveLegacyProfilesStateFile } from "../profiles/profiles.config";
 import { resolveLegacyTemplatesStateFile } from "../templates/templates.config";
+import { loadEnvironmentFiles } from "../shared/env";
 import { createDatabaseClient, runMigrations } from "./database.client";
 import { resolveDatabaseConfig } from "./database.config";
 import { importLegacyApplications } from "./import-legacy-applications";
@@ -24,11 +23,7 @@ import { importLegacyTemplates } from "./import-legacy-templates";
  * traffic against a half-migrated database.
  */
 async function main() {
-  const envFile = resolve(process.cwd(), ".env");
-
-  if (existsSync(envFile)) {
-    process.loadEnvFile(envFile);
-  }
+  loadEnvironmentFiles();
 
   const config = resolveDatabaseConfig(process.env);
 

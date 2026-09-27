@@ -165,3 +165,25 @@ describe("document renderer", () => {
     expect(letter).toContain("<strong>Subject:</strong>");
   });
 });
+
+/**
+ * Two typographic choices that an ATS reads, and that cost us 41 points on our
+ * own scanner before they were found.
+ *
+ * A PDF is judged on its text layer, not on its appearance. A CSS list marker
+ * is drawn but never written there, and `letter-spacing` on a heading pushes
+ * the glyphs far enough apart that the extractor reads the gaps as spaces —
+ * "EX P É R I E N C E S", which matches no section name anywhere.
+ */
+describe("what survives into the PDF text layer", () => {
+  it("writes the bullet into the text rather than leaving it to list-style", () => {
+    const html = renderCvPdfHtml(cvContent);
+
+    expect(html).toContain("•&nbsp;");
+    expect(html).toContain("list-style: none");
+  });
+
+  it("never letter-spaces a section heading", () => {
+    expect(renderCvPdfHtml(cvContent)).not.toMatch(/letter-spacing:\s*0\.0[1-9]/);
+  });
+});

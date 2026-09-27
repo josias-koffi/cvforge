@@ -23,7 +23,7 @@ export function MissingDocument({
   const label = kind === "cv" ? "CV" : "lettre de motivation"
 
   return (
-    <Empty className="mx-4 rise-in border bg-card shadow-surface lg:mx-6">
+    <Empty className="mx-4 w-auto rise-in border bg-card shadow-surface lg:mx-6">
       <EmptyHeader>
         <EmptyMedia variant="icon" className="bg-primary/10 text-primary motion-safe:animate-float">
           <FileTextIcon />

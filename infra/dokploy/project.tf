@@ -5,7 +5,7 @@
 # The provider warns against deriving the environment id from the `environments`
 # list — a project update marks that list unknown at plan time, and an unknown
 # environment_id forces a replacement of every service under it.
-resource "dokploy_project" "cvspark" {
+resource "dokploy_project" "jobspark" {
   name        = local.project_name
-  description = "CVSpark ${var.environment} — managed by OpenTofu in infra/dokploy. Do not edit in the Dokploy UI."
+  description = "Jobspark ${var.environment} — managed by OpenTofu in infra/dokploy. Do not edit in the Dokploy UI."
 }

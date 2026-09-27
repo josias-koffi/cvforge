@@ -1,3 +1,4 @@
+import { adminAuditActions } from "@cvforge/types";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import {
   createTestDatabase,
@@ -51,6 +52,20 @@ describe("PgAdminAuditStore", () => {
         targetEmail: "user@example.com",
       }),
     ).rejects.toThrow();
+  });
+
+  // The check constraint lives in hand-written migrations: a new action added
+  // to `adminAuditActions` without its migration must fail here, not in prod.
+  it.each(adminAuditActions)("accepts the known action %s", async (action) => {
+    await expect(
+      store.record({
+        action,
+        actorEmail: "admin@example.com",
+        metadata: {},
+        note: null,
+        targetEmail: null,
+      }),
+    ).resolves.toMatchObject({ action });
   });
 
   it("lists newest first, filtered by target and by action", async () => {

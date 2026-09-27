@@ -478,3 +478,49 @@
 - **Learned**: quand une story annoncée « simple » exige de rendre asynchrone un helper synchrone utilisé partout, chercher le point d'application unique (middleware/guard) avant d'accepter un refactor de 65 fichiers. Le coût réel est une lecture indexée par requête, à surveiller si le trafic monte.
 - **Learned**: préférer réduire un **contrat** (le store) plutôt qu'ajouter une garde, quand l'invariant est de sécurité : la capacité disparaît du code au lieu d'être refusée à l'exécution.
 - **Open**: (1) clé de management OpenRouter à provisionner, sinon supervision inerte ; (2) consolidation `GET /credits/admin/users` ; (3) `apps/app` casse `pnpm build` (panne préexistante) ; (4) aucun axe/test de composant dans `apps/web`.
+
+## 2026-09-23 — ADR-024 plateforme France Travail et ROME (proposé)
+- **Context**: [[decisions/ADR-024-france-travail-platform-rome]] · [[sprints/sprint-026]]
+- **Did**: Proposé un jeton OAuth **par scope** et un limiteur par API dans `apps/api/src/france-travail/`, un référentiel ROME 4.0 copié en local et maintenu par les substitutions, et ROMEO appelé à l'enregistrement, jamais à l'affichage. Aucune dépendance nouvelle.
+- **Why**: France Travail refuse tout le jeton (`invalid_scope`) si un seul scope demandé n'est pas souscrit : un jeton multi-scope ferait tomber toutes les API pour une souscription manquante.
+- **Learned**: Numérotation au 2026-09-23 : migrations jusqu'à `0027`, stories jusqu'à US-121 avant ce plan (US-122 à US-130 réservées), ADR suivant 025.
+- **Open**: Scopes, chemins et quotas de ROMEO, ROME 4.0 et Marché du travail non vérifiés : les confirmer par `ft:smoke` avant tout code.
+
+### 2026-09-24 — US-118 (tech-lead · [[workflows/runs/analyze-design-dev-review-20260923233426]])
+- **Context** : [[sprints/sprint-026#^us-118]]
+- **Learned** : Les tables où les utilisateurs stockent des codes ROME se déclarent dans ROME_CODE_HOLDERS, et les substitutions les suivent. Défaut Terraform de FRANCE_TRAVAIL_APIS : les API vérifiées.
+
+## 2026-09-24 — US-131 final (· [[workflows/runs/analyze-design-dev-review-20260924143552]])
+- **Context**: [[sprints/sprint-029#US-131]] · [[workflows/runs/analyze-design-dev-review-20260924143552/final-summary]]
+- **Did**: Verdict passed. Livraison en deux PR (API, puis web et landing), à déployer ensemble.
+- **Why**: Environ 600 lignes de code, au-delà de la limite de 400 lignes par PR.
+- **Learned**: Le script d'orchestration de shipyard cherche `shipyard/agents`, alors que ce projet utilise `agent-setup/`. Les runs se tiennent donc à la main.
+- **Open**: Migration 0039, `ATS_IP_HASH_SECRET` en production, mention dans la politique de confidentialité.
+
+## 2026-09-24 — US-132 final (· [[workflows/runs/analyze-design-dev-review-20260924145528]])
+- **Context**: [[sprints/sprint-029#US-132]] · [[workflows/runs/analyze-design-dev-review-20260924145528/final-summary]]
+- **Did**: Verdict passed. Limitation par politique de route, relais d'IP signé (`LANDING_PROXY_SECRET`), variables `ATS_*` enfin transmises au conteneur `api` sur Dokploy.
+- **Why**: En production, le scan ATS plafonnait à 3 analyses par heure pour tout le site, sans que personne ne le voie.
+- **Learned**: Dans `dokploy-stack.yml`, une variable qui n'est pas listée dans `environment` n'atteint jamais le processus, même si Terraform l'écrit dans le `.env`. Vérifier les deux bouts à chaque nouvelle variable.
+- **Open**: Secret GitHub à créer, vérification en production (DoD du sprint 029).
+
+## 2026-09-24 — US-133 final (· [[workflows/runs/analyze-design-dev-review-20260924155415]])
+- **Context**: [[sprints/sprint-029#US-133]] · [[workflows/runs/analyze-design-dev-review-20260924155415/final-summary]]
+- **Did**: Verdict passed après deux retours en implémentation. Intention de lead portée par le lien magique, rapports ATS dans l'app.
+- **Why**: Socle de conversion commun aux outils d'E23.
+- **Learned**: Pour une surface de sécurité, une contre-revue ciblée qui cherche activement à contourner le correctif en vaut la peine.
+- **Open**: Deux PR ; migration 0041.
+
+## 2026-09-24 — US-134 final (· [[workflows/runs/analyze-design-dev-review-20260924162332]])
+- **Context**: [[sprints/sprint-029#US-134]] · [[workflows/runs/analyze-design-dev-review-20260924162332/final-summary]]
+- **Did**: Verdict passed. Codes d'erreur publics, `locale`, liens depuis le Hero et le CTA, checker découpé.
+- **Why**: Le tunnel ATS parlait français aux visiteurs anglophones.
+- **Learned**: La landing n'a pas de DOM de test : les branchements se testent via de petits modules purs. Ajouter `happy-dom` demanderait un ADR.
+- **Open**: none
+
+## 2026-09-24 — US-139 final (finalization · [[workflows/runs/analyze-design-dev-review-20260924222645]])
+- **Context**: [[sprints/sprint-030#US-139]] · [[workflows/runs/analyze-design-dev-review-20260924222645/final-summary]]
+- **Did**: Verdict passed, case cochée, ADR-022 amendé (sexies).
+- **Why**: Tous les critères vérifiés, suites vertes.
+- **Learned**: Deux limiteurs de 2/s sur la même source restent sous le seuil de 429 observé ; un limiteur partagé ferait attendre l'outil derrière le job horaire.
+- **Open**: US-140.

@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from "@nestjs/common";
 import {
   APPLICATION_STATUS_SENT,
   NOTIFICATION_TYPE_APPLICATION_FOLLOW_UP,
+  NOTIFICATION_TYPE_JOB_DIGEST,
   type ApplicationStatusHistoryEntry,
   type InAppNotification,
   type NotificationPreferences,
@@ -51,6 +52,7 @@ function findSentStatusEntry(
 function buildReminderNotification(
   application: StoredApplication,
   reminderCreatedAt: string,
+  delayDays: number,
 ): InAppNotification {
   const company = application.extracted.companyName ?? "cette entreprise";
 
@@ -58,7 +60,7 @@ function buildReminderNotification(
     createdAt: reminderCreatedAt,
     id: randomUUID(),
     linkHref: `/candidatures?applicationId=${application.id}`,
-    message: `Sept jours se sont ecoules depuis l'envoi de votre candidature ${application.extracted.title} chez ${company}. Pensez a relancer si vous n'avez toujours pas de retour.`,
+    message: `${delayDays} jour(s) se sont écoulés depuis l'envoi de votre candidature ${application.extracted.title} chez ${company}. Pensez à relancer si vous n'avez toujours pas de retour.`,
     metadata: {
       applicationId: application.id,
     },
@@ -74,6 +76,7 @@ function createDefaultPreferences(): NotificationPreferences {
     email: {
       applicationFollowUp: true,
       creditPurchaseConfirmed: true,
+      jobDigest: true,
     },
   };
 }
@@ -224,6 +227,62 @@ export class NotificationsService {
     });
   }
 
+  /**
+   * Announces the morning selection: one in-app notification, and the e-mail
+   * unless the candidate turned it off.
+   *
+   * `createOncePerDay` is what keeps a second run of the digest from
+   * announcing the same morning twice.
+   */
+  async sendJobDigestNotification(input: {
+    userEmail: string;
+    digestDate: string;
+    offers: Array<{
+      title: string;
+      companyName: string;
+      locationLabel: string;
+      score: number;
+      reason: string;
+    }>;
+    totalCount: number;
+    /** What moved in the candidate's job market this month (US-128). */
+    marketNotes?: string[];
+    emailEnabled: boolean;
+    digestUrl: string;
+    preferencesUrl: string;
+  }) {
+    const notification = await this.createOncePerDay({
+      linkHref: "/offres-du-jour",
+      message: `${input.totalCount} offre(s) correspondent à votre recherche ce matin.`,
+      metadata: {
+        digestDate: input.digestDate,
+        matchCount: input.totalCount,
+      },
+      title: "Vos offres du jour",
+      type: NOTIFICATION_TYPE_JOB_DIGEST,
+      userEmail: input.userEmail,
+    });
+
+    // Already announced today: the e-mail must not go out a second time
+    // either.
+    if (!notification) return null;
+
+    const preferences = await this.readPreferences(input.userEmail);
+
+    if (input.emailEnabled && preferences.email.jobDigest) {
+      await this.notificationsMailer.sendJobDigestEmail({
+        digestUrl: input.digestUrl,
+        marketNotes: input.marketNotes ?? [],
+        offers: input.offers,
+        preferencesUrl: input.preferencesUrl,
+        to: input.userEmail,
+        totalCount: input.totalCount,
+      });
+    }
+
+    return notification;
+  }
+
   private async readPreferences(userEmail: string) {
     return (
       (await this.notificationsStore.readPreferences(userEmail)) ??
@@ -272,13 +331,18 @@ export class NotificationsService {
       }
 
       const notification = await this.notificationsStore.add(
-        buildReminderNotification(application, reminderAt.toISOString()),
+        buildReminderNotification(
+          application,
+          reminderAt.toISOString(),
+          this.config.followUpDelayDays,
+        ),
       );
       existingApplicationReminderIds.add(application.id);
 
       if (preferences.email.applicationFollowUp) {
         await this.notificationsMailer.sendApplicationFollowUpEmail({
           companyName: application.extracted.companyName ?? "cette entreprise",
+          delayDays: this.config.followUpDelayDays,
           followUpUrl: notification.linkHref,
           jobTitle: application.extracted.title,
           to: userEmail,

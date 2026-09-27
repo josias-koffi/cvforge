@@ -3,10 +3,8 @@ import type { StudioPhase } from "@/lib/interview/studio-machine"
 /**
  * What the orb is showing, which is not quite what the microphone is doing.
  *
- * The VAD only knows about the candidate: while the interviewer speaks it
- * reports `processing`, the same as while an answer uploads. Those two feel
- * nothing alike — one is a voice in the room, the other is a wait — so the
- * orb reads the studio phase instead and gets a state of its own.
+ * A voice in the room and a wait for one feel nothing alike, so the orb reads
+ * the studio phase and gets a state of its own for each.
  */
 export type OrbState =
   | "idle"
@@ -23,7 +21,13 @@ export function orbState({
   phase: StudioPhase
   muted: boolean
 }): OrbState {
-  if (phase === "booting" || phase === "completed" || phase === "error") {
+  if (
+    phase === "booting" ||
+    phase === "connecting" ||
+    phase === "ended" ||
+    phase === "completed" ||
+    phase === "error"
+  ) {
     return "idle"
   }
   // Checked after the phases above: a muted microphone during the recruiter's

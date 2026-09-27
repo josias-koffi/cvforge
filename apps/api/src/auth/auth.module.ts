@@ -1,28 +1,16 @@
 import { Module } from "@nestjs/common";
-import nodemailer from "nodemailer";
-import { SMTP_CONFIG, type SmtpConfig } from "../smtp/smtp.config";
 import { PgAuthAccountStore } from "./auth.pg-store";
-import { SmtpModule } from "../smtp/smtp.module";
+import { MailModule } from "../mail/mail.module";
 import { DATABASE, type Database } from "../database/database.types";
-import {
-  AUTH_EMAIL_FROM,
-  AUTH_MAIL_TRANSPORT,
-  AuthMailerService,
-} from "./auth-mailer.service";
+import { AuthMailerService } from "./auth-mailer.service";
 import { AuthController } from "./auth.controller";
 import { AuthService } from "./auth.service";
 import { resolveAuthConfig } from "./auth.config";
 import { SessionStateMiddleware } from "./session-state.middleware";
 import { AUTH_ACCOUNT_STORE, type AuthAccountStore } from "./auth.types";
 
-function readEmailFrom(env: NodeJS.ProcessEnv) {
-  const value = env.EMAIL_FROM?.trim();
-
-  return value && value.length > 0 ? value : null;
-}
-
 @Module({
-  imports: [SmtpModule],
+  imports: [MailModule],
   controllers: [AuthController],
   providers: [
     {
@@ -41,29 +29,6 @@ function readEmailFrom(env: NodeJS.ProcessEnv) {
       inject: [AuthService],
       useFactory: (authService: AuthService) =>
         new SessionStateMiddleware(authService),
-    },
-    {
-      provide: AUTH_EMAIL_FROM,
-      useFactory: () => readEmailFrom(process.env),
-    },
-    {
-      provide: AUTH_MAIL_TRANSPORT,
-      inject: [SMTP_CONFIG],
-      useFactory: (smtpConfig: SmtpConfig) => {
-        if (!smtpConfig.enabled) {
-          return null;
-        }
-
-        return nodemailer.createTransport({
-          auth: {
-            pass: smtpConfig.password ?? undefined,
-            user: smtpConfig.user ?? undefined,
-          },
-          host: smtpConfig.server ?? undefined,
-          port: smtpConfig.port ?? undefined,
-          secure: smtpConfig.port === 465,
-        });
-      },
     },
     AuthMailerService,
   ],

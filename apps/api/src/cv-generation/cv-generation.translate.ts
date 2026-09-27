@@ -56,7 +56,7 @@ async function requestTranslation(
         { role: "system", content: systemPrompt },
         { role: "user", content: JSON.stringify(payload) },
       ],
-      { temperature: 0.1 },
+      { feature: "cv_translation", temperature: 0.1 },
     ),
   );
   return extractJsonFromContent<unknown>(rawResponse);

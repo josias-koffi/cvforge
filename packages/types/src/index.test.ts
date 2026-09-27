@@ -53,30 +53,30 @@ import {
 
 describe("types package", () => {
   it("should count complete applications from a credit amount", () => {
-    expect(CREDITS_PER_APPLICATION).toBe(17);
-    expect(estimateApplications(350)).toBe(20);
-    expect(estimateApplications(16)).toBe(0);
+    expect(CREDITS_PER_APPLICATION).toBe(22);
+    expect(estimateApplications(350)).toBe(15);
+    expect(estimateApplications(21)).toBe(0);
     expect(estimateApplications(-3)).toBe(0);
   });
 
-  it("should offer a CV import plus two applications on sign-up", () => {
-    expect(WELCOME_CREDITS).toBe(36);
-    expect(WELCOME_APPLICATIONS).toBe(2);
+  it("should offer a CV import plus one application on sign-up", () => {
+    expect(WELCOME_CREDITS).toBe(24);
+    expect(WELCOME_APPLICATIONS).toBe(1);
   });
 
   it("should count the mock interview inside a complete application", () => {
     // The packs promise applications with their interview and report, so the
     // interview belongs in CREDITS_PER_APPLICATION — and in the welcome grant.
-    expect(AI_CREDIT_COSTS.interview_session).toBe(10);
-    expect(CREDITS_PER_APPLICATION).toBe(17);
-    expect(WELCOME_CREDITS).toBe(36);
+    expect(AI_CREDIT_COSTS.interview_session).toBe(15);
+    expect(CREDITS_PER_APPLICATION).toBe(22);
+    expect(WELCOME_CREDITS).toBe(24);
   });
 
   it("should price an interview by the minute", () => {
-    expect(CREDITS_PER_INTERVIEW_MINUTE).toBe(1);
-    expect(interviewSessionCost(10)).toBe(10);
-    expect(interviewSessionCost(20)).toBe(20);
-    expect(interviewSessionCost(30)).toBe(30);
+    expect(CREDITS_PER_INTERVIEW_MINUTE).toBe(1.5);
+    expect(interviewSessionCost(10)).toBe(15);
+    expect(interviewSessionCost(20)).toBe(30);
+    expect(interviewSessionCost(30)).toBe(45);
   });
 
   it("should keep the flat interview cost in step with the per-minute rate", () => {
@@ -86,7 +86,7 @@ describe("types package", () => {
     );
     expect(
       INTERVIEW_DURATION_CHOICES.every(
-        (minutes) => interviewSessionCost(minutes) === minutes,
+        (minutes) => interviewSessionCost(minutes) === minutes * CREDITS_PER_INTERVIEW_MINUTE,
       ),
     ).toBe(true);
   });

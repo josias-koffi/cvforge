@@ -3,8 +3,10 @@ import { describe, expect, it } from "vitest";
 import {
   MAX_RAW_OFFER_CHARS,
   buildGroundedUserMessage,
+  offerContextOf,
   type OfferContext,
 } from "./cv-generation.payload";
+import type { StoredApplication } from "../applications/applications.types";
 
 function makeProfile(
   preferences?: PromptSafeProfile["preferences"],
@@ -36,6 +38,85 @@ const OFFER: OfferContext = {
   summary: "Ingénieur plateforme",
   title: "Ingénieur Plateforme Senior",
 };
+
+describe("pointers to bring forward (US-127)", () => {
+  it("fences them between the offer and the profile, as pointers, not facts", () => {
+    const message = buildGroundedUserMessage(makeProfile(), {
+      ...OFFER,
+      skillsToHighlight: ["Kubernetes", "Tests unitaires"],
+    });
+    const block = message.indexOf("=== PISTES À VALORISER");
+
+    expect(block).toBeGreaterThan(message.indexOf("=== FIN TEXTE BRUT"));
+    expect(block).toBeLessThan(message.indexOf("=== PROFIL CANDIDAT"));
+    expect(message).toContain("SI ET SEULEMENT SI LE PROFIL LES ÉTAYE");
+    expect(message).toContain("Ce ne sont PAS des faits concernant le candidat");
+    expect(message).toContain('["Kubernetes","Tests unitaires"]');
+    // Not repeated inside the offer's own JSON.
+    expect(message).not.toContain('"skillsToHighlight"');
+  });
+
+  it("adds no block when the offer lacked nothing", () => {
+    expect(
+      buildGroundedUserMessage(makeProfile(), { ...OFFER, skillsToHighlight: [] }),
+    ).not.toContain("PISTES À VALORISER");
+    expect(buildGroundedUserMessage(makeProfile(), OFFER)).not.toContain(
+      "PISTES À VALORISER",
+    );
+  });
+
+  it("reads them from the application, empty for an older one", () => {
+    const application = {
+      extracted: {
+        companyName: "CloudScale",
+        language: "fr",
+        requirements: [],
+        responsibilities: [],
+        summary: null,
+        title: "Ingénieur",
+      },
+      rawOfferText: "Texte",
+    } as unknown as StoredApplication;
+
+    expect(offerContextOf(application).skillsToHighlight).toEqual([]);
+    expect(
+      offerContextOf({ ...application, skillsToHighlight: ["Kubernetes"] })
+        .skillsToHighlight,
+    ).toEqual(["Kubernetes"]);
+  });
+});
+
+describe("spontaneous applications (US-120)", () => {
+  it("says there is no offer, and sends no raw text to fence off", () => {
+    const message = buildGroundedUserMessage(makeProfile(), {
+      ...OFFER,
+      rawOfferText: "Candidature spontanée auprès de EVERIENCE.",
+      spontaneous: true,
+    });
+
+    expect(message).toContain("=== CANDIDATURE SPONTANÉE — CONTEXTE DE CIBLAGE ===");
+    expect(message).toContain("Aucune offre publiée");
+    expect(message).not.toContain("=== OFFRE D'EMPLOI");
+    expect(message).not.toContain("TEXTE BRUT");
+    expect(message).not.toContain('"spontaneous"');
+    expect(message.indexOf("CANDIDATURE SPONTANÉE")).toBeLessThan(
+      message.indexOf("=== PROFIL CANDIDAT"),
+    );
+  });
+
+  it("recognises one from its source", () => {
+    const application = {
+      extracted: OFFER,
+      rawOfferText: "Texte",
+      sourceType: "spontaneous",
+    } as unknown as StoredApplication;
+
+    expect(offerContextOf(application).spontaneous).toBe(true);
+    expect(
+      offerContextOf({ ...application, sourceType: "url" }).spontaneous,
+    ).toBe(false);
+  });
+});
 
 describe("buildGroundedUserMessage", () => {
   it("fences the offer off from the profile and puts the profile last", () => {
@@ -89,6 +170,38 @@ describe("buildGroundedUserMessage", () => {
 
     expect(message).toContain("RECHERCHE DU CANDIDAT");
     expect(message).toContain("2026-11-02");
+    expect(message).toContain("CDI");
+  });
+
+  it("prefers the structured search over the legacy free-text contracts", () => {
+    const message = buildGroundedUserMessage(
+      makeProfile({
+        availabilityDate: "",
+        availabilityMode: "immediate",
+        contractTypes: "CDI",
+      }),
+      OFFER,
+      {
+        contractSearch: "Stage ou alternance (rythme 3j/2j)",
+        includePreferences: true,
+      },
+    );
+
+    expect(message).toContain("Stage ou alternance (rythme 3j/2j)");
+    expect(message).not.toContain("\"contratsRecherches\":\"CDI\"");
+  });
+
+  it("keeps the legacy free-text contracts while a profile has no search project", () => {
+    const message = buildGroundedUserMessage(
+      makeProfile({
+        availabilityDate: "",
+        availabilityMode: "immediate",
+        contractTypes: "CDI",
+      }),
+      OFFER,
+      { contractSearch: "", includePreferences: true },
+    );
+
     expect(message).toContain("CDI");
   });
 

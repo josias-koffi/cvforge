@@ -26,6 +26,11 @@
 | E15 | V2.1 | UX Redesign desktop-first + refonte interview et éditeur | App desktop-first shadcn-minimal; tables candidatures/documents; interview VAD auto sans bouton; continuité agent via messages[] Redis; Puck admin full-screen uniquement; écrans intermédiaires; dashboard épuré | 016–019 | vision `§2.5`, `§2.6`, `§6`, `§8`, `§10`, feedback 2026-04-26 |
 | E16 ✅ | 022 | Supervision solde IA & pilotage revenus admin | L'admin surveille le solde OpenRouter, est alerté avant rupture, ne vend pas de crédits qu'il ne peut pas honorer, et dispose d'un dashboard de métriques produit + revenus | 022 | Hors vision v0.7, hors ADR existante — décision produit du 2026-09-17 |
 | E17 ✅ | 023 | Gestion utilisateurs avancée (admin) | Recherche/filtres/pagination serveur, fiche utilisateur complète, suspension, suppression RGPD vérifiée, rétrogradation admin→user uniquement, journal d'audit, révocation de session | 023 | Complète vision `§13.2`/`§15.1` ; US-093 contraint par vision `§3.2` |
+| E18 ✅ | 024 | Score ATS (produit d'appel + in-app) | Un visiteur non authentifié scanne son CV sur la landing, obtient un score et 3 points gratuitement, et déverrouille le rapport contre son email — ce qui lui crée un compte ; en in-app, chaque CV généré porte un badge de score gratuit | 024 | Complète vision `§7.1`, `§7.4`, `§12.2`, `§12.3`, `§8.1` ; **la page publique est hors vision** — décision produit du 2026-09-22 |
+| E23 | 029-030 | Outils gratuits d'acquisition sur la landing | Quatre outils sans compte en plus du scan ATS (comparateur CV ↔ offre, métier qui recrute + salaire, vérification d'employeur, questions d'entretien probables) ; chacun donne un résultat utile, puis convertit par email en un compte pré-rempli avec ce que le visiteur a saisi ; le tunnel de chaque outil est mesuré de la vue à l'activation du compte | 029-030 | **Hors vision** — décision produit du 2026-09-24 ; prolonge E18 (ADR-022) et exploite E19-E21 (ADR-024 §3 : les données France Travail restent gratuites) |
+| E24 | 031 | Landing : vitrine complète et pages fonctionnalités | L'accueil présente toute la recherche (offres du jour, CV et lettre, entretien, entreprises et marché) ; quatre pages dédiées indexables, illustrées par des captures de l'app, avec métadonnées, JSON-LD et sitemap | 031 | Pages marketing sur des fonctionnalités livrées — décision produit du 2026-09-25 |
+| E25 | 032 | Onboarding guidé à la première connexion | Une page plein écran `/bienvenue` en 7 étapes réutilise les formulaires existants (profil, critères, métiers ROME, alertes) avec un texte « pourquoi » par étape, puis une checklist « Bien démarrer » sur le tableau de bord | 032 | Vision §4 ; remplace l'ancien wizard US-013 perdu à la réécriture v2 — décision produit du 2026-09-25 |
+| E26 | 033 | Cockpit de pilotage admin | `/admin/metrics` devient un cockpit à onglets (vue d'ensemble, revenus et conversion, coûts IA, produit, marché, acquisition), avec une période, des graphiques et des insights ; le coût réel de chaque appel IA et les recherches des outils gratuits sont désormais enregistrés | 033 | Remplace le tableau US-086 ; précédent US-054 — demande propriétaire du 2026-09-25 |
 
 ## Estimate Scale
 
@@ -126,6 +131,48 @@ Référence de gate: le spec impose des branches courtes et des PRs <= 400 ligne
 | US-094 | Journal d'audit /admin/audit-log (qui/quand/quoi/sur qui/note) pour suspension, réactivation, suppression, rétrogradation, octroi crédits | E17 | M | P1 | 023 | vision `§13.2` |
 | US-095 | Déconnexion forcée / révocation de session depuis la fiche utilisateur | E17 | S | P2 | 023 | vision `§13.2` |
 | US-096 | Hotfix §3.2 : rendre la promotion user→admin impossible par toute action admin | E17 | S | P0 | 022 | vision `§3.2` — ajout hors énoncé, validé le 2026-09-17 |
+| US-097 | Moteur de score ATS : package pur, modèle normalisé, noyau déterministe, renormalisation des dimensions non observables, barème versionné | E18 | M | P0 | 024 | vision `§7.1`, `§7.4`, `§12.2`, `§12.3` |
+| US-098 | Adaptateurs texte brut / `CVDocumentContent` + dimensions `keywords` (note max à 60 % de couverture) et `impact` en mode règles | E18 | M | P0 | 024 | vision `§8.1` |
+| US-099 | Signaux de lisibilité machine à l'extraction PDF (couche texte, pages, colonnes, mojibake) et extraction de `extractText` en module réutilisable | E18 | M | P0 | 024 | vision `§6.4` |
+| US-100 | `AtsImpactService` : volet LLM borné à la seule dimension `impact`, 4 sous-notes 0..10, clamp ±25 autour du score par règles, jamais bloquant | E18 | M | P0 | 024 | vision `§8.1`, `§15.3` |
+| US-101 | Rate limiting applicatif sur les routes publiques : fenêtre glissante par IP, budget global quotidien, store derrière une interface | E18 | M | P0 | 024 | `engineering-standards.md` §7 — aucun rate limiting n'existe dans l'API |
+| US-102 | `POST /public/ats-scan` : module ATS, table `ats_scans`, sniff des magic bytes, OCR désactivé, réponse gratuite sans `dimensions[]`, aucun texte de CV persisté | E18 | L | P0 | 024 | vision `§15.3` |
+| US-103 | Déverrouillage par email : rapport complet immédiat + magic link en parallèle, consentement explicite, purge 30 jours | E18 | M | P0 | 024 | vision `§15.1`, `§15.3` |
+| US-104 | Page publique d'analyse ATS sur la landing (FR/EN) : route BFF, dictionnaires, dropzone, jauge, rapport verrouillé, formulaire email | E18 | L | P0 | 024 | Hors vision — décision produit du 2026-09-22 |
+| US-105 | Score in-app : persistance sur `applications` et `application_cv_versions`, calcul à la génération et à la sauvegarde, 0 crédit | E18 | M | P0 | 024 | vision `§7.4`, `§12.3` |
+| US-106 | Badge de score ATS dans `apps/web` (colonne de liste, entête éditeur CV), WCAG 2.1 AA | E18 | S | P1 | 024 | vision `§7.1` |
+| US-107 | KPI admin : score ATS moyen groupé par version de moteur, scans publics, taux de déverrouillage, conversion en compte | E18 | S | P2 | 024 | vision `§12.2` |
+| US-131 | Événements de tunnel côté API : table `acquisition_events` (outil, étape, locale, `ip_hash`, aucune donnée personnelle), route `POST /public/events` rate-limitée, tunnel par outil dans `/admin/metrics` | E23 | M | P0 | 029 | vision `§12.2` ; Hors vision — décision produit du 2026-09-24 |
+| US-132 | Rate limit générique : clé de budget global, limites et variables d'env par route publique ; l'ATS garde ses `ATS_*` | E23 | M | P0 | 029 | ADR-022 |
+| US-133 | Service « lead » générique extrait du déverrouillage ATS : email + consentement → magic link + intention de pré-remplissage appliquée à la première connexion ; le scan ATS est retrouvé dans l'app | E23 | M | P0 | 029 | vision `§15.1` ; Hors vision — décision produit du 2026-09-24 |
+| US-134 | Correctifs du tunnel ATS : `locale` transmise par la landing, erreurs traduites par code, liens depuis le Hero et la section CTA | E23 | S | P1 | 029 | Hors vision — décision produit du 2026-09-24 |
+| US-135 | Hub « Outils gratuits » sur la landing FR/EN (`/fr/outils`, `/en/tools`) : entrée de menu, section home, sitemap, JSON-LD | E23 | M | P1 | 029 | Hors vision — décision produit du 2026-09-24 |
+| US-136 | Comparateur CV ↔ offre : `POST /public/keyword-match` (moteur `packages/ats-score`, extraction sans OCR, 0 LLM, CV jamais persisté), page landing, CTA « Générer un CV adapté » → candidature pré-créée | E23 | L | P0 | 029 | Hors vision — décision produit du 2026-09-24 |
+| US-137 | « Ce métier recrute-t-il près de chez moi ? » : autocomplete ROME public, tension, offres, demandeurs et salaire médian avec taille d'échantillon ; CTA « offres du jour par email » → projet de recherche pré-rempli | E23 | L | P1 | 030 | Hors vision — décision produit du 2026-09-24 ; ADR-024 §3 |
+| US-138 | Pages SEO métier × département (ISR, sitemap, JSON-LD) générées depuis les données locales | E23 | M | P2 | 030 | Hors vision — décision produit du 2026-09-24 |
+| US-139 | « Vérifier un employeur » : recherche par nom ou SIREN, fiche (effectif, NAF, Egapro, ESS, société à mission, bilan carbone, page employeur France Travail) ; CTA entreprises qui recrutent | E23 | M | P1 | 030 | Hors vision — décision produit du 2026-09-24 ; ADR-024 §3 |
+| US-140 | Pages SEO entreprises (ISR, sitemap) avec sources citées | E23 | M | P2 | 030 | Hors vision — décision produit du 2026-09-24 |
+| US-141 | Questions d'entretien probables : 5 questions pour un texte d'offre, un appel LLM court sous budget global quotidien et limite par IP ; CTA entretien vocal | E23 | M | P2 | 030 | Hors vision — décision produit du 2026-09-24 ; ADR-022 |
+| US-142 | Socle des pages fonctionnalités : registre `lib/features.ts`, slugs FR/EN, gabarit commun, métadonnées, JSON-LD, image OG, sitemap | E24 | M | P0 | 031 | Décision produit du 2026-09-25 |
+| US-143 | Page « Offres du jour » : sources, score de correspondance, classement IA avec une phrase par offre, captures | E24 | M | P0 | 031 | Décision produit du 2026-09-25 |
+| US-144 | Page « CV et lettre sur mesure » : import, génération ancrée, score ATS, éditeur, traduction, export | E24 | M | P1 | 031 | Décision produit du 2026-09-25 |
+| US-145 | Page « Simulation d'entretien » : voix temps réel, styles de recruteur, rapport, progression | E24 | M | P1 | 031 | Décision produit du 2026-09-25 |
+| US-146 | Page « Entreprises qui recrutent et marché » : potentiel d'embauche, fiche entreprise, radar marché | E24 | M | P1 | 031 | Décision produit du 2026-09-25 |
+| US-147 | Nouvelle page d'accueil « toute la recherche » et menu Fonctionnalités | E24 | L | P0 | 031 | Décision produit du 2026-09-25 |
+| US-148 | Captures d'écran v2 : nouveaux écrans et captures de détail depuis le compte de démo | E24 | M | P0 | 031 | Décision produit du 2026-09-25 |
+| US-153 | Analyse ATS d'un CV généré dans l'app : le badge ouvre un panneau avec les points relevés, un conseil par point, la note par critère et le plafonnement ; lien depuis la liste des candidatures | E18 | M | P1 | 031 | Complète vision `§7.1` ; décision produit du 2026-09-25 (aligner l'app sur la landing) |
+| US-149 | API onboarding : colonnes `onboarding_completed_at` et `getting_started_dismissed_at`, migration 0045 avec reprise des comptes au profil prêt, module `/onboarding` | E25 | S | P0 | 032 | Décision produit du 2026-09-25 |
+| US-150 | Page `/bienvenue` : cadre plein écran, étapes Bienvenue (import CV), Identité, Parcours ; redirection des premières connexions | E25 | M | P0 | 032 | Décision produit du 2026-09-25 |
+| US-151 | Étapes Poste visé, Lieu, Métiers, Offres du jour et récapitulatif ; fin sur le tableau de bord | E25 | M | P0 | 032 | Décision produit du 2026-09-25 |
+| US-152 | Checklist « Bien démarrer » du tableau de bord : six étapes lues dans les données, reprise et masquage | E25 | S | P1 | 032 | Décision produit du 2026-09-25 |
+| US-154 | Journal des coûts IA : table `ai_usage_events` (fonctionnalité, modèle, tokens, coût USD OpenRouter, durée, fallback, statut), écrit par les clients texte, voix et transcription sans jamais faire échouer l'appel | E26 | M | P0 | 033 | Demande propriétaire du 2026-09-25 |
+| US-155 | Journal agrégé des recherches des outils gratuits (entreprise vérifiée, métier × département), sans IP, purgé à 365 jours | E26 | S | P1 | 033 | Demande propriétaire du 2026-09-25 |
+| US-156 | API cockpit découpée par domaine : période, séries, écarts avec la période précédente, insights, types partagés, export CSV | E26 | L | P0 | 033 | Demande propriétaire du 2026-09-25 |
+| US-157 | Cockpit web : onglets, sélecteur de période, vue d'ensemble et insights | E26 | M | P0 | 033 | Demande propriétaire du 2026-09-25 |
+| US-158 | Onglets Revenus & conversion et Coûts IA | E26 | M | P0 | 033 | Demande propriétaire du 2026-09-25 |
+| US-159 | Onglets Produit, Marché et Acquisition ; fil d'Ariane et retrait de l'ancienne grille | E26 | M | P1 | 033 | Demande propriétaire du 2026-09-25 |
+| US-160 | Entretien vocal en direct via OpenAI Realtime (WebRTC) : coupure native du recruteur, fin de tour sémantique, suivi serveur (agenda, transcription, raccrochage), coût par appel — ADR-026 | E12 | L | P0 | — | Demande propriétaire du 2026-09-25 |
+| US-161 | E-mails aux couleurs de CVSpark : gabarit commun (logo, carte, bouton, pied de page avec préférences, support et liens légaux), les 4 e-mails réécrits, Reply-To support, aperçu `email:preview` ; logo d'expéditeur via DMARC + BIMI (sans certificat), Gravatar et compte Google | — | M | P1 | — | Demande propriétaire du 2026-09-26 |
 
 ## Critères d'acceptation détaillés — E16
 
@@ -143,6 +190,94 @@ Référence de gate: le spec impose des branches courtes et des PRs <= 400 ligne
 
 - **US-088** : ordre strict — obligatoire avant toute autre story E17 ; certaines (US-089 à US-095) peuvent être partiellement déjà livrées
 - **US-096** : `PATCH /admin/users/:email` avec `{role:"admin"}` renvoie 400 ; aucun select de rôle dans l'UI d'édition ; test de non-régression prouvant qu'aucun chemin de service ne promeut
+
+## Critères d'acceptation détaillés — E18
+
+> ⚠️ **RÈGLE DE COÛT NON NÉGOCIABLE** : `POST /public/ats-scan` est la première surface IA publique
+> non authentifiée du produit, sur une API sans aucun rate limiting. **US-101 est obligatoire avant
+> la mise en ligne d'US-104.** L'OCR reste désactivé sur cette route tant qu'il n'y a pas de worker.
+
+> ⚠️ **RÈGLE RGPD** : aucun texte de CV n'est jamais persisté — ni fichier, ni texte extrait, ni
+> texte pseudonymisé. Seuls des scores et des codes. Contrepartie assumée : pas de préremplissage
+> du profil à l'inscription.
+
+- **Invariant du barème (toutes stories)** : une dimension non observable est **exclue et les poids
+  renormalisés**, jamais notée 0. Corollaire : une règle d'absence de défaut ne crédite que s'il
+  existe de la matière où ce défaut pourrait apparaître (sinon un document vide marque des points).
+- **US-097** : `scoreAts` pure et déterministe ; somme des poids = 100 assertée ;
+  `ATS_SCORE_ENGINE_VERSION` sur chaque résultat et persisté avec lui — sans quoi la courbe §12.3
+  compare des mesures prises avec deux règles différentes. ADR-021.
+- **US-098** : un CV équivalent passé par les deux adaptateurs score à **±3 points** (c'est le test
+  qui verrouille la cohérence des deux surfaces) ; fixtures **synthétiques** uniquement.
+- **US-099** : le comportement de l'import CV existant reste inchangé, prouvé par ses tests actuels.
+- **US-100** : le modèle ne renvoie **jamais** le score global, seulement 4 sous-notes 0..10 ; le
+  scoring ne peut jamais faire échouer une génération de CV ; aucun test n'appelle le réseau.
+- **US-101** : middleware maison, pas `@nestjs/throttler` (le repo n'utilise pas de Guards Nest) ;
+  tests à timers simulés, aucun `sleep`. ADR-022.
+- **US-102** : la réponse gratuite ne contient **jamais** `dimensions[]` — le gating est serveur, pas
+  un flou CSS ; test explicite que la ligne écrite ne contient aucun texte de CV ; `ip_hash` jamais
+  l'IP brute.
+- **US-103** : réponse identique qu'il existe ou non un compte pour cet email (pas d'énumération) ;
+  consentement explicite, l'envoi du lien valant création de compte.
+- **US-104** : zéro texte en dur (tout dans `content/{fr,en}.ts`) ; axe-core propre ; dropzone
+  opérable au clavier, `aria-live` sur le résultat, jauge avec équivalent textuel, la couleur n'est
+  jamais seul porteur de sens.
+- **US-105** : `cv-generation.service.ts` est à **417 lignes**, au-delà du seuil bloquant de 400 —
+  cette story doit en **extraire** du code, pas en ajouter ; OpenRouter coupé ⇒ la génération
+  réussit quand même, score rendu en mode règles.
+
+## Critères d'acceptation détaillés — E23
+
+> ⚠️ **Hors vision.** Décision produit du 2026-09-24 : les quatre outils ont été validés par le
+> propriétaire. À reporter dans `.project/vision.md` par le `product-owner`, jamais en auto-édition.
+
+> ⚠️ **RÈGLE DE COÛT** : toute route `public/*` passe par le rate limit (US-132) **avant** sa mise
+> en ligne. Seule US-141 appelle un LLM ; elle a son propre budget global quotidien.
+
+> ⚠️ **RÈGLE RGPD (reprise d'E18)** : aucun texte de CV n'est persisté. Le pré-remplissage à
+> l'inscription ne porte que sur ce que le visiteur a saisi hors CV : texte d'offre, code ROME et
+> lieu, SIREN, identifiant de scan.
+
+Critères communs à chaque outil (US-136, US-137, US-139, US-141) :
+- utilisable sans compte, en FR et en EN, sans texte en dur (`content/{fr,en}.ts`, test de parité) ;
+- événements US-131 émis à chaque étape : vue, résultat affiché, clic CTA, email saisi ;
+- WCAG 2.1 AA (axe-core propre, `aria-live` sur le résultat), `prefers-reduced-motion` respecté ;
+- source citée dès que la donnée vient de France Travail ou d'une API de l'État ;
+- page déclarée dans `sitemap.ts`, métadonnées via `pageMetadata()`.
+
+- **US-131** : aucune IP brute, aucun email, aucun texte libre dans `acquisition_events` ;
+  l'activation du compte se lit par jointure, comme `readAtsCounters` ; le tunnel admin affiche
+  vue → résultat → email → compte activé pour chaque outil, ATS inclus.
+- **US-132** : les limites et l'ATS existant restent inchangés (tests actuels verts) ; une nouvelle
+  route s'ajoute par configuration, sans copier le middleware ; tests à timers simulés.
+- **US-133** : réponse identique qu'un compte existe ou non (pas d'énumération) ; l'intention de
+  pré-remplissage expire avec le magic link ; ATS migré sur ce service sans régression.
+- **US-134** : un scan fait depuis `/en/…` est stocké en `en` ; aucune erreur française sur la
+  version EN.
+- **US-136** : 0 appel LLM, prouvé par test ; la réponse liste les mots-clés présents et
+  manquants et un taux de couverture ; après inscription, la candidature existe avec le texte de
+  l'offre, sans crédit consommé.
+- **US-137** : 0 appel France Travail à la requête, lecture des copies locales uniquement ; un
+  salaire n'est affiché qu'au-dessus d'une taille d'échantillon minimale, sinon message explicite.
+- **US-138 / US-140** : pas de page générée sans données (pas de contenu mince) ; canonical et
+  hreflang corrects.
+- **US-139** : fonctionne sans clé API (sources publiques) ; une entreprise inconnue renvoie un
+  message clair, pas une erreur.
+- **US-141** : panne OpenRouter ⇒ message propre, jamais une 500 ; budget épuisé ⇒ 503 avec
+  `Retry-After`.
+
+## Statut E18
+
+**Livré le 2026-09-22**, US-097 à US-107 incluses. Barème en version **1.1.0** (les plafonds de
+défauts rédhibitoires, voir l'amendement d'ADR-021).
+
+Restes hors code avant mise en ligne :
+- **`ENABLE_ZDR_CHAT=true` en production** — la vision `§15.3` l'exige, il est à `false` en dev.
+- Renseigner `ATS_IP_HASH_SECRET` (sinon le sel est régénéré à chaque redémarrage : les hachages
+  cessent d'être comparables, ce qui n'expose rien mais rend la forensique inutile).
+- Décider du timeout global au reverse proxy (écart assumé d'US-102).
+- Le barème n'est étalonné sur **aucun CV réel d'utilisateur** : à réviser sur retours terrain, en
+  bumpant la version.
 
 ## Statut E16/E17
 
@@ -176,11 +311,17 @@ Contexte persistance : la migration ADR-011 est **terminée** — tous les modul
 - 2026-06-10 — Remplacer les liens internes restants vers `/` par leur destination explicite (`/dashboard` ou landing) pour éviter une redirection intermédiaire.
 - 2026-07-10 — US-075 : `share-card-content.ts` (`buildDashboardSharePageUrl`, `buildLinkedInShareUrl`) n'a plus d'appelant depuis le retrait de la carte LinkedIn du dashboard ; nettoyer quand `/share/*` sera replanifié.
 - 2026-07-10 — US-075 : `/share/dashboard` n'a plus de point d'entrée dans l'app (route/page/OG image conservées mais orphelines) ; décider de restaurer un accès ou de dépréciter la route.
-- 2026-09-18 — **Le smoke test de déploiement ne couvre que l'API.** Le conteneur `web` de staging est resté sur une image antérieure pendant 5 déploiements consécutifs, tous rapportés « success » : `/admin/metrics` et `/admin/audit-log` renvoyaient 404 alors que l'image `cvspark-web:<sha>` contenait bien les routes (vérifié en lançant l'image). Un `workflow_dispatch` manuel a corrigé. Deux manques : le smoke test ne vérifie que `https://$API_DOMAIN/health`, jamais le web ; et rien ne contrôle que les conteneurs tournent bien le tag demandé. À ajouter : un curl sur le web dans le même step, et si possible une assertion sur le tag déployé.
-- 2026-09-18 — **Le pipeline ne teste jamais l'image avant de la déployer.** Un import circulaire entre `SessionStateMiddleware` et `AuthService` a fait crasher l'API au démarrage en staging : invisible pour les 593 tests (vitest résout le cycle en ESM), visible seulement dans le build CommonJS. Le smoke test actuel tourne **après** `tofu apply`, donc l'environnement est déjà cassé quand il échoue. À ajouter : démarrer le conteneur API construit contre un Postgres jetable et vérifier `/health` **avant** l'étape de déploiement. Envisager aussi `import/no-cycle` (nouvelle dépendance → ADR).
+- 2026-09-22 — ~~Les deux trous du pipeline de déploiement~~ → **corrigés**. (1) Chaque conteneur expose désormais le build qu'il sert (`APP_VERSION` → `/health` côté api, `/version` côté web) et le déploiement **échoue** si ce n'est pas le tag publié : c'est ce qui manquait quand staging a servi une image vieille de cinq déploiements tous « réussis » — le smoke test vérifiait bien le web, mais `/login` répond identiquement sur l'ancienne image. *(Ma note initiale disait que le smoke test ne couvrait que l'API : c'était faux.)* (2) Nouveau job `verify-image` : l'image API est démarrée contre un PostgreSQL 16 jetable, migrations comprises, **avant** `tofu apply` — un crash au boot ou une migration cassée arrête le pipeline au lieu d'abîmer l'environnement.
 - 2026-09-17 — `pnpm build` échoue sur `apps/app` (v1 gelée) : `app/credits/**` référence `CreateCheckoutSessionRequest["packId"]`, champ supprimé de `@cvforge/types` par la refonte des offres de crédits. Panne préexistante, indépendante de E16/E17. Décider entre corriger la v1 ou la retirer du pipeline `build` (cf. contexte §6.2 « retrait de `apps/app` »).
 
 - 2026-09-21 — **Le ZDR est désactivé et la chaîne de repli sort de l'UE, contre la vision `§15.2`.** `ENABLE_ZDR_CHAT=false` et `ENABLE_ZDR_STT=false` dans `.env.example` comme en réel, et les modèles de repli (`openai/gpt-4.1-nano`, `google/gemini-2.5-flash`, plus les modèles voix/STT d'OpenAI) sont hors Union européenne, alors que la vision prescrit « activer ZDR systématiquement » et `provider.only = ["Mistral"]`. La politique de confidentialité publiée ce jour **dit la vérité plutôt que de promettre le zéro-rétention** : elle nomme OpenRouter, OpenAI, Google et Mistral, et assume les transferts hors UE sous clauses contractuelles types. À arbitrer : réactiver le ZDR sur le chat (l'endpoint transcription n'accepte pas de filtre provider, cf. `ADR-013`), et décider si la chaîne de repli doit être restreinte à l'UE au prix de la disponibilité. Toute décision change le texte de la politique, qui s'édite désormais depuis `/admin/legal`.
+
+- **Rate limit (revue US-132)** : `/public/ats-scan/` (barre oblique finale) correspond aux deux motifs Nest, donc le middleware s'exécute deux fois et compte la requête double. Préexistant ; la landing n'utilise jamais ce chemin.
+
+- **Landing, contraste (revue US-134)** : le paragraphe `cta.body` de `components/sections/cta.tsx` (`text-lg opacity-85`, blanc à 85 % sur le bleu primaire) tombe à environ 4,06:1, sous les 4,5:1 exigés pour du texte de 18 px non gras. Préexistant : le choix visuel revient au designer.
+- **Landing, focus du résultat ATS (revue US-136)** : `components/ats/ats-checker.tsx` focalise le résultat dans un `requestAnimationFrame` lancé depuis `analyse()`. Sur le comparateur, ce motif s'exécutait avant que React monte le panneau, et le focus restait sur le `body` (vérifié au navigateur). Le comparateur utilise désormais un `useEffect` sur le résultat. Le checker ATS a probablement le même défaut : à vérifier, puis corriger de la même façon.
+- **Comparateur, vocabulaire de l'offre (US-136)** : les termes sont les mots de 4 lettres et plus, moins les mots vides d'offre et les verbes en « -ez ». Des mots de prose passent encore (« bases », « code », « revues »). Deux pistes : une liste de mots vides plus riche, ou des groupes nominaux. Un changement dans `offerTerms` modifie aussi la dimension `keywords`, donc demande de monter `ATS_SCORE_ENGINE_VERSION`.
+- **API, taille (US-136)** : `applications.service.ts` passe de 767 à 669 lignes (structuration de l'offre sortie dans `offer-structuring.ts`). Il reste au-dessus de la cible de 300.
 
 ## Clarifications Pendantes
 
@@ -216,6 +357,8 @@ Contexte persistance : la migration ADR-011 est **terminée** — tous les modul
 | `E15` | `E2`, `E12`, `E13` | La refonte UX s'appuie sur le design system, le pipeline interview et les écrans documentaires existants |
 | `E16` | `E8`, `E9` | La supervision du solde et les métriques de revenus s'appuient sur le ledger crédits, les commandes Stripe et le panel admin |
 | `E17` | `E3`, `E9` | La gestion utilisateurs avancée prolonge l'auth/les rôles et le panel admin utilisateurs |
+| `E18` | `E3`, `E7`, `E10` | Le score réutilise l'extraction de texte de l'import CV (`E10`), le pipeline documentaire pour le badge in-app (`E7`), et l'auth magic link (`E3`) pour convertir un visiteur en compte |
+| `E23` | `E3`, `E18`, `E19`, `E20`, `E21` | Les outils réutilisent le rate limit et le déverrouillage d'E18, l'auth magic link (`E3`), les offres du jour (`E19`), les fiches entreprises (`E20`), le référentiel ROME et le radar marché (`E21`) |
 
 ## Technical Gates
 
@@ -232,10 +375,20 @@ Contexte persistance : la migration ADR-011 est **terminée** — tous les modul
 | `014` | Gate purge audio et conservation RGPD | `tech-lead` |
 | `017` | Gate continuité agent interview (messages[] Redis) + VAD auto | `tech-lead` + `qa-reviewer` |
 | `018` | Gate cohérence Puck admin-only: aucune surface Puck côté user | `tech-lead` + `qa-reviewer` |
+| `024` | Gate coût surface IA publique : rate limit par IP **et** budget global quotidien vérifiés en conditions réelles avant mise en ligne ; OCR désactivé sur la route publique | `tech-lead` |
+| `024` | Gate RGPD scan anonyme : aucune ligne `ats_scans` ne contient de texte de CV (test d'intégration) | `tech-lead` + `qa-reviewer` |
+| `024` | Gate résilience scoring : OpenRouter coupé ⇒ la génération de CV réussit, score rendu en mode règles | `tech-lead` |
+| `029` | Gate mesure : le tunnel de chaque outil est visible dans `/admin/metrics` avant d'en ajouter un autre | `analyst` + `tech-lead` |
+| `030` | Gate coût : budget global et limite par IP vérifiés sur la route LLM d'US-141 avant mise en ligne | `tech-lead` |
 
 ## ADR Watchlist
 
 - Direction visuelle "Papier & Crayon raffiné" vs mobile-first (vision `§2.5`/`§2.6`) : décision produit desktop-first actée depuis 2026-04-26 (sprint 016) mais jamais formalisée en ADR — à écrire avant le prochain freeze de vision.
+- **Page publique d'analyse ATS (E18)** : fonctionnalité **absente de la vision**, qui ne prévoit le score qu'en in-app. Décidée avec le propriétaire le 2026-09-22 — à reporter dans `.project/vision.md` par le `product-owner` (hard rule : jamais d'auto-édition de la vision).
+- **Outils gratuits d'acquisition (E23)** : **absents de la vision**. Décidés avec le propriétaire le 2026-09-24 — à reporter dans `.project/vision.md` par le `product-owner`. Mesure par événements côté API, sans outil tiers : pas d'ADR analytics tant que ce choix tient.
+- **ADR-021** ✅ écrit — moteur ATS : package pur, barème versionné, LLM borné à une dimension.
+- **ADR-022** ✅ écrit — surface IA publique : rate limiting sans Redis ni throttler, budget global, OCR désactivé, rétention zéro.
+- **Rate limit en mémoire = mono-instance.** Valide tant que l'API tourne en une instance ; le jour du scale-out, le `RateLimitStore` bascule sur Redis (déjà provisionné dans `docker-compose.yml`, lu nulle part aujourd'hui) — ADR à ce moment-là.
 - ~~Puck Editor comme couche WYSIWYG~~ → **ADR-003 acceptée** (2026-04-20)
 - Provider email pour magic links / notifications
 - Librairie DOCX pour `V1.1`

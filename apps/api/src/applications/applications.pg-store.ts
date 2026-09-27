@@ -24,6 +24,12 @@ function toCvVersion(row: CvVersionRow): CVDocumentVersionEntry {
     source: row.source,
     templateId: row.templateId,
     versionNumber: row.versionNumber,
+    // Null on every version generated before the score shipped: absent means
+    // "not measured", never zero.
+    ...(row.atsScore !== null ? { atsScore: row.atsScore } : {}),
+    ...(row.atsEngineVersion !== null
+      ? { atsEngineVersion: row.atsEngineVersion }
+      : {}),
   };
 }
 
@@ -49,6 +55,7 @@ function toApplication(
     cvGeneratedAt: row.cvGeneratedAt?.toISOString() ?? null,
     cvTemplateId: row.cvTemplateId,
     cvVersions,
+    atsScore: row.atsScore ?? null,
     extracted: row.extracted,
     id: row.id,
     interviewReports: row.interviewReports,
@@ -63,6 +70,7 @@ function toApplication(
     offerUrl: row.offerUrl,
     profileId: row.profileId,
     rawOfferText: row.rawOfferText,
+    skillsToHighlight: row.skillsToHighlight,
     sourceLabel: row.sourceLabel,
     sourceType: row.sourceType,
     status: row.status,
@@ -74,6 +82,7 @@ function toApplication(
 
 function toRow(application: StoredApplication) {
   return {
+    atsScore: application.atsScore ?? null,
     createdAt: new Date(application.createdAt),
     cvContent: application.cvContent ?? null,
     cvGeneratedAt: application.cvGeneratedAt
@@ -96,6 +105,7 @@ function toRow(application: StoredApplication) {
     offerUrl: application.offerUrl,
     profileId: application.profileId ?? null,
     rawOfferText: application.rawOfferText,
+    skillsToHighlight: application.skillsToHighlight ?? [],
     sourceLabel: application.sourceLabel,
     sourceType: application.sourceType,
     status: application.status,
@@ -211,6 +221,8 @@ export class PgApplicationsStore implements ApplicationsStore {
     for (const version of application.cvVersions ?? []) {
       await tx.insert(applicationCvVersions).values({
         applicationId: application.id,
+        atsEngineVersion: version.atsEngineVersion ?? null,
+        atsScore: version.atsScore ?? null,
         content: version.content,
         createdAt: new Date(version.createdAt),
         id: version.id,
