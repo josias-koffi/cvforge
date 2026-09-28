@@ -1601,3 +1601,9 @@
 - `/finish` appelle `endCall` avant le scoring pour sauver les derniers mots. `getSession` renvoie `concluded` : le studio le lit quand l'appel se coupe (au revoir vs coupure réseau).
 - Coût : `openai-realtime.pricing.ts` (tarifs en dur, les prix cachés du mini sont estimés — à recaler sur facture) → cockpit `interview_voice`.
 - Nouveau secret `OPENAI_API_KEY` (deploy.yml, Terraform `openai_api_key`, set-secrets.sh, boot test). Les variables `INTERVIEW_VOICE_*`/`INTERVIEW_STT_*` sont supprimées.
+
+## 2026-09-28 — Score « Adéquation à l'offre » sur les mots-clés de l'offre (moteur ATS 1.3.0)
+- Cause du 20/100 contesté : `scoreKeywords` découpait les phrases de `requirements`/`responsibilities` en mots ; verbes et remplissage (« contribuer », « différents ») faisaient ~la moitié des termes, un CV aligné ne pouvait pas dépasser 0,3.
+- `ExtractedOfferFields.keywords?` extrait par le même appel `structureOffer` (8-20 groupes nominaux dans les mots de l'offre). Le score les utilise en priorité (tous les mots significatifs d'une expression requis, pluriel toléré via `morphology.ts`), sinon repli sur les phrases sans les verbes « -ez ».
+- Candidatures antérieures : `withOfferKeywords` (cv-generation.offer-keywords.ts) récupère les mots-clés à la génération du CV, après le contrôle des crédits, sans écraser les champs corrigés à la main.
+- Même liste injectée dans le prompt (bloc « VOCABULAIRE DE L'OFFRE ») ; `missingTerms` de la dimension affichés sous le critère dans `components/ats/ats-report.tsx`.

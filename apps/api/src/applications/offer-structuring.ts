@@ -22,6 +22,9 @@ export type OfferMetadata = {
 
 const MAX_EXTRACTED_LIST_ITEMS = 8;
 
+/** What the ATS score matches a CV against; a longer list stops being the offer's core. */
+const MAX_OFFER_KEYWORDS = 20;
+
 export async function structureOffer(
   openRouterService: Pick<OpenRouterService, "chat">,
   offerText: string,
@@ -35,7 +38,8 @@ export async function structureOffer(
         {
           role: "system",
           content:
-            "You extract structured job-offer data. Return JSON only with keys: title, companyName, location, contractType, salaryRange, summary, responsibilities, requirements, language.",
+            "You extract structured job-offer data. Return JSON only with keys: title, companyName, location, contractType, salaryRange, summary, responsibilities, requirements, keywords, language. " +
+            "keywords: 8 to 20 skills, tools, domains or deliverables the offer asks for, as short noun phrases copied in the offer's exact wording and language (e.g. \"communication interne\", \"newsletters\", \"montage vidéo\", \"Canva\", \"KPIs\"). No verbs, no generic qualities, no company or product names of the employer.",
         },
         {
           role: "user",
@@ -147,6 +151,7 @@ function normalizeExtractedFields(
       payload.language === "en" || payload.language === "fr"
         ? payload.language
         : inferLocaleFromText(fallback.offerText),
+    keywords: [...new Set(toStringArray(payload.keywords, MAX_OFFER_KEYWORDS))],
     location: toStringOrNull(payload.location),
     requirements: toStringArray(payload.requirements),
     responsibilities: toStringArray(payload.responsibilities),

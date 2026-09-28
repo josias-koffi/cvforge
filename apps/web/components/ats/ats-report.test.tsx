@@ -63,6 +63,27 @@ describe("AtsReport", () => {
     )
   })
 
+  it("names the offer's terms the CV lacks, and asks to add only true ones", () => {
+    const markup = renderToStaticMarkup(
+      <AtsReport
+        result={{
+          ...REPORT.result,
+          dimensions: [
+            {
+              key: "keywords",
+              missingTerms: ["newsletters", "montage vidéo"],
+              score: 83,
+              status: "scored",
+            },
+          ],
+        }}
+      />
+    )
+
+    expect(markup).toContain("newsletters · montage vidéo")
+    expect(markup).toContain("seulement si vous les avez vraiment pratiqués")
+  })
+
   it("says so when nothing was found", () => {
     const markup = renderToStaticMarkup(
       <AtsReport result={{ ...REPORT.result, findings: [] }} />

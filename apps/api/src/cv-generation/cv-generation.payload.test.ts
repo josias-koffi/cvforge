@@ -86,6 +86,28 @@ describe("pointers to bring forward (US-127)", () => {
   });
 });
 
+describe("offer vocabulary", () => {
+  it("fences the offer's keywords off as wording to reuse only when the profile backs it", () => {
+    const message = buildGroundedUserMessage(makeProfile(), {
+      ...OFFER,
+      keywords: ["communication interne", "newsletters"],
+    });
+    const block = message.indexOf("=== VOCABULAIRE DE L'OFFRE");
+
+    expect(block).toBeGreaterThan(message.indexOf("=== FIN TEXTE BRUT"));
+    expect(block).toBeLessThan(message.indexOf("=== PROFIL CANDIDAT"));
+    expect(message).toContain("SI ET SEULEMENT SI LE PROFIL L'ÉTAYE");
+    expect(message).toContain('["communication interne","newsletters"]');
+    expect(message).not.toContain('"keywords"');
+  });
+
+  it("adds no block for an offer structured before keywords existed", () => {
+    expect(buildGroundedUserMessage(makeProfile(), OFFER)).not.toContain(
+      "VOCABULAIRE DE L'OFFRE",
+    );
+  });
+});
+
 describe("spontaneous applications (US-120)", () => {
   it("says there is no offer, and sends no raw text to fence off", () => {
     const message = buildGroundedUserMessage(makeProfile(), {

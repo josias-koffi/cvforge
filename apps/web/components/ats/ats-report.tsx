@@ -5,6 +5,8 @@ import {
   ATS_DIMENSION_LABELS,
   ATS_FINDING_FIXES,
   ATS_FINDING_LABELS,
+  ATS_MISSING_TERMS_HINT,
+  ATS_MISSING_TERMS_LABEL,
   ATS_SEVERITY_LABELS,
   sortFindings,
   type AtsReportFinding,
@@ -73,6 +75,15 @@ export function AtsReport({
                       }}
                     />
                   </div>
+                ) : null}
+                {dimension.missingTerms && dimension.missingTerms.length > 0 ? (
+                  <p className="mt-1.5 text-xs text-muted-foreground">
+                    {ATS_MISSING_TERMS_LABEL}{" "}
+                    <span className="text-foreground">
+                      {dimension.missingTerms.join(" · ")}
+                    </span>
+                    . {ATS_MISSING_TERMS_HINT}
+                  </p>
                 ) : null}
               </div>
             ))}

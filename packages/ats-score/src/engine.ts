@@ -21,6 +21,7 @@ import { ATS_DIMENSION_WEIGHTS, CRITICAL_CAPS, bandFor } from "./weights";
 type DimensionOutcome = {
   score: number;
   findings: AtsFinding[];
+  missingTerms?: string[];
 };
 
 /**
@@ -30,9 +31,6 @@ type DimensionOutcome = {
  */
 export function scoreAts(
   doc: AtsDocument,
-  // Part of the contract from the start so callers are written once. The offer
-  // and the model signals are consumed by the `keywords` and `impact`
-  // dimensions, which land in the next story.
   context: AtsScoreContext = {},
 ): AtsScoreResult {
   const outcomes = new Map<AtsDimensionKey, DimensionOutcome>();
@@ -132,7 +130,12 @@ function buildDimensions(
       const outcome = outcomes.get(key);
 
       if (outcome) {
-        return { key, score: outcome.score, status: "scored" as const };
+        return {
+          key,
+          score: outcome.score,
+          status: "scored" as const,
+          ...(outcome.missingTerms ? { missingTerms: outcome.missingTerms } : {}),
+        };
       }
 
       return {

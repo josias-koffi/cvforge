@@ -36,6 +36,7 @@ function toOfferContext(
   if (!extracted) return null;
 
   return {
+    keywords: extracted.keywords ?? [],
     requirements: extracted.requirements ?? [],
     responsibilities: extracted.responsibilities ?? [],
     title: extracted.title ?? "",

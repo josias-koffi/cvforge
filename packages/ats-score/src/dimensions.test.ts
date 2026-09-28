@@ -138,6 +138,110 @@ describe("keywords", () => {
       "unavailable",
     );
   });
+
+  it("drops the offer's 'vous …ez' verbs from the sentence fallback", () => {
+    const addressed: AtsOfferContext = {
+      ...OFFER,
+      requirements: [...OFFER.requirements, "vous piloterez", "vous animerez"],
+    };
+
+    expect(dimensionOf("keywords", FLAWLESS, addressed).score).toBe(
+      dimensionOf("keywords", FLAWLESS, OFFER).score,
+    );
+  });
+
+  it("lists no missing terms when it fell back to the offer's sentences", () => {
+    expect(dimensionOf("keywords", FLAWLESS, OFFER).missingTerms).toBeUndefined();
+  });
+});
+
+describe("keywords (offer keywords)", () => {
+  const withKeywords = (keywords: string[]): AtsOfferContext => ({
+    ...OFFER,
+    keywords,
+  });
+
+  it("matches a plural keyword against its singular in the CV", () => {
+    const doc = makeDocument({ rawText: "Suivi des KPI.", skills: [] });
+
+    expect(dimensionOf("keywords", doc, withKeywords(["KPIs"])).score).toBe(100);
+  });
+
+  it("requires every significant word of a keyword phrase", () => {
+    const doc = makeDocument({ rawText: "Montage de stands.", skills: [] });
+    const dimension = dimensionOf("keywords", doc, withKeywords(["montage vidéo"]));
+
+    expect(dimension.score).toBe(0);
+    expect(dimension.missingTerms).toEqual(["montage vidéo"]);
+  });
+
+  it("matches a short acronym keyword as a whole word", () => {
+    const doc = makeDocument({ rawText: "Relations presse et RP.", skills: [] });
+
+    expect(dimensionOf("keywords", doc, withKeywords(["RP"])).score).toBe(100);
+  });
+
+  it("ignores the sentences once the offer has keywords", () => {
+    const doc = makeDocument({ rawText: "TypeScript.", skills: [] });
+
+    // The requirements would score 1/5; the keywords alone decide.
+    expect(dimensionOf("keywords", doc, withKeywords(["TypeScript"])).score).toBe(100);
+  });
+
+  /**
+   * The case that prompted keyword extraction: a CV aligned on what the
+   * candidate has done scored 20/100, because the offer's sentences were split
+   * into verbs and fillers no CV contains. It must now clear the low-coverage
+   * threshold while still naming what the CV genuinely lacks.
+   */
+  it("scores an aligned internal-communication CV fairly and names its real gaps", () => {
+    const doc = makeDocument({
+      rawText: [
+        "Chargée de Communication Interne.",
+        "Experte en stratégie de contenu et communication interne.",
+        "Pilotage de la communication interne et externe du groupe.",
+        "Animation au Salon International de l'Agriculture avec reporting KPIs.",
+        "Trade Marketing, Canva, Photoshop, Esprit d'équipe.",
+      ].join(" "),
+      skills: ["Communication interne", "Canva", "Photoshop", "KPI & Reporting"],
+    });
+    const offer = withKeywords([
+      "communication interne",
+      "stratégie de communication",
+      "articles",
+      "newsletters",
+      "vidéo",
+      "montage vidéo",
+      "canaux de diffusion",
+      "KPIs",
+      "Canva",
+      "Photoshop",
+      "suite Adobe",
+      "orthographe",
+      "esprit d'équipe",
+      "marketing",
+    ]);
+
+    const dimension = dimensionOf("keywords", doc, offer);
+
+    expect(dimension.score).toBeGreaterThanOrEqual(80);
+    expect(codesOf(doc, offer)).not.toContain("LOW_KEYWORD_COVERAGE");
+    expect(dimension.missingTerms).toEqual(
+      expect.arrayContaining(["newsletters", "montage vidéo", "suite Adobe"]),
+    );
+  });
+
+  it("still flags a CV unrelated to the offer's keywords", () => {
+    const doc = makeDocument({
+      experiences: [makeExperience({ bullets: ["Développement backend."] })],
+      rawText: "Développeur Java.",
+      skills: ["Java"],
+    });
+
+    expect(
+      codesOf(doc, withKeywords(["communication interne", "newsletters", "Canva"])),
+    ).toContain("LOW_KEYWORD_COVERAGE");
+  });
 });
 
 describe("impact (rules)", () => {

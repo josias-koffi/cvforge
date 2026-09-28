@@ -7,6 +7,11 @@ import type { StoredApplication } from "../applications/applications.types";
 
 export interface OfferContext {
   companyName: string | null;
+  /**
+   * The offer's own wording for what it asks — the terms the ATS score looks
+   * for. Fenced off like `skillsToHighlight`: vocabulary, never facts.
+   */
+  keywords?: string[];
   language: Locale;
   rawOfferText: string;
   requirements: string[];
@@ -30,6 +35,7 @@ export function offerContextOf(application: StoredApplication): OfferContext {
   return {
     title: application.extracted.title,
     companyName: application.extracted.companyName,
+    keywords: application.extracted.keywords ?? [],
     requirements: application.extracted.requirements,
     responsibilities: application.extracted.responsibilities,
     summary: application.extracted.summary,
@@ -104,6 +110,7 @@ export function buildGroundedUserMessage(
   } = {},
 ): string {
   const {
+    keywords = [],
     rawOfferText,
     skillsToHighlight = [],
     spontaneous = false,
@@ -143,6 +150,15 @@ export function buildGroundedUserMessage(
           "Compétences que l'offre demande et que le profil ne montre pas clairement (référentiel ROME 4.0, France Travail). Ce ne sont PAS des faits concernant le candidat.",
           JSON.stringify(skillsToHighlight),
           "=== FIN PISTES ===",
+          "",
+        ]
+      : []),
+    ...(keywords.length > 0
+      ? [
+          "=== VOCABULAIRE DE L'OFFRE — À REPRENDRE MOT POUR MOT SI ET SEULEMENT SI LE PROFIL L'ÉTAYE ===",
+          "Les termes exacts de l'offre. Quand le profil montre la même chose sous d'autres mots, écris-la avec le terme de l'offre. Un terme que le profil ne montre pas n'apparaît nulle part.",
+          JSON.stringify(keywords),
+          "=== FIN VOCABULAIRE ===",
           "",
         ]
       : []),

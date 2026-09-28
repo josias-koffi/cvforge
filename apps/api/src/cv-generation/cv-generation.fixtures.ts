@@ -28,6 +28,7 @@ export function makeStoredApplication(
     extracted: {
       companyName: "Acme Corp",
       contractType: "CDI",
+      keywords: ["TypeScript", "Node.js"],
       language: "en",
       location: "Paris",
       requirements: ["TypeScript", "Node.js"],
