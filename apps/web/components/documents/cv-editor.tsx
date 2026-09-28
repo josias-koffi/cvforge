@@ -141,7 +141,7 @@ function Section({
           ) : null}
         </span>
       </AccordionTrigger>
-      <AccordionContent className="pt-1">{children}</AccordionContent>
+      <AccordionContent className="flex flex-col gap-4 pt-1">{children}</AccordionContent>
     </AccordionItem>
   )
 }
