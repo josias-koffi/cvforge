@@ -10,6 +10,7 @@ import {
   applications,
 } from "../database/schema";
 import type { ApplicationsStore, StoredApplication } from "./applications.types";
+import { withContactLinks } from "./document-links.normalize";
 
 type ApplicationRow = typeof applications.$inferSelect;
 type CvVersionRow = typeof applicationCvVersions.$inferSelect;
@@ -18,7 +19,7 @@ type Tx = Parameters<Parameters<Database["transaction"]>[0]>[0];
 
 function toCvVersion(row: CvVersionRow): CVDocumentVersionEntry {
   return {
-    content: row.content,
+    content: withContactLinks(row.content),
     createdAt: row.createdAt.toISOString(),
     id: row.id,
     source: row.source,
@@ -35,7 +36,7 @@ function toCvVersion(row: CvVersionRow): CVDocumentVersionEntry {
 
 function toLetterVersion(row: LetterVersionRow): LetterDocumentVersionEntry {
   return {
-    content: row.content,
+    content: withContactLinks(row.content),
     createdAt: row.createdAt.toISOString(),
     id: row.id,
     source: row.source,
@@ -51,7 +52,7 @@ function toApplication(
 ): StoredApplication {
   return {
     createdAt: row.createdAt.toISOString(),
-    cvContent: row.cvContent ?? null,
+    cvContent: withContactLinks(row.cvContent ?? null),
     cvGeneratedAt: row.cvGeneratedAt?.toISOString() ?? null,
     cvTemplateId: row.cvTemplateId,
     cvVersions,
@@ -62,7 +63,7 @@ function toApplication(
     companyContext: row.companyContext ?? null,
     companyContextGeneratedAt:
       row.companyContextGeneratedAt?.toISOString() ?? null,
-    letterContent: row.letterContent ?? null,
+    letterContent: withContactLinks(row.letterContent ?? null),
     letterGeneratedAt: row.letterGeneratedAt?.toISOString() ?? null,
     letterTemplateId: row.letterTemplateId,
     letterVersions,

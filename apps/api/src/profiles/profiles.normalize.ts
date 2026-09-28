@@ -26,19 +26,40 @@ const LEGACY_LINK_FIELDS: Array<{ key: string; label: string }> = [
 function normalizeContactLinks(
   identity: Record<string, unknown>,
 ): ProfileContactLink[] {
-  if (Array.isArray(identity.links)) {
-    return identity.links.filter(
-      (link): link is ProfileContactLink =>
-        Boolean(link) &&
-        typeof link === "object" &&
-        typeof (link as Record<string, unknown>).label === "string" &&
-        typeof (link as Record<string, unknown>).url === "string",
-    );
-  }
+  const links = Array.isArray(identity.links)
+    ? identity.links.filter(
+        (link): link is ProfileContactLink =>
+          Boolean(link) &&
+          typeof link === "object" &&
+          typeof (link as Record<string, unknown>).label === "string" &&
+          typeof (link as Record<string, unknown>).url === "string",
+      )
+    : [];
+
+  // An empty list is not proof the legacy fields were dropped on purpose: a
+  // profile saved before this read-side migration shipped wrote `links: []`
+  // next to the untouched scalars. Once read here, those scalars are left out
+  // of the identity, so the next save retires them for good.
+  if (links.length > 0) return links;
 
   return LEGACY_LINK_FIELDS.filter(
     ({ key }) => typeof identity[key] === "string" && (identity[key] as string).trim(),
   ).map(({ key, label }) => ({ label, url: (identity[key] as string).trim() }));
+}
+
+/** The identity as the app knows it today, whatever shape it was stored in. */
+export function normalizeIdentity(value: unknown): StoredProfile["identity"] {
+  const identity =
+    value && typeof value === "object" ? (value as Record<string, unknown>) : {};
+
+  return {
+    city: typeof identity.city === "string" ? identity.city : "",
+    email: typeof identity.email === "string" ? identity.email : "",
+    firstName: typeof identity.firstName === "string" ? identity.firstName : "",
+    lastName: typeof identity.lastName === "string" ? identity.lastName : "",
+    links: normalizeContactLinks(identity),
+    phone: typeof identity.phone === "string" ? identity.phone : "",
+  };
 }
 
 function normalizePreferences(value: unknown): StoredProfile["preferences"] {
@@ -85,14 +106,7 @@ export function normalizeProfile(value: unknown): StoredProfile | null {
   return {
     headline: typeof raw.headline === "string" ? raw.headline : "",
     id: raw.id,
-    identity: {
-      city: typeof identity.city === "string" ? identity.city : "",
-      email: typeof identity.email === "string" ? identity.email : "",
-      firstName: typeof identity.firstName === "string" ? identity.firstName : "",
-      lastName: typeof identity.lastName === "string" ? identity.lastName : "",
-      links: normalizeContactLinks(identity),
-      phone: typeof identity.phone === "string" ? identity.phone : "",
-    },
+    identity: normalizeIdentity(identity),
     label: typeof raw.label === "string" ? raw.label : "Profil",
     meta: {
       lastSavedAt:

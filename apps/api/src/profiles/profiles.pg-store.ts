@@ -6,6 +6,7 @@ import {
   profileRomeInferences,
   profiles,
 } from "../database/schema";
+import { normalizeIdentity } from "./profiles.normalize";
 import type {
   ProfilesStore,
   StoredProfile,
@@ -18,7 +19,7 @@ function toProfile(row: ProfileRow): StoredProfile {
   return {
     headline: row.headline,
     id: row.id,
-    identity: row.identity,
+    identity: normalizeIdentity(row.identity),
     label: row.label,
     meta: row.meta,
     preferences: row.preferences,

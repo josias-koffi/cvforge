@@ -28,7 +28,8 @@ function contactLineChildren(
     .map(
       (link) =>
         new ExternalHyperlink({
-          children: [new TextRun({ style: "Hyperlink", text: link.label })],
+          // Not Word's blue "Hyperlink" style: the colour of the rest of the line.
+          children: [new TextRun({ text: link.label, underline: {} })],
           link: link.url,
         }),
     );
