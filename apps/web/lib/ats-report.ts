@@ -126,6 +126,11 @@ export const ATS_FINDING_FIXES: Record<string, string> = {
     "Pour chaque compétence listée, montrez-la dans une expérience où vous l'avez utilisée.",
 }
 
+/** Under `keywords`: the offer's terms the CV does not show, and what to do about them. */
+export const ATS_MISSING_TERMS_LABEL = "Termes de l'offre absents du CV :"
+export const ATS_MISSING_TERMS_HINT =
+  "Ajoutez-les à votre profil seulement si vous les avez vraiment pratiqués."
+
 export const ATS_SEVERITY_LABELS: Record<AtsReportFinding["severity"], string> =
   {
     critical: "Critique",

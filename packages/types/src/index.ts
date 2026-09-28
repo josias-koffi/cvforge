@@ -174,6 +174,12 @@ export interface ServiceHealth {
 export interface ExtractedOfferFields {
   companyName: string | null;
   contractType: string | null;
+  /**
+   * The offer's skills, tools and deliverables in its own wording — what the
+   * ATS score and the CV generation both aim at. Absent on offers structured
+   * before it was extracted.
+   */
+  keywords?: string[];
   language: Locale;
   location: string | null;
   requirements: string[];
@@ -740,6 +746,8 @@ export interface AtsScoreDimensionDetail {
   key: string;
   status: "scored" | "unavailable";
   score: number | null;
+  /** `keywords` only: the offer's terms the CV does not show. */
+  missingTerms?: string[];
 }
 
 /** One point the engine raised, worded by its code on the client. */

@@ -175,6 +175,27 @@ describe("ApplicationsService offer editing", () => {
     expect(creditsService.consumeCredits).toHaveBeenCalledTimes(1);
   });
 
+  it("keeps the offer's keywords, deduplicated and capped, and none when absent", async () => {
+    const keywords = ["Canva", "Canva", ...Array.from({ length: 30 }, (_, i) => `outil ${i}`)];
+    openRouterService.chat.mockResolvedValue(
+      JSON.stringify({ keywords, summary: "Resume", title: "Chargee de communication" }),
+    );
+
+    const application = await service.reExtractOffer("user@example.com", "app_1", "text");
+
+    expect(application.extracted.keywords?.[0]).toBe("Canva");
+    expect(application.extracted.keywords?.filter((k) => k === "Canva")).toHaveLength(1);
+    expect(application.extracted.keywords?.length).toBeLessThanOrEqual(20);
+
+    openRouterService.chat.mockResolvedValue(
+      JSON.stringify({ summary: "Resume", title: "Chargee de communication" }),
+    );
+
+    expect(
+      (await service.reExtractOffer("user@example.com", "app_1", "text")).extracted.keywords,
+    ).toEqual([]);
+  });
+
   it("rejects url re-extraction without a link and unknown sources", async () => {
     await store.save(createStoredApplication({ offerUrl: null, sourceType: "text" }));
 

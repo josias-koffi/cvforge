@@ -105,6 +105,15 @@ describe("scoreGeneratedCv", () => {
     expect(scored(withOffer)).toBeGreaterThan(scored(without));
   });
 
+  it("scores against the offer's keywords and names the ones the CV lacks", () => {
+    const keywords = scoreGeneratedCv(makeContent(), {
+      ...OFFER,
+      keywords: ["newsletters", "montage vidéo"],
+    }).dimensions.find((d) => d.key === "keywords");
+
+    expect(keywords?.missingTerms).toEqual(["newsletters", "montage vidéo"]);
+  });
+
   /** No file exists until the PDF is exported, so readability is not judged. */
   it("leaves machine readability unavailable", () => {
     const dimension = scoreGeneratedCv(makeContent(), null).dimensions.find(

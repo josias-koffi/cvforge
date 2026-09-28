@@ -8,6 +8,13 @@
  */
 
 /**
+ * 1.3.0 — `keywords` compares the offer's keywords, extracted in its own
+ * wording at structuring time, instead of every word of its sentences: verbs
+ * and fillers ("contribuer", "différents") no CV carries were a third of the
+ * terms, so a well-aligned CV could not clear the low-coverage threshold. A
+ * plural matches its singular, and offers structured before keywords existed
+ * fall back to the old sentence split minus the "vous …ez" verbs.
+ *
  * 1.2.0 — the scale stopped punishing correct French CVs. A bullet may open on
  * a deverbal noun, a skill may be evidenced anywhere in the prose rather than
  * only inside a bullet, and the `impact` sub-scores reach full credit at a
@@ -17,7 +24,7 @@
  * Scores from 1.1.0 and 1.0.0 are not comparable with these: group by version
  * before averaging or charting anything.
  */
-export const ATS_SCORE_ENGINE_VERSION = "1.2.0";
+export const ATS_SCORE_ENGINE_VERSION = "1.3.0";
 
 export const ATS_DIMENSION_KEYS = [
   "machineReadability",
@@ -45,6 +52,11 @@ export type AtsDimension = {
   score: number | null;
   /** Why it could not be scored — shown to the user as an unlock hint. */
   unavailableReason?: AtsUnavailableReason;
+  /**
+   * `keywords` only: the offer's keywords the CV does not show, so the
+   * candidate can add the ones they genuinely practise to their profile.
+   */
+  missingTerms?: string[];
 };
 
 export type AtsUnavailableReason =
@@ -164,6 +176,8 @@ export type AtsOfferContext = {
   title: string;
   requirements: string[];
   responsibilities: string[];
+  /** The offer's skills, tools and deliverables in its own wording. */
+  keywords?: string[];
 };
 
 /**

@@ -115,6 +115,31 @@ describe("CvGenerationService", () => {
       });
     });
 
+    it("backfills an older offer's keywords, then saves and aims at them", async () => {
+      const legacy = makeStoredApplication();
+      delete legacy.extracted.keywords;
+      (store.findByIdForUserEmail as ReturnType<typeof vi.fn>).mockReturnValue(legacy);
+      openRouter.chat
+        .mockResolvedValueOnce(
+          JSON.stringify({ keywords: ["TypeScript"], summary: "s", title: "t" }),
+        )
+        .mockResolvedValueOnce(JSON.stringify(VALID_CV_JSON));
+
+      await service.generateCv("user@test.example", "app-001", makeRequest());
+
+      const [messages] = openRouter.chat.mock.calls[1] as [
+        Array<{ role: string; content: string }>,
+      ];
+      const saved = (store.save as ReturnType<typeof vi.fn>).mock
+        .calls[0][0] as StoredApplication;
+
+      expect(messages.find((m) => m.role === "user")!.content).toContain(
+        "=== VOCABULAIRE DE L'OFFRE",
+      );
+      expect(saved.extracted.keywords).toEqual(["TypeScript"]);
+      expect(saved.extracted.title).toBe(legacy.extracted.title);
+    });
+
     it("passes the offer's pointers, and drops one the profile does not back (US-127)", async () => {
       const app = {
         ...makeStoredApplication(),

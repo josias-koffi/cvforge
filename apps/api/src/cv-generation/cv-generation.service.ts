@@ -37,6 +37,7 @@ import {
   readLetterContent,
   readLetterVersions,
 } from "./cv-generation.reads";
+import { withOfferKeywords } from "./cv-generation.offer-keywords";
 import { scoreGeneratedCvSafely } from "./cv-generation.scoring";
 import {
   appendCvVersion,
@@ -89,15 +90,14 @@ export class CvGenerationService {
   ): Promise<CVDocumentContent> {
     assertProfileIsGroundable(request.promptProfile);
     assertLocalFieldsProvided(request.localFields);
-    const application = await loadApplication(this.store, 
-      userEmail,
-      applicationId,
-    );
-    const offerContext = offerContextOf(application);
+    const loaded = await loadApplication(this.store, userEmail, applicationId);
     await this.creditsService.assertSufficientCredits(
       AI_CREDIT_ACTION_CV_GENERATION,
       userEmail,
     );
+    // After the credit check, so a candidate who cannot generate costs no call.
+    const application = await withOfferKeywords(this.openRouterService, loaded);
+    const offerContext = offerContextOf(application);
 
     const rawResponse = await withOpenRouterHttpErrors(() =>
       this.openRouterService.chat(
