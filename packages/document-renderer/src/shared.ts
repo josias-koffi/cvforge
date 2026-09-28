@@ -44,6 +44,14 @@ export const SHARED_PDF_STYLES = `
     color: #6b6860;
   }
 
+  /* Same grey as the rest of the line; the faint underline keeps them readable as links. */
+  .contact a {
+    color: inherit;
+    text-decoration: underline;
+    text-decoration-color: #c9c5bd;
+    text-underline-offset: 0.15em;
+  }
+
   .title {
     font-size: 10.5pt;
     color: #1a1a1a;
