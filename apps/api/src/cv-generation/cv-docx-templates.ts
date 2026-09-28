@@ -1,8 +1,9 @@
-import { documentLabels } from "@cvforge/document-renderer";
-import type { CVDocumentContent, LetterDocumentContent } from "@cvforge/types";
+import { documentLabels, sanitizeHref } from "@cvforge/document-renderer";
+import type { CandidateIdentity, CVDocumentContent, LetterDocumentContent } from "@cvforge/types";
 import {
   AlignmentType,
   Document,
+  ExternalHyperlink,
   HeadingLevel,
   Packer,
   Paragraph,
@@ -14,6 +15,30 @@ function paragraph(text: string, options: { bold?: boolean } = {}) {
     children: [new TextRun({ bold: options.bold, text })],
     spacing: { after: 140 },
   });
+}
+
+/** Contact line children: scalar values as plain text, links as clickable labels. */
+function contactLineChildren(
+  scalarValues: string[],
+  links: CandidateIdentity["links"],
+) {
+  const linkRuns = links
+    .map((link) => ({ label: link.label.trim(), url: sanitizeHref(link.url) }))
+    .filter((link): link is { label: string; url: string } => Boolean(link.label && link.url))
+    .map(
+      (link) =>
+        new ExternalHyperlink({
+          children: [new TextRun({ style: "Hyperlink", text: link.label })],
+          link: link.url,
+        }),
+    );
+
+  const scalarRuns = scalarValues.filter(Boolean).map((value) => new TextRun(value));
+  const separator = () => new TextRun(" | ");
+
+  return [...scalarRuns, ...linkRuns].flatMap((run, index) =>
+    index === 0 ? [run] : [separator(), run],
+  );
 }
 
 function sectionHeading(text: string) {
@@ -54,19 +79,10 @@ export function renderCvDocx(content: CVDocumentContent) {
     }),
     new Paragraph({
       alignment: AlignmentType.CENTER,
-      children: [
-        new TextRun(
-          [
-            candidate.phone,
-            candidate.email,
-            candidate.city,
-            candidate.linkedin,
-            candidate.github,
-          ]
-            .filter(Boolean)
-            .join(" | "),
-        ),
-      ],
+      children: contactLineChildren(
+        [candidate.phone, candidate.email, candidate.city],
+        candidate.links,
+      ),
       spacing: { after: 240 },
     }),
   ];
@@ -183,11 +199,13 @@ export function renderLetterDocx(content: LetterDocumentContent) {
       spacing: { after: 80 },
     }),
     ...(candidate.title ? [paragraph(candidate.title)] : []),
-    paragraph(
-      [candidate.phone, candidate.email, candidate.city, candidate.linkedin]
-        .filter(Boolean)
-        .join(" · "),
-    ),
+    new Paragraph({
+      children: contactLineChildren(
+        [candidate.phone, candidate.email, candidate.city],
+        candidate.links,
+      ),
+      spacing: { after: 140 },
+    }),
     paragraph(content.company.name),
     paragraph(content.company.city),
     paragraph(content.date),

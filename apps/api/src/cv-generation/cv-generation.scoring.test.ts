@@ -15,9 +15,11 @@ function makeContent(
       city: "Lyon",
       email: "alex@example.com",
       firstName: "Alex",
-      github: "github.com/alex",
       lastName: "Martin",
-      linkedin: "linkedin.com/in/alex",
+      links: [
+        { label: "GitHub", url: "github.com/alex" },
+        { label: "LinkedIn", url: "linkedin.com/in/alex" },
+      ],
       phone: "0612345678",
       summary:
         "Ingenieur plateforme, huit ans d'experience sur des chaines de livraison continues. Je concois et fiabilise les outils internes qui permettent aux equipes produit de livrer plusieurs fois par jour, en gardant la maitrise des couts d'infrastructure et la qualite de service attendue par les clients de la plateforme.",

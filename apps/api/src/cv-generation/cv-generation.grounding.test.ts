@@ -176,14 +176,15 @@ describe("CvGenerationService grounding and billing", () => {
         ...VALID_CV_JSON,
         candidate: {
           ...VALID_CV_JSON.candidate,
-          github: "github.com/invented",
-          linkedin: "linkedin.com/in/invented",
+          links: [{ label: "GitHub", url: "github.com/invented" }],
         },
       }),
     );
 
     const request = makeRequest();
-    request.localFields.linkedin = "linkedin.com/in/jean-dupont";
+    request.localFields.links = [
+      { label: "LinkedIn", url: "linkedin.com/in/jean-dupont" },
+    ];
 
     const cvContent = await service.generateCv(
       "user@test.example",
@@ -191,8 +192,9 @@ describe("CvGenerationService grounding and billing", () => {
       request,
     );
 
-    expect(cvContent.candidate.linkedin).toBe("linkedin.com/in/jean-dupont");
-    expect(cvContent.candidate.github).toBe("");
+    expect(cvContent.candidate.links).toEqual([
+      { label: "LinkedIn", url: "linkedin.com/in/jean-dupont" },
+    ]);
   });
 
   it("dates the letter even when the model echoes back an empty field", async () => {

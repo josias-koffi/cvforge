@@ -1,9 +1,10 @@
+import type { ContactLink } from "./documents";
+
 export interface CvLocalFields {
   email: string;
-  /** Re-injected locally like the other identifiers, never generated. */
-  github?: string;
   lastName: string;
-  linkedin?: string;
+  /** Re-injected locally like the other identifiers, never generated. */
+  links?: ContactLink[];
   phone: string;
 }
 
@@ -79,9 +80,7 @@ export interface ImportedCvProfilePatch {
   identity: {
     city: string;
     firstName: string;
-    github: string;
-    linkedIn: string;
-    portfolio: string;
+    links: ContactLink[];
   };
   sections: PromptSafeProfileSections;
 }

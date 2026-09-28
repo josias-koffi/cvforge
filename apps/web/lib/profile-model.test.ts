@@ -13,7 +13,7 @@ import {
 function patch(overrides: Partial<ImportedCvProfilePatch["sections"]> = {}): ImportedCvProfilePatch {
   return {
     headline: "Ingénieur IA",
-    identity: { city: "", firstName: "Yahse", github: "", linkedIn: "", portfolio: "" },
+    identity: { city: "", firstName: "Yahse", links: [] },
     sections: {
       certifications: [],
       education: [{ degree: "BTS", honors: "", institution: "Lycée", year: "2025" }],
@@ -59,16 +59,21 @@ describe("profile model", () => {
 
   it("keeps personal identifiers out of the prompt profile", () => {
     const profile = createEmptyProfile(" me@example.com ")
-    profile.identity = { ...profile.identity, firstName: "Yahse", lastName: "Koffi", phone: "0600" }
+    profile.identity = {
+      ...profile.identity,
+      firstName: "Yahse",
+      lastName: "Koffi",
+      links: [{ label: "LinkedIn", url: "linkedin.com/in/yahse" }],
+      phone: "0600",
+    }
 
     const request = buildGenerationRequest(profile)
 
     // Links travel with the identifiers so the model never guesses a profile URL.
     expect(request.localFields).toEqual({
       email: "me@example.com",
-      github: "",
       lastName: "Koffi",
-      linkedin: "",
+      links: [{ label: "LinkedIn", url: "linkedin.com/in/yahse" }],
       phone: "0600",
     })
     expect(JSON.stringify(request.promptProfile)).not.toMatch(/Koffi|0600|me@example/)

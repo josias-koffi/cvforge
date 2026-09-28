@@ -2,6 +2,7 @@ import type { CVDocumentContent } from "@cvforge/types";
 import {
   escapeAttribute,
   escapeHtml,
+  renderContactLine,
   SHARED_PDF_STYLES,
 } from "./shared";
 import { documentLabels } from "./labels";
@@ -290,16 +291,10 @@ export function renderCvPdfHtml(cvContent: CVDocumentContent) {
           <h1>${escapeHtml(`${candidate.firstName} ${candidate.lastName}`.trim())}</h1>
           <p class="title">${escapeHtml(candidate.title)}</p>
           <p class="contact">
-            ${[
-              candidate.phone,
-              candidate.email,
-              candidate.city,
-              candidate.linkedin,
-              candidate.github,
-            ]
-              .filter((value) => value.length > 0)
-              .map((value) => escapeHtml(value))
-              .join(" · ")}
+            ${renderContactLine(
+              [candidate.phone, candidate.email, candidate.city],
+              candidate.links,
+            )}
           </p>
         </header>
         ${sections}

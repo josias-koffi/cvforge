@@ -20,12 +20,9 @@ function makeProfile(
       city: "Paris",
       email: "jane@example.com",
       firstName: "Jane",
-      github: "",
       lastName: "Doe",
-      linkedIn: "",
-      otherLink: "",
+      links: [],
       phone: "",
-      portfolio: "",
     },
     label: `Profil ${id}`,
     meta: {

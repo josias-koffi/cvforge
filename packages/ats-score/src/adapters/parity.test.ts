@@ -20,9 +20,11 @@ const STRUCTURED: CVDocumentContent = {
     city: "Lyon",
     email: "candidat@example.com",
     firstName: "Alex",
-    github: "github.com/alex",
     lastName: "Martin",
-    linkedin: "linkedin.com/in/alex",
+    links: [
+      { label: "LinkedIn", url: "linkedin.com/in/alex" },
+      { label: "GitHub", url: "github.com/alex" },
+    ],
     phone: "+33 6 12 34 56 78",
     summary:
       "Ingénieur plateforme, huit ans d'expérience sur des chaînes de livraison TypeScript et PostgreSQL.",

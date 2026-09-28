@@ -21,9 +21,8 @@ const GENERATED_FR: CVDocumentContent = {
     city: "Lyon",
     email: "camille@example.com",
     firstName: "Camille",
-    github: "",
     lastName: "Rousseau",
-    linkedin: "linkedin.com/in/camille",
+    links: [{ label: "LinkedIn", url: "linkedin.com/in/camille" }],
     phone: "+33 6 11 22 33 44",
     summary:
       "Développeuse full-stack expérimentée sur applications web à fort trafic. Spécialisée TypeScript, React et Node.js, de la conception produit à la mise en production. 6 ans d'expertise en optimisation performance et mentorat.",

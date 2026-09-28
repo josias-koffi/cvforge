@@ -76,8 +76,8 @@ PROJETS (projects[]) :
 CENTRES D'INTÉRÊT (interests) :
 - Reprendre ceux du profil sans en inventer. Laisser vide si absents.
 
-LIENS (candidate.linkedin, candidate.github) :
-- Laisse toujours ces champs vides, ils sont réinjectés localement.
+LIENS (candidate.links) :
+- Laisse toujours ce tableau vide, il est réinjecté localement.
 
 COHÉRENCE GLOBALE :
 - Le titre, le résumé, les expériences et les compétences pointent vers le même poste cible.
@@ -97,8 +97,7 @@ Retourne UNIQUEMENT un JSON valide avec cette structure exacte :
     "phone": "",
     "email": "",
     "city": "",
-    "linkedin": "",
-    "github": ""
+    "links": []
   },
   "experiences": [{
     "company": "",
@@ -162,8 +161,7 @@ Retourne UNIQUEMENT un JSON valide avec cette structure exacte :
     "phone": "",
     "email": "",
     "city": "",
-    "linkedin": "",
-    "github": ""
+    "links": []
   },
   "company": { "name": "", "city": "" },
   "date": "",

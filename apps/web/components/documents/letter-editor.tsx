@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { renderLetterPdfHtml } from "@cvforge/document-renderer"
-import type { LetterDocumentContent, LetterDocumentVersionEntry } from "@cvforge/types"
+import type { ContactLink, LetterDocumentContent, LetterDocumentVersionEntry } from "@cvforge/types"
 import { ZapIcon } from "lucide-react"
 
 import { saveLetter } from "@/app/(app)/candidatures/[id]/documents-actions"
@@ -10,7 +10,7 @@ import { generateDocument } from "@/app/(app)/candidatures/actions"
 import { ActionButton } from "@/components/feedback/action-button"
 import { EditorLayout } from "@/components/documents/editor-layout"
 import { TranslateDialog } from "@/components/documents/translate-dialog"
-import { FieldGrid, SpecField, type FieldSpec } from "@/components/documents/list-editor"
+import { FieldGrid, ListEditor, SpecField, type FieldSpec } from "@/components/documents/list-editor"
 import { useDocumentEditor } from "@/components/documents/use-document-editor"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -28,15 +28,20 @@ import { Textarea } from "@/components/ui/textarea"
 import { creditCostLabel } from "@/lib/format"
 
 type Candidate = LetterDocumentContent["candidate"]
+type ScalarCandidate = Omit<Candidate, "links">
 type Body = LetterDocumentContent["body"]
 
-const candidateFields: FieldSpec<Candidate>[] = [
+const candidateFields: FieldSpec<ScalarCandidate>[] = [
   { key: "firstName", label: "Prénom" },
   { key: "lastName", label: "Nom" },
   { key: "email", label: "E-mail" },
   { key: "phone", label: "Téléphone" },
   { key: "city", label: "Ville" },
-  { key: "linkedin", label: "LinkedIn" },
+]
+
+const linkFields: FieldSpec<ContactLink>[] = [
+  { key: "label", label: "Libellé" },
+  { key: "url", label: "URL" },
 ]
 
 const bodyFields: FieldSpec<Body>[] = [
@@ -171,6 +176,17 @@ export function LetterEditor({
               onChange={(value) => setDraft({ ...draft, object: value as string })}
             />
           </FieldGrid>
+          <ListEditor
+            id="link"
+            items={draft.candidate.links}
+            fields={linkFields}
+            onChange={(links) =>
+              setDraft({ ...draft, candidate: { ...draft.candidate, links } })
+            }
+            itemTitle={(item, index) => item.label || `Lien ${index + 1}`}
+            addLabel="Ajouter un lien"
+            createItem={() => ({ label: "", url: "" })}
+          />
         </CardContent>
       </Card>
       <Card>

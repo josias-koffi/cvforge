@@ -1,4 +1,8 @@
-import type { StoredProfile, StoredProfileRegistry } from "./profiles.types";
+import type {
+  ProfileContactLink,
+  StoredProfile,
+  StoredProfileRegistry,
+} from "./profiles.types";
 
 /**
  * The repairs the JSON store used to apply on every read. Legacy records on
@@ -6,6 +10,36 @@ import type { StoredProfile, StoredProfileRegistry } from "./profiles.types";
  * `not null`, so `import-legacy-profiles` runs them before inserting.
  */
 const AVAILABILITY_MODES = ["immediate", "date", ""];
+
+/**
+ * Records saved before the free-form links list existed stored a fixed set
+ * of scalar fields; their non-empty values are ported in as labelled links
+ * so nothing is lost on the first read after the migration.
+ */
+const LEGACY_LINK_FIELDS: Array<{ key: string; label: string }> = [
+  { key: "linkedIn", label: "LinkedIn" },
+  { key: "github", label: "GitHub" },
+  { key: "portfolio", label: "Portfolio" },
+  { key: "otherLink", label: "Autre" },
+];
+
+function normalizeContactLinks(
+  identity: Record<string, unknown>,
+): ProfileContactLink[] {
+  if (Array.isArray(identity.links)) {
+    return identity.links.filter(
+      (link): link is ProfileContactLink =>
+        Boolean(link) &&
+        typeof link === "object" &&
+        typeof (link as Record<string, unknown>).label === "string" &&
+        typeof (link as Record<string, unknown>).url === "string",
+    );
+  }
+
+  return LEGACY_LINK_FIELDS.filter(
+    ({ key }) => typeof identity[key] === "string" && (identity[key] as string).trim(),
+  ).map(({ key, label }) => ({ label, url: (identity[key] as string).trim() }));
+}
 
 function normalizePreferences(value: unknown): StoredProfile["preferences"] {
   const raw = value && typeof value === "object" ? (value as Record<string, unknown>) : {};
@@ -55,12 +89,9 @@ export function normalizeProfile(value: unknown): StoredProfile | null {
       city: typeof identity.city === "string" ? identity.city : "",
       email: typeof identity.email === "string" ? identity.email : "",
       firstName: typeof identity.firstName === "string" ? identity.firstName : "",
-      github: typeof identity.github === "string" ? identity.github : "",
       lastName: typeof identity.lastName === "string" ? identity.lastName : "",
-      linkedIn: typeof identity.linkedIn === "string" ? identity.linkedIn : "",
-      otherLink: typeof identity.otherLink === "string" ? identity.otherLink : "",
+      links: normalizeContactLinks(identity),
       phone: typeof identity.phone === "string" ? identity.phone : "",
-      portfolio: typeof identity.portfolio === "string" ? identity.portfolio : "",
     },
     label: typeof raw.label === "string" ? raw.label : "Profil",
     meta: {
