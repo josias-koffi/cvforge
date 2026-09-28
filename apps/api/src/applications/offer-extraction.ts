@@ -50,8 +50,16 @@ export function buildOfferPreview(offerText: string, limit = 220) {
     : `${offerText.slice(0, limit - 1).trimEnd()}...`;
 }
 
+function stripDiacritics(value: string) {
+  return value.normalize("NFD").replace(/[̀-ͯ]/g, "");
+}
+
+/**
+ * "experience" is spelled identically in both languages, so it never
+ * discriminates anything — deliberately left out of both signal lists below.
+ */
 export function inferLocaleFromText(text: string): Locale {
-  const lowered = text.toLowerCase();
+  const lowered = stripDiacritics(text.toLowerCase());
   const frenchSignals = [
     "bonjour",
     "poste",
@@ -59,17 +67,23 @@ export function inferLocaleFromText(text: string): Locale {
     "entreprise",
     "responsabilites",
     "candidat",
-    "experience",
     "offre",
+    "mission",
+    "competences",
+    "nous recherchons",
+    "societe",
   ];
   const englishSignals = [
     "responsibilities",
     "requirements",
     "company",
     "candidate",
-    "experience",
     "role",
     "about us",
+    "skills",
+    "we are looking",
+    "duties",
+    "you will",
   ];
 
   const frenchScore = frenchSignals.filter((signal) =>
@@ -79,7 +93,13 @@ export function inferLocaleFromText(text: string): Locale {
     lowered.includes(signal),
   ).length;
 
-  return frenchScore >= englishScore ? "fr" : "en";
+  if (englishScore > frenchScore) return "en";
+  if (frenchScore > englishScore) return "fr";
+
+  // True tie, including 0-0 (no signal matched either way): default to
+  // French, the primary user base, rather than silently biasing every
+  // ambiguous case the same way the ">=" it replaces used to.
+  return "fr";
 }
 
 export function extractOfferMetadata(html: string) {
