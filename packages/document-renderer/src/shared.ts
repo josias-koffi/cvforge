@@ -82,3 +82,38 @@ export function escapeHtml(value: string) {
 export function escapeAttribute(value: string) {
   return escapeHtml(value);
 }
+
+/** Only http(s) links are allowed as hrefs; missing schemes default to https. */
+export function sanitizeHref(url: string): string | null {
+  const trimmed = url.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  const withScheme = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+
+  try {
+    const parsed = new URL(withScheme);
+    return parsed.protocol === "http:" || parsed.protocol === "https:"
+      ? withScheme
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+/** The header contact line: phone/email/city as plain text, links as clickable labels. */
+export function renderContactLine(
+  scalarValues: string[],
+  links: Array<{ label: string; url: string }>,
+) {
+  const parts = [
+    ...scalarValues.filter((value) => value.length > 0).map((value) => escapeHtml(value)),
+    ...links
+      .map((link) => ({ label: link.label.trim(), url: sanitizeHref(link.url) }))
+      .filter((link): link is { label: string; url: string } => Boolean(link.label && link.url))
+      .map((link) => `<a href="${escapeAttribute(link.url)}">${escapeHtml(link.label)}</a>`),
+  ];
+
+  return parts.join(" · ");
+}

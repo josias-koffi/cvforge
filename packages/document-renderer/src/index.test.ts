@@ -7,9 +7,8 @@ const cvContent: CVDocumentContent = {
     city: "Paris",
     email: "alice@example.com",
     firstName: "Alice",
-    github: "",
     lastName: "Martin",
-    linkedin: "",
+    links: [{ label: "LinkedIn", url: "linkedin.com/in/alice" }],
     phone: "+33600000000",
     summary: "Profil cible",
     title: "Engineer",
@@ -60,9 +59,8 @@ const letterContent: LetterDocumentContent = {
     city: "Paris",
     email: "alice@example.com",
     firstName: "Alice",
-    github: "",
     lastName: "Martin",
-    linkedin: "",
+    links: [{ label: "LinkedIn", url: "linkedin.com/in/alice" }],
     phone: "+33600000000",
     title: "Engineer",
   },
@@ -89,6 +87,13 @@ describe("document renderer", () => {
     expect(html).toContain("Anglais C1");
     expect(html).toContain("Architect (2025) · AWS");
     expect(html).toContain("https://example.com?a=1&amp;b=2");
+  });
+
+  it("renders contact links as clickable labels, not raw URLs", () => {
+    const html = renderCvPdfHtml(cvContent);
+
+    expect(html).toContain('<a href="https://linkedin.com/in/alice">LinkedIn</a>');
+    expect(html).not.toMatch(/class="contact">[^<]*linkedin\.com/);
   });
 
   it("falls back to flat skills and omits empty optional sections", () => {

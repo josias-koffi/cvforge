@@ -36,6 +36,11 @@ export type ProfileProjectEntry = {
   title: string;
 };
 
+export type ProfileContactLink = {
+  label: string;
+  url: string;
+};
+
 export type StoredProfile = {
   headline: string;
   id: string;
@@ -43,12 +48,9 @@ export type StoredProfile = {
     city: string;
     email: string;
     firstName: string;
-    github: string;
     lastName: string;
-    linkedIn: string;
-    otherLink: string;
+    links: ProfileContactLink[];
     phone: string;
-    portfolio: string;
   };
   label: string;
   meta: {

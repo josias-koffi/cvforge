@@ -1,19 +1,13 @@
 import type { LetterDocumentContent } from "@cvforge/types";
-import { escapeHtml, SHARED_PDF_STYLES } from "./shared";
+import { escapeHtml, renderContactLine, SHARED_PDF_STYLES } from "./shared";
 import { documentLabels } from "./labels";
 
 export function renderLetterPdfHtml(letterContent: LetterDocumentContent) {
   const candidate = letterContent.candidate;
-  const contactLine = [
-    candidate.phone,
-    candidate.email,
-    candidate.city,
-    candidate.linkedin,
-    candidate.github,
-  ]
-    .filter((value) => value.length > 0)
-    .map((value) => escapeHtml(value))
-    .join(" · ");
+  const contactLine = renderContactLine(
+    [candidate.phone, candidate.email, candidate.city],
+    candidate.links,
+  );
 
   const placeDate = [candidate.city, letterContent.date]
     .filter((value) => value.length > 0)

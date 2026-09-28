@@ -101,20 +101,31 @@ function extractFirstJsonObject(rawContent: string): RawImportedProfile {
   }
 }
 
+/** Labels applied to the fixed extraction fields once ported into the free-form links list. */
+const EXTRACTED_LINK_LABELS: Array<{ key: "github" | "linkedIn" | "portfolio"; label: string }> = [
+  { key: "linkedIn", label: "LinkedIn" },
+  { key: "github", label: "GitHub" },
+  { key: "portfolio", label: "Portfolio" },
+];
+
 function normalizeImportedProfile(raw: RawImportedProfile): ImportedCvProfilePatch {
-  const identity: Partial<ImportedCvProfilePatch["identity"]> =
-    raw.identity ?? {};
+  const identity: Partial<
+    ImportedCvProfilePatch["identity"] & { github: unknown; linkedIn: unknown; portfolio: unknown }
+  > = raw.identity ?? {};
   const sections: Partial<ImportedCvProfilePatch["sections"]> =
     raw.sections ?? {};
+
+  const links = EXTRACTED_LINK_LABELS.map(({ key, label }) => ({
+    label,
+    url: normalizeText(identity[key], 240),
+  })).filter((link) => link.url);
 
   return {
     headline: normalizeText(raw.headline, 120),
     identity: {
       city: normalizeText(identity.city, 120),
       firstName: normalizeText(identity.firstName, 80),
-      github: normalizeText(identity.github, 240),
-      linkedIn: normalizeText(identity.linkedIn, 240),
-      portfolio: normalizeText(identity.portfolio, 240),
+      links,
     },
     sections: {
       certifications: Array.isArray(sections.certifications)

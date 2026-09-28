@@ -1,4 +1,4 @@
-import type { CvGenerationRequest, ImportedCvProfilePatch } from "@cvforge/types"
+import type { ContactLink, CvGenerationRequest, ImportedCvProfilePatch } from "@cvforge/types"
 
 export type ExperienceEntry = { company: string; period: string; results: string; role: string }
 export type EducationEntry = {
@@ -24,12 +24,9 @@ export type BaseProfile = {
     city: string
     email: string
     firstName: string
-    github: string
     lastName: string
-    linkedIn: string
-    otherLink: string
+    links: ContactLink[]
     phone: string
-    portfolio: string
   }
   label: string
   meta: {
@@ -65,12 +62,9 @@ export function createEmptyProfile(email: string, label = "Profil principal"): B
       city: "",
       email,
       firstName: "",
-      github: "",
       lastName: "",
-      linkedIn: "",
-      otherLink: "",
+      links: [],
       phone: "",
-      portfolio: "",
     },
     label,
     meta: { lastSavedAt: null, maxProfiles: null, source: "empty" },
@@ -129,9 +123,10 @@ export function buildGenerationRequest(profile: BaseProfile): CvGenerationReques
   return {
     localFields: {
       email: profile.identity.email.trim(),
-      github: profile.identity.github.trim(),
       lastName: profile.identity.lastName.trim(),
-      linkedin: profile.identity.linkedIn.trim(),
+      links: profile.identity.links
+        .map((link) => ({ label: link.label.trim(), url: link.url.trim() }))
+        .filter((link) => link.label && link.url),
       phone: profile.identity.phone.trim(),
     },
     promptProfile: {
@@ -165,9 +160,7 @@ export function applyImportedCv(
       ...profile.identity,
       city: identity.city.trim() || profile.identity.city,
       firstName: identity.firstName.trim() || profile.identity.firstName,
-      github: identity.github.trim() || profile.identity.github,
-      linkedIn: identity.linkedIn.trim() || profile.identity.linkedIn,
-      portfolio: identity.portfolio.trim() || profile.identity.portfolio,
+      links: pickList(identity.links, profile.identity.links),
     },
     sections: {
       certifications: pickList(sections.certifications, profile.sections.certifications),

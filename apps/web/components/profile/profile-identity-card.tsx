@@ -1,7 +1,10 @@
 "use client"
 
+import type { ContactLink } from "@cvforge/types"
+
 import {
   FieldGrid,
+  ListEditor,
   SpecField,
   type FieldSpec,
 } from "@/components/documents/list-editor"
@@ -9,17 +12,20 @@ import { SectionCard } from "@/components/layout/section-card"
 import type { BaseProfile } from "@/lib/profile-model"
 
 type Identity = BaseProfile["identity"]
+type ScalarIdentity = Omit<Identity, "links">
 type ProfileUpdater = (update: (profile: BaseProfile) => BaseProfile) => void
 
-const identityFields: FieldSpec<Identity>[] = [
+const identityFields: FieldSpec<ScalarIdentity>[] = [
   { key: "firstName", label: "Prénom" },
   { key: "lastName", label: "Nom" },
   { key: "email", label: "E-mail" },
   { key: "phone", label: "Téléphone" },
   { key: "city", label: "Ville" },
-  { key: "linkedIn", label: "LinkedIn" },
-  { key: "github", label: "GitHub" },
-  { key: "portfolio", label: "Portfolio" },
+]
+
+const linkFields: FieldSpec<ContactLink>[] = [
+  { key: "label", label: "Libellé" },
+  { key: "url", label: "URL" },
 ]
 
 export function ProfileIdentityCard({
@@ -69,6 +75,20 @@ export function ProfileIdentityCard({
           />
         ))}
       </FieldGrid>
+      <ListEditor
+        id="link"
+        items={profile.identity.links}
+        fields={linkFields}
+        addLabel="Ajouter un lien"
+        itemTitle={(item, index) => item.label || `Lien ${index + 1}`}
+        createItem={() => ({ label: "", url: "" })}
+        onChange={(links) =>
+          onChange((current) => ({
+            ...current,
+            identity: { ...current.identity, links },
+          }))
+        }
+      />
     </SectionCard>
   )
 }

@@ -6,6 +6,7 @@ import type {
   CVDocumentContent,
   CVDocumentVersionEntry,
   CertificationItemProps,
+  ContactLink,
   EducationItemProps,
   ExperienceItemProps,
   LanguageItemProps,
@@ -34,17 +35,21 @@ import { Field, FieldDescription, FieldLabel } from "@/components/ui/field"
 import { Textarea } from "@/components/ui/textarea"
 
 type Candidate = CVDocumentContent["candidate"]
+type ScalarIdentity = Omit<Candidate, "links">
 
-const identityFields: FieldSpec<Candidate>[] = [
+const identityFields: FieldSpec<ScalarIdentity>[] = [
   { key: "firstName", label: "Prénom" },
   { key: "lastName", label: "Nom" },
   { key: "title", label: "Titre du CV", wide: true },
   { key: "email", label: "E-mail" },
   { key: "phone", label: "Téléphone" },
   { key: "city", label: "Ville" },
-  { key: "linkedin", label: "LinkedIn" },
-  { key: "github", label: "GitHub" },
   { key: "summary", label: "Accroche", type: "multiline" },
+]
+
+const linkFields: FieldSpec<ContactLink>[] = [
+  { key: "label", label: "Libellé" },
+  { key: "url", label: "URL" },
 ]
 
 const experienceFields: FieldSpec<ExperienceItemProps>[] = [
@@ -201,6 +206,15 @@ export function CvEditor({
               />
             ))}
           </FieldGrid>
+          <ListEditor
+            id="link"
+            items={draft.candidate.links}
+            fields={linkFields}
+            onChange={(links) => set("candidate", { ...draft.candidate, links })}
+            itemTitle={(item, index) => item.label || `Lien ${index + 1}`}
+            addLabel="Ajouter un lien"
+            createItem={() => ({ label: "", url: "" })}
+          />
         </Section>
         <Section value="experiences" title="Expériences" count={draft.experiences.length}>
           <ListEditor

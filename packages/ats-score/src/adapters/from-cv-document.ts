@@ -15,6 +15,9 @@ export function fromCvDocument(content: CVDocumentContent): AtsDocument {
   const skills = [...content.skills.hard, ...content.skills.soft];
   const evidenceText = buildEvidence(content, experiences);
   const rawText = buildText(content, experiences, skills);
+  const links = content.candidate.links;
+  const isLinkedInLink = (link: { label: string; url: string }) =>
+    /linkedin/i.test(link.label) || /linkedin\.com/i.test(link.url);
 
   return {
     bulletCount: experiences.reduce(
@@ -24,10 +27,10 @@ export function fromCvDocument(content: CVDocumentContent): AtsDocument {
     contact: {
       city: isFilled(content.candidate.city),
       email: isFilled(content.candidate.email),
-      linkedIn: isFilled(content.candidate.linkedin),
+      linkedIn: links.some(isLinkedInLink),
       phone: isFilled(content.candidate.phone),
       portfolio:
-        isFilled(content.candidate.github) ||
+        links.some((link) => !isLinkedInLink(link)) ||
         content.projects.some((project) => isFilled(project.url)),
     },
     educationCount: content.education.length,
@@ -89,7 +92,12 @@ function buildText(
 
   return [
     [candidate.firstName, candidate.lastName].filter(isFilled).join(" "),
-    [candidate.email, candidate.phone, candidate.city, candidate.linkedin, candidate.github]
+    [
+      candidate.email,
+      candidate.phone,
+      candidate.city,
+      ...candidate.links.map((link) => link.url),
+    ]
       .filter(isFilled)
       .join(" · "),
     buildEvidenceLines(content, experiences, true).join("\n"),

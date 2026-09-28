@@ -1,5 +1,6 @@
 import type {
   CertificationItemProps,
+  ContactLink,
   CVDocumentContent,
   CvContentUpdateRequest,
   CvGenerationRequest,
@@ -69,6 +70,15 @@ function uniqueStrings(values: string[], seen = new Set<string>()): string[] {
     if (seen.has(value)) return false;
     seen.add(value);
     return true;
+  });
+}
+
+function normalizeContactLinks(value: unknown): ContactLink[] {
+  if (!Array.isArray(value)) return [];
+  return normalizeItems(value, (item) => {
+    const label = toStr(item.label);
+    const url = toStr(item.url);
+    return label && url ? { label, url } : null;
   });
 }
 
@@ -303,11 +313,10 @@ export function normalizeCvJson(
       city: toStr(candidate.city),
       email: localFields.email,
       firstName: toStr(candidate.firstName),
+      lastName: localFields.lastName,
       // Links are identifiers: re-injected locally like the name and contacts,
       // never taken from the model, which would otherwise guess a profile URL.
-      github: toStr(localFields.github),
-      lastName: localFields.lastName,
-      linkedin: toStr(localFields.linkedin),
+      links: localFields.links ?? [],
       phone: localFields.phone,
       summary: toStr(candidate.summary),
       title: toStr(candidate.title),
@@ -332,9 +341,8 @@ export function normalizeUpdatedCvContent(
       city: toStr(value.candidate.city),
       email: toStr(value.candidate.email),
       firstName: toStr(value.candidate.firstName),
-      github: toStr(value.candidate.github),
       lastName: toStr(value.candidate.lastName),
-      linkedin: toStr(value.candidate.linkedin),
+      links: normalizeContactLinks(value.candidate.links),
       phone: toStr(value.candidate.phone),
       summary: toStr(value.candidate.summary),
       title: toStr(value.candidate.title),
@@ -375,9 +383,8 @@ export function normalizeLetterJson(
       city: toStr(candidate.city),
       email: localFields.email,
       firstName: toStr(candidate.firstName),
-      github: toStr(localFields.github),
       lastName: localFields.lastName,
-      linkedin: toStr(localFields.linkedin),
+      links: localFields.links ?? [],
       phone: localFields.phone,
       title: toStr(candidate.title),
     },
@@ -409,9 +416,8 @@ export function normalizeUpdatedLetterContent(
       city: toStr(value.candidate.city),
       email: toStr(value.candidate.email),
       firstName: toStr(value.candidate.firstName),
-      github: toStr(value.candidate.github),
       lastName: toStr(value.candidate.lastName),
-      linkedin: toStr(value.candidate.linkedin),
+      links: normalizeContactLinks(value.candidate.links),
       phone: toStr(value.candidate.phone),
       title: toStr(value.candidate.title),
     },

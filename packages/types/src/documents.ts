@@ -2,13 +2,17 @@ import type { GroundingReport } from "./grounding";
 import type { DividerStyle, SectionTitleStyle } from "./index";
 import type { Locale } from "./locale";
 
+export interface ContactLink {
+  label: string;
+  url: string;
+}
+
 export interface CandidateIdentity {
   city: string;
   email: string;
   firstName: string;
-  github: string;
   lastName: string;
-  linkedin: string;
+  links: ContactLink[];
   phone: string;
   title: string;
 }
