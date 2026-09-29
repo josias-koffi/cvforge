@@ -286,7 +286,9 @@ configs:
 
       mkdir -p "$$STATE" && chown postgres "$$STATE"
 
-      json() { printf '%s' "$$1" | tr '\t\r' '  ' | sed 's/\\/\\\\/g; s/"/\\"/g' | awk '{printf "%s\\n", $$0}'; }
+      # Lines joined by `\n`, with none after the last: a trailing one would
+      # land inside the From and To addresses, which Resend rejects (422).
+      json() { printf '%s' "$$1" | tr '\t\r' '  ' | sed 's/\\/\\\\/g; s/"/\\"/g' | awk 'NR > 1 { printf "\\n" } { printf "%s", $$0 }'; }
 
       alert() {
         echo "ALERT: $$1"
