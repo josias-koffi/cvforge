@@ -223,6 +223,38 @@ services:
     volumes:
       - pg_backups:/backups
 
+  # Restores every new dump of db_backup into a throwaway Postgres inside this
+  # container, compares it with the live database, and e-mails
+  # RESTORE_CHECK_ALERT_TO when the restore fails or no dump is under 26 h old.
+  # Turns unhealthy when the last successful check is older than 26 h.
+  # `docker exec <container> sh /restore-check.sh alert-test` sends a test alert.
+  restore_check:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    entrypoint: ["/bin/sh", "/restore-check.sh"]
+    environment:
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      POSTGRES_DB: ${POSTGRES_DB:-cvforge}
+      POSTGRES_USER: ${POSTGRES_USER:-cvforge}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      # Resend's SMTP password is its API key; the alert goes through its HTTP API.
+      SMTP_PASSWORD: ${SMTP_PASSWORD}
+      EMAIL_FROM: ${EMAIL_FROM}
+      RESTORE_CHECK_ALERT_TO: ${RESTORE_CHECK_ALERT_TO}
+      RESTORE_CHECK_ENV: ${RESTORE_CHECK_ENV}
+    configs:
+      - source: restore_check_script
+        target: /restore-check.sh
+    volumes:
+      - pg_backups:/backups:ro
+    healthcheck:
+      test: ["CMD-SHELL", "test -n \"$$(find /var/lib/restore-check/ok -mmin -1560 2>/dev/null)\""]
+      interval: 5m
+      timeout: 10s
+      start_period: 15m
+
 # Volume names are pinned to VOLUME_PREFIX instead of the compose project name,
 # so production keeps using the volumes created under the old `cvforge` project.
 volumes:
@@ -239,3 +271,84 @@ volumes:
   # time and interleaved the dumps. It stays on disk, detached, for its history.
   pg_backups:
     name: ${VOLUME_PREFIX}_pg_backups
+
+# Inline because Dokploy receives this file alone, nothing else of the repo.
+# Every `$` of the script is doubled, or compose would interpolate it.
+configs:
+  restore_check_script:
+    content: |
+      #!/bin/sh
+      set -u
+
+      LATEST="/backups/last/$${POSTGRES_DB}-latest.dump"
+      STATE=/var/lib/restore-check
+      MAX_AGE_MIN=1560 # 26 h: one daily dump plus slack
+
+      mkdir -p "$$STATE" && chown postgres "$$STATE"
+
+      json() { printf '%s' "$$1" | tr '\t\r' '  ' | sed 's/\\/\\\\/g; s/"/\\"/g' | awk '{printf "%s\\n", $$0}'; }
+
+      alert() {
+        echo "ALERT: $$1"
+        printf '%s\n' "$$2"
+        body="{\"from\":\"$$(json "$$EMAIL_FROM")\",\"to\":[\"$$(json "$$RESTORE_CHECK_ALERT_TO")\"],\"subject\":\"$$(json "[$${RESTORE_CHECK_ENV}] $$1")\",\"text\":\"$$(json "$$2")\"}"
+        wget -q -O /dev/null --header "Authorization: Bearer $${SMTP_PASSWORD}" \
+          --header "Content-Type: application/json" --post-data "$$body" https://api.resend.com/emails \
+          || echo "could not send the alert e-mail"
+      }
+
+      live() { PGPASSWORD="$$POSTGRES_PASSWORD" psql -h "$$POSTGRES_HOST" -U "$$POSTGRES_USER" -d "$$POSTGRES_DB" -Atc "$$1"; }
+      scratch() { su-exec postgres psql -h "$$STATE" -d restore_check -Atc "$$1"; }
+
+      TABLES="select count(*) from information_schema.tables where table_schema in ('public', 'drizzle')"
+      MIGRATIONS="select count(*) from drizzle.__drizzle_migrations"
+      ACCOUNTS="select count(*) from auth_accounts"
+
+      # Prints what is wrong with the dump, nothing when it restores and matches.
+      verify() {
+        rm -rf "$$STATE/pgdata"
+        su-exec postgres initdb -D "$$STATE/pgdata" -U postgres --auth=trust >/dev/null 2>&1 || { echo "initdb failed"; return; }
+        su-exec postgres pg_ctl -D "$$STATE/pgdata" -o "-c listen_addresses='' -k $$STATE" -w -l "$$STATE/server.log" start >/dev/null \
+          || { echo "scratch server did not start"; return; }
+        su-exec postgres createdb -h "$$STATE" restore_check
+        # Read by root and piped: the dump need not be readable by `postgres`.
+        if ! su-exec postgres pg_restore -h "$$STATE" -d restore_check --no-owner --exit-on-error <"$$1" 2>"$$STATE/restore.log"; then
+          echo "pg_restore failed:"; tail -5 "$$STATE/restore.log"
+        else
+          for q in "$$TABLES" "$$MIGRATIONS"; do
+            got=$$(scratch "$$q" 2>&1); want=$$(live "$$q" 2>&1)
+            [ "$$got" = "$$want" ] || echo "restored '$$q' = $$got, live = $$want"
+          done
+          [ "$$(scratch "$$ACCOUNTS" 2>&1)" -gt 0 ] 2>/dev/null || echo "auth_accounts is empty in the restored dump"
+        fi
+        su-exec postgres pg_ctl -D "$$STATE/pgdata" -m immediate stop >/dev/null
+        rm -rf "$$STATE/pgdata"
+      }
+
+      if [ "$${1:-}" = "alert-test" ]; then
+        alert "Test de l'alerte de restauration" "Alerte de test envoyée à la main depuis restore_check. Rien à faire."
+        exit 0
+      fi
+
+      while true; do
+        dump=$$(readlink -f "$$LATEST" 2>/dev/null)
+        if [ -z "$$dump" ] || [ -n "$$(find "$$dump" -mmin +$$MAX_AGE_MIN)" ]; then
+          # Once a day, not every loop.
+          if [ -z "$$(find "$$STATE/stale-alerted" -mmin -1440 2>/dev/null)" ]; then
+            alert "Aucune sauvegarde récente" "Pas de dump de moins de 26 h dans /backups/last (dernier : $${dump:-aucun}). Vérifier le conteneur db_backup."
+            touch "$$STATE/stale-alerted"
+          fi
+        elif [ "$$dump" != "$$(cat "$$STATE/checked" 2>/dev/null)" ]; then
+          echo "checking $$dump"
+          problems=$$(verify "$$dump")
+          if [ -z "$$problems" ]; then
+            echo "restore OK"; touch "$$STATE/ok"
+          else
+            alert "Échec du test de restauration" "Le dump $$dump ne se restaure pas correctement :
+
+      $$problems"
+          fi
+          echo "$$dump" > "$$STATE/checked"
+        fi
+        sleep 600
+      done
