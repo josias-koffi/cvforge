@@ -205,6 +205,12 @@ variable "email_reply_to" {
   default     = "Jobspark <support@jobspark.koklo.dev>"
 }
 
+variable "restore_check_alert_to" {
+  type        = string
+  description = "Recipient of the restore_check alerts: a nightly dump that fails to restore, or no fresh dump."
+  default     = "yahsekoffi@gmail.com"
+}
+
 # Secrets ---------------------------------------------------------------------
 # One value each: this state manages a single environment, so CI can pass the
 # GitHub Environment secrets of that environment directly as TF_VAR_<name>.
