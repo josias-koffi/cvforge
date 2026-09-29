@@ -21,7 +21,7 @@ The module manages **one** environment, chosen by `var.environment`
 |---|---|---|
 | Dokploy project | `jobspark` | `jobspark-staging` |
 | state key | `cvspark/dokploy-production.tfstate` (kept, see note below) | `cvspark/dokploy-staging.tfstate` (kept, see note below) |
-| volume prefix | `cvforge` (legacy, kept on purpose) | `cvspark-staging` (legacy, kept on purpose) |
+| volume prefix | `jobspark` (dedicated since 2026-09-29) | `cvspark-staging` (legacy, kept on purpose) |
 | cookie name | `jobspark_session` | `jobspark_staging_session` |
 | landing | `jobspark.koklo.dev` | `jobspark-staging.koklo.dev` |
 | app (web) | `jobspark-app.koklo.dev` | `jobspark-app-staging.koklo.dev` |
@@ -51,8 +51,10 @@ environments.
 
 There is no `application.tf` or `database.tf`. The stack is modelled as a single
 compose service rather than as native Dokploy resources, because MinIO,
-Puppeteer and the nightly `db_backup` sidecar have no native equivalent in the
-provider. Postgres and Redis therefore stay inside the compose file next to them.
+Puppeteer and the backup sidecars (`db_backup`, `r2_fetch`, `restore_check`)
+have no native equivalent in the provider. Postgres and Redis therefore stay
+inside the compose file next to them. `docs/deploy.md` (Operations) describes
+the backups and their nightly restore test.
 
 The compose YAML lives at `../compose/dokploy-stack.yml` and is shipped inline by
 `raw.compose_file`, so Dokploy clones nothing and no GitHub App has to be
@@ -105,16 +107,18 @@ Waiting does not help — the window is 24 hours.
    stack routes through the `traefik-public` Traefik supplied by `koklo-infra`.
    Both cannot hold the same ports — settle this on VPS20 before the production
    apply.
-2. **Two Postgres on one volume.** Production keeps `VOLUME_PREFIX=cvforge`, so
-   the Dokploy stack attaches the very volumes the old stack uses. Stop the old
-   stack (`cd /opt/apps/cvspark && docker compose down`) first, or two Postgres
-   processes write to `cvforge_postgres_data`.
-3. **The real data is `cvforge_api_data`.** The API persists JSON state files in
-   `/workspace/.data`; there is no ORM and Postgres is effectively unused. Back
-   that volume up before the cutover.
+2. **Two Postgres on one volume — it happened.** Production first kept
+   `VOLUME_PREFIX=cvforge` and attached the volumes of the old stack, which was
+   never stopped: two Postgres wrote to `cvforge_postgres_data` from 2026-09-27
+   to 2026-09-29. Production now has its own `jobspark_*` volumes; the
+   `cvforge_*` ones are detached and kept as a rollback. Never point two stacks
+   at the same volume prefix.
+3. **Data lives in Postgres and `api_data`.** Credits, offers and orders are in
+   Postgres (ADR-011); the API still keeps JSON state files in the `api_data`
+   volume (`/workspace/.data`). Back up both before any volume change.
 4. **No more pre-deploy `pg_dump`.** That step lived in the SSH job this module
-   replaced. The nightly `db_backup` sidecar still runs, but it is on-VPS only.
-   `dokploy_backup` + `dokploy_destination` would restore an off-site copy.
+   replaced. The nightly `db_backup` dump (on-VPS) and `dokploy_backup` (R2,
+   `backup.tf`) replace it, and `restore_check` test-restores both every night.
 
 ## Secrets and state
 

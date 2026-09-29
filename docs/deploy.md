@@ -33,7 +33,7 @@ re-run with an unchanged tag produces an empty plan and no redeploy.
 | landing | `jobspark-staging.koklo.dev` | `jobspark.koklo.dev` |
 | app (web) | `jobspark-app-staging.koklo.dev` | `jobspark-app.koklo.dev` |
 | api | `jobspark-api-staging.koklo.dev` | `jobspark-api.koklo.dev` |
-| volumes | `jobspark-staging_*` | `cvforge_*` (legacy names, kept on purpose) |
+| volumes | `cvspark-staging_*` (legacy names, kept on purpose) | `jobspark_*` (dedicated since 2026-09-29) |
 | cookie name | `jobspark_staging_session` | `jobspark_session` |
 
 One state per environment is what lets the deploy job keep
@@ -264,7 +264,7 @@ destroyed, the compose applied, then the domains recreated.
 **5. Staging.** The same merge deploys staging through Dokploy. Check
 `jobspark-staging.koklo.dev`, `jobspark-app-staging.koklo.dev` and
 `jobspark-api-staging.koklo.dev/health`. Staging uses its own volumes
-(`jobspark-staging_*`) and touches nothing in production. Do not continue until
+(`cvspark-staging_*`) and touches nothing in production. Do not continue until
 this is green.
 
 **6. Production cutover — the irreversible step.** The CVForge stack and the
@@ -280,17 +280,31 @@ ssh root@<VPS20_IP> 'cd /opt/koklo/stacks/cvforge && docker compose down'
 Then merge `develop` into `main`. That triggers the production environment,
 which is restricted to the `main` branch.
 
+> **What actually happened (2026-09-27 → 2026-09-29).** The old stack in
+> `/opt/koklo/stacks/cvforge` was not stopped. Both Postgres ran on
+> `cvforge_postgres_data` for two days, and both backup sidecars wrote the same
+> filenames into `cvforge_db_backups`, so no dump restored production. The old
+> stack was then stopped (`restart=no`, Postgres and Redis killed with SIGKILL
+> so they would not flush stale state onto the shared volumes), and production
+> moved to its own `jobspark_*` volumes, filled from a fresh `pg_dump` while
+> the API was stopped. The `cvforge_*` volumes are left on disk, detached, as
+> a rollback: set `volume_prefix` back to `cvforge` in `infra/dokploy/main.tf`.
+
 **7. Retire the old names.** Once `jobspark*` serves correctly, delete the
 `cvforge*` records from `koklo-infra`, remove `stacks/cvforge` from its Ansible
 playbook, and delete `infra/compose/docker-compose.yml` here — it is the SSH
-pipeline's file and nothing references it any more.
+pipeline's file and nothing references it any more. On VPS20, remove the stopped
+`cvforge-*` containers and the `cvforge_*` volumes (including
+`cvforge_db_backups`) once the rollback is no longer needed.
 
 ## Operations
 
 - Logs and shells: the Dokploy UI, per service, in the `jobspark` project.
 - Backups, two independent copies per environment:
-  1. On-VPS: nightly `pg_dump` in the `${VOLUME_PREFIX}_db_backups` volume (7
-     daily, 4 weekly, 6 monthly). **Does not survive VPS destruction.**
+  1. On-VPS: the `db_backup` sidecar dumps the whole database at 00:00 UTC in
+     custom format (`<db>-<date>.dump`) into the `${VOLUME_PREFIX}_pg_backups`
+     volume (7 daily, 4 weekly, 6 monthly; newest at
+     `last/<db>-latest.dump`). **Does not survive VPS destruction.**
   2. Off-site (`infra/dokploy/backup.tf`): Dokploy's own `dokploy_backup`
      (Postgres dump, 03:00) and `dokploy_volume_backup` (the `api_data`
      volume — JSON state pg_dump does not cover — 04:00), both to the
@@ -299,7 +313,30 @@ pipeline's file and nothing references it any more.
      `R2_BACKUP_ACCESS_KEY_ID` / `R2_BACKUP_SECRET_ACCESS_KEY` repo secrets —
      a token scoped to that bucket only, never the state bucket's token.
      Keeps the last 14 of each. Check a run from the Dokploy UI's Backups tab
-     on the compose, or trigger one manually there.
+     on the compose, or trigger one manually there. The Postgres file is a
+     gzipped custom-format dump (`.sql.gz`, read with `zcat | pg_restore`).
+- Restore tests, nightly and automatic: the `restore_check` sidecar restores
+  every new dump of both copies — the local one, and the newest R2 one that the
+  `r2_fetch` sidecar (rclone) copies into `${VOLUME_PREFIX}_r2_check` — into a
+  throwaway Postgres inside its own container, then compares the table and
+  migration counts with the live database. It e-mails `RESTORE_CHECK_ALERT_TO`
+  (`restore_check_alert_to` in `infra/dokploy/variables.tf`) through Resend when
+  a restore fails, the counts differ, or a copy has no dump under 26 h old, and
+  turns unhealthy when either copy's last success is older than 26 h. Its log
+  (`restore OK (local)` / `restore OK (r2)`) is the quickest health check;
+  `docker exec <restore_check container> sh /restore-check.sh alert-test` sends
+  a test e-mail. Its script and r2_fetch's are inline in
+  `infra/compose/dokploy-stack.yml`, every `$` doubled; OpenTofu passes a hash of
+  that file (`RESTORE_CHECK_REV`) because compose does not recreate a container
+  when only an inline config changes.
+- Restoring for real: dump first whatever is live, then restore into the
+  stack's Postgres with the API stopped —
+  `pg_restore -U <user> -d <db> --clean --if-exists <file>.dump` for a local
+  dump, `zcat <file>.sql.gz | pg_restore -U <user> -d <db> --clean --if-exists`
+  for an R2 one. To restore onto fresh volumes instead, fill them before the
+  deploy that switches `volume_prefix`: compose reuses a named volume that
+  already exists (with a warning), and starts the stack on empty ones
+  otherwise.
 - The API stores credits, offers and orders in Postgres and everything else as
   JSON files in the `api_data` volume (`/workspace/.data`). Never recreate either
   volume. Migrations run automatically before the API starts; `GET /ready`
