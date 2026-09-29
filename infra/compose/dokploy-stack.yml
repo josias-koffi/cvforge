@@ -198,8 +198,10 @@ services:
     image: ghcr.io/josias-koffi/jobspark-puppeteer:${IMAGE_TAG}
     restart: unless-stopped
 
-  # Nightly pg_dump → compressed file in the db_backups volume.
-  # Keeps 7 daily + 4 weekly + 6 monthly snapshots.
+  # Nightly pg_dump → custom-format archive in the pg_backups volume, restored
+  # with `pg_restore`. Keeps 7 daily + 4 weekly + 6 monthly snapshots.
+  # Whole database, not just `public`: the `drizzle` schema holds the migration
+  # journal, without which the API replays every migration onto a restored base.
   # WARNING: on-VPS backup only — it does NOT survive VPS destruction.
   db_backup:
     image: prodrigestivill/postgres-backup-local:16
@@ -211,14 +213,15 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-cvforge}
       POSTGRES_USER: ${POSTGRES_USER:-cvforge}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_EXTRA_OPTS: "--schema=public --blobs"
+      POSTGRES_EXTRA_OPTS: "--format=custom"
+      BACKUP_SUFFIX: ".dump"
       SCHEDULE: "@daily"
       BACKUP_KEEP_DAYS: "7"
       BACKUP_KEEP_WEEKS: "4"
       BACKUP_KEEP_MONTHS: "6"
       HEALTHCHECK_PORT: "8080"
     volumes:
-      - db_backups:/backups
+      - pg_backups:/backups
 
 # Volume names are pinned to VOLUME_PREFIX instead of the compose project name,
 # so production keeps using the volumes created under the old `cvforge` project.
@@ -231,5 +234,8 @@ volumes:
     name: ${VOLUME_PREFIX}_redis_data
   minio_data:
     name: ${VOLUME_PREFIX}_minio_data
-  db_backups:
-    name: ${VOLUME_PREFIX}_db_backups
+  # Not `${VOLUME_PREFIX}_db_backups`: in production that volume was shared with
+  # the pre-Dokploy stack, whose sidecar wrote the same filenames at the same
+  # time and interleaved the dumps. It stays on disk, detached, for its history.
+  pg_backups:
+    name: ${VOLUME_PREFIX}_pg_backups
