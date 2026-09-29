@@ -307,12 +307,18 @@ pipeline's file and nothing references it any more. On VPS20, remove the stopped
      `last/<db>-latest.dump`). **Does not survive VPS destruction.**
   2. Off-site (`infra/dokploy/backup.tf`): Dokploy's own `dokploy_backup`
      (Postgres dump, 03:00) and `dokploy_volume_backup` (the `api_data`
-     volume — JSON state pg_dump does not cover — 04:00), both to the
-     `koklo-db-backups` R2 bucket via `dokploy_destination`, under
-     `db/<environment>/` and `api-data/<environment>/`. Needs the
-     `R2_BACKUP_ACCESS_KEY_ID` / `R2_BACKUP_SECRET_ACCESS_KEY` repo secrets —
-     a token scoped to that bucket only, never the state bucket's token.
-     Keeps the last 14 of each. Check a run from the Dokploy UI's Backups tab
+     volume — JSON state pg_dump does not cover — 04:00), both via
+     `dokploy_destination` to the R2 bucket of the environment —
+     `koklo-db-backups` for production, `koklo-db-backups-staging` for
+     staging — under `db/<environment>/` and `api-data/<environment>/`. One
+     bucket each because an R2 token is scoped to whole buckets: the
+     `R2_BACKUP_ACCESS_KEY_ID` / `R2_BACKUP_SECRET_ACCESS_KEY` secrets are set
+     per GitHub environment, each an *Object Read & Write* token on its own
+     bucket only — never the state bucket's token. The production bucket has
+     a 30-day bucket lock (Cloudflare dashboard, *Settings → Bucket lock
+     rules*): nothing under 30 days old can be deleted or overwritten, even
+     with a valid key. Keeps the last 35 of each, above the lock, so Dokploy
+     only prunes released objects. Check a run from the Dokploy UI's Backups tab
      on the compose, or trigger one manually there. The Postgres file is a
      gzipped custom-format dump (`.sql.gz`, read with `zcat | pg_restore`).
 - Restore tests, nightly and automatic: the `restore_check` sidecar restores

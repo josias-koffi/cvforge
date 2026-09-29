@@ -3,18 +3,25 @@
 # One destination + two schedules per environment (this file is shared by both
 # states, same as everywhere else in this module): a database dump (Postgres,
 # via Dokploy's own dump command) and a volume archive of `api_data` (the JSON
-# state — credits, offers — that pg_dump does not cover). Both land in the same
-# R2 bucket, under a prefix that keeps `staging` and `production` apart even
-# though each environment applies from its own state.
+# state — credits, offers — that pg_dump does not cover). Both land in the R2
+# bucket of their environment (local.r2_backup_bucket), under `db/<env>/` and
+# `api-data/<env>/`.
 
 resource "dokploy_destination" "backups" {
   name              = "R2 backups — ${var.environment}"
   provider_name     = "Cloudflare"
   endpoint          = var.r2_backup_endpoint
-  bucket            = var.r2_backup_bucket
+  bucket            = local.r2_backup_bucket
   region            = var.r2_backup_region
   access_key        = var.r2_backup_access_key
   secret_access_key = var.r2_backup_secret_access_key
+}
+
+locals {
+  # Daily runs, so a count is a number of days. Kept above the 30-day bucket
+  # lock set in Cloudflare on the backup buckets: Dokploy only prunes what the
+  # lock already released, instead of failing on a locked object.
+  r2_backup_keep = 35
 }
 
 resource "dokploy_backup" "postgres" {
@@ -31,7 +38,7 @@ resource "dokploy_backup" "postgres" {
   # never fight Postgres for I/O at the same time.
   cron_expression        = "0 3 * * *"
   prefix                 = "db/${var.environment}/"
-  keep_latest_count      = 14
+  keep_latest_count      = local.r2_backup_keep
   include_encryption_key = true
 }
 
@@ -46,5 +53,5 @@ resource "dokploy_volume_backup" "api_data" {
 
   cron_expression   = "0 4 * * *"
   prefix            = "api-data/${var.environment}/"
-  keep_latest_count = 14
+  keep_latest_count = local.r2_backup_keep
 }
