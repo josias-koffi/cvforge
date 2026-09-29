@@ -53,13 +53,15 @@ locals {
   # the two states share no resource at all.
   project_name = local.is_production ? "jobspark" : "jobspark-staging"
 
-  # Both environments keep their legacy volume prefix so existing data survives
-  # a rename. Changing either one points the stack at empty volumes: production
-  # kept `cvforge` from the CVForge->Dokploy move; staging kept `cvspark-staging`
-  # after the Jobspark rebrand orphaned its data under the new prefix once
+  # Changing a prefix points the stack at other volumes: fill them first, or it
+  # starts on empty ones. Production moved off `cvforge` on 2026-09-29, after
+  # the pre-Dokploy stack ran a second Postgres on `cvforge_postgres_data`; its
+  # `jobspark_*` volumes were filled from a fresh dump, and the `cvforge_*` ones
+  # stay on disk, detached, as a rollback. Staging kept `cvspark-staging` after
+  # the Jobspark rebrand orphaned its data under the new prefix once
   # (2026-09-26) — restored here rather than migrated, since the old volumes
   # were still on disk.
-  volume_prefix = local.is_production ? "cvforge" : "cvspark-staging"
+  volume_prefix = local.is_production ? "jobspark" : "cvspark-staging"
 
   # Both environments live under .koklo.dev, so an identical cookie name would
   # make the two sessions collide.
