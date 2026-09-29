@@ -223,10 +223,11 @@ services:
     volumes:
       - pg_backups:/backups
 
-  # Restores every new dump of db_backup into a throwaway Postgres inside this
-  # container, compares it with the live database, and e-mails
-  # RESTORE_CHECK_ALERT_TO when the restore fails or no dump is under 26 h old.
-  # Turns unhealthy when the last successful check is older than 26 h.
+  # Restores every new dump — the local one of db_backup and the off-site one
+  # Dokploy ships to R2 (fetched by r2_fetch) — into a throwaway Postgres inside
+  # this container, compares it with the live database, and e-mails
+  # RESTORE_CHECK_ALERT_TO when a restore fails or a source has no dump under
+  # 26 h old. Unhealthy when either source's last success is older than 26 h.
   # `docker exec <container> sh /restore-check.sh alert-test` sends a test alert.
   restore_check:
     image: postgres:16-alpine
@@ -251,11 +252,38 @@ services:
         target: /restore-check.sh
     volumes:
       - pg_backups:/backups:ro
+      - r2_check:/r2:ro
     healthcheck:
-      test: ["CMD-SHELL", "test -n \"$$(find /var/lib/restore-check/ok -mmin -1560 2>/dev/null)\""]
+      test:
+        - CMD-SHELL
+        - >-
+          test -n "$$(find /var/lib/restore-check/ok-local -mmin -1560 2>/dev/null)"
+          && test -n "$$(find /var/lib/restore-check/ok-r2 -mmin -1560 2>/dev/null)"
       interval: 5m
       timeout: 10s
       start_period: 15m
+
+  # Copies the newest Dokploy dump of this environment from R2 into r2_check,
+  # for restore_check to test; keeps that one file only.
+  r2_fetch:
+    image: rclone/rclone:1.75.1
+    restart: unless-stopped
+    entrypoint: ["/bin/sh", "/r2-fetch.sh"]
+    environment:
+      RCLONE_CONFIG_R2_TYPE: s3
+      RCLONE_CONFIG_R2_PROVIDER: Cloudflare
+      RCLONE_CONFIG_R2_ENDPOINT: ${R2_BACKUP_ENDPOINT}
+      RCLONE_CONFIG_R2_ACCESS_KEY_ID: ${R2_BACKUP_ACCESS_KEY}
+      RCLONE_CONFIG_R2_SECRET_ACCESS_KEY: ${R2_BACKUP_SECRET_ACCESS_KEY}
+      R2_BACKUP_BUCKET: ${R2_BACKUP_BUCKET}
+      # Same prefix as dokploy_backup.postgres in infra/dokploy/backup.tf.
+      R2_DB_PREFIX: db/${RESTORE_CHECK_ENV}/
+      RESTORE_CHECK_REV: ${RESTORE_CHECK_REV:-}
+    configs:
+      - source: r2_fetch_script
+        target: /r2-fetch.sh
+    volumes:
+      - r2_check:/r2
 
 # Volume names are pinned to VOLUME_PREFIX instead of the compose project name,
 # so production keeps using the volumes created under the old `cvforge` project.
@@ -273,6 +301,8 @@ volumes:
   # time and interleaved the dumps. It stays on disk, detached, for its history.
   pg_backups:
     name: ${VOLUME_PREFIX}_pg_backups
+  r2_check:
+    name: ${VOLUME_PREFIX}_r2_check
 
 # Inline because Dokploy receives this file alone, nothing else of the repo.
 # Every `$` of the script is doubled, or compose would interpolate it.
@@ -282,9 +312,12 @@ configs:
       #!/bin/sh
       set -u
 
-      LATEST="/backups/last/$${POSTGRES_DB}-latest.dump"
       STATE=/var/lib/restore-check
       MAX_AGE_MIN=1560 # 26 h: one daily dump plus slack
+      # name|newest dump|reader — the db_backup dump is a plain custom-format
+      # archive, the Dokploy one fetched from R2 by r2_fetch is gzipped.
+      SOURCES="local|/backups/last/$${POSTGRES_DB}-latest.dump|cat
+      r2|/r2/latest.sql.gz|zcat"
 
       mkdir -p "$$STATE" && chown postgres "$$STATE"
 
@@ -308,7 +341,7 @@ configs:
       MIGRATIONS="select count(*) from drizzle.__drizzle_migrations"
       ACCOUNTS="select count(*) from auth_accounts"
 
-      # Prints what is wrong with the dump, nothing when it restores and matches.
+      # Prints what is wrong with dump $$1 read by $$2, nothing when it restores and matches.
       verify() {
         rm -rf "$$STATE/pgdata"
         su-exec postgres initdb -D "$$STATE/pgdata" -U postgres --auth=trust >/dev/null 2>&1 || { echo "initdb failed"; return; }
@@ -316,7 +349,7 @@ configs:
           || { echo "scratch server did not start"; return; }
         su-exec postgres createdb -h "$$STATE" restore_check
         # Read by root and piped: the dump need not be readable by `postgres`.
-        if ! su-exec postgres pg_restore -h "$$STATE" -d restore_check --no-owner --exit-on-error <"$$1" 2>"$$STATE/restore.log"; then
+        if ! "$$2" "$$1" | su-exec postgres pg_restore -h "$$STATE" -d restore_check --no-owner --exit-on-error 2>"$$STATE/restore.log"; then
           echo "pg_restore failed:"; tail -5 "$$STATE/restore.log"
         else
           for q in "$$TABLES" "$$MIGRATIONS"; do
@@ -329,30 +362,57 @@ configs:
         rm -rf "$$STATE/pgdata"
       }
 
+      check() {
+        src=$$1 dump=$$(readlink -f "$$2" 2>/dev/null)
+        if [ -z "$$dump" ] || [ ! -e "$$dump" ] || [ -n "$$(find "$$dump" -mmin +$$MAX_AGE_MIN)" ]; then
+          # Once a day, not every loop.
+          if [ -z "$$(find "$$STATE/stale-$$src" -mmin -1440 2>/dev/null)" ]; then
+            case $$src in
+              r2) hint="Vérifier la sauvegarde Dokploy vers R2 (3 h) et le conteneur r2_fetch." ;;
+              *) hint="Vérifier le conteneur db_backup." ;;
+            esac
+            alert "Aucune sauvegarde $$src récente" "Pas de dump $$src de moins de 26 h (dernier : $${dump:-aucun}). $$hint"
+            touch "$$STATE/stale-$$src"
+          fi
+        elif [ "$$dump" != "$$(cat "$$STATE/checked-$$src" 2>/dev/null)" ]; then
+          echo "checking $$src $$dump"
+          problems=$$(verify "$$dump" "$$3")
+          if [ -z "$$problems" ]; then
+            echo "restore OK ($$src)"; touch "$$STATE/ok-$$src"
+          else
+            alert "Échec du test de restauration ($$src)" "Le dump $$dump ne se restaure pas correctement :
+
+      $$problems"
+          fi
+          echo "$$dump" > "$$STATE/checked-$$src"
+        fi
+      }
+
       if [ "$${1:-}" = "alert-test" ]; then
         alert "Test de l'alerte de restauration" "Alerte de test envoyée à la main depuis restore_check. Rien à faire."
         exit 0
       fi
 
       while true; do
-        dump=$$(readlink -f "$$LATEST" 2>/dev/null)
-        if [ -z "$$dump" ] || [ -n "$$(find "$$dump" -mmin +$$MAX_AGE_MIN)" ]; then
-          # Once a day, not every loop.
-          if [ -z "$$(find "$$STATE/stale-alerted" -mmin -1440 2>/dev/null)" ]; then
-            alert "Aucune sauvegarde récente" "Pas de dump de moins de 26 h dans /backups/last (dernier : $${dump:-aucun}). Vérifier le conteneur db_backup."
-            touch "$$STATE/stale-alerted"
-          fi
-        elif [ "$$dump" != "$$(cat "$$STATE/checked" 2>/dev/null)" ]; then
-          echo "checking $$dump"
-          problems=$$(verify "$$dump")
-          if [ -z "$$problems" ]; then
-            echo "restore OK"; touch "$$STATE/ok"
-          else
-            alert "Échec du test de restauration" "Le dump $$dump ne se restaure pas correctement :
+        echo "$$SOURCES" | while IFS='|' read -r src latest reader; do check "$$src" "$$latest" "$$reader"; done
+        sleep 600
+      done
+  r2_fetch_script:
+    content: |
+      #!/bin/sh
+      set -u
 
-      $$problems"
+      while true; do
+        newest=$$(rclone lsf -R --files-only --format tp --include "**/$${R2_DB_PREFIX}*.sql.gz" "r2:$${R2_BACKUP_BUCKET}" 2>/tmp/lsf.err | sort | tail -1 | cut -d';' -f2)
+        name=$$(basename "$${newest:-none}")
+        if [ -z "$$newest" ]; then
+          echo "no dump listed under $${R2_DB_PREFIX}: $$(tail -1 /tmp/lsf.err)"
+        elif [ ! -e "/r2/$$name" ]; then
+          if rclone copyto "r2:$${R2_BACKUP_BUCKET}/$$newest" /r2/.partial; then
+            mv /r2/.partial "/r2/$$name" && ln -sfn "$$name" /r2/latest.sql.gz
+            find /r2 -maxdepth 1 -name '*.sql.gz' ! -name "$$name" ! -name latest.sql.gz -delete
+            echo "fetched $$newest"
           fi
-          echo "$$dump" > "$$STATE/checked"
         fi
         sleep 600
       done

@@ -79,6 +79,12 @@ resource "dokploy_compose" "jobspark" {
     "EMAIL_REPLY_TO=${var.email_reply_to}",
     "RESTORE_CHECK_ALERT_TO=${var.restore_check_alert_to}",
     "RESTORE_CHECK_ENV=${var.environment}",
+    # r2_fetch only lists and downloads with these, so restore_check can test
+    # the off-site dumps too.
+    "R2_BACKUP_ENDPOINT=${var.r2_backup_endpoint}",
+    "R2_BACKUP_BUCKET=${var.r2_backup_bucket}",
+    "R2_BACKUP_ACCESS_KEY=${var.r2_backup_access_key}",
+    "R2_BACKUP_SECRET_ACCESS_KEY=${var.r2_backup_secret_access_key}",
     # Compose does not recreate a container when only an inline config changes;
     # a new value here does, so an edit of the restore_check script ships.
     "RESTORE_CHECK_REV=${substr(sha1(file("${path.module}/../compose/dokploy-stack.yml")), 0, 12)}",
