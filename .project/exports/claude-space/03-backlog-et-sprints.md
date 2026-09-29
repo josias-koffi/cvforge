@@ -28,6 +28,10 @@
 | E17 ✅ | 023 | Gestion utilisateurs avancée (admin) | Recherche/filtres/pagination serveur, fiche utilisateur complète, suspension, suppression RGPD vérifiée, rétrogradation admin→user uniquement, journal d'audit, révocation de session | 023 | Complète vision `§13.2`/`§15.1` ; US-093 contraint par vision `§3.2` |
 | E18 ✅ | 024 | Score ATS (produit d'appel + in-app) | Un visiteur non authentifié scanne son CV sur la landing, obtient un score et 3 points gratuitement, et déverrouille le rapport contre son email — ce qui lui crée un compte ; en in-app, chaque CV généré porte un badge de score gratuit | 024 | Complète vision `§7.1`, `§7.4`, `§12.2`, `§12.3`, `§8.1` ; **la page publique est hors vision** — décision produit du 2026-09-22 |
 | E23 | 029-030 | Outils gratuits d'acquisition sur la landing | Quatre outils sans compte en plus du scan ATS (comparateur CV ↔ offre, métier qui recrute + salaire, vérification d'employeur, questions d'entretien probables) ; chacun donne un résultat utile, puis convertit par email en un compte pré-rempli avec ce que le visiteur a saisi ; le tunnel de chaque outil est mesuré de la vue à l'activation du compte | 029-030 | **Hors vision** — décision produit du 2026-09-24 ; prolonge E18 (ADR-022) et exploite E19-E21 (ADR-024 §3 : les données France Travail restent gratuites) |
+| E27 | 034 | Offres en temps réel | Une offre qui correspond est détectée dans les 15 minutes qui suivent sa publication (flux national France Travail toutes les 5 minutes, sites carrière suivis toutes les 30 minutes), le candidat reçoit une alerte gratuite et postule en un clic ; l'analyse IA de l'alerte (pourquoi elle vaut le coup) est l'option payante ; le récap du matin reste | 034 | Change le périmètre d'E19 (ADR-023 → ADR-027) — demande propriétaire du 2026-09-28 |
+| E28 | 035 | Durées de conservation des offres et des candidatures | Une offre fermée est anonymisée tout de suite (licence France Travail), toute offre est purgée après 30 jours sauf si une candidature active s'y rattache, et une candidature sans activité depuis un an est supprimée après un rappel ; la politique de confidentialité l'annonce | 035 | Demande propriétaire du 2026-09-28 ; à livrer avant E27 |
+| E29 | 036 | Postuler depuis sa propre boîte mail | Le candidat connecte Gmail ou Outlook (permission d'envoi seule) et envoie CV et lettre au recruteur depuis CVForge, depuis sa vraie adresse ; brouillon pré-rempli pour les autres messageries ; envoi gratuit, un destinataire par envoi, 20 par jour | 036 | **Hors vision** — demande propriétaire du 2026-09-28 ; ADR-028 |
+| E30 | 037 | Plus d'entreprises : Workday et les logiciels vus sur JobTeaser | Les offres que JobTeaser relaie sont lues à la source, dans le logiciel de recrutement de l'entreprise : adaptateur Workday (sitemap + `JobPosting`), adaptateurs Workable, Recruitee, Personio et Welcome Kit, ajout en masse d'entreprises depuis l'admin ; `robots.txt` respecté, CGU relues, retrait sur demande, affichage minimal ; JobTeaser n'est jamais lu par un programme | 037 | Demande propriétaire du 2026-09-28 ; ADR-029 ; étend E19/E20 |
 
 ## Estimate Scale
 
@@ -151,6 +155,25 @@ Référence de gate: le spec impose des branches courtes et des PRs <= 400 ligne
 | US-140 | Pages SEO entreprises (ISR, sitemap) avec sources citées | E23 | M | P2 | 030 | Hors vision — décision produit du 2026-09-24 |
 | US-141 | Questions d'entretien probables : 5 questions pour un texte d'offre, un appel LLM court sous budget global quotidien et limite par IP ; CTA entretien vocal | E23 | M | P2 | 030 | Hors vision — décision produit du 2026-09-24 ; ADR-022 |
 | US-160 | Entretien vocal en direct via OpenAI Realtime (WebRTC) : coupure native du recruteur, fin de tour sémantique, suivi serveur (agenda, transcription, raccrochage), coût par appel — ADR-026 | E12 | L | P0 | — | Demande propriétaire du 2026-09-25 |
+| US-162 | ADR-027 « Collecte continue », amendement d'ADR-023, application France Travail passée en production, débit `offres` porté à 8 appels/s | E27 | S | P0 | 034 | Demande propriétaire du 2026-09-28 |
+| US-163 | Flux France Travail en continu : tranches de 5 minutes par `minCreationDate`/`maxCreationDate` sur toute la France, curseur persistant, redécoupage au-delà de 1 150 offres, verrou, compteur d'appels | E27 | L | P0 | 034 | Demande propriétaire du 2026-09-28 |
+| US-164 | Sites carrière des entreprises suivies lus toutes les 30 minutes, date de détection enregistrée, repli quotidien sur 429/403 | E27 | M | P1 | 034 | Demande propriétaire du 2026-09-28 |
+| US-165 | Correspondance au fil de l'eau : score déterministe sur chaque nouvelle offre, stockage limité aux offres qui correspondent, vérification en direct, délai publication → correspondance mesuré | E27 | M | P0 | 034 | Demande propriétaire du 2026-09-28 |
+| US-166 | Alertes « nouvelle offre » par e-mail, gratuites pour tous : immédiat ou regroupé à l'heure, seuil, plafond quotidien, heures calmes, désinscription | E27 | M | P0 | 034 | Demande propriétaire du 2026-09-28 |
+| US-167 | Fraîcheur dans l'app : section « Nouvelles depuis votre dernière visite », badge « il y a X min », tri « les plus récentes », postuler en un clic depuis l'alerte | E27 | M | P1 | 034 | Demande propriétaire du 2026-09-28 |
+| US-168 | Enrichissement IA des alertes (payant) : verdict « à saisir / à considérer / à passer », pourquoi l'offre vaut le coup, points de vigilance, quoi mettre en avant ; filtre les alertes « à passer » ; 1 crédit par jour où au moins une alerte est analysée (illimité ce jour-là, plafond de 20), action `job_alert_enrich` journalisée dans `ai_usage_events` | E27 | M | P0 | 034 | Demande propriétaire du 2026-09-28 — alertes gratuites, analyse IA à 1 crédit/jour |
+| US-169 | Anonymiser les offres à leur fermeture (contact recruteur et entreprise retirés de `job_listings.raw`) et purger chaque jour les offres de plus de 30 jours non rattachées à une candidature active ; rattrapage `jobs:purge --dry-run` | E28 | M | P0 | 035 | Demande propriétaire du 2026-09-28 — licence France Travail |
+| US-170 | Supprimer les candidatures sans modification depuis un an (versions, entretiens, fichiers), rappel par e-mail et dans l'app 15 jours avant, politique de confidentialité mise à jour avant activation | E28 | M | P0 | 035 | Demande propriétaire du 2026-09-28 — RGPD, durée de conservation |
+| US-171 | Connecter sa boîte Gmail (`gmail.send` seule) : table `mail_connections`, jeton chiffré AES-256-GCM, déconnexion avec révocation, purge RGPD | E29 | M | P0 | 036 | Demande propriétaire du 2026-09-28 ; ADR-028 |
+| US-172 | Connecter sa boîte Outlook via Microsoft Graph (`Mail.Send` seule), comptes personnels et professionnels, refus administrateur géré | E29 | M | P0 | 036 | Demande propriétaire du 2026-09-28 ; ADR-028 |
+| US-173 | Envoyer sa candidature au recruteur : aperçu obligatoire, CV et lettre en PDF, un destinataire, gratuit, 20 envois par jour, statut « envoyée » et historique | E29 | L | P0 | 036 | Demande propriétaire du 2026-09-28 ; ADR-028 |
+| US-174 | Repli pour les autres messageries : téléchargement des PDF et brouillon `mailto:` pré-rempli | E29 | S | P1 | 036 | Demande propriétaire du 2026-09-28 ; ADR-028 |
+| US-175 | Démarches : validation Google `gmail.send`, vérification éditeur Microsoft, politique de confidentialité et CGU, variables d'environnement | E29 | S | P0 | 036 | Demande propriétaire du 2026-09-28 ; ADR-028 |
+| US-176 | ADR-029 « Lire les sites carrière sans API officielle » : Workday par sitemap et `JobPosting`, User-Agent `JobSparkBot`, `robots.txt` bloquant, registre de conformité, retrait sous 48 h, affichage minimal, JobTeaser jamais lu automatiquement | E30 | S | P0 | 037 | Demande propriétaire du 2026-09-28 |
+| US-177 | Règles de collecte sur tous les sites carrière : User-Agent, `robots.txt` en cache 24 h, statut de conformité `ok`/`a_relire`/`exclue` dans `job_boards`, relecture des CGU détectées, retrait sur demande | E30 | M | P0 | 037 | Demande propriétaire du 2026-09-28 ; avant US-164 |
+| US-178 | Adaptateur Workday : détection `{tenant}.wd{N}.myworkdayjobs.com`, sitemap puis `JobPosting` des offres nouvelles, filtre France et 30 jours, contrat déduit du titre, offres gardées seulement si elles correspondent à une recherche active | E30 | M | P0 | 037 | Demande propriétaire du 2026-09-28 ; banc d'essai sur 5 entreprises |
+| US-179 | Ajout en masse d'entreprises (100 URL d'offres) dans `/admin/job-search`, tableau « Logiciels à couvrir », Common Crawl sur `*.myworkdayjobs.com` | E30 | S | P1 | 037 | Demande propriétaire du 2026-09-28 |
+| US-180 | Adaptateurs Workable, Recruitee, Personio et Welcome Kit (reconnus mais jamais collectés), conditions d'utilisation relues avant production | E30 | M | P1 | 037 | Décision du 2026-09-22 restée sans adaptateur |
 
 ## Critères d'acceptation détaillés — E16
 
@@ -337,6 +360,10 @@ Contexte persistance : la migration ADR-011 est **terminée** — tous les modul
 | `E17` | `E3`, `E9` | La gestion utilisateurs avancée prolonge l'auth/les rôles et le panel admin utilisateurs |
 | `E18` | `E3`, `E7`, `E10` | Le score réutilise l'extraction de texte de l'import CV (`E10`), le pipeline documentaire pour le badge in-app (`E7`), et l'auth magic link (`E3`) pour convertir un visiteur en compte |
 | `E23` | `E3`, `E18`, `E19`, `E20`, `E21` | Les outils réutilisent le rate limit et le déverrouillage d'E18, l'auth magic link (`E3`), les offres du jour (`E19`), les fiches entreprises (`E20`), le référentiel ROME et le radar marché (`E21`) |
+| `E27` | `E19`, `E20`, `E26` | Le flux réutilise les sources, le dédoublonnage, le score et la vérification en direct d'E19, le registre des sites carrière (`E20`) et le cockpit admin (`E26`) pour le délai de détection |
+| `E28` | `E19`, `E9` | La purge s'appuie sur les offres et correspondances d'E19 et sur le flux de suppression RGPD existant (`E9`) ; elle précède `E27`, qui multiplie le volume d'offres |
+| `E29` | `E3`, `E7`, `E9`, `E19` | L'envoi réutilise l'auth et le flux de suppression RGPD (`E3`, `E9`), les exports PDF du CV et de la lettre (`E7`) et le contact recruteur des offres France Travail (`E19`) |
+| `E30` | `E19`, `E20`, `E27` | Les adaptateurs s'ajoutent aux sources et au registre des sites carrière (`E19`, `E20`) ; les règles de collecte (US-177) doivent précéder la lecture toutes les 30 minutes d'`E27` (US-164) |
 
 ## Technical Gates
 
@@ -743,3 +770,684 @@ Critères communs aux outils : voir `backlog.md`, « Critères d'acceptation dé
 - [ ] QA review
 - [ ] Gate coût : budget global et limite par IP vérifiés sur la route LLM d'US-141 avant mise en
       ligne
+
+<!-- generated-by: plan « Offres en temps réel » (demande propriétaire 2026-09-28) -->
+
+# Sprint 034 — Être parmi les premiers à postuler
+
+## 🎯 Sprint Goal
+
+Épic **E27 — Offres en temps réel**. Aujourd'hui, la collecte tourne une fois par jour à 6 h
+(`DIGEST_HOUR`, `job-digest.service.ts`) et France Travail est interrogé avec `publieeDepuis=1`.
+Une offre publiée à 9 h arrive donc chez le candidat le lendemain matin, quand une centaine de
+personnes ont déjà postulé. À l'issue du sprint, une offre qui correspond est détectée **dans les
+15 minutes** qui suivent sa publication, le candidat reçoit une alerte, et un clic enchaîne sur
+« Postuler avec CVForge ». Le récap du matin reste, comme filet de sécurité.
+
+**Modèle de prix (décision du propriétaire, 2026-09-28)** : les alertes sont **gratuites pour
+tous**, immédiates ou regroupées. Ce qui est payant, c'est l'**enrichissement IA** des alertes
+(US-168) : l'IA dit pourquoi cette offre-là vaut la peine d'être prise, ou pas. C'est notre valeur
+ajoutée par rapport à une alerte LinkedIn ou France Travail.
+
+Cible front : `apps/web`. `apps/app` est gelée, non touchée.
+
+> ⚠️ **Change le périmètre d'E19** : ADR-023 et la règle « la collecte est quotidienne » de
+> `sprint-025.md` sont à amender (US-162). Demande explicite du propriétaire le 2026-09-28. À
+> reporter dans la vision par le Product Owner, jamais en auto-édition (hard rule).
+
+> ⚠️ **RÈGLE DE GRATUITÉ (licence de réutilisation des offres France Travail, art. 5.1)** :
+> « aucune rétribution, directe ou indirecte, ne peut être exigée des personnes à la recherche d'un
+> emploi » et « il est interdit […] de vendre des offres d'emploi, quel que soit le support ». Voir
+> une offre, en être alerté et accéder au lien pour postuler reste **toujours gratuit**. Les crédits
+> paient une analyse ou un document produit par l'IA, jamais l'accès à une offre. L'analyse IA
+> s'ajoute à l'offre : elle ne remplace ni ne modifie son contenu (« ne pas altérer le Contenu »,
+> « la totalité du Contenu » affichée sur chaque offre). Source « France Travail » et date de mise
+> à jour citées sur chaque offre.
+
+> ⚠️ **RÈGLE DE SOURCES inchangée** : uniquement France Travail, La bonne alternance et les
+> endpoints publics des logiciels de recrutement. Pas de LinkedIn, ni en direct ni par un
+> revendeur (Fantastic.jobs, Apify, TheirStack : payants, et leur contenu LinkedIn est scrapé).
+> Le site carrière de l'entreprise publie **avant** LinkedIn : c'est là qu'on gagne la course.
+
+## 📐 Mesures sur l'API Offres d'emploi v2 (2026-09-28, lundi 11 h 30, heure de Paris)
+
+Relevées en direct avec les identifiants du projet, en lecture seule :
+
+| Mesure | Valeur | Conséquence |
+| ------ | ------ | ----------- |
+| Débit par application (`x-ratelimit-*-clientidlimiter`) | **10 appels/s** en continu, rafale de 10 | Le code est réglé à 4/s (`ft.config.ts`, commentaire « documenté : 4 ») : la marge est large |
+| Débit global partagé (`defaultlimiter`) | 100 appels/s, rafale de 100 | Partagé entre toutes les applications : un 429 reste possible, `Retry-After` déjà géré |
+| Quota mensuel | **Aucun en-tête**. Pas de plafond mensuel fixe : les quotas dépendent de l'application (homologation ou production), et le passage en production permet d'en obtenir de plus élevés | Nos ≈ 9 000 à 18 000 appels/mois restent modestes ; le « 100 000/mois » des blogs n'est pas une limite officielle |
+| Nouvelles offres (`minCreationDate`/`maxCreationDate`, France entière, sans filtre) | 225 en 15 min, 3 197 en 1 h, 4 808 en 3 h, 9 620 en 24 h (dimanche compris) | Un pic en semaine peut dépasser 3 000/h |
+| Délai de mise à disposition | Offre créée à 09:32:33, visible à 09:32:34 | L'API est en temps réel : seule notre fréquence de collecte crée le retard |
+| Plafond d'une recherche | 1 150 résultats (`range` 0-1149, 150 par page) | Au pic, une fenêtre d'une heure déborde : il faut des tranches de temps courtes |
+
+**Conséquence de conception : lire tout le flux national, puis trier chez nous.** Une requête par
+tranche de temps, sans mot-clé ni département, coûte le même nombre d'appels quel que soit le
+nombre de candidats. Toutes les 5 minutes, ça donne 1 ou 2 pages au pic, soit **environ 300 à
+600 appels par jour** (≈ 9 000 à 18 000 par mois). Une requête par (métier × département) ferait
+croître la facture avec chaque nouveau candidat.
+
+> **Prérequis** : sprint 035 (E28, durées de conservation) livré avant, pour que la purge des
+> offres existe quand le flux continu fait grossir la base.
+
+## 📅 Period
+
+- Start: à planifier après validation du propriétaire
+- End: —
+
+## ✅ Tasks (3–8 max)
+
+> **Ordre strict** : US-162 (cadre et ADR) → US-163 (flux France Travail) → US-164 (sites
+> carrière) → US-165 (correspondance au fil de l'eau) → US-166 (alertes gratuites) → US-168
+> (enrichissement IA payant) → US-167 (surfaces web).
+
+- [ ] **[US-162]** ADR-027 « Collecte continue » et amendement d'ADR-023
+  - Agent: `tech-lead`
+  - Critères d'acceptation :
+    - [ ] ADR-027 dans `decisions/` : collecte continue (flux national France Travail et sites
+          carrière), budget d'appels chiffré à partir des mesures ci-dessus, stockage limité aux
+          offres qui correspondent à au moins une recherche active, récap du matin conservé.
+    - [ ] ADR-023 porte un renvoi vers ADR-027 ; la règle « collecte quotidienne » de
+          `sprint-025.md` est marquée comme remplacée.
+    - [ ] Section « Licence » dans l'ADR-027 : gratuité pour le candidat (art. 5.1), pas
+          d'altération du contenu, resynchronisation sous 24 h, pas de mise à disposition de la base à
+          des tiers, pas d'usage commercial des coordonnées des recruteurs (art. 8). Relecture
+          juridique recommandée avant la mise en production de l'option payante (US-168).
+    - [ ] Le statut de l'application CVForge sur francetravail.io (homologation ou production)
+          est relevé et consigné dans l'ADR. Si elle est encore en homologation : demande de
+          passage en production déposée et licence de l'API acceptée (usage commercial continu),
+          avec le cas d'usage « collecte toutes les 5 minutes, ≈ 600 appels/jour ».
+    - [ ] Le débit `offres` passe de 4 à 8 appels/s (sous les 10 mesurés, pour laisser de la
+          place à la vérification en direct et aux autres appels France Travail).
+- [ ] **[US-163]** Flux France Travail en continu, par tranches de temps
+  - Agent: `developer`
+  - Critères d'acceptation :
+    - [ ] Une boucle toutes les **5 minutes** (réglable, `JOB_STREAM_INTERVAL_MINUTES`) lit les
+          offres créées depuis la fin de la tranche précédente (`minCreationDate`/
+          `maxCreationDate`, ISO-8601 à la seconde), sans mot-clé ni département.
+    - [ ] Curseur persistant en base (fin de la dernière tranche lue avec succès) : un
+          redémarrage ou une panne reprend là où la collecte s'était arrêtée, sans trou ni
+          doublon. Le rattrapage après une longue panne est plafonné à 31 jours.
+    - [ ] Tranche redécoupée par dichotomie quand `Content-Range` annonce plus de 1 150
+          offres : aucune offre perdue au pic. Couvert par un test sur un total fictif de 3 000.
+    - [ ] Chevauchement de 2 minutes entre deux tranches pour les offres créées pendant l'appel ;
+          le dédoublonnage existant (US-111) absorbe les doublons.
+    - [ ] Verrou (même mécanisme que `digest-runs`) : une seule instance collecte à la fois.
+    - [ ] Un 429 met la boucle en pause sur `Retry-After`, sans avancer le curseur.
+    - [ ] Le compteur d'appels du jour est enregistré par source et visible dans l'admin des
+          sources ; alerte admin à 80 % du quota mensuel s'il existe.
+    - [ ] Suppressions et modifications resynchronisées **au moins une fois toutes les 24 h**
+          (obligation de la licence) : le flux ne lit que les créations, la passe quotidienne et la
+          vérification en direct (`isStillOpen`) couvrent le reste. Une offre retirée chez France
+          Travail disparaît de l'app et des alertes non encore envoyées.
+    - [ ] La collecte par requêtes (`buildSourceQueries`) reste utilisée pour le rattrapage
+          `--since=31` et pour La bonne alternance, dont l'API n'expose pas de date de création
+          fine (à vérifier en direct, voir To Clarify).
+- [ ] **[US-164]** Sites carrière interrogés plusieurs fois par heure
+  - Agent: `developer`
+  - Critères d'acceptation :
+    - [ ] Les entreprises suivies par au moins un candidat, ou dont une offre a correspondu dans
+          les 30 derniers jours, sont lues **toutes les 30 minutes** ; les autres une fois par jour,
+          comme aujourd'hui.
+    - [ ] Une offre est « nouvelle » si son identifiant n'a jamais été vu pour ce site ; sa date
+          de détection est enregistrée à côté de la date annoncée par le logiciel de recrutement
+          (Lever et Greenhouse n'en donnent pas toujours une fiable).
+    - [ ] Le limiteur par hôte (`board-http.ts`) est respecté ; un site qui répond 429 ou 403
+          repasse au rythme quotidien pendant 24 h.
+    - [ ] Aucune hausse de charge au-delà du budget fixé par l'ADR-027, vérifiée sur une journée
+          de staging.
+- [ ] **[US-165]** Correspondance au fil de l'eau
+  - Agent: `developer`
+  - Critères d'acceptation :
+    - [ ] Chaque nouvelle offre (US-163, US-164) est comparée aux recherches actives avec le
+          score déterministe existant (ROME, compétences, contrat, lieu, télétravail) : pas
+          d'appel IA dans la boucle, le reclassement IA reste réservé au récap du matin.
+    - [ ] Seules les offres qui correspondent à au moins une recherche sont stockées ; les
+          autres sont oubliées. La table `jobs` ne doit pas grossir de tout le flux national
+          (≈ 10 000 à 30 000 offres par jour).
+    - [ ] Une offre qui dépasse le seuil d'alerte du candidat crée une correspondance marquée
+          `alert`, avec sa date de publication et sa date de détection.
+    - [ ] L'offre est vérifiée en direct (`isStillOpen`) avant l'alerte, comme pour le récap.
+    - [ ] Une offre déjà envoyée en alerte ne revient pas dans le récap du lendemain.
+    - [ ] Délai publication → correspondance mesuré et exposé dans le cockpit admin (médiane et
+          90e centile par source). Objectif : médiane sous 10 minutes pour France Travail.
+- [ ] **[US-166]** Alertes « nouvelle offre », sans spammer
+  - Agent: `developer`
+  - Critères d'acceptation :
+    - [ ] E-mail « Nouvelle offre pour vous » dans le gabarit commun (US-161) : intitulé,
+          entreprise, lieu, « publiée il y a X min », pourquoi elle correspond, bouton
+          « Postuler avec CVForge ».
+    - [ ] Préférences sur `/notifications` : alertes activées ou non, seuil (offres « très
+          proches » seulement ou toutes), et rythme **immédiat** ou **regroupé toutes les heures**.
+    - [ ] Garde-fous : plafond d'alertes par jour et par candidat (valeur par défaut à fixer, voir
+          To Clarify), heures calmes 21 h – 7 h (regroupées dans un envoi à 7 h), lien de
+          désinscription `List-Unsubscribe` comme les autres e-mails.
+    - [ ] Une alerte en échec ne bloque jamais la boucle de collecte.
+    - [ ] Aperçu dans `email:preview`.
+    - [ ] Gratuites pour tous, aucun crédit consommé : seul l'enrichissement IA (US-168) est payant.
+- [ ] **[US-168]** Enrichissement IA des alertes : « pourquoi cette offre vaut la peine » (payant)
+  - Agent: `developer` (+ `designer` pour le bloc dans l'e-mail et la carte)
+  - Critères d'acceptation :
+    - [ ] Option « Analyse IA de mes alertes » dans les préférences, désactivée par défaut, avec le
+          prix affiché : « 1 crédit par jour où au moins une alerte est analysée, analyses
+          illimitées ce jour-là ». Solde vide : l'alerte part quand même, sans analyse, avec une
+          mention « analyse IA non incluse ».
+    - [ ] Garde-fou : **20 analyses par jour et par candidat** au plus (réglable,
+          `JOB_ALERT_ENRICH_DAILY_CAP`). Au-delà, les alertes partent sans analyse.
+    - [ ] Pour chaque offre qui passe le seuil déterministe, un appel court (profil pseudonymisé,
+          comme `rerankSelection`) renvoie un JSON validé :
+          - **verdict** : « à saisir », « à considérer » ou « à passer » ;
+          - **pourquoi elle vaut le coup** : 2 ou 3 raisons tirées du profil et de l'offre
+            (compétences qui collent, progression, salaire, lieu, taille d'entreprise) ;
+          - **points de vigilance** : écarts avec le profil, exigences manquantes, indices d'une
+            annonce floue ou republiée ;
+          - **quoi mettre en avant** dans le CV et la lettre pour cette offre.
+          Rien n'est inventé : les compétences et expériences citées doivent exister dans le
+          profil, sinon le champ est écarté (même garde-fou que le reclassement).
+    - [ ] Avec l'option, l'IA **filtre** aussi : une offre jugée « à passer » n'est pas envoyée en
+          immédiat, elle reste visible dans l'app avec son analyse. Moins d'alertes, mais les bonnes.
+          Ce filtre est un **choix du candidat**, désactivable : sans lui, il reçoit toutes les
+          alertes gratuites, exactement comme un candidat sans l'option. Payer ne donne accès à
+          aucune offre supplémentaire ni plus tôt (règle de gratuité).
+    - [ ] L'analyse est présentée à côté de l'offre, jamais à sa place : l'intitulé, la
+          description et les informations de l'offre restent affichés intégralement et sans
+          modification, avec la mention de la source.
+    - [ ] Facturation : **1 crédit par jour** (jour calendaire, heure de Paris), débité après la
+          **première analyse réussie** de la journée, comme `rerankSelection`. Les analyses
+          suivantes du même jour sont gratuites. Un jour sans alerte analysée ne coûte rien ; un
+          appel en échec ne déclenche pas le débit. Débit unique garanti par une contrainte
+          d'unicité (candidat, jour) : deux alertes simultanées ne débitent pas deux crédits.
+          Nouvelle action de crédit `job_alert_enrich` dans `@cvforge/types`
+          (`AI_CREDIT_COSTS` = 1).
+    - [ ] Un candidat qui a aussi le classement IA du récap du matin paie les deux (1 + 1 crédit
+          par jour au plus) : ce sont deux options distinctes.
+    - [ ] Chaque appel est journalisé dans `ai_usage_events` (US-154, fonctionnalité
+          `job_alert_enrich`) : le cockpit montre le coût réel par jour facturé et la marge.
+    - [ ] L'analyse est réutilisée par « Postuler avec CVForge » : les points à mettre en avant
+          alimentent la génération du CV et de la lettre, sans nouvel appel.
+    - [ ] L'enrichissement tourne hors de la boucle de collecte (file de travail) : un modèle lent
+          ou en panne retarde l'alerte enrichie de 2 minutes au plus, au-delà elle part sans
+          analyse.
+    - [ ] Tests : validation du JSON, champ inventé écarté, un seul débit par jour même avec des
+          alertes simultanées, pas de débit sur échec, pas de débit un jour sans alerte, plafond de
+          20 analyses respecté.
+- [ ] **[US-167]** Fraîcheur visible et réponse rapide dans l'app
+  - Agent: `developer` (+ `designer` pour la carte)
+  - Critères d'acceptation :
+    - [ ] Sur « Offres du jour », une section « Nouvelles depuis votre dernière visite » en tête,
+          triée par date de publication, avec un badge « il y a X min / X h ».
+    - [ ] Filtre et tri « les plus récentes » sur la recherche libre (US-115).
+    - [ ] Depuis l'alerte, « Postuler avec CVForge » ouvre directement la candidature avec la
+          génération du CV adapté lancée (parcours US-113), sans étape intermédiaire.
+    - [ ] Tests web sur le badge (fuseau de Paris) et sur la section « nouvelles ».
+
+## 📊 Sprint DoD
+
+- [ ] Sur staging pendant une journée ouvrée : médiane publication → alerte sous 15 minutes pour
+      France Travail, aucun 429 persistant, budget d'appels respecté.
+- [ ] `pnpm lint` et `pnpm test` verts (API et web).
+- [ ] Mémoire des agents concernés mise à jour.
+
+## 🚧 Risks
+
+- **Quotas France Travail propres à l'application** : pas de plafond mensuel fixe, mais une
+  application en homologation peut être bridée ou réévaluée par France Travail. Le compteur
+  d'appels (US-163) et la gestion des 429 existante (`Retry-After`, pause de la source) couvrent
+  le risque ; le passage en production (US-162) l'écarte.
+- **Marge de l'analyse IA** : un appel coûte ≈ 0,0004 $ (`mistralai/mistral-small-2603`,
+  ≈ 1 500 tokens en entrée, 300 en sortie, tarif OpenRouter du 2026-09-28). Au plafond de 20
+  analyses, une journée coûte ≈ 0,8 c€ pour 1 crédit vendu 3,4 à 6,6 c€ selon le pack (base
+  locale, à revérifier en prod). Un changement de modèle par défaut doit être revérifié dans le
+  cockpit.
+- **Spam** : trop d'alertes et le candidat désactive tout, ou les e-mails partent en indésirable
+  et dégradent la réputation du domaine d'envoi. D'où le plafond, les heures calmes et le mode
+  regroupé.
+- **Charge sur les sites carrière** : lire un site toutes les 30 minutes au lieu d'une fois par
+  jour multiplie les appels par 48. Greenhouse bloque une IP qui insiste : limiter aux
+  entreprises réellement suivies.
+- **Offres republiées** : certaines agences republient la même annonce tous les jours avec une
+  nouvelle `dateCreation`. Le dédoublonnage (US-111) doit les attraper, sinon elles déclenchent
+  une alerte chaque matin.
+
+## ⚠️ To Clarify
+
+- **Option payante et licence France Travail** : l'art. 5.1 interdit toute rétribution, même
+  indirecte, exigée d'un candidat. Notre lecture : faire payer une analyse IA, comme un CV ou une
+  lettre, reste possible tant que l'offre, l'alerte et le lien pour postuler restent gratuits. C'est
+  une interprétation, pas un avis juridique : **à faire valider** (juriste, ou question écrite à
+  France Travail via francetravail.io) avant d'activer US-168 en production. Le même point vaut
+  pour le classement IA payant du récap du matin, déjà en ligne (US-112).
+
+- ~~Réservé à l'offre payante ?~~ **Tranché le 2026-09-28** : alertes gratuites dans tous les
+  cas ; l'enrichissement IA est payant (US-168).
+- ~~Prix de l'enrichissement~~ **Tranché le 2026-09-28** : 1 crédit par jour où au moins une
+  alerte est analysée, analyses illimitées ce jour-là (plafond technique de 20). 1 crédit par
+  alerte a été écarté : environ 300 crédits par mois pour 10 alertes par jour, soit presque tout
+  le pack « Recherche active ». Coût réel à confirmer dans le cockpit après une semaine.
+- **Plafond d'alertes par jour** : proposition 10 en immédiat, au-delà basculement automatique en
+  regroupé.
+- **Notification push web** (PWA, service worker) : plus rapide que l'e-mail, mais c'est une
+  nouvelle brique, qui n'existe pas encore dans `apps/web`. Proposée pour un sprint suivant.
+- **La bonne alternance** : vérifier en direct si elle filtre par date de création fine ; sinon
+  elle reste sur le rythme actuel.
+- **Statut de l'application France Travail** : homologation ou production ? À lire dans l'espace
+  développeur de francetravail.io (le propriétaire seul y a accès).
+
+## 🔁 Workflow Runs
+
+— aucun pour l'instant.
+
+<!-- generated-by: plan « Durées de conservation » (demande propriétaire 2026-09-28) -->
+
+# Sprint 035 — Ne garder que ce qui sert
+
+## 🎯 Sprint Goal
+
+Épic **E28 — Durées de conservation des offres et des candidatures**. Aujourd'hui, rien n'est
+jamais supprimé : une offre fermée garde son `closed_at` et sa réponse brute (`job_listings.raw`),
+**coordonnées du recruteur comprises** (141 offres France Travail sur 2 722 en base locale portent
+un e-mail de recruteur), et une candidature vit aussi longtemps que le compte. À l'issue du sprint :
+
+- une offre est anonymisée dès sa fermeture, puis supprimée après 30 jours, sauf si une
+  candidature active s'y rattache ;
+- une candidature sans activité depuis un an est supprimée, après un avertissement ;
+- la politique de confidentialité annonce ces durées.
+
+Indépendant d'E27 : **à livrer avant le sprint 034**. Le flux continu d'E27 fera entrer beaucoup
+plus d'offres en base, et la purge doit exister avant.
+
+> ⚠️ **Licence de réutilisation des offres France Travail** : le contenu d'une offre supprimée
+> qu'on conserve doit être anonymisé (nom, description et URL de l'entreprise, personne à
+> contacter, téléphone), et les coordonnées des recruteurs ne servent à aucun usage commercial
+> (art. 8). Vérifié le 2026-09-28 : le module `leads` et les modules entreprises ne réutilisent
+> aucune coordonnée de recruteur ; seule la fiche d'offre les montre au candidat, pour postuler.
+
+## 📅 Period
+
+- Start: à planifier, avant le sprint 034
+- End: —
+
+## ✅ Tasks (3–8 max)
+
+- [ ] **[US-169]** Anonymiser les offres fermées et purger les offres de plus de 30 jours
+  - Agent: `developer`
+  - Critères d'acceptation :
+    - [ ] **Anonymisation à la fermeture** : quand une annonce passe `closed_at`, son `raw` perd le
+          contact (`contact.*` : nom, courriel, coordonnées, téléphone) et les champs d'entreprise
+          (nom, description, URL, logo) ; les mêmes champs sont vidés dans `jobs` si toutes ses
+          annonces sont fermées. Couvert par un test sur une réponse France Travail réelle
+          (fixture) et une annonce de logiciel de recrutement.
+    - [ ] **Purge quotidienne** (même verrou que `job_digest_runs`) : une offre (`jobs`) est
+          supprimée, avec ses annonces, liens et correspondances en cascade, quand **sa date de
+          publication (ou, à défaut, de première détection) dépasse 30 jours**, ou quand elle est
+          fermée depuis plus de 30 jours,
+          **sauf** si une correspondance la relie à une candidature **active** (brouillon, envoyée,
+          entretien prévu), via `job_matches.application_id`.
+    - [ ] Une offre conservée pour une candidature active est anonymisée à sa fermeture comme les
+          autres, puis purgée au premier passage où la candidature n'est plus active (refusée,
+          offre reçue, supprimée).
+    - [ ] Une candidature ne dépend pas de l'offre purgée : elle garde sa propre copie
+          (`raw_offer_text`, `extracted`). Vérifié par un test : la page candidature, la
+          génération du CV et de la lettre, et l'entretien fonctionnent après la purge de l'offre.
+    - [ ] **Rattrapage une seule fois** : les annonces déjà fermées sont anonymisées et les offres
+          de plus de 30 jours purgées, par un script relançable (`jobs:purge --dry-run` pour
+          compter avant d'agir).
+    - [ ] Le nombre d'offres anonymisées et purgées par passage est journalisé et visible dans
+          l'admin des sources.
+    - [ ] La fenêtre de 30 jours est une constante partagée avec la règle de fraîcheur d'E19
+          (aucune offre de plus de 30 jours proposée), pas un second chiffre.
+- [ ] **[US-170]** Supprimer les candidatures sans activité depuis un an
+  - Agent: `developer`
+  - Critères d'acceptation :
+    - [ ] Une candidature dont la **dernière modification** (`updated_at`) date de plus d'un an est
+          supprimée, quel que soit son statut : versions de CV et de lettre (cascade existante),
+          sessions et rapports d'entretien rattachés, fichiers stockés s'il y en a, correspondance
+          d'offre détachée.
+    - [ ] Une ouverture de la candidature ne compte pas comme une activité ; un changement de
+          statut, une génération ou une modification, si.
+    - [ ] **Avertissement 15 jours avant**, par e-mail (gabarit commun, US-161) et dans l'app :
+          liste des candidatures concernées, avec un lien pour les garder (toute modification repousse
+          l'échéance) ou télécharger leurs documents. Désactivable dans `/notifications` comme les
+          autres e-mails, sauf qu'on ne peut pas désactiver la suppression elle-même.
+    - [ ] Tâche quotidienne sur le modèle d'`AtsPurgeService` (au démarrage du module, puis toutes
+          les 24 h), avec un mode `--dry-run`.
+    - [ ] Les métriques admin qui comptent les candidatures (cockpit E26, KPI) restent justes :
+          les agrégats historiques ne sont pas recalculés à partir des lignes supprimées, ou la
+          baisse est documentée dans le cockpit.
+    - [ ] `privacy-retention-policy.ts` porte les deux nouvelles règles (offres 30 jours,
+          candidatures un an après la dernière activité).
+    - [ ] Politique de confidentialité mise à jour depuis `/admin/legal`, section « Combien de
+          temps nous les gardons » : « Vos candidatures : un an après leur dernière modification,
+          avec un rappel quinze jours avant. » **Publiée avant l'activation de la purge.**
+    - [ ] Tests : seuil d'un an, avertissement envoyé une seule fois, candidature modifiée après
+          l'avertissement conservée, suppression complète (aucune ligne restante dans les tables
+          liées).
+
+## 📊 Sprint DoD
+
+- [ ] `--dry-run` lancé en staging puis en prod, chiffres relus par le propriétaire avant la
+      première vraie purge.
+- [ ] `pnpm lint` et `pnpm test` verts.
+- [ ] Mémoire des agents concernés mise à jour.
+
+## 🚧 Risks
+
+- **Suppression irréversible** : une erreur de requête efface des candidatures en cours. D'où le
+  `--dry-run` obligatoire avant la première exécution, et des tests qui vérifient ce qui est
+  **conservé**, pas seulement ce qui est supprimé.
+- **Sauvegardes** : une candidature supprimée survit dans les sauvegardes de la base jusqu'à leur
+  rotation. À mentionner dans la politique de confidentialité si la rotation dépasse quelques
+  semaines.
+
+## ⚠️ To Clarify
+
+- **« Plus d'un an »** : compté depuis la **dernière modification** et non la création, pour ne
+  pas supprimer une candidature encore suivie. Proposition à confirmer par le propriétaire.
+- **Candidature avec une offre d'emploi reçue** : la supprimer aussi au bout d'un an sans
+  activité ? Proposition : oui, la règle est la même pour tous les statuts, et l'avertissement
+  laisse le temps de télécharger les documents.
+
+## 🔁 Workflow Runs
+
+— aucun pour l'instant.
+
+<!-- generated-by: plan « Postuler depuis sa boîte mail » (demande propriétaire 2026-09-28) -->
+
+# Sprint 036 — Postuler depuis sa propre boîte mail
+
+## 🎯 Sprint Goal
+
+Épic **E29 — Postuler depuis sa propre boîte mail**. À l'issue du sprint, un candidat connecte son
+Gmail ou son Outlook une fois, puis envoie sa candidature (CV et lettre en PDF) au recruteur depuis
+CVForge, **comme s'il l'envoyait lui-même** : le message part de sa vraie adresse et apparaît dans
+ses messages envoyés. Pour les autres messageries, un brouillon pré-rempli prend le relais.
+
+Décision d'architecture : **ADR-028** (`decisions/ADR-028-send-applications-from-candidate-mailbox.md`).
+
+Cible front : `apps/web`. `apps/app` est gelée, non touchée.
+
+> ⚠️ **Absent de la vision.** Demande explicite du propriétaire le 2026-09-28. À reporter dans la
+> vision par le Product Owner, jamais en auto-édition (hard rule).
+
+> ⚠️ **RÈGLES (ADR-028 §1 et §4)** : permission d'**envoi** seule, jamais de lecture de la boîte.
+> Un envoi = une candidature = un destinataire, après aperçu. Envoi **gratuit** (licence France
+> Travail, art. 5.1). Jamais d'adresse cherchée ou devinée par CVForge. Plafond de 20 envois par
+> jour.
+
+## 📅 Period
+
+- Start: à planifier — la validation Google peut prendre plusieurs semaines, US-175 est à lancer
+  dès l'accord sur l'ADR
+- End: —
+
+## ✅ Tasks (3–8 max)
+
+> **Ordre** : US-175 (démarches, longues) démarre en premier et en parallèle. Puis US-171
+> (connexion Google et socle), US-172 (Microsoft), US-173 (envoi), US-174 (repli).
+
+- [ ] **[US-171]** Connecter sa boîte Gmail (socle commun des connexions)
+  - Agent: `developer`
+  - Critères d'acceptation :
+    - [ ] Table `mail_connections` (candidat, fournisseur, adresse connectée, jeton de
+          rafraîchissement **chiffré AES-256-GCM**, état `active` / `lost`, dates), sans clé
+          étrangère vers les profils (même règle que `search_projects`).
+    - [ ] Chiffrement par `node:crypto` avec `MAIL_CONNECT_ENCRYPTION_KEY` ; sans clé, la
+          fonctionnalité est inerte (aucun bouton, aucune erreur au démarrage). Test : le jeton
+          écrit en base n'est jamais lisible en clair.
+    - [ ] Flux OAuth Google avec `state` et PKCE, permissions `openid email` et `gmail.send`
+          **uniquement** ; un test échoue si une autre permission Gmail est demandée.
+    - [ ] Section « Messagerie connectée » dans les paramètres du compte : adresse connectée,
+          bouton « Déconnecter » (révocation chez Google + suppression locale).
+    - [ ] `invalid_grant` au rafraîchissement : connexion marquée `lost`, reconnexion proposée
+          au prochain envoi.
+    - [ ] Suppression du compte : connexions effacées et jetons révoqués (flux RGPD existant,
+          test de résidu vert).
+    - [ ] Aucun appel HTTP réel dans les tests (client injecté), pas de SDK Google (ADR-028 §2).
+- [ ] **[US-172]** Connecter sa boîte Outlook (Microsoft 365, Outlook.com, Hotmail)
+  - Agent: `developer`
+  - Critères d'acceptation :
+    - [ ] Flux OAuth Microsoft (point d'accès `common`, comptes personnels et professionnels),
+          permissions `openid email offline_access Mail.Send` uniquement.
+    - [ ] Même socle que US-171 : stockage chiffré, état `lost`, déconnexion (suppression locale
+          et lien vers la page Microsoft de retrait des autorisations), purge RGPD.
+    - [ ] Consentement refusé par l'administrateur d'une entreprise : message clair qui propose
+          le repli (US-174), pas d'erreur technique affichée.
+- [ ] **[US-173]** Envoyer sa candidature au recruteur depuis CVForge
+  - Agent: `developer` (+ `designer` pour l'aperçu)
+  - Critères d'acceptation :
+    - [ ] Bouton « Envoyer au recruteur » sur la candidature, visible seulement si une adresse
+          est admise (ADR-028 §4) : contact de l'offre France Travail (jamais pour une offre
+          anonyme), adresse présente dans le texte d'offre importé par le candidat, ou adresse
+          saisie par le candidat. Masqué si l'offre demande de postuler par un lien.
+    - [ ] **Aperçu obligatoire** avant envoi : expéditeur, destinataire, objet, message, pièces
+          jointes (CV et lettre en PDF, exports existants). Tout est modifiable sauf l'expéditeur.
+    - [ ] Message d'accompagnement pré-rempli **sans appel IA** (modèle fixe : poste, nom du
+          candidat), objet « Candidature — <intitulé du poste> ».
+    - [ ] Envoi par l'API Gmail (message MIME en base64url) ou Graph `sendMail`, avec les deux
+          PDF en pièces jointes. Un seul destinataire, ni copie ni copie cachée.
+    - [ ] **Gratuit** : aucun crédit consommé par l'envoi. Un CV ou une lettre pas encore générés
+          sont proposés à la génération, au prix habituel, avant l'aperçu.
+    - [ ] **Plafond de 20 envois par jour** et par candidat, message explicite quand il est
+          atteint.
+    - [ ] Après succès : candidature en « envoyée », entrée d'historique « envoyée depuis Gmail /
+          Outlook le … », adresse du destinataire et identifiant du message enregistrés **sur la
+          candidature seulement** (purgés avec elle, US-170).
+    - [ ] Échec du fournisseur (quota, jeton perdu, pièce jointe refusée) : rien n'est marqué
+          envoyé, l'erreur dit quoi faire (reconnecter, réessayer, passer au repli).
+    - [ ] Un deuxième envoi de la même candidature demande une confirmation (« déjà envoyée le … »).
+    - [ ] Tests : construction MIME (accents dans l'objet et le nom, pièces jointes), plafond,
+          aucun débit de crédits, offre anonyme sans bouton, historique.
+- [ ] **[US-174]** Repli pour les autres messageries
+  - Agent: `developer`
+  - Critères d'acceptation :
+    - [ ] Sans connexion Gmail ou Outlook : « Préparer l'e-mail » télécharge le CV et la lettre,
+          puis ouvre un brouillon `mailto:` avec destinataire, objet et message pré-remplis.
+    - [ ] Le candidat est prévenu qu'il doit joindre les fichiers lui-même ; un bouton « Je l'ai
+          envoyée » passe la candidature en « envoyée ».
+    - [ ] Proposé aussi quand la connexion est perdue ou refusée par l'entreprise.
+- [ ] **[US-175]** Démarches Google, Microsoft et documents légaux
+  - Agent: `product-owner` (actions du propriétaire, suivies ici)
+  - Critères d'acceptation :
+    - [ ] Projet Google Cloud : écran de consentement OAuth, domaine vérifié, demande de
+          validation pour `gmail.send` déposée avec la vidéo de démonstration.
+    - [ ] Application Entra ID enregistrée ; vérification de l'éditeur Microsoft lancée
+          (prérequis à confirmer, ADR-028 « To check »).
+    - [ ] Politique de confidentialité mise à jour depuis `/admin/legal` : Google et Microsoft
+          comme services d'envoi, données stockées (adresse connectée, jeton chiffré), durée
+          (jusqu'à la déconnexion ou la suppression du compte), permission d'envoi seule. Publiée
+          **avant** l'ouverture au public.
+    - [ ] CGU : le candidat est l'expéditeur et reste responsable du contenu envoyé et des
+          adresses qu'il saisit.
+    - [ ] Variables ajoutées à `.env.example`, Compose et Dokploy : identifiants OAuth Google et
+          Microsoft, `MAIL_CONNECT_ENCRYPTION_KEY`.
+
+## 📊 Sprint DoD
+
+- [ ] Envoi réel vérifié depuis un compte Gmail de test et un compte Outlook.com vers une adresse
+      de test : pièces jointes lisibles, accents corrects, message présent dans « Envoyés ».
+- [ ] `pnpm lint` et `pnpm test` verts (API et web).
+- [ ] Mémoire des agents concernés mise à jour.
+
+## 🚧 Risks
+
+- **Validation Google longue** : tant qu'elle n'est pas obtenue, 100 utilisateurs de test au plus
+  et un écran d'avertissement. Microsoft et le repli fonctionnent pendant ce temps.
+- **Mauvais usage** : un candidat qui arrose des recruteurs se fait bloquer par son fournisseur,
+  et l'image de CVForge en pâtit. D'où l'aperçu obligatoire, un destinataire par envoi et le
+  plafond quotidien.
+- **Fuite de jetons** : un jeton d'envoi volé permet d'écrire au nom du candidat. D'où le
+  chiffrement, une clé hors base et hors sauvegardes, la permission d'envoi seule et la
+  révocation à la déconnexion.
+
+## ⚠️ To Clarify
+
+- **Employeurs à fort potentiel (La bonne boîte)** : pas d'adresse fournie par l'API, donc hors
+  de cette épic. Canal officiel d'envoi à rechercher dans le catalogue France Travail.
+- **Plafond de 20 envois par jour** : à confirmer par le propriétaire.
+
+## 🔁 Workflow Runs
+
+— aucun pour l'instant.
+
+<!-- generated-by: plan « Plus d'entreprises : Workday et les logiciels des offres JobTeaser » (demande propriétaire 2026-09-28) -->
+
+# Sprint 037 — Aller chercher les offres là où les entreprises les publient
+
+## 🎯 Sprint Goal
+
+Épic **E30 — Plus d'entreprises : Workday et les logiciels de recrutement vus sur JobTeaser**.
+Le propriétaire trouve sur JobTeaser beaucoup d'offres d'entreprises que JobSpark n'a pas. JobTeaser
+reste exclu (ADR-023 : pas d'API, CGU contre le scraping), mais ses offres renvoient presque toutes
+vers le logiciel de recrutement de l'entreprise (ex. `cc.wd3.myworkdayjobs.com/…?source=Jobteaser`).
+On va lire ce logiciel directement. À l'issue du sprint :
+
+- les grands groupes sur **Workday** (Chanel, Sanofi, Airbus, Michelin…) sont collectés ;
+- les quatre logiciels déjà reconnus mais jamais lus (Workable, Recruitee, Personio, Welcome Kit)
+  le sont aussi ;
+- chaque site est lu **selon ses propres règles** : `robots.txt` respecté, CGU relues quand il en
+  affiche, retrait sur simple demande ;
+- le propriétaire ajoute d'un coup les entreprises repérées en naviguant (liens « Postuler »), et
+  l'admin montre quels logiciels restent à couvrir ;
+- seules les offres qui correspondent aux recherches des candidats sont gardées.
+
+Le produit s'appelle désormais **JobSpark** (ex-CVSpark) : le robot se présente comme `JobSparkBot`.
+
+> ⚠️ **JobTeaser n'est jamais lu par un programme.** La découverte passe par le propriétaire (qui
+> navigue et colle des liens), les imports des candidats et Common Crawl sur les domaines des
+> logiciels de recrutement. Aucune requête automatique vers `jobteaser.com`.
+
+## 🔬 Banc d'essai du 2026-09-28 (5 entreprises sur Workday, `JobSparkBot/0.1`, 1 requête/s)
+
+| Entreprise | `robots.txt` | Lien légal sur le site carrière | Offres (API / sitemap) | `JobPosting` |
+|---|---|---|---|---|
+| Thales | ❌ interdit `/Careers/`, son propre site | confidentialité | 2000+ / aucun | non lu |
+| Sanofi | ✅ | confidentialité | 841 / 100 | complet |
+| Airbus | ✅ (interdit `/Airbus_Specific/`) | confidentialité candidats | 2000+ / 100 | complet |
+| Chanel | ✅ | confidentialité | 1151 / 100 | employeur vide |
+| Michelin | ✅ (interdit `/forum/`) | aucun | 739 / 100 | employeur vide sur les offres FR |
+
+Constats : aucune CGU sur les sites carrière (seulement des politiques de confidentialité) ; les
+CGU de workday.com ne couvrent que les pages qui y renvoient, et ces sites n'y renvoient pas ; le
+sitemap ne liste que les **100 offres les plus récentes**, triées par date (dates vérifiées contre
+« Posted Today ») ; `employmentType` vaut toujours `FULL_TIME`, même pour un CDD ou un stage ;
+titres avec entités HTML (`&amp;`) ; beaucoup d'offres hors de France. 44 requêtes en 66 s.
+
+## 📅 Period
+
+- Start: à planifier — **US-177 avant US-164** (sprint 034), qui multiplie les passages sur les
+  sites carrière
+- End: —
+
+## ✅ Tasks (3–8 max)
+
+> **Ordre** : US-176 (règles) → US-177 (règles appliquées à toutes les sources) → US-178
+> (Workday) et US-179 (découverte) en parallèle → US-180 (quatre adaptateurs).
+
+- [ ] **[US-176]** ADR-029 « Lire les sites carrière sans API officielle »
+  - Agent: `tech-lead`
+  - Critères d'acceptation :
+    - [ ] ADR-029 dans `decisions/`, avec renvoi depuis ADR-023 : Workday lu par son **sitemap et
+          les données `JobPosting`** des pages d'offre (faites pour Google for Jobs), pas par
+          l'endpoint interne `/wday/cxs/` ; les constats du banc d'essai ci-dessus y figurent.
+    - [ ] Règles communes à **toutes** les sources « sites carrière » : User-Agent
+          `JobSparkBot/1.0 (+<page de contact>)`, `robots.txt` bloquant, 1 requête/s par hôte,
+          registre de conformité par entreprise, retrait sous 48 h sur demande, affichage minimal.
+    - [ ] **Affichage minimal** défini : pour une source sans API officielle, la fiche montre
+          titre, entreprise, lieu, date, type de contrat, un extrait (300 caractères au plus) et le
+          lien vers l'offre d'origine ; la description complète n'est jamais republiée. Elle reste
+          utilisable en interne pour la correspondance et la génération du CV et de la lettre à la
+          demande du candidat.
+    - [ ] JobTeaser : la règle « aucune lecture automatique » est écrite noir sur blanc, avec les
+          trois voies de découverte autorisées (propriétaire, imports, Common Crawl).
+    - [ ] Relecture juridique recommandée avant la mise en production, comme pour ADR-027.
+- [ ] **[US-177]** Règles de collecte appliquées à tous les sites carrière
+  - Agent: `developer`
+  - Critères d'acceptation :
+    - [ ] `board-http.ts` envoie le User-Agent `JobSparkBot` à Greenhouse, Lever, Ashby,
+          SmartRecruiters et aux nouveaux adaptateurs.
+    - [ ] `robots.txt` lu par hôte, gardé 24 h en cache ; une URL interdite n'est pas appelée,
+          l'entreprise passe `exclue (robots.txt)` et l'admin l'affiche. Test avec le
+          `robots.txt` réel de Thales en fixture.
+    - [ ] `job_boards` gagne un statut de conformité (`ok`, `a_relire`, `exclue`), une note et une
+          date de relecture ; seules les entreprises `ok` sont collectées.
+    - [ ] Une entreprise nouvellement ajoutée dont le site carrière affiche un lien de CGU ou de
+          conditions d'utilisation (hors politique de confidentialité) arrive en `a_relire` ;
+          l'admin montre le lien et deux boutons « valider » / « exclure ».
+    - [ ] **Retrait sur demande** : l'admin exclut une entreprise avec un motif ; ses offres
+          disparaissent de l'app au prochain passage et elle ne peut plus être réinscrite par
+          Common Crawl ni par un import. La page de contact le mentionne.
+    - [ ] L'affichage minimal d'ADR-029 s'applique aux fiches d'offre des sources concernées.
+- [ ] **[US-178]** Adaptateur Workday
+  - Agent: `developer`
+  - Critères d'acceptation :
+    - [ ] `detectAtsBoard` reconnaît `{tenant}.wd{N}.myworkdayjobs.com/[{langue}/]{site}/job/…` ;
+          le jeton garde l'hôte complet et le site (ex. `cc.wd3/ChanelCareers`) ; le paramètre
+          `?source=…` est ignoré.
+    - [ ] Lecture : sitemap du site (déclaré dans `robots.txt`), puis la page de chaque offre
+          **jamais vue** pour son `JobPosting` ; une offre déjà connue n'est pas relue.
+    - [ ] Seules les offres en France (ou en télétravail) sont gardées ; les offres de plus de
+          30 jours sont ignorées (constante partagée avec US-169).
+    - [ ] Type de contrat déduit du titre et de la description (CDI, CDD, stage, alternance,
+          intérim), `employmentType` n'étant pas fiable ; entreprise prise dans le registre quand
+          `hiringOrganization` est vide ; entités HTML décodées.
+    - [ ] Tests sur des pages réelles en fixtures (Chanel, Airbus, Michelin) et sur le
+          `robots.txt` de Thales (entreprise exclue, aucun appel).
+    - [ ] Les offres lues passent par la même correspondance que les autres sources : **seules
+          celles qui correspondent à au moins une recherche active d'un candidat sont gardées**.
+- [ ] **[US-179]** Ajouter des entreprises en masse et voir les logiciels manquants
+  - Agent: `developer`
+  - Critères d'acceptation :
+    - [ ] Dans `/admin/job-search`, un champ accepte jusqu'à 100 URL d'offres (une par ligne) et
+          rend un rapport : ajoutées, déjà connues, exclues, **logiciel non reconnu** (avec l'hôte).
+    - [ ] Un tableau « Logiciels à couvrir » compte les hôtes non reconnus rencontrés (ajouts
+          admin et imports des candidats), triés par nombre d'entreprises, pour décider des
+          prochains adaptateurs.
+    - [ ] Common Crawl interroge aussi `*.myworkdayjobs.com/*` ; les entreprises trouvées passent
+          par les règles d'US-177 avant toute collecte.
+    - [ ] Une offre importée par un candidat depuis Workday inscrit l'entreprise (origine
+          `user`), comme pour les autres logiciels.
+- [ ] **[US-180]** Adaptateurs Workable, Recruitee, Personio et Welcome Kit
+  - Agent: `developer`
+  - Critères d'acceptation :
+    - [ ] Les quatre logiciels, déjà reconnus par `detectAtsBoard` et retenus le 2026-09-22, ont
+          un adaptateur par leur endpoint public ; les entreprises déjà inscrites pour eux sont
+          collectées sans nouvelle inscription.
+    - [ ] Les conditions d'utilisation de chaque endpoint public sont relues et consignées dans
+          ADR-029 avant la mise en production ; un logiciel dont les conditions interdisent l'usage
+          reste reconnu mais non collecté.
+    - [ ] Mêmes règles qu'US-177 et même filtre France/30 jours qu'US-178, tests sur réponses
+          réelles en fixtures.
+
+## 📊 Sprint DoD
+
+- [ ] **Mesure de couverture** : le propriétaire colle 50 liens « Postuler » repérés sur JobTeaser ;
+      le rapport d'US-179 donne la part d'entreprises collectées avant et après le sprint.
+- [ ] Une journée de staging sans hausse de charge au-delà du budget d'ADR-027.
+- [ ] `pnpm lint` et `pnpm test` verts.
+- [ ] Mémoire des agents concernés mise à jour.
+
+## 🚧 Risks
+
+- **Droit de l'employeur sur ses offres** (droit d'auteur, droit du producteur de base de
+  données) : c'est lui, pas Workday, qui peut se plaindre. D'où l'affichage minimal et le retrait
+  sous 48 h.
+- **Sitemap limité à 100 offres** : une entreprise qui publie plus de 100 offres entre deux
+  passages en perdrait. Peu probable toutes les 30 min (US-164), à surveiller sur Airbus et Chanel.
+- **Pages Workday changeantes** : le `JobPosting` est stable (standard schema.org), mais un
+  locataire peut désactiver son sitemap. L'échec est compté comme pour les autres sources.
+
+## ⚠️ To Clarify
+
+- **Recherche ciblée Workday** : l'endpoint `/wday/cxs/` accepte une recherche par mot-clé et par
+  pays, ce qui permettrait de ne demander que les offres des métiers recherchés par nos candidats
+  (et de dépasser la limite de 100). Il n'est pas interdit par les `robots.txt` testés, mais c'est
+  l'API interne du site, pas une publication. Proposition : sitemap d'abord, recherche ciblée
+  seulement si la mesure de couverture le justifie, et après décision du propriétaire.
+- **Page de contact du robot** : l'URL à mettre dans le User-Agent (domaine JobSpark à confirmer).
+- **Affichage minimal pour Greenhouse, Lever, Ashby, SmartRecruiters** : ces API sont publiées par
+  l'entreprise pour diffuser ses offres ; proposition : garder l'affichage complet pour elles.
+
+## 🔁 Workflow Runs
+
+— aucun pour l'instant.

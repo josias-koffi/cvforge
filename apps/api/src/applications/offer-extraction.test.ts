@@ -58,4 +58,26 @@ describe("offer extraction helpers", () => {
       inferLocaleFromText("Le poste inclut des responsabilites produit et de l'experience Node."),
     ).toBe("fr");
   });
+
+  it("does not default an unmatched english offer to french", () => {
+    expect(
+      inferLocaleFromText(
+        "We are looking for a backend engineer. You will own our API and ship features with the team.",
+      ),
+    ).toBe("en");
+  });
+
+  it("matches accented french signals", () => {
+    expect(
+      inferLocaleFromText(
+        "Nous recherchons un(e) candidat(e) avec de l'expérience et de solides compétences produit.",
+      ),
+    ).toBe("fr");
+  });
+
+  it("falls back to french on a true tie with no signal matched", () => {
+    expect(inferLocaleFromText("Node.js, PostgreSQL, Docker, Kubernetes.")).toBe(
+      "fr",
+    );
+  });
 });
