@@ -63,6 +63,11 @@ locals {
   # were still on disk.
   volume_prefix = local.is_production ? "jobspark" : "cvspark-staging"
 
+  # One bucket per environment: an R2 token is scoped to whole buckets, never to
+  # a prefix, so staging's credentials must not be able to reach production's
+  # dumps. Production keeps the original bucket, and its history with it.
+  r2_backup_bucket = local.is_production ? var.r2_backup_bucket : "${var.r2_backup_bucket}-staging"
+
   # Both environments live under .koklo.dev, so an identical cookie name would
   # make the two sessions collide.
   auth_cookie_name = local.is_production ? "jobspark_session" : "jobspark_staging_session"

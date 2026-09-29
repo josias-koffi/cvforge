@@ -82,7 +82,7 @@ resource "dokploy_compose" "jobspark" {
     # r2_fetch only lists and downloads with these, so restore_check can test
     # the off-site dumps too.
     "R2_BACKUP_ENDPOINT=${var.r2_backup_endpoint}",
-    "R2_BACKUP_BUCKET=${var.r2_backup_bucket}",
+    "R2_BACKUP_BUCKET=${local.r2_backup_bucket}",
     "R2_BACKUP_ACCESS_KEY=${var.r2_backup_access_key}",
     "R2_BACKUP_SECRET_ACCESS_KEY=${var.r2_backup_secret_access_key}",
     # Compose does not recreate a container when only an inline config changes;
