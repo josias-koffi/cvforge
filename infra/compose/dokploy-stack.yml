@@ -244,6 +244,8 @@ services:
       EMAIL_FROM: ${EMAIL_FROM}
       RESTORE_CHECK_ALERT_TO: ${RESTORE_CHECK_ALERT_TO}
       RESTORE_CHECK_ENV: ${RESTORE_CHECK_ENV}
+      # Hash of this file, set by OpenTofu: recreates the container on a script edit.
+      RESTORE_CHECK_REV: ${RESTORE_CHECK_REV:-}
     configs:
       - source: restore_check_script
         target: /restore-check.sh

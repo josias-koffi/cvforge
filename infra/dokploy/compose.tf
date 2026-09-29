@@ -79,6 +79,9 @@ resource "dokploy_compose" "jobspark" {
     "EMAIL_REPLY_TO=${var.email_reply_to}",
     "RESTORE_CHECK_ALERT_TO=${var.restore_check_alert_to}",
     "RESTORE_CHECK_ENV=${var.environment}",
+    # Compose does not recreate a container when only an inline config changes;
+    # a new value here does, so an edit of the restore_check script ships.
+    "RESTORE_CHECK_REV=${substr(sha1(file("${path.module}/../compose/dokploy-stack.yml")), 0, 12)}",
     "NEXT_SERVER_ACTIONS_ENCRYPTION_KEY=${var.next_server_actions_encryption_key}",
     "ATS_IP_HASH_SECRET=${var.ats_ip_hash_secret}",
     "ATS_PUBLIC_HOURLY_LIMIT=${var.ats_public_hourly_limit}",
