@@ -1,4 +1,9 @@
-import { Inject, Module, type OnModuleInit } from "@nestjs/common";
+import {
+  Inject,
+  Module,
+  type OnModuleDestroy,
+  type OnModuleInit,
+} from "@nestjs/common";
 import { OpenRouterModule, OPENROUTER_SERVICE } from "../ai/openrouter.module";
 import type { OpenRouterService } from "../ai/openrouter.service";
 import { ApplicationsModule } from "../applications/applications.module";
@@ -53,6 +58,14 @@ import { JobBoardsController } from "./job-boards.controller";
 import { JobSearchAdminController } from "./job-search-admin.controller";
 import { JobMatchesController } from "./job-matches.controller";
 import { JobMatchesService } from "./job-matches.service";
+import { jobStreamProviders } from "./job-stream.providers";
+import {
+  BOARD_CADENCE_STORE,
+  type BoardCadenceStore,
+} from "./board-cadence.types";
+import { JOB_SOURCE_CALLS_STORE } from "./job-stream.types";
+import { SourceCallCounter } from "./source-call-counter";
+import { BoardHttpClient } from "./sources/boards/board-http";
 import {
   PgRomeMatchingReader,
   ROME_MATCHING_READER,
@@ -107,9 +120,19 @@ import {
     },
     {
       provide: BoardsService,
-      inject: [JOB_BOARDS_STORE],
-      useFactory: (store: JobBoardsStore) => new BoardsService(store),
+      inject: [JOB_BOARDS_STORE, SourceCallCounter, BOARD_CADENCE_STORE],
+      useFactory: (
+        store: JobBoardsStore,
+        counter: SourceCallCounter,
+        postings: BoardCadenceStore,
+      ) => {
+        const http = new BoardHttpClient();
+        http.onRequest((provider) => counter.add(provider));
+
+        return new BoardsService(store, http, postings);
+      },
     },
+    ...jobStreamProviders,
     {
       provide: JOB_MATCHES_STORE,
       inject: [DATABASE],
@@ -217,19 +240,26 @@ import {
     JobDigestService,
     JOB_BOARDS_STORE,
     JOB_MATCHES_STORE,
+    JOB_SOURCE_CALLS_STORE,
     JOB_SOURCES_STORE,
     JOBS_STORE,
   ],
 })
-export class JobSearchModule implements OnModuleInit {
+export class JobSearchModule implements OnModuleInit, OnModuleDestroy {
   // Explicit tokens: this repo does not rely on decorator metadata for DI.
   constructor(
     @Inject(ApplicationsService)
     private readonly applications: ApplicationsService,
     @Inject(BoardsService) private readonly boards: BoardsService,
+    @Inject(SourceCallCounter) private readonly callCounter: SourceCallCounter,
   ) {}
 
+  async onModuleDestroy() {
+    await this.callCounter.stop();
+  }
+
   onModuleInit() {
+    this.callCounter.start();
     this.applications.onOfferImported(async (offerUrl) => {
       await this.boards.registerFromUrl(offerUrl, "user");
     });

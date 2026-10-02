@@ -26,20 +26,31 @@ export type FtUnavailableReason =
  * because only the first may remove anything.
  */
 export type FtResult<T> =
-  | { kind: "ok"; status: number; data: T }
+  | {
+      kind: "ok";
+      status: number;
+      data: T;
+      /** `Content-Range` of a paginated search: how many results there are in all. */
+      contentRange?: string;
+    }
   | { kind: "empty"; status: number }
   | {
       kind: "unavailable";
       status: number | null;
       reason: FtUnavailableReason;
       detail: string;
+      /** For `throttled`: how long the API asked us to wait. */
+      retryAfterMs?: number;
     };
 
 const DETAIL_MAX_CHARS = 300;
 
 export async function readJson<T>(response: Response): Promise<FtResult<T>> {
   try {
+    const contentRange = response.headers.get("content-range");
+
     return {
+      ...(contentRange ? { contentRange } : {}),
       data: (await response.json()) as T,
       kind: "ok",
       status: response.status,
@@ -57,6 +68,9 @@ export function unavailable<T>(
   reason: FtUnavailableReason,
   status: number | null,
   detail: string,
+  retryAfterMs?: number,
 ): FtResult<T> {
-  return { detail, kind: "unavailable", reason, status };
+  return retryAfterMs === undefined
+    ? { detail, kind: "unavailable", reason, status }
+    : { detail, kind: "unavailable", reason, retryAfterMs, status };
 }

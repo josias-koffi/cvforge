@@ -2,6 +2,8 @@
 
 import { setSourceEnabled } from "@/app/(app)/admin/job-search/actions"
 import { TableFrame } from "@/components/data-table/table-frame"
+import { StreamsSummary } from "@/components/admin/job-search/streams-summary"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
@@ -18,6 +20,7 @@ import {
   PROVIDER_LABELS,
   type BoardProvider,
   type JobSourceState,
+  type StreamReports,
 } from "@/lib/job-boards"
 import { SOURCE_LABELS } from "@/lib/job-labels"
 
@@ -28,9 +31,19 @@ import { SOURCE_LABELS } from "@/lib/job-labels"
  * have one but no credentials, or be switched off on purpose. Showing them as
  * one "inactive" would hide which of the three needs doing something about.
  */
-export function SourcesTable({ sources }: { sources: JobSourceState[] }) {
+export function SourcesTable({
+  sources,
+  streams = {},
+}: {
+  sources: JobSourceState[]
+  streams?: StreamReports
+}) {
+  const nearQuota = sources.filter((source) => source.quotaAlert)
+
   return (
     <div className="flex flex-col gap-4">
+      {nearQuota.length > 0 ? <QuotaAlert sources={nearQuota} /> : null}
+      <StreamsSummary streams={streams} />
       <p className="text-sm text-muted-foreground">
         L&apos;interrupteur coupe une source déjà configurée. Une source sans
         identifiants reste muette quoi qu&apos;il arrive : ce sont deux choses
@@ -43,6 +56,7 @@ export function SourcesTable({ sources }: { sources: JobSourceState[] }) {
             <TableHead>Source</TableHead>
             <TableHead>État</TableHead>
             <TableHead className="text-right">Dernières offres</TableHead>
+            <TableHead className="text-right">Appels du jour</TableHead>
             <TableHead>Dernier appel</TableHead>
             <TableHead>
               <span className="sr-only">Actions</span>
@@ -81,6 +95,9 @@ function SourceRow({ source }: { source: JobSourceState }) {
       <TableCell className="text-right tabular-nums">
         {source.lastRunAt ? source.lastListingCount : "—"}
       </TableCell>
+      <TableCell className="text-right tabular-nums">
+        <CallsCell source={source} />
+      </TableCell>
       <TableCell className="text-muted-foreground">
         {source.lastRunAt ? formatDateTime(source.lastRunAt) : "jamais"}
         {source.lastStatus && source.lastStatus !== "ok" ? (
@@ -115,4 +132,42 @@ function SourceBadge({ source }: { source: JobSourceState }) {
   }
 
   return <Badge variant="secondary">Active</Badge>
+}
+
+/**
+ * Calls made today, and the month against the quota when one is known.
+ * France Travail announces none today (ADR-027): the month alone is shown.
+ */
+function CallsCell({ source }: { source: JobSourceState }) {
+  return (
+    <>
+      {source.callsToday.toLocaleString("fr-FR")}
+      <span className="block text-xs text-muted-foreground">
+        {source.callsThisMonth.toLocaleString("fr-FR")}
+        {source.monthlyQuota
+          ? ` / ${source.monthlyQuota.toLocaleString("fr-FR")}`
+          : ""}{" "}
+        ce mois-ci
+      </span>
+    </>
+  )
+}
+
+/** 80 % of a monthly quota: past it, France Travail can throttle the collection. */
+export function QuotaAlert({ sources }: { sources: JobSourceState[] }) {
+  return (
+    <Alert variant="warning">
+      <AlertTitle>Quota mensuel bientôt atteint</AlertTitle>
+      <AlertDescription>
+        {sources
+          .map(
+            (source) =>
+              `${SOURCE_LABELS[source.source] ?? source.source} : ${source.callsThisMonth.toLocaleString("fr-FR")} appels sur ${(source.monthlyQuota ?? 0).toLocaleString("fr-FR")}`
+          )
+          .join(" · ")}
+        . Ralentir la collecte (JOB_STREAM_INTERVAL_MINUTES) ou demander un
+        quota plus élevé.
+      </AlertDescription>
+    </Alert>
+  )
 }

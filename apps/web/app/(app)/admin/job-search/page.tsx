@@ -13,6 +13,7 @@ import type {
   FuzzyMerge,
   JobSourceState,
   RegisteredBoard,
+  StreamReports,
 } from "@/lib/job-boards"
 import { requireAdminSession } from "@/lib/session"
 
@@ -31,7 +32,12 @@ export default async function AdminJobSearchPage(
 
   const params = await props.searchParams
   const provider = typeof params.provider === "string" ? params.provider : ""
-  const [{ boards, supportedProviders }, { merges }, { runs }, { sources }] =
+  const [
+    { boards, supportedProviders },
+    { merges },
+    { runs },
+    { sources, streams },
+  ] =
     await Promise.all([
       api<{ boards: RegisteredBoard[]; supportedProviders: BoardProvider[] }>(
         "/admin/job-boards",
@@ -43,7 +49,9 @@ export default async function AdminJobSearchPage(
       api<{ runs: DigestRun[] }>("/admin/job-search/runs", {
         query: { limit: 20 },
       }),
-      api<{ sources: JobSourceState[] }>("/admin/job-search/sources"),
+      api<{ sources: JobSourceState[]; streams: StreamReports }>(
+        "/admin/job-search/sources"
+      ),
     ])
 
   return (
@@ -63,7 +71,7 @@ export default async function AdminJobSearchPage(
           }
           merges={<MergesTable merges={merges} />}
           runs={<RunsPanel runs={runs} />}
-          sources={<SourcesTable sources={sources} />}
+          sources={<SourcesTable sources={sources} streams={streams} />}
         />
       </div>
     </>

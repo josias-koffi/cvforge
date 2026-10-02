@@ -9,6 +9,7 @@ import { extractJsonFromContent } from "../cv-generation/cv-generation.normalize
 import type { StoredProfile } from "../profiles/profiles.types";
 import type { JobSourceAdapter } from "./job-search.types";
 import type { JobsStore } from "./jobs.types";
+import type { ResyncStats } from "./listing-resync";
 import type { NewJobMatch } from "./matches.types";
 import type { ScoredJob } from "./matching/job-matching";
 import {
@@ -40,6 +41,8 @@ export interface DigestStats {
   candidatesWithoutOffers: number;
   notificationsSent: number;
   aiReranks: number;
+  /** France Travail adverts brought back in step (US-163). */
+  resync?: ResyncStats;
   errors: string[];
 }
 

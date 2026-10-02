@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import {
   createTestDatabase,
@@ -251,6 +252,30 @@ describe("JobDeduplicator", () => {
 
       await deduplicator.attach(makeListing({ externalId: "1", source: "greenhouse" }));
       expect((await store.findById(first.jobId))?.job.closedAt).toBeNull();
+    });
+
+    it("lists the open adverts nobody saw in 24 hours, oldest first (US-163)", async () => {
+      for (const externalId of ["SEEN", "STALE", "OLDER", "CLOSED"]) {
+        await deduplicator.attach(
+          makeListing({ externalId, source: "france_travail", title: externalId }),
+        );
+      }
+      await testDatabase.db.execute(sql`
+        update job_listings set last_seen_at = case external_id
+          when 'STALE' then now() - interval '2 days'
+          when 'OLDER' then now() - interval '3 days'
+          when 'CLOSED' then now() - interval '3 days'
+          else last_seen_at end`);
+      await store.closeListing("france_travail", "CLOSED", new Date().toISOString());
+
+      expect(
+        await store.listStaleOpenListings({
+          limit: 10,
+          publishedSince: new Date(Date.now() - 31 * 86_400_000).toISOString(),
+          seenBefore: new Date(Date.now() - 86_400_000).toISOString(),
+          source: "france_travail",
+        }),
+      ).toEqual(["OLDER", "STALE"]);
     });
   });
 
