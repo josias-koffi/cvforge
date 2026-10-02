@@ -16,6 +16,7 @@ export class MarketMetricsService {
       topSearchedJobs,
       dailyOffers,
       topAppliedCompanies,
+      alertDelays,
     ] = await Promise.all([
       this.store.readTopCompanies(range),
       this.store.readTopJobTitles(range),
@@ -24,9 +25,11 @@ export class MarketMetricsService {
       this.store.readTopSearchedJobs(range),
       this.store.readDailyOffers(range),
       this.store.readTopAppliedCompanies(range),
+      this.store.readAlertDelays(range),
     ]);
 
     return {
+      alertDelays,
       dailyOffers,
       topAppliedCompanies,
       topCheckedCompanies,

@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, lt } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, lt, not, or, sql } from "drizzle-orm";
 import type { Database } from "../database/database.types";
 import { jobDigestRuns, jobMatches, jobs } from "../database/schema";
 import { toJob } from "./jobs.rows";
@@ -19,6 +19,7 @@ type JobRow = typeof jobs.$inferSelect;
 
 function toMatch(row: MatchRow): StoredJobMatch {
   return {
+    aiAnalysis: row.aiAnalysis ?? null,
     aiRank: row.aiRank,
     aiReason: row.aiReason,
     applicationId: row.applicationId,
@@ -39,18 +40,23 @@ function toMatch(row: MatchRow): StoredJobMatch {
 export class PgJobMatchesStore implements JobMatchesStore {
   constructor(private readonly db: Database) {}
 
+  /**
+   * An alert not sent yet does not count (US-165): if the candidate turned
+   * alerts off, or the alert is still queued, the morning may propose it.
+   */
   async listProposedJobIds(userEmail: string) {
     const rows = await this.db
       .select({ jobId: jobMatches.jobId })
       .from(jobMatches)
-      .where(eq(jobMatches.userEmail, userEmail));
+      .where(and(eq(jobMatches.userEmail, userEmail), not(pendingAlert())));
 
     return rows.map((row) => row.jobId);
   }
 
   /**
    * Writes the morning's selection. A conflict means the offer was already
-   * proposed — the run is simply idempotent, not in error.
+   * proposed — the run is simply idempotent, not in error — except over an
+   * alert never sent, which the morning takes over (US-165).
    */
   async createMany(matches: readonly NewJobMatch[]) {
     if (matches.length === 0) return 0;
@@ -72,7 +78,16 @@ export class PgJobMatchesStore implements JobMatchesStore {
           userEmail: match.userEmail,
         })),
       )
-      .onConflictDoNothing({
+      .onConflictDoUpdate({
+        set: {
+          aiRank: sql`excluded.ai_rank`,
+          aiReason: sql`excluded.ai_reason`,
+          digestDate: sql`excluded.digest_date`,
+          kind: "digest",
+          score: sql`excluded.score`,
+          scoreBreakdown: sql`excluded.score_breakdown`,
+        },
+        setWhere: pendingAlert(),
         target: [jobMatches.userEmail, jobMatches.jobId],
       })
       .returning({ id: jobMatches.id });
@@ -84,7 +99,9 @@ export class PgJobMatchesStore implements JobMatchesStore {
     const [row] = await this.db
       .select()
       .from(jobMatches)
-      .where(and(eq(jobMatches.userEmail, userEmail), eq(jobMatches.jobId, jobId)))
+      .where(
+        and(eq(jobMatches.userEmail, userEmail), eq(jobMatches.jobId, jobId)),
+      )
       .limit(1);
 
     return row ? toMatch(row) : null;
@@ -115,6 +132,7 @@ export class PgJobMatchesStore implements JobMatchesStore {
         and(
           eq(jobMatches.userEmail, userEmail),
           eq(jobMatches.digestDate, digestDate),
+          stillShown(),
         ),
       )
       .orderBy(jobMatches.aiRank, desc(jobMatches.score));
@@ -127,7 +145,7 @@ export class PgJobMatchesStore implements JobMatchesStore {
       .select({ job: jobs, match: jobMatches })
       .from(jobMatches)
       .innerJoin(jobs, eq(jobs.id, jobMatches.jobId))
-      .where(eq(jobMatches.userEmail, userEmail))
+      .where(and(eq(jobMatches.userEmail, userEmail), stillShown()))
       .orderBy(desc(jobMatches.digestDate), desc(jobMatches.score))
       .limit(limit);
 
@@ -139,7 +157,9 @@ export class PgJobMatchesStore implements JobMatchesStore {
       .select({ job: jobs, match: jobMatches })
       .from(jobMatches)
       .innerJoin(jobs, eq(jobs.id, jobMatches.jobId))
-      .where(and(eq(jobMatches.userEmail, userEmail), eq(jobMatches.id, matchId)))
+      .where(
+        and(eq(jobMatches.userEmail, userEmail), eq(jobMatches.id, matchId)),
+      )
       .limit(1);
 
     return row ? withJob(row.match, row.job) : null;
@@ -158,7 +178,9 @@ export class PgJobMatchesStore implements JobMatchesStore {
         status,
         updatedAt: new Date(),
       })
-      .where(and(eq(jobMatches.userEmail, userEmail), eq(jobMatches.id, matchId)))
+      .where(
+        and(eq(jobMatches.userEmail, userEmail), eq(jobMatches.id, matchId)),
+      )
       .returning();
 
     return row ? toMatch(row) : null;
@@ -285,4 +307,21 @@ function toRun(row: typeof jobDigestRuns.$inferSelect): DigestRun {
     stats: (row.stats as Record<string, unknown> | null) ?? null,
     status: row.status as DigestRun["status"],
   };
+}
+
+/**
+ * An offer withdrawn at the source leaves the candidate's lists: the licence
+ * forbids showing it as if it were open (US-163). One the candidate saved or
+ * applied to stays — it is their own record, and the snapshot exists for it.
+ */
+function stillShown() {
+  return or(
+    isNull(jobs.closedAt),
+    inArray(jobMatches.status, ["saved", "applied"]),
+  );
+}
+
+/** An alert raised but never sent. */
+function pendingAlert() {
+  return and(eq(jobMatches.kind, "alert"), isNull(jobMatches.alertSentAt))!;
 }

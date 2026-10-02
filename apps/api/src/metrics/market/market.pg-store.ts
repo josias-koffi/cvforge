@@ -153,4 +153,36 @@ export class PgMarketStore {
 
     return toRanked(rows);
   }
+
+  /**
+   * Publication → alert, per source (US-165). Only alerts whose source gave a
+   * publication date count: a missing one would read as "no delay at all".
+   */
+  async readAlertDelays(range: Range) {
+    const minutes = sql`greatest(0, extract(epoch from (${jobMatches.createdAt} - ${jobMatches.publishedAt})) / 60)`;
+    const rows = await this.db
+      .select({
+        alerts: count(),
+        median: sql<string>`percentile_cont(0.5) within group (order by ${minutes})`,
+        p90: sql<string>`percentile_cont(0.9) within group (order by ${minutes})`,
+        source: jobMatches.source,
+      })
+      .from(jobMatches)
+      .where(
+        and(
+          eq(jobMatches.kind, "alert"),
+          sql`${jobMatches.publishedAt} is not null`,
+          inRange(jobMatches.createdAt, range),
+        ),
+      )
+      .groupBy(jobMatches.source)
+      .orderBy(sql`count(*) desc`);
+
+    return rows.map((row) => ({
+      alerts: toNumber(row.alerts),
+      medianMinutes: Math.round(Number(row.median) * 10) / 10,
+      p90Minutes: Math.round(Number(row.p90) * 10) / 10,
+      source: row.source ?? "inconnue",
+    }));
+  }
 }

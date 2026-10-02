@@ -21,6 +21,18 @@ describe("MarketSections", () => {
     expect(content).toContain("Écartées par les candidats : 30")
   })
 
+  it("shows the publication → alert delay per source (US-165)", () => {
+    const content = textOf(
+      renderToStaticMarkup(<MarketSections data={MARKET} />)
+    )
+
+    expect(content).toContain("Délai publication → alerte")
+    expect(content).toContain("France Travail427,5 min14 min")
+    expect(
+      textOf(renderToStaticMarkup(<MarketSections data={EMPTY_MARKET} />))
+    ).toContain("Aucune alerte sur la période.")
+  })
+
   it("renders a fresh database", () => {
     const html = renderToStaticMarkup(<MarketSections data={EMPTY_MARKET} />)
 

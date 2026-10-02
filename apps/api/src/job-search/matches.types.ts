@@ -1,3 +1,4 @@
+import type { JobAlertAnalysis } from "@cvforge/types";
 import type { StoredJob } from "./jobs.types";
 import type { ScoreBreakdown } from "./matching/job-matching";
 
@@ -23,6 +24,8 @@ export interface StoredJobMatch {
   missingSkills: string[];
   aiRank: number | null;
   aiReason: string | null;
+  /** The paid analysis of an alert (US-168), shown beside the offer. */
+  aiAnalysis?: JobAlertAnalysis | null;
   status: JobMatchStatus;
   applicationId: string | null;
   createdAt: string;

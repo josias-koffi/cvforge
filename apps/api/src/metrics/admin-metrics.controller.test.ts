@@ -75,6 +75,7 @@ const SNAPSHOT = {
     window: WINDOW,
   },
   market: {
+    alertDelays: [],
     dailyOffers: { applied: 0, dismissed: 0, proposed: 0, saved: 0, seen: 0 },
     topAppliedCompanies: [],
     topCheckedCompanies: [],
