@@ -13,6 +13,12 @@ import { formatEuros, formatParisDateTime } from "./mail-brand";
 import { renderEmail } from "./mail-layout";
 import type { MailConfig } from "./mail.config";
 
+export {
+  composeJobAlertEmail,
+  type JobAlertEmailInput,
+  type JobAlertOffer,
+} from "./job-alert-email";
+
 /**
  * The content of every Jobspark e-mail. Pure functions: the mailers add the
  * sender and the transport, the preview script (`email:preview`) renders

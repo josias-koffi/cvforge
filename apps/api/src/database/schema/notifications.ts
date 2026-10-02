@@ -49,6 +49,8 @@ export const notificationPreferences = pgTable("notification_preferences", {
     .$type<NotificationPreferences["email"]>()
     .notNull()
     .default(sql`'{"applicationFollowUp": true, "creditPurchaseConfirmed": true, "jobDigest": true}'::jsonb`),
+  /** Null until the candidate changes them: the defaults live in the code (US-166). */
+  jobAlerts: jsonb("job_alerts").$type<NotificationPreferences["jobAlerts"]>(),
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

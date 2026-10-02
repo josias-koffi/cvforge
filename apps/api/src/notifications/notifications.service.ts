@@ -5,7 +5,7 @@ import {
   NOTIFICATION_TYPE_JOB_DIGEST,
   type ApplicationStatusHistoryEntry,
   type InAppNotification,
-  type NotificationPreferences,
+  type JobAlertPreferences,
   type NotificationPreferencesResponse,
   type NotificationSummary,
 } from "@cvforge/types";
@@ -19,6 +19,12 @@ import type {
   NotificationsStore,
 } from "./notifications.types";
 import { NotificationsMailerService } from "./notifications-mailer.service";
+import type { JobAlertEmailInput } from "../mail/emails";
+import {
+  createDefaultPreferences,
+  mergePreferences,
+  type PreferencesUpdate,
+} from "./notification-preferences";
 
 function addDays(date: Date, days: number) {
   const copy = new Date(date);
@@ -68,16 +74,6 @@ function buildReminderNotification(
     title: `Relancer ${company}`,
     type: NOTIFICATION_TYPE_APPLICATION_FOLLOW_UP,
     userEmail: application.userEmail,
-  };
-}
-
-function createDefaultPreferences(): NotificationPreferences {
-  return {
-    email: {
-      applicationFollowUp: true,
-      creditPurchaseConfirmed: true,
-      jobDigest: true,
-    },
   };
 }
 
@@ -141,19 +137,20 @@ export class NotificationsService {
     };
   }
 
+  /**
+   * Only the values sent change: a switch left out keeps its state, rather
+   * than being overwritten with `undefined` as the e-mail switches used to be.
+   */
   async updatePreferences(
     userEmail: string,
-    partial: Partial<NotificationPreferences["email"]>,
+    update: PreferencesUpdate,
   ): Promise<NotificationPreferencesResponse> {
     const current = await this.readPreferences(userEmail);
-    const nextPreferences: NotificationPreferences = {
-      email: {
-        ...current.email,
-        ...partial,
-      },
-    };
 
-    await this.notificationsStore.savePreferences(userEmail, nextPreferences);
+    await this.notificationsStore.savePreferences(
+      userEmail,
+      mergePreferences(current, update),
+    );
 
     return this.getPreferences(userEmail);
   }
@@ -281,6 +278,22 @@ export class NotificationsService {
     }
 
     return notification;
+  }
+
+  /** What the alert dispatcher and the live matcher read (US-166). */
+  async readJobAlertPreferences(userEmail: string): Promise<JobAlertPreferences> {
+    return (await this.readPreferences(userEmail)).jobAlerts;
+  }
+
+  /**
+   * The "Nouvelle offre pour vous" e-mail. Free: no credit is involved
+   * (US-166). Returns false when e-mail delivery is not configured.
+   */
+  sendJobAlertEmail(input: Omit<JobAlertEmailInput, "preferencesUrl"> & {
+    to: string;
+    preferencesUrl: string;
+  }): Promise<boolean> {
+    return this.notificationsMailer.sendJobAlertEmail(input);
   }
 
   private async readPreferences(userEmail: string) {

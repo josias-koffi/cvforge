@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 import {
   composeApplicationFollowUpEmail,
   composeCreditPurchaseEmail,
+  composeJobAlertEmail,
   composeJobDigestEmail,
   composeMagicLinkEmail,
   type ComposedEmail,
@@ -25,12 +26,14 @@ const preferencesUrl = `${brand.appUrl}/notifications`;
 const emails: Record<string, ComposedEmail> = {
   "magic-link": composeMagicLinkEmail(brand, {
     expiresAt: inOneQuarter,
-    magicLink: "https://jobspark-api.koklo.dev/auth/passwordless/consume?token=preview",
+    magicLink:
+      "https://jobspark-api.koklo.dev/auth/passwordless/consume?token=preview",
     sessionDurationDays: 7,
   }),
   "magic-link-tool-result": composeMagicLinkEmail(brand, {
     expiresAt: inOneQuarter,
-    magicLink: "https://jobspark-api.koklo.dev/auth/passwordless/consume?token=preview",
+    magicLink:
+      "https://jobspark-api.koklo.dev/auth/passwordless/consume?token=preview",
     purpose: "tool-result",
     sessionDurationDays: 7,
   }),
@@ -65,6 +68,49 @@ const emails: Record<string, ComposedEmail> = {
     preferencesUrl,
     totalCount: 9,
   }),
+  "job-alert": composeJobAlertEmail(brand, {
+    now: new Date().toISOString(),
+    offers: [alertOffer("Développeur full stack", "Doctolib", "Nantes", 4)],
+    offersUrl: `${brand.appUrl}/offres-du-jour`,
+    preferencesUrl,
+  }),
+  "job-alert-analysis": composeJobAlertEmail(brand, {
+    now: new Date().toISOString(),
+    offers: [
+      {
+        ...alertOffer("Développeur full stack", "Doctolib", "Nantes", 4),
+        analysis: {
+          highlights: ["Vos trois ans de React et TypeScript en production"],
+          reasons: [
+            "Même stack que votre poste actuel : React, TypeScript, PostgreSQL",
+            "Un cran au-dessus en responsabilités, dans une équipe produit",
+          ],
+          verdict: "seize" as const,
+          watchouts: ["L'offre cite Kubernetes, absent de votre profil"],
+        },
+      },
+      {
+        ...alertOffer("Ingénieur backend Node.js", "", "Rennes", 9),
+        analysisMissing: true,
+      },
+    ],
+    offersUrl: `${brand.appUrl}/offres-du-jour`,
+    preferencesUrl,
+  }),
+  "job-alert-grouped": composeJobAlertEmail(brand, {
+    now: new Date().toISOString(),
+    offers: [
+      alertOffer("Développeur full stack", "Doctolib", "Nantes", 12),
+      alertOffer(
+        "Ingénieur backend Node.js",
+        "",
+        "Rennes (télétravail partiel)",
+        47,
+      ),
+    ],
+    offersUrl: `${brand.appUrl}/offres-du-jour`,
+    preferencesUrl,
+  }),
   "application-follow-up": composeApplicationFollowUpEmail(brand, {
     companyName: "Doctolib",
     delayDays: 7,
@@ -79,6 +125,26 @@ const emails: Record<string, ComposedEmail> = {
     preferencesUrl,
   }),
 };
+
+function alertOffer(
+  title: string,
+  companyName: string,
+  locationLabel: string,
+  minutesAgo: number,
+) {
+  return {
+    applyUrl: `${brand.appUrl}/offres-du-jour/postuler/preview`,
+    companyName,
+    locationLabel,
+    publishedAt: new Date(Date.now() - minutesAgo * 60_000).toISOString(),
+    reasons: [
+      "vos compétences en TypeScript, React, PostgreSQL",
+      "télétravail possible",
+    ],
+    sourceLabel: "France Travail",
+    title,
+  };
+}
 
 const outDir = resolve(process.cwd(), ".email-previews");
 mkdirSync(outDir, { recursive: true });

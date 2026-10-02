@@ -89,6 +89,8 @@ describe("importLegacyNotifications", () => {
     );
     await expect(store.readPreferences("user@example.com")).resolves.toEqual({
       email: { applicationFollowUp: false, creditPurchaseConfirmed: true },
+      // Legacy files predate alerts: the defaults fill them in (US-166).
+      jobAlerts: { aiAnalysis: false, aiFilter: true, enabled: true, rhythm: "immediate", threshold: "close" },
     });
     const [read] = await store.listByUserEmail("other@example.com");
     expect(read?.readAt).toBe("2026-04-23T09:00:00.000Z");
