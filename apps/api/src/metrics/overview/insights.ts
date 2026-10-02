@@ -27,6 +27,7 @@ const UNIT_LABELS: Record<string, string> = {
   cv_generation: "Un CV généré",
   cv_import: "Un import de CV",
   interview_session: "Une minute d'entretien",
+  job_alert_enrich: "Un jour d'analyse IA des alertes",
   job_digest_rerank: "Un classement IA des offres",
   letter_generation: "Une lettre générée",
   offer_enrichment: "Une offre analysée",

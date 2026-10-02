@@ -49,6 +49,7 @@ function makeApplication(
     profileId: null,
     rawOfferText: "Long offer text",
     skillsToHighlight: [],
+    pointsToHighlight: [],
     sourceLabel: "Texte colle",
     sourceType: APPLICATION_SOURCE_TEXT,
     status: APPLICATION_STATUS_DRAFT,
@@ -95,6 +96,16 @@ describe("PgApplicationsStore", () => {
 
     expect((await store.findById("app-1"))?.skillsToHighlight).toEqual([
       "Kubernetes",
+    ]);
+  });
+
+  it("keeps what the alert's AI analysis said to bring forward (US-168)", async () => {
+    await store.createDraft(
+      makeApplication("app-1", { pointsToHighlight: ["Vos projets React"] }),
+    );
+
+    expect((await store.findById("app-1"))?.pointsToHighlight).toEqual([
+      "Vos projets React",
     ]);
   });
 

@@ -23,6 +23,7 @@ export const creditActionLabels: Record<CreditLedgerEntry["action"], string> = {
   cv_generation: "Génération de CV",
   cv_import: "Import de CV",
   interview_session: "Entretien simulé",
+  job_alert_enrich: "Analyse IA des alertes du jour",
   job_digest_rerank: "Classement IA des offres du jour",
   letter_generation: "Génération de lettre",
   offer_enrichment: "Analyse d'offre",

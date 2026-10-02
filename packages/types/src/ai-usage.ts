@@ -16,6 +16,7 @@ export const aiFeatures = [
   "interview_transcription",
   "interview_questions",
   "job_digest_rerank",
+  "job_alert_enrich",
   "other",
 ] as const;
 export type AiFeature = (typeof aiFeatures)[number];

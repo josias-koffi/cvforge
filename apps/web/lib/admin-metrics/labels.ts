@@ -14,6 +14,7 @@ export const aiFeatureLabels: Record<AiFeature, string> = {
   interview_transcription: "Transcription d'entretien",
   interview_questions: "Questions d'entretien",
   job_digest_rerank: "Tri des offres du jour",
+  job_alert_enrich: "Analyse IA des alertes",
   other: "Autre",
 }
 
@@ -35,6 +36,7 @@ const creditActionLabels: Record<string, string> = {
   cv_generation: "CV généré",
   cv_import: "CV importé",
   interview_session: "Minute d'entretien",
+  job_alert_enrich: "Jour d'analyse IA des alertes",
   job_digest_rerank: "Tri IA des offres du jour",
   letter_generation: "Lettre générée",
   offer_enrichment: "Offre analysée",
