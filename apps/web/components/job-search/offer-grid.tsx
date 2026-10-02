@@ -24,7 +24,14 @@ export const OFFER_PARAM = "offre"
  * Known limit: a link to an offer that is not on the page shows nothing, since
  * there is no endpoint for a single offer.
  */
-export function OfferGrid({ offers }: { offers: JobCardOffer[] }) {
+export function OfferGrid({
+  offers,
+  fresh = false,
+}: {
+  offers: JobCardOffer[]
+  /** Each card says to the minute how fresh its offer is (US-167). */
+  fresh?: boolean
+}) {
   const params = useSearchParams()
   const [dismissed, setDismissed] = useState<string[]>([])
   const [saved, setSaved] = useState<string[]>([])
@@ -114,6 +121,7 @@ export function OfferGrid({ offers }: { offers: JobCardOffer[] }) {
           <OfferCard
             key={offer.job.id}
             offer={offer}
+            fresh={fresh}
             pending={pending}
             onSave={save}
             onDismiss={dismiss}

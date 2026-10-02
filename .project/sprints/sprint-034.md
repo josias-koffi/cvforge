@@ -72,12 +72,12 @@ croître la facture avec chaque nouveau candidat.
 - [ ] **[US-162]** ADR-027 « Collecte continue » et amendement d'ADR-023
   - Agent: `tech-lead`
   - Critères d'acceptation :
-    - [ ] ADR-027 dans `decisions/` : collecte continue (flux national France Travail et sites
+    - [x] ADR-027 dans `decisions/` : collecte continue (flux national France Travail et sites
           carrière), budget d'appels chiffré à partir des mesures ci-dessus, stockage limité aux
           offres qui correspondent à au moins une recherche active, récap du matin conservé.
-    - [ ] ADR-023 porte un renvoi vers ADR-027 ; la règle « collecte quotidienne » de
+    - [x] ADR-023 porte un renvoi vers ADR-027 ; la règle « collecte quotidienne » de
           `sprint-025.md` est marquée comme remplacée.
-    - [ ] Section « Licence » dans l'ADR-027 : gratuité pour le candidat (art. 5.1), pas
+    - [x] Section « Licence » dans l'ADR-027 : gratuité pour le candidat (art. 5.1), pas
           d'altération du contenu, resynchronisation sous 24 h, pas de mise à disposition de la base à
           des tiers, pas d'usage commercial des coordonnées des recruteurs (art. 8). Relecture
           juridique recommandée avant la mise en production de l'option payante (US-168).
@@ -85,84 +85,89 @@ croître la facture avec chaque nouveau candidat.
           est relevé et consigné dans l'ADR. Si elle est encore en homologation : demande de
           passage en production déposée et licence de l'API acceptée (usage commercial continu),
           avec le cas d'usage « collecte toutes les 5 minutes, ≈ 600 appels/jour ».
-    - [ ] Le débit `offres` passe de 4 à 8 appels/s (sous les 10 mesurés, pour laisser de la
+          *2026-10-01 : homologation, rien déposé. Texte de la demande prêt dans ADR-027 ; action
+          propriétaire.*
+    - [x] Le débit `offres` passe de 4 à 8 appels/s (sous les 10 mesurés, pour laisser de la
           place à la vérification en direct et aux autres appels France Travail).
-- [ ] **[US-163]** Flux France Travail en continu, par tranches de temps
+- [x] **[US-163]** Flux France Travail en continu, par tranches de temps
   - Agent: `developer`
   - Critères d'acceptation :
-    - [ ] Une boucle toutes les **5 minutes** (réglable, `JOB_STREAM_INTERVAL_MINUTES`) lit les
+    - [x] Une boucle toutes les **5 minutes** (réglable, `JOB_STREAM_INTERVAL_MINUTES`) lit les
           offres créées depuis la fin de la tranche précédente (`minCreationDate`/
           `maxCreationDate`, ISO-8601 à la seconde), sans mot-clé ni département.
-    - [ ] Curseur persistant en base (fin de la dernière tranche lue avec succès) : un
+    - [x] Curseur persistant en base (fin de la dernière tranche lue avec succès) : un
           redémarrage ou une panne reprend là où la collecte s'était arrêtée, sans trou ni
           doublon. Le rattrapage après une longue panne est plafonné à 31 jours.
-    - [ ] Tranche redécoupée par dichotomie quand `Content-Range` annonce plus de 1 150
+    - [x] Tranche redécoupée par dichotomie quand `Content-Range` annonce plus de 1 150
           offres : aucune offre perdue au pic. Couvert par un test sur un total fictif de 3 000.
-    - [ ] Chevauchement de 2 minutes entre deux tranches pour les offres créées pendant l'appel ;
+    - [x] Chevauchement de 2 minutes entre deux tranches pour les offres créées pendant l'appel ;
           le dédoublonnage existant (US-111) absorbe les doublons.
-    - [ ] Verrou (même mécanisme que `digest-runs`) : une seule instance collecte à la fois.
-    - [ ] Un 429 met la boucle en pause sur `Retry-After`, sans avancer le curseur.
-    - [ ] Le compteur d'appels du jour est enregistré par source et visible dans l'admin des
+    - [x] Verrou (même mécanisme que `digest-runs`) : une seule instance collecte à la fois.
+    - [x] Un 429 met la boucle en pause sur `Retry-After`, sans avancer le curseur.
+    - [x] Le compteur d'appels du jour est enregistré par source et visible dans l'admin des
           sources ; alerte admin à 80 % du quota mensuel s'il existe.
-    - [ ] Suppressions et modifications resynchronisées **au moins une fois toutes les 24 h**
+    - [x] Suppressions et modifications resynchronisées **au moins une fois toutes les 24 h**
           (obligation de la licence) : le flux ne lit que les créations, la passe quotidienne et la
           vérification en direct (`isStillOpen`) couvrent le reste. Une offre retirée chez France
           Travail disparaît de l'app et des alertes non encore envoyées.
-    - [ ] La collecte par requêtes (`buildSourceQueries`) reste utilisée pour le rattrapage
+          *2026-10-02 : vérifié avec US-166, une alerte dont l'offre est fermée ne part jamais.*
+    - [x] La collecte par requêtes (`buildSourceQueries`) reste utilisée pour le rattrapage
           `--since=31` et pour La bonne alternance, dont l'API n'expose pas de date de création
           fine (à vérifier en direct, voir To Clarify).
 - [ ] **[US-164]** Sites carrière interrogés plusieurs fois par heure
   - Agent: `developer`
   - Critères d'acceptation :
-    - [ ] Les entreprises suivies par au moins un candidat, ou dont une offre a correspondu dans
+    - [x] Les entreprises suivies par au moins un candidat, ou dont une offre a correspondu dans
           les 30 derniers jours, sont lues **toutes les 30 minutes** ; les autres une fois par jour,
           comme aujourd'hui.
-    - [ ] Une offre est « nouvelle » si son identifiant n'a jamais été vu pour ce site ; sa date
+    - [x] Une offre est « nouvelle » si son identifiant n'a jamais été vu pour ce site ; sa date
           de détection est enregistrée à côté de la date annoncée par le logiciel de recrutement
           (Lever et Greenhouse n'en donnent pas toujours une fiable).
-    - [ ] Le limiteur par hôte (`board-http.ts`) est respecté ; un site qui répond 429 ou 403
+    - [x] Le limiteur par hôte (`board-http.ts`) est respecté ; un site qui répond 429 ou 403
           repasse au rythme quotidien pendant 24 h.
     - [ ] Aucune hausse de charge au-delà du budget fixé par l'ADR-027, vérifiée sur une journée
           de staging.
-- [ ] **[US-165]** Correspondance au fil de l'eau
+          *2026-10-01 : plafond par cycle codé et testé ; journée de staging à faire une fois le flux
+          allumé (après US-165).*
+- [x] **[US-165]** Correspondance au fil de l'eau
   - Agent: `developer`
   - Critères d'acceptation :
-    - [ ] Chaque nouvelle offre (US-163, US-164) est comparée aux recherches actives avec le
+    - [x] Chaque nouvelle offre (US-163, US-164) est comparée aux recherches actives avec le
           score déterministe existant (ROME, compétences, contrat, lieu, télétravail) : pas
           d'appel IA dans la boucle, le reclassement IA reste réservé au récap du matin.
-    - [ ] Seules les offres qui correspondent à au moins une recherche sont stockées ; les
+    - [x] Seules les offres qui correspondent à au moins une recherche sont stockées ; les
           autres sont oubliées. La table `jobs` ne doit pas grossir de tout le flux national
           (≈ 10 000 à 30 000 offres par jour).
-    - [ ] Une offre qui dépasse le seuil d'alerte du candidat crée une correspondance marquée
+    - [x] Une offre qui dépasse le seuil d'alerte du candidat crée une correspondance marquée
           `alert`, avec sa date de publication et sa date de détection.
-    - [ ] L'offre est vérifiée en direct (`isStillOpen`) avant l'alerte, comme pour le récap.
-    - [ ] Une offre déjà envoyée en alerte ne revient pas dans le récap du lendemain.
-    - [ ] Délai publication → correspondance mesuré et exposé dans le cockpit admin (médiane et
+    - [x] L'offre est vérifiée en direct (`isStillOpen`) avant l'alerte, comme pour le récap.
+    - [x] Une offre déjà envoyée en alerte ne revient pas dans le récap du lendemain.
+    - [x] Délai publication → correspondance mesuré et exposé dans le cockpit admin (médiane et
           90e centile par source). Objectif : médiane sous 10 minutes pour France Travail.
-- [ ] **[US-166]** Alertes « nouvelle offre », sans spammer
+- [x] **[US-166]** Alertes « nouvelle offre », sans spammer
   - Agent: `developer`
   - Critères d'acceptation :
-    - [ ] E-mail « Nouvelle offre pour vous » dans le gabarit commun (US-161) : intitulé,
+    - [x] E-mail « Nouvelle offre pour vous » dans le gabarit commun (US-161) : intitulé,
           entreprise, lieu, « publiée il y a X min », pourquoi elle correspond, bouton
           « Postuler avec CVForge ».
-    - [ ] Préférences sur `/notifications` : alertes activées ou non, seuil (offres « très
+    - [x] Préférences sur `/notifications` : alertes activées ou non, seuil (offres « très
           proches » seulement ou toutes), et rythme **immédiat** ou **regroupé toutes les heures**.
-    - [ ] Garde-fous : plafond d'alertes par jour et par candidat (valeur par défaut à fixer, voir
+    - [x] Garde-fous : plafond d'alertes par jour et par candidat (valeur par défaut à fixer, voir
           To Clarify), heures calmes 21 h – 7 h (regroupées dans un envoi à 7 h), lien de
           désinscription `List-Unsubscribe` comme les autres e-mails.
-    - [ ] Une alerte en échec ne bloque jamais la boucle de collecte.
-    - [ ] Aperçu dans `email:preview`.
-    - [ ] Gratuites pour tous, aucun crédit consommé : seul l'enrichissement IA (US-168) est payant.
-- [ ] **[US-168]** Enrichissement IA des alertes : « pourquoi cette offre vaut la peine » (payant)
+    - [x] Une alerte en échec ne bloque jamais la boucle de collecte.
+    - [x] Aperçu dans `email:preview`.
+    - [x] Gratuites pour tous, aucun crédit consommé : seul l'enrichissement IA (US-168) est payant.
+- [x] **[US-168]** Enrichissement IA des alertes : « pourquoi cette offre vaut la peine » (payant)
   - Agent: `developer` (+ `designer` pour le bloc dans l'e-mail et la carte)
   - Critères d'acceptation :
-    - [ ] Option « Analyse IA de mes alertes » dans les préférences, désactivée par défaut, avec le
+    - [x] Option « Analyse IA de mes alertes » dans les préférences, désactivée par défaut, avec le
           prix affiché : « 1 crédit par jour où au moins une alerte est analysée, analyses
           illimitées ce jour-là ». Solde vide : l'alerte part quand même, sans analyse, avec une
           mention « analyse IA non incluse ».
-    - [ ] Garde-fou : **20 analyses par jour et par candidat** au plus (réglable,
+    - [x] Garde-fou : **20 analyses par jour et par candidat** au plus (réglable,
           `JOB_ALERT_ENRICH_DAILY_CAP`). Au-delà, les alertes partent sans analyse.
-    - [ ] Pour chaque offre qui passe le seuil déterministe, un appel court (profil pseudonymisé,
+    - [x] Pour chaque offre qui passe le seuil déterministe, un appel court (profil pseudonymisé,
           comme `rerankSelection`) renvoie un JSON validé :
           - **verdict** : « à saisir », « à considérer » ou « à passer » ;
           - **pourquoi elle vaut le coup** : 2 ou 3 raisons tirées du profil et de l'offre
@@ -172,42 +177,42 @@ croître la facture avec chaque nouveau candidat.
           - **quoi mettre en avant** dans le CV et la lettre pour cette offre.
           Rien n'est inventé : les compétences et expériences citées doivent exister dans le
           profil, sinon le champ est écarté (même garde-fou que le reclassement).
-    - [ ] Avec l'option, l'IA **filtre** aussi : une offre jugée « à passer » n'est pas envoyée en
+    - [x] Avec l'option, l'IA **filtre** aussi : une offre jugée « à passer » n'est pas envoyée en
           immédiat, elle reste visible dans l'app avec son analyse. Moins d'alertes, mais les bonnes.
           Ce filtre est un **choix du candidat**, désactivable : sans lui, il reçoit toutes les
           alertes gratuites, exactement comme un candidat sans l'option. Payer ne donne accès à
           aucune offre supplémentaire ni plus tôt (règle de gratuité).
-    - [ ] L'analyse est présentée à côté de l'offre, jamais à sa place : l'intitulé, la
+    - [x] L'analyse est présentée à côté de l'offre, jamais à sa place : l'intitulé, la
           description et les informations de l'offre restent affichés intégralement et sans
           modification, avec la mention de la source.
-    - [ ] Facturation : **1 crédit par jour** (jour calendaire, heure de Paris), débité après la
+    - [x] Facturation : **1 crédit par jour** (jour calendaire, heure de Paris), débité après la
           **première analyse réussie** de la journée, comme `rerankSelection`. Les analyses
           suivantes du même jour sont gratuites. Un jour sans alerte analysée ne coûte rien ; un
           appel en échec ne déclenche pas le débit. Débit unique garanti par une contrainte
           d'unicité (candidat, jour) : deux alertes simultanées ne débitent pas deux crédits.
           Nouvelle action de crédit `job_alert_enrich` dans `@cvforge/types`
           (`AI_CREDIT_COSTS` = 1).
-    - [ ] Un candidat qui a aussi le classement IA du récap du matin paie les deux (1 + 1 crédit
+    - [x] Un candidat qui a aussi le classement IA du récap du matin paie les deux (1 + 1 crédit
           par jour au plus) : ce sont deux options distinctes.
-    - [ ] Chaque appel est journalisé dans `ai_usage_events` (US-154, fonctionnalité
+    - [x] Chaque appel est journalisé dans `ai_usage_events` (US-154, fonctionnalité
           `job_alert_enrich`) : le cockpit montre le coût réel par jour facturé et la marge.
-    - [ ] L'analyse est réutilisée par « Postuler avec CVForge » : les points à mettre en avant
+    - [x] L'analyse est réutilisée par « Postuler avec CVForge » : les points à mettre en avant
           alimentent la génération du CV et de la lettre, sans nouvel appel.
-    - [ ] L'enrichissement tourne hors de la boucle de collecte (file de travail) : un modèle lent
+    - [x] L'enrichissement tourne hors de la boucle de collecte (file de travail) : un modèle lent
           ou en panne retarde l'alerte enrichie de 2 minutes au plus, au-delà elle part sans
           analyse.
-    - [ ] Tests : validation du JSON, champ inventé écarté, un seul débit par jour même avec des
+    - [x] Tests : validation du JSON, champ inventé écarté, un seul débit par jour même avec des
           alertes simultanées, pas de débit sur échec, pas de débit un jour sans alerte, plafond de
           20 analyses respecté.
-- [ ] **[US-167]** Fraîcheur visible et réponse rapide dans l'app
+- [x] **[US-167]** Fraîcheur visible et réponse rapide dans l'app
   - Agent: `developer` (+ `designer` pour la carte)
   - Critères d'acceptation :
-    - [ ] Sur « Offres du jour », une section « Nouvelles depuis votre dernière visite » en tête,
+    - [x] Sur « Offres du jour », une section « Nouvelles depuis votre dernière visite » en tête,
           triée par date de publication, avec un badge « il y a X min / X h ».
-    - [ ] Filtre et tri « les plus récentes » sur la recherche libre (US-115).
-    - [ ] Depuis l'alerte, « Postuler avec CVForge » ouvre directement la candidature avec la
+    - [x] Filtre et tri « les plus récentes » sur la recherche libre (US-115).
+    - [x] Depuis l'alerte, « Postuler avec CVForge » ouvre directement la candidature avec la
           génération du CV adapté lancée (parcours US-113), sans étape intermédiaire.
-    - [ ] Tests web sur le badge (fuseau de Paris) et sur la section « nouvelles ».
+    - [x] Tests web sur le badge (fuseau de Paris) et sur la section « nouvelles ».
 
 ## 📊 Sprint DoD
 
@@ -258,9 +263,15 @@ croître la facture avec chaque nouveau candidat.
   nouvelle brique, qui n'existe pas encore dans `apps/web`. Proposée pour un sprint suivant.
 - **La bonne alternance** : vérifier en direct si elle filtre par date de création fine ; sinon
   elle reste sur le rythme actuel.
-- **Statut de l'application France Travail** : homologation ou production ? À lire dans l'espace
-  développeur de francetravail.io (le propriétaire seul y a accès).
+- ~~Statut de l'application France Travail~~ **Relevé le 2026-10-01** : homologation, demande de
+  passage en production à déposer (texte dans ADR-027).
 
 ## 🔁 Workflow Runs
 
-— aucun pour l'instant.
+- 2026-10-01 — [[workflows/runs/tech-lead-20261001221038|tech-lead]] (US-162) — failed (4/5 critères, en attente du passage en production francetravail.io)
+- 2026-10-01 — [[workflows/runs/developer-20261001224331|developer]] (US-163) — failed (8/9 critères ; partie alertes à vérifier avec US-165/166)
+- 2026-10-01 — [[workflows/runs/developer-20261001233130|developer]] (US-164) — failed (3/4 critères ; journée de staging à faire)
+- 2026-10-02 — [[workflows/runs/developer-20261002090712|developer]] (US-165) — passed
+- 2026-10-02 — [[workflows/runs/developer-20261002134029|developer]] (US-166) — passed (clôt aussi US-163)
+- 2026-10-02 — [[workflows/runs/developer-20261002135719|developer]] (US-168) — passed
+- 2026-10-02 — [[workflows/runs/developer-20261002151155|developer]] (US-167) — passed

@@ -1,8 +1,10 @@
 import type { Metadata } from "next"
+import { cookies } from "next/headers"
 import Link from "next/link"
 import { SearchIcon } from "lucide-react"
 
 import { OfferGrid } from "@/components/job-search/offer-grid"
+import { OffersVisitMarker } from "@/components/job-search/offers-visit-marker"
 import { PageHeader } from "@/components/layout/page-header"
 import { Button } from "@/components/ui/button"
 import {
@@ -14,6 +16,7 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty"
 import { loadDigest, loadRecentMatches, type JobMatch } from "@/lib/job-search"
+import { OFFERS_VISIT_COOKIE, splitSinceVisit } from "@/lib/offer-freshness"
 
 export const metadata: Metadata = { title: "Offres du jour" }
 
@@ -33,6 +36,12 @@ export default async function DailyJobsPage() {
     digest.matches.length > 0 ? digest.matches : await loadRecentMatches()
   const showingToday = digest.matches.length > 0
   const visible = matches.filter((match) => match.status !== "dismissed")
+  // What arrived since the candidate last left this page goes first (US-167).
+  const lastVisit = (await cookies()).get(OFFERS_VISIT_COOKIE)?.value
+  const { fresh, rest } = splitSinceVisit(
+    visible,
+    lastVisit ? decodeURIComponent(lastVisit) : null
+  )
 
   return (
     <>
@@ -66,8 +75,9 @@ export default async function DailyJobsPage() {
               </EmptyMedia>
               <EmptyTitle>Aucune offre pour l&apos;instant</EmptyTitle>
               <EmptyDescription>
-                Décrivez ce que vous cherchez — postes visés, contrats, lieux — et
-                activez les offres du jour. La sélection arrive le lendemain matin.
+                Décrivez ce que vous cherchez — postes visés, contrats, lieux —
+                et activez les offres du jour. La sélection arrive le lendemain
+                matin.
               </EmptyDescription>
             </EmptyHeader>
             <EmptyContent className="flex-row flex-wrap justify-center gap-2">
@@ -81,14 +91,34 @@ export default async function DailyJobsPage() {
           </Empty>
         ) : (
           <>
-            <OfferGrid offers={visible} />
-            <p className="text-muted-foreground pb-4 text-xs">
-              Offres issues de France Travail et des sites des entreprises. Chaque
-              lien renvoie à l&apos;annonce d&apos;origine.
+            {fresh.length > 0 ? (
+              <section
+                aria-labelledby="fresh-offers-title"
+                className="flex flex-col gap-3"
+              >
+                <h2 id="fresh-offers-title" className="text-base font-semibold">
+                  Nouvelles depuis votre dernière visite
+                  <span className="ml-2 text-sm font-normal text-muted-foreground">
+                    {fresh.length}
+                  </span>
+                </h2>
+                <OfferGrid offers={fresh} fresh />
+              </section>
+            ) : null}
+            {fresh.length > 0 && rest.length > 0 ? (
+              <h2 className="pt-2 text-base font-semibold">
+                Vos autres offres
+              </h2>
+            ) : null}
+            <OfferGrid offers={rest} />
+            <p className="pb-4 text-xs text-muted-foreground">
+              Offres issues de France Travail et des sites des entreprises.
+              Chaque lien renvoie à l&apos;annonce d&apos;origine.
             </p>
           </>
         )}
       </div>
+      <OffersVisitMarker />
     </>
   )
 }

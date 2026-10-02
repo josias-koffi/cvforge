@@ -26,7 +26,7 @@ function offer(overrides: Partial<JobCardOffer> = {}) {
   } as JobCardOffer
 }
 
-function render(card: JobCardOffer) {
+function render(card: JobCardOffer, fresh = false) {
   const noop = () => undefined
 
   return renderToStaticMarkup(
@@ -37,6 +37,7 @@ function render(card: JobCardOffer) {
         onSave={noop}
         onDismiss={noop}
         pending={false}
+        fresh={fresh}
       />
     </TooltipProvider>
   )
@@ -73,5 +74,15 @@ describe("OfferCard", () => {
 
     expect(html).toContain("Gardée")
     expect(html).not.toContain("lucide-bookmark")
+  })
+
+  it("says to the minute how fresh the offer is, when asked (US-167)", () => {
+    const publishedAt = new Date(Date.now() - 12 * 60_000).toISOString()
+    const card = offer({
+      job: { ...offer().job, publishedAt },
+    })
+
+    expect(render(card, true)).toContain("il y a 12 min")
+    expect(render(card)).not.toContain("il y a 12 min")
   })
 })

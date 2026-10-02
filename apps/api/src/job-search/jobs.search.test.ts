@@ -27,7 +27,10 @@ beforeEach(async () => {
 });
 
 function makeListing(
-  overrides: Partial<NormalizedJobListing> & { source: JobSource; externalId: string },
+  overrides: Partial<NormalizedJobListing> & {
+    source: JobSource;
+    externalId: string;
+  },
 ): NormalizedJobListing {
   return {
     applyUrl: "",
@@ -117,7 +120,10 @@ describe("PgJobsStore.searchJobs", () => {
 
   it("narrows with every extra word instead of widening", async () => {
     const one = await store.searchJobs({ ...BASE, query: "developpeur" });
-    const two = await store.searchJobs({ ...BASE, query: "developpeur alternance" });
+    const two = await store.searchJobs({
+      ...BASE,
+      query: "developpeur alternance",
+    });
 
     expect(two.total).toBeLessThan(one.total);
     expect(two.jobs[0]?.title).toContain("Alternance");
@@ -134,9 +140,12 @@ describe("PgJobsStore.searchJobs", () => {
       (await store.searchJobs({ ...BASE, departments: ["69"] })).total,
     ).toBe(1);
     expect(
-      (await store.searchJobs({ ...BASE, contractTypes: ["alternance"] })).total,
+      (await store.searchJobs({ ...BASE, contractTypes: ["alternance"] }))
+        .total,
     ).toBe(1);
-    expect((await store.searchJobs({ ...BASE, remoteOnly: true })).total).toBe(1);
+    expect((await store.searchJobs({ ...BASE, remoteOnly: true })).total).toBe(
+      1,
+    );
   });
 
   it("keeps a remote offer when a department is asked for", async () => {
@@ -147,13 +156,19 @@ describe("PgJobsStore.searchJobs", () => {
       remoteOnly: true,
     });
 
-    expect(found.jobs.map((job) => job.department).sort()).toEqual(["44", "44", "75"]);
+    expect(found.jobs.map((job) => job.department).sort()).toEqual([
+      "44",
+      "44",
+      "75",
+    ]);
   });
 
   it("hides a closed offer", async () => {
     await store.closeListing("smartrecruiters", "4", new Date().toISOString());
 
-    expect((await store.searchJobs({ ...BASE, query: "sodexo" })).total).toBe(0);
+    expect((await store.searchJobs({ ...BASE, query: "sodexo" })).total).toBe(
+      0,
+    );
   });
 
   it("pages through the results", async () => {
@@ -194,5 +209,65 @@ describe("PgJobsStore.searchJobs", () => {
 
   it("ignores an offer older than the window asked for", async () => {
     expect((await store.searchJobs({ ...BASE, maxAgeDays: 0 })).total).toBe(0);
+  });
+
+  describe("the most recent first (US-167)", () => {
+    const hoursAgo = (hours: number) =>
+      new Date(Date.now() - hours * 3_600_000).toISOString();
+
+    beforeEach(async () => {
+      await testDatabase.reset();
+      for (const [externalId, hours] of [
+        ["day", 30],
+        ["fresh", 1],
+        ["week", 100],
+      ] as const) {
+        await deduplicator.attach(
+          makeListing({
+            externalId,
+            publishedAt: hoursAgo(hours),
+            source: "france_travail",
+            title: `Développeur ${externalId}`,
+          }),
+        );
+      }
+    });
+
+    it("sorts by publication date, the latest first", async () => {
+      const found = await store.searchJobs({ ...BASE, sort: "recent" });
+
+      expect(found.jobs.map((job) => job.title)).toEqual([
+        "Développeur fresh",
+        "Développeur day",
+        "Développeur week",
+      ]);
+    });
+
+    it("keeps only the offers published within the window asked for", async () => {
+      const found = await store.searchJobs({
+        ...BASE,
+        maxAgeDays: 1,
+        sort: "recent",
+      });
+
+      expect(found.jobs.map((job) => job.title)).toEqual(["Développeur fresh"]);
+      expect(found.available).toBe(1);
+    });
+  });
+
+  it("puts the offers with the words in their title first, by relevance", async () => {
+    await deduplicator.attach(
+      makeListing({
+        description: "Nous cherchons un chef de partie confirmé.",
+        externalId: "desc-only",
+        source: "france_travail",
+        title: "Cuisinier",
+      }),
+    );
+
+    const found = await store.searchJobs({ ...BASE, query: "chef partie" });
+
+    expect(found.jobs[0]?.title).toBe("Chef de partie (H/F)");
+    expect(found.total).toBe(2);
   });
 });

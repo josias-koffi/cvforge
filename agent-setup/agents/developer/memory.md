@@ -1607,3 +1607,41 @@
 - `ExtractedOfferFields.keywords?` extrait par le même appel `structureOffer` (8-20 groupes nominaux dans les mots de l'offre). Le score les utilise en priorité (tous les mots significatifs d'une expression requis, pluriel toléré via `morphology.ts`), sinon repli sur les phrases sans les verbes « -ez ».
 - Candidatures antérieures : `withOfferKeywords` (cv-generation.offer-keywords.ts) récupère les mots-clés à la génération du CV, après le contrôle des crédits, sans écraser les champs corrigés à la main.
 - Même liste injectée dans le prompt (bloc « VOCABULAIRE DE L'OFFRE ») ; `missingTerms` de la dimension affichés sous le critère dans `components/ats/ats-report.tsx`.
+
+## 2026-10-01 — Flux France Travail continu (ADR-027, US-163 · [[workflows/runs/developer-20261001224331]])
+- `FranceTravailStreamReader` (sources/france-travail.stream.ts) lit une tranche `minCreationDate`/`maxCreationDate` et la coupe en deux tant que `Content-Range` dépasse 1 150. `FtResult.ok` porte désormais `contentRange`, `unavailable` porte `retryAfterMs`.
+- `JobStreamService` : bail en base `job_stream_cursors` (pas `job_digest_runs` : son index « une collecte en cours » bloquerait le récap). Le curseur n'avance qu'après l'écriture par le `sink`. US-165 devra insérer le filtre de correspondance dans le `sink` de `job-stream.providers.ts`.
+- Compteur `job_source_calls` alimenté par `FtHttpClient.onRequest` / `BoardHttpClient.onRequest`, tampon `SourceCallCounter` écrit chaque minute.
+- La resynchronisation 24 h (`listing-resync.ts`) tourne dans le récap du matin. Les listes de matches masquent les offres fermées, sauf celles gardées ou postulées.
+- `job-digest.service.ts` découpé : la sélection par candidat est dans `job-digest.selection.ts` (`DigestSelector`).
+
+## 2026-10-01 — Sites carrière toutes les 30 min (ADR-027, US-164 · [[workflows/runs/developer-20261001233130]])
+- `job_board_postings` (provider, board_token, external_id) garde les identifiants vus ; `recordSeen` renvoie les nouveaux grâce à `(xmax = 0)` dans le RETURNING d'un upsert. Le daily `BoardsService.collect` enregistre aussi, sinon la passe fréquente prendrait tout pour neuf.
+- `BoardStreamService` choisit les sites : SQL match → job_listings → job_board_postings, plus les URLs des candidatures passées dans `detectAtsBoard`. Plafond `cycleCapacity` = débit × 900 s.
+- `BoardRefusedError` (board.types.ts) : 429 après les nouvelles tentatives, 403 tout de suite. `fetchBoard(token, { skipExternalIds })` : seul SmartRecruiters s'en sert, pour éviter les appels de détail.
+- `job_stream_cursors` accepte une clé de flux libre (`boards_frequent`) et garde `last_report`, que l'admin affiche (`StreamsSummary`). `MemoryCursors` est dans `job-stream.testing.ts`.
+
+## 2026-10-02 — Correspondance au fil de l'eau (ADR-027 §4, US-165 · [[workflows/runs/developer-20261002090712]])
+- `LiveMatcher.handle` est le sink des deux flux (`streamSink` dans job-stream.providers.ts). Il note des `previewJob` (StoredJob construit sans écriture, id `source:externalId`) et n'appelle `deduplicator.attach` que pour les offres retenues.
+- Le seuil 35 seul est trop lâche sur le flux national (lieu + fraîcheur ≈ 37) : `isRelevantMatch` exige aussi intitulé ou compétences > 0.
+- `job_matches.kind` vaut `digest` ou `alert`. `listProposedJobIds` ignore les alertes non envoyées, et `createMany` les reprend en `digest` (`onConflictDoUpdate` + `setWhere`). US-166 doit appeler `PgAlertMatchesStore.markAlertSent`.
+- Délai dans le cockpit : `PgMarketStore.readAlertDelays` (`percentile_cont`), `MarketMetrics.alertDelays`. Il faut rebuild `@cvforge/types` pour que le web voie un nouveau champ.
+
+## 2026-10-02 — Alertes « Nouvelle offre » (US-166 · [[workflows/runs/developer-20261002134029]])
+- Préférences : `NotificationPreferences.jobAlerts` (colonne jsonb `job_alerts`, null = défauts dans le code). `notification-preferences.ts` (`readJobAlertPreferences`, `mergePreferences`) valide tout ; avant, une mise à jour partielle écrasait les autres interrupteurs avec `undefined`.
+- `JobAlertDispatcher` (job-alerts.service.ts) tourne à part, bail `job_alerts`. `dueNow` = immédiat sous le plafond, sinon une heure depuis `lastSentAt`. `sendJobAlertEmail` renvoie false si le SMTP n'est pas prêt : rien n'est marqué envoyé.
+- E-mail : `mail/job-alert-email.ts`, réexporté par `emails.ts`. Bouton « Postuler avec Jobspark » vers `/offres-du-jour?offre=<jobId>` ; US-167 doit lire ce paramètre.
+- Ajouter un champ à `NotificationPreferences` casse `import-legacy-notifications.test.ts`, qui relit via le store.
+
+## 2026-10-02 — Analyse IA payante des alertes (US-168 · [[workflows/runs/developer-20261002135719]])
+- `JobAlertEnricher` (job-alert-enrich.service.ts) : la file, ce sont les alertes elles-mêmes (`ai_analysis_status` null). Statuts `done`, `no_credit`, `capped`, `failed`. Le plafond compte `done` et `failed` (`analysesOn`, jour de Paris sur `ai_analysis_at`).
+- Débit une fois par jour : `consumeCredits({ idempotencyKey })`. La clé est unique dans `credit_ledger_entries`, ce qui suffit contre la concurrence (testé sur PGlite). Le jour est payé dès qu'un `done` existe ce jour-là.
+- Validation dans `matching/job-alert-analysis.ts` : un point est écarté s'il cite une compétence ou une expérience absente du profil, ou s'il contient une `missingSkill`. Sans verdict, l'analyse est rejetée et rien n'est débité.
+- `sendable()` dans le dispatcher : attente de `ANALYSIS_WAIT_MS` (60 s), puis filtre « à passer ». La reprise dans « Postuler » passe par `applications.points_to_highlight` puis `OfferContext.pointsToHighlight`.
+- Les types d'alertes sont sortis d'`index.ts` vers `packages/types/src/job-alerts.ts`. Prettier sur l'API reformate tout le fichier, jusqu'aux lignes déjà présentes à 100 colonnes.
+
+## 2026-10-02 — Fraîcheur et candidature directe (US-167 · [[workflows/runs/developer-20261002151155]])
+- `lib/offer-freshness.ts` contient `formatFreshness` (fuseau Europe/Paris explicite) et `splitSinceVisit`. La dernière visite est dans le cookie `jobspark_offers_visit`, écrit en quittant la page avec l'heure d'ouverture : un `router.refresh` ne doit pas vider la section.
+- Badge minute sur la carte (`fresh`) : `suppressHydrationWarning`, parce que le serveur et le client calculent à des instants différents.
+- Alerte → `/offres-du-jour/postuler/[jobId]`. L'action `applyFromAlert` enchaîne `applyToMatch` puis `generateDocument("cv")`. Elle est lancée depuis un `useEffect` (avec un ref contre le double appel), jamais au rendu : un scanner de mail ne doit rien créer. `applyToJob` renvoie `existing` pour une offre déjà candidatée.
+- Nouvelle route web : lancer `npx next typegen` pour que `PageProps<"/…">` la connaisse.

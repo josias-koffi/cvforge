@@ -1,7 +1,9 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
+import { redirect } from "next/navigation"
 
+import { generateDocument } from "@/app/(app)/candidatures/actions"
 import { ApiError, api, runAction, type ActionResult } from "@/lib/api"
 import type { JobMatchStatus } from "@/lib/job-search"
 
@@ -31,17 +33,22 @@ export async function setMatchStatus(
  */
 export async function applyToMatch(
   jobId: string
-): Promise<{ ok: true; applicationId: string } | { ok: false; message: string }> {
+): Promise<
+  | { ok: true; applicationId: string; existing: boolean }
+  | { ok: false; message: string }
+> {
   try {
-    const { applicationId } = await api<{ applicationId: string }>(
-      `/job-search/offers/${encodeURIComponent(jobId)}/apply`,
-      { method: "POST" }
-    )
+    const { applicationId, existing } = await api<{
+      applicationId: string
+      existing?: boolean
+    }>(`/job-search/offers/${encodeURIComponent(jobId)}/apply`, {
+      method: "POST",
+    })
 
     revalidatePath("/offres-du-jour")
     revalidatePath("/offres")
     revalidatePath("/candidatures")
-    return { applicationId, ok: true }
+    return { applicationId, existing: existing ?? false, ok: true }
   } catch (error) {
     if (error instanceof ApiError && error.status === 410) {
       return {
@@ -55,4 +62,28 @@ export async function applyToMatch(
 
     throw error
   }
+}
+
+/**
+ * « Postuler avec Jobspark » from an alert (US-167): the application, then
+ * the tailored CV, in one go — the candidate lands on their CV being written.
+ *
+ * An offer already applied to opens its application instead: a second click
+ * on the same e-mail must not pay for a second CV. On a failure — the offer
+ * gone, a profile too thin, no credit left — the page says why and offers
+ * the way on; an application already created is named so it is not lost.
+ */
+export async function applyFromAlert(
+  jobId: string
+): Promise<{ ok: false; message: string; applicationId?: string }> {
+  const applied = await applyToMatch(jobId)
+  if (!applied.ok) return applied
+
+  if (applied.existing) redirect(`/candidatures/${applied.applicationId}`)
+
+  // Redirects to the CV once it is written; returns only on a failure.
+  const generated = await generateDocument(applied.applicationId, "cv")
+  if (generated.ok) redirect(`/candidatures/${applied.applicationId}/cv`)
+
+  return { ...generated, applicationId: applied.applicationId }
 }
