@@ -206,3 +206,77 @@ describe("BoardsService.collect", () => {
     expect(fetches).toEqual([]);
   });
 });
+
+/** Seen postings in memory: the database behaviour, without the database. */
+function memoryPostings() {
+  const seen = new Map<string, Set<string>>();
+  const postings = {
+    knownIds: vi.fn(async (provider: string, token: string) =>
+      new Set(seen.get(`${provider}/${token}`) ?? []),
+    ),
+    recordSeen: vi.fn(
+      async (provider: string, token: string, list: ReadonlyArray<{ externalId: string }>) => {
+        const key = `${provider}/${token}`;
+        const ids = seen.get(key) ?? new Set<string>();
+        const created = new Set(list.map((p) => p.externalId).filter((id) => !ids.has(id)));
+        for (const id of created) ids.add(id);
+        seen.set(key, ids);
+        return created;
+      },
+    ),
+  };
+
+  return postings;
+}
+
+function greenhouseJob(id: number) {
+  return {
+    absolute_url: `https://job-boards.greenhouse.io/doctolib/jobs/${id}`,
+    content: "&lt;p&gt;Poste&lt;/p&gt;",
+    first_published: "2026-09-01T08:00:00Z",
+    id,
+    location: { name: "Paris, France" },
+    title: `Développeur ${id} (CDI)`,
+  };
+}
+
+describe("BoardsService.readFrequent (US-164)", () => {
+  const doctolib = { boardToken: "doctolib", provider: "greenhouse" as const };
+
+  it("returns only the postings never seen on that board, daily pass included", async () => {
+    const { store } = createStore([makeBoard(doctolib)]);
+    let jobs = [greenhouseJob(1)];
+    const http = createHttp(() => jsonResponse({ jobs }));
+    const postings = memoryPostings();
+    const service = new BoardsService(store, http, postings);
+
+    await service.collect();
+    jobs = [greenhouseJob(1), greenhouseJob(2)];
+    const report = await service.readFrequent([doctolib]);
+
+    expect(report.boardsRead).toBe(1);
+    expect(report.newListings.map((listing) => listing.externalId)).toEqual(["2"]);
+    expect(postings.recordSeen).toHaveBeenLastCalledWith("greenhouse", "doctolib", [
+      { announcedAt: "2026-09-01T08:00:00.000Z", externalId: "1" },
+      { announcedAt: "2026-09-01T08:00:00.000Z", externalId: "2" },
+    ]);
+    expect((await service.readFrequent([doctolib])).newListings).toEqual([]);
+  });
+
+  it("reports a board that refused, without stopping the others", async () => {
+    const { store } = createStore();
+    const http = createHttp((url) =>
+      url.includes("/doctolib/") ? jsonResponse({}, 403) : jsonResponse({ jobs: [greenhouseJob(3)] }),
+    );
+    const service = new BoardsService(store, http, memoryPostings());
+
+    const report = await service.readFrequent([
+      doctolib,
+      { boardToken: "alan", provider: "greenhouse" },
+    ]);
+
+    expect(report.refused).toEqual([{ ...doctolib, status: 403 }]);
+    expect(report).toMatchObject({ boardsFailed: 1, boardsRead: 1 });
+    expect(report.newListings).toHaveLength(1);
+  });
+});

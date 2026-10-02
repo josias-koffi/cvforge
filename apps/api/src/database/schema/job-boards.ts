@@ -5,6 +5,7 @@ import {
   index,
   integer,
   pgTable,
+  primaryKey,
   text,
   timestamp,
   uniqueIndex,
@@ -38,6 +39,10 @@ export const jobBoards = pgTable(
     lastJobCount: integer("last_job_count").notNull().default(0),
     /** Reset on success. Past the threshold, the company is disabled. */
     consecutiveFailures: integer("consecutive_failures").notNull().default(0),
+    /** Set by a 429 or a 403 to the frequent pass: daily only until then (US-164). */
+    frequentPausedUntil: timestamp("frequent_paused_until", {
+      withTimezone: true,
+    }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -52,6 +57,36 @@ export const jobBoards = pgTable(
     check(
       "job_boards_origin_valid",
       sql`${table.origin} in ('seed', 'crawl', 'france_travail', 'user', 'admin', 'probe')`,
+    ),
+  ],
+);
+
+/**
+ * Every posting a board ever showed, by id only (ADR-027 §4, US-164): what
+ * tells a new offer from one already seen, and when we first saw it next to
+ * the date the recruiting software announces.
+ */
+export const jobBoardPostings = pgTable(
+  "job_board_postings",
+  {
+    provider: text("provider").notNull(),
+    boardToken: text("board_token").notNull(),
+    externalId: text("external_id").notNull(),
+    announcedAt: timestamp("announced_at", { withTimezone: true }),
+    firstSeenAt: timestamp("first_seen_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    lastSeenAt: timestamp("last_seen_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    primaryKey({
+      columns: [table.provider, table.boardToken, table.externalId],
+    }),
+    index("job_board_postings_external_idx").on(
+      table.provider,
+      table.externalId,
     ),
   ],
 );

@@ -7,7 +7,12 @@ import type {
   RegisteredBoard,
 } from "./boards.types";
 import { BoardHttpClient } from "./sources/boards/board-http";
-import { BoardNotFoundError, type CompanyBoardAdapter } from "./sources/boards/board.types";
+import {
+  BoardNotFoundError,
+  BoardRefusedError,
+  type CompanyBoardAdapter,
+} from "./sources/boards/board.types";
+import type { BoardCadenceStore, SeenPosting } from "./board-cadence.types";
 import { AshbyBoard } from "./sources/boards/ashby.board";
 import { detectAtsBoard, type BoardProvider } from "./sources/boards/detect-board";
 import { GreenhouseBoard } from "./sources/boards/greenhouse.board";
@@ -27,6 +32,22 @@ export interface BoardCollectionReport {
   byProvider: Map<BoardProvider, { listingCount: number; failures: number }>;
 }
 
+export interface FrequentReadReport {
+  boardsRead: number;
+  boardsFailed: number;
+  /** Postings never seen on their board before this read. */
+  newListings: NormalizedJobListing[];
+  /** Boards that answered 429 or 403. */
+  refused: Array<{ provider: BoardProvider; boardToken: string; status: number }>;
+}
+
+function toSeen(listings: readonly NormalizedJobListing[]): SeenPosting[] {
+  return listings.map((listing) => ({
+    announcedAt: listing.publishedAt,
+    externalId: listing.externalId,
+  }));
+}
+
 /**
  * Reads every company in the registry, and grows the registry from the links
  * the product already sees.
@@ -44,6 +65,8 @@ export class BoardsService {
   constructor(
     private readonly store: JobBoardsStore,
     http: BoardHttpClient = new BoardHttpClient(),
+    /** Where seen postings are kept (US-164). Optional for the scripts. */
+    private readonly postings?: Pick<BoardCadenceStore, "knownIds" | "recordSeen">,
   ) {
     this.adapters = new Map<BoardProvider, CompanyBoardAdapter>([
       ["ashby", new AshbyBoard(http)],
@@ -140,6 +163,7 @@ export class BoardsService {
 
       try {
         const listings = await adapter.fetchBoard(board.boardToken);
+        await this.recordSeen(board, listings);
         report.listings.push(...listings);
         report.boardsRead += 1;
         tally.listingCount += listings.length;
@@ -167,6 +191,67 @@ export class BoardsService {
     }
 
     return report;
+  }
+
+  /**
+   * The frequent pass (US-164): reads these boards and returns only the
+   * postings never seen on them. A 429 or a 403 is reported apart, so the
+   * caller can send that board back to the daily pass.
+   */
+  async readFrequent(
+    boards: ReadonlyArray<{ provider: BoardProvider; boardToken: string }>,
+  ): Promise<FrequentReadReport> {
+    const report: FrequentReadReport = {
+      boardsFailed: 0,
+      boardsRead: 0,
+      newListings: [],
+      refused: [],
+    };
+
+    for (const board of boards) {
+      const adapter = this.adapters.get(board.provider);
+      if (!adapter || !this.postings) continue;
+
+      try {
+        const known = await this.postings.knownIds(board.provider, board.boardToken);
+        const listings = await adapter.fetchBoard(board.boardToken, {
+          skipExternalIds: known,
+        });
+        const created = await this.postings.recordSeen(
+          board.provider,
+          board.boardToken,
+          toSeen(listings),
+        );
+        report.boardsRead += 1;
+        report.newListings.push(
+          ...listings.filter((listing) => created.has(listing.externalId)),
+        );
+      } catch (error) {
+        report.boardsFailed += 1;
+        if (error instanceof BoardRefusedError) {
+          report.refused.push({ ...board, status: error.status });
+        }
+        this.logger.warn(
+          `Frequent read of ${board.provider}/${board.boardToken}: ${String(error)}`,
+        );
+      }
+    }
+
+    return report;
+  }
+
+  /** The daily pass records what it saw too, so "new" means never seen. */
+  private async recordSeen(
+    board: { provider: BoardProvider; boardToken: string },
+    listings: readonly NormalizedJobListing[],
+  ): Promise<void> {
+    try {
+      await this.postings?.recordSeen(board.provider, board.boardToken, toSeen(listings));
+    } catch (error) {
+      this.logger.warn(
+        `Could not record the postings of ${board.provider}/${board.boardToken}: ${String(error)}`,
+      );
+    }
   }
 
   /** The providers a company can actually be collected from today. */

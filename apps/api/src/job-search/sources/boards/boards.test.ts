@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { AshbyBoard } from "./ashby.board";
 import { BoardHttpClient } from "./board-http";
-import { BoardNotFoundError } from "./board.types";
+import { BoardNotFoundError, BoardRefusedError } from "./board.types";
 import { GreenhouseBoard } from "./greenhouse.board";
 import { LeverBoard } from "./lever.board";
 import { SmartRecruitersBoard } from "./smartrecruiters.board";
@@ -239,6 +239,19 @@ describe("SmartRecruitersBoard", () => {
     expect(fetchImpl).toHaveBeenCalledTimes(2);
   });
 
+  it("pays no detail call for a posting already seen (US-164)", async () => {
+    const { client, fetchImpl } = createClient((url) =>
+      url.includes("/postings?") ? jsonResponse(listing) : jsonResponse(detail),
+    );
+
+    const listings = await new SmartRecruitersBoard(client).fetchBoard("Sodexo", {
+      skipExternalIds: new Set(["744000151238125"]),
+    });
+
+    expect(listings).toEqual([]);
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+  });
+
   it("keeps the offer when its advert text cannot be read", async () => {
     const { client } = createClient((url) =>
       url.includes("/postings?") ? jsonResponse(listing) : jsonResponse({}, 500),
@@ -261,6 +274,24 @@ describe("BoardHttpClient", () => {
 
     await expect(new GreenhouseBoard(client).fetchBoard("acme")).resolves.toEqual([]);
     expect(calls).toBe(2);
+  });
+
+  it("reports a throttle that outlasts the retries as a refusal (US-164)", async () => {
+    const { client, fetchImpl } = createClient(() => jsonResponse({}, 429));
+
+    await expect(new GreenhouseBoard(client).fetchBoard("acme")).rejects.toBeInstanceOf(
+      BoardRefusedError,
+    );
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not insist after a 403", async () => {
+    const { client, fetchImpl } = createClient(() => jsonResponse({}, 403));
+
+    await expect(new GreenhouseBoard(client).fetchBoard("acme")).rejects.toMatchObject({
+      status: 403,
+    });
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
   });
 
   it("gives up after the second failure", async () => {
