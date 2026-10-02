@@ -41,7 +41,7 @@ describe("resolveFtConfig", () => {
     expect(FT_API_IDS.filter((id) => config.apis[id].enabled)).toEqual([
       "offres",
     ]);
-    expect(config.apis.offres.requestsPerSecond).toBe(4);
+    expect(config.apis.offres.requestsPerSecond).toBe(8);
   });
 
   it("enables what FRANCE_TRAVAIL_APIS lists, and reports what it cannot read", () => {
@@ -97,7 +97,7 @@ describe("resolveFtConfig", () => {
           ...CREDENTIALS,
           FRANCE_TRAVAIL_OFFRES_REQUESTS_PER_SECOND: value,
         }).apis.offres.requestsPerSecond,
-      ).toBe(4);
+      ).toBe(8);
     }
   });
 });

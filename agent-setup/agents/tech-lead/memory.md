@@ -524,3 +524,10 @@
 - **Why**: Tous les critères vérifiés, suites vertes.
 - **Learned**: Deux limiteurs de 2/s sur la même source restent sous le seuil de 429 observé ; un limiteur partagé ferait attendre l'outil derrière le job horaire.
 - **Open**: US-140.
+
+## 2026-10-01 — US-162 (· [[workflows/runs/tech-lead-20261001221038]])
+- **Context**: [[sprints/sprint-034#US-162]] · [[workflows/runs/tech-lead-20261001221038/final-summary]]
+- **Did**: ADR-027 « Collecte continue » écrit ; ADR-023 et la règle de sprint-025 amendés ; débit `offres` 4 → 8/s.
+- **Why**: E27 vise une détection en moins de 15 min ; les mesures du 2026-09-28 (10/s par application) rendent le flux national toutes les 5 min abordable.
+- **Learned**: Un critère qui dépend d'un espace réservé au propriétaire (francetravail.io) se demande en début de run, pas en fin.
+- **Open**: Demande de passage en production à déposer par le propriétaire ; case US-162 non cochée tant qu'elle ne l'est pas.

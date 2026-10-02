@@ -27,7 +27,9 @@ Cible front : `apps/web`. `apps/app` est gelée, non touchée.
 > de retirer son annonce ne doit pas faire perdre une candidature.
 
 > ⚠️ **RÈGLE DE DÉBIT** : toutes les requêtes sortantes passent par un limiteur par source. La
-> collecte est quotidienne et mutualisée entre candidats — jamais un appel par affichage de page.
+> collecte est ~~quotidienne~~ et mutualisée entre candidats — jamais un appel par affichage de page.
+> **« Quotidienne » remplacé le 2026-10-01 par ADR-027** : collecte continue (flux France Travail
+> toutes les 5 minutes, sites carrière suivis toutes les 30 minutes) ; le récap du matin reste.
 
 ## 📅 Period
 

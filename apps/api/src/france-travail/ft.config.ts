@@ -56,9 +56,11 @@ export const FT_APIS: Record<FtApiId, FtApiDefinition> = {
     label: "Offres d'emploi v2",
     baseUrl: `${FT_API_ROOT}/offresdemploi/v2`,
     scope: "api_offresdemploiv2 o2dsoffre",
-    // Documented: 4 calls per second per application (the API takes 100,
-    // shared between every application). Past it, a 429 with Retry-After.
-    requestsPerSecond: 4,
+    // Measured on 2026-09-28: 10 calls a second per application, a burst of
+    // 10 (100 shared between every application). 8 leaves room for the live
+    // checks and the other France Travail calls (ADR-027). Past it, a 429
+    // with Retry-After.
+    requestsPerSecond: 8,
     verified: true,
     smoke: {
       method: "GET",
