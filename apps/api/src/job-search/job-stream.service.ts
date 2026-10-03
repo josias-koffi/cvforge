@@ -25,15 +25,12 @@ export const STREAM_CHUNK_MS = 60 * MINUTE_MS;
 const LEASE_MS = 10 * MINUTE_MS;
 
 export interface JobStreamConfig {
-  enabled: boolean;
   intervalMs: number;
 }
 
 /**
- * `JOB_STREAM_ENABLED=true` turns the loop on. Off by default: production
- * waits for the purge (sprint 035) and for the France Travail application to
- * leave its trial status (ADR-027). `JOB_STREAM_INTERVAL_MINUTES` sets the
- * pace (5 by default).
+ * Always on: each candidate chooses whether alerts reach them (ADR-027).
+ * `JOB_STREAM_INTERVAL_MINUTES` sets the pace (5 by default).
  */
 export function resolveJobStreamConfig(
   env: NodeJS.ProcessEnv = process.env,
@@ -41,7 +38,6 @@ export function resolveJobStreamConfig(
   const minutes = Number(env.JOB_STREAM_INTERVAL_MINUTES);
 
   return {
-    enabled: env.JOB_STREAM_ENABLED?.trim().toLowerCase() === "true",
     intervalMs:
       (Number.isFinite(minutes) && minutes >= 1
         ? minutes
@@ -98,8 +94,6 @@ export class JobStreamService implements OnModuleInit, OnModuleDestroy {
   ) {}
 
   onModuleInit() {
-    if (!this.config.enabled) return;
-
     this.timer = setInterval(() => {
       void this.tick().catch((error: unknown) => {
         this.logger.error(`Stream tick failed: ${String(error)}`);

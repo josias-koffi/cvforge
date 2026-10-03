@@ -92,7 +92,7 @@ function createEnricher(input: {
         });
       }),
     },
-    config: { dailyCap: input.dailyCap ?? 20, enabled: true },
+    config: { dailyCap: input.dailyCap ?? 20 },
     credits,
     cursors: new MemoryCursors(),
     notifications: {
@@ -271,16 +271,10 @@ describe("toAnalysisProfile", () => {
 });
 
 describe("resolveJobAlertEnrichConfig", () => {
-  it("follows the stream switch, 20 analyses a day by default", () => {
-    expect(resolveJobAlertEnrichConfig({})).toEqual({
-      dailyCap: 20,
-      enabled: false,
-    });
+  it("allows 20 analyses a day by default", () => {
+    expect(resolveJobAlertEnrichConfig({})).toEqual({ dailyCap: 20 });
     expect(
-      resolveJobAlertEnrichConfig({
-        JOB_ALERT_ENRICH_DAILY_CAP: "5",
-        JOB_STREAM_ENABLED: "true",
-      }),
-    ).toEqual({ dailyCap: 5, enabled: true });
+      resolveJobAlertEnrichConfig({ JOB_ALERT_ENRICH_DAILY_CAP: "5" }),
+    ).toEqual({ dailyCap: 5 });
   });
 });

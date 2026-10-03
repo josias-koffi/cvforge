@@ -14,7 +14,7 @@ import { MemoryCursors } from "./job-stream.testing";
 import type { BoardProvider } from "./sources/boards/detect-board";
 
 const NOW = Date.parse("2026-10-01T10:00:00Z");
-const CONFIG = { enabled: true, intervalMs: 30 * 60_000 };
+const CONFIG = { intervalMs: 30 * 60_000 };
 
 function board(
   provider: FrequentBoard["provider"],
@@ -197,16 +197,10 @@ describe("BoardStreamService.tick", () => {
 });
 
 describe("resolveBoardStreamConfig", () => {
-  it("follows the stream switch, every 30 minutes by default", () => {
-    expect(resolveBoardStreamConfig({})).toEqual({
-      enabled: false,
-      intervalMs: 30 * 60_000,
-    });
+  it("runs every 30 minutes by default, and refuses a pace under five", () => {
+    expect(resolveBoardStreamConfig({})).toEqual({ intervalMs: 30 * 60_000 });
     expect(
-      resolveBoardStreamConfig({
-        JOB_BOARDS_INTERVAL_MINUTES: "2",
-        JOB_STREAM_ENABLED: "true",
-      }),
-    ).toEqual({ enabled: true, intervalMs: 30 * 60_000 });
+      resolveBoardStreamConfig({ JOB_BOARDS_INTERVAL_MINUTES: "2" }),
+    ).toEqual({ intervalMs: 30 * 60_000 });
   });
 });

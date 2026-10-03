@@ -47,12 +47,11 @@ const DEFAULT_DAILY_CAP = 20;
 export const ENRICH_STREAM_KEY = "job_alert_enrich";
 
 export interface JobAlertEnrichConfig {
-  enabled: boolean;
   /** Analyses a day per candidate, failed ones included; past it, alerts go bare. */
   dailyCap: number;
 }
 
-/** Same switch as the collection and the alerts it enriches. */
+/** Always on: runs only for candidates who turned the AI analysis on. */
 export function resolveJobAlertEnrichConfig(
   env: NodeJS.ProcessEnv = process.env,
 ): JobAlertEnrichConfig {
@@ -60,7 +59,6 @@ export function resolveJobAlertEnrichConfig(
 
   return {
     dailyCap: Number.isInteger(cap) && cap >= 0 ? cap : DEFAULT_DAILY_CAP,
-    enabled: env.JOB_STREAM_ENABLED?.trim().toLowerCase() === "true",
   };
 }
 
@@ -113,8 +111,6 @@ export class JobAlertEnricher implements OnModuleInit, OnModuleDestroy {
   }
 
   onModuleInit() {
-    if (!this.deps.config.enabled) return;
-
     this.timer = setInterval(() => {
       void this.tick().catch((error: unknown) => {
         this.logger.error(`Alert analysis failed: ${String(error)}`);
