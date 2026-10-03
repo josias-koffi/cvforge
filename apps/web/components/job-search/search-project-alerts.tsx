@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import { useState, useTransition, type ReactNode } from "react"
 import Link from "next/link"
 import type { SearchProject } from "@cvforge/types"
 import { CheckIcon } from "lucide-react"
@@ -30,16 +30,18 @@ import type { SearchAlerts } from "@/lib/search-project"
  * The morning selection: whether it comes, by e-mail, and ranked by the AI.
  * Each switch applies at once, like the job chips — and next to them, what
  * the selection is built from, since that is what a candidate who gets the
- * wrong offers comes here to find.
+ * wrong offers comes here to find. `instantAlerts` (US-166) goes under it.
  */
 export function SearchProjectAlerts({
   confirmedJobs,
   initialAlerts,
+  instantAlerts,
   profileId,
   project,
 }: {
   confirmedJobs: number
   initialAlerts: SearchAlerts
+  instantAlerts?: ReactNode
   profileId: string
   project: SearchProject
 }) {
@@ -64,52 +66,55 @@ export function SearchProjectAlerts({
   }
 
   return (
-    <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]">
-      <Card>
-        <CardHeader>
-          <CardTitle>Vos offres du jour</CardTitle>
-          <CardDescription>
-            Une sélection chaque matin, d&apos;après vos critères et vos
-            métiers.
-          </CardDescription>
-          <CardAction>
-            <span
-              aria-live="polite"
-              className="flex items-center gap-1.5 text-xs text-muted-foreground"
-            >
-              {pending ? (
-                <>
-                  <Spinner className="size-3" /> Enregistrement…
-                </>
-              ) : (
-                <>
-                  <CheckIcon className="size-3" /> Enregistré
-                </>
-              )}
-            </span>
-          </CardAction>
-        </CardHeader>
-        <CardContent className="flex flex-col divide-y">
-          <AlertSwitch
-            checked={alerts.digestEnabled}
-            label="Me proposer des offres chaque matin"
-            onChange={(checked) => toggle("digestEnabled", checked)}
-          />
-          <AlertSwitch
-            checked={alerts.emailEnabled}
-            disabled={!alerts.digestEnabled}
-            label="Recevoir la sélection par e-mail"
-            onChange={(checked) => toggle("emailEnabled", checked)}
-          />
-          <AlertSwitch
-            checked={alerts.aiRerankEnabled}
-            disabled={!alerts.digestEnabled}
-            label="Classement par l'IA, avec une phrase par offre expliquant pourquoi elle vous correspond"
-            hint="1 crédit par sélection, débité seulement si le classement aboutit."
-            onChange={(checked) => toggle("aiRerankEnabled", checked)}
-          />
-        </CardContent>
-      </Card>
+    <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]">
+      <div className="flex min-w-0 flex-col gap-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>Vos offres du jour</CardTitle>
+            <CardDescription>
+              Une sélection chaque matin, d&apos;après vos critères et vos
+              métiers.
+            </CardDescription>
+            <CardAction>
+              <span
+                aria-live="polite"
+                className="flex items-center gap-1.5 text-xs text-muted-foreground"
+              >
+                {pending ? (
+                  <>
+                    <Spinner className="size-3" /> Enregistrement…
+                  </>
+                ) : (
+                  <>
+                    <CheckIcon className="size-3" /> Enregistré
+                  </>
+                )}
+              </span>
+            </CardAction>
+          </CardHeader>
+          <CardContent className="flex flex-col divide-y">
+            <AlertSwitch
+              checked={alerts.digestEnabled}
+              label="Me proposer des offres chaque matin"
+              onChange={(checked) => toggle("digestEnabled", checked)}
+            />
+            <AlertSwitch
+              checked={alerts.emailEnabled}
+              disabled={!alerts.digestEnabled}
+              label="Recevoir la sélection par e-mail"
+              onChange={(checked) => toggle("emailEnabled", checked)}
+            />
+            <AlertSwitch
+              checked={alerts.aiRerankEnabled}
+              disabled={!alerts.digestEnabled}
+              label="Classement par l'IA, avec une phrase par offre expliquant pourquoi elle vous correspond"
+              hint="1 crédit par sélection, débité seulement si le classement aboutit."
+              onChange={(checked) => toggle("aiRerankEnabled", checked)}
+            />
+          </CardContent>
+        </Card>
+        {instantAlerts}
+      </div>
 
       <Card size="sm">
         <CardHeader>

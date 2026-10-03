@@ -33,12 +33,11 @@ const LEASE_MS = 5 * MINUTE_MS;
 export const ALERTS_STREAM_KEY = "job_alerts";
 
 export interface JobAlertConfig {
-  enabled: boolean;
   /** Offers a day sent one by one; past it, the candidate gets them grouped hourly. */
   dailyImmediateCap: number;
 }
 
-/** Same switch as the continuous collection: without it, nothing raises alerts. */
+/** Always on: a candidate's own preferences decide whether alerts reach them. */
 export function resolveJobAlertConfig(
   env: NodeJS.ProcessEnv = process.env,
 ): JobAlertConfig {
@@ -47,7 +46,6 @@ export function resolveJobAlertConfig(
   return {
     dailyImmediateCap:
       Number.isInteger(cap) && cap >= 0 ? cap : DEFAULT_DAILY_IMMEDIATE_CAP,
-    enabled: env.JOB_STREAM_ENABLED?.trim().toLowerCase() === "true",
   };
 }
 
@@ -95,8 +93,6 @@ export class JobAlertDispatcher implements OnModuleInit, OnModuleDestroy {
   ) {}
 
   onModuleInit() {
-    if (!this.config.enabled) return;
-
     this.timer = setInterval(() => {
       void this.tick().catch((error: unknown) => {
         this.logger.error(`Alert dispatch failed: ${String(error)}`);

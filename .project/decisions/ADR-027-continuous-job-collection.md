@@ -46,9 +46,12 @@ facture avec chaque inscrit.
   `UPDATE` conditionnel et expiré au bout de 10 minutes si le processus meurt. Même principe que
   `digest-runs` (la base tranche, pas la mémoire), mais une table à part : l'index « une collecte
   en cours » de `job_digest_runs` aurait bloqué le récap du matin pendant le flux.
-- Interrupteur `JOB_STREAM_ENABLED`, **coupé par défaut** : il ne s'allume en production
-  qu'une fois la purge (sprint 035) livrée et l'application passée en production sur
-  francetravail.io. Le filtre de correspondance (US-165) est livré.
+- ~~Interrupteur `JOB_STREAM_ENABLED`, coupé par défaut, allumé en production après la purge
+  (sprint 035) et le passage en production sur francetravail.io.~~ **Amendé le 2026-10-03
+  (décision du propriétaire)** : pas d'interrupteur, la collecte, les alertes et l'analyse IA
+  tournent toujours ; chaque candidat active ou non ses alertes et l'option IA. Mis en service
+  avant la purge (US-169, US-170) et avec l'application encore en homologation : voir
+  Conséquences. Le filtre de correspondance (US-165) est livré.
 - Resynchronisation : chaque matin, les annonces France Travail ouvertes qu'aucune collecte n'a
   revues depuis 24 h sont redemandées une à une (`/offres/{id}`) ; fermées si elles ont disparu,
   réécrites sinon. Plafond de 20 000 par passe.
@@ -63,8 +66,8 @@ site qui répond 429 ou 403 repasse au quotidien pendant 24 h.
 ou postulé à une de ses offres, ou importé une candidature depuis son site, dans les 90 derniers
 jours. Les identifiants vus sur chaque site sont gardés seuls (`job_board_postings`, avec la date
 de détection à côté de la date annoncée) ; la passe fréquente ne transmet que les offres jamais
-vues, et SmartRecruiters ne paie plus d'appel de détail pour une offre déjà connue. Interrupteur
-commun avec le flux France Travail (`JOB_STREAM_ENABLED`), rythme `JOB_BOARDS_INTERVAL_MINUTES`.
+vues, et SmartRecruiters ne paie plus d'appel de détail pour une offre déjà connue. Toujours
+active, comme le flux France Travail ; rythme `JOB_BOARDS_INTERVAL_MINUTES`.
 
 ### 3. Budget d'appels
 
@@ -100,7 +103,7 @@ du lendemain qu'une fois envoyée : en attente, le récap la reprend.
 
 L'envoi tourne sur sa propre minuterie (toutes les minutes, bail `job_alerts`) : un serveur de
 mail en panne retarde une alerte, jamais une tranche de collecte. Préférences du candidat sur
-`/notifications` : activées par défaut (décision du propriétaire, 2026-10-02), seuil « très
+`/ma-recherche/alertes` (sur `/notifications` jusqu'au 2026-10-03) : activées par défaut (décision du propriétaire, 2026-10-02), seuil « très
 proches » (60) ou « toutes » (35), rythme immédiat ou horaire. Garde-fous : 10 offres par jour en
 immédiat (`JOB_ALERT_DAILY_IMMEDIATE_CAP`), au-delà regroupées toutes les heures ; rien de 21 h à
 7 h, la nuit part en un e-mail à 7 h ; `List-Unsubscribe` sur chaque envoi. Une alerte plus vieille
@@ -178,7 +181,9 @@ la licence de l'API pour un usage commercial continu. Texte proposé pour la dem
 
 - Délai publication → alerte visé : médiane sous 15 minutes pour France Travail.
 - La croissance de `jobs` suit le nombre de recherches actives, pas le flux national. La purge
-  d'E28 (sprint 035) doit exister avant que le flux ne tourne.
+  d'E28 (sprint 035) devait exister avant que le flux ne tourne ; depuis le 2026-10-03, le flux
+  tourne sans elle : les offres gardées et le contact recruteur dans `job_listings.raw`
+  s'accumulent jusqu'à la livraison d'US-169 et US-170, qui reste prioritaire.
 - La charge sur les sites carrière est multipliée par 48 pour les entreprises suivies ; le plafond
   par cycle (§3) protège contre un blocage par Greenhouse.
 - Tant que l'application est en homologation, France Travail peut brider ou réévaluer nos quotas.

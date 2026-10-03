@@ -13,7 +13,7 @@ import type { StreamSliceResult } from "./sources/france-travail.stream";
 
 const MINUTE = 60_000;
 const NOW = Date.parse("2026-10-01T10:00:00Z");
-const CONFIG = { enabled: true, intervalMs: 5 * MINUTE };
+const CONFIG = { intervalMs: 5 * MINUTE };
 
 function listing(id: string): NormalizedJobListing {
   return { externalId: id, partnerUrls: [] } as unknown as NormalizedJobListing;
@@ -207,20 +207,14 @@ describe("JobStreamService", () => {
 });
 
 describe("resolveJobStreamConfig", () => {
-  it("is off unless asked for, every five minutes by default", () => {
-    expect(resolveJobStreamConfig({})).toEqual({
-      enabled: false,
-      intervalMs: 5 * MINUTE,
-    });
+  it("runs every five minutes by default", () => {
+    expect(resolveJobStreamConfig({})).toEqual({ intervalMs: 5 * MINUTE });
   });
 
-  it("reads the switch and the pace, and refuses a pace under a minute", () => {
+  it("reads the pace, and refuses a pace under a minute", () => {
     expect(
-      resolveJobStreamConfig({
-        JOB_STREAM_ENABLED: "true",
-        JOB_STREAM_INTERVAL_MINUTES: "10",
-      }),
-    ).toEqual({ enabled: true, intervalMs: 10 * MINUTE });
+      resolveJobStreamConfig({ JOB_STREAM_INTERVAL_MINUTES: "10" }),
+    ).toEqual({ intervalMs: 10 * MINUTE });
     expect(
       resolveJobStreamConfig({ JOB_STREAM_INTERVAL_MINUTES: "0" }).intervalMs,
     ).toBe(5 * MINUTE);

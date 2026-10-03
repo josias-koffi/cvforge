@@ -150,7 +150,7 @@ croître la facture avec chaque nouveau candidat.
     - [x] E-mail « Nouvelle offre pour vous » dans le gabarit commun (US-161) : intitulé,
           entreprise, lieu, « publiée il y a X min », pourquoi elle correspond, bouton
           « Postuler avec CVForge ».
-    - [x] Préférences sur `/notifications` : alertes activées ou non, seuil (offres « très
+    - [x] Préférences sur `/ma-recherche/alertes` (déplacées de `/notifications` le 2026-10-03) : alertes activées ou non, seuil (offres « très
           proches » seulement ou toutes), et rythme **immédiat** ou **regroupé toutes les heures**.
     - [x] Garde-fous : plafond d'alertes par jour et par candidat (valeur par défaut à fixer, voir
           To Clarify), heures calmes 21 h – 7 h (regroupées dans un envoi à 7 h), lien de

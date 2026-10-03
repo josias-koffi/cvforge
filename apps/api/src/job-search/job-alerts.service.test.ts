@@ -19,7 +19,7 @@ import { MemoryCursors } from "./job-stream.testing";
 
 /** 10:00 in Paris (UTC+2 in October). */
 const NOW = Date.parse("2026-10-02T08:00:00Z");
-const CONFIG = { dailyImmediateCap: 10, enabled: true };
+const CONFIG = { dailyImmediateCap: 10 };
 
 function pending(
   id: string,
@@ -325,16 +325,10 @@ describe("alert wording", () => {
 });
 
 describe("resolveJobAlertConfig", () => {
-  it("follows the stream switch, 10 immediate alerts a day by default", () => {
-    expect(resolveJobAlertConfig({})).toEqual({
-      dailyImmediateCap: 10,
-      enabled: false,
-    });
+  it("sends 10 immediate alerts a day by default", () => {
+    expect(resolveJobAlertConfig({})).toEqual({ dailyImmediateCap: 10 });
     expect(
-      resolveJobAlertConfig({
-        JOB_ALERT_DAILY_IMMEDIATE_CAP: "5",
-        JOB_STREAM_ENABLED: "true",
-      }),
-    ).toEqual({ dailyImmediateCap: 5, enabled: true });
+      resolveJobAlertConfig({ JOB_ALERT_DAILY_IMMEDIATE_CAP: "5" }),
+    ).toEqual({ dailyImmediateCap: 5 });
   });
 });

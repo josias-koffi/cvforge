@@ -9,7 +9,6 @@ import { BellIcon, CheckIcon } from "lucide-react"
 import { markNotificationRead } from "@/app/(app)/notifications/actions"
 import { ActionButton } from "@/components/feedback/action-button"
 import { PageHeader } from "@/components/layout/page-header"
-import { JobAlertPreferences } from "@/components/notifications/job-alert-preferences"
 import { PreferenceSwitch } from "@/components/notifications/preference-switch"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -41,7 +40,7 @@ export default async function NotificationsPage() {
     <>
       <PageHeader
         title="Notifications"
-        description="Alertes de nouvelles offres, relances de candidatures et confirmations d'achat."
+        description="Relances de candidatures et confirmations d'achat. Les alertes de nouvelles offres se règlent dans Ma recherche."
       />
       <div className="grid items-start gap-4 px-4 lg:px-6 @5xl/main:grid-cols-[1fr_360px]">
         <Card>
@@ -106,22 +105,6 @@ export default async function NotificationsPage() {
           </CardContent>
         </Card>
         <div className="flex flex-col gap-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Alertes</CardTitle>
-              <CardDescription>
-                {preferences.emailDeliveryReady
-                  ? "Soyez parmi les premiers à postuler."
-                  : "L'envoi d'e-mails n'est pas configuré sur ce serveur."}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <JobAlertPreferences
-                preferences={preferences.preferences.jobAlerts}
-                disabled={!preferences.emailDeliveryReady}
-              />
-            </CardContent>
-          </Card>
           <Card>
             <CardHeader>
               <CardTitle>E-mails</CardTitle>

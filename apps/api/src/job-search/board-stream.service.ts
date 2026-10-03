@@ -29,14 +29,12 @@ const LEASE_MS = 30 * MINUTE_MS;
 export const BOARDS_STREAM_KEY = "boards_frequent";
 
 export interface BoardStreamConfig {
-  enabled: boolean;
   intervalMs: number;
 }
 
 /**
- * Same switch as the France Travail flow (`JOB_STREAM_ENABLED`): both feed
- * the same live matching (US-165).
- * `JOB_BOARDS_INTERVAL_MINUTES` sets the pace, 30 by default.
+ * Always on, like the France Travail flow: both feed the same live matching
+ * (US-165). `JOB_BOARDS_INTERVAL_MINUTES` sets the pace, 30 by default.
  */
 export function resolveBoardStreamConfig(
   env: NodeJS.ProcessEnv = process.env,
@@ -44,7 +42,6 @@ export function resolveBoardStreamConfig(
   const minutes = Number(env.JOB_BOARDS_INTERVAL_MINUTES);
 
   return {
-    enabled: env.JOB_STREAM_ENABLED?.trim().toLowerCase() === "true",
     intervalMs:
       (Number.isFinite(minutes) && minutes >= 5 ? minutes : DEFAULT_INTERVAL_MINUTES) *
       MINUTE_MS,
@@ -90,8 +87,6 @@ export class BoardStreamService implements OnModuleInit, OnModuleDestroy {
   ) {}
 
   onModuleInit() {
-    if (!this.config.enabled) return;
-
     this.timer = setInterval(() => {
       void this.tick().catch((error: unknown) => {
         this.logger.error(`Frequent board pass failed: ${String(error)}`);
