@@ -24,6 +24,11 @@ export interface OfferContext {
    */
   skillsToHighlight?: string[];
   /**
+   * What the paid analysis of the alert said to bring forward (US-168),
+   * reused without a new call. Fenced off the same way: pointers, never facts.
+   */
+  pointsToHighlight?: string[];
+  /**
    * No offer behind it: a company La Bonne Boîte expects to hire in the job
    * (US-120). The block then says so, and there is no raw text to fence off.
    */
@@ -42,6 +47,7 @@ export function offerContextOf(application: StoredApplication): OfferContext {
     language: application.extracted.language,
     rawOfferText: application.rawOfferText.slice(0, 4000),
     skillsToHighlight: application.skillsToHighlight ?? [],
+    pointsToHighlight: application.pointsToHighlight ?? [],
     spontaneous: application.sourceType === APPLICATION_SOURCE_SPONTANEOUS,
   };
 }
@@ -59,10 +65,7 @@ export const MAX_RAW_OFFER_CHARS = 2000;
  * Empty fields are dropped rather than sent as "", so the model cannot read a
  * blank availability as "available immediately".
  */
-function statedPreferences(
-  profile: PromptSafeProfile,
-  contractSearch: string,
-) {
+function statedPreferences(profile: PromptSafeProfile, contractSearch: string) {
   const preferences = profile.preferences;
   if (!preferences) return null;
 
@@ -74,7 +77,8 @@ function statedPreferences(
         : "";
   // The search project when the candidate filled one in; the legacy free-text
   // field otherwise, until every profile has been migrated.
-  const contractTypes = contractSearch.trim() || preferences.contractTypes.trim();
+  const contractTypes =
+    contractSearch.trim() || preferences.contractTypes.trim();
 
   if (!availability && !contractTypes) return null;
 
@@ -113,6 +117,7 @@ export function buildGroundedUserMessage(
     keywords = [],
     rawOfferText,
     skillsToHighlight = [],
+    pointsToHighlight = [],
     spontaneous = false,
     ...offerFields
   } = offer;
@@ -153,6 +158,15 @@ export function buildGroundedUserMessage(
           "",
         ]
       : []),
+    ...(pointsToHighlight.length > 0
+      ? [
+          "=== ANGLES À METTRE EN AVANT — SI ET SEULEMENT SI LE PROFIL LES ÉTAYE ===",
+          "Conseils de l'analyse de l'offre faite pour le candidat. Ce ne sont PAS des faits : n'en reprends que ce que le bloc PROFIL CANDIDAT montre.",
+          JSON.stringify(pointsToHighlight),
+          "=== FIN ANGLES ===",
+          "",
+        ]
+      : []),
     ...(keywords.length > 0
       ? [
           "=== VOCABULAIRE DE L'OFFRE — À REPRENDRE MOT POUR MOT SI ET SEULEMENT SI LE PROFIL L'ÉTAYE ===",
@@ -179,7 +193,12 @@ export function buildGroundedUserMessage(
       : []),
     "=== FIN PROFIL CANDIDAT ===",
     ...(refinement
-      ? ["", "=== DEMANDE DE L'UTILISATEUR ===", refinement, "=== FIN DEMANDE ==="]
+      ? [
+          "",
+          "=== DEMANDE DE L'UTILISATEUR ===",
+          refinement,
+          "=== FIN DEMANDE ===",
+        ]
       : []),
     "",
     "Rappel final : tout élément du bloc OFFRE absent du bloc PROFIL CANDIDAT est interdit dans ta réponse.",

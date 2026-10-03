@@ -3,6 +3,7 @@
 import { BookmarkIcon, ThumbsDownIcon } from "lucide-react"
 import { memo } from "react"
 
+import { AlertVerdictBadge } from "@/components/job-search/alert-analysis"
 import { CompanyMark } from "@/components/job-search/company-mark"
 import { MatchScoreSummary } from "@/components/job-search/match-score"
 import { OfferMeta } from "@/components/job-search/offer-meta"
@@ -12,6 +13,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { formatRelativeDays } from "@/lib/format"
 import type { JobCardOffer } from "@/lib/job-search"
+import { formatFreshness } from "@/lib/offer-freshness"
 
 /** The company's name, or `null` when the advert does not give it. */
 export function companyName(offer: JobCardOffer) {
@@ -41,14 +43,20 @@ export const OfferCard = memo(function OfferCard({
   onSave,
   onDismiss,
   pending,
+  fresh = false,
 }: {
   offer: JobCardOffer
   onOpen: (jobId: string) => void
   onSave: (jobId: string) => void
   onDismiss: (jobId: string) => void
   pending: boolean
+  /** Says to the minute how fresh the offer is (US-167). */
+  fresh?: boolean
 }) {
   const { job } = offer
+  const freshness = fresh
+    ? formatFreshness(job.publishedAt ?? job.firstSeenAt)
+    : null
   const saved = offer.status === "saved"
   const applied = offer.status === "applied"
 
@@ -74,6 +82,17 @@ export const OfferCard = memo(function OfferCard({
               Publiée {formatRelativeDays(job.publishedAt ?? job.firstSeenAt)}
             </p>
           </div>
+          {freshness ? (
+            // Computed on the server, then again in the browser a moment
+            // later: a minute may have turned in between.
+            <Badge
+              variant="secondary"
+              className="shrink-0 tabular-nums"
+              suppressHydrationWarning
+            >
+              {freshness}
+            </Badge>
+          ) : null}
         </div>
 
         <div className="flex flex-col gap-2">
@@ -91,6 +110,9 @@ export const OfferCard = memo(function OfferCard({
 
         <div className="mt-auto flex items-center justify-between gap-2 border-t pt-3">
           <div className="flex min-w-0 gap-1.5">
+            {offer.aiAnalysis ? (
+              <AlertVerdictBadge analysis={offer.aiAnalysis} />
+            ) : null}
             {saved ? <Badge variant="outline">Gardée</Badge> : null}
             {applied ? (
               <Badge variant="outline">Candidature créée</Badge>

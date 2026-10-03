@@ -1,17 +1,19 @@
 import {
   and,
+  asc,
   count,
   desc,
   eq,
   gte,
   inArray,
   isNull,
+  lt,
   or,
   sql,
   type AnyColumn,
 } from "drizzle-orm";
 import type { Database } from "../database/database.types";
-import { jobs } from "../database/schema";
+import { jobListings, jobs } from "../database/schema";
 import type { MatchCandidate } from "./dedup/match-job";
 import type { JobSearchFilters, StoredJob } from "./jobs.types";
 import { toJob } from "./jobs.rows";
@@ -105,9 +107,10 @@ export async function searchJobs(db: Database, filters: JobSearchFilters) {
   // date an offer from the day we imported it: a back-fill over a month
   // would make every advert of that month look published today.
   const cutoff = new Date(Date.now() - filters.maxAgeDays * MS_PER_DAY);
+  const publishedOrSeen = sql`least(coalesce(${jobs.publishedAt}, ${jobs.firstSeenAt}), ${jobs.firstSeenAt})`;
   const available = [
     isNull(jobs.closedAt),
-    sql`least(coalesce(${jobs.publishedAt}, ${jobs.firstSeenAt}), ${jobs.firstSeenAt}) >= ${cutoff}`,
+    sql`${publishedOrSeen} >= ${cutoff}`,
   ];
   const conditions = [
     ...available,
@@ -136,11 +139,23 @@ export async function searchJobs(db: Database, filters: JobSearchFilters) {
       : []),
   ];
 
+  const titleHits = words.map(
+    (word) => sql`(${folded(jobs.title)} like ${`%${foldWord(word)}%`})::int`,
+  );
+  const order =
+    filters.sort === "recent"
+      ? [desc(publishedOrSeen), desc(jobs.firstSeenAt)]
+      : [
+          ...(titleHits.length > 0
+            ? [desc(sql.join(titleHits, sql` + `))]
+            : []),
+          desc(jobs.firstSeenAt),
+        ];
   const rows = await db
     .select()
     .from(jobs)
     .where(and(...conditions))
-    .orderBy(desc(jobs.firstSeenAt))
+    .orderBy(...order)
     .limit(filters.limit)
     .offset(filters.offset);
   const [counted] = await db
@@ -207,4 +222,31 @@ export async function findMatchCandidates(
     publishedAt: row.publishedAt?.toISOString() ?? null,
     titleKey: row.titleKey,
   }));
+}
+
+/** Open adverts of a source not seen since `seenBefore`, oldest first (US-163). */
+export async function listStaleOpenListings(
+  db: Database,
+  input: {
+    source: string;
+    seenBefore: string;
+    publishedSince: string;
+    limit: number;
+  },
+): Promise<string[]> {
+  const rows = await db
+    .select({ externalId: jobListings.externalId })
+    .from(jobListings)
+    .where(
+      and(
+        eq(jobListings.source, input.source),
+        isNull(jobListings.closedAt),
+        lt(jobListings.lastSeenAt, new Date(input.seenBefore)),
+        gte(jobListings.firstSeenAt, new Date(input.publishedSince)),
+      ),
+    )
+    .orderBy(asc(jobListings.lastSeenAt))
+    .limit(input.limit);
+
+  return rows.map((row) => row.externalId);
 }

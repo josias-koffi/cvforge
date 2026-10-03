@@ -324,10 +324,12 @@ pipeline's file and nothing references it any more. On VPS20, remove the stopped
 - Restore tests, nightly and automatic: the `restore_check` sidecar restores
   every new dump of both copies — the local one, and the newest R2 one that the
   `r2_fetch` sidecar (rclone) copies into `${VOLUME_PREFIX}_r2_check` — into a
-  throwaway Postgres inside its own container, then compares the table and
-  migration counts with the live database. It e-mails `RESTORE_CHECK_ALERT_TO`
+  throwaway Postgres inside its own container, then compares its migrations
+  (and, when they are the same, its table count) with the live database. A dump
+  taken before a deploy's new migrations is accepted once, but the next dump
+  must hold them. It e-mails `RESTORE_CHECK_ALERT_TO`
   (`restore_check_alert_to` in `infra/dokploy/variables.tf`) through Resend when
-  a restore fails, the counts differ, or a copy has no dump under 26 h old, and
+  a restore fails, the comparison fails, or a copy has no dump under 26 h old, and
   turns unhealthy when either copy's last success is older than 26 h. Its log
   (`restore OK (local)` / `restore OK (r2)`) is the quickest health check;
   `docker exec <restore_check container> sh /restore-check.sh alert-test` sends

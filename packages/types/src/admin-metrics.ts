@@ -249,6 +249,18 @@ export type MarketMetrics = {
     dismissed: number;
   };
   topAppliedCompanies: RankedItem[];
+  /**
+   * Publication at the source → alert raised, per source, over the period
+   * (US-165). The goal is a median under 10 minutes for France Travail.
+   */
+  alertDelays: AlertDelay[];
+};
+
+export type AlertDelay = {
+  source: string;
+  alerts: number;
+  medianMinutes: number;
+  p90Minutes: number;
 };
 
 /* ------------------------------------------------------------- acquisition */

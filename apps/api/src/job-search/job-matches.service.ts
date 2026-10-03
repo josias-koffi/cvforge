@@ -44,7 +44,8 @@ export interface OfferSearchResult {
 }
 
 export type ApplyOutcome =
-  | { outcome: "applied"; applicationId: string }
+  /** `existing`: already applied to; the same application, nothing charged. */
+  | { outcome: "applied"; applicationId: string; existing?: boolean }
   | { outcome: "closed" }
   | { outcome: "not_found" };
 
@@ -93,7 +94,11 @@ export class JobMatchesService {
   async searchOffers(
     userEmail: string,
     filters: JobSearchFilters,
-  ): Promise<{ offers: OfferSearchResult[]; total: number; available: number }> {
+  ): Promise<{
+    offers: OfferSearchResult[];
+    total: number;
+    available: number;
+  }> {
     const found = await this.jobs.searchJobs(filters);
     const statuses = await this.matches.listStatusesByJobIds(
       userEmail,
@@ -194,6 +199,16 @@ export class JobMatchesService {
     const match = await this.ensureMatch(userEmail, jobId);
     if (!match) return { outcome: "not_found" };
 
+    // A second click on the alert's button must not pay for a second
+    // application of the same offer (US-167).
+    if (match.status === "applied" && match.applicationId) {
+      return {
+        applicationId: match.applicationId,
+        existing: true,
+        outcome: "applied",
+      };
+    }
+
     const found = await this.jobs.findById(match.jobId);
     const listings = found?.listings ?? [];
 
@@ -201,7 +216,12 @@ export class JobMatchesService {
 
     const application = await this.createApplication(userEmail, match);
     await this.carrySkillsToHighlight(userEmail, application.id, match);
-    await this.matches.setStatus(userEmail, match.id, "applied", application.id);
+    await this.matches.setStatus(
+      userEmail,
+      match.id,
+      "applied",
+      application.id,
+    );
 
     return { applicationId: application.id, outcome: "applied" };
   }
@@ -209,15 +229,18 @@ export class JobMatchesService {
   /**
    * What the offer asked and the CV did not show goes with the application,
    * for the CV generation to bring forward — if, and only if, the profile
-   * already holds it (US-127). Stored on the application because the
-   * generation runs later, from another screen.
+   * already holds it (US-127). So does what the alert's paid analysis said to
+   * bring forward (US-168): already paid for, reused without a new call.
+   * Stored on the application because the generation runs later, from
+   * another screen.
    */
   private async carrySkillsToHighlight(
     userEmail: string,
     applicationId: string,
     match: JobMatchWithJob,
   ) {
-    if (match.missingSkills.length === 0) return;
+    const points = match.aiAnalysis?.highlights ?? [];
+    if (match.missingSkills.length === 0 && points.length === 0) return;
 
     const stored = await this.applicationsStore.findByIdForUserEmail(
       userEmail,
@@ -227,6 +250,7 @@ export class JobMatchesService {
 
     await this.applicationsStore.save({
       ...stored,
+      pointsToHighlight: points,
       skillsToHighlight: match.missingSkills,
     });
   }

@@ -1,3 +1,4 @@
+import type { JobAlertAnalysis } from "@cvforge/types";
 import { sql } from "drizzle-orm";
 import {
   check,
@@ -32,9 +33,15 @@ export const jobMatches = pgTable(
     digestDate: date("digest_date").notNull(),
     score: integer("score").notNull(),
     scoreBreakdown: jsonb("score_breakdown"),
-    matchedSkills: jsonb("matched_skills").$type<string[]>().notNull().default([]),
+    matchedSkills: jsonb("matched_skills")
+      .$type<string[]>()
+      .notNull()
+      .default([]),
     /** The offer's ROME competences the CV does not show, required first. */
-    missingSkills: jsonb("missing_skills").$type<string[]>().notNull().default([]),
+    missingSkills: jsonb("missing_skills")
+      .$type<string[]>()
+      .notNull()
+      .default([]),
     /** Rank the paid AI pass gave it, and its one-line explanation. */
     aiRank: integer("ai_rank"),
     aiReason: text("ai_reason"),
@@ -46,6 +53,19 @@ export const jobMatches = pgTable(
      * offer survives the purge of `jobs`, which drops what nobody kept.
      */
     jobSnapshot: jsonb("job_snapshot"),
+    /** `digest` for the morning's, `alert` for one raised as the offer arrived (US-165). */
+    kind: text("kind").notNull().default("digest"),
+    /** For an alert: where the offer came from, when it was published, when we saw it. */
+    source: text("source"),
+    publishedAt: timestamp("published_at", { withTimezone: true }),
+    detectedAt: timestamp("detected_at", { withTimezone: true }),
+    /** Set once the alert went out (US-166); only then does it leave the morning. */
+    alertSentAt: timestamp("alert_sent_at", { withTimezone: true }),
+    /** The paid analysis of an alert (US-168), beside the offer, never in it. */
+    aiAnalysis: jsonb("ai_analysis").$type<JobAlertAnalysis>(),
+    /** `done`, or why the alert went without one: `no_credit`, `capped`, `failed`. */
+    aiAnalysisStatus: text("ai_analysis_status"),
+    aiAnalysisAt: timestamp("ai_analysis_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -56,6 +76,19 @@ export const jobMatches = pgTable(
   (table) => [
     uniqueIndex("job_matches_user_job_idx").on(table.userEmail, table.jobId),
     index("job_matches_user_digest_idx").on(table.userEmail, table.digestDate),
+    index("job_matches_alert_created_idx")
+      .on(table.createdAt)
+      .where(sql`${table.kind} = 'alert'`),
+    index("job_matches_alert_to_analyse_idx")
+      .on(table.detectedAt)
+      .where(
+        sql`${table.kind} = 'alert' and ${table.aiAnalysisStatus} is null and ${table.alertSentAt} is null`,
+      ),
+    check(
+      "job_matches_ai_analysis_status_valid",
+      sql`${table.aiAnalysisStatus} is null or ${table.aiAnalysisStatus} in ('done', 'no_credit', 'capped', 'failed')`,
+    ),
+    check("job_matches_kind_valid", sql`${table.kind} in ('digest', 'alert')`),
     check(
       "job_matches_status_valid",
       sql`${table.status} in ('new', 'seen', 'saved', 'dismissed', 'applied')`,
@@ -101,6 +134,9 @@ export const jobDigestRuns = pgTable(
       .on(table.status)
       .where(sql`${table.status} = 'running'`),
     index("job_digest_runs_recent_idx").on(sql`${table.startedAt} desc`),
-    check("job_digest_runs_kind_check", sql`${table.kind} in ('digest', 'collect')`),
+    check(
+      "job_digest_runs_kind_check",
+      sql`${table.kind} in ('digest', 'collect')`,
+    ),
   ],
 );

@@ -2,7 +2,11 @@
 
 import { useRouter } from "next/navigation"
 import { useState } from "react"
-import { RotateCcwIcon, SearchIcon } from "lucide-react"
+import {
+  ArrowDownWideNarrowIcon,
+  RotateCcwIcon,
+  SearchIcon,
+} from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -17,6 +21,13 @@ const CONTRACTS = [
   { id: "stage", label: "Stage" },
   { id: "alternance", label: "Alternance" },
   { id: "vie", label: "VIE" },
+] as const
+
+/** "Publiée depuis" (US-167), in days, as the API reads it. */
+const PUBLISHED_WITHIN = [
+  { id: "1", label: "24 h" },
+  { id: "3", label: "3 jours" },
+  { id: "7", label: "7 jours" },
 ] as const
 
 /**
@@ -34,6 +45,8 @@ export function OfferSearchForm({ filters }: { filters: OfferSearchFilters }) {
     (filters.contrat ?? "").split(",").filter(Boolean)
   )
   const [remoteOnly, setRemoteOnly] = useState(filters.teletravail === "1")
+  const [publishedWithin, setPublishedWithin] = useState(filters.publiee ?? "")
+  const [latestFirst, setLatestFirst] = useState(filters.tri === "recent")
 
   const submit = (event: React.FormEvent) => {
     event.preventDefault()
@@ -43,6 +56,8 @@ export function OfferSearchForm({ filters }: { filters: OfferSearchFilters }) {
     if (department.trim()) params.set("departement", department.trim())
     if (contracts.length > 0) params.set("contrat", contracts.join(","))
     if (remoteOnly) params.set("teletravail", "1")
+    if (publishedWithin) params.set("publiee", publishedWithin)
+    if (latestFirst) params.set("tri", "recent")
 
     const suffix = params.toString()
     router.push(suffix ? `/offres?${suffix}` : "/offres")
@@ -53,6 +68,8 @@ export function OfferSearchForm({ filters }: { filters: OfferSearchFilters }) {
     setDepartment("")
     setContracts([])
     setRemoteOnly(false)
+    setPublishedWithin("")
+    setLatestFirst(false)
     router.push("/offres")
   }
 
@@ -61,7 +78,9 @@ export function OfferSearchForm({ filters }: { filters: OfferSearchFilters }) {
     query.trim() !== "" ||
     department.trim() !== "" ||
     contracts.length > 0 ||
-    remoteOnly
+    remoteOnly ||
+    publishedWithin !== "" ||
+    latestFirst
 
   const toggleContract = (id: string) =>
     setContracts((current) =>
@@ -129,6 +148,37 @@ export function OfferSearchForm({ filters }: { filters: OfferSearchFilters }) {
           onClick={() => setRemoteOnly((current) => !current)}
         >
           Télétravail
+        </Button>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-sm text-muted-foreground">Publiée depuis</span>
+        {PUBLISHED_WITHIN.map((option) => (
+          <Button
+            key={option.id}
+            type="button"
+            size="sm"
+            variant={publishedWithin === option.id ? "default" : "outline"}
+            aria-pressed={publishedWithin === option.id}
+            onClick={() =>
+              setPublishedWithin((current) =>
+                current === option.id ? "" : option.id
+              )
+            }
+          >
+            {option.label}
+          </Button>
+        ))}
+        <Button
+          type="button"
+          size="sm"
+          className="ml-auto"
+          variant={latestFirst ? "default" : "outline"}
+          aria-pressed={latestFirst}
+          onClick={() => setLatestFirst((current) => !current)}
+        >
+          <ArrowDownWideNarrowIcon />
+          Les plus récentes d&apos;abord
         </Button>
       </div>
     </form>

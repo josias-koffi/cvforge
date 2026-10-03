@@ -80,6 +80,14 @@ export const applications = pgTable(
       .$type<string[]>()
       .notNull()
       .default([]),
+    /**
+     * What the alert's AI analysis said to bring forward (US-168), carried so
+     * the CV and the letter use it without a new call. Pointers, never facts.
+     */
+    pointsToHighlight: jsonb("points_to_highlight")
+      .$type<string[]>()
+      .notNull()
+      .default([]),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
   },

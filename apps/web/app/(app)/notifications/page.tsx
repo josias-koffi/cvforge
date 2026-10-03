@@ -1,11 +1,15 @@
 import type { Metadata } from "next"
 import Link from "next/link"
-import type { InAppNotification, NotificationPreferencesResponse } from "@cvforge/types"
+import type {
+  InAppNotification,
+  NotificationPreferencesResponse,
+} from "@cvforge/types"
 import { BellIcon, CheckIcon } from "lucide-react"
 
 import { markNotificationRead } from "@/app/(app)/notifications/actions"
 import { ActionButton } from "@/components/feedback/action-button"
 import { PageHeader } from "@/components/layout/page-header"
+import { JobAlertPreferences } from "@/components/notifications/job-alert-preferences"
 import { PreferenceSwitch } from "@/components/notifications/preference-switch"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -35,32 +39,49 @@ export default async function NotificationsPage() {
 
   return (
     <>
-      <PageHeader title="Notifications" description="Relances de candidatures et confirmations d'achat." />
+      <PageHeader
+        title="Notifications"
+        description="Alertes de nouvelles offres, relances de candidatures et confirmations d'achat."
+      />
       <div className="grid items-start gap-4 px-4 lg:px-6 @5xl/main:grid-cols-[1fr_360px]">
         <Card>
           <CardContent className="p-0">
             {notifications.length === 0 ? (
               <Empty>
                 <EmptyHeader>
-                  <EmptyMedia variant="icon" className="bg-primary/10 text-primary motion-safe:animate-float">
+                  <EmptyMedia
+                    variant="icon"
+                    className="bg-primary/10 text-primary motion-safe:animate-float"
+                  >
                     <BellIcon />
                   </EmptyMedia>
                   <EmptyTitle>Rien de nouveau</EmptyTitle>
-                  <EmptyDescription>Relances et confirmations arriveront ici dès qu&apos;il y a du nouveau.</EmptyDescription>
+                  <EmptyDescription>
+                    Relances et confirmations arriveront ici dès qu&apos;il y a
+                    du nouveau.
+                  </EmptyDescription>
                 </EmptyHeader>
               </Empty>
             ) : (
               <ul className="divide-y">
                 {notifications.map((notification) => (
-                  <li key={notification.id} className="flex items-start gap-4 px-6 py-4">
+                  <li
+                    key={notification.id}
+                    className="flex items-start gap-4 px-6 py-4"
+                  >
                     <div className="min-w-0 flex-1 space-y-1">
                       <div className="flex items-center gap-2">
-                        <Link href={notification.linkHref} className="font-medium hover:underline">
+                        <Link
+                          href={notification.linkHref}
+                          className="font-medium hover:underline"
+                        >
                           {notification.title}
                         </Link>
                         {notification.readAt ? null : <Badge>Nouveau</Badge>}
                       </div>
-                      <p className="text-sm text-muted-foreground">{notification.message}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {notification.message}
+                      </p>
                       <p className="text-xs text-muted-foreground tabular-nums">
                         {formatDateTime(notification.createdAt)}
                       </p>
@@ -69,7 +90,10 @@ export default async function NotificationsPage() {
                       <ActionButton
                         variant="ghost"
                         size="sm"
-                        action={markNotificationRead.bind(null, notification.id)}
+                        action={markNotificationRead.bind(
+                          null,
+                          notification.id
+                        )}
                       >
                         <CheckIcon />
                         Marquer comme lue
@@ -81,39 +105,57 @@ export default async function NotificationsPage() {
             )}
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>E-mails</CardTitle>
-            <CardDescription>
-              {preferences.emailDeliveryReady
-                ? "Choisissez les e-mails que vous recevez."
-                : "L'envoi d'e-mails n'est pas configuré sur ce serveur."}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-6">
-            <PreferenceSwitch
-              preference="applicationFollowUp"
-              label="Relances de candidature"
-              description="Rappel quand une candidature envoyée reste sans réponse."
-              enabled={preferences.preferences.email.applicationFollowUp}
-              disabled={!preferences.emailDeliveryReady}
-            />
-            <PreferenceSwitch
-              preference="jobDigest"
-              label="Offres du jour"
-              description="Votre sélection d'offres chaque matin. Désactivé, elle reste visible dans l'application."
-              enabled={preferences.preferences.email.jobDigest}
-              disabled={!preferences.emailDeliveryReady}
-            />
-            <PreferenceSwitch
-              preference="creditPurchaseConfirmed"
-              label="Confirmation d'achat"
-              description="Reçu après un achat de crédits."
-              enabled={preferences.preferences.email.creditPurchaseConfirmed}
-              disabled={!preferences.emailDeliveryReady}
-            />
-          </CardContent>
-        </Card>
+        <div className="flex flex-col gap-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Alertes</CardTitle>
+              <CardDescription>
+                {preferences.emailDeliveryReady
+                  ? "Soyez parmi les premiers à postuler."
+                  : "L'envoi d'e-mails n'est pas configuré sur ce serveur."}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <JobAlertPreferences
+                preferences={preferences.preferences.jobAlerts}
+                disabled={!preferences.emailDeliveryReady}
+              />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>E-mails</CardTitle>
+              <CardDescription>
+                {preferences.emailDeliveryReady
+                  ? "Choisissez les e-mails que vous recevez."
+                  : "L'envoi d'e-mails n'est pas configuré sur ce serveur."}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-6">
+              <PreferenceSwitch
+                preference="applicationFollowUp"
+                label="Relances de candidature"
+                description="Rappel quand une candidature envoyée reste sans réponse."
+                enabled={preferences.preferences.email.applicationFollowUp}
+                disabled={!preferences.emailDeliveryReady}
+              />
+              <PreferenceSwitch
+                preference="jobDigest"
+                label="Offres du jour"
+                description="Votre sélection d'offres chaque matin. Désactivé, elle reste visible dans l'application."
+                enabled={preferences.preferences.email.jobDigest}
+                disabled={!preferences.emailDeliveryReady}
+              />
+              <PreferenceSwitch
+                preference="creditPurchaseConfirmed"
+                label="Confirmation d'achat"
+                description="Reçu après un achat de crédits."
+                enabled={preferences.preferences.email.creditPurchaseConfirmed}
+                disabled={!preferences.emailDeliveryReady}
+              />
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </>
   )

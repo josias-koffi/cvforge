@@ -118,6 +118,10 @@ export function buildMetricsCsv(snapshot: CockpitSnapshot) {
     ...rankRows("market_job_title", market.topJobTitles),
     ...rankRows("market_checked_company", market.topCheckedCompanies),
     ...rankRows("market_searched_job", market.topSearchedJobs),
+    ...market.alertDelays.flatMap((delay) => [
+      row(`market_alert_delay_median:${delay.source}`, delay.medianMinutes, "minutes"),
+      row(`market_alert_delay_p90:${delay.source}`, delay.p90Minutes, "minutes"),
+    ]),
     ...acquisitionRows(acquisition),
   ]);
 }

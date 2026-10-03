@@ -151,7 +151,7 @@ describe("FtHttpClient", () => {
     });
     await client.request("offres", { path: "/offres/search" });
 
-    expect(limiters.map(({ rps }) => rps)).toEqual([4, 2]);
+    expect(limiters.map(({ rps }) => rps)).toEqual([8, 2]);
   });
 
   it("pauses the API and retries once after a 429", async () => {
@@ -181,8 +181,55 @@ describe("FtHttpClient", () => {
       detail: "busy",
       kind: "unavailable",
       reason: "throttled",
+      // No Retry-After: the default pause, which the stream waits out too.
+      retryAfterMs: 2000,
       status: 503,
     });
+  });
+
+  it("hands the Retry-After over to the caller (US-163)", async () => {
+    const { client } = createClient(
+      fakeFetch(
+        jsonResponse({}, 429, { "retry-after": "45" }),
+        jsonResponse({}, 429, { "retry-after": "45" }),
+      ),
+    );
+
+    expect(await client.request("offres", { path: "/x" })).toMatchObject({
+      reason: "throttled",
+      retryAfterMs: 45_000,
+    });
+  });
+
+  it("gives the Content-Range of a search, where the total is", async () => {
+    const { client } = createClient(
+      fakeFetch(
+        jsonResponse({ resultats: [] }, 206, {
+          "content-range": "offres 0-149/3000",
+        }),
+      ),
+    );
+
+    expect(await client.request("offres", { path: "/x" })).toMatchObject({
+      contentRange: "offres 0-149/3000",
+      kind: "ok",
+    });
+  });
+
+  it("tells its listeners about every call sent, retries included", async () => {
+    const { client } = createClient(
+      fakeFetch(jsonResponse({}, 429), jsonResponse({ ok: true })),
+    );
+    const calls: string[] = [];
+    client.onRequest((api) => calls.push(api));
+    client.onRequest(() => {
+      throw new Error("a broken counter");
+    });
+
+    expect(await client.request("offres", { path: "/x" })).toMatchObject({
+      kind: "ok",
+    });
+    expect(calls).toEqual(["offres", "offres"]);
   });
 
   it("does not retry a rejected call, and keeps the reason given", async () => {

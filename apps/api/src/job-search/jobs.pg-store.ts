@@ -19,7 +19,12 @@ import {
   toJob,
   toListing,
 } from "./jobs.rows";
-import { findMatchCandidates, findOpenJobs, searchJobs } from "./jobs.search";
+import {
+  findMatchCandidates,
+  findOpenJobs,
+  listStaleOpenListings,
+  searchJobs,
+} from "./jobs.search";
 import type {
   JobSearchFilters,
   JobsStore,
@@ -271,6 +276,15 @@ export class PgJobsStore implements JobsStore {
       .returning({ jobId: jobListings.jobId });
 
     if (row) await this.refreshClosedAt(row.jobId, at);
+  }
+
+  listStaleOpenListings(input: {
+    source: JobSource;
+    seenBefore: string;
+    publishedSince: string;
+    limit: number;
+  }): Promise<string[]> {
+    return listStaleOpenListings(this.db, input);
   }
 
   async closeListingsMissingFrom(input: {

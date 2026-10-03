@@ -1,5 +1,5 @@
 import { readRetryAfterMs, SourceRateLimiter } from "../source-rate-limiter";
-import { BoardNotFoundError } from "./board.types";
+import { BoardNotFoundError, BoardRefusedError } from "./board.types";
 import type { BoardProvider } from "./detect-board";
 
 /**
@@ -7,8 +7,9 @@ import type { BoardProvider } from "./detect-board";
  *
  * These endpoints exist so a company can display its own openings on its own
  * site. None of them documents a rate limit, and Greenhouse's is "be
- * respectful or get blocked" — so every provider gets a limiter, a real
- * user agent, and a single read a day (ADR-023).
+ * respectful or get blocked" — so every provider gets a limiter and a real
+ * user agent. Most companies are read once a day (ADR-023), the ones
+ * candidates care about every half hour (ADR-027).
  */
 
 /**
@@ -37,6 +38,8 @@ export const BOARD_REQUESTS_PER_SECOND: Record<BoardProvider, number> = {
 
 export class BoardHttpClient {
   private readonly limiters = new Map<BoardProvider, SourceRateLimiter>();
+  private readonly requestListeners: Array<(provider: BoardProvider) => void> =
+    [];
 
   constructor(
     private readonly fetchImpl: typeof globalThis.fetch = globalThis.fetch,
@@ -45,6 +48,11 @@ export class BoardHttpClient {
     /** Injected in tests, so a throttled board does not really sleep. */
     private readonly sleep?: (delayMs: number) => Promise<void>,
   ) {}
+
+  /** Called once per HTTP call sent, retries included (US-163 call counter). */
+  onRequest(listener: (provider: BoardProvider) => void): void {
+    this.requestListeners.push(listener);
+  }
 
   /**
    * Reads a board's JSON. A 404 means the company is gone from that provider —
@@ -57,12 +65,13 @@ export class BoardHttpClient {
 
     for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt += 1) {
       try {
-        const response = await limiter.run(() =>
-          this.fetchImpl(url, {
+        const response = await limiter.run(() => {
+          for (const listener of this.requestListeners) listener(provider);
+          return this.fetchImpl(url, {
             headers: { accept: "application/json", "user-agent": BOARD_USER_AGENT },
             signal: AbortSignal.timeout(this.timeoutMs),
-          }),
-        );
+          });
+        });
 
         if (response.status === 404 || response.status === 410) {
           throw new BoardNotFoundError(provider, url);
@@ -77,8 +86,15 @@ export class BoardHttpClient {
                 this.now(),
               ),
           );
-          lastError = new Error(`${provider} answered ${response.status}.`);
+          lastError =
+            response.status === 429
+              ? new BoardRefusedError(provider, 429)
+              : new Error(`${provider} answered ${response.status}.`);
           continue;
+        }
+
+        if (response.status === 403) {
+          throw new BoardRefusedError(provider, 403);
         }
 
         if (!response.ok) {
@@ -87,7 +103,12 @@ export class BoardHttpClient {
 
         return (await response.json()) as T;
       } catch (error) {
-        if (error instanceof BoardNotFoundError) throw error;
+        if (
+          error instanceof BoardNotFoundError ||
+          (error instanceof BoardRefusedError && error.status === 403)
+        ) {
+          throw error;
+        }
         lastError = error;
       }
     }

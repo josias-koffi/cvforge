@@ -52,6 +52,12 @@ export type ConsumeCreditsInput = {
   applicationId?: string;
   /** Interview sessions: recorded so the ledger line says what was paid for. */
   durationMinutes?: number;
+  /**
+   * A charge that must happen once only: a second call with the same key
+   * returns the first entry and debits nothing. Unique in the ledger, so two
+   * simultaneous calls cannot both debit (US-168, one charge a day).
+   */
+  idempotencyKey?: string;
   userEmail: string;
 };
 

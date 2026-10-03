@@ -40,6 +40,7 @@ export class FtHttpClient {
   private readonly limiters = new Map<FtApiId, SourceRateLimiter>();
   /** Turned off by an `invalid_scope` until the process restarts. */
   private readonly unsubscribed = new Set<FtApiId>();
+  private readonly requestListeners: Array<(id: FtApiId) => void> = [];
 
   constructor(
     private readonly config: FtConfig,
@@ -86,6 +87,14 @@ export class FtHttpClient {
     }
   }
 
+  /**
+   * Called once per HTTP call actually sent, retries included: what the
+   * quota counts, so what the admin's call counter must count (US-163).
+   */
+  onRequest(listener: (id: FtApiId) => void): void {
+    this.requestListeners.push(listener);
+  }
+
   async request<T>(id: FtApiId, request: FtRequest): Promise<FtResult<T>> {
     if (!this.isEnabled(id)) {
       return unavailable("disabled", null, `${id} is not enabled.`);
@@ -113,9 +122,10 @@ export class FtHttpClient {
       let response: Response;
 
       try {
-        response = await this.limiterFor(api).run(() =>
-          this.fetchImpl(url, this.init(request, token)),
-        );
+        response = await this.limiterFor(api).run(() => {
+          this.notifyRequest(id);
+          return this.fetchImpl(url, this.init(request, token));
+        });
       } catch (error) {
         failure = unavailable("network", null, String(error));
         continue;
@@ -142,11 +152,12 @@ export class FtHttpClient {
       }
 
       if (response.status === 429 || response.status >= 500) {
-        this.pauseFrom(api, response);
+        const retryAfterMs = this.pauseFrom(api, response);
         failure = unavailable(
           "throttled",
           response.status,
           await readDetail(response),
+          retryAfterMs,
         );
         continue;
       }
@@ -231,13 +242,26 @@ export class FtHttpClient {
   }
 
   /** The API told us its pace; arguing with it only earns a longer ban. */
-  private pauseFrom(api: FtResolvedApi, response: Response): void {
+  private pauseFrom(api: FtResolvedApi, response: Response): number {
     const pauseMs = readRetryAfterMs(
       response.headers.get("retry-after"),
       DEFAULT_PAUSE_MS,
       this.now(),
     );
     this.limiterFor(api).pauseUntil(this.now() + pauseMs);
+
+    return pauseMs;
+  }
+
+  /** A counter that fails must never fail the call it counts. */
+  private notifyRequest(id: FtApiId): void {
+    for (const listener of this.requestListeners) {
+      try {
+        listener(id);
+      } catch (error) {
+        this.logger.warn(`Request listener failed: ${String(error)}`);
+      }
+    }
   }
 }
 

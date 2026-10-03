@@ -269,6 +269,9 @@ export const EMPTY_USAGE: UsageMetrics = {
 }
 
 export const MARKET: MarketMetrics = {
+  alertDelays: [
+    { alerts: 42, medianMinutes: 7.5, p90Minutes: 14, source: "france_travail" },
+  ],
   dailyOffers: {
     applied: 5,
     dismissed: 30,
@@ -286,6 +289,7 @@ export const MARKET: MarketMetrics = {
 }
 
 export const EMPTY_MARKET: MarketMetrics = {
+  alertDelays: [],
   dailyOffers: { applied: 0, dismissed: 0, proposed: 0, saved: 0, seen: 0 },
   topAppliedCompanies: [],
   topCheckedCompanies: [],

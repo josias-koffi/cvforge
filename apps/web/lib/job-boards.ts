@@ -130,4 +130,40 @@ export interface JobSourceState {
   lastStatus: string | null
   lastListingCount: number
   consecutiveFailures: number
+  /** Calls made to the source today and this month, Paris time (US-163). */
+  callsToday: number
+  callsThisMonth: number
+  /** `null` when the source has no known monthly quota. */
+  monthlyQuota: number | null
+  /** 80 % of the monthly quota reached. */
+  quotaAlert: boolean
+}
+
+/** What the last frequent pass over company boards did (US-164). */
+export interface BoardStreamReport {
+  status: string
+  at?: string
+  boardsSelected?: number
+  boardsRead?: number
+  newListings?: number
+  /** Boards sent back to the daily pass for 24 hours after a 429 or 403. */
+  paused?: string[]
+  /** Per provider, interested companies the cycle budget left to the daily pass. */
+  overflow?: Record<string, number>
+}
+
+/** What the last pass of the France Travail flow did (US-163). */
+export interface FranceTravailStreamReport {
+  status: string
+  at?: string
+  listings?: number
+  calls?: number
+  cursorAt?: string | null
+  error?: string
+}
+
+/** The last report of each continuous stream, by stream name. */
+export interface StreamReports {
+  france_travail?: FranceTravailStreamReport
+  boards_frequent?: BoardStreamReport
 }

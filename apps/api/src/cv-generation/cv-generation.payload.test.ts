@@ -13,7 +13,11 @@ function makeProfile(
 ): PromptSafeProfile {
   return {
     headline: "Développeur back-end",
-    identity: { candidateToken: "[CANDIDATE]", city: "Nantes", firstName: "Camille" },
+    identity: {
+      candidateToken: "[CANDIDATE]",
+      city: "Nantes",
+      firstName: "Camille",
+    },
     ...(preferences ? { preferences } : {}),
     profileSections: {
       certifications: [],
@@ -50,7 +54,9 @@ describe("pointers to bring forward (US-127)", () => {
     expect(block).toBeGreaterThan(message.indexOf("=== FIN TEXTE BRUT"));
     expect(block).toBeLessThan(message.indexOf("=== PROFIL CANDIDAT"));
     expect(message).toContain("SI ET SEULEMENT SI LE PROFIL LES ÉTAYE");
-    expect(message).toContain("Ce ne sont PAS des faits concernant le candidat");
+    expect(message).toContain(
+      "Ce ne sont PAS des faits concernant le candidat",
+    );
     expect(message).toContain('["Kubernetes","Tests unitaires"]');
     // Not repeated inside the offer's own JSON.
     expect(message).not.toContain('"skillsToHighlight"');
@@ -58,7 +64,10 @@ describe("pointers to bring forward (US-127)", () => {
 
   it("adds no block when the offer lacked nothing", () => {
     expect(
-      buildGroundedUserMessage(makeProfile(), { ...OFFER, skillsToHighlight: [] }),
+      buildGroundedUserMessage(makeProfile(), {
+        ...OFFER,
+        skillsToHighlight: [],
+      }),
     ).not.toContain("PISTES À VALORISER");
     expect(buildGroundedUserMessage(makeProfile(), OFFER)).not.toContain(
       "PISTES À VALORISER",
@@ -83,6 +92,42 @@ describe("pointers to bring forward (US-127)", () => {
       offerContextOf({ ...application, skillsToHighlight: ["Kubernetes"] })
         .skillsToHighlight,
     ).toEqual(["Kubernetes"]);
+  });
+});
+
+describe("angles from the alert's AI analysis (US-168)", () => {
+  it("fences them off as pointers, before the profile, without a new call", () => {
+    const message = buildGroundedUserMessage(makeProfile(), {
+      ...OFFER,
+      pointsToHighlight: ["Vos 3 ans d'exploitation Kubernetes en production"],
+    });
+    const block = message.indexOf("=== ANGLES À METTRE EN AVANT");
+
+    expect(block).toBeGreaterThan(message.indexOf("=== FIN TEXTE BRUT"));
+    expect(block).toBeLessThan(message.indexOf("=== PROFIL CANDIDAT"));
+    expect(message).toContain("Ce ne sont PAS des faits");
+    expect(message).not.toContain('"pointsToHighlight"');
+    expect(buildGroundedUserMessage(makeProfile(), OFFER)).not.toContain(
+      "ANGLES À METTRE",
+    );
+  });
+
+  it("reads them from the application, empty for an older one", () => {
+    const application = {
+      extracted: {
+        language: "fr",
+        requirements: [],
+        responsibilities: [],
+        title: "x",
+      },
+      rawOfferText: "Texte",
+    } as unknown as StoredApplication;
+
+    expect(offerContextOf(application).pointsToHighlight).toEqual([]);
+    expect(
+      offerContextOf({ ...application, pointsToHighlight: ["Angle"] })
+        .pointsToHighlight,
+    ).toEqual(["Angle"]);
   });
 });
 
@@ -116,7 +161,9 @@ describe("spontaneous applications (US-120)", () => {
       spontaneous: true,
     });
 
-    expect(message).toContain("=== CANDIDATURE SPONTANÉE — CONTEXTE DE CIBLAGE ===");
+    expect(message).toContain(
+      "=== CANDIDATURE SPONTANÉE — CONTEXTE DE CIBLAGE ===",
+    );
     expect(message).toContain("Aucune offre publiée");
     expect(message).not.toContain("=== OFFRE D'EMPLOI");
     expect(message).not.toContain("TEXTE BRUT");
@@ -210,7 +257,7 @@ describe("buildGroundedUserMessage", () => {
     );
 
     expect(message).toContain("Stage ou alternance (rythme 3j/2j)");
-    expect(message).not.toContain("\"contratsRecherches\":\"CDI\"");
+    expect(message).not.toContain('"contratsRecherches":"CDI"');
   });
 
   it("keeps the legacy free-text contracts while a profile has no search project", () => {

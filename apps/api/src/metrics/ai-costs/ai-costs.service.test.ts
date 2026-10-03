@@ -14,7 +14,9 @@ describe("summarizeBalance", () => {
 
   it("says nothing about a runway without a balance or without spend", () => {
     expect(summarizeBalance(null, 14, 7).runwayDays).toBeNull();
-    expect(summarizeBalance({ remaining: 30, stale: true }, 0, 7)).toMatchObject({
+    expect(
+      summarizeBalance({ remaining: 30, stale: true }, 0, 7),
+    ).toMatchObject({
       runwayDays: null,
       stale: true,
     });
@@ -23,8 +25,22 @@ describe("summarizeBalance", () => {
 
 describe("buildUnitEconomics", () => {
   const features = [
-    { calls: 2, completionTokens: 0, costUsd: 1, errors: 0, feature: "cv_generation" as const, promptTokens: 0 },
-    { calls: 1, completionTokens: 0, costUsd: 5, errors: 0, feature: "ats_impact" as const, promptTokens: 0 },
+    {
+      calls: 2,
+      completionTokens: 0,
+      costUsd: 1,
+      errors: 0,
+      feature: "cv_generation" as const,
+      promptTokens: 0,
+    },
+    {
+      calls: 1,
+      completionTokens: 0,
+      costUsd: 5,
+      errors: 0,
+      feature: "ats_impact" as const,
+      promptTokens: 0,
+    },
   ];
 
   it("sets a unit's cost against the credits it was charged", () => {
@@ -46,6 +62,31 @@ describe("buildUnitEconomics", () => {
     });
   });
 
+  it("prices the alerts' analysis per day billed, the free analyses of that day included (US-168)", () => {
+    const enrich = buildUnitEconomics({
+      creditValueEurCents: 20,
+      // Three days billed; 30 analyses between them, 0.3 USD in all.
+      creditsCharged: { job_alert_enrich: 3 },
+      features: [
+        {
+          calls: 30,
+          completionTokens: 0,
+          costUsd: 0.3,
+          errors: 0,
+          feature: "job_alert_enrich",
+          promptTokens: 0,
+        },
+      ],
+      usdToEurRate: 1,
+    }).find((unit) => unit.action === "job_alert_enrich");
+
+    expect(enrich).toMatchObject({
+      costPerUnitEurCents: 10,
+      marginRate: 50,
+      units: 3,
+    });
+  });
+
   it("leaves unbilled calls out, and prices nothing before any sale", () => {
     const units = buildUnitEconomics({
       creditValueEurCents: null,
@@ -55,6 +96,8 @@ describe("buildUnitEconomics", () => {
     });
 
     expect(units.map((unit) => unit.action)).not.toContain("ats_impact");
-    expect(units.every((unit) => unit.marginRate === null && unit.units === 0)).toBe(true);
+    expect(
+      units.every((unit) => unit.marginRate === null && unit.units === 0),
+    ).toBe(true);
   });
 });

@@ -1,4 +1,8 @@
-import type { ScoreBreakdown, SearchContractType } from "@cvforge/types"
+import type {
+  JobAlertAnalysis,
+  ScoreBreakdown,
+  SearchContractType,
+} from "@cvforge/types"
 
 import { api } from "@/lib/api"
 
@@ -92,6 +96,8 @@ export interface JobCardOffer {
   /** Points per criterion behind `score`; absent on older selections. */
   scoreBreakdown?: ScoreBreakdown | null
   aiReason: string | null
+  /** The paid analysis of an alert (US-168); shown beside the offer. */
+  aiAnalysis?: JobAlertAnalysis | null
   /** What the candidate has: their own skills, then ROME competences. */
   matchedSkills?: string[]
   /** What the offer asks that the CV does not show, required first (US-126). */
@@ -108,8 +114,11 @@ export interface JobMatch {
   missingSkills?: string[]
   aiRank: number | null
   aiReason: string | null
+  aiAnalysis?: JobAlertAnalysis | null
   status: JobMatchStatus
   applicationId: string | null
+  /** When it was proposed: the morning run, or the minute an alert caught it. */
+  createdAt: string
   job: JobOffer
   listings: JobListingSummary[]
   details?: OfferDetails | null
@@ -143,6 +152,10 @@ export interface OfferSearchFilters {
   departement?: string
   contrat?: string
   teletravail?: string
+  /** Published within 1, 3 or 7 days (US-167). */
+  publiee?: string
+  /** `recent`: the latest published first. */
+  tri?: string
   page?: string
 }
 
@@ -159,8 +172,10 @@ export async function searchOffers(filters: OfferSearchFilters) {
       contrat: filters.contrat,
       departement: filters.departement,
       page: filters.page,
+      publiee: filters.publiee,
       q: filters.q,
       teletravail: filters.teletravail,
+      tri: filters.tri,
     },
   })
 }

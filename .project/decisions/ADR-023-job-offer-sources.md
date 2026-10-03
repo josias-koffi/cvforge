@@ -3,6 +3,8 @@
 - Statut : accepté
 - Date : 2026-09-22
 - Portée : `apps/api/src/job-search`, `apps/api/src/search-projects`, épic E19 (sprint 025)
+- Amendée le 2026-10-01 : la collecte quotidienne du §2 est remplacée par la collecte continue
+  d'[ADR-027](ADR-027-continuous-job-collection.md). Le reste tient.
 
 ## Context
 
@@ -35,10 +37,15 @@ aux nouveaux clients et s'arrête le 1er janvier 2027.
 
 ### 2. Les offres sont stockées chez nous, jamais interrogées à l'affichage
 
+> **Remplacé par ADR-027 (2026-10-01)** pour la fréquence : collecte continue (flux national
+> France Travail toutes les 5 minutes, sites carrière suivis toutes les 30 minutes). Le principe
+> « stocker, jamais interroger à l'affichage » tient.
+
 Une collecte quotidienne, groupée par requête et non par candidat, écrit dans `job_listings`. Les
 raisons, dans l'ordre d'importance :
 
-1. **Les quotas.** France Travail documente **4 appels par seconde et par application**, et
+1. **Les quotas.** France Travail documente **4 appels par seconde et par application** (10
+   mesurés le 2026-09-28, voir ADR-027), et
    1 150 résultats par recherche. Un appel par ouverture de page épuiserait ces limites dès que le produit aurait des
    utilisateurs.
 2. **Les logiciels de recrutement ne se cherchent pas.** Ils exposent la liste d'une entreprise, sans

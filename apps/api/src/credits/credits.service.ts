@@ -2,6 +2,7 @@ import {
   AI_CREDIT_ACTION_CV_GENERATION,
   AI_CREDIT_ACTION_CV_IMPORT,
   AI_CREDIT_ACTION_INTERVIEW_SESSION,
+  AI_CREDIT_ACTION_JOB_ALERT_ENRICH,
   AI_CREDIT_ACTION_JOB_DIGEST_RERANK,
   AI_CREDIT_ACTION_LETTER_GENERATION,
   AI_CREDIT_ACTION_OFFER_ENRICHMENT,
@@ -57,6 +58,8 @@ function buildAiUsageNote(
       return "Session d'entretien simule";
     case AI_CREDIT_ACTION_JOB_DIGEST_RERANK:
       return "Classement IA des offres du jour";
+    case AI_CREDIT_ACTION_JOB_ALERT_ENRICH:
+      return "Analyse IA des alertes du jour";
   }
 }
 
@@ -178,17 +181,20 @@ export class CreditsService {
   }
 
   async consumeCredits(input: ConsumeCreditsInput): Promise<CreditLedgerEntry> {
-    const result = await this.store.applyEntry({
-      action: input.action,
-      amount: -resolveCost(input.action, input.amount),
-      metadata: {
-        applicationId: input.applicationId,
-        durationMinutes: input.durationMinutes,
+    const result = await this.store.applyEntry(
+      {
+        action: input.action,
+        amount: -resolveCost(input.action, input.amount),
+        metadata: {
+          applicationId: input.applicationId,
+          durationMinutes: input.durationMinutes,
+        },
+        note: buildAiUsageNote(input.action, input.durationMinutes),
+        type: CREDIT_EVENT_AI_USAGE,
+        userEmail: input.userEmail,
       },
-      note: buildAiUsageNote(input.action, input.durationMinutes),
-      type: CREDIT_EVENT_AI_USAGE,
-      userEmail: input.userEmail,
-    });
+      input.idempotencyKey,
+    );
 
     if (result.status === "insufficient_balance") {
       throw new InsufficientCreditsException(input.action);

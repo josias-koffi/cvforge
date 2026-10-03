@@ -3,7 +3,11 @@ import {
   createTestDatabase,
   type TestDatabase,
 } from "../database/testing/test-database";
-import { DELETED_ACCOUNT_MARKER, PgCreditLedgerStore } from "./credits.pg-store";
+import {
+  DELETED_ACCOUNT_MARKER,
+  PgCreditLedgerStore,
+} from "./credits.pg-store";
+import { CreditsService } from "./credits.service";
 
 function adminGrant(userEmail: string, amount: number, adminEmail: string) {
   return {
@@ -35,11 +39,15 @@ describe("PgCreditLedgerStore", () => {
 
   it("reports a zero balance and no history for an unknown user", async () => {
     await expect(store.getBalance("nobody@example.com")).resolves.toBe(0);
-    await expect(store.listEntriesForUser("nobody@example.com")).resolves.toEqual([]);
+    await expect(
+      store.listEntriesForUser("nobody@example.com"),
+    ).resolves.toEqual([]);
   });
 
   it("refuses a debit that would make the balance negative", async () => {
-    await store.applyEntry(adminGrant("user@example.com", 2, "admin@example.com"));
+    await store.applyEntry(
+      adminGrant("user@example.com", 2, "admin@example.com"),
+    );
 
     await expect(
       store.applyEntry({
@@ -51,11 +59,15 @@ describe("PgCreditLedgerStore", () => {
         userEmail: "user@example.com",
       }),
     ).resolves.toEqual({ status: "insufficient_balance", balance: 2 });
-    await expect(store.listEntriesForUser("user@example.com")).resolves.toHaveLength(1);
+    await expect(
+      store.listEntriesForUser("user@example.com"),
+    ).resolves.toHaveLength(1);
   });
 
   it("pages the history newest first and filters it by direction", async () => {
-    await store.applyEntry(adminGrant("user@example.com", 10, "admin@example.com"));
+    await store.applyEntry(
+      adminGrant("user@example.com", 10, "admin@example.com"),
+    );
     await store.applyEntry({
       action: "cv_generation",
       amount: -3,
@@ -64,8 +76,12 @@ describe("PgCreditLedgerStore", () => {
       type: "ai_usage",
       userEmail: "user@example.com",
     });
-    await store.applyEntry(adminGrant("user@example.com", 5, "admin@example.com"));
-    await store.applyEntry(adminGrant("other@example.com", 7, "admin@example.com"));
+    await store.applyEntry(
+      adminGrant("user@example.com", 5, "admin@example.com"),
+    );
+    await store.applyEntry(
+      adminGrant("other@example.com", 7, "admin@example.com"),
+    );
 
     const firstPage = await store.listEntriesPageForUser("user@example.com", {
       limit: 2,
@@ -80,10 +96,18 @@ describe("PgCreditLedgerStore", () => {
     expect(firstPage.entries.map((entry) => entry.amount)).toEqual([5, -3]);
     expect(lastPage.entries.map((entry) => entry.amount)).toEqual([10]);
     await expect(
-      store.listEntriesPageForUser("user@example.com", { kind: "spent", limit: 10, offset: 0 }),
+      store.listEntriesPageForUser("user@example.com", {
+        kind: "spent",
+        limit: 10,
+        offset: 0,
+      }),
     ).resolves.toMatchObject({ entries: [{ amount: -3 }], totalItems: 1 });
     await expect(
-      store.listEntriesPageForUser("user@example.com", { kind: "earned", limit: 10, offset: 0 }),
+      store.listEntriesPageForUser("user@example.com", {
+        kind: "earned",
+        limit: 10,
+        offset: 0,
+      }),
     ).resolves.toMatchObject({ totalItems: 2 });
   });
 
@@ -105,19 +129,59 @@ describe("PgCreditLedgerStore", () => {
     await expect(store.getBalance("user@example.com")).resolves.toBe(5);
   });
 
-  it("lists, deletes and anonymises admin references", async () => {
-    await store.applyEntry(adminGrant("user@example.com", 25, "admin@example.com"));
-    await store.applyEntry(adminGrant("admin@example.com", 10, "admin@example.com"));
-    await store.applyEntry(adminGrant("other@example.com", 10, "root@example.com"));
+  it("debits the alerts' AI analysis once a day, even for two simultaneous analyses (US-168)", async () => {
+    await store.applyEntry(
+      adminGrant("user@example.com", 5, "admin@example.com"),
+    );
+    const service = new CreditsService(store, { lowBalanceThreshold: 0 });
+    const charge = () =>
+      service.consumeCredits({
+        action: "job_alert_enrich",
+        idempotencyKey: "job_alert_enrich:user@example.com:2026-10-02",
+        userEmail: "user@example.com",
+      });
 
-    await expect(store.listEntriesByAdminEmail("admin@example.com")).resolves.toHaveLength(2);
-    await expect(store.anonymizeAdminReferences("admin@example.com")).resolves.toBe(1);
+    await Promise.all([charge(), charge()]);
+    await charge();
+
+    await expect(store.getBalance("user@example.com")).resolves.toBe(4);
+    const spent = (await store.listEntriesForUser("user@example.com")).filter(
+      (entry) => entry.amount < 0,
+    );
+    expect(spent).toEqual([
+      expect.objectContaining({
+        action: "job_alert_enrich",
+        amount: -1,
+        note: "Analyse IA des alertes du jour",
+      }),
+    ]);
+  });
+
+  it("lists, deletes and anonymises admin references", async () => {
+    await store.applyEntry(
+      adminGrant("user@example.com", 25, "admin@example.com"),
+    );
+    await store.applyEntry(
+      adminGrant("admin@example.com", 10, "admin@example.com"),
+    );
+    await store.applyEntry(
+      adminGrant("other@example.com", 10, "root@example.com"),
+    );
+
+    await expect(
+      store.listEntriesByAdminEmail("admin@example.com"),
+    ).resolves.toHaveLength(2);
+    await expect(
+      store.anonymizeAdminReferences("admin@example.com"),
+    ).resolves.toBe(1);
     await expect(store.deleteByUserEmail("admin@example.com")).resolves.toBe(1);
 
     const [userEntry] = await store.listEntriesForUser("user@example.com");
 
     expect(userEntry.metadata.adminEmail).toBe(DELETED_ACCOUNT_MARKER);
     await expect(store.getBalance("admin@example.com")).resolves.toBe(0);
-    await expect(store.listEntriesByAdminEmail("admin@example.com")).resolves.toEqual([]);
+    await expect(
+      store.listEntriesByAdminEmail("admin@example.com"),
+    ).resolves.toEqual([]);
   });
 });

@@ -1,4 +1,13 @@
-import { boolean, integer, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import {
+  boolean,
+  date,
+  integer,
+  jsonb,
+  pgTable,
+  primaryKey,
+  text,
+  timestamp,
+} from "drizzle-orm/pg-core";
 
 /**
  * Whether a source is switched on, and what its last run gave.
@@ -21,3 +30,29 @@ export const jobSources = pgTable("job_sources", {
   consecutiveFailures: integer("consecutive_failures").notNull().default(0),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+/**
+ * Where the continuous collection of a source stands (ADR-027): the end of the
+ * last slice read successfully, and the lease that keeps a single instance
+ * reading. Nothing else: the offers themselves go where the daily pass puts them.
+ */
+export const jobStreamCursors = pgTable("job_stream_cursors", {
+  source: text("source").primaryKey(),
+  cursorAt: timestamp("cursor_at", { withTimezone: true }),
+  lockedBy: text("locked_by"),
+  lockedUntil: timestamp("locked_until", { withTimezone: true }),
+  /** What the last pass did, for the admin screen (US-164). */
+  lastReport: jsonb("last_report").$type<Record<string, unknown>>(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+/** Calls made to a source on a day (Paris time), for the admin's quota view. */
+export const jobSourceCalls = pgTable(
+  "job_source_calls",
+  {
+    source: text("source").notNull(),
+    day: date("day", { mode: "string" }).notNull(),
+    calls: integer("calls").notNull().default(0),
+  },
+  (table) => [primaryKey({ columns: [table.source, table.day] })],
+);

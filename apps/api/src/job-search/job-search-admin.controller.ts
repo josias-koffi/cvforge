@@ -28,6 +28,19 @@ import {
 import { resolveLaBonneAlternanceConfig } from "./sources/la-bonne-alternance.config";
 import { FtHttpClient } from "../france-travail/ft-http.client";
 import { importSeededBoards } from "./sources/boards/boards-seed";
+import {
+  JOB_SOURCE_CALLS_STORE,
+  JOB_STREAM_CURSORS_STORE,
+  type JobSourceCallsStore,
+  type JobStreamCursorsStore,
+} from "./job-stream.types";
+import { dateInParis } from "./paris-time";
+import { SourceCallCounter } from "./source-call-counter";
+import {
+  monthStartOf,
+  resolveMonthlyQuotas,
+  toCallUsage,
+} from "./source-call-usage";
 
 type RequestLike = {
   headers: { cookie?: string };
@@ -54,6 +67,10 @@ export class JobSearchAdminController {
     @Inject(JOB_DIGEST_RUNS_STORE) private readonly runs: JobDigestRunsStore,
     @Inject(JOB_SOURCES_STORE) private readonly sources: JobSourcesStore,
     @Inject(FtHttpClient) private readonly franceTravail: FtHttpClient,
+    @Inject(JOB_SOURCE_CALLS_STORE) private readonly calls: JobSourceCallsStore,
+    @Inject(SourceCallCounter) private readonly callCounter: SourceCallCounter,
+    @Inject(JOB_STREAM_CURSORS_STORE)
+    private readonly streams: JobStreamCursorsStore,
   ) {}
 
   /**
@@ -76,11 +93,20 @@ export class JobSearchAdminController {
       "france_travail",
       "la_bonne_alternance",
     ]);
+    // The last minute of counting is still in memory: written first, so the
+    // screen shows the calls just made.
+    await this.callCounter.flush();
+    const today = dateInParis(Date.now());
+    const calls = await this.calls.totals(today, monthStartOf(today));
+    const quotas = resolveMonthlyQuotas();
 
     return {
+      /** What the last pass of each continuous stream did (US-163, US-164). */
+      streams: Object.fromEntries(await this.streams.lastReports()),
       sources: jobSources.map((source) => ({
         ...defaultState(source),
         ...stored.get(source),
+        ...toCallUsage(calls.get(source), quotas[source]),
         /** Has an adapter at all — unwritten sources are shown as such. */
         implemented: collectable.has(source),
         /** Configured to be able to answer, credentials included. */

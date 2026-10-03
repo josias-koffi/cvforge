@@ -26,6 +26,8 @@ export type StoredApplication = DraftApplication & {
   rawOfferText: string;
   /** What the offer asked and the CV did not show (US-127); pointers only. */
   skillsToHighlight?: string[];
+  /** What the alert's AI analysis said to bring forward (US-168); pointers only. */
+  pointsToHighlight?: string[];
 };
 
 /**

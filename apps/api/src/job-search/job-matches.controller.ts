@@ -35,6 +35,7 @@ type RequestLike = {
 };
 
 const MAX_HISTORY = 100;
+const PUBLISHED_WITHIN_DAYS = [1, 3, 7];
 const PAGE_SIZE = 20;
 const MAX_QUERY_CHARS = 120;
 /** The pool the morning selection reads from, and nothing older. */
@@ -86,6 +87,8 @@ export class JobMatchesController {
     @Query("departement") department: string | undefined,
     @Query("contrat") contract: string | undefined,
     @Query("teletravail") remote: string | undefined,
+    @Query("publiee") publishedWithin: string | undefined,
+    @Query("tri") sort: string | undefined,
     @Query("page") page: string | undefined,
     @Req() request: RequestLike,
   ) {
@@ -95,10 +98,11 @@ export class JobMatchesController {
       contractTypes: readContracts(contract),
       departments: readDepartments(department),
       limit: PAGE_SIZE,
-      maxAgeDays: MAX_AGE_DAYS,
+      maxAgeDays: readPublishedWithin(publishedWithin),
       offset: (pageNumber - 1) * PAGE_SIZE,
       query: (query ?? "").slice(0, MAX_QUERY_CHARS),
       remoteOnly: remote === "1" || remote === "true",
+      sort: sort === "recent" ? "recent" : "relevance",
     });
 
     return { ...found, page: pageNumber, pageSize: PAGE_SIZE };
@@ -148,7 +152,10 @@ export class JobMatchesController {
       );
     }
 
-    return { applicationId: result.applicationId };
+    return {
+      applicationId: result.applicationId,
+      existing: result.existing ?? false,
+    };
   }
 }
 
@@ -195,4 +202,11 @@ function readDate(value: string | undefined): string | null {
   const date = value?.trim() ?? "";
 
   return /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : null;
+}
+
+/** "Publiée depuis" (US-167): 1, 3 or 7 days; anything else, the whole month. */
+function readPublishedWithin(value: string | undefined): number {
+  const days = Number(value);
+
+  return PUBLISHED_WITHIN_DAYS.includes(days) ? days : MAX_AGE_DAYS;
 }

@@ -34,10 +34,13 @@ export default async function OfferSearchPage(props: PageProps<"/offres">) {
     contrat: readParam(params.contrat),
     departement: readParam(params.departement),
     page: readParam(params.page),
+    publiee: readParam(params.publiee),
     q: readParam(params.q),
     teletravail: readParam(params.teletravail),
+    tri: readParam(params.tri),
   }
-  const { available, offers, page, pageSize, total } = await searchOffers(filters)
+  const { available, offers, page, pageSize, total } =
+    await searchOffers(filters)
   const visible = offers.filter((offer) => offer.status !== "dismissed")
   const lastPage = Math.max(1, Math.ceil(total / pageSize))
 
@@ -58,7 +61,7 @@ export default async function OfferSearchPage(props: PageProps<"/offres">) {
       <div className="flex flex-col gap-4 px-4 lg:px-6">
         <OfferSearchForm filters={filters} />
 
-        <p className="text-muted-foreground text-sm">
+        <p className="text-sm text-muted-foreground">
           {total === 0
             ? "Aucune offre ne correspond."
             : `${total} offre(s) sur ${available} en base — page ${page} sur ${lastPage}.`}
@@ -88,7 +91,11 @@ export default async function OfferSearchPage(props: PageProps<"/offres">) {
             ) : null}
           </Empty>
         ) : (
-          <OfferGrid offers={visible} />
+          // Sorted by date, the cards say it to the minute (US-167).
+          <OfferGrid
+            offers={visible}
+            fresh={filters.tri === "recent" || filters.publiee !== undefined}
+          />
         )}
 
         {lastPage > 1 ? (

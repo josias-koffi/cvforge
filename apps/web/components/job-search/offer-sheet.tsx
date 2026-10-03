@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { ExternalLinkIcon } from "lucide-react"
 
+import { AlertAnalysis } from "@/components/job-search/alert-analysis"
 import { AiReason, MatchScoreDetail } from "@/components/job-search/match-score"
 import { CompanyMark } from "@/components/job-search/company-mark"
 import { OfferActions } from "@/components/job-search/offer-actions"
@@ -138,6 +139,10 @@ function OfferDetail({
             aiReason={offer.aiReason}
           />
         )}
+
+        {offer.aiAnalysis ? (
+          <AlertAnalysis analysis={offer.aiAnalysis} />
+        ) : null}
 
         <OfferSkills offer={offer} />
 

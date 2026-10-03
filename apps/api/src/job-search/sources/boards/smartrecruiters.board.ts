@@ -6,7 +6,7 @@ import {
   normalizeLocation,
 } from "../../job-listing.normalize";
 import type { BoardHttpClient } from "./board-http";
-import type { CompanyBoardAdapter } from "./board.types";
+import type { CompanyBoardAdapter, FetchBoardOptions } from "./board.types";
 import { isoDate } from "./greenhouse.board";
 
 /**
@@ -61,8 +61,15 @@ export class SmartRecruitersBoard implements CompanyBoardAdapter {
 
   constructor(private readonly http: BoardHttpClient) {}
 
-  async fetchBoard(boardToken: string): Promise<NormalizedJobListing[]> {
-    const postings = await this.listFrenchPostings(boardToken);
+  async fetchBoard(
+    boardToken: string,
+    options: FetchBoardOptions = {},
+  ): Promise<NormalizedJobListing[]> {
+    // One detail call per posting: the ones already seen are not worth it on
+    // the frequent pass (US-164).
+    const postings = (await this.listFrenchPostings(boardToken)).filter(
+      (posting) => !options.skipExternalIds?.has(posting.id?.trim() ?? ""),
+    );
     const listings: NormalizedJobListing[] = [];
 
     for (const posting of postings.slice(0, MAX_DETAILS)) {

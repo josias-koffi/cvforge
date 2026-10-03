@@ -40,7 +40,9 @@ function makeJob(overrides: Partial<StoredJob> = {}): StoredJob {
   };
 }
 
-function makeListing(overrides: Partial<StoredJobListing> = {}): StoredJobListing {
+function makeListing(
+  overrides: Partial<StoredJobListing> = {},
+): StoredJobListing {
   return {
     applyUrl: "",
     closedAt: null,
@@ -79,24 +81,29 @@ function makeMatch(job = makeJob()): JobMatchWithJob {
   };
 }
 
-function createService(options: {
-  match?: JobMatchWithJob | null;
-  listings?: StoredJobListing[];
-  isStillOpen?: boolean | null;
-  searchResults?: StoredJob[];
-  knownStatuses?: Map<string, JobMatchWithJob>;
-  missingJob?: boolean;
-  /** Sources an admin switched off: never called, not even to check an offer. */
-  disabledSources?: JobSource[];
-} = {}) {
+function createService(
+  options: {
+    match?: JobMatchWithJob | null;
+    listings?: StoredJobListing[];
+    isStillOpen?: boolean | null;
+    searchResults?: StoredJob[];
+    knownStatuses?: Map<string, JobMatchWithJob>;
+    missingJob?: boolean;
+    /** Sources an admin switched off: never called, not even to check an offer. */
+    disabledSources?: JobSource[];
+  } = {},
+) {
   const created: unknown[] = [];
   const statuses: Array<{ status: string; applicationId?: string }> = [];
   const closed: string[] = [];
   const importFromText = vi.fn(async () => ({ id: "app-1" }) as never);
   const importFromUrl = vi.fn(async () => ({ id: "app-2" }) as never);
   const updateOffer = vi.fn(async () => ({}) as never);
-  const savedApplications: Array<{ id: string; skillsToHighlight?: string[] }> =
-    [];
+  const savedApplications: Array<{
+    id: string;
+    skillsToHighlight?: string[];
+    pointsToHighlight?: string[];
+  }> = [];
   const applicationsStore = {
     findByIdForUserEmail: async (_userEmail: string, id: string) =>
       ({ id }) as never,
@@ -116,7 +123,8 @@ function createService(options: {
     findById: async () =>
       options.match === undefined ? makeMatch() : options.match,
     listStatusesByJobIds: async () => options.knownStatuses ?? new Map(),
-    listByDigestDate: async () => (options.match ? [options.match] : [makeMatch()]),
+    listByDigestDate: async () =>
+      options.match ? [options.match] : [makeMatch()],
     listRecent: async () => [makeMatch()],
     setStatus: async (
       _userEmail: string,
@@ -203,7 +211,10 @@ describe("JobMatchesService.searchOffers", () => {
   it("returns the offers we hold, with what the candidate already did", async () => {
     const harness = createService({
       knownStatuses: new Map([
-        ["job-1", { ...makeMatch(), scoreBreakdown: breakdown, status: "saved" }],
+        [
+          "job-1",
+          { ...makeMatch(), scoreBreakdown: breakdown, status: "saved" },
+        ],
       ]),
     });
 
@@ -264,7 +275,11 @@ describe("JobMatchesService.setStatusForJob", () => {
     const harness = createService({ match: null, missingJob: true });
 
     expect(
-      await harness.service.setStatusForJob("user@example.com", "inconnue", "saved"),
+      await harness.service.setStatusForJob(
+        "user@example.com",
+        "inconnue",
+        "saved",
+      ),
     ).toBeNull();
   });
 });
@@ -278,28 +293,33 @@ describe("JobMatchesService", () => {
       ],
     });
 
-    const digest = await harness.service.getDigest("user@example.com", "2026-09-23");
+    const digest = await harness.service.getDigest(
+      "user@example.com",
+      "2026-09-23",
+    );
 
     expect(digest.digestDate).toBe("2026-09-23");
-    expect(digest.matches[0]?.listings.map((listing) => listing.source)).toEqual([
-      "france_travail",
-      "greenhouse",
-    ]);
+    expect(
+      digest.matches[0]?.listings.map((listing) => listing.source),
+    ).toEqual(["france_travail", "greenhouse"]);
   });
 
   it("defaults to today, Paris time", async () => {
     const harness = createService();
 
-    expect((await harness.service.getDigest("user@example.com", null)).digestDate).toBe(
-      "2026-09-23",
-    );
+    expect(
+      (await harness.service.getDigest("user@example.com", null)).digestDate,
+    ).toBe("2026-09-23");
   });
 
   describe("applying", () => {
     it("creates the application from the advert text we already hold", async () => {
       const harness = createService();
 
-      const result = await harness.service.applyToJob("user@example.com", "job-1");
+      const result = await harness.service.applyToJob(
+        "user@example.com",
+        "job-1",
+      );
 
       expect(result).toEqual({ applicationId: "app-1", outcome: "applied" });
       expect(harness.importFromText).toHaveBeenCalledWith(
@@ -314,6 +334,25 @@ describe("JobMatchesService", () => {
       ]);
     });
 
+    it("returns the application already made, without a second one nor a credit (US-167)", async () => {
+      const harness = createService({
+        match: { ...makeMatch(), applicationId: "app-0", status: "applied" },
+      });
+
+      const result = await harness.service.applyToJob(
+        "user@example.com",
+        "job-1",
+      );
+
+      expect(result).toEqual({
+        applicationId: "app-0",
+        existing: true,
+        outcome: "applied",
+      });
+      expect(harness.importFromText).not.toHaveBeenCalled();
+      expect(harness.importFromUrl).not.toHaveBeenCalled();
+    });
+
     it("carries what the offer asks and the CV lacks to the CV generation (US-127)", async () => {
       const harness = createService({
         match: {
@@ -325,7 +364,35 @@ describe("JobMatchesService", () => {
       await harness.service.applyToJob("user@example.com", "job-1");
 
       expect(harness.savedApplications).toEqual([
-        { id: "app-1", skillsToHighlight: ["Tests unitaires et d'intégration"] },
+        {
+          id: "app-1",
+          pointsToHighlight: [],
+          skillsToHighlight: ["Tests unitaires et d'intégration"],
+        },
+      ]);
+    });
+
+    it("reuses the alert's paid analysis for the CV and the letter, without a new call (US-168)", async () => {
+      const harness = createService({
+        match: {
+          ...makeMatch(),
+          aiAnalysis: {
+            highlights: ["Vos trois ans de React en production"],
+            reasons: [],
+            verdict: "seize",
+            watchouts: [],
+          },
+        },
+      });
+
+      await harness.service.applyToJob("user@example.com", "job-1");
+
+      expect(harness.savedApplications).toEqual([
+        {
+          id: "app-1",
+          pointsToHighlight: ["Vos trois ans de React en production"],
+          skillsToHighlight: [],
+        },
       ]);
     });
 
@@ -342,7 +409,10 @@ describe("JobMatchesService", () => {
         match: makeMatch(makeJob({ description: "Voir l'annonce." })),
       });
 
-      const result = await harness.service.applyToJob("user@example.com", "job-1");
+      const result = await harness.service.applyToJob(
+        "user@example.com",
+        "job-1",
+      );
 
       expect(result).toEqual({ applicationId: "app-2", outcome: "applied" });
       expect(harness.importFromUrl).toHaveBeenCalled();
@@ -351,7 +421,10 @@ describe("JobMatchesService", () => {
     it("refuses, and charges nothing, when the offer is gone", async () => {
       const harness = createService({ isStillOpen: false });
 
-      const result = await harness.service.applyToJob("user@example.com", "job-1");
+      const result = await harness.service.applyToJob(
+        "user@example.com",
+        "job-1",
+      );
 
       expect(result).toEqual({ outcome: "closed" });
       expect(harness.importFromText).not.toHaveBeenCalled();

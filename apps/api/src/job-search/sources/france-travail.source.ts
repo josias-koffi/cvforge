@@ -22,8 +22,9 @@ export const FRANCE_TRAVAIL_MAX_RANGE_START = 1000;
 /**
  * The France Travail "Offres d'emploi v2" source.
  *
- * Reads offers once a day, per grouped query, and never on a page view: the
- * quota is a few calls a second for the whole product (ADR-023). Tokens,
+ * Reads offers per grouped query, once a day, and never on a page view
+ * (ADR-023). The continuous flow reads by time slice instead
+ * (`france-travail.stream.ts`, ADR-027). Tokens,
  * pacing and retries belong to the shared client (ADR-024); this class only
  * paginates and maps.
  */
@@ -89,6 +90,33 @@ export class FranceTravailSource implements JobSourceAdapter {
       `Could not check offer ${externalId}: ${result.reason} ${result.detail}`,
     );
     return null;
+  }
+
+  /**
+   * The offer as France Travail holds it now, for the daily
+   * resynchronisation the licence requires (US-163): `open` with its current
+   * content, `closed` once it is gone, `unknown` when we could not ask.
+   */
+  async refresh(
+    externalId: string,
+  ): Promise<
+    | { kind: "open"; listing: NormalizedJobListing }
+    | { kind: "closed" }
+    | { kind: "unknown" }
+  > {
+    if (!this.client.isEnabled("offres")) return { kind: "unknown" };
+
+    const result = await this.client.request<FranceTravailOffer>("offres", {
+      attempts: 1,
+      path: `/offres/${encodeURIComponent(externalId)}`,
+    });
+
+    if (result.kind === "empty") return { kind: "closed" };
+    if (result.kind === "unavailable") return { kind: "unknown" };
+
+    const listing = toNormalizedListing(result.data);
+
+    return listing ? { kind: "open", listing } : { kind: "unknown" };
   }
 
   /** One page, or `null` when the page could not be read. */

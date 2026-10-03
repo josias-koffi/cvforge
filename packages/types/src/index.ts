@@ -1,3 +1,4 @@
+import type { JobAlertPreferences } from "./job-alerts";
 import type { Locale } from "./locale";
 
 export * from "./departments";
@@ -10,6 +11,7 @@ export * from "./companies";
 export * from "./company-check";
 export * from "./company-pages";
 export * from "./hiring-companies";
+export * from "./job-alerts";
 export * from "./lead";
 export * from "./locale";
 export * from "./market";
@@ -45,6 +47,8 @@ export const AI_CREDIT_ACTION_CV_IMPORT = "cv_import" as const;
 export const AI_CREDIT_ACTION_INTERVIEW_SESSION = "interview_session" as const;
 /** The optional AI pass over a morning selection of job offers (E19). */
 export const AI_CREDIT_ACTION_JOB_DIGEST_RERANK = "job_digest_rerank" as const;
+/** The optional AI analysis of the "Nouvelle offre pour vous" alerts (E27, US-168). */
+export const AI_CREDIT_ACTION_JOB_ALERT_ENRICH = "job_alert_enrich" as const;
 export const CREDIT_EVENT_AI_USAGE = "ai_usage" as const;
 export const CREDIT_EVENT_ADMIN_GRANT = "admin_grant" as const;
 export const CREDIT_EVENT_STRIPE_PURCHASE = "stripe_purchase" as const;
@@ -122,6 +126,7 @@ export const aiCreditActions = [
   AI_CREDIT_ACTION_CV_IMPORT,
   AI_CREDIT_ACTION_INTERVIEW_SESSION,
   AI_CREDIT_ACTION_JOB_DIGEST_RERANK,
+  AI_CREDIT_ACTION_JOB_ALERT_ENRICH,
 ] as const;
 export type AiCreditAction = (typeof aiCreditActions)[number];
 export const creditEventTypes = [
@@ -513,6 +518,9 @@ export const AI_CREDIT_COSTS: Record<AiCreditAction, number> = {
   // offer. Charged once a day, to the candidates who asked for it — and only
   // when the call succeeds.
   [AI_CREDIT_ACTION_JOB_DIGEST_RERANK]: 1,
+  // A day pass: charged once, on the day's first analysis that succeeded; the
+  // following ones that day are free. Distinct from the morning rerank.
+  [AI_CREDIT_ACTION_JOB_ALERT_ENRICH]: 1,
 };
 
 /**
@@ -718,6 +726,7 @@ export interface NotificationEmailPreferences {
 
 export interface NotificationPreferences {
   email: NotificationEmailPreferences;
+  jobAlerts: JobAlertPreferences;
 }
 
 export interface NotificationPreferencesResponse {

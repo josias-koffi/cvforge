@@ -59,15 +59,29 @@ export class NotificationsController {
         jobDigest?: boolean;
         creditPurchaseConfirmed?: boolean;
       };
+      /**
+       * Alerts (US-166): `enabled`, `threshold`, `rhythm`; their paid analysis
+       * (US-168): `aiAnalysis`, `aiFilter`. Unknown values are ignored.
+       */
+      jobAlerts?: {
+        enabled?: unknown;
+        threshold?: unknown;
+        rhythm?: unknown;
+        aiAnalysis?: unknown;
+        aiFilter?: unknown;
+      };
     },
     @Req() request: RequestLike,
   ) {
     const session = this.readSession(request);
 
     return this.notificationsService.updatePreferences(session.email, {
-      applicationFollowUp: body.email?.applicationFollowUp,
-      jobDigest: body.email?.jobDigest,
-      creditPurchaseConfirmed: body.email?.creditPurchaseConfirmed,
+      email: {
+        applicationFollowUp: body.email?.applicationFollowUp,
+        creditPurchaseConfirmed: body.email?.creditPurchaseConfirmed,
+        jobDigest: body.email?.jobDigest,
+      },
+      jobAlerts: body.jobAlerts,
     });
   }
 

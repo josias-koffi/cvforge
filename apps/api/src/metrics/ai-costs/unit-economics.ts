@@ -2,6 +2,7 @@ import {
   AI_CREDIT_ACTION_CV_GENERATION,
   AI_CREDIT_ACTION_CV_IMPORT,
   AI_CREDIT_ACTION_INTERVIEW_SESSION,
+  AI_CREDIT_ACTION_JOB_ALERT_ENRICH,
   AI_CREDIT_ACTION_JOB_DIGEST_RERANK,
   AI_CREDIT_ACTION_LETTER_GENERATION,
   AI_CREDIT_ACTION_OFFER_ENRICHMENT,
@@ -31,6 +32,9 @@ export const BILLED_FEATURES: Record<string, AiFeature[]> = {
     "company_context",
   ],
   [AI_CREDIT_ACTION_JOB_DIGEST_RERANK]: ["job_digest_rerank"],
+  // The unit is a day billed: every analysis of that day, the free ones
+  // after the first included, is its cost (US-168).
+  [AI_CREDIT_ACTION_JOB_ALERT_ENRICH]: ["job_alert_enrich"],
 };
 
 /** Credits one unit costs the candidate; an interview is billed per minute. */

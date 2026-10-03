@@ -74,6 +74,12 @@ export interface JobSearchFilters {
   remoteOnly: boolean;
   /** Offers first collected in the last N days. */
   maxAgeDays: number;
+  /**
+   * `relevance`: offers with the words in their title first, then the latest
+   * collected. `recent`: the latest published first (US-167). Defaults to
+   * relevance.
+   */
+  sort?: "relevance" | "recent";
   limit: number;
   offset: number;
 }
@@ -133,7 +139,21 @@ export type JobsStore = {
     available: number;
   }>;
   /** Closes the advert, and the job once its last advert is closed. */
-  closeListing(source: JobSource, externalId: string, at: string): Promise<void>;
+  closeListing(
+    source: JobSource,
+    externalId: string,
+    at: string,
+  ): Promise<void>;
+  /**
+   * Open adverts of a source no collection has seen since `seenBefore`,
+   * oldest first: the ones the licence asks us to resynchronise (US-163).
+   */
+  listStaleOpenListings(input: {
+    source: JobSource;
+    seenBefore: string;
+    publishedSince: string;
+    limit: number;
+  }): Promise<string[]>;
   /** Closes every advert of a source not seen in the run that just ended. */
   closeListingsMissingFrom(input: {
     source: JobSource;

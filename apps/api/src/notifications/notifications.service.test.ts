@@ -209,11 +209,22 @@ describe("NotificationsService", () => {
     );
 
     const updated = await service.updatePreferences("user@example.com", {
-      applicationFollowUp: false,
+      email: { applicationFollowUp: false, jobDigest: undefined },
+      jobAlerts: { rhythm: "hourly", threshold: "nonsense" },
     });
 
     expect(updated.preferences.email.applicationFollowUp).toBe(false);
+    // A switch the request left out keeps its state.
+    expect(updated.preferences.email.jobDigest).toBe(true);
     expect(updated.preferences.email.creditPurchaseConfirmed).toBe(true);
+    // An unknown value is ignored, a known one is kept (US-166).
+    expect(updated.preferences.jobAlerts).toEqual({
+      aiAnalysis: false,
+      aiFilter: true,
+      enabled: true,
+      rhythm: "hourly",
+      threshold: "close",
+    });
     await expect(service.getPreferences("user@example.com")).resolves.toMatchObject(
       { provider: "resend" },
     );
@@ -227,6 +238,7 @@ describe("NotificationsService", () => {
         creditPurchaseConfirmed: true,
         jobDigest: true,
       },
+      jobAlerts: { aiAnalysis: false, aiFilter: true, enabled: true, rhythm: "immediate", threshold: "close" },
     });
     const service = new NotificationsService(
       store,
