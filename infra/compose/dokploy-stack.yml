@@ -232,7 +232,8 @@ services:
 
   # Restores every new dump — the local one of db_backup and the off-site one
   # Dokploy ships to R2 (fetched by r2_fetch) — into a throwaway Postgres inside
-  # this container, compares it with the live database, and e-mails
+  # this container, compares its migrations with the live database (a dump that
+  # predates a deploy's migrations is accepted once), and e-mails
   # RESTORE_CHECK_ALERT_TO when a restore fails or a source has no dump under
   # 26 h old. Unhealthy when either source's last success is older than 26 h.
   # `docker exec <container> sh /restore-check.sh alert-test` sends a test alert.
@@ -345,10 +346,34 @@ configs:
       scratch() { su-exec postgres psql -h "$$STATE" -d restore_check -Atc "$$1"; }
 
       TABLES="select count(*) from information_schema.tables where table_schema in ('public', 'drizzle')"
-      MIGRATIONS="select count(*) from drizzle.__drizzle_migrations"
+      MIGRATIONS="select hash from drizzle.__drizzle_migrations order by id"
       ACCOUNTS="select count(*) from auth_accounts"
 
-      # Prints what is wrong with dump $$1 read by $$2, nothing when it restores and matches.
+      lines() { printf '%s\n' "$$1" | grep -c .; }
+
+      # A deploy applies migrations after the last dump was taken: a dump whose
+      # migrations are the first ones of live is accepted, once. The live count
+      # is kept as a floor that the next dump of source $$1 must reach.
+      # Prints what is wrong, nothing when the restored migrations are acceptable.
+      compare_migrations() {
+        got=$$(scratch "$$MIGRATIONS" 2>&1); want=$$(live "$$MIGRATIONS" 2>&1)
+        n_got=$$(lines "$$got"); n_want=$$(lines "$$want")
+        floor=$$(cat "$$STATE/floor-$$1" 2>/dev/null || echo 0)
+        if [ "$$got" = "$$want" ]; then
+          got=$$(scratch "$$TABLES" 2>&1); want=$$(live "$$TABLES" 2>&1)
+          [ "$$got" = "$$want" ] || echo "restored tables = $$got, live = $$want"
+        elif [ "$$n_got" -gt 0 ] && [ "$$n_got" -ge "$$floor" ] \
+          && [ "$$got" = "$$(printf '%s\n' "$$want" | head -n "$$n_got")" ]; then
+          echo "$$n_want" > "$$STATE/floor-$$1"
+          echo "$$1: dump is $$((n_want - n_got)) migration(s) behind live, accepted once" >&2
+        elif [ "$$n_got" -lt "$$floor" ]; then
+          echo "restored migrations = $$n_got, still behind the $$floor already live when the previous dump was checked"
+        else
+          echo "restored migrations ($$n_got) are not the first ones of live ($$n_want)"
+        fi
+      }
+
+      # Prints what is wrong with dump $$1 read by $$2 for source $$3, nothing when it restores and matches.
       verify() {
         rm -rf "$$STATE/pgdata"
         su-exec postgres initdb -D "$$STATE/pgdata" -U postgres --auth=trust >/dev/null 2>&1 || { echo "initdb failed"; return; }
@@ -359,10 +384,7 @@ configs:
         if ! "$$2" "$$1" | su-exec postgres pg_restore -h "$$STATE" -d restore_check --no-owner --exit-on-error 2>"$$STATE/restore.log"; then
           echo "pg_restore failed:"; tail -5 "$$STATE/restore.log"
         else
-          for q in "$$TABLES" "$$MIGRATIONS"; do
-            got=$$(scratch "$$q" 2>&1); want=$$(live "$$q" 2>&1)
-            [ "$$got" = "$$want" ] || echo "restored '$$q' = $$got, live = $$want"
-          done
+          compare_migrations "$$3"
           [ "$$(scratch "$$ACCOUNTS" 2>&1)" -gt 0 ] 2>/dev/null || echo "auth_accounts is empty in the restored dump"
         fi
         su-exec postgres pg_ctl -D "$$STATE/pgdata" -m immediate stop >/dev/null
@@ -383,7 +405,7 @@ configs:
           fi
         elif [ "$$dump" != "$$(cat "$$STATE/checked-$$src" 2>/dev/null)" ]; then
           echo "checking $$src $$dump"
-          problems=$$(verify "$$dump" "$$3")
+          problems=$$(verify "$$dump" "$$3" "$$src")
           if [ -z "$$problems" ]; then
             echo "restore OK ($$src)"; touch "$$STATE/ok-$$src"
           else
