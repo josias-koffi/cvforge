@@ -1,0 +1,218 @@
+name: Deploy
+
+# Deployed by the josias-koffi/infra platform. No rule lives here: which branch
+# deploys which environment, and whether a push is enough or a manual run is
+# needed, come from .deploy/manifest.yaml (environments.<env>.branch / deploy).
+#
+#   manual run : Actions → Deploy → Run workflow, from the environment's branch;
+#                image_tag to promote / roll back to an existing tag;
+#                plan_only to only show the plan.
+
+on:
+  push:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Environment (empty: the one of this branch)"
+        required: false
+        type: string
+      image_tag:
+        description: "Existing image tag to deploy (short sha). Empty: build this commit."
+        required: false
+        type: string
+      plan_only:
+        description: "Only show the plan"
+        type: boolean
+        default: false
+
+env:
+  REGISTRY: ghcr.io
+  OWNER: josias-koffi
+
+jobs:
+  resolve:
+    uses: josias-koffi/infra/.github/workflows/resolve.yml@main
+    with:
+      environment: ${{ inputs.environment }}
+      image_tag: ${{ inputs.image_tag }}
+
+  build:
+    name: Build & push ${{ matrix.service }}
+    if: needs.resolve.outputs.build == 'true'
+    needs: resolve
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - service: jobspark-web
+            dockerfile: docker/web.Dockerfile
+          - service: jobspark-landing
+            dockerfile: docker/landing.Dockerfile
+          - service: jobspark-api
+            dockerfile: docker/api.Dockerfile
+          - service: jobspark-puppeteer
+            dockerfile: docker/puppeteer.Dockerfile
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.OWNER }}/${{ matrix.service }}
+          tags: |
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+            type=ref,event=branch
+            type=sha,prefix=,format=short
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          # Only the landing bakes public URLs at build time; web and api read
+          # them at runtime.
+          build-args: |
+            NEXT_PUBLIC_APP_URL=https://${{ fromJSON(needs.resolve.outputs.domains).web }}
+            NEXT_PUBLIC_API_URL=https://${{ fromJSON(needs.resolve.outputs.domains).api }}
+            NEXT_PUBLIC_SITE_URL=https://${{ fromJSON(needs.resolve.outputs.domains).landing }}
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.OWNER }}/${{ matrix.service }}:cache
+          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.OWNER }}/${{ matrix.service }}:cache,mode=max
+
+  # The image is deployed without anyone ever having started it: a crash at
+  # boot only surfaces in the smoke test, which runs after `tofu apply` — so
+  # the environment is already broken by the time it fails. That is exactly how
+  # a circular import between a middleware and its service took staging's API
+  # down: it passed 593 unit tests, because Vitest's ESM graph resolves the
+  # cycle that the compiled CommonJS build does not.
+  verify-image:
+    name: Boot the API image
+    needs: [resolve, build]
+    if: ${{ !failure() && !cancelled() && needs.resolve.outputs.deploy == 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: verify
+          POSTGRES_PASSWORD: verify
+          POSTGRES_DB: verify
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U verify"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    steps:
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Migrations run first in the image's own CMD, so this also proves the
+      # new migration applies to a real PostgreSQL 16 — not just to the PGlite
+      # the test suite uses.
+      - name: Start the image against a disposable PostgreSQL
+        env:
+          IMAGE: ${{ env.REGISTRY }}/${{ env.OWNER }}/jobspark-api:${{ needs.resolve.outputs.image_tag }}
+        run: |
+          set -euo pipefail
+          docker run -d --name api-verify --network host \
+            -e NODE_ENV=production \
+            -e PORT=3333 \
+            -e DATABASE_URL=postgres://verify:verify@127.0.0.1:5432/verify \
+            -e AUTH_SESSION_SECRET=verify-only-not-a-real-secret \
+            -e OPENROUTER_API_KEY=verify-only-not-a-real-key \
+            -e OPENAI_API_KEY=verify-only-not-a-real-key \
+            -e APP_VERSION=${{ needs.resolve.outputs.image_tag }} \
+            "${IMAGE}"
+
+      - name: Wait for /health and /ready
+        run: |
+          set -euo pipefail
+          for attempt in $(seq 1 30); do
+            if curl -fsS -o /dev/null http://127.0.0.1:3333/health; then
+              echo "api answered after ${attempt} attempt(s)"
+              curl -fsS http://127.0.0.1:3333/health
+              echo
+              # /ready queries the database, so it also covers the migration.
+              curl -fsS -o /dev/null http://127.0.0.1:3333/ready
+              echo "ready: ok"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "::error::The API image never became healthy. Container logs follow."
+          exit 1
+
+      - name: Container logs
+        if: always()
+        run: docker logs api-verify 2>&1 | tail -80
+
+      - name: Stop the container
+        if: always()
+        run: docker rm -f api-verify
+
+  deploy:
+    name: Deploy
+    needs: [resolve, verify-image]
+    if: ${{ !failure() && !cancelled() && needs.resolve.outputs.deploy == 'true' }}
+    uses: josias-koffi/infra/.github/workflows/deploy.yml@main
+    with:
+      environment: ${{ needs.resolve.outputs.environment }}
+      image_tag: ${{ needs.resolve.outputs.image_tag }}
+      plan_only: ${{ inputs.plan_only == true }}
+    secrets: inherit
+
+  # The platform's smoke test proves the domains answer; this proves they serve
+  # the tag just deployed (a stack can report success without replacing a
+  # container).
+  verify-version:
+    name: Assert the deployed version
+    needs: [resolve, deploy]
+    if: ${{ !failure() && !cancelled() && needs.resolve.outputs.deploy == 'true' && inputs.plan_only != true }}
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          WEB_DOMAIN: ${{ fromJSON(needs.resolve.outputs.domains).web }}
+          API_DOMAIN: ${{ fromJSON(needs.resolve.outputs.domains).api }}
+          IMAGE_TAG: ${{ needs.resolve.outputs.image_tag }}
+        run: |
+          set -euo pipefail
+          for target in "api https://${API_DOMAIN}/health" "web https://${WEB_DOMAIN}/version"; do
+            set -- ${target}
+            service="$1"; url="$2"
+            for attempt in $(seq 1 10); do
+              running=$(curl -fsS --retry 3 --retry-delay 5 --retry-all-errors "${url}" \
+                | python3 -c 'import json,sys; print(json.load(sys.stdin).get("version",""))')
+              [ "${running}" = "${IMAGE_TAG}" ] && break
+              echo "${service}: serving '${running}', waiting for '${IMAGE_TAG}' (${attempt}/10)"
+              sleep 10
+            done
+            [ "${running}" = "${IMAGE_TAG}" ] || { echo "::error::${service} serves '${running}' instead of '${IMAGE_TAG}'."; exit 1; }
+            echo "${service}: running ${running}"
+          done
