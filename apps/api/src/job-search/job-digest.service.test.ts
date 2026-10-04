@@ -292,6 +292,7 @@ function createService(
       return 0;
     },
     list: async () => [],
+    latest: async () => null,
     claim: async (runDate, kind) => {
       claims.push(runDate);
       return options.alreadyClaimed

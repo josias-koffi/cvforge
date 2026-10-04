@@ -53,6 +53,8 @@ export const jobs = pgTable(
       .defaultNow(),
     /** Set only once every advert of this job is closed. */
     closedAt: timestamp("closed_at", { withTimezone: true }),
+    /** When the closed job lost its company fields (US-169). */
+    anonymizedAt: timestamp("anonymized_at", { withTimezone: true }),
     /** The ROME job, from the first advert that named one (US-124). */
     romeCode: text("rome_code"),
     romeCompetences: jsonb("rome_competences")
@@ -106,6 +108,8 @@ export const jobListings = pgTable(
       .notNull()
       .defaultNow(),
     closedAt: timestamp("closed_at", { withTimezone: true }),
+    /** When the closed advert lost its contact and company fields (US-169). */
+    anonymizedAt: timestamp("anonymized_at", { withTimezone: true }),
     matchMethod: text("match_method").notNull().default("new"),
     romeCode: text("rome_code"),
     /** The appellation's label: offers never give its code. */
@@ -122,6 +126,9 @@ export const jobListings = pgTable(
       table.externalId,
     ),
     index("job_listings_job_idx").on(table.jobId),
+    index("job_listings_to_anonymize_idx")
+      .on(table.jobId)
+      .where(sql`${table.closedAt} is not null and ${table.anonymizedAt} is null`),
     check(
       "job_listings_match_method_valid",
       sql`${table.matchMethod} in ('new', 'url', 'strict_key', 'fuzzy', 'manual')`,

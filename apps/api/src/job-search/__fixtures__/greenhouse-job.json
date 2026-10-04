@@ -1,0 +1,52 @@
+{
+  "id": 5082357003,
+  "title": "Business Developer (x/f/m) - France entière",
+  "content": "&lt;h2&gt;&lt;strong&gt;Vos missions dans l&#39;équipe commerciale&lt;/strong&gt;&lt;/h2&gt;\n&lt;p&gt;La santé est l&#39;une des choses les plus précieuses que nous ayons. Or, les soignants manquent parfois de temps et de moyens pour mener leur mission à bien.&lt;/p&gt;\n&lt;p&gt;Chez Doctolib, nous voulons améliorer leur quotidien grâce à des services efficaces et innovants. Nos technologies les a",
+  "offices": [],
+  "language": "fr",
+  "location": {
+    "name": "France"
+  },
+  "metadata": [
+    {
+      "id": 4031212003,
+      "name": "Job Posting Country",
+      "value": null,
+      "value_type": "single_select"
+    },
+    {
+      "id": 4018295003,
+      "name": "Employment Type",
+      "value": null,
+      "value_type": "single_select"
+    }
+  ],
+  "updated_at": "2026-08-05T09:37:56-04:00",
+  "departments": [
+    {
+      "id": 4004191003,
+      "name": "Sales",
+      "child_ids": [],
+      "parent_id": null
+    }
+  ],
+  "absolute_url": "https://job-boards.greenhouse.io/doctolib/jobs/5082357003",
+  "company_name": "Doctolib",
+  "ai_disclaimer": null,
+  "requisition_id": null,
+  "data_compliance": [
+    {
+      "type": "gdpr",
+      "requires_consent": false,
+      "retention_period": null,
+      "requires_retention_consent": false,
+      "requires_processing_consent": false,
+      "demographic_data_consent_applies": false
+    }
+  ],
+  "first_published": "2022-04-19T05:37:21-04:00",
+  "internal_job_id": null,
+  "application_deadline": null,
+  "include_ai_disclaimer": null,
+  "ai_opt_out_request_url": null
+}

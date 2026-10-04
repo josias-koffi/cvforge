@@ -80,8 +80,11 @@ export const ORIGIN_LABELS: Record<BoardOrigin, string> = {
   user: "Candidature d'un utilisateur",
 }
 
-/** What a run did: `digest` selects and notifies afterwards, `collect` stops. */
-export type DigestRunKind = "digest" | "collect"
+/**
+ * What a run did: `digest` selects and notifies afterwards, `collect` stops,
+ * `purge` anonymizes the closed offers and deletes those past 30 days (US-169).
+ */
+export type DigestRunKind = "digest" | "collect" | "purge"
 
 export interface DigestRun {
   id: string
@@ -99,6 +102,7 @@ export const COLLECTION_WINDOWS = [1, 7, 31] as const
 export const RUN_KIND_LABELS: Record<DigestRunKind, string> = {
   collect: "Collecte seule",
   digest: "Sélection du matin",
+  purge: "Purge (30 jours)",
 }
 
 export const RUN_STATUS_LABELS: Record<DigestRun["status"], string> = {
@@ -116,6 +120,10 @@ export const RUN_STAT_LABELS: Record<string, string> = {
   matchesWritten: "offres proposées",
   notificationsSent: "notifications",
   projects: "recherches",
+  listingsAnonymized: "annonces anonymisées",
+  jobsAnonymized: "offres anonymisées",
+  jobsPurged: "offres supprimées",
+  jobsKeptForApplications: "gardées pour une candidature",
 }
 
 /** A source as the admin sees it: what it is, and what it last did. */

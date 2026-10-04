@@ -79,7 +79,7 @@ export type JobMatchesStore = {
 };
 
 /** What a run did: `digest` selects and notifies afterwards, `collect` stops. */
-export type DigestRunKind = "digest" | "collect";
+export type DigestRunKind = "digest" | "collect" | "purge";
 
 export interface DigestRun {
   id: string;
@@ -113,6 +113,11 @@ export type JobDigestRunsStore = {
   list(limit: number): Promise<DigestRun[]>;
   /** The day's morning selection, whatever else ran that day. */
   find(runDate: string): Promise<DigestRun | null>;
+  /** The newest run of a kind, or of a kind that ended so. */
+  latest(
+    kind: DigestRunKind,
+    status?: DigestRun["status"],
+  ): Promise<DigestRun | null>;
   /**
    * Gives the day back, so a run can be asked for again. Only the `--force`
    * flag of the manual script uses it: a search configured after the morning

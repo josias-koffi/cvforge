@@ -17,6 +17,7 @@ import { AuthService } from "../auth/auth.service";
 import { requireSession } from "../auth/request-session";
 import { JobMatchesService } from "./job-matches.service";
 import { jobMatchStatuses, type JobMatchStatus } from "./matches.types";
+import { DEFAULT_MAX_AGE_DAYS } from "./matching/job-matching";
 
 /** Contracts a candidate can filter their own search by. */
 const jobContractFilters = [
@@ -38,8 +39,6 @@ const MAX_HISTORY = 100;
 const PUBLISHED_WITHIN_DAYS = [1, 3, 7];
 const PAGE_SIZE = 20;
 const MAX_QUERY_CHARS = 120;
-/** The pool the morning selection reads from, and nothing older. */
-const MAX_AGE_DAYS = 30;
 
 /** The candidate's own offers of the day. */
 @Controller("job-search")
@@ -208,5 +207,5 @@ function readDate(value: string | undefined): string | null {
 function readPublishedWithin(value: string | undefined): number {
   const days = Number(value);
 
-  return PUBLISHED_WITHIN_DAYS.includes(days) ? days : MAX_AGE_DAYS;
+  return PUBLISHED_WITHIN_DAYS.includes(days) ? days : DEFAULT_MAX_AGE_DAYS;
 }
