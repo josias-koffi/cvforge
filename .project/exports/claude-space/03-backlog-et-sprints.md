@@ -1105,27 +1105,35 @@ plus d'offres en base, et la purge doit exister avant.
 - [ ] **[US-170]** Supprimer les candidatures sans activité depuis un an
   - Agent: `developer`
   - Critères d'acceptation :
-    - [ ] Une candidature dont la **dernière modification** (`updated_at`) date de plus d'un an est
+    - [x] Une candidature dont la **dernière modification** (`updated_at`) date de plus d'un an est
           supprimée, quel que soit son statut : versions de CV et de lettre (cascade existante),
           sessions et rapports d'entretien rattachés, fichiers stockés s'il y en a, correspondance
           d'offre détachée.
-    - [ ] Une ouverture de la candidature ne compte pas comme une activité ; un changement de
+    - [x] Une ouverture de la candidature ne compte pas comme une activité ; un changement de
           statut, une génération ou une modification, si.
-    - [ ] **Avertissement 15 jours avant**, par e-mail (gabarit commun, US-161) et dans l'app :
+    - [x] **Avertissement 15 jours avant**, par e-mail (gabarit commun, US-161) et dans l'app :
           liste des candidatures concernées, avec un lien pour les garder (toute modification repousse
           l'échéance) ou télécharger leurs documents. Désactivable dans `/notifications` comme les
           autres e-mails, sauf qu'on ne peut pas désactiver la suppression elle-même.
-    - [ ] Tâche quotidienne sur le modèle d'`AtsPurgeService` (au démarrage du module, puis toutes
+          _Lien vers `/candidatures` : bandeau « vont être supprimées », bouton « Garder » et accès
+          à la candidature pour télécharger ; le lien de l'e-mail n'écrit rien._
+    - [x] Tâche quotidienne sur le modèle d'`AtsPurgeService` (au démarrage du module, puis toutes
           les 24 h), avec un mode `--dry-run`.
-    - [ ] Les métriques admin qui comptent les candidatures (cockpit E26, KPI) restent justes :
+          _`applications:purge [--dry-run]`. La passe quotidienne ne démarre qu'après une première
+          passe lancée à la main, qui refuse de tourner tant que la politique publiée ne contient
+          pas « un an après leur dernière modification »._
+    - [x] Les métriques admin qui comptent les candidatures (cockpit E26, KPI) restent justes :
           les agrégats historiques ne sont pas recalculés à partir des lignes supprimées, ou la
           baisse est documentée dans le cockpit.
-    - [ ] `privacy-retention-policy.ts` porte les deux nouvelles règles (offres 30 jours,
+          _Périodes 7/30/90/365 jours intactes (une candidature supprimée a plus d'un an) ; note
+          dans l'onglet Usage pour « 1 an » (période précédente) et « Tout »._
+    - [x] `privacy-retention-policy.ts` porte les deux nouvelles règles (offres 30 jours,
           candidatures un an après la dernière activité).
     - [ ] Politique de confidentialité mise à jour depuis `/admin/legal`, section « Combien de
           temps nous les gardons » : « Vos candidatures : un an après leur dernière modification,
           avec un rappel quinze jours avant. » **Publiée avant l'activation de la purge.**
-    - [ ] Tests : seuil d'un an, avertissement envoyé une seule fois, candidature modifiée après
+          _À faire par le propriétaire depuis `/admin/legal` ; le script d'activation le vérifie._
+    - [x] Tests : seuil d'un an, avertissement envoyé une seule fois, candidature modifiée après
           l'avertissement conservée, suppression complète (aucune ligne restante dans les tables
           liées).
 

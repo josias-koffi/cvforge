@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  composeApplicationDeletionWarningEmail,
   composeApplicationFollowUpEmail,
   composeCreditPurchaseEmail,
   composeMagicLinkEmail,
@@ -143,5 +144,35 @@ describe("resolveMailConfig", () => {
     expect(config.from).toBeNull();
     expect(config.replyTo).toBeNull();
     expect(config.landingUrl).toBe("http://localhost:3101");
+  });
+});
+
+describe("composeApplicationDeletionWarningEmail (US-170)", () => {
+  it("lists every application with its deletion date and points to the applications", () => {
+    const email = composeApplicationDeletionWarningEmail(brand, {
+      applications: [
+        { companyName: "Doctolib", deletesAt: "2026-10-19T08:00:00.000Z", title: "Développeur" },
+        { companyName: "", deletesAt: "2026-10-20T08:00:00.000Z", title: "Juriste" },
+      ],
+      applicationsUrl: "https://app.jobspark.test/candidatures",
+      preferencesUrl: "https://app.jobspark.test/notifications",
+    });
+
+    expect(email.subject).toBe("2 candidatures inactives seront supprimées");
+    expect(email.text).toContain("Développeur — Doctolib : 19 octobre 2026");
+    expect(email.text).toContain("Juriste : 20 octobre 2026");
+    expect(email.text).toContain("Voir mes candidatures : https://app.jobspark.test/candidatures");
+    expect(email.html).toContain("https://app.jobspark.test/notifications");
+  });
+
+  it("speaks of one application in the singular", () => {
+    const email = composeApplicationDeletionWarningEmail(brand, {
+      applications: [{ companyName: "Acme", deletesAt: "2026-10-19T08:00:00.000Z", title: "Développeur" }],
+      applicationsUrl: "https://app.jobspark.test/candidatures",
+      preferencesUrl: "https://app.jobspark.test/notifications",
+    });
+
+    expect(email.subject).toBe("Une candidature inactive sera supprimée");
+    expect(email.text).toContain("Pour la garder");
   });
 });

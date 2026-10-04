@@ -14,6 +14,11 @@ import { renderEmail } from "./mail-layout";
 import type { MailConfig } from "./mail.config";
 
 export {
+  composeApplicationDeletionWarningEmail,
+  type ApplicationDeletionWarningEmailInput,
+  type ExpiringApplicationLine,
+} from "./application-deletion-email";
+export {
   composeJobAlertEmail,
   type JobAlertEmailInput,
   type JobAlertOffer,

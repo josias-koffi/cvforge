@@ -4,11 +4,13 @@ import {
   InternalServerErrorException,
 } from "@nestjs/common";
 import {
+  composeApplicationDeletionWarningEmail,
   composeApplicationFollowUpEmail,
   composeCreditPurchaseEmail,
   composeJobAlertEmail,
   composeJobDigestEmail,
   type ComposedEmail,
+  type ExpiringApplicationLine,
   type JobAlertEmailInput,
   type JobDigestEmailInput,
 } from "../mail/emails";
@@ -82,6 +84,25 @@ export class NotificationsMailerService {
     if (!this.getDeliveryStatus().ready) return false;
 
     await this.sendMail(input.to, composeJobAlertEmail(this.mailConfig, input));
+
+    return true;
+  }
+
+  /** True once handed to the transport; false when delivery is not configured. */
+  async sendApplicationDeletionWarningEmail(input: {
+    applications: ExpiringApplicationLine[];
+    to: string;
+  }): Promise<boolean> {
+    if (!this.getDeliveryStatus().ready) return false;
+
+    await this.sendMail(
+      input.to,
+      composeApplicationDeletionWarningEmail(this.mailConfig, {
+        applications: input.applications,
+        applicationsUrl: absoluteAppUrl(this.mailConfig.appUrl, "/candidatures"),
+        preferencesUrl: this.preferencesUrl(),
+      }),
+    );
 
     return true;
   }

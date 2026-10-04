@@ -97,35 +97,35 @@ describe("PgNotificationsStore", () => {
     ).resolves.toBeNull();
 
     await store.savePreferences("user@example.com", {
-      email: { applicationFollowUp: false, creditPurchaseConfirmed: true, jobDigest: true },
+      email: { applicationDeletionWarning: true, applicationFollowUp: false, creditPurchaseConfirmed: true, jobDigest: true },
       jobAlerts: { aiAnalysis: false, aiFilter: true, enabled: true, rhythm: "immediate", threshold: "close" },
     });
 
     await expect(store.readPreferences("user@example.com")).resolves.toEqual({
-      email: { applicationFollowUp: false, creditPurchaseConfirmed: true, jobDigest: true },
+      email: { applicationDeletionWarning: true, applicationFollowUp: false, creditPurchaseConfirmed: true, jobDigest: true },
       jobAlerts: { aiAnalysis: false, aiFilter: true, enabled: true, rhythm: "immediate", threshold: "close" },
     });
   });
 
   it("overwrites preferences on a second save", async () => {
     await store.savePreferences("user@example.com", {
-      email: { applicationFollowUp: false, creditPurchaseConfirmed: true, jobDigest: true },
+      email: { applicationDeletionWarning: true, applicationFollowUp: false, creditPurchaseConfirmed: true, jobDigest: true },
       jobAlerts: { aiAnalysis: false, aiFilter: true, enabled: true, rhythm: "immediate", threshold: "close" },
     });
     await store.savePreferences("user@example.com", {
-      email: { applicationFollowUp: true, creditPurchaseConfirmed: false, jobDigest: true },
+      email: { applicationDeletionWarning: true, applicationFollowUp: true, creditPurchaseConfirmed: false, jobDigest: true },
       jobAlerts: { aiAnalysis: false, aiFilter: true, enabled: true, rhythm: "immediate", threshold: "close" },
     });
 
     await expect(store.readPreferences("user@example.com")).resolves.toEqual({
-      email: { applicationFollowUp: true, creditPurchaseConfirmed: false, jobDigest: true },
+      email: { applicationDeletionWarning: true, applicationFollowUp: true, creditPurchaseConfirmed: false, jobDigest: true },
       jobAlerts: { aiAnalysis: false, aiFilter: true, enabled: true, rhythm: "immediate", threshold: "close" },
     });
   });
 
   it("keeps the alert preferences, and fills a row written before them with the defaults (US-166)", async () => {
     await store.savePreferences("user@example.com", {
-      email: { applicationFollowUp: true, creditPurchaseConfirmed: true, jobDigest: true },
+      email: { applicationDeletionWarning: true, applicationFollowUp: true, creditPurchaseConfirmed: true, jobDigest: true },
       jobAlerts: { aiAnalysis: false, aiFilter: true, enabled: false, rhythm: "hourly", threshold: "all" },
     });
     await expect(store.readPreferences("user@example.com")).resolves.toMatchObject({
@@ -147,7 +147,7 @@ describe("PgNotificationsStore", () => {
       makeNotification("other", { userEmail: "other@example.com" }),
     );
     await store.savePreferences("user@example.com", {
-      email: { applicationFollowUp: false, creditPurchaseConfirmed: false, jobDigest: true },
+      email: { applicationDeletionWarning: true, applicationFollowUp: false, creditPurchaseConfirmed: false, jobDigest: true },
       jobAlerts: { aiAnalysis: false, aiFilter: true, enabled: true, rhythm: "immediate", threshold: "close" },
     });
 

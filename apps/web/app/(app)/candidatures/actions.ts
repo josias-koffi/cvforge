@@ -103,6 +103,17 @@ export async function updateOfferStatus(
   return result
 }
 
+/** "Garder": the application counts as changed today, its deletion is off (US-170). */
+export async function keepApplication(offerId: string): Promise<ActionResult> {
+  const result = await runAction(
+    () => api(`/applications/${encodeURIComponent(offerId)}/keep`, { method: "POST" }),
+    "Candidature gardée pour un an de plus."
+  )
+
+  revalidatePath("/", "layout")
+  return result
+}
+
 /** Remembers which base profile generates this offer's documents. */
 export async function setOfferProfile(offerId: string, profileId: string): Promise<ActionResult> {
   const result = await runAction(() =>

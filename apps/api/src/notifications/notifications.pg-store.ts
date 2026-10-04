@@ -5,7 +5,10 @@ import type {
 import { and, desc, eq } from "drizzle-orm";
 import type { Database } from "../database/database.types";
 import { notificationPreferences, notifications } from "../database/schema";
-import { readJobAlertPreferences } from "./notification-preferences";
+import {
+  readEmailPreferences,
+  readJobAlertPreferences,
+} from "./notification-preferences";
 import type { NotificationsStore } from "./notifications.types";
 
 type NotificationRow = typeof notifications.$inferSelect;
@@ -81,7 +84,10 @@ export class PgNotificationsStore implements NotificationsStore {
       .where(eq(notificationPreferences.userEmail, userEmail));
 
     return row
-      ? { email: row.email, jobAlerts: readJobAlertPreferences(row.jobAlerts) }
+      ? {
+          email: readEmailPreferences(row.email),
+          jobAlerts: readJobAlertPreferences(row.jobAlerts),
+        }
       : null;
   }
 

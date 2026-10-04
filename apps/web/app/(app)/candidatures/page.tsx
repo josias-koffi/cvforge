@@ -4,6 +4,7 @@ import type { DraftApplication } from "@cvforge/types"
 import { PlusIcon } from "lucide-react"
 
 import { PageHeader } from "@/components/layout/page-header"
+import { ExpiringApplications } from "@/components/offers/expiring-applications"
 import { OffersTable } from "@/components/offers/offers-table"
 import { Button } from "@/components/ui/button"
 import { api } from "@/lib/api"
@@ -29,7 +30,8 @@ export default async function OffersPage() {
           </Button>
         }
       />
-      <div className="px-4 lg:px-6">
+      <div className="flex flex-col gap-4 px-4 lg:px-6">
+        <ExpiringApplications applications={applications} />
         <OffersTable offers={applications} />
       </div>
     </>

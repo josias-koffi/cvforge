@@ -9,6 +9,7 @@ import {
   applicationLetterVersions,
   applications,
 } from "../database/schema";
+import { deletionScheduledAt } from "./application-retention.rules";
 import type { ApplicationsStore, StoredApplication } from "./applications.types";
 import { withContactLinks } from "./document-links.normalize";
 
@@ -52,6 +53,10 @@ function toApplication(
 ): StoredApplication {
   return {
     createdAt: row.createdAt.toISOString(),
+    deletionScheduledAt: deletionScheduledAt({
+      deletionWarnedAt: row.deletionWarnedAt?.toISOString() ?? null,
+      updatedAt: row.updatedAt.toISOString(),
+    }),
     cvContent: withContactLinks(row.cvContent ?? null),
     cvGeneratedAt: row.cvGeneratedAt?.toISOString() ?? null,
     cvTemplateId: row.cvTemplateId,
