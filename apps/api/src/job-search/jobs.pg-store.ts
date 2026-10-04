@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 import type { Database } from "../database/database.types";
 import { jobLinks, jobListings, jobs } from "../database/schema";
 import {
@@ -11,6 +11,11 @@ import {
 import type { MatchCandidate, MatchMethod } from "./dedup/match-job";
 import type { JobSource, NormalizedJobListing } from "./job-search.types";
 import { findAdvertsByJobIds } from "./jobs.adverts";
+import {
+  closeListing,
+  closeListingsMissingFrom,
+  refreshClosedAt,
+} from "./jobs.closing";
 import {
   newJobValues,
   olderOf,
@@ -133,7 +138,7 @@ export class PgJobsStore implements JobsStore {
       .values({ ...values, firstSeenAt: seenAt })
       .onConflictDoUpdate({
         target: [jobListings.source, jobListings.externalId],
-        set: { ...values, closedAt: null },
+        set: { ...values, anonymizedAt: null, closedAt: null },
       })
       .returning();
 
@@ -165,8 +170,11 @@ export class PgJobsStore implements JobsStore {
     );
     // `bestRank` already counts this advert, since it was written just above.
     // Equal rank therefore means "nobody better publishes this job", and the
-    // freshest wording of that rank wins.
-    const takesOver = sourcePriority(listing.source) >= bestRank;
+    // freshest wording of that rank wins. A job anonymized at its closing
+    // (US-169) takes the wording of whichever advert brings it back.
+    const takesOver =
+      current.anonymizedAt !== null ||
+      sourcePriority(listing.source) >= bestRank;
 
     await this.db
       .update(jobs)
@@ -205,6 +213,7 @@ export class PgJobsStore implements JobsStore {
           current.romeCompetences.length > 0
             ? current.romeCompetences
             : (listing.rome?.competences ?? []),
+        anonymizedAt: null,
         closedAt: null,
         firstSeenAt: current.firstSeenAt,
         lastSeenAt: seenAt,
@@ -263,19 +272,8 @@ export class PgJobsStore implements JobsStore {
     return searchJobs(this.db, filters);
   }
 
-  async closeListing(source: JobSource, externalId: string, at: string) {
-    const [row] = await this.db
-      .update(jobListings)
-      .set({ closedAt: new Date(at) })
-      .where(
-        and(
-          eq(jobListings.source, source),
-          eq(jobListings.externalId, externalId),
-        ),
-      )
-      .returning({ jobId: jobListings.jobId });
-
-    if (row) await this.refreshClosedAt(row.jobId, at);
+  closeListing(source: JobSource, externalId: string, at: string) {
+    return closeListing(this.db, { at, externalId, source });
   }
 
   listStaleOpenListings(input: {
@@ -287,45 +285,12 @@ export class PgJobsStore implements JobsStore {
     return listStaleOpenListings(this.db, input);
   }
 
-  async closeListingsMissingFrom(input: {
+  closeListingsMissingFrom(input: {
     source: JobSource;
     seenExternalIds: readonly string[];
     at: string;
   }): Promise<number> {
-    const seen = [...new Set(input.seenExternalIds)];
-    const closed = await this.db
-      .update(jobListings)
-      .set({ closedAt: new Date(input.at) })
-      .where(
-        and(
-          eq(jobListings.source, input.source),
-          isNull(jobListings.closedAt),
-          seen.length > 0
-            ? sql`${jobListings.externalId} not in ${seen}`
-            : sql`true`,
-        ),
-      )
-      .returning({ jobId: jobListings.jobId });
-
-    for (const jobId of new Set(closed.map((row) => row.jobId))) {
-      await this.refreshClosedAt(jobId, input.at);
-    }
-
-    return closed.length;
-  }
-
-  /** A job is closed only once every one of its adverts is. */
-  private async refreshClosedAt(jobId: string, at: string) {
-    const open = await this.db
-      .select({ id: jobListings.id })
-      .from(jobListings)
-      .where(and(eq(jobListings.jobId, jobId), isNull(jobListings.closedAt)))
-      .limit(1);
-
-    await this.db
-      .update(jobs)
-      .set({ closedAt: open.length > 0 ? null : new Date(at) })
-      .where(eq(jobs.id, jobId));
+    return closeListingsMissingFrom(this.db, input);
   }
 
   /**
@@ -362,7 +327,7 @@ export class PgJobsStore implements JobsStore {
         .where(inArray(jobLinks.urlKey, keys));
     }
 
-    await this.refreshClosedAt(row.jobId, new Date().toISOString());
+    await refreshClosedAt(this.db, row.jobId, new Date().toISOString());
 
     return toJob(created!);
   }

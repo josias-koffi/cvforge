@@ -24,6 +24,10 @@ export { readYearlySalary } from "./salary";
  */
 
 const MS_PER_DAY = 86_400_000;
+/**
+ * The 30-day rule: nothing older is proposed, and the purge deletes what is
+ * past it (US-169). One figure for both.
+ */
 export const DEFAULT_MAX_AGE_DAYS = 30;
 /** Offers kept per candidate per morning. Ten is a readable e-mail. */
 export const DEFAULT_SELECTION_SIZE = 10;

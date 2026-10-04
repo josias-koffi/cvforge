@@ -30,32 +30,37 @@ plus d'offres en base, et la purge doit exister avant.
 
 ## ✅ Tasks (3–8 max)
 
-- [ ] **[US-169]** Anonymiser les offres fermées et purger les offres de plus de 30 jours
+- [x] **[US-169]** Anonymiser les offres fermées et purger les offres de plus de 30 jours
   - Agent: `developer`
   - Critères d'acceptation :
-    - [ ] **Anonymisation à la fermeture** : quand une annonce passe `closed_at`, son `raw` perd le
+    - [x] **Anonymisation à la fermeture** : quand une annonce passe `closed_at`, son `raw` perd le
           contact (`contact.*` : nom, courriel, coordonnées, téléphone) et les champs d'entreprise
           (nom, description, URL, logo) ; les mêmes champs sont vidés dans `jobs` si toutes ses
           annonces sont fermées. Couvert par un test sur une réponse France Travail réelle
           (fixture) et une annonce de logiciel de recrutement.
-    - [ ] **Purge quotidienne** (même verrou que `job_digest_runs`) : une offre (`jobs`) est
+    - [x] **Purge quotidienne** (même verrou que `job_digest_runs`) : une offre (`jobs`) est
           supprimée, avec ses annonces, liens et correspondances en cascade, quand **sa date de
           publication (ou, à défaut, de première détection) dépasse 30 jours**, ou quand elle est
           fermée depuis plus de 30 jours,
           **sauf** si une correspondance la relie à une candidature **active** (brouillon, envoyée,
           entretien prévu), via `job_matches.application_id`.
-    - [ ] Une offre conservée pour une candidature active est anonymisée à sa fermeture comme les
+    - [x] Une offre conservée pour une candidature active est anonymisée à sa fermeture comme les
           autres, puis purgée au premier passage où la candidature n'est plus active (refusée,
           offre reçue, supprimée).
-    - [ ] Une candidature ne dépend pas de l'offre purgée : elle garde sa propre copie
+    - [x] Une candidature ne dépend pas de l'offre purgée : elle garde sa propre copie
           (`raw_offer_text`, `extracted`). Vérifié par un test : la page candidature, la
           génération du CV et de la lettre, et l'entretien fonctionnent après la purge de l'offre.
-    - [ ] **Rattrapage une seule fois** : les annonces déjà fermées sont anonymisées et les offres
+          _Vérifié : test PGlite (la candidature relue par son store après la purge est entière) ;
+          aucun module candidature, génération ou entretien ne lit `jobs` ni `job_matches`._
+    - [x] **Rattrapage une seule fois** : les annonces déjà fermées sont anonymisées et les offres
           de plus de 30 jours purgées, par un script relançable (`jobs:purge --dry-run` pour
           compter avant d'agir).
-    - [ ] Le nombre d'offres anonymisées et purgées par passage est journalisé et visible dans
+          _La purge quotidienne ne démarre qu'après une première purge lancée à la main
+          (`jobs:purge`), une fois le `--dry-run` relu (DoD). Base locale le 2026-10-04 : 4
+          annonces à anonymiser, 376 offres sur 3 050 à purger, aucune gardée._
+    - [x] Le nombre d'offres anonymisées et purgées par passage est journalisé et visible dans
           l'admin des sources.
-    - [ ] La fenêtre de 30 jours est une constante partagée avec la règle de fraîcheur d'E19
+    - [x] La fenêtre de 30 jours est une constante partagée avec la règle de fraîcheur d'E19
           (aucune offre de plus de 30 jours proposée), pas un second chiffre.
 - [ ] **[US-170]** Supprimer les candidatures sans activité depuis un an
   - Agent: `developer`
@@ -110,4 +115,4 @@ plus d'offres en base, et la purge doit exister avant.
 
 ## 🔁 Workflow Runs
 
-— aucun pour l'instant.
+- 2026-10-04 — [[workflows/runs/developer-20261004122902|developer]] (US-169) — passed

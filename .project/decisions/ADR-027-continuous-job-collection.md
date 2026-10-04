@@ -183,7 +183,8 @@ la licence de l'API pour un usage commercial continu. Texte proposé pour la dem
 - La croissance de `jobs` suit le nombre de recherches actives, pas le flux national. La purge
   d'E28 (sprint 035) devait exister avant que le flux ne tourne ; depuis le 2026-10-03, le flux
   tourne sans elle : les offres gardées et le contact recruteur dans `job_listings.raw`
-  s'accumulent jusqu'à la livraison d'US-169 et US-170, qui reste prioritaire.
+  s'accumulent jusqu'à la livraison d'US-169 et US-170, qui reste prioritaire. US-169 livrée
+  le 2026-10-04 : anonymisation à la fermeture, purge à 30 jours une fois lancée à la main.
 - La charge sur les sites carrière est multipliée par 48 pour les entreprises suivies ; le plafond
   par cycle (§3) protège contre un blocage par Greenhouse.
 - Tant que l'application est en homologation, France Travail peut brider ou réévaluer nos quotas.

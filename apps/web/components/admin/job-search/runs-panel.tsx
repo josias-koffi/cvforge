@@ -94,6 +94,9 @@ export function RunsPanel({ runs }: { runs: DigestRun[] }) {
       <p className="text-sm text-muted-foreground">
         La collecte récupère et enregistre les offres. Elle n&apos;envoie ni
         sélection ni e-mail : c&apos;est la passe de 6 h qui s&apos;en charge.
+        La purge anonymise les offres fermées et supprime celles de plus de
+        30 jours ; elle tourne chaque jour une fois lancée à la main
+        (<code>jobs:purge</code>).
       </p>
 
       <TableFrame>

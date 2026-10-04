@@ -45,7 +45,7 @@ const COLLECTION_WINDOW_DAYS = 1;
  * collection takes two hours, and the row would otherwise block every later
  * one.
  */
-const STALE_RUN_MS = 2 * 60 * 60_000;
+export const STALE_RUN_MS = 2 * 60 * 60_000;
 
 @Injectable()
 export class JobDigestService implements OnModuleInit {

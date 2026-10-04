@@ -49,8 +49,8 @@ export const jobMatches = pgTable(
     /** Set when the candidate turned the offer into an application. */
     applicationId: text("application_id"),
     /**
-     * A copy of the offer as it was proposed. Kept so a saved or applied-to
-     * offer survives the purge of `jobs`, which drops what nobody kept.
+     * A copy of the offer as it was proposed. The purge of `jobs` (US-169)
+     * takes the match with it, unless an active application points to it.
      */
     jobSnapshot: jsonb("job_snapshot"),
     /** `digest` for the morning's, `alert` for one raised as the offer arrived (US-165). */
@@ -76,6 +76,9 @@ export const jobMatches = pgTable(
   (table) => [
     uniqueIndex("job_matches_user_job_idx").on(table.userEmail, table.jobId),
     index("job_matches_user_digest_idx").on(table.userEmail, table.digestDate),
+    index("job_matches_application_idx")
+      .on(table.applicationId)
+      .where(sql`${table.applicationId} is not null`),
     index("job_matches_alert_created_idx")
       .on(table.createdAt)
       .where(sql`${table.kind} = 'alert'`),
@@ -117,7 +120,10 @@ export const jobDigestRuns = pgTable(
   {
     id: uuid("id").primaryKey().defaultRandom(),
     runDate: date("run_date").notNull(),
-    /** `digest` selects and notifies afterwards; `collect` stops at storing. */
+    /**
+     * `digest` selects and notifies afterwards; `collect` stops at storing;
+     * `purge` anonymizes and deletes the offers past retention (US-169).
+     */
     kind: text("kind").notNull().default("digest"),
     status: text("status").notNull().default("running"),
     stats: jsonb("stats"),
@@ -136,7 +142,7 @@ export const jobDigestRuns = pgTable(
     index("job_digest_runs_recent_idx").on(sql`${table.startedAt} desc`),
     check(
       "job_digest_runs_kind_check",
-      sql`${table.kind} in ('digest', 'collect')`,
+      sql`${table.kind} in ('digest', 'collect', 'purge')`,
     ),
   ],
 );

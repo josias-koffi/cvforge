@@ -295,6 +295,22 @@ export class PgJobDigestRunsStore implements JobDigestRunsStore {
 
     return row ? toRun(row) : null;
   }
+
+  async latest(kind: DigestRunKind, status?: DigestRun["status"]) {
+    const [row] = await this.db
+      .select()
+      .from(jobDigestRuns)
+      .where(
+        and(
+          eq(jobDigestRuns.kind, kind),
+          status ? eq(jobDigestRuns.status, status) : undefined,
+        ),
+      )
+      .orderBy(desc(jobDigestRuns.startedAt))
+      .limit(1);
+
+    return row ? toRun(row) : null;
+  }
 }
 
 function toRun(row: typeof jobDigestRuns.$inferSelect): DigestRun {

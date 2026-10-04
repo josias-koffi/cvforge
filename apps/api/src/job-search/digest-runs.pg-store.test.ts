@@ -94,4 +94,22 @@ describe("PgJobDigestRunsStore", () => {
     expect(await store.release("2026-09-23")).toBe(true);
     expect(await store.claim("2026-09-23", "digest")).not.toBeNull();
   });
+
+  it("shares the collection's lock with the purge (US-169)", async () => {
+    const collect = await store.claim("2026-10-04", "collect");
+    expect(await store.claim("2026-10-04", "purge")).toBeNull();
+
+    await store.finish(collect!.id, { stats: {}, status: "done" });
+    const purge = await store.claim("2026-10-04", "purge");
+    expect(purge).not.toBeNull();
+    expect(await store.claim("2026-10-04", "collect")).toBeNull();
+
+    await store.finish(purge!.id, { stats: { jobsPurged: 3 }, status: "failed" });
+    expect(await store.latest("purge", "done")).toBeNull();
+    expect(await store.latest("purge")).toMatchObject({
+      kind: "purge",
+      stats: { jobsPurged: 3 },
+      status: "failed",
+    });
+  });
 });

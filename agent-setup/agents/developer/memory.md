@@ -1645,3 +1645,11 @@
 - Badge minute sur la carte (`fresh`) : `suppressHydrationWarning`, parce que le serveur et le client calculent à des instants différents.
 - Alerte → `/offres-du-jour/postuler/[jobId]`. L'action `applyFromAlert` enchaîne `applyToMatch` puis `generateDocument("cv")`. Elle est lancée depuis un `useEffect` (avec un ref contre le double appel), jamais au rendu : un scanner de mail ne doit rien créer. `applyToJob` renvoie `existing` pour une offre déjà candidatée.
 - Nouvelle route web : lancer `npx next typegen` pour que `PageProps<"/…">` la connaisse.
+
+## 2026-10-04 — Anonymisation et purge des offres (US-169 · [[workflows/runs/developer-20261004122902]])
+- Toute fermeture d'annonce passe par `refreshClosedAt` (jobs.closing.ts), qui appelle `anonymizeClosed(db, [jobId])` : un nouveau chemin de fermeture doit passer par là, sinon le contact du recruteur reste dans `raw`.
+- Champs identifiants par source : `IDENTIFYING_RAW_PATHS` (job-retention.pg-store.ts), retirés en SQL par `#-`. Un nouvel adaptateur qui met le nom de l'entreprise ou un contact dans `raw` doit y être ajouté.
+- Une annonce rouverte efface `anonymized_at` (upsert d'`attachListing`) ; une offre anonymisée laisse l'annonce qui la rouvre réécrire ses champs (`takesOver`).
+- `JobPurgeService` prend un run `purge` dans `job_digest_runs` (même index « une collecte en cours »). Il ne tourne seul qu'après une première purge `done` lancée à la main (`jobs:purge`).
+- `Database` n'a pas de `db.execute` typé : rester sur le query builder Drizzle avec des fragments `sql`.
+- Fixtures réelles dans `job-search/__fixtures__/` (coordonnées du recruteur remplacées).

@@ -58,6 +58,8 @@ import { JobBoardsController } from "./job-boards.controller";
 import { JobSearchAdminController } from "./job-search-admin.controller";
 import { JobMatchesController } from "./job-matches.controller";
 import { JobMatchesService } from "./job-matches.service";
+import { JobPurgeService } from "./job-purge.service";
+import { PgJobRetentionStore } from "./job-retention.pg-store";
 import { jobStreamProviders } from "./job-stream.providers";
 import {
   BOARD_CADENCE_STORE,
@@ -142,6 +144,12 @@ import {
       provide: JOB_DIGEST_RUNS_STORE,
       inject: [DATABASE],
       useFactory: (db: Database) => new PgJobDigestRunsStore(db),
+    },
+    {
+      provide: JobPurgeService,
+      inject: [DATABASE, JOB_DIGEST_RUNS_STORE],
+      useFactory: (db: Database, runs: JobDigestRunsStore) =>
+        new JobPurgeService(new PgJobRetentionStore(db), runs),
     },
     {
       provide: JOB_SOURCES_STORE,
@@ -238,6 +246,7 @@ import {
     BoardsService,
     JobDeduplicator,
     JobDigestService,
+    JobPurgeService,
     JOB_BOARDS_STORE,
     JOB_MATCHES_STORE,
     JOB_SOURCE_CALLS_STORE,
