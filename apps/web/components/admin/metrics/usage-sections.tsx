@@ -110,6 +110,15 @@ export function UsageSections({ data }: { data: UsageMetrics }) {
               candidatures, {formatCount(sumOf(data.series, "cvGenerated"))} CV,{" "}
               {formatCount(sumOf(data.series, "lettersGenerated"))} lettres et{" "}
               {formatCount(sumOf(data.series, "interviews"))} entretiens.
+              {period === "365" || period === "all" ? (
+                // US-170: the counts read the rows that remain, so periods
+                // more than a year back shrink as old applications go.
+                <span className="block text-muted-foreground">
+                  Les candidatures sans modification depuis un an sont supprimées, avec leurs
+                  documents et entretiens : les chiffres de plus d&apos;un an baissent au fil des
+                  suppressions (période précédente comprise).
+                </span>
+              ) : null}
             </ChartSummary>
           }
           series={[

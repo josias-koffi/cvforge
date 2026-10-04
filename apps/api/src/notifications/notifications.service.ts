@@ -1,81 +1,37 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import {
   APPLICATION_STATUS_SENT,
+  NOTIFICATION_TYPE_APPLICATION_DELETION_WARNING,
   NOTIFICATION_TYPE_APPLICATION_FOLLOW_UP,
   NOTIFICATION_TYPE_JOB_DIGEST,
-  type ApplicationStatusHistoryEntry,
   type InAppNotification,
   type JobAlertPreferences,
   type NotificationPreferencesResponse,
   type NotificationSummary,
 } from "@cvforge/types";
 import { randomUUID } from "node:crypto";
-import type {
-  ApplicationsStore,
-  StoredApplication,
-} from "../applications/applications.types";
+import type { ApplicationsStore } from "../applications/applications.types";
 import type {
   NotificationsConfig,
   NotificationsStore,
 } from "./notifications.types";
 import { NotificationsMailerService } from "./notifications-mailer.service";
-import type { JobAlertEmailInput } from "../mail/emails";
+import type {
+  ExpiringApplicationLine,
+  JobAlertEmailInput,
+} from "../mail/emails";
 import {
   createDefaultPreferences,
   mergePreferences,
   type PreferencesUpdate,
 } from "./notification-preferences";
-
-function addDays(date: Date, days: number) {
-  const copy = new Date(date);
-  copy.setUTCDate(copy.getUTCDate() + days);
-  return copy;
-}
-
-function sortNotifications(notifications: InAppNotification[]) {
-  return [...notifications].sort((left, right) => {
-    const leftUnread = left.readAt ? 1 : 0;
-    const rightUnread = right.readAt ? 1 : 0;
-
-    return (
-      leftUnread - rightUnread ||
-      right.createdAt.localeCompare(left.createdAt) ||
-      left.id.localeCompare(right.id)
-    );
-  });
-}
-
-function findSentStatusEntry(
-  application: StoredApplication,
-): ApplicationStatusHistoryEntry | null {
-  const matches = application.statusHistory.filter(
-    (entry) => entry.status === APPLICATION_STATUS_SENT,
-  );
-
-  return matches.length > 0 ? matches[matches.length - 1] ?? null : null;
-}
-
-function buildReminderNotification(
-  application: StoredApplication,
-  reminderCreatedAt: string,
-  delayDays: number,
-): InAppNotification {
-  const company = application.extracted.companyName ?? "cette entreprise";
-
-  return {
-    createdAt: reminderCreatedAt,
-    id: randomUUID(),
-    linkHref: `/candidatures?applicationId=${application.id}`,
-    message: `${delayDays} jour(s) se sont écoulés depuis l'envoi de votre candidature ${application.extracted.title} chez ${company}. Pensez à relancer si vous n'avez toujours pas de retour.`,
-    metadata: {
-      applicationId: application.id,
-    },
-    readAt: null,
-    title: `Relancer ${company}`,
-    type: NOTIFICATION_TYPE_APPLICATION_FOLLOW_UP,
-    userEmail: application.userEmail,
-  };
-}
+import {
+  addDays,
+  buildReminderNotification,
+  findSentStatusEntry,
+  formatDay,
+  sortNotifications,
+} from "./notification-builders";
 
 @Injectable()
 export class NotificationsService {
@@ -278,6 +234,48 @@ export class NotificationsService {
     }
 
     return notification;
+  }
+
+  /**
+   * Applications untouched for a year go in 15 days (US-170). The in-app
+   * notice is always written: the e-mail can be turned off, the deletion
+   * cannot. Returns whether the e-mail went out.
+   */
+  async sendApplicationDeletionWarning(input: {
+    userEmail: string;
+    applications: Array<ExpiringApplicationLine & { id: string }>;
+  }): Promise<{ emailed: boolean }> {
+    const count = input.applications.length;
+    const first = input.applications[0];
+    if (!first) return { emailed: false };
+
+    await this.notificationsStore.add({
+      createdAt: new Date().toISOString(),
+      id: randomUUID(),
+      linkHref: "/candidatures",
+      message:
+        count > 1
+          ? `${count} candidatures sans modification depuis un an seront supprimées à partir du ${formatDay(first.deletesAt)}. Gardez celles qui vous servent encore.`
+          : `« ${first.title} », sans modification depuis un an, sera supprimée le ${formatDay(first.deletesAt)}. Gardez-la si elle vous sert encore.`,
+      metadata: count > 1 ? {} : { applicationId: first.id },
+      readAt: null,
+      title:
+        count > 1
+          ? "Des candidatures vont être supprimées"
+          : "Une candidature va être supprimée",
+      type: NOTIFICATION_TYPE_APPLICATION_DELETION_WARNING,
+      userEmail: input.userEmail,
+    });
+
+    const preferences = await this.readPreferences(input.userEmail);
+    if (!preferences.email.applicationDeletionWarning) return { emailed: false };
+
+    return {
+      emailed: await this.notificationsMailer.sendApplicationDeletionWarningEmail({
+        applications: input.applications,
+        to: input.userEmail,
+      }),
+    };
   }
 
   /** What the alert dispatcher and the live matcher read (US-166). */

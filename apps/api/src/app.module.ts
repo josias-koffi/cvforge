@@ -7,6 +7,7 @@ import { SessionStateMiddleware } from "./auth/session-state.middleware";
 import { SmtpModule } from "./smtp/smtp.module";
 import { OpenRouterModule } from "./ai/openrouter.module";
 import { ApplicationsModule } from "./applications/applications.module";
+import { ApplicationRetentionModule } from "./application-retention/application-retention.module";
 import { AtsModule } from "./ats/ats.module";
 import { CompanyCheckModule } from "./company-check/company-check.module";
 import { JobMarketModule } from "./job-market/job-market.module";
@@ -44,6 +45,7 @@ import { rateLimitedRoutes } from "./shared/rate-limit/rate-limit.policies";
     SmtpModule,
     OpenRouterModule,
     ApplicationsModule,
+    ApplicationRetentionModule,
     AtsModule,
     KeywordMatchModule,
     JobMarketModule,

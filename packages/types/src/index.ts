@@ -62,6 +62,9 @@ export const NOTIFICATION_TYPE_JOB_DIGEST = "job_digest" as const;
 /** Admin-only: the OpenRouter account balance fell under the alert threshold. */
 export const NOTIFICATION_TYPE_OPENROUTER_LOW_BALANCE =
   "openrouter_low_balance" as const;
+/** Applications untouched for a year are deleted in 15 days (US-170). */
+export const NOTIFICATION_TYPE_APPLICATION_DELETION_WARNING =
+  "application_deletion_warning" as const;
 
 export const ADMIN_AUDIT_ACCOUNT_SUSPENDED = "account_suspended" as const;
 export const ADMIN_AUDIT_ACCOUNT_REACTIVATED = "account_reactivated" as const;
@@ -141,6 +144,7 @@ export const notificationTypes = [
   NOTIFICATION_TYPE_CREDIT_PURCHASE_CONFIRMED,
   NOTIFICATION_TYPE_JOB_DIGEST,
   NOTIFICATION_TYPE_OPENROUTER_LOW_BALANCE,
+  NOTIFICATION_TYPE_APPLICATION_DELETION_WARNING,
 ] as const;
 export type NotificationType = (typeof notificationTypes)[number];
 export type TemplateKind =
@@ -719,6 +723,11 @@ export interface NotificationSummary {
 
 export interface NotificationEmailPreferences {
   applicationFollowUp: boolean;
+  /**
+   * The reminder 15 days before an inactive application is deleted (US-170).
+   * Off here only silences the e-mail: the deletion still happens.
+   */
+  applicationDeletionWarning: boolean;
   creditPurchaseConfirmed: boolean;
   /** The morning e-mail of job offers. Off here means in-app only. */
   jobDigest: boolean;
@@ -808,6 +817,11 @@ export interface DraftApplication {
    */
   companyContext?: CompanyContext | null;
   companyContextGeneratedAt?: string | null;
+  /**
+   * When the application will be deleted for inactivity, once the candidate
+   * was warned and has not changed it since (US-170); null otherwise.
+   */
+  deletionScheduledAt?: string | null;
 }
 
 

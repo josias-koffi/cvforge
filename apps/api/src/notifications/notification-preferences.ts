@@ -11,12 +11,28 @@ import {
 export function createDefaultPreferences(): NotificationPreferences {
   return {
     email: {
+      applicationDeletionWarning: true,
       applicationFollowUp: true,
       creditPurchaseConfirmed: true,
       jobDigest: true,
     },
     jobAlerts: { ...DEFAULT_JOB_ALERT_PREFERENCES },
   };
+}
+
+/**
+ * Stored e-mail switches, completed with the defaults: a row written before a
+ * switch existed (US-170's warning) has no value for it, which means "on".
+ */
+export function readEmailPreferences(stored: unknown): NotificationEmailPreferences {
+  const value = (stored ?? {}) as Partial<Record<keyof NotificationEmailPreferences, unknown>>;
+  const email = createDefaultPreferences().email;
+
+  for (const key of Object.keys(email) as Array<keyof NotificationEmailPreferences>) {
+    if (typeof value[key] === "boolean") email[key] = value[key] as boolean;
+  }
+
+  return email;
 }
 
 /**

@@ -1,3 +1,8 @@
+import {
+  APPLICATION_RETENTION_DAYS,
+  DELETION_NOTICE_DAYS,
+} from "../applications/application-retention.rules";
+import { DEFAULT_MAX_AGE_DAYS as OFFER_RETENTION_DAYS } from "../job-search/matching/job-matching";
 import type { PrivacyRetentionPolicy } from "./privacy.types";
 
 export const AUDIO_RETENTION_DAYS = 30;
@@ -48,6 +53,22 @@ export const PRIVACY_RETENTION_POLICY: PrivacyRetentionPolicy = {
       dataType:
         "Public ATS scans: the computed scores and finding codes, the hashed visitor address, and the email address once the detailed report is unlocked. The uploaded CV is never stored — neither the file, nor the extracted text, nor a pseudonymised copy; it exists only in memory for the duration of the request.",
       retention: `${ATS_SCAN_RETENTION_DAYS} days.`,
+    },
+    {
+      action: `Delete automatically ${APPLICATION_RETENTION_DAYS} days after the last change, after a warning by e-mail and in the app ${DELETION_NOTICE_DAYS} days before.`,
+      automation:
+        "Implemented in ApplicationRetentionService (US-170), at module init and every 24h, once a first pass was launched by hand (`applications:purge`).",
+      dataType:
+        "Applications with their CV and letter versions, the interview sessions attached to them and the notifications about them. Opening an application does not count as a change; a new status, a generation or an edit does.",
+      retention: `${APPLICATION_RETENTION_DAYS} days after the last change.`,
+    },
+    {
+      action: `Anonymize when closed; delete ${OFFER_RETENTION_DAYS} days after publication or closing, unless an active application points to it.`,
+      automation:
+        "Anonymization when an advert closes; JobPurgeService (US-169) every day, once a first purge was launched by hand (`jobs:purge`).",
+      dataType:
+        "Collected job offers: the recruiter's contact and the company fields are removed from a closed advert, then the offer is deleted.",
+      retention: `${OFFER_RETENTION_DAYS} days.`,
     },
   ],
 };

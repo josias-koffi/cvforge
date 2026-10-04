@@ -17,6 +17,7 @@ import {
   pgTable,
   text,
   timestamp,
+  uuid,
 } from "drizzle-orm/pg-core";
 
 /**
@@ -90,6 +91,12 @@ export const applications = pgTable(
       .default([]),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
+    /**
+     * When the candidate was told this application, untouched for a year,
+     * would be deleted (US-170). A later `updated_at` cancels the warning.
+     * Written by the retention pass only, never by `save`.
+     */
+    deletionWarnedAt: timestamp("deletion_warned_at", { withTimezone: true }),
   },
   (table) => [
     // `listByUserEmail` orders by creation, `listAll` by last change.
@@ -155,3 +162,10 @@ export const applicationLetterVersions = pgTable(
     ),
   ],
 );
+
+/** One real pass of the applications' retention (US-170), for the record. */
+export const applicationRetentionRuns = pgTable("application_retention_runs", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  ranAt: timestamp("ran_at", { withTimezone: true }).notNull().defaultNow(),
+  stats: jsonb("stats").$type<Record<string, number>>().notNull(),
+});

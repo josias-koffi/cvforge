@@ -88,7 +88,13 @@ describe("importLegacyNotifications", () => {
       1,
     );
     await expect(store.readPreferences("user@example.com")).resolves.toEqual({
-      email: { applicationFollowUp: false, creditPurchaseConfirmed: true },
+      // Legacy files predate the newer switches: the defaults fill them in.
+      email: {
+        applicationDeletionWarning: true,
+        applicationFollowUp: false,
+        creditPurchaseConfirmed: true,
+        jobDigest: true,
+      },
       // Legacy files predate alerts: the defaults fill them in (US-166).
       jobAlerts: { aiAnalysis: false, aiFilter: true, enabled: true, rhythm: "immediate", threshold: "close" },
     });

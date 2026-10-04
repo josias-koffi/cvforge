@@ -1653,3 +1653,10 @@
 - `JobPurgeService` prend un run `purge` dans `job_digest_runs` (même index « une collecte en cours »). Il ne tourne seul qu'après une première purge `done` lancée à la main (`jobs:purge`).
 - `Database` n'a pas de `db.execute` typé : rester sur le query builder Drizzle avec des fragments `sql`.
 - Fixtures réelles dans `job-search/__fixtures__/` (coordonnées du recruteur remplacées).
+
+## 2026-10-04 — Suppression des candidatures inactives (US-170 · [[workflows/runs/developer-20261004131152]])
+- Règle dans `applications/application-retention.rules.ts` ; `deletion_warned_at` n'est écrit que par la passe de rétention (absent de `toRow`, donc préservé par `save`). Une sauvegarde qui ne touche pas `updatedAt` (contexte entreprise, points à mettre en avant) ne compte pas comme activité.
+- Un nouvel interrupteur e-mail : l'ajouter à `createDefaultPreferences` ; `readEmailPreferences` complète les lignes anciennes. Tests concernés : `notifications.pg-store.test.ts`, `notifications.service.test.ts`, `import-legacy-notifications.test.ts`.
+- Une nouvelle constante de `@cvforge/types` est `undefined` à l'exécution côté API tant que `pnpm --filter @cvforge/types build` n'a pas tourné (le typecheck, lui, passe).
+- Nouveau module Nest : l'ajouter aussi à `app.module.test.ts`, qui liste les imports.
+- Une candidature supprimée emporte ses sessions d'entretien et les notifications dont `metadata.applicationId` la nomme ; la correspondance d'offre est seulement détachée.

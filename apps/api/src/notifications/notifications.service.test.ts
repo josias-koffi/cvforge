@@ -116,6 +116,7 @@ describe("NotificationsService", () => {
       provider: "resend",
       ready: true,
     })),
+    sendApplicationDeletionWarningEmail: vi.fn(async () => true),
     sendApplicationFollowUpEmail: vi.fn(),
     sendCreditPurchaseConfirmationEmail: vi.fn(),
   } as unknown as NotificationsMailerService;
@@ -135,6 +136,60 @@ describe("NotificationsService", () => {
     vi.setSystemTime(new Date("2026-04-22T08:00:00.000Z"));
     vi.mocked(notificationsMailer.sendApplicationFollowUpEmail).mockReset();
     vi.mocked(notificationsMailer.sendCreditPurchaseConfirmationEmail).mockReset();
+    vi.mocked(notificationsMailer.sendApplicationDeletionWarningEmail).mockClear();
+  });
+
+  it("warns in the app and by e-mail before deleting inactive applications (US-170)", async () => {
+    const store = await createNotificationsStore();
+    const service = new NotificationsService(store, createApplicationsStore([]), config, notificationsMailer);
+    const applications = [
+      { companyName: "Acme", deletesAt: "2026-05-07T08:00:00.000Z", id: "a1", title: "Développeur" },
+      { companyName: "", deletesAt: "2026-05-07T08:00:00.000Z", id: "a2", title: "Juriste" },
+    ];
+
+    await expect(
+      service.sendApplicationDeletionWarning({ applications, userEmail: "user@example.com" }),
+    ).resolves.toEqual({ emailed: true });
+
+    expect(notificationsMailer.sendApplicationDeletionWarningEmail).toHaveBeenCalledWith({
+      applications,
+      to: "user@example.com",
+    });
+    const [notification] = await store.listByUserEmail("user@example.com");
+    expect(notification).toMatchObject({
+      linkHref: "/candidatures",
+      message: expect.stringContaining("2 candidatures"),
+      type: "application_deletion_warning",
+    });
+  });
+
+  it("still warns in the app when the candidate turned the deletion e-mail off", async () => {
+    const store = await createNotificationsStore();
+    await store.savePreferences("user@example.com", {
+      email: {
+        applicationDeletionWarning: false,
+        applicationFollowUp: true,
+        creditPurchaseConfirmed: true,
+        jobDigest: true,
+      },
+      jobAlerts: { aiAnalysis: false, aiFilter: true, enabled: true, rhythm: "immediate", threshold: "close" },
+    });
+    const service = new NotificationsService(store, createApplicationsStore([]), config, notificationsMailer);
+
+    await expect(
+      service.sendApplicationDeletionWarning({
+        applications: [{ companyName: "Acme", deletesAt: "2026-05-07T08:00:00.000Z", id: "a1", title: "Développeur" }],
+        userEmail: "user@example.com",
+      }),
+    ).resolves.toEqual({ emailed: false });
+
+    expect(notificationsMailer.sendApplicationDeletionWarningEmail).not.toHaveBeenCalled();
+    expect(await store.listByUserEmail("user@example.com")).toEqual([
+      expect.objectContaining({
+        message: expect.stringContaining("« Développeur »"),
+        metadata: { applicationId: "a1" },
+      }),
+    ]);
   });
 
   it("creates a single J+7 follow-up reminder for sent applications without response", async () => {
@@ -234,6 +289,7 @@ describe("NotificationsService", () => {
     const store = await createNotificationsStore();
     await store.savePreferences("user@example.com", {
       email: {
+        applicationDeletionWarning: true,
         applicationFollowUp: false,
         creditPurchaseConfirmed: true,
         jobDigest: true,

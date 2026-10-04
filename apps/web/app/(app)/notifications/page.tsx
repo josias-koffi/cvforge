@@ -40,7 +40,7 @@ export default async function NotificationsPage() {
     <>
       <PageHeader
         title="Notifications"
-        description="Relances de candidatures et confirmations d'achat. Les alertes de nouvelles offres se règlent dans Ma recherche."
+        description="Relances de candidatures, rappels avant suppression et confirmations d'achat. Les alertes de nouvelles offres se règlent dans Ma recherche."
       />
       <div className="grid items-start gap-4 px-4 lg:px-6 @5xl/main:grid-cols-[1fr_360px]">
         <Card>
@@ -120,6 +120,13 @@ export default async function NotificationsPage() {
                 label="Relances de candidature"
                 description="Rappel quand une candidature envoyée reste sans réponse."
                 enabled={preferences.preferences.email.applicationFollowUp}
+                disabled={!preferences.emailDeliveryReady}
+              />
+              <PreferenceSwitch
+                preference="applicationDeletionWarning"
+                label="Avant la suppression d'une candidature"
+                description="Rappel quinze jours avant qu'une candidature sans modification depuis un an soit supprimée. Désactivé, la suppression a quand même lieu ; le rappel reste visible ici."
+                enabled={preferences.preferences.email.applicationDeletionWarning}
                 disabled={!preferences.emailDeliveryReady}
               />
               <PreferenceSwitch

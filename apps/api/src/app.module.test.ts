@@ -8,6 +8,7 @@ import { AuthModule } from "./auth/auth.module";
 import { SmtpModule } from "./smtp/smtp.module";
 import { OpenRouterModule } from "./ai/openrouter.module";
 import { ApplicationsModule } from "./applications/applications.module";
+import { ApplicationRetentionModule } from "./application-retention/application-retention.module";
 import { AtsModule } from "./ats/ats.module";
 import { CompanyCheckModule } from "./company-check/company-check.module";
 import { JobMarketModule } from "./job-market/job-market.module";
@@ -48,6 +49,7 @@ describe("AppModule", () => {
       SmtpModule,
       OpenRouterModule,
       ApplicationsModule,
+      ApplicationRetentionModule,
       AtsModule,
       KeywordMatchModule,
       JobMarketModule,

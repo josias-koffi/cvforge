@@ -84,9 +84,11 @@ describe("PgApplicationsStore", () => {
   it("round-trips an application", async () => {
     await store.createDraft(makeApplication("app-1"));
 
-    await expect(store.findById("app-1")).resolves.toEqual(
-      makeApplication("app-1"),
-    );
+    await expect(store.findById("app-1")).resolves.toEqual({
+      ...makeApplication("app-1"),
+      // Never warned about its deletion (US-170).
+      deletionScheduledAt: null,
+    });
   });
 
   it("keeps what an offer of the day asked the CV to bring forward (US-127)", async () => {
