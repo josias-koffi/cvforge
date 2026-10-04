@@ -111,8 +111,7 @@ environments:
       EMAIL_FROM: Jobspark <no-reply@koklo.dev>
       R2_BACKUP_BUCKET: koklo-db-backups
   staging:
-    branch: develop
-    deploy: manual                    # TEMPORARY during the platform migration — back to auto after
+    branch: develop                   # deploy: auto (default): every push on develop deploys
     volumePrefix: cvspark-staging     # LIVE staging volumes (compose jobspark-staging-rdzqb4)
     externalVolumes: true
     domains: { landing: jobspark-staging.koklo.dev, web: jobspark-app-staging.koklo.dev, api: jobspark-api-staging.koklo.dev }

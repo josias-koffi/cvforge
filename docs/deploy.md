@@ -1,58 +1,66 @@
 # Deployment
 
-Jobspark deploys itself. The repository owns its images, its stack file, its DNS
-records, its Dokploy configuration and its pipeline; `koklo-infra` only provides
-the shared VPS20 host and the Dokploy instance at `https://dokploy.ops.koklo.dev`.
-
-Everything runs in CI. Nothing is applied from a workstation.
+Jobspark is deployed by the [josias-koffi/infra](https://github.com/josias-koffi/infra)
+platform. This repository owns its images, its stack file
+(`infra/compose/dokploy-stack.yml`), its DNS records (`infra/terraform`) and
+**one manifest**, [`.deploy/manifest.yaml`](../.deploy/manifest.yaml), which
+describes the Dokploy project, its environments, domains, variables, secrets
+and backups. The platform turns it into Dokploy resources.
 
 ## Pipeline
 
-`.github/workflows/deploy.yml` runs on every push to `develop` (→ staging) and
-`main` (→ production):
+`.github/workflows/deploy-platform.yml` carries no rule of its own: the manifest
+decides (`environments.<env>.branch` and `deploy: auto|manual`).
 
-1. **build** — pushes `ghcr.io/josias-koffi/jobspark-{web,landing,api,puppeteer}`
-   tagged with the short commit sha (plus the branch name, and `latest` on main).
-2. **tofu** — `tofu plan` on `infra/terraform/` (Cloudflare DNS), then `apply`
-   only when the plan reports changes. The plan is printed in the job summary.
-3. **deploy** — `tofu apply` on `infra/dokploy/` against the target environment's
-   state, which pushes the compose stack and its environment to Dokploy and
-   blocks until the deploy reaches a terminal status; then smoke-tests the three
-   public URLs.
+| Event | Effect |
+|---|---|
+| push on `develop` | build the 4 images (short sha) → boot the API image against a disposable Postgres → deploy **staging** → assert the served version |
+| push on `main` | nothing: production is `deploy: manual` |
+| *Actions → Deploy → Run workflow* from `main` | deploy **production** (refused from any other branch) |
+| same, with `image_tag` | redeploy an existing tag: promote the staging tag, or **roll back** |
+| same, with `plan_only` | show the plan, apply nothing |
 
-`workflow_dispatch` takes an `environment` and an optional `image_tag`, which is
-how you redeploy or **roll back**: pick the short sha of a previous build. A
-re-run with an unchanged tag produces an empty plan and no redeploy.
+Promote staging to production: merge `develop` → `main`, then *Run workflow* on
+`main` with `image_tag` = the staging tag (no rebuild).
+
+The deploy job (reusable, in the platform) validates the manifest, plans, refuses
+any plan that would destroy the stack or a volume, applies, and smoke-tests the
+domains. `verify-version` then checks that `/health` (api) and `/version` (web)
+serve the deployed tag.
 
 ## Environments
 
 | | staging | production |
 |---|---|---|
-| Dokploy project | `jobspark-staging` | `jobspark` |
-| Dokploy state | `jobspark/dokploy-staging.tfstate` | `jobspark/dokploy-production.tfstate` |
+| Dokploy | project `jobspark`, environment `staging` | project `jobspark`, environment `production` |
+| compose (appName) | `jobspark-staging-rdzqb4` | `cvspark-vxlxow` |
+| platform state | `apps/jobspark/staging.tfstate` | `apps/jobspark/production.tfstate` |
 | landing | `jobspark-staging.koklo.dev` | `jobspark.koklo.dev` |
 | app (web) | `jobspark-app-staging.koklo.dev` | `jobspark-app.koklo.dev` |
 | api | `jobspark-api-staging.koklo.dev` | `jobspark-api.koklo.dev` |
-| volumes | `cvspark-staging_*` (legacy names, kept on purpose) | `jobspark_*` (dedicated since 2026-09-29) |
+| volumes (`external`) | `cvspark-staging_*` (legacy names, kept on purpose) | `jobspark_*` |
 | cookie name | `jobspark_staging_session` | `jobspark_session` |
 
-One state per environment is what lets the deploy job keep
-`environment: staging|production` and see only that environment's secrets. All of
-the values above are derived from `var.environment` in `infra/dokploy/main.tf` —
-they are no longer GitHub variables. See `infra/dokploy/README.md`.
+All these values live in `.deploy/manifest.yaml`. The volumes are declared
+`external: true` by the platform: a wrong `volumePrefix` fails the deploy
+instead of starting on empty volumes, and deleting the compose cannot delete
+them.
 
 ## Required GitHub configuration
 
-Repository secrets: `DOKPLOY_API_KEY`, `VPS20_IP` (the DNS record target),
-`CF_API_TOKEN`, `CF_ZONE_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`,
-`R2_ENDPOINT` (`https://<account_id>.r2.cloudflarestorage.com`).
+Repository variables: `DOKPLOY_URL`, `TF_STATE_BUCKET`. Repository secrets:
+`DOKPLOY_API_KEY`, `VPS20_IP` (the DNS record target), `CF_API_TOKEN`,
+`CF_ZONE_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_ENDPOINT`
+(`https://<account_id>.r2.cloudflarestorage.com`).
 
 Per-environment (`staging`, `production`) secrets — unchanged, and the only
 per-environment configuration left: `POSTGRES_PASSWORD`, `MINIO_ACCESS_KEY`,
 `MINIO_SECRET_KEY`, `OPENROUTER_API_KEY`, `OPENAI_API_KEY`, `STRIPE_SECRET_KEY`,
 `STRIPE_WEBHOOK_SECRET`, `AUTH_SESSION_SECRET`, `SMTP_USER`, `SMTP_PASSWORD`,
 `NEXT_SERVER_ACTIONS_ENCRYPTION_KEY` (fixed value, or every redeploy invalidates
-in-flight server actions).
+in-flight server actions), `ALERT_EMAIL` (restore-check alerts), `R2_BACKUP_ACCESS_KEY_ID`,
+`R2_BACKUP_SECRET_ACCESS_KEY` (read-only use by `r2_fetch`). The list is the
+`secrets` / `optionalSecrets` of the manifest.
 
 Optional, per environment: `OPENROUTER_MANAGEMENT_API_KEY`. It enables balance
 supervision — the OpenRouter balance on `/admin/metrics`, the low-balance alert
@@ -65,7 +73,7 @@ inert (no balance shown, no alert, purchases unaffected). The two thresholds,
 `OPENROUTER_BALANCE_ALERT_THRESHOLD` (default 5) and
 `OPENROUTER_BALANCE_CRITICAL_THRESHOLD` (default 0, so a sale is refused only
 once the account is empty), are non-secret defaults in
-`infra/dokploy/variables.tf` and only need overriding to change them.
+`.deploy/manifest.yaml` and only need overriding to change them.
 
 Optional, per environment: `FRANCE_TRAVAIL_CLIENT_ID` and
 `FRANCE_TRAVAIL_CLIENT_SECRET`, the credentials of an application declared on
@@ -130,10 +138,10 @@ key answers `401`, not `429`, and the window is 24 hours.
 
 No per-environment GitHub *variables* are needed any more. Domains, volume
 prefixes, cookie names, model names and SMTP settings are now defaults in
-`infra/dokploy/variables.tf` and `main.tf`. `SSH_PRIVATE_KEY` and `SSH_USER` are
+`.deploy/manifest.yaml`. `SSH_PRIVATE_KEY` and `SSH_USER` are
 no longer used by this workflow.
 
-## Going to production
+## Going to production (historical, pre-platform bootstrap)
 
 Jobspark is the evolution of CVForge, so the live production is still the CVForge
 stack: `cvforge.koklo.dev`, `cvforge-app.koklo.dev` and `cvforge-api.koklo.dev`,
@@ -184,7 +192,7 @@ the first deploy.
 To move to `no-reply@jobspark.koklo.dev` later — Resend recommends a subdomain
 over the apex, to keep each product's sending reputation separate — add that
 subdomain in Resend, publish the records it issues into the `koklo.dev` zone,
-wait for *verified*, then change `email_from` in `infra/dokploy/variables.tf`.
+wait for *verified*, then change `email_from` in `.deploy/manifest.yaml`.
 
 Checklist for that move, and for the Jobspark logo next to the sender:
 
@@ -288,7 +296,7 @@ which is restricted to the `main` branch.
 > so they would not flush stale state onto the shared volumes), and production
 > moved to its own `jobspark_*` volumes, filled from a fresh `pg_dump` while
 > the API was stopped. The `cvforge_*` volumes are left on disk, detached, as
-> a rollback: set `volume_prefix` back to `cvforge` in `infra/dokploy/main.tf`.
+> a rollback: set `volumePrefix` back to `cvforge` in `.deploy/manifest.yaml`.
 
 **7. Retire the old names.** Once `jobspark*` serves correctly, delete the
 `cvforge*` records from `koklo-infra`, remove `stacks/cvforge` from its Ansible
@@ -305,7 +313,7 @@ pipeline's file and nothing references it any more. On VPS20, remove the stopped
      custom format (`<db>-<date>.dump`) into the `${VOLUME_PREFIX}_pg_backups`
      volume (7 daily, 4 weekly, 6 monthly; newest at
      `last/<db>-latest.dump`). **Does not survive VPS destruction.**
-  2. Off-site (`infra/dokploy/backup.tf`): Dokploy's own `dokploy_backup`
+  2. Off-site (declared in `.deploy/manifest.yaml`, created by the platform): Dokploy's own `dokploy_backup`
      (Postgres dump, 03:00) and `dokploy_volume_backup` (the `api_data`
      volume — JSON state pg_dump does not cover — 04:00), both via
      `dokploy_destination` to the R2 bucket of the environment —
@@ -328,7 +336,7 @@ pipeline's file and nothing references it any more. On VPS20, remove the stopped
   (and, when they are the same, its table count) with the live database. A dump
   taken before a deploy's new migrations is accepted once, but the next dump
   must hold them. It e-mails `RESTORE_CHECK_ALERT_TO`
-  (`restore_check_alert_to` in `infra/dokploy/variables.tf`) through Resend when
+  (`restore_check_alert_to` in `.deploy/manifest.yaml`) through Resend when
   a restore fails, the comparison fails, or a copy has no dump under 26 h old, and
   turns unhealthy when either copy's last success is older than 26 h. Its log
   (`restore OK (local)` / `restore OK (r2)`) is the quickest health check;

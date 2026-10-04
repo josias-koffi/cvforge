@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Fills the 27 GitHub secrets the Deploy workflow needs.
+# Fills the GitHub secrets the Deploy workflow needs (names: `secrets` and
+# `optionalSecrets` of .deploy/manifest.yaml, plus the platform repo secrets).
 #
 #   bash set-secrets.sh
 #
