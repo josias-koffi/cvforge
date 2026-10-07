@@ -1660,3 +1660,10 @@
 - Une nouvelle constante de `@cvforge/types` est `undefined` à l'exécution côté API tant que `pnpm --filter @cvforge/types build` n'a pas tourné (le typecheck, lui, passe).
 - Nouveau module Nest : l'ajouter aussi à `app.module.test.ts`, qui liste les imports.
 - Une candidature supprimée emporte ses sessions d'entretien et les notifications dont `metadata.applicationId` la nomme ; la correspondance d'offre est seulement détachée.
+
+## 2026-10-07 — Pertinence métier du classement des offres (hors sprint)
+- Cas signalé : un ingénieur DevOps recevait des offres « Technicien BTP ». Le pool du matin est tiré par département, sans filtre métier ; lieu + fraîcheur + expérience + salaire valent jusqu'à 42 points, au-dessus du seuil de 35.
+- `isRelevantToTrade` (`matching/job-matching.ts`) : titre + compétences ≥ `MIN_RELEVANCE_POINTS` (10), appliqué au matin (`selectJobsForProject`) et aux alertes (`isRelevantMatch`).
+- Compétences lues en mots entiers ; mots génériques des intitulés (`GENERIC_TITLE_WORDS`) ignorés sans mot propre au métier ; pas de poste visé = titre à 0.
+- Score multiplicatif écarté : il retirait l'offre « Développeur » à un « Développeur Full Stack » (test `live-matching.test.ts`, fixture CLOSE).
+- Suite envisagée : jeu d'évaluation profil/offre, puis pilote Laya (auto-hébergé) comme étape de pertinence — nécessite une ADR.

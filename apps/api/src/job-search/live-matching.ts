@@ -9,6 +9,7 @@ import type { JobsStore, StoredJob } from "./jobs.types";
 import { newJobValues, seedFromListing } from "./jobs.rows";
 import {
   DEFAULT_SCORE_THRESHOLD,
+  isRelevantToTrade,
   rejectionReason,
   scoreJob,
   type ScoredJob,
@@ -219,16 +220,13 @@ export class LiveMatcher {
 }
 
 /**
- * The morning's threshold, plus one condition: the title or the skills must
- * count. Place, freshness and contract alone reach the threshold for any
- * recent offer near the candidate — fine for a pool already narrowed by the
- * morning's query, not for the whole national flow, where it would keep
- * every accountant near a developer.
+ * The morning's rule: the threshold, and enough of the title or the skills.
+ * Place, freshness and contract alone reach the threshold for any recent
+ * offer near the candidate, and would keep every accountant near a developer.
  */
 export function isRelevantMatch(scored: ScoredJob): boolean {
   return (
-    scored.score >= DEFAULT_SCORE_THRESHOLD &&
-    (scored.breakdown.title > 0 || scored.breakdown.skills > 0)
+    scored.score >= DEFAULT_SCORE_THRESHOLD && isRelevantToTrade(scored.breakdown)
   );
 }
 
