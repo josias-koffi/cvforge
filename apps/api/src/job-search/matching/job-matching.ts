@@ -33,6 +33,13 @@ export const DEFAULT_MAX_AGE_DAYS = 30;
 export const DEFAULT_SELECTION_SIZE = 10;
 /** Below this, an offer is not worth a candidate's morning. */
 export const DEFAULT_SCORE_THRESHOLD = 35;
+/**
+ * The points title and skills must bring together, whatever the total. Place,
+ * freshness, experience and salary add up to 42 for any recent offer nearby:
+ * without this floor a BTP site technician reached a DevOps engineer on a
+ * single shared word. Ten is a third of the title, or two skills in five.
+ */
+export const MIN_RELEVANCE_POINTS = 10;
 
 export type RejectionReason =
   | "closed"
@@ -197,31 +204,79 @@ function distinctFolded(labels: readonly string[]): string[] {
   });
 }
 
-/** How much of a target job title the offer's own title carries. */
-function titleScore(job: StoredJob, project: SearchProject): number {
-  if (project.targetRoles.length === 0) return 0.5;
+/** Whether an offer speaks of the candidate's trade at all, before any context. */
+export function isRelevantToTrade(breakdown: ScoreBreakdown): boolean {
+  return breakdown.title + breakdown.skills >= MIN_RELEVANCE_POINTS;
+}
 
-  const title = fold(job.title);
+/**
+ * Words every trade's titles share: "Ingénieur DevOps" and "Ingénieur travaux"
+ * have one in common, and it says nothing about the job.
+ */
+const GENERIC_TITLE_WORDS = new Set([
+  "agent",
+  "assistant",
+  "charge",
+  "chef",
+  "confirme",
+  "consultant",
+  "directeur",
+  "employe",
+  "expert",
+  "gestionnaire",
+  "ingenieur",
+  "junior",
+  "lead",
+  "manager",
+  "operateur",
+  "projet",
+  "responsable",
+  "senior",
+  "technicien",
+]);
+
+/**
+ * How much of a target job title the offer's own title carries. No target
+ * title, no reading: the score then rests on skills and ROME alone.
+ */
+function titleScore(job: StoredJob, project: SearchProject): number {
+  const title = new Set(titleWords(job.title));
   let best = 0;
 
   for (const role of project.targetRoles) {
-    const words = fold(role).split(" ").filter((word) => word.length > 2);
-    if (words.length === 0) continue;
+    const words = titleWords(role);
+    const specific = words.filter((word) => !GENERIC_TITLE_WORDS.has(word));
+    // "Chef de projet" is all generic words: then all of them must be there.
+    const telling = specific.length > 0 ? specific : words;
+    if (!telling.some((word) => title.has(word))) continue;
 
-    const found = words.filter((word) => title.includes(word)).length;
+    const found = words.filter((word) => title.has(word)).length;
     best = Math.max(best, found / words.length);
   }
 
   return best;
 }
 
+/** Whole words only, a plural read as its singular: "Ingénieurs" is "ingenieur". */
+function titleWords(value: string): string[] {
+  return fold(value)
+    .split(" ")
+    .filter((word) => word.length > 2)
+    .map((word) => word.replace(/[sx]$/, ""));
+}
+
+/**
+ * A skill counts when the advert names it as a whole word: "CI" is not in
+ * "technicien", nor "Go" in "Google".
+ */
 function matchSkills(haystack: string, skills: readonly string[]): string[] {
+  const padded = ` ${haystack} `;
   const found: string[] = [];
 
   for (const skill of skills) {
     const folded = fold(skill);
     if (folded.length < 2) continue;
-    if (haystack.includes(folded)) found.push(skill);
+    if (padded.includes(` ${folded} `)) found.push(skill);
   }
 
   return found;
@@ -354,7 +409,11 @@ export function selectJobsForProject(input: SelectionInput): ScoredJob[] {
         skills: input.skills,
       }),
     )
-    .filter((scored) => scored.score >= (input.threshold ?? DEFAULT_SCORE_THRESHOLD))
+    .filter(
+      (scored) =>
+        isRelevantToTrade(scored.breakdown) &&
+        scored.score >= (input.threshold ?? DEFAULT_SCORE_THRESHOLD),
+    )
     .sort((left, right) => right.score - left.score)
     .slice(0, input.limit ?? DEFAULT_SELECTION_SIZE);
 }
