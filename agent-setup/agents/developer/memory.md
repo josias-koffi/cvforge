@@ -1667,3 +1667,10 @@
 - Compétences lues en mots entiers ; mots génériques des intitulés (`GENERIC_TITLE_WORDS`) ignorés sans mot propre au métier ; pas de poste visé = titre à 0.
 - Score multiplicatif écarté : il retirait l'offre « Développeur » à un « Développeur Full Stack » (test `live-matching.test.ts`, fixture CLOSE).
 - Suite envisagée : jeu d'évaluation profil/offre, puis pilote Laya (auto-hébergé) comme étape de pertinence — nécessite une ADR.
+
+## 2026-10-08 — Évaluation de la pertinence métier (hors sprint)
+- Repo voisin `../jobspark-relevance` : export prod en lecture seule (`export/*.sql`, conteneur prod `cvspark-vxlxow-postgres-1` sur `kokloVps20`, pas `cvforge-*`), 424 paires étiquetées, comparaison score / Laya. Commande cvforge : `pnpm --filter @cvforge/api relevance:eval`.
+- Sur données réelles, la règle de l'étape 1 (`isRelevantToTrade`) laisse passer 59 % des offres hors métier : les compétences ROME inférées du CV (GPAO…) donnent 13 à 20 points à des offres industrielles.
+- `hasTradeEvidence` (mot du métier dans le titre, métier ROME confirmé exact, ou ≥ 2 compétences saisies en mots entiers) : 14 % hors métier, 8 % pertinents manqués. Branché en prod (matin et alertes) à la place de `isRelevantToTrade`, supprimée.
+- Laya 0.4.0 sur CPU : AUC 0,67 sur données réelles, ~1 à 2 s par paire ; très sensible à la formulation (0,40 à 0,96 sur le jeu d'exemple). Non retenu à ce stade.
+- La prod tournait sur 4db72ec (avant US-169 : pas de colonne `anonymized_at`).
