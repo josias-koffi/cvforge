@@ -1,4 +1,5 @@
 import { SCORE_WEIGHTS, type ScoreBreakdown, type SearchProject } from "@cvforge/types";
+import { findCommuneByName, haversineKm } from "../../shared/geo/communes";
 import { fold } from "../../shared/text";
 import type { StoredJob } from "../jobs.types";
 import {
@@ -236,10 +237,14 @@ function distinctFolded(labels: readonly string[]): string[] {
 
 /**
  * Words every trade's titles share: "Ingénieur DevOps" and "Ingénieur travaux"
- * have one in common, and it says nothing about the job.
+ * have one in common, and it says nothing about the job. "Analyst" is one of
+ * them: a "Program Analyst" was sent every business, data and security analyst
+ * (production, 2026-10-08).
  */
 const GENERIC_TITLE_WORDS = new Set([
   "agent",
+  "analyst",
+  "analyste",
   "assistant",
   "charge",
   "chef",
@@ -254,10 +259,26 @@ const GENERIC_TITLE_WORDS = new Set([
   "lead",
   "manager",
   "operateur",
+  "program",
+  "programme",
   "projet",
   "responsable",
   "senior",
   "technicien",
+]);
+
+/**
+ * Words naming a trade of their own: an "Ingénieur commercial logiciels" is a
+ * salesman, whatever the candidate's "Ingénieur logiciel" shares with it.
+ */
+const OTHER_TRADE_TITLE_WORDS = new Set([
+  "achat",
+  "acheteur",
+  "commercial",
+  "commerciale",
+  "sale",
+  "vendeur",
+  "vente",
 ]);
 
 /**
@@ -268,31 +289,72 @@ function titleScore(job: StoredJob, project: SearchProject): number {
   const title = new Set(titleWords(job.title));
   let best = 0;
 
-  for (const role of project.targetRoles) {
+  for (const role of targetRoles(project)) {
     const words = titleWords(role);
-    const specific = words.filter((word) => !GENERIC_TITLE_WORDS.has(word));
-    // "Chef de projet" is all generic words: then all of them must be there.
-    const telling = specific.length > 0 ? specific : words;
-    if (!telling.some((word) => title.has(word))) continue;
+    const otherTrade = [...title].some(
+      (word) => OTHER_TRADE_TITLE_WORDS.has(word) && !words.includes(word),
+    );
+    if (otherTrade) continue;
 
-    const found = words.filter((word) => title.has(word)).length;
-    best = Math.max(best, found / words.length);
+    const specific = words.filter((word) => !GENERIC_TITLE_WORDS.has(word));
+    const found = specific.length > 0
+      ? specific.some((word) => title.has(word))
+      : // "Chef de projet" is all generic words: then all of them must be there.
+        words.every((word) => title.has(word));
+    if (!found) continue;
+
+    const shared = words.filter((word) => title.has(word)).length;
+    best = Math.max(best, shared / words.length);
   }
 
   return best;
 }
 
-/** Whole words only, a plural read as its singular: "Ingénieurs" is "ingenieur". */
+/**
+ * "Program Analyst / Ingénieur logiciel" is two roles: read as one, its
+ * words would mix and the share of each found in a title would mean nothing.
+ */
+function targetRoles(project: SearchProject): string[] {
+  return project.targetRoles.flatMap((role) =>
+    role.split("/").map((part) => part.trim()).filter(Boolean),
+  );
+}
+
+/**
+ * Whole words only, a plural read as its singular: "Ingénieurs" is
+ * "ingenieur". "Full Stack", "Full-Stack" and "Fullstack" are one word.
+ */
 function titleWords(value: string): string[] {
   return fold(value)
+    .replace(/\b(full|back|front) (stack|end)\b/g, "$1$2")
     .split(" ")
     .filter((word) => word.length > 2)
     .map((word) => word.replace(/[sx]$/, ""));
 }
 
 /**
+ * Skills a CV lists that most adverts name too, whatever the trade. Measured
+ * on the open offers of production (2026-10-08): "Développement" in 30 % of
+ * them (business development, child development…), "Architecture" in 2 %,
+ * mostly building; the next skill, "SaaS", in 0.8 %.
+ */
+const GENERIC_SKILLS = new Set([
+  "analyse",
+  "architecture",
+  "communication",
+  "conception",
+  "developpement",
+  "gestion",
+  "gestion de projet",
+  "informatique",
+  "management",
+  "organisation",
+  "projet",
+]);
+
+/**
  * A skill counts when the advert names it as a whole word: "CI" is not in
- * "technicien", nor "Go" in "Google".
+ * "technicien", nor "Go" in "Google". A skill every trade names does not.
  */
 function matchSkills(haystack: string, skills: readonly string[]): string[] {
   const padded = ` ${haystack} `;
@@ -300,7 +362,7 @@ function matchSkills(haystack: string, skills: readonly string[]): string[] {
 
   for (const skill of skills) {
     const folded = fold(skill);
-    if (folded.length < 2) continue;
+    if (folded.length < 2 || GENERIC_SKILLS.has(folded)) continue;
     if (padded.includes(` ${folded} `)) found.push(skill);
   }
 
@@ -343,24 +405,20 @@ function locationScore(job: StoredJob, project: SearchProject): number {
 
 /**
  * 1 at the candidate's doorstep, fading to 0 at the edge of the radius they
- * accepted. Coordinates when both sides have them, the department otherwise —
- * a board rarely gives more than a city name.
+ * accepted. Coordinates when both sides have them — an offer without any is
+ * placed at the commune its label names — the department otherwise.
  */
 function distanceScore(job: StoredJob, project: SearchProject): number {
   if (project.locations.length === 0 || project.nationalMobility) return 0.6;
 
+  const place = placeOf(job);
   let best = 0;
 
   for (const location of project.locations) {
-    if (
-      job.latitude !== null &&
-      job.longitude !== null &&
-      location.latitude !== null &&
-      location.longitude !== null
-    ) {
+    if (place && location.latitude !== null && location.longitude !== null) {
       const distance = haversineKm(
-        job.latitude,
-        job.longitude,
+        place.latitude,
+        place.longitude,
         location.latitude,
         location.longitude,
       );
@@ -379,24 +437,22 @@ function distanceScore(job: StoredJob, project: SearchProject): number {
   return best;
 }
 
-const EARTH_RADIUS_KM = 6371;
+/**
+ * Where the offer is: its coordinates, or the commune of its label. France
+ * Travail writes "59 - Villeneuve-d'Ascq", a board "Lille, France"; 82 % of
+ * the offers stored before 2026-10-08 have no coordinates.
+ */
+function placeOf(job: StoredJob): { latitude: number; longitude: number } | null {
+  if (job.latitude !== null && job.longitude !== null) {
+    return { latitude: job.latitude, longitude: job.longitude };
+  }
 
-export function haversineKm(
-  latitudeA: number,
-  longitudeA: number,
-  latitudeB: number,
-  longitudeB: number,
-): number {
-  const toRadians = (degrees: number) => (degrees * Math.PI) / 180;
-  const deltaLatitude = toRadians(latitudeB - latitudeA);
-  const deltaLongitude = toRadians(longitudeB - longitudeA);
-  const a =
-    Math.sin(deltaLatitude / 2) ** 2 +
-    Math.cos(toRadians(latitudeA)) *
-      Math.cos(toRadians(latitudeB)) *
-      Math.sin(deltaLongitude / 2) ** 2;
+  const name = /^\s*(?:\d{2,3}|2[AB])\s*-\s*(.+)$/.exec(job.locationLabel)?.[1]
+    ?? job.locationLabel.split(",")[0]
+    ?? "";
+  const commune = job.department ? findCommuneByName(name, job.department) : null;
 
-  return 2 * EARTH_RADIUS_KM * Math.asin(Math.sqrt(a));
+  return commune ? { latitude: commune.latitude, longitude: commune.longitude } : null;
 }
 
 export interface SelectionInput {

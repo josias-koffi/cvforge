@@ -148,6 +148,15 @@ describe("matchJob", () => {
 
       expect(matchJob(subject, [makeCandidate()])).toBeNull();
     });
+
+    it("refuses another title or another place, however close the descriptions", () => {
+      const subject = makeSubject({ companyAnonymous: true, companyKey: "" });
+
+      expect(
+        matchJob(subject, [makeCandidate({ titleKey: titleKey("Cariste (H/F)") })]),
+      ).toBeNull();
+      expect(matchJob(subject, [makeCandidate({ department: "21" })])).toBeNull();
+    });
   });
 
   it("keeps the best candidate when several could match", () => {

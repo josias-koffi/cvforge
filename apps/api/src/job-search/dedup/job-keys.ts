@@ -39,8 +39,12 @@ export function urlKey(rawUrl: string): string {
   const host = url.hostname.toLowerCase().replace(/^www\./, "");
   const path = url.pathname.replace(/\/+$/, "");
   const query = url.searchParams.toString();
+  // A single-page application names the offer after the "#": every Beetween
+  // advert is "app.beetween.com/WeaselWeb/p/#/apply/job/<id>", and without
+  // its fragment 547 different offers became one (production, 2026-10-08).
+  const route = /^#!?\//.test(url.hash) ? url.hash : "";
 
-  return `${host}${path}${query ? `?${query}` : ""}`.toLowerCase();
+  return `${host}${path}${query ? `?${query}` : ""}${route}`.toLowerCase();
 }
 
 const LEGAL_FORMS = new Set([

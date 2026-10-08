@@ -3,6 +3,7 @@ import {
   readContractType,
   readDepartment,
   readPartnerUrls,
+  readPlace,
   readRome,
   toNormalizedListing,
   type FranceTravailOffer,
@@ -44,7 +45,7 @@ describe("toNormalizedListing", () => {
       department: "44",
       externalId: "184XYZQ",
       latitude: 47.21,
-      remote: true,
+      remote: false,
       source: "france_travail",
       title: "Développeur Full Stack (H/F)",
     });
@@ -93,6 +94,46 @@ describe("toNormalizedListing", () => {
     });
 
     expect(listing?.remote).toBe(false);
+  });
+
+  it.each([
+    "Télétravail : non",
+    "Pas de télétravail.",
+    "2 jours de télétravail par semaine.",
+    "Télétravail partiel possible.",
+  ])("reads no remote from %j: only a fully remote job is one", (said) => {
+    expect(toNormalizedListing({ ...OFFER, description: said })?.remote).toBe(false);
+  });
+
+  it.each([
+    "Poste en 100% télétravail.",
+    "Télétravail à 100 % depuis la France.",
+    "Full remote, quelques déplacements par an.",
+    "Poste en télétravail complet.",
+  ])("reads a fully remote job from %j", (said) => {
+    expect(toNormalizedListing({ ...OFFER, description: said })?.remote).toBe(true);
+  });
+});
+
+describe("readPlace", () => {
+  it("keeps the offer's own coordinates", () => {
+    expect(readPlace(OFFER)).toEqual({ latitude: 47.21, longitude: -1.55 });
+  });
+
+  it("places an offer without coordinates at its commune", () => {
+    const place = readPlace({
+      lieuTravail: { commune: "59350", libelle: "59 - Lille" },
+    });
+
+    expect(place.latitude).toBeCloseTo(50.63, 1);
+    expect(place.longitude).toBeCloseTo(3.05, 1);
+  });
+
+  it("leaves an unknown commune unplaced", () => {
+    expect(readPlace({ lieuTravail: { libelle: "Luxembourg" } })).toEqual({
+      latitude: null,
+      longitude: null,
+    });
   });
 });
 

@@ -47,13 +47,14 @@ describe("prefillSearchProject", () => {
       "Développeuse React",
     ]);
     expect(project.contractTypes).toEqual(["stage", "alternance"]);
+    // Placed from its name: a city without a point matches no offer.
     expect(project.locations).toEqual([
       {
-        department: "",
-        inseeCode: "",
+        department: "44",
+        inseeCode: "44109",
         label: "Nantes",
-        latitude: null,
-        longitude: null,
+        latitude: expect.closeTo(47.24, 1),
+        longitude: expect.closeTo(-1.56, 1),
         radiusKm: 25,
       },
     ]);

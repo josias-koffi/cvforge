@@ -161,6 +161,45 @@ describe("rejectionReason", () => {
     expect(rejectionReason({ job, now: NOW, project: makeProject() })).toBeNull();
   });
 
+  it("measures an offer without coordinates from the commune of its label", () => {
+    const project = makeProject({
+      locations: [
+        {
+          department: "59",
+          inseeCode: "59350",
+          label: "Lille",
+          latitude: 50.6311,
+          longitude: 3.0468,
+          radiusKm: 25,
+        },
+      ],
+    });
+    const near = makeJob({ department: "59", locationLabel: "59 - Villeneuve-d'Ascq" });
+    // Same department, 60 km away: the department alone used to let it in.
+    const far = makeJob({ department: "59", locationLabel: "59 - Maubeuge" });
+
+    expect(rejectionReason({ job: near, now: NOW, project })).toBeNull();
+    expect(rejectionReason({ job: far, now: NOW, project })).toBe("location");
+  });
+
+  it("reaches a neighbouring department within the radius", () => {
+    const project = makeProject({
+      locations: [
+        {
+          department: "75",
+          inseeCode: "75056",
+          label: "Paris",
+          latitude: 48.8589,
+          longitude: 2.347,
+          radiusKm: 25,
+        },
+      ],
+    });
+    const job = makeJob({ department: "92", locationLabel: "92 - Boulogne-Billancourt" });
+
+    expect(rejectionReason({ job, now: NOW, project })).toBeNull();
+  });
+
   it("refuses an on-site job to someone who wants full remote", () => {
     const project = makeProject({ remote: "full_remote" });
 
@@ -505,5 +544,45 @@ describe("hasTradeEvidence", () => {
         scoreJob({ ...base, job: makeJob({ title: "Software engineer" }), skills: ["TypeScript"] }),
       ),
     ).toBe(false);
+  });
+});
+
+describe("the trade, on the owner's search (production, 2026-10-08)", () => {
+  const owner = makeProject({
+    targetRoles: ["Ingénieur Fullstack", "Program Analyst / Ingénieur logiciel"],
+  });
+  const evidenceFor = (title: string, description = "Poste en CDI.", skills: string[] = []) =>
+    hasTradeEvidence(
+      scoreJob({ job: makeJob({ description, title }), now: NOW, project: owner, skills }),
+    );
+
+  it("reads the trade in a title, whatever the spelling of full stack", () => {
+    expect(evidenceFor("Développeur Full Stack Senior (H/F)")).toBe(true);
+    expect(evidenceFor("Ingénieur logiciel Symfony (H/F)")).toBe(true);
+    expect(evidenceFor("Program Analyst (H/F)")).toBe(true);
+  });
+
+  it("does not take every analyst for a program analyst", () => {
+    expect(evidenceFor("Business Analyst flux de paiements (H/F)")).toBe(false);
+    expect(evidenceFor("Data Analyst Confirmé (F/H)")).toBe(false);
+  });
+
+  it("does not take a salesman of software for a software engineer", () => {
+    expect(evidenceFor("Ingénieur commercial logiciels - CDI (H/F)")).toBe(false);
+  });
+
+  it("does not count the skills every trade names", () => {
+    const skills = ["Développement", "Architecture", "NestJS"];
+
+    expect(
+      evidenceFor(
+        "Ingénieur structure",
+        "Développement de projets, architecture des ouvrages.",
+        skills,
+      ),
+    ).toBe(false);
+    expect(evidenceFor("Software engineer", "NestJS, développement, architecture.", skills)).toBe(
+      false,
+    );
   });
 });

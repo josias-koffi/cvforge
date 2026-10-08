@@ -6,6 +6,7 @@ import {
   searchProjectRome,
   searchProjects,
 } from "../database/schema";
+import { placeLocation } from "./search-location";
 import type { SearchProjectsStore } from "./search-projects.types";
 
 type SearchProjectRow = typeof searchProjects.$inferSelect;
@@ -23,7 +24,8 @@ function toProject(row: SearchProjectRow): SearchProject {
     excludedSectors: row.excludedSectors,
     experienceLevel: row.experienceLevel,
     internship: row.internship,
-    locations: row.locations,
+    // Rows written before locations were placed (2026-10-08) are placed here.
+    locations: row.locations.map(placeLocation),
     nationalMobility: row.nationalMobility,
     partTimeOk: row.partTimeOk,
     profileId: row.profileId,
