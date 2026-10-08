@@ -26,6 +26,15 @@ describe("urlKey", () => {
     expect(urlKey("https://acme.com/jobs?id=42")).toBe("acme.com/jobs?id=42");
   });
 
+  it("keeps the route of a single-page application, not a plain anchor", () => {
+    const first = urlKey("https://app.beetween.com/WeaselWeb/p/#/apply/job/zmz0f2uor88/ingenieur-cvc");
+    const second = urlKey("https://app.beetween.com/WeaselWeb/p/#/apply/job/oyloc6txk98/chef-de-rang");
+
+    expect(first).toBe("app.beetween.com/weaselweb/p#/apply/job/zmz0f2uor88/ingenieur-cvc");
+    expect(first).not.toBe(second);
+    expect(urlKey("https://acme.com/jobs/42#apply")).toBe("acme.com/jobs/42");
+  });
+
   it("returns nothing for what is not a link", () => {
     expect(urlKey("")).toBe("");
     expect(urlKey("voir l'annonce")).toBe("");

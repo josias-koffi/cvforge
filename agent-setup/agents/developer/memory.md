@@ -1674,3 +1674,17 @@
 - `hasTradeEvidence` (mot du métier dans le titre, métier ROME confirmé exact, ou ≥ 2 compétences saisies en mots entiers) : 14 % hors métier, 8 % pertinents manqués. Branché en prod (matin et alertes) à la place de `isRelevantToTrade`, supprimée.
 - Laya 0.4.0 sur CPU : AUC 0,67 sur données réelles, ~1 à 2 s par paire ; très sensible à la formulation (0,40 à 0,96 sur le jeu d'exemple). Non retenu à ce stade.
 - La prod tournait sur 4db72ec (avant US-169 : pas de colonne `anonymized_at`).
+
+## 2026-10-08 — Analyse de pertinence sur le compte du propriétaire (hors sprint, sans code)
+- 186 offres proposées du 05 au 08/10 : 74 % hors zone, 83 % hors métier, 10 vraiment pertinentes. Rejeu hors ligne (scratchpad, non versionné) sur 13 267 offres ouvertes.
+- Zone : `isRemote` (france-travail.mapper.ts) prend toute mention de « télétravail » — « télétravail : non » et l'hybride compris : 1 456 offres FT marquées remote, 29 vraiment 100 %. Une offre remote passe le filtre lieu et prend 15/15.
+- 82 % des offres n'ont pas de coordonnées, mais `lieuTravail.commune` (code INSEE) permet d'en géocoder 87 %. Le « Paris » pré-rempli par `prefillSearchProject` n'a ni coordonnées ni département : lieu mort (5 recherches sur 6 en prod en ont un).
+- Métier : la compétence « Développement » est dans 30 % des annonces, « Architecture » 2 % ; « Analyst » de « Program Analyst / Ingénieur logiciel » sert de mot du métier ; le métier ROME M1813 confirmé fait passer les consultants ERP.
+- Dédup : `app.beetween.com/weaselweb/p` a fusionné 547 annonces en un job ; les anonymes fusionnent sur le seul simhash, sans département. Le job fusionné prend `remote` en OU et le premier code ROME.
+
+## 2026-10-08 — Correctifs de pertinence 1 à 4 (hors sprint)
+- Télétravail = 100 % seulement : `FULL_REMOTE_PATTERNS` (france-travail.mapper.ts) ; La bonne alternance « hybrid » n'est plus remote. Les offres déjà stockées gardent l'ancien drapeau tant qu'aucune migration ne les relit (migration écrite puis bloquée par le garde-fou : à valider par le propriétaire).
+- Géo : `shared/geo/communes.ts` + `communes.data.ts` (35 014 communes et arrondissements, geo.api.gouv.fr, à régénérer chaque janvier). `readPlace` géocode par code commune ; `placeLocation` place les lieux de recherche à la lecture, l'écriture et le pré-remplissage ; `placeOf` (job-matching) place une offre sans coordonnées par son libellé « 59 - Ville » ; `poolDepartments` élargit le pool du matin aux départements du rayon.
+- Métier : intitulés visés découpés sur « / », « full stack » = « fullstack », `analyst`/`program` génériques, `OTHER_TRADE_TITLE_WORDS` (commercial, vente…), `GENERIC_SKILLS` (« Développement », « Architecture »…). Le repli « intitulé tout générique » exigeait un seul mot au lieu de tous : corrigé.
+- Dédup : `urlKey` garde le fragment `#/…` des applications monopages ; la fusion floue exige même département et titre proche, anonymes compris ; les candidats anonymes sont filtrés par département.
+- Rejeu sur la prod (scratchpad) : 18 % → 57 % d'offres pertinentes, 85 % une fois les offres stockées relues.

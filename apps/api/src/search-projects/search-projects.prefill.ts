@@ -4,6 +4,7 @@ import {
   type SearchProject,
 } from "@cvforge/types";
 import type { StoredProfile } from "../profiles/profiles.types";
+import { placeLocation } from "./search-location";
 import { parseLegacyContractTypes } from "./search-projects.normalize";
 
 /**
@@ -23,14 +24,14 @@ export function prefillSearchProject(profile: StoredProfile): SearchProject {
     contractTypes: parseLegacyContractTypes(profile.preferences.contractTypes),
     locations: city
       ? [
-          {
+          placeLocation({
             department: "",
             inseeCode: "",
             label: city,
             latitude: null,
             longitude: null,
             radiusKm: DEFAULT_SEARCH_RADIUS_KM,
-          },
+          }),
         ]
       : [],
     targetRoles: targetRoles(profile),

@@ -203,12 +203,11 @@ export async function findMatchCandidates(
       and(
         isNull(jobs.closedAt),
         gte(jobs.firstSeenAt, new Date(input.since)),
+        eq(jobs.department, input.department),
+        // A job matches in its own department only (`matchJob`).
         input.companyAnonymous || !input.companyKey
           ? eq(jobs.companyAnonymous, true)
-          : and(
-              eq(jobs.companyKey, input.companyKey),
-              eq(jobs.department, input.department),
-            ),
+          : eq(jobs.companyKey, input.companyKey),
       ),
     )
     .limit(200);

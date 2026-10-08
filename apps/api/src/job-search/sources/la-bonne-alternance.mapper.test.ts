@@ -108,10 +108,13 @@ describe("toNormalizedListing", () => {
     ).toMatchObject({ companyAnonymous: true, companyName: "" });
   });
 
-  it("counts hybrid work as remote, on site as not", () => {
+  it("counts fully remote work as remote, hybrid and on site as not", () => {
+    expect(
+      toNormalizedListing(makeOffer({ contract: { remote: "remote" } }))?.remote,
+    ).toBe(true);
     expect(
       toNormalizedListing(makeOffer({ contract: { remote: "hybrid" } }))?.remote,
-    ).toBe(true);
+    ).toBe(false);
     expect(
       toNormalizedListing(makeOffer({ contract: { remote: null } }))?.remote,
     ).toBe(false);

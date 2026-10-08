@@ -161,27 +161,30 @@ function fuzzyScore(
     candidate.descriptionSimhash,
   );
 
-  // Neither side names the employer: the description is all there is, so the
-  // bar is raised rather than lowered.
-  if (subject.companyAnonymous || candidate.companyAnonymous) {
-    if (distance > thresholds.anonymousDescriptionDistance) return null;
+  // The same job is in one place and carries one title, whoever publishes it.
+  // Without this, anonymous adverts merged on their description alone, across
+  // France: "Cariste" in Beaune with "Coach en cybersécurité" near Paris
+  // (production, 2026-10-08).
+  if (subject.department !== candidate.department) return null;
 
-    return 0.6;
+  const similarity = trigramSimilarity(subject.titleKey, candidate.titleKey);
+  if (similarity < thresholds.titleSimilarity) return null;
+
+  // A title whose meaningful words differ is a different job, whatever the
+  // trigrams say: "back end" and "front end" share most of their characters.
+  if (!sameCoreWords(subject.titleKey, candidate.titleKey)) return null;
+
+  // Neither side names the employer: the description must be near-identical,
+  // so the bar is raised rather than lowered.
+  if (subject.companyAnonymous || candidate.companyAnonymous) {
+    return distance <= thresholds.anonymousDescriptionDistance ? 0.6 : null;
   }
 
   if (!subject.companyKey || subject.companyKey !== candidate.companyKey) {
     return null;
   }
 
-  if (subject.department !== candidate.department) return null;
-
-  const similarity = trigramSimilarity(subject.titleKey, candidate.titleKey);
-  if (similarity < thresholds.titleSimilarity) return null;
   if (distance > thresholds.descriptionDistance) return null;
-
-  // A title whose meaningful words differ is a different job, whatever the
-  // trigrams say: "back end" and "front end" share most of their characters.
-  if (!sameCoreWords(subject.titleKey, candidate.titleKey)) return null;
 
   return Math.min(0.85, similarity);
 }

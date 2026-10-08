@@ -1,6 +1,7 @@
 import type { SearchProject } from "@cvforge/types";
 import { Logger } from "@nestjs/common";
 import type { OpenRouterService } from "../ai/openrouter.service";
+import { departmentsWithin } from "../shared/geo/communes";
 import type { CreditsService } from "../credits/credits.service";
 import type { MarketNotesReader } from "../market/market-stats.service";
 import type { NotificationsService } from "../notifications/notifications.service";
@@ -21,6 +22,28 @@ import {
   type ScoredJob,
 } from "./matching/job-matching";
 import type { RomeMatchingRun } from "./rome-matching.pg-reader";
+
+/**
+ * Every department a location's radius reaches, not only its own: 25 km
+ * around Paris takes in Boulogne and Montreuil, which the pool otherwise
+ * never read.
+ */
+export function poolDepartments(project: SearchProject): string[] {
+  const departments = project.locations.flatMap((location) =>
+    location.latitude !== null && location.longitude !== null
+      ? [
+          location.department,
+          ...departmentsWithin(
+            location.latitude,
+            location.longitude,
+            location.radiusKm,
+          ),
+        ]
+      : [location.department],
+  );
+
+  return [...new Set(departments.filter(Boolean))];
+}
 
 /** How far back a candidate's pool reaches. Past 30 days nothing is proposed. */
 const CANDIDATE_WINDOW_DAYS = 31;
@@ -64,7 +87,7 @@ export class DigestSelector {
         await this.deps.matches.listProposedJobIds(userEmail),
       );
       const candidates = await this.deps.jobs.findOpenJobs({
-        departments: project.locations.map((location) => location.department),
+        departments: poolDepartments(project),
         includeRemote: project.remote !== "onsite",
         limit: CANDIDATE_POOL_SIZE,
         since: new Date(

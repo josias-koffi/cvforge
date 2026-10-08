@@ -87,7 +87,9 @@ export function toNormalizedListing(
     partnerUrls: [text(offer.workplace?.website)].filter(Boolean),
     publishedAt: isoDate(offer.offer?.publication?.creation),
     raw: offer,
-    remote: offer.contract?.remote === "remote" || offer.contract?.remote === "hybrid",
+    // Hybrid work is done at the advert's address: read as remote, it would be
+    // proposed to candidates anywhere in France.
+    remote: offer.contract?.remote === "remote",
     ...readRome(offer),
     // The API publishes no pay, and inventing "selon profil" would be a lie.
     salaryLabel: "",

@@ -1,5 +1,6 @@
 import type { SearchContractType } from "@cvforge/types";
 import { departmentFromPostcode } from "../job-listing.normalize";
+import { findCommuneByCode } from "../../shared/geo/communes";
 import type {
   ListingCompetence,
   ListingRome,
@@ -43,7 +44,17 @@ export interface FranceTravailOffer {
 /** Wording France Travail uses when the employer stays hidden. */
 const ANONYMOUS_MARKERS = ["confidentiel", "anonyme"];
 
-const REMOTE_MARKERS = ["télétravail", "teletravail", "100% remote", "full remote"];
+/**
+ * Wording of a job done entirely from home. "Télétravail" alone is not one:
+ * measured on production (2026-10-08), 1 456 offers said it and 29 were fully
+ * remote — the rest offered a day a week, or wrote "télétravail : non". A
+ * remote offer is proposed anywhere in France, so a hybrid one read as remote
+ * sent a candidate in Lille every office job in Toulouse.
+ */
+const FULL_REMOTE_PATTERNS = [
+  /\b(100 ?%|full|totalement|enti[eè]rement|complet)[^.\n]{0,20}(t[eé]l[eé]travail|remote|[aà] distance)/,
+  /\b(t[eé]l[eé]travail|remote)[^.\n]{0,15}(100 ?%|total|complet|int[eé]gral)/,
+];
 
 /**
  * `typeContrat` codes, from the API's reference list. An unknown code reads as
@@ -73,6 +84,7 @@ export function toNormalizedListing(
   const companyName = text(offer.entreprise?.nom);
   const description = text(offer.description);
   const locationLabel = text(offer.lieuTravail?.libelle);
+  const place = readPlace(offer);
 
   return {
     applyUrl: text(offer.contact?.urlPostulation),
@@ -84,13 +96,13 @@ export function toNormalizedListing(
     department: readDepartment(offer),
     description,
     externalId,
-    latitude: coordinate(offer.lieuTravail?.latitude),
+    latitude: place.latitude,
     locationLabel,
-    longitude: coordinate(offer.lieuTravail?.longitude),
+    longitude: place.longitude,
     partnerUrls: readPartnerUrls(offer),
     publishedAt: isoDate(offer.dateCreation),
     raw: offer,
-    remote: isRemote(`${title} ${locationLabel} ${description}`),
+    remote: isFullyRemote(`${title} ${locationLabel} ${description}`),
     ...readRome(offer),
     salaryLabel: text(offer.salaire?.libelle),
     source: "france_travail",
@@ -199,14 +211,34 @@ function isAnonymous(companyName: string): boolean {
   return ANONYMOUS_MARKERS.some((marker) => folded.includes(marker));
 }
 
-function isRemote(haystack: string): boolean {
-  const folded = haystack.toLowerCase();
+function isFullyRemote(haystack: string): boolean {
+  const lower = haystack.toLowerCase();
 
-  return REMOTE_MARKERS.some((marker) => folded.includes(marker));
+  return FULL_REMOTE_PATTERNS.some((pattern) => pattern.test(lower));
 }
 
 function text(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
+}
+
+/**
+ * The offer's coordinates, or its commune's: most offers of the national flow
+ * come without coordinates but always with the commune's INSEE code, and a
+ * candidate's radius can only be measured from a point.
+ */
+export function readPlace(offer: FranceTravailOffer): {
+  latitude: number | null;
+  longitude: number | null;
+} {
+  const latitude = coordinate(offer.lieuTravail?.latitude);
+  const longitude = coordinate(offer.lieuTravail?.longitude);
+  if (latitude !== null && longitude !== null) return { latitude, longitude };
+
+  const commune = findCommuneByCode(text(offer.lieuTravail?.commune));
+
+  return commune
+    ? { latitude: commune.latitude, longitude: commune.longitude }
+    : { latitude: null, longitude: null };
 }
 
 function coordinate(value: unknown): number | null {

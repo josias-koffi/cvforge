@@ -16,6 +16,7 @@ import {
   type SearchSectorId,
 } from "@cvforge/types";
 import { fold } from "../shared/text";
+import { placeLocation } from "./search-location";
 
 /**
  * Turns whatever the client sent into a valid search project.
@@ -215,14 +216,16 @@ function locations(value: unknown): SearchLocation[] {
     const inseeCode = text(entry.inseeCode);
     if (!label && !inseeCode) continue;
 
-    entries.push({
-      department: departmentFrom(inseeCode, entry.department),
-      inseeCode,
-      label,
-      latitude: coordinate(entry.latitude, 90),
-      longitude: coordinate(entry.longitude, 180),
-      radiusKm: positiveInt(entry.radiusKm, MAX_RADIUS_KM) ?? DEFAULT_SEARCH_RADIUS_KM,
-    });
+    entries.push(
+      placeLocation({
+        department: departmentFrom(inseeCode, entry.department),
+        inseeCode,
+        label,
+        latitude: coordinate(entry.latitude, 90),
+        longitude: coordinate(entry.longitude, 180),
+        radiusKm: positiveInt(entry.radiusKm, MAX_RADIUS_KM) ?? DEFAULT_SEARCH_RADIUS_KM,
+      }),
+    );
 
     if (entries.length >= MAX_LOCATIONS) break;
   }
