@@ -22,6 +22,7 @@ export type BaseProfile = {
   id: string
   identity: {
     city: string
+    drivingLicenses: string[]
     email: string
     firstName: string
     lastName: string
@@ -60,6 +61,7 @@ export function createEmptyProfile(email: string, label = "Profil principal"): B
     id: crypto.randomUUID(),
     identity: {
       city: "",
+      drivingLicenses: [],
       email,
       firstName: "",
       lastName: "",
@@ -122,6 +124,7 @@ export function isProfileReady(profile: BaseProfile) {
 export function buildGenerationRequest(profile: BaseProfile): CvGenerationRequest {
   return {
     localFields: {
+      drivingLicenses: profile.identity.drivingLicenses,
       email: profile.identity.email.trim(),
       lastName: profile.identity.lastName.trim(),
       links: profile.identity.links
@@ -159,6 +162,7 @@ export function applyImportedCv(
     identity: {
       ...profile.identity,
       city: identity.city.trim() || profile.identity.city,
+      drivingLicenses: pickList(identity.drivingLicenses, profile.identity.drivingLicenses),
       firstName: identity.firstName.trim() || profile.identity.firstName,
       links: pickList(identity.links, profile.identity.links),
     },

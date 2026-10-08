@@ -14,6 +14,7 @@ import type {
 } from "@cvforge/types"
 
 import { saveCv } from "@/app/(app)/candidatures/[id]/documents-actions"
+import { DrivingLicenseField } from "@/components/documents/driving-license-field"
 import { EditorLayout } from "@/components/documents/editor-layout"
 import { GroundingNotice } from "@/components/documents/grounding-notice"
 import { TranslateDialog } from "@/components/documents/translate-dialog"
@@ -35,7 +36,7 @@ import { Field, FieldDescription, FieldLabel } from "@/components/ui/field"
 import { Textarea } from "@/components/ui/textarea"
 
 type Candidate = CVDocumentContent["candidate"]
-type ScalarIdentity = Omit<Candidate, "links">
+type ScalarIdentity = Omit<Candidate, "drivingLicenses" | "links">
 
 const identityFields: FieldSpec<ScalarIdentity>[] = [
   { key: "firstName", label: "Prénom" },
@@ -206,6 +207,12 @@ export function CvEditor({
               />
             ))}
           </FieldGrid>
+          <DrivingLicenseField
+            value={draft.candidate.drivingLicenses}
+            onChange={(drivingLicenses) =>
+              set("candidate", { ...draft.candidate, drivingLicenses })
+            }
+          />
           <ListEditor
             id="link"
             items={draft.candidate.links}

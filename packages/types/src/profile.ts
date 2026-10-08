@@ -1,6 +1,8 @@
 import type { ContactLink } from "./documents";
 
 export interface CvLocalFields {
+  /** Re-injected from the profile like the links; the model never writes it. */
+  drivingLicenses?: string[];
   email: string;
   lastName: string;
   /** Re-injected locally like the other identifiers, never generated. */
@@ -79,6 +81,7 @@ export interface ImportedCvProfilePatch {
   headline: string;
   identity: {
     city: string;
+    drivingLicenses: string[];
     firstName: string;
     links: ContactLink[];
   };

@@ -18,6 +18,7 @@ function makeProfile(
     id,
     identity: {
       city: "Paris",
+      drivingLicenses: [],
       email: "jane@example.com",
       firstName: "Jane",
       lastName: "Doe",

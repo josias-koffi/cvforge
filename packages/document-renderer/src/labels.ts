@@ -2,6 +2,7 @@ import type { Locale } from "@cvforge/types";
 
 export interface DocumentLabels {
   certifications: string;
+  drivingLicense: string;
   education: string;
   experiences: string;
   interests: string;
@@ -16,6 +17,7 @@ export interface DocumentLabels {
 const LABELS: Record<Locale, DocumentLabels> = {
   en: {
     certifications: "Certifications",
+    drivingLicense: "Driving licence",
     education: "Education",
     experiences: "Experience",
     interests: "Interests",
@@ -28,6 +30,7 @@ const LABELS: Record<Locale, DocumentLabels> = {
   },
   fr: {
     certifications: "Certifications",
+    drivingLicense: "Permis",
     education: "Formation",
     experiences: "Expériences",
     interests: "Centres d'intérêt",
@@ -43,4 +46,14 @@ const LABELS: Record<Locale, DocumentLabels> = {
 /** Section labels for a document; legacy documents without a language are French. */
 export function documentLabels(language: Locale | undefined): DocumentLabels {
   return LABELS[language ?? "fr"];
+}
+
+/** "Permis A, B" for the contact line; empty when the candidate has none. */
+export function drivingLicenseText(
+  licenses: string[] | undefined,
+  language: Locale | undefined,
+): string {
+  return licenses?.length
+    ? `${documentLabels(language).drivingLicense} ${licenses.join(", ")}`
+    : "";
 }

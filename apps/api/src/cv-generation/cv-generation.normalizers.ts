@@ -13,7 +13,7 @@ import type {
   ProjectItemProps,
   SkillCategory,
 } from "@cvforge/types";
-import { isLocale } from "@cvforge/types";
+import { isLocale, normalizeDrivingLicenses } from "@cvforge/types";
 import { UnprocessableEntityException } from "@nestjs/common";
 
 const MAX_SKILL_CATEGORIES = 5;
@@ -311,6 +311,8 @@ export function normalizeCvJson(
   return {
     candidate: {
       city: toStr(candidate.city),
+      // Like the links: copied from the profile, the model never sees it.
+      drivingLicenses: normalizeDrivingLicenses(localFields.drivingLicenses),
       email: localFields.email,
       firstName: toStr(candidate.firstName),
       lastName: localFields.lastName,
@@ -339,6 +341,7 @@ export function normalizeUpdatedCvContent(
   return {
     candidate: {
       city: toStr(value.candidate.city),
+      drivingLicenses: normalizeDrivingLicenses(value.candidate.drivingLicenses),
       email: toStr(value.candidate.email),
       firstName: toStr(value.candidate.firstName),
       lastName: toStr(value.candidate.lastName),

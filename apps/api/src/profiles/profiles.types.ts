@@ -46,6 +46,7 @@ export type StoredProfile = {
   id: string;
   identity: {
     city: string;
+    drivingLicenses: string[];
     email: string;
     firstName: string;
     lastName: string;

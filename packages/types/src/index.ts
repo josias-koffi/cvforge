@@ -3,6 +3,7 @@ import type { Locale } from "./locale";
 
 export * from "./departments";
 export * from "./documents";
+export * from "./driving-license";
 export * from "./grounding";
 export * from "./acquisition";
 export * from "./admin-metrics";

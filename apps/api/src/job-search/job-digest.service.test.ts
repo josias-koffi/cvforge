@@ -85,6 +85,7 @@ function makeProfile(): StoredProfile {
     id: "profile-1",
     identity: {
       city: "Nantes",
+      drivingLicenses: [],
       email: "jane@example.com",
       firstName: "Jane",
       lastName: "Doe",

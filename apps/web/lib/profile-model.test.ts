@@ -13,7 +13,7 @@ import {
 function patch(overrides: Partial<ImportedCvProfilePatch["sections"]> = {}): ImportedCvProfilePatch {
   return {
     headline: "Ingénieur IA",
-    identity: { city: "", firstName: "Yahse", links: [] },
+    identity: { city: "", drivingLicenses: [], firstName: "Yahse", links: [] },
     sections: {
       certifications: [],
       education: [{ degree: "BTS", honors: "", institution: "Lycée", year: "2025" }],
@@ -44,6 +44,21 @@ describe("profile model", () => {
     expect(merged.sections.education[0].description).toBe("")
   })
 
+  it("takes the imported driving licences and passes them as local fields", () => {
+    const base = createEmptyProfile("me@example.com")
+    base.identity.drivingLicenses = ["A"]
+
+    const kept = applyImportedCv(base, patch())
+    expect(kept.identity.drivingLicenses).toEqual(["A"])
+
+    const imported = applyImportedCv(base, {
+      ...patch(),
+      identity: { city: "", drivingLicenses: ["B"], firstName: "Yahse", links: [] },
+    })
+    expect(imported.identity.drivingLicenses).toEqual(["B"])
+    expect(buildGenerationRequest(imported).localFields.drivingLicenses).toEqual(["B"])
+  })
+
   it("requires a first name and some substance before generation", () => {
     const profile = createEmptyProfile("me@example.com")
 
@@ -71,6 +86,7 @@ describe("profile model", () => {
 
     // Links travel with the identifiers so the model never guesses a profile URL.
     expect(request.localFields).toEqual({
+      drivingLicenses: [],
       email: "me@example.com",
       lastName: "Koffi",
       links: [{ label: "LinkedIn", url: "linkedin.com/in/yahse" }],

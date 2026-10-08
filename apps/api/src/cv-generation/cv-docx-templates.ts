@@ -1,4 +1,8 @@
-import { documentLabels, sanitizeHref } from "@cvforge/document-renderer";
+import {
+  documentLabels,
+  drivingLicenseText,
+  sanitizeHref,
+} from "@cvforge/document-renderer";
 import type { CandidateIdentity, CVDocumentContent, LetterDocumentContent } from "@cvforge/types";
 import {
   AlignmentType,
@@ -81,7 +85,12 @@ export function renderCvDocx(content: CVDocumentContent) {
     new Paragraph({
       alignment: AlignmentType.CENTER,
       children: contactLineChildren(
-        [candidate.phone, candidate.email, candidate.city],
+        [
+          candidate.phone,
+          candidate.email,
+          candidate.city,
+          drivingLicenseText(candidate.drivingLicenses, content.language),
+        ],
         candidate.links,
       ),
       spacing: { after: 240 },

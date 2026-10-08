@@ -4,15 +4,13 @@ import type { SearchProject } from "@cvforge/types"
 
 import { SectionCard, FieldHint } from "@/components/layout/section-card"
 import type { SetCriterion } from "@/components/job-search/search-criteria"
-import {
-  ChipGroup,
-  LinesTextarea,
-} from "@/components/job-search/search-project-fields"
+import { LinesTextarea } from "@/components/job-search/search-project-fields"
 import {
   SECTOR_OPTIONS,
   SIZE_OPTIONS,
   VALUE_OPTIONS,
 } from "@/components/job-search/search-project-options"
+import { ChipGroup } from "@/components/ui/chip-group"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 

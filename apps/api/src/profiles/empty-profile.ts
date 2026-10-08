@@ -16,6 +16,7 @@ export function emptyProfileRegistry(
     id,
     identity: {
       city: "",
+      drivingLicenses: [],
       email: userEmail,
       firstName: "",
       lastName: "",

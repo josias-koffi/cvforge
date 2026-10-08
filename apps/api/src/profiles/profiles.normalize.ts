@@ -1,3 +1,4 @@
+import { normalizeDrivingLicenses } from "@cvforge/types";
 import type {
   ProfileContactLink,
   StoredProfile,
@@ -54,6 +55,7 @@ export function normalizeIdentity(value: unknown): StoredProfile["identity"] {
 
   return {
     city: typeof identity.city === "string" ? identity.city : "",
+    drivingLicenses: normalizeDrivingLicenses(identity.drivingLicenses),
     email: typeof identity.email === "string" ? identity.email : "",
     firstName: typeof identity.firstName === "string" ? identity.firstName : "",
     lastName: typeof identity.lastName === "string" ? identity.lastName : "",

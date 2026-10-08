@@ -8,14 +8,12 @@ import {
   ApprenticeshipFields,
   InternshipFields,
 } from "@/components/job-search/search-project-contract-fields"
-import {
-  ChipGroup,
-  LinesTextarea,
-} from "@/components/job-search/search-project-fields"
+import { LinesTextarea } from "@/components/job-search/search-project-fields"
 import {
   CONTRACT_OPTIONS,
   EXPERIENCE_LABELS,
 } from "@/components/job-search/search-project-options"
+import { ChipGroup } from "@/components/ui/chip-group"
 import { Label } from "@/components/ui/label"
 
 const EXPERIENCE_OPTIONS = searchExperienceLevels.map((level) => ({

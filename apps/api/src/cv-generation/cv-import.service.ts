@@ -2,6 +2,7 @@ import {
   AI_CREDIT_ACTION_CV_IMPORT,
   type ImportedCvExtractionResult,
   type ImportedCvProfilePatch,
+  normalizeDrivingLicenses,
 } from "@cvforge/types";
 import { BadRequestException, Injectable, UnprocessableEntityException } from "@nestjs/common";
 import { withOpenRouterHttpErrors } from "../ai/openrouter.exception";
@@ -42,11 +43,13 @@ Règles impératives :
 2. Ne reconstruis jamais un nom de famille, email, telephone, adresse exacte ou date de naissance.
 3. Si une information manque, retourne une chaine vide ou un tableau vide.
 4. Garde uniquement les donnees professionnelles utiles a un profil de base.
-5. Retourne UNIQUEMENT un JSON valide avec cette structure exacte :
+5. drivingLicenses : uniquement les categories de permis de conduire ecrites dans le CV, en codes (ex. "Permis B" -> "B", "permis A et B" -> ["A", "B"]).
+6. Retourne UNIQUEMENT un JSON valide avec cette structure exacte :
 {
   "headline": "",
   "identity": {
     "city": "",
+    "drivingLicenses": [],
     "firstName": "",
     "github": "",
     "linkedIn": "",
@@ -124,6 +127,7 @@ function normalizeImportedProfile(raw: RawImportedProfile): ImportedCvProfilePat
     headline: normalizeText(raw.headline, 120),
     identity: {
       city: normalizeText(identity.city, 120),
+      drivingLicenses: normalizeDrivingLicenses(identity.drivingLicenses),
       firstName: normalizeText(identity.firstName, 80),
       links,
     },

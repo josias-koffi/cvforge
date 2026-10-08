@@ -37,4 +37,9 @@ describe("normalizeIdentity", () => {
   it("gives an empty list to a profile that never had a link", () => {
     expect(normalizeIdentity(BASE).links).toEqual([]);
   });
+
+  it("keeps known licence categories and defaults older profiles to none", () => {
+    expect(normalizeIdentity({ ...BASE, drivingLicenses: ["B", "Z", "A"] }).drivingLicenses).toEqual(["A", "B"]);
+    expect(normalizeIdentity(BASE).drivingLicenses).toEqual([]);
+  });
 });
