@@ -17,6 +17,7 @@
     "job-digest:run": "tsx src/job-search/job-digest.main.ts",
     "job-digest:status": "tsx src/job-search/job-digest-status.main.ts",
     "jobs:purge": "tsx src/job-search/job-purge.main.ts",
+    "relevance:eval": "tsx src/job-search/matching/relevance-eval.main.ts",
     "applications:purge": "tsx src/application-retention/application-retention.main.ts",
     "email:preview": "tsx src/mail/mail-preview.main.ts",
     "rome:sync": "tsx src/rome/rome-sync.main.ts",
