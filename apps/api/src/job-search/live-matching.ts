@@ -9,7 +9,7 @@ import type { JobsStore, StoredJob } from "./jobs.types";
 import { newJobValues, seedFromListing } from "./jobs.rows";
 import {
   DEFAULT_SCORE_THRESHOLD,
-  isRelevantToTrade,
+  hasTradeEvidence,
   rejectionReason,
   scoreJob,
   type ScoredJob,
@@ -220,13 +220,13 @@ export class LiveMatcher {
 }
 
 /**
- * The morning's rule: the threshold, and enough of the title or the skills.
+ * The morning's rule: the threshold, and direct evidence of the trade.
  * Place, freshness and contract alone reach the threshold for any recent
  * offer near the candidate, and would keep every accountant near a developer.
  */
 export function isRelevantMatch(scored: ScoredJob): boolean {
   return (
-    scored.score >= DEFAULT_SCORE_THRESHOLD && isRelevantToTrade(scored.breakdown)
+    scored.score >= DEFAULT_SCORE_THRESHOLD && hasTradeEvidence(scored)
   );
 }
 

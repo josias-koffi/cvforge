@@ -17,6 +17,7 @@ function makeScored(id: string, overrides: Partial<StoredJob> = {}): ScoredJob {
       skills: 20,
       title: 25,
     },
+    evidence: { keywordSkills: 3, romeMetier: true, title: 1 },
     missingSkills: [],
     job: {
       closedAt: null,

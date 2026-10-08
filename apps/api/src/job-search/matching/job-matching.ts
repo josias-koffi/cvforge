@@ -33,13 +33,6 @@ export const DEFAULT_MAX_AGE_DAYS = 30;
 export const DEFAULT_SELECTION_SIZE = 10;
 /** Below this, an offer is not worth a candidate's morning. */
 export const DEFAULT_SCORE_THRESHOLD = 35;
-/**
- * The points title and skills must bring together, whatever the total. Place,
- * freshness, experience and salary add up to 42 for any recent offer nearby:
- * without this floor a BTP site technician reached a DevOps engineer on a
- * single shared word. Ten is a third of the title, or two skills in five.
- */
-export const MIN_RELEVANCE_POINTS = 10;
 
 export type RejectionReason =
   | "closed"
@@ -140,6 +133,39 @@ export interface ScoredJob {
   matchedSkills: string[];
   /** The offer's ROME competences the CV does not show, required first. */
   missingSkills: string[];
+  /** The direct signs that the offer is the candidate's trade (see `hasTradeEvidence`). */
+  evidence: TradeEvidence;
+}
+
+export interface TradeEvidence {
+  /** A word of the trade in the offer's title, 0 to 1. */
+  title: number;
+  /** The offer is one of the métiers the candidate confirmed. */
+  romeMetier: boolean;
+  /** Skills the candidate typed, found as whole words in the advert. */
+  keywordSkills: number;
+}
+
+/** Two of the candidate's own skills in the advert; one could be chance. */
+const MIN_KEYWORD_SKILLS = 2;
+
+/**
+ * Whether an offer is the candidate's trade, on direct evidence only, before
+ * any context: place, freshness, experience and salary add up to 42 points
+ * for any recent offer nearby, past the threshold on their own.
+ *
+ * The ROME competences read in a CV and the ROME domain only add to the
+ * score. Measured on production data (jobspark-relevance, 2026-10-08), letting
+ * them decide sent 59 % of out-of-trade offers through — "GPAO" read in a
+ * software engineer's CV matched every machining offer; this rule lets 14 %
+ * through and misses 8 % of the right ones.
+ */
+export function hasTradeEvidence({ evidence }: Pick<ScoredJob, "evidence">): boolean {
+  return (
+    evidence.title > 0 ||
+    evidence.romeMetier ||
+    evidence.keywordSkills >= MIN_KEYWORD_SKILLS
+  );
 }
 
 export interface ScoreInput {
@@ -159,6 +185,8 @@ export function scoreJob(input: ScoreInput): ScoredJob {
   const romeSkills = rome
     ? romeSkillsMatch(job, rome)
     : { matched: [], missing: [], ratio: 0 };
+  const titleWordsScore = titleScore(job, project);
+  const romeTitle = romeTitleScore(job, rome?.projectCodes ?? []);
   const breakdown: ScoreBreakdown = {
     experience: SCORE_WEIGHTS.experience * experienceScore(job, project),
     freshness: SCORE_WEIGHTS.freshness * freshnessScore(job, now),
@@ -175,14 +203,16 @@ export function scoreJob(input: ScoreInput): ScoredJob {
       ),
     title:
       SCORE_WEIGHTS.title *
-      Math.max(
-        titleScore(job, project),
-        romeTitleScore(job, rome?.projectCodes ?? []),
-      ),
+      Math.max(titleWordsScore, romeTitle),
   };
 
   return {
     breakdown,
+    evidence: {
+      keywordSkills: keywordSkills.length,
+      romeMetier: romeTitle === 1,
+      title: titleWordsScore,
+    },
     job,
     matchedSkills: distinctFolded([...keywordSkills, ...romeSkills.matched]),
     missingSkills: romeSkills.missing,
@@ -202,11 +232,6 @@ function distinctFolded(labels: readonly string[]): string[] {
     seen.add(key);
     return true;
   });
-}
-
-/** Whether an offer speaks of the candidate's trade at all, before any context. */
-export function isRelevantToTrade(breakdown: ScoreBreakdown): boolean {
-  return breakdown.title + breakdown.skills >= MIN_RELEVANCE_POINTS;
 }
 
 /**
@@ -411,7 +436,7 @@ export function selectJobsForProject(input: SelectionInput): ScoredJob[] {
     )
     .filter(
       (scored) =>
-        isRelevantToTrade(scored.breakdown) &&
+        hasTradeEvidence(scored) &&
         scored.score >= (input.threshold ?? DEFAULT_SCORE_THRESHOLD),
     )
     .sort((left, right) => right.score - left.score)

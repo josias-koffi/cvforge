@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { StoredJob } from "../jobs.types";
 import {
   ageInDays,
-  isRelevantToTrade,
+  hasTradeEvidence,
   readYearlySalary,
   rejectionReason,
   scoreJob,
@@ -436,7 +436,7 @@ describe("a DevOps engineer and the BTP offers", () => {
     const scored = scoreJob({ job: btpTechnician, now: NOW, project: devops, skills: DEVOPS_SKILLS });
 
     expect(scored.score).toBeGreaterThanOrEqual(35);
-    expect(isRelevantToTrade(scored.breakdown)).toBe(false);
+    expect(hasTradeEvidence(scored)).toBe(false);
   });
 
   it("refuses an offer sharing a single skill and nothing else", () => {
@@ -450,5 +450,60 @@ describe("a DevOps engineer and the BTP offers", () => {
     expect(
       selectJobsForProject({ jobs: [oneSkill], now: NOW, project: devops, skills: DEVOPS_SKILLS }),
     ).toEqual([]);
+  });
+});
+
+/**
+ * Measured on production data (jobspark-relevance, 2026-10-08): a software
+ * engineer's CV read by ROMEO held "GPAO" and "Piloter la performance d'une
+ * activité", which machining and plant offers name too — 20 skill points,
+ * past the relevance floor, with not one word of the trade in the title.
+ */
+describe("hasTradeEvidence", () => {
+  const softwareEngineer = makeProject({ targetRoles: ["Ingénieur Fullstack"] });
+  const machining = makeJob({
+    description: "Usinage CNC, gestion de production assistée par ordinateur, React-ivité exigée.",
+    romeCode: "H2503",
+    title: "Technicien de production en usinage CNC (H/F)",
+  });
+  const gpao = {
+    genericCodes: new Set<string>(),
+    metierCompetences: new Map(),
+    profileCompetences: [{ code: "C1", label: "Gestion de Production Assistée Par Ordinateur (GPAO)" }],
+    projectCodes: ["M1855"],
+  };
+
+  it("does not take ROME competences read in a CV as the trade", () => {
+    const scored = scoreJob({
+      job: { ...machining, romeCompetences: [{ code: "C1", label: "GPAO", required: true }] },
+      now: NOW,
+      project: softwareEngineer,
+      rome: gpao,
+      skills: ["React", "Docker"],
+    });
+
+    expect(scored.breakdown.skills).toBeGreaterThan(0);
+    expect(hasTradeEvidence(scored)).toBe(false);
+  });
+
+  it("takes a word of the trade, the confirmed métier, or two typed skills", () => {
+    const base = { now: NOW, project: softwareEngineer, rome: gpao };
+
+    expect(
+      hasTradeEvidence(scoreJob({ ...base, job: makeJob({ title: "Ingénieur Fullstack (H/F)" }), skills: [] })),
+    ).toBe(true);
+    expect(
+      hasTradeEvidence(scoreJob({ ...base, job: makeJob({ romeCode: "M1855", title: "Dév web" }), skills: [] })),
+    ).toBe(true);
+    expect(
+      hasTradeEvidence(
+        scoreJob({ ...base, job: makeJob({ title: "Software engineer" }), skills: ["TypeScript", "React"] }),
+      ),
+    ).toBe(true);
+    expect(
+      hasTradeEvidence(
+        scoreJob({ ...base, job: makeJob({ title: "Software engineer" }), skills: ["TypeScript"] }),
+      ),
+    ).toBe(false);
   });
 });
