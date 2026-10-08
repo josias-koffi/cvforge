@@ -4,6 +4,7 @@ import {
   profileRomeCompetences,
   romeCompetences,
   romeMetierCompetences,
+  searchProjectRome,
 } from "../database/schema";
 import type { StoredJob } from "./jobs.types";
 import type {
@@ -63,6 +64,7 @@ export class PgRomeMatchingReader implements RomeMatchingReader {
         }
 
         return {
+          appellations: await this.appellations(userEmail, profileId),
           genericCodes: await generic,
           metierCompetences: metiers,
           profileCompetences: await this.profileCompetences(
@@ -110,6 +112,21 @@ export class PgRomeMatchingReader implements RomeMatchingReader {
     }
 
     return byMetier;
+  }
+
+  private async appellations(userEmail: string, profileId: string) {
+    const rows = await this.db
+      .select({ label: searchProjectRome.libelle })
+      .from(searchProjectRome)
+      .where(
+        and(
+          eq(searchProjectRome.userEmail, userEmail),
+          eq(searchProjectRome.profileId, profileId),
+          eq(searchProjectRome.status, "confirmed"),
+        ),
+      );
+
+    return rows.map((row) => row.label);
   }
 
   private profileCompetences(userEmail: string, profileId: string) {

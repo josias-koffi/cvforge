@@ -3,6 +3,7 @@ import {
   createTestDatabase,
   type TestDatabase,
 } from "../database/testing/test-database";
+import { searchProjectRome } from "../database/schema";
 import { PgProfileCompetencesStore } from "../profiles/profile-competences.pg-store";
 import { PgRomeStore } from "../rome/rome.pg-store";
 import type { StoredJob } from "./jobs.types";
@@ -66,6 +67,30 @@ beforeEach(async () => {
 });
 
 describe("PgRomeMatchingReader", () => {
+  it("reads the appellations the candidate confirmed, not the suggested ones", async () => {
+    const row = {
+      metierCode: "M1855",
+      metierLibelle: "Développeur / Développeuse web",
+      profileId: "p1",
+      score: 0.9,
+      source: "romeo",
+      userEmail: ANA,
+    };
+    await testDatabase.db.insert(searchProjectRome).values([
+      { ...row, appellationCode: "38976", libelle: "Développeur / Développeuse full-stack", status: "confirmed" },
+      { ...row, appellationCode: "12723", libelle: "Combattant / Combattante toutes armes", status: "suggested" },
+    ]);
+
+    const context = await reader.forRun().contextFor({
+      jobs: [],
+      profileId: "p1",
+      projectCodes: ["M1855"],
+      userEmail: ANA,
+    });
+
+    expect(context.appellations).toEqual(["Développeur / Développeuse full-stack"]);
+  });
+
   it("reads the CV's competences, the pool's métiers and the generic ones", async () => {
     await seedReferential();
     const competences = new PgProfileCompetencesStore(testDatabase.db);

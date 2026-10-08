@@ -20,6 +20,11 @@ export interface RomeCompetenceRef {
 export interface RomeScoringContext {
   /** Métier codes of the appellations the candidate confirmed. */
   projectCodes: readonly string[];
+  /**
+   * Labels of those appellations ("Développeur / Développeuse full-stack"):
+   * the job titles the candidate accepts beyond the ones they typed.
+   */
+  appellations?: readonly string[];
   /** Competences ROMEO read in the CV, the removed ones left out. */
   profileCompetences: readonly RomeCompetenceRef[];
   /** Per métier code, its competences in the referential. */
