@@ -9,6 +9,8 @@ export interface ContactLink {
 
 export interface CandidateIdentity {
   city: string;
+  /** Licence categories (see DRIVING_LICENSE_CATEGORIES); absent on legacy documents. */
+  drivingLicenses?: string[];
   email: string;
   firstName: string;
   lastName: string;

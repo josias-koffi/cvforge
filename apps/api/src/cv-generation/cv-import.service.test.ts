@@ -40,6 +40,7 @@ const AI_RESPONSE = {
   headline: "Senior Product Engineer",
   identity: {
     city: "Paris",
+    drivingLicenses: ["b", "Permis moto"],
     firstName: "Jean",
     github: "",
     linkedIn: "https://linkedin.com/in/jean",
@@ -112,6 +113,7 @@ describe("CvImportService", () => {
 
     expect(result.extractedProfile.headline).toBe("Senior Product Engineer");
     expect(result.extractedProfile.identity.firstName).toBe("Jean");
+    expect(result.extractedProfile.identity.drivingLicenses).toEqual(["B"]);
     expect(result.extractedProfile.sections.technicalSkills).toContain("TypeScript");
     expect(result.omittedFields).toContain("identity.email");
     expect(result.qualityLimits.length).toBeGreaterThan(0);

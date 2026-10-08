@@ -4,11 +4,9 @@ import { searchRemoteModes, type SearchProject } from "@cvforge/types"
 
 import { SectionCard, FieldHint } from "@/components/layout/section-card"
 import type { SetCriterion } from "@/components/job-search/search-criteria"
-import {
-  ChipGroup,
-  LocationPicker,
-} from "@/components/job-search/search-project-fields"
+import { LocationPicker } from "@/components/job-search/search-project-fields"
 import { REMOTE_LABELS } from "@/components/job-search/search-project-options"
+import { ChipGroup } from "@/components/ui/chip-group"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"

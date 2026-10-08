@@ -2,6 +2,7 @@
 
 import type { ContactLink } from "@cvforge/types"
 
+import { DrivingLicenseField } from "@/components/documents/driving-license-field"
 import {
   FieldGrid,
   ListEditor,
@@ -12,7 +13,7 @@ import { SectionCard } from "@/components/layout/section-card"
 import type { BaseProfile } from "@/lib/profile-model"
 
 type Identity = BaseProfile["identity"]
-type ScalarIdentity = Omit<Identity, "links">
+type ScalarIdentity = Omit<Identity, "drivingLicenses" | "links">
 type ProfileUpdater = (update: (profile: BaseProfile) => BaseProfile) => void
 
 const identityFields: FieldSpec<ScalarIdentity>[] = [
@@ -75,6 +76,15 @@ export function ProfileIdentityCard({
           />
         ))}
       </FieldGrid>
+      <DrivingLicenseField
+        value={profile.identity.drivingLicenses}
+        onChange={(drivingLicenses) =>
+          onChange((current) => ({
+            ...current,
+            identity: { ...current.identity, drivingLicenses },
+          }))
+        }
+      />
       <ListEditor
         id="link"
         items={profile.identity.links}

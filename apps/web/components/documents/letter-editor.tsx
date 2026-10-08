@@ -28,7 +28,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { creditCostLabel } from "@/lib/format"
 
 type Candidate = LetterDocumentContent["candidate"]
-type ScalarCandidate = Omit<Candidate, "links">
+type ScalarCandidate = Omit<Candidate, "drivingLicenses" | "links">
 type Body = LetterDocumentContent["body"]
 
 const candidateFields: FieldSpec<ScalarCandidate>[] = [

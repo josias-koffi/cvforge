@@ -5,7 +5,7 @@ import {
   renderContactLine,
   SHARED_PDF_STYLES,
 } from "./shared";
-import { documentLabels } from "./labels";
+import { documentLabels, drivingLicenseText } from "./labels";
 
 function renderList(items: string[]) {
   if (items.length === 0) {
@@ -292,7 +292,12 @@ export function renderCvPdfHtml(cvContent: CVDocumentContent) {
           <p class="title">${escapeHtml(candidate.title)}</p>
           <p class="contact">
             ${renderContactLine(
-              [candidate.phone, candidate.email, candidate.city],
+              [
+                candidate.phone,
+                candidate.email,
+                candidate.city,
+                drivingLicenseText(candidate.drivingLicenses, cvContent.language),
+              ],
               candidate.links,
             )}
           </p>

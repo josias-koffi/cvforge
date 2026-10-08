@@ -89,6 +89,32 @@ describe("CV generation normalizers", () => {
   });
 });
 
+describe("driving licences", () => {
+  const profile = {
+    profileSections: { interests: "" },
+  } as never as Parameters<typeof normalizeCvJson>[2];
+
+  it("re-injects them from the profile, whatever the model wrote", () => {
+    const content = normalizeCvJson(
+      { candidate: { drivingLicenses: ["C"] } } as never,
+      { drivingLicenses: ["B", "A"], email: "", lastName: "Dupont", phone: "" },
+      profile,
+    );
+
+    expect(content.candidate.drivingLicenses).toEqual(["A", "B"]);
+  });
+
+  it("keeps an edit on save and gives legacy documents an empty list", () => {
+    const saved = normalizeUpdatedCvContent({
+      ...BASE_CV,
+      candidate: { ...BASE_CV.candidate, drivingLicenses: ["B", "X"] },
+    });
+
+    expect(saved.candidate.drivingLicenses).toEqual(["B"]);
+    expect(normalizeUpdatedCvContent(BASE_CV).candidate.drivingLicenses).toEqual([]);
+  });
+});
+
 describe("normalizeCvJson — chronology", () => {
   const profile = {
     profileSections: { interests: "" },

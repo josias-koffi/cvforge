@@ -96,6 +96,16 @@ describe("document renderer", () => {
     expect(html).not.toMatch(/class="contact">[^<]*linkedin\.com/);
   });
 
+  it("lists the driving licences on the contact line, in the document's language", () => {
+    const candidate = { ...cvContent.candidate, drivingLicenses: ["A", "B"] };
+
+    expect(renderCvPdfHtml({ ...cvContent, candidate })).toContain("Permis A, B");
+    expect(renderCvPdfHtml({ ...cvContent, candidate, language: "en" })).toContain(
+      "Driving licence A, B",
+    );
+    expect(renderCvPdfHtml(cvContent)).not.toContain("Permis");
+  });
+
   it("falls back to flat skills and omits empty optional sections", () => {
     const html = renderCvPdfHtml({
       ...cvContent,
