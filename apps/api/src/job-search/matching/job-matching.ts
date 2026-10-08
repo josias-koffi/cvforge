@@ -186,7 +186,7 @@ export function scoreJob(input: ScoreInput): ScoredJob {
   const romeSkills = rome
     ? romeSkillsMatch(job, rome)
     : { matched: [], missing: [], ratio: 0 };
-  const titleWordsScore = titleScore(job, project);
+  const titleWordsScore = titleScore(job, project, rome?.appellations ?? []);
   const romeTitle = romeTitleScore(job, rome?.projectCodes ?? []);
   const breakdown: ScoreBreakdown = {
     experience: SCORE_WEIGHTS.experience * experienceScore(job, project),
@@ -282,32 +282,72 @@ const OTHER_TRADE_TITLE_WORDS = new Set([
 ]);
 
 /**
- * How much of a target job title the offer's own title carries. No target
- * title, no reading: the score then rests on skills and ROME alone.
+ * How much of a target job title the offer's own title carries: the titles
+ * the candidate typed, then the ROME appellations they confirmed. No title at
+ * all, no reading: the score then rests on skills and ROME alone.
+ *
+ * A confirmed appellation needs all its own words, where a typed title needs
+ * one: the candidate chose the appellation from a list, and "Ingénieur
+ * d'étude logiciel informatique" read word by word would take every
+ * "Technicien informatique".
  */
-function titleScore(job: StoredJob, project: SearchProject): number {
+function titleScore(
+  job: StoredJob,
+  project: SearchProject,
+  appellations: readonly string[],
+): number {
   const title = new Set(titleWords(job.title));
-  let best = 0;
 
-  for (const role of targetRoles(project)) {
-    const words = titleWords(role);
-    const otherTrade = [...title].some(
-      (word) => OTHER_TRADE_TITLE_WORDS.has(word) && !words.includes(word),
-    );
-    if (otherTrade) continue;
+  return Math.max(
+    0,
+    ...targetRoles(project).map((role) => roleScore(title, titleWords(role), "any")),
+    ...appellations.map((label) =>
+      roleScore(title, titleWords(masculineForm(label)), "all"),
+    ),
+  );
+}
 
-    const specific = words.filter((word) => !GENERIC_TITLE_WORDS.has(word));
-    const found = specific.length > 0
-      ? specific.some((word) => title.has(word))
-      : // "Chef de projet" is all generic words: then all of them must be there.
-        words.every((word) => title.has(word));
-    if (!found) continue;
+function roleScore(
+  title: ReadonlySet<string>,
+  words: readonly string[],
+  needs: "any" | "all",
+): number {
+  if (words.length === 0) return 0;
 
-    const shared = words.filter((word) => title.has(word)).length;
-    best = Math.max(best, shared / words.length);
-  }
+  const otherTrade = [...title].some(
+    (word) => OTHER_TRADE_TITLE_WORDS.has(word) && !words.includes(word),
+  );
+  if (otherTrade) return 0;
 
-  return best;
+  const specific = words.filter((word) => !GENERIC_TITLE_WORDS.has(word));
+  const found =
+    specific.length === 0
+      ? // "Chef de projet" is all generic words: then all of them must be there.
+        words.every((word) => title.has(word))
+      : needs === "all"
+        ? specific.every((word) => title.has(word))
+        : specific.some((word) => title.has(word));
+  if (!found) return 0;
+
+  return words.filter((word) => title.has(word)).length / words.length;
+}
+
+/**
+ * ROME writes an appellation in both genders: "Développeur / Développeuse
+ * full-stack" is the job "Développeur full-stack". A label whose two sides
+ * are not one word in two genders is read as it is.
+ */
+export function masculineForm(label: string): string {
+  const [left, right, ...others] = label.split(" / ");
+  if (!left || !right || others.length > 0) return label;
+
+  const [feminine = "", ...rest] = right.split(" ");
+  const masculine = left.split(" ").at(-1) ?? "";
+  const sameWord =
+    fold(masculine).length >= 3 &&
+    fold(feminine).startsWith(fold(masculine).slice(0, 4));
+
+  return sameWord ? [left, ...rest].join(" ") : label;
 }
 
 /**
@@ -321,6 +361,22 @@ function targetRoles(project: SearchProject): string[] {
 }
 
 /**
+ * The words of a title in one language and one gender, so that "Software
+ * Engineer" reads as "Ingénieur logiciel" and "Développeuse" as "Développeur".
+ * Only job words: the trade's own vocabulary (React, DevOps…) is the same in
+ * both languages.
+ */
+const SAME_TITLE_WORD: Record<string, string> = {
+  architect: "architecte",
+  developer: "developpeur",
+  developpeuse: "developpeur",
+  engineer: "ingenieur",
+  ingenieure: "ingenieur",
+  programmer: "programmeur",
+  software: "logiciel",
+};
+
+/**
  * Whole words only, a plural read as its singular: "Ingénieurs" is
  * "ingenieur". "Full Stack", "Full-Stack" and "Fullstack" are one word.
  */
@@ -329,7 +385,8 @@ function titleWords(value: string): string[] {
     .replace(/\b(full|back|front) (stack|end)\b/g, "$1$2")
     .split(" ")
     .filter((word) => word.length > 2)
-    .map((word) => word.replace(/[sx]$/, ""));
+    .map((word) => word.replace(/[sx]$/, ""))
+    .map((word) => SAME_TITLE_WORD[word] ?? word);
 }
 
 /**

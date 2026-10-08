@@ -4,6 +4,7 @@ import type { StoredJob } from "../jobs.types";
 import {
   ageInDays,
   hasTradeEvidence,
+  masculineForm,
   readYearlySalary,
   rejectionReason,
   scoreJob,
@@ -581,8 +582,53 @@ describe("the trade, on the owner's search (production, 2026-10-08)", () => {
         skills,
       ),
     ).toBe(false);
-    expect(evidenceFor("Software engineer", "NestJS, développement, architecture.", skills)).toBe(
+    expect(evidenceFor("Chargé d'affaires", "NestJS, développement, architecture.", skills)).toBe(
       false,
     );
+  });
+
+  it("reads an English title as its French job", () => {
+    expect(evidenceFor("Senior Software Engineer, Connectors Platform")).toBe(true);
+    expect(evidenceFor("Full-Stack Engineer (m/f/x)")).toBe(true);
+    expect(evidenceFor("Sales Engineer - Software")).toBe(false);
+  });
+});
+
+describe("the ROME appellations the candidate confirmed", () => {
+  const project = makeProject({ targetRoles: ["Ingénieur Fullstack"] });
+  const rome = {
+    appellations: [
+      "Développeur / Développeuse full-stack",
+      "Ingénieur / Ingénieure d'étude logiciel informatique",
+    ],
+    genericCodes: new Set<string>(),
+    metierCompetences: new Map(),
+    profileCompetences: [],
+    projectCodes: [],
+  };
+  const titleFor = (title: string) =>
+    scoreJob({ job: makeJob({ description: "", title }), now: NOW, project, rome, skills: [] })
+      .evidence.title;
+
+  it("takes an appellation the candidate did not type as their trade", () => {
+    expect(titleFor("Développeuse Full Stack confirmée (H/F)")).toBeGreaterThan(0);
+    expect(titleFor("Ingénieur d'études logiciel informatique")).toBe(1);
+  });
+
+  it("needs every word of the appellation, not one of them", () => {
+    expect(titleFor("Développeur immobilier (H/F)")).toBe(0);
+    expect(titleFor("Technicien informatique (H/F)")).toBe(0);
+  });
+});
+
+describe("masculineForm", () => {
+  it.each([
+    ["Développeur / Développeuse full-stack", "Développeur full-stack"],
+    ["Chef / Cheffe de projet informatique", "Chef de projet informatique"],
+    ["Ingénieur / Ingénieure logiciel", "Ingénieur logiciel"],
+    ["Data scientist", "Data scientist"],
+    ["Web / mobile", "Web / mobile"],
+  ])("reads %j as %j", (label, expected) => {
+    expect(masculineForm(label)).toBe(expected);
   });
 });

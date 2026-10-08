@@ -1689,3 +1689,8 @@
 - Dédup : `urlKey` garde le fragment `#/…` des applications monopages ; la fusion floue exige même département et titre proche, anonymes compris ; les candidats anonymes sont filtrés par département.
 - Rejeu sur la prod (scratchpad) : 18 % → 57 % d'offres pertinentes, 85 % une fois les offres stockées relues.
 - Migration `0058_job_remote_reread.sql` relit le drapeau télétravail des offres stockées (mêmes motifs que le mapper, `\m` pour `\b` en Postgres). Réparation des fusions : `dedup/merge-repair.ts` (règle pure, fermeture transitive depuis l'annonce `new`, `manual`/`strict_key` jamais défaits) + `jobs:repair-merges [--dry-run]` (`jobs:repair-merges:built` dans le conteneur), à lancer une fois après déploiement.
+
+## 2026-10-08 — Intitulés anglais et appellations ROME (hors sprint)
+- `RomeScoringContext.appellations` : libellés des appellations confirmées (`search_project_rome`, statut `confirmed`), lus par `PgRomeMatchingReader`. `titleScore` les lit via `masculineForm` (« Développeur / Développeuse full-stack » → « Développeur full-stack ») et exige tous leurs mots propres ; un intitulé tapé n'en exige qu'un.
+- `SAME_TITLE_WORD` (job-matching.ts) ramène software/engineer/developer… et les formes féminines au mot français.
+- Rejeu prod : rappel 54 % → 62 %, précision ≈ 85 % ; les manques restants sont des métiers voisins (SRE, DevOps, backend) absents des intitulés visés du propriétaire.
