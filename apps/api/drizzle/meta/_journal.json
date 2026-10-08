@@ -407,6 +407,13 @@
       "when": 1794200000000,
       "tag": "0057_application_retention",
       "breakpoints": true
+    },
+    {
+      "idx": 58,
+      "version": "7",
+      "when": 1794300000000,
+      "tag": "0058_job_remote_reread",
+      "breakpoints": true
     }
   ]
 }
