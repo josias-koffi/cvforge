@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import nodemailer from "nodemailer";
 import type { SmtpConfig } from "../smtp/smtp.config";
 
@@ -34,7 +35,13 @@ export function createMailTransport(smtpConfig: SmtpConfig): MailTransport | nul
   });
 }
 
-/** What every mailer sends: the composed e-mail, from Jobspark, replies to support. */
+/**
+ * What every mailer sends: the composed e-mail, from Jobspark, replies to support.
+ *
+ * Gmail files messages from one sender under one subject in a single
+ * conversation, and ours repeat (« 3 offres pour vous aujourd'hui », every
+ * day). A fresh `X-Entity-Ref-ID` keeps each e-mail on its own.
+ */
 export function toMailMessage(
   sender: { from: string; replyTo: string | null },
   to: string,
@@ -42,7 +49,7 @@ export function toMailMessage(
 ): MailMessage {
   return {
     from: sender.from,
-    ...(email.headers ? { headers: email.headers } : {}),
+    headers: { ...email.headers, "X-Entity-Ref-ID": randomUUID() },
     html: email.html,
     ...(sender.replyTo ? { replyTo: sender.replyTo } : {}),
     subject: email.subject,

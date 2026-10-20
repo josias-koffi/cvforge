@@ -63,7 +63,7 @@ describe("sendJobDigestEmail", () => {
     // Findable in two seconds, in both parts of the message.
     expect(sent[0]!.text).toContain("Ne plus recevoir ces e-mails");
     expect(sent[0]!.html).toContain("https://app.cvforge.fr/notifications");
-    expect(sent[0]!.headers).toEqual({
+    expect(sent[0]!.headers).toMatchObject({
       "List-Unsubscribe": "<https://app.cvforge.fr/notifications>",
     });
   });

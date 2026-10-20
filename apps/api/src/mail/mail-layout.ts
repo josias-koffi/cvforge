@@ -83,7 +83,7 @@ function renderHtml(brand: Brand, content: EmailContent) {
     `<tr><td style="padding:0 4px 20px;">`,
     `<a href="${landing}" target="_blank" style="text-decoration:none;">`,
     `<img src="${escapeHtml(mailLogoUrl(brand.landingUrl))}" width="32" height="32" alt="Jobspark" style="display:inline-block;vertical-align:middle;border:0;border-radius:8px;" />`,
-    `<span class="cs-text" style="display:inline-block;vertical-align:middle;padding-left:10px;font-family:${MAIL_FONT};font-size:20px;font-weight:600;letter-spacing:-0.01em;color:${C.text};">CV<span class="cs-brand-accent" style="color:${C.primary};">Spark</span></span>`,
+    `<span class="cs-text" style="display:inline-block;vertical-align:middle;padding-left:10px;font-family:${MAIL_FONT};font-size:20px;font-weight:600;letter-spacing:-0.01em;color:${C.text};">Job<span class="cs-brand-accent" style="color:${C.primary};">spark</span></span>`,
     `</a></td></tr>`,
     // Card.
     `<tr><td class="cs-card" style="background:${C.card};border:1px solid ${C.border};border-radius:16px;padding:40px;">`,
