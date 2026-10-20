@@ -27,6 +27,8 @@ describe("renderEmail", () => {
 
     expect(html).toContain('src="https://jobspark.test/email/jobspark-mark.png"');
     expect(html).toContain('alt="Jobspark"');
+    expect(html).toContain(">Job<span");
+    expect(html).not.toContain("CV<span");
     expect(html).toContain("Les bonnes offres. Le bon CV. Une étincelle.");
     expect(html).toContain("mailto:support@jobspark.test");
     expect(html).toContain("https://jobspark.test/fr/legal/cgu");
