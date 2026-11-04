@@ -137,4 +137,15 @@ describe('resolveOpenRouterConfig', () => {
     expect(config.enableZdrChat).toBe(false);
     expect(config.enableZdrStt).toBe(false);
   });
+
+  it('reads a model per feature from OPENROUTER_MODEL_<FEATURE>', () => {
+    process.env.OPENROUTER_API_KEY = 'key';
+    process.env.OPENROUTER_MODEL_CV_GENERATION = ' openai/gpt-4.1-mini ';
+    process.env.OPENROUTER_MODEL_LETTER_GENERATION = '';
+    delete process.env.OPENROUTER_MODEL_CV_IMPORT;
+
+    expect(resolveOpenRouterConfig().featureModels).toEqual({
+      cv_generation: 'openai/gpt-4.1-mini',
+    });
+  });
 });
