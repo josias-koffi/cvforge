@@ -17,7 +17,6 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
-import { creditCostLabel } from "@/lib/format"
 
 const languageLabels: Record<Locale, string> = { en: "Anglais", fr: "Français" }
 
@@ -55,8 +54,7 @@ export function TranslateDialog({
           <DialogDescription>
             Tout le contenu est traduit dans la langue choisie, vos modifications comprises.
             Votre nom et vos coordonnées ne sont pas envoyés à l&apos;IA. La version actuelle reste
-            dans l&apos;historique.{" "}
-            {creditCostLabel(kind === "cv" ? "cv_generation" : "letter_generation")}.
+            dans l&apos;historique. Traduction gratuite.
           </DialogDescription>
         </DialogHeader>
         <div className="flex flex-col gap-2">
@@ -80,7 +78,6 @@ export function TranslateDialog({
         </div>
         <DialogFooter>
           <ActionButton
-            spark
             pendingLabel="Traduction en cours…"
             action={async () => {
               const result = await translateDocument(offerId, kind, target)

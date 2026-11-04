@@ -1,5 +1,4 @@
 import {
-  AI_CREDIT_ACTION_CV_IMPORT,
   type ImportedCvExtractionResult,
   type ImportedCvProfilePatch,
   normalizeDrivingLicenses,
@@ -7,7 +6,7 @@ import {
 import { BadRequestException, Injectable, UnprocessableEntityException } from "@nestjs/common";
 import { withOpenRouterHttpErrors } from "../ai/openrouter.exception";
 import type { OpenRouterService } from "../ai/openrouter.service";
-import type { CreditsService } from "../credits/credits.service";
+import { FreeActionLimiter } from "../credits/free-action-limiter";
 import { pseudonymizeCvText } from "./cv-pseudonymizer";
 import {
   extractCvText,
@@ -194,7 +193,7 @@ function hasExtractedContent(profile: ImportedCvProfilePatch) {
 export class CvImportService {
   constructor(
     private readonly openRouterService: OpenRouterService,
-    private readonly creditsService: CreditsService,
+    private readonly limiter: Pick<FreeActionLimiter, "assertWithinLimit"> = new FreeActionLimiter(),
   ) {}
 
   async extractProfileFromCv(
@@ -217,10 +216,8 @@ export class CvImportService {
       );
     }
 
-    await this.creditsService.assertSufficientCredits(
-      AI_CREDIT_ACTION_CV_IMPORT,
-      userEmail,
-    );
+    // Free of credits: the cap is what stops a loop.
+    this.limiter.assertWithinLimit("cv_import", userEmail);
 
     const pseudonymized = pseudonymizeCvText(text);
 
@@ -250,12 +247,6 @@ export class CvImportService {
         "Aucune information exploitable n'a ete trouvee dans ce CV.",
       );
     }
-
-    // Charged only once the extraction produced usable data.
-    await this.creditsService.consumeCredits({
-      action: AI_CREDIT_ACTION_CV_IMPORT,
-      userEmail,
-    });
 
     return {
       extractedProfile,

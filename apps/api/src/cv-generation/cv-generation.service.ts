@@ -16,6 +16,7 @@ import { withOpenRouterHttpErrors } from "../ai/openrouter.exception";
 import type { OpenRouterService } from "../ai/openrouter.service";
 import type { ApplicationsStore } from "../applications/applications.types";
 import type { CreditsService } from "../credits/credits.service";
+import { FreeActionLimiter } from "../credits/free-action-limiter";
 import { formatContractSearch } from "../search-projects/search-projects.format";
 import type { SearchProjectsStore } from "../search-projects/search-projects.types";
 import type { TemplatesStore } from "../templates/templates.types";
@@ -81,6 +82,10 @@ export class CvGenerationService {
       SearchProjectsStore,
       "findByProfileId"
     >,
+    private readonly freeActionLimiter: Pick<
+      FreeActionLimiter,
+      "assertWithinLimit"
+    > = new FreeActionLimiter(),
   ) {}
 
   async generateCv(
@@ -300,7 +305,7 @@ export class CvGenerationService {
 
   private translationDeps() {
     return {
-      creditsService: this.creditsService,
+      limiter: this.freeActionLimiter,
       openRouterService: this.openRouterService,
       store: this.store,
     };

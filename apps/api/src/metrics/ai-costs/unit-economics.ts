@@ -1,6 +1,5 @@
 import {
   AI_CREDIT_ACTION_CV_GENERATION,
-  AI_CREDIT_ACTION_CV_IMPORT,
   AI_CREDIT_ACTION_INTERVIEW_SESSION,
   AI_CREDIT_ACTION_JOB_ALERT_ENRICH,
   AI_CREDIT_ACTION_JOB_DIGEST_RERANK,
@@ -18,12 +17,12 @@ import { percent } from "../shared/metrics-window";
  * Which AI calls make up each billed unit. An interview minute is the spoken
  * turns, their transcription, the report and the company context the prompt
  * is fed. Calls left out here — the ATS impact, the free tools — are not
- * billed to anyone and show only in the per-feature table.
+ * billed to anyone and show only in the per-feature table — the CV import and
+ * the translations among them, free since 2026-11-04.
  */
 export const BILLED_FEATURES: Record<string, AiFeature[]> = {
   [AI_CREDIT_ACTION_CV_GENERATION]: ["cv_generation"],
   [AI_CREDIT_ACTION_LETTER_GENERATION]: ["letter_generation"],
-  [AI_CREDIT_ACTION_CV_IMPORT]: ["cv_import"],
   [AI_CREDIT_ACTION_OFFER_ENRICHMENT]: ["offer_structuring"],
   [AI_CREDIT_ACTION_INTERVIEW_SESSION]: [
     "interview_voice",

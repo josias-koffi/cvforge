@@ -66,11 +66,10 @@ import { CvPdfExportService } from "./cv-pdf-export.service";
     },
     {
       provide: CvImportService,
-      inject: [OPENROUTER_SERVICE, CreditsService],
+      inject: [OPENROUTER_SERVICE],
       useFactory: (
         openRouterService: ConstructorParameters<typeof CvImportService>[0],
-        creditsService: ConstructorParameters<typeof CvImportService>[1],
-      ) => new CvImportService(openRouterService, creditsService),
+      ) => new CvImportService(openRouterService),
     },
   ],
 })

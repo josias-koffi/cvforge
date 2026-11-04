@@ -2,8 +2,6 @@ import {
   type CVDocumentContent,
   type LetterDocumentContent,
   type Locale,
-  AI_CREDIT_ACTION_CV_GENERATION,
-  AI_CREDIT_ACTION_LETTER_GENERATION,
 } from "@cvforge/types";
 import { NotFoundException } from "@nestjs/common";
 import { withOpenRouterHttpErrors } from "../ai/openrouter.exception";
@@ -12,7 +10,7 @@ import type {
   ApplicationsStore,
   StoredApplication,
 } from "../applications/applications.types";
-import type { CreditsService } from "../credits/credits.service";
+import type { FreeActionLimiter } from "../credits/free-action-limiter";
 
 import { extractJsonFromContent } from "./cv-generation.normalizers";
 import {
@@ -31,10 +29,8 @@ import {
 } from "./cv-generation.versions";
 
 export interface TranslationDeps {
-  creditsService: Pick<
-    CreditsService,
-    "assertSufficientCredits" | "consumeCredits"
-  >;
+  /** Translating is free of credits; this cap is what stops a loop. */
+  limiter: Pick<FreeActionLimiter, "assertWithinLimit">;
   openRouterService: Pick<OpenRouterService, "chat">;
   store: Pick<ApplicationsStore, "save">;
 }
@@ -71,10 +67,7 @@ export async function translateStoredCv(
   if (!application.cvContent) {
     throw new NotFoundException("Aucun CV généré pour cette candidature.");
   }
-  await deps.creditsService.assertSufficientCredits(
-    AI_CREDIT_ACTION_CV_GENERATION,
-    userEmail,
-  );
+  deps.limiter.assertWithinLimit("cv_translation", userEmail);
 
   const rawJson = await requestTranslation(deps, CV_TRANSLATION_SYSTEM_PROMPT, {
     targetLanguage: language,
@@ -85,13 +78,6 @@ export async function translateStoredCv(
     asRecord(rawJson).cv ?? rawJson,
     language,
   );
-
-  // Charged only once the translation came back and merged cleanly.
-  await deps.creditsService.consumeCredits({
-    action: AI_CREDIT_ACTION_CV_GENERATION,
-    applicationId: application.id,
-    userEmail,
-  });
 
   const timestamp = new Date().toISOString();
   deps.store.save({
@@ -119,10 +105,7 @@ export async function translateStoredLetter(
   if (!application.letterContent) {
     throw new NotFoundException("Aucune lettre générée pour cette candidature.");
   }
-  await deps.creditsService.assertSufficientCredits(
-    AI_CREDIT_ACTION_LETTER_GENERATION,
-    userEmail,
-  );
+  deps.limiter.assertWithinLimit("cv_translation", userEmail);
 
   const rawJson = await requestTranslation(
     deps,
@@ -137,13 +120,6 @@ export async function translateStoredLetter(
     asRecord(rawJson).letter ?? rawJson,
     language,
   );
-
-  // Charged only once the translation came back and merged cleanly.
-  await deps.creditsService.consumeCredits({
-    action: AI_CREDIT_ACTION_LETTER_GENERATION,
-    applicationId: application.id,
-    userEmail,
-  });
 
   const timestamp = new Date().toISOString();
   deps.store.save({

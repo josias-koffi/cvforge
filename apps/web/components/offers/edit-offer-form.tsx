@@ -33,7 +33,6 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
-import { formatCredits } from "@/lib/format"
 
 type EditOfferFormProps = {
   offer: DraftApplication
@@ -77,7 +76,7 @@ export function EditOfferForm({ offer, offerText }: EditOfferFormProps) {
               <ActionButton
                 type="button"
                 size="sm"
-                variant="outline"
+                credits={AI_CREDIT_COSTS.offer_enrichment}
                 pendingLabel="Analyse en cours…"
                 disabled={!offer.offerUrl}
                 action={() => reExtractOffer(offer.id, "url")}
@@ -88,7 +87,7 @@ export function EditOfferForm({ offer, offerText }: EditOfferFormProps) {
               <ActionButton
                 type="button"
                 size="sm"
-                variant="outline"
+                credits={AI_CREDIT_COSTS.offer_enrichment}
                 pendingLabel="Analyse en cours…"
                 action={() => reExtractOffer(offer.id, "text")}
               >
@@ -123,8 +122,7 @@ export function EditOfferForm({ offer, offerText }: EditOfferFormProps) {
                 />
                 <FieldDescription>
                   Enregistrez d&apos;abord vos modifications, puis relancez
-                  l&apos;analyse pour mettre à jour les champs (
-                  {formatCredits(AI_CREDIT_COSTS.offer_enrichment)}).
+                  l&apos;analyse pour mettre à jour les champs.
                 </FieldDescription>
               </Field>
             </FieldGroup>

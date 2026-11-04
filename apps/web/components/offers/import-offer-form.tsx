@@ -1,6 +1,7 @@
 "use client"
 
 import { useActionState } from "react"
+import { AI_CREDIT_COSTS } from "@cvforge/types"
 import { AlertCircleIcon, ClipboardPasteIcon, LinkIcon, ZapIcon } from "lucide-react"
 
 import { importOffer } from "@/app/(app)/candidatures/actions"
@@ -18,7 +19,6 @@ import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
-import { creditCostLabel } from "@/lib/format"
 
 function SourceForm({
   children,
@@ -39,8 +39,7 @@ function SourceForm({
           </CardTitle>
           <CardDescription>
             On en extrait le poste, l&apos;entreprise, les missions et le profil
-            recherché en quelques secondes. Tout reste modifiable ensuite.{" "}
-            {creditCostLabel("offer_enrichment")}.
+            recherché en quelques secondes. Tout reste modifiable ensuite.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -55,7 +54,7 @@ function SourceForm({
           </FieldGroup>
         </CardContent>
         <CardFooter className="justify-end">
-          <SubmitButton spark pendingLabel="Analyse en cours…">
+          <SubmitButton credits={AI_CREDIT_COSTS.offer_enrichment} pendingLabel="Analyse en cours…">
             <ZapIcon />
             Analyser l&apos;offre
           </SubmitButton>

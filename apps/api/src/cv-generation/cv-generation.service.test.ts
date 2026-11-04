@@ -22,12 +22,14 @@ import type {
   StoredApplication,
 } from "../applications/applications.types";
 import type { CreditsService } from "../credits/credits.service";
+import type { FreeActionLimiter } from "../credits/free-action-limiter";
 import type { TemplatesStore } from "../templates/templates.types";
 
 describe("CvGenerationService", () => {
   let store: ApplicationsStore;
   let openRouter: { chat: ReturnType<typeof vi.fn> };
   let creditsService: CreditsService;
+  let limiter: Pick<FreeActionLimiter, "assertWithinLimit">;
   let templatesStore: Pick<TemplatesStore, "list">;
   let service: CvGenerationService;
 
@@ -51,6 +53,7 @@ describe("CvGenerationService", () => {
       assertSufficientCredits: vi.fn(),
       consumeCredits: vi.fn(),
     } as unknown as CreditsService;
+    limiter = { assertWithinLimit: vi.fn() };
     templatesStore = {
       list: vi.fn().mockReturnValue([
         {
@@ -84,6 +87,8 @@ describe("CvGenerationService", () => {
       openRouter as never,
       creditsService,
       templatesStore,
+      undefined,
+      limiter,
     );
   });
 
@@ -741,11 +746,11 @@ describe("CvGenerationService", () => {
       expect(JSON.parse(userMessage.content)).toMatchObject({
         targetLanguage: "en",
       });
-      expect(creditsService.consumeCredits).toHaveBeenCalledWith({
-        action: "cv_generation",
-        applicationId: "app-001",
-        userEmail: "user@test.example",
-      });
+      expect(limiter.assertWithinLimit).toHaveBeenCalledWith(
+        "cv_translation",
+        "user@test.example",
+      );
+      expect(creditsService.consumeCredits).not.toHaveBeenCalled();
     });
 
     it("leaves the balance untouched and answers 503 when the provider is throttled", async () => {
@@ -757,18 +762,17 @@ describe("CvGenerationService", () => {
         service.translateCv("user@test.example", "app-001", "en"),
       ).rejects.toBeInstanceOf(ServiceUnavailableException);
 
-      expect(creditsService.assertSufficientCredits).toHaveBeenCalled();
       expect(creditsService.consumeCredits).not.toHaveBeenCalled();
     });
 
-    it("refuses to call the provider when the balance is too low", async () => {
-      vi.mocked(creditsService.assertSufficientCredits).mockRejectedValue(
-        new Error("insufficient"),
-      );
+    it("refuses to call the provider when the daily cap is reached", async () => {
+      vi.mocked(limiter.assertWithinLimit).mockImplementation(() => {
+        throw new Error("cap reached");
+      });
 
       await expect(
         service.translateCv("user@test.example", "app-001", "en"),
-      ).rejects.toThrow("insufficient");
+      ).rejects.toThrow("cap reached");
 
       expect(openRouter.chat).not.toHaveBeenCalled();
       expect(creditsService.consumeCredits).not.toHaveBeenCalled();
@@ -877,11 +881,7 @@ describe("CvGenerationService", () => {
       expect(translated.signature.lastName).toBe("Dupont");
       expect(translated.company).toEqual(storedLetter.company);
       expect(translated.language).toBe("en");
-      expect(creditsService.consumeCredits).toHaveBeenCalledWith({
-        action: "letter_generation",
-        applicationId: "app-001",
-        userEmail: "user@test.example",
-      });
+      expect(creditsService.consumeCredits).not.toHaveBeenCalled();
       const saved = (store.save as ReturnType<typeof vi.fn>).mock
         .calls[0][0] as StoredApplication;
       expect(saved.letterVersions?.at(-1)?.source).toBe("translation");
