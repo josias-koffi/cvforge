@@ -7,7 +7,7 @@ import {
   FieldGrid,
   ListEditor,
   SpecField,
-  type FieldSpec,
+  type TextSpec,
 } from "@/components/documents/list-editor"
 import { SectionCard } from "@/components/layout/section-card"
 import type { BaseProfile } from "@/lib/profile-model"
@@ -16,7 +16,7 @@ type Identity = BaseProfile["identity"]
 type ScalarIdentity = Omit<Identity, "drivingLicenses" | "links">
 type ProfileUpdater = (update: (profile: BaseProfile) => BaseProfile) => void
 
-const identityFields: FieldSpec<ScalarIdentity>[] = [
+const identityFields: TextSpec<ScalarIdentity>[] = [
   { key: "firstName", label: "Prénom" },
   { key: "lastName", label: "Nom" },
   { key: "email", label: "E-mail" },
@@ -24,7 +24,7 @@ const identityFields: FieldSpec<ScalarIdentity>[] = [
   { key: "city", label: "Ville" },
 ]
 
-const linkFields: FieldSpec<ContactLink>[] = [
+const linkFields: TextSpec<ContactLink>[] = [
   { key: "label", label: "Libellé" },
   { key: "url", label: "URL" },
 ]

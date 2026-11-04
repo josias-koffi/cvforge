@@ -13,7 +13,14 @@ import type {
   ProjectItemProps,
   SkillCategory,
 } from "@cvforge/types";
-import { isLocale, normalizeDrivingLicenses } from "@cvforge/types";
+import type { Locale } from "@cvforge/types";
+import {
+  formatPartialDate,
+  isLocale,
+  isPartialDate,
+  normalizeDrivingLicenses,
+  resolvePeriodText,
+} from "@cvforge/types";
 import { UnprocessableEntityException } from "@nestjs/common";
 
 const MAX_SKILL_CATEGORIES = 5;
@@ -106,24 +113,81 @@ function normalizeItems<T>(
     .filter((item): item is T => item !== null);
 }
 
-function normalizeExperiences(raw: unknown[]): ExperienceItemProps[] {
-  return sortMostRecentFirst(
-    normalizeItems(raw, (item) => {
-      const description = toStr(item.description);
+interface NormalizeOptions {
+  locale: Locale;
+  /** Generation orders by recency; a manual save keeps the user's own order. */
+  sort: boolean;
+}
 
-      return {
-        achievements: withoutRepetitions(
-          toStrArray(item.achievements),
-          description,
-        ),
-        company: toStr(item.company),
+function structuredDate(value: unknown): string | undefined {
+  const text = toStr(value);
+
+  return isPartialDate(text) ? text : undefined;
+}
+
+/**
+ * Structured dates are optional and only kept when the user set them. The legacy
+ * free text then follows them, in the document language, so every reader that
+ * still looks at startDate / endDate / year keeps working. Without structured
+ * dates the stored text is returned untouched.
+ */
+function experienceDates(
+  item: Record<string, unknown>,
+  locale: Locale,
+): Pick<
+  ExperienceItemProps,
+  "current" | "end" | "endDate" | "start" | "startDate"
+> {
+  const start = structuredDate(item.start);
+  const end = structuredDate(item.end);
+  const current = item.current === true;
+
+  if (!start && !end && !current) {
+    return { endDate: toStr(item.endDate), startDate: toStr(item.startDate) };
+  }
+
+  const text = resolvePeriodText({ current, end, start }, "", "", locale);
+
+  return {
+    ...(current ? { current } : {}),
+    ...(end && !current ? { end } : {}),
+    endDate: text.end,
+    ...(start ? { start } : {}),
+    startDate: text.start,
+  };
+}
+
+function singleDate(
+  item: Record<string, unknown>,
+  locale: Locale,
+): { date?: string; year: string } {
+  const date = structuredDate(item.date);
+
+  return date
+    ? { date, year: formatPartialDate(date, locale) }
+    : { year: toStr(item.year) };
+}
+
+function normalizeExperiences(
+  raw: unknown[],
+  { locale, sort }: NormalizeOptions,
+): ExperienceItemProps[] {
+  const experiences = normalizeItems(raw, (item) => {
+    const description = toStr(item.description);
+
+    return {
+      achievements: withoutRepetitions(
+        toStrArray(item.achievements),
         description,
-        endDate: toStr(item.endDate),
-        position: toStr(item.position),
-        startDate: toStr(item.startDate),
-      };
-    }),
-  );
+      ),
+      company: toStr(item.company),
+      description,
+      ...experienceDates(item, locale),
+      position: toStr(item.position),
+    };
+  });
+
+  return sort ? sortMostRecentFirst(experiences) : experiences;
 }
 
 /**
@@ -218,21 +282,27 @@ function endsAt(experience: ExperienceItemProps) {
 
 const ONGOING = /^(present|présent|aujourd|current|now|en cours)/i;
 
-function normalizeEducation(raw: unknown[]): EducationItemProps[] {
+function normalizeEducation(
+  raw: unknown[],
+  locale: Locale,
+): EducationItemProps[] {
   return normalizeItems(raw, (item) => ({
     description: toStr(item.description),
     degree: toStr(item.degree),
     institution: toStr(item.institution),
     mention: toStr(item.mention),
-    year: toStr(item.year),
+    ...singleDate(item, locale),
   }));
 }
 
-function normalizeCertifications(raw: unknown[]): CertificationItemProps[] {
+function normalizeCertifications(
+  raw: unknown[],
+  locale: Locale,
+): CertificationItemProps[] {
   return normalizeItems(raw, (item) => ({
     issuer: toStr(item.issuer),
     title: toStr(item.title),
-    year: toStr(item.year),
+    ...singleDate(item, locale),
   }));
 }
 
@@ -323,9 +393,12 @@ export function normalizeCvJson(
       summary: toStr(candidate.summary),
       title: toStr(candidate.title),
     },
-    certifications: normalizeCertifications(raw.certifications ?? []),
-    education: normalizeEducation(raw.education ?? []),
-    experiences: normalizeExperiences(raw.experiences ?? []),
+    certifications: normalizeCertifications(raw.certifications ?? [], "fr"),
+    education: normalizeEducation(raw.education ?? [], "fr"),
+    experiences: normalizeExperiences(raw.experiences ?? [], {
+      locale: "fr",
+      sort: true,
+    }),
     interests:
       toStr(promptProfile.profileSections.interests) || toStr(raw.interests),
     languages: normalizeLanguages(raw.languages ?? []),
@@ -338,10 +411,13 @@ export function normalizeUpdatedCvContent(
   value: CvContentUpdateRequest["cvContent"],
 ): CVDocumentContent {
   const categories = normalizeSkillCategories(value.skills?.categories);
+  const locale: Locale = isLocale(value.language) ? value.language : "fr";
   return {
     candidate: {
       city: toStr(value.candidate.city),
-      drivingLicenses: normalizeDrivingLicenses(value.candidate.drivingLicenses),
+      drivingLicenses: normalizeDrivingLicenses(
+        value.candidate.drivingLicenses,
+      ),
       email: toStr(value.candidate.email),
       firstName: toStr(value.candidate.firstName),
       lastName: toStr(value.candidate.lastName),
@@ -350,9 +426,12 @@ export function normalizeUpdatedCvContent(
       summary: toStr(value.candidate.summary),
       title: toStr(value.candidate.title),
     },
-    certifications: normalizeCertifications(value.certifications ?? []),
-    education: normalizeEducation(value.education ?? []),
-    experiences: normalizeExperiences(value.experiences ?? []),
+    certifications: normalizeCertifications(value.certifications ?? [], locale),
+    education: normalizeEducation(value.education ?? [], locale),
+    experiences: normalizeExperiences(value.experiences ?? [], {
+      locale,
+      sort: false,
+    }),
     interests: toStr(value.interests),
     ...languageField(value.language),
     languages: normalizeLanguages(value.languages ?? []),

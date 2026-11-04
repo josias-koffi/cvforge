@@ -64,6 +64,29 @@ export function buildCvTranslationPayload(
   };
 }
 
+/**
+ * Structured dates are language-neutral, so they come from the original entry and
+ * not from the model; normalizeUpdatedCvContent then re-renders them in the
+ * target language.
+ */
+function withOriginalDates<T extends object>(
+  translated: T[],
+  original: T[],
+  keys: string[],
+): T[] {
+  return translated.map((entry, index) => {
+    const merged = { ...entry } as Record<string, unknown>;
+    const source = (original[index] ?? {}) as Record<string, unknown>;
+
+    for (const key of keys) {
+      delete merged[key];
+      if (source[key] !== undefined) merged[key] = source[key];
+    }
+
+    return merged as T;
+  });
+}
+
 export function mergeTranslatedCv(
   original: CVDocumentContent,
   raw: unknown,
@@ -80,12 +103,21 @@ export function mergeTranslatedCv(
       summary: stringOr(candidate.summary, original.candidate.summary),
       title: stringOr(candidate.title, original.candidate.title),
     },
-    certifications: sameLengthOr(
-      translated.certifications,
+    certifications: withOriginalDates(
+      sameLengthOr(translated.certifications, original.certifications),
       original.certifications,
+      ["date"],
     ),
-    education: sameLengthOr(translated.education, original.education),
-    experiences: sameLengthOr(translated.experiences, original.experiences),
+    education: withOriginalDates(
+      sameLengthOr(translated.education, original.education),
+      original.education,
+      ["date"],
+    ),
+    experiences: withOriginalDates(
+      sameLengthOr(translated.experiences, original.experiences),
+      original.experiences,
+      ["start", "end", "current"],
+    ),
     interests: stringOr(translated.interests, original.interests),
     language: targetLanguage,
     languages: sameLengthOr(translated.languages, original.languages),

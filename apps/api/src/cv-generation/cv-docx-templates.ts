@@ -4,6 +4,7 @@ import {
   sanitizeHref,
 } from "@cvforge/document-renderer";
 import type { CandidateIdentity, CVDocumentContent, LetterDocumentContent } from "@cvforge/types";
+import { experienceDateTexts, singleDateText } from "@cvforge/types";
 import {
   AlignmentType,
   Document,
@@ -65,6 +66,7 @@ function bullet(text: string) {
 export function renderCvDocx(content: CVDocumentContent) {
   const candidate = content.candidate;
   const labels = documentLabels(content.language);
+  const locale = content.language ?? "fr";
   const children: Paragraph[] = [
     new Paragraph({
       alignment: AlignmentType.CENTER,
@@ -104,9 +106,10 @@ export function renderCvDocx(content: CVDocumentContent) {
   if (content.experiences.length > 0) {
     children.push(sectionHeading(labels.experiences));
     content.experiences.forEach((experience) => {
+      const dates = experienceDateTexts(experience, locale);
       children.push(
         paragraph(
-          `${experience.position} - ${experience.company} (${experience.startDate} - ${experience.endDate})`,
+          `${experience.position} - ${experience.company} (${dates.startDate} - ${dates.endDate})`,
           { bold: true },
         ),
         paragraph(experience.description),
@@ -120,7 +123,7 @@ export function renderCvDocx(content: CVDocumentContent) {
     content.education.forEach((education) => {
       children.push(
         paragraph(
-          `${education.degree} - ${education.institution} (${education.year})`,
+          `${education.degree} - ${education.institution} (${singleDateText(education, locale)})`,
           { bold: true },
         ),
       );
@@ -166,7 +169,7 @@ export function renderCvDocx(content: CVDocumentContent) {
     content.certifications.forEach((certification) => {
       children.push(
         paragraph(
-          `${certification.title} - ${certification.issuer} (${certification.year})`,
+          `${certification.title} - ${certification.issuer} (${singleDateText(certification, locale)})`,
         ),
       );
     });

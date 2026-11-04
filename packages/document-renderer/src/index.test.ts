@@ -202,3 +202,36 @@ describe("what survives into the PDF text layer", () => {
     expect(renderCvPdfHtml(cvContent)).not.toMatch(/letter-spacing:\s*0\.0[1-9]/);
   });
 });
+
+describe("structured dates", () => {
+  const structured: CVDocumentContent = {
+    ...cvContent,
+    certifications: [{ date: "2025-06", issuer: "AWS", title: "Architect", year: "2025" }],
+    experiences: [
+      {
+        ...cvContent.experiences[0],
+        current: true,
+        start: "2024-03",
+        startDate: "texte obsolète",
+      },
+    ],
+  };
+
+  it("formats them in the document language", () => {
+    const fr = renderCvPdfHtml(structured);
+    expect(fr).toContain("mars 2024 – Présent");
+    expect(fr).toContain("Architect (juin 2025)");
+
+    const en = renderCvPdfHtml({ ...structured, language: "en" });
+    expect(en).toContain("Mar 2024 – Present");
+    expect(en).toContain("Architect (Jun 2025)");
+  });
+
+  it("shows legacy free text as is when no structured date exists", () => {
+    const html = renderCvPdfHtml({
+      ...cvContent,
+      experiences: [{ ...cvContent.experiences[0], endDate: "Hiver 2021", startDate: "Été 2019" }],
+    });
+    expect(html).toContain("Été 2019 – Hiver 2021");
+  });
+});

@@ -1,4 +1,5 @@
 import type { CVDocumentContent } from "@cvforge/types";
+import { experienceDateTexts, singleDateText } from "@cvforge/types";
 import {
   escapeAttribute,
   escapeHtml,
@@ -26,6 +27,7 @@ const BULLET = "•";
 export function renderCvPdfHtml(cvContent: CVDocumentContent) {
   const candidate = cvContent.candidate;
   const labels = documentLabels(cvContent.language);
+  const locale = cvContent.language ?? "fr";
 
   const skillsSection = (() => {
     const categories = cvContent.skills.categories;
@@ -71,8 +73,10 @@ export function renderCvPdfHtml(cvContent: CVDocumentContent) {
         <section class="section">
           <h2>${labels.experiences}</h2>
           ${cvContent.experiences
-            .map(
-              (experience) => `
+            .map((experience) => {
+              const dates = experienceDateTexts(experience, locale);
+
+              return `
                 <article class="item">
                   <div class="item__header">
                     <div>
@@ -80,14 +84,14 @@ export function renderCvPdfHtml(cvContent: CVDocumentContent) {
                       <p class="company">${escapeHtml(experience.company)}</p>
                     </div>
                     <p class="date-range">${escapeHtml(
-                      `${experience.startDate} – ${experience.endDate}`,
+                      `${dates.startDate} – ${dates.endDate}`,
                     )}</p>
                   </div>
                   ${experience.description ? `<p>${escapeHtml(experience.description)}</p>` : ""}
                   ${renderList(experience.achievements)}
                 </article>
-              `,
-            )
+              `;
+            })
             .join("")}
         </section>
       `
@@ -109,7 +113,7 @@ export function renderCvPdfHtml(cvContent: CVDocumentContent) {
                           .join(" · "),
                       )}</p>
                     </div>
-                    <p class="date-range">${escapeHtml(education.year)}</p>
+                    <p class="date-range">${escapeHtml(singleDateText(education, locale))}</p>
                   </div>
                   ${education.description ? `<p>${escapeHtml(education.description)}</p>` : ""}
                 </article>
@@ -144,7 +148,7 @@ export function renderCvPdfHtml(cvContent: CVDocumentContent) {
         <section class="section">
           <h2>${labels.certifications}</h2>
           <p>${cvContent.certifications
-            .map((c) => escapeHtml(`${c.title} (${c.year}) · ${c.issuer}`))
+            .map((c) => escapeHtml(`${c.title} (${singleDateText(c, locale)}) · ${c.issuer}`))
             .join(" · ")}</p>
         </section>
       `

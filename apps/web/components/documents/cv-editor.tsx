@@ -24,6 +24,7 @@ import {
   ListEditor,
   SpecField,
   type FieldSpec,
+  type TextSpec,
 } from "@/components/documents/list-editor"
 import { useDocumentEditor } from "@/components/documents/use-document-editor"
 import {
@@ -38,7 +39,7 @@ import { Textarea } from "@/components/ui/textarea"
 type Candidate = CVDocumentContent["candidate"]
 type ScalarIdentity = Omit<Candidate, "drivingLicenses" | "links">
 
-const identityFields: FieldSpec<ScalarIdentity>[] = [
+const identityFields: TextSpec<ScalarIdentity>[] = [
   { key: "firstName", label: "Prénom" },
   { key: "lastName", label: "Nom" },
   { key: "title", label: "Titre du CV", wide: true },
@@ -48,7 +49,7 @@ const identityFields: FieldSpec<ScalarIdentity>[] = [
   { key: "summary", label: "Accroche", type: "multiline" },
 ]
 
-const linkFields: FieldSpec<ContactLink>[] = [
+const linkFields: TextSpec<ContactLink>[] = [
   { key: "label", label: "Libellé" },
   { key: "url", label: "URL" },
 ]
@@ -56,8 +57,15 @@ const linkFields: FieldSpec<ContactLink>[] = [
 const experienceFields: FieldSpec<ExperienceItemProps>[] = [
   { key: "position", label: "Poste" },
   { key: "company", label: "Entreprise" },
-  { key: "startDate", label: "Début" },
-  { key: "endDate", label: "Fin" },
+  {
+    type: "period",
+    key: "start",
+    label: "Période",
+    endKey: "end",
+    currentKey: "current",
+    legacyStartKey: "startDate",
+    legacyEndKey: "endDate",
+  },
   { key: "description", label: "Description", type: "multiline" },
   { key: "achievements", label: "Réalisations (une par ligne)", type: "lines" },
 ]
@@ -65,7 +73,7 @@ const experienceFields: FieldSpec<ExperienceItemProps>[] = [
 const educationFields: FieldSpec<EducationItemProps>[] = [
   { key: "degree", label: "Diplôme" },
   { key: "institution", label: "Établissement" },
-  { key: "year", label: "Année" },
+  { type: "date", key: "date", legacyKey: "year", label: "Date" },
   { key: "mention", label: "Mention" },
   { key: "description", label: "Description", type: "multiline" },
 ]
@@ -84,7 +92,7 @@ const languageFields: FieldSpec<LanguageItemProps>[] = [
 const certificationFields: FieldSpec<CertificationItemProps>[] = [
   { key: "title", label: "Certification" },
   { key: "issuer", label: "Organisme" },
-  { key: "year", label: "Année" },
+  { type: "date", key: "date", legacyKey: "year", label: "Date" },
 ]
 
 function categoriesToText(content: CVDocumentContent) {
@@ -214,6 +222,7 @@ export function CvEditor({
             }
           />
           <ListEditor
+            locale={cvContent.language ?? "fr"}
             id="link"
             items={draft.candidate.links}
             fields={linkFields}
@@ -225,6 +234,7 @@ export function CvEditor({
         </Section>
         <Section value="experiences" title="Expériences" count={draft.experiences.length}>
           <ListEditor
+            locale={cvContent.language ?? "fr"}
             id="experience"
             items={draft.experiences}
             fields={experienceFields}
@@ -245,6 +255,7 @@ export function CvEditor({
         </Section>
         <Section value="education" title="Formation" count={draft.education.length}>
           <ListEditor
+            locale={cvContent.language ?? "fr"}
             id="education"
             items={draft.education}
             fields={educationFields}
@@ -289,6 +300,7 @@ export function CvEditor({
         </Section>
         <Section value="projects" title="Projets" count={draft.projects.length}>
           <ListEditor
+            locale={cvContent.language ?? "fr"}
             id="project"
             items={draft.projects}
             fields={projectFields}
@@ -300,6 +312,7 @@ export function CvEditor({
         </Section>
         <Section value="languages" title="Langues" count={draft.languages.length}>
           <ListEditor
+            locale={cvContent.language ?? "fr"}
             id="language"
             items={draft.languages}
             fields={languageFields}
@@ -311,6 +324,7 @@ export function CvEditor({
         </Section>
         <Section value="certifications" title="Certifications" count={draft.certifications.length}>
           <ListEditor
+            locale={cvContent.language ?? "fr"}
             id="certification"
             items={draft.certifications}
             fields={certificationFields}
