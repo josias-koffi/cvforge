@@ -23,7 +23,7 @@ const COSTS = [
     cost: `${formatCredits(CREDITS_PER_INTERVIEW_MINUTE)} / min`,
     label: "Entretien simulé et rapport",
   },
-  { cost: formatCredits(AI_CREDIT_COSTS.cv_import), label: "Import de CV" },
+  { cost: "Gratuit", label: "Import de CV et traduction" },
 ]
 
 /** The price list, so a pack can be read as what it pays for. */

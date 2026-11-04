@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { AI_CREDIT_COSTS } from "@cvforge/types"
 import { FileTextIcon, ZapIcon } from "lucide-react"
 
 import { generateDocument } from "@/app/(app)/candidatures/actions"
@@ -36,7 +37,7 @@ export function MissingDocument({
       </EmptyHeader>
       <EmptyContent className="flex-row justify-center">
         <ActionButton
-          spark
+          credits={kind === "cv" ? AI_CREDIT_COSTS.cv_generation : AI_CREDIT_COSTS.letter_generation}
           pendingLabel="Génération en cours…"
           action={generateDocument.bind(null, offerId, kind, undefined)}
         >

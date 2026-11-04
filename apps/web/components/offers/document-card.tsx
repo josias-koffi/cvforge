@@ -5,6 +5,8 @@ import Link from "next/link"
 import { toast } from "sonner"
 import { ArrowRightIcon, RefreshCwIcon, ZapIcon } from "lucide-react"
 
+import { AI_CREDIT_COSTS } from "@cvforge/types"
+
 import { generateDocument, setOfferProfile } from "@/app/(app)/candidatures/actions"
 import { ActionButton } from "@/components/feedback/action-button"
 import { Button } from "@/components/ui/button"
@@ -17,6 +19,11 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { formatDateTime } from "@/lib/format"
+
+const DOCUMENT_CREDITS = {
+  cv: AI_CREDIT_COSTS.cv_generation,
+  letter: AI_CREDIT_COSTS.letter_generation,
+}
 
 type DocumentRowProps = {
   description: string
@@ -54,7 +61,7 @@ export function DocumentRow({
             </Button>
             <ActionButton
               size="sm"
-              variant="outline"
+              credits={DOCUMENT_CREDITS[kind]}
               pendingLabel="Génération en cours…"
               action={() => generateDocument(offerId, kind)}
               disabled={disabled}
@@ -65,7 +72,7 @@ export function DocumentRow({
           </>
         ) : (
           <ActionButton
-            spark
+            credits={DOCUMENT_CREDITS[kind]}
             size="sm"
             pendingLabel="Génération en cours…"
             action={() => generateDocument(offerId, kind)}

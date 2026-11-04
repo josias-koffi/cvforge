@@ -510,7 +510,9 @@ export function interviewSessionCost(minutes: InterviewDurationMinutes) {
 }
 
 export const AI_CREDIT_COSTS: Record<AiCreditAction, number> = {
-  [AI_CREDIT_ACTION_CV_IMPORT]: 2,
+  // Free since 2026-11-04 (about 0.0003 USD a call). The key stays: the ledger
+  // and the metrics still carry the imports charged before then.
+  [AI_CREDIT_ACTION_CV_IMPORT]: 0,
   [AI_CREDIT_ACTION_OFFER_ENRICHMENT]: 1,
   [AI_CREDIT_ACTION_CV_GENERATION]: 3,
   [AI_CREDIT_ACTION_LETTER_GENERATION]: 3,
@@ -546,13 +548,15 @@ export function estimateApplications(credits: number) {
 }
 
 /**
- * Granted once on account creation: the onboarding's CV import plus one
- * complete application, interview included — the mock interview is the thing
- * to try before paying. One, not two, since the interview became the costly
- * part of an application (2026-09-25).
+ * Granted once on account creation: one complete application, interview
+ * included — the mock interview is the thing to try before paying — plus two
+ * credits on top. Those two paid for the onboarding's CV import until it
+ * became free (2026-11-04); they are kept as they were, on purpose. One
+ * application, not two, since the interview became the costly part of an
+ * application (2026-09-25).
  */
-export const WELCOME_CREDITS =
-  AI_CREDIT_COSTS[AI_CREDIT_ACTION_CV_IMPORT] + CREDITS_PER_APPLICATION;
+const WELCOME_EXTRA_CREDITS = 2;
+export const WELCOME_CREDITS = WELCOME_EXTRA_CREDITS + CREDITS_PER_APPLICATION;
 export const WELCOME_APPLICATIONS = estimateApplications(WELCOME_CREDITS);
 
 export interface CreditLedgerEntry {

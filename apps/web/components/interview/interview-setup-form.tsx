@@ -12,9 +12,11 @@ import {
 } from "@cvforge/types"
 import { useRouter } from "next/navigation"
 import * as React from "react"
+import { interviewSessionCost } from "@cvforge/types"
 import { AlertCircleIcon, MicIcon } from "lucide-react"
 
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { CreditPill } from "@/components/credits/credit-pill"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -235,9 +237,10 @@ export function InterviewSetupForm({
         </CardContent>
 
         <CardFooter>
-          <Button disabled={pending} type="submit">
+          <Button variant="spark" disabled={pending} type="submit">
             <MicIcon />
             {pending ? "Démarrage…" : "Démarrer l'entretien"}
+            {pending ? null : <CreditPill amount={interviewSessionCost(durationMinutes)} />}
           </Button>
         </CardFooter>
       </Card>

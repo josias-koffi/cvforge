@@ -3,10 +3,12 @@
 import { useState } from "react"
 import { renderLetterPdfHtml } from "@cvforge/document-renderer"
 import type { ContactLink, LetterDocumentContent, LetterDocumentVersionEntry } from "@cvforge/types"
+import { AI_CREDIT_COSTS } from "@cvforge/types"
 import { ZapIcon } from "lucide-react"
 
 import { saveLetter } from "@/app/(app)/candidatures/[id]/documents-actions"
 import { generateDocument } from "@/app/(app)/candidatures/actions"
+import { CreditPill } from "@/components/credits/credit-pill"
 import { ActionButton } from "@/components/feedback/action-button"
 import { EditorLayout } from "@/components/documents/editor-layout"
 import { TranslateDialog } from "@/components/documents/translate-dialog"
@@ -25,7 +27,6 @@ import {
 } from "@/components/ui/dialog"
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field"
 import { Textarea } from "@/components/ui/textarea"
-import { creditCostLabel } from "@/lib/format"
 
 type Candidate = LetterDocumentContent["candidate"]
 type ScalarCandidate = Omit<Candidate, "drivingLicenses" | "links">
@@ -57,9 +58,10 @@ function RegenerateDialog({ offerId }: { offerId: string }) {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="outline">
+        <Button variant="spark">
           <ZapIcon />
           Régénérer
+          <CreditPill amount={AI_CREDIT_COSTS.letter_generation} />
         </Button>
       </DialogTrigger>
       <DialogContent>
@@ -67,7 +69,7 @@ function RegenerateDialog({ offerId }: { offerId: string }) {
           <DialogTitle>Régénérer la lettre</DialogTitle>
           <DialogDescription>
             Orientez la nouvelle version en une phrase. La lettre actuelle reste
-            dans l&apos;historique des versions. {creditCostLabel("letter_generation")}.
+            dans l&apos;historique des versions.
           </DialogDescription>
         </DialogHeader>
         <Field>
@@ -83,7 +85,7 @@ function RegenerateDialog({ offerId }: { offerId: string }) {
         </Field>
         <DialogFooter>
           <ActionButton
-            spark
+            credits={AI_CREDIT_COSTS.letter_generation}
             pendingLabel="Génération en cours…"
             action={() => generateDocument(offerId, "letter", refinement.trim() || undefined)}
           >

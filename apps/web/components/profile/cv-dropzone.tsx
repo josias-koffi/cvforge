@@ -11,11 +11,11 @@ import {
 import { toast } from "sonner"
 
 import { importCvFile } from "@/app/(app)/profile/actions"
-import { PendingContent, sparkClassName } from "@/components/feedback/pending-content"
+import { PendingContent } from "@/components/feedback/pending-content"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { CV_ACCEPT, cvRejectionReason } from "@/lib/cv-upload"
-import { creditCostLabel, formatFileSize } from "@/lib/format"
+import { formatFileSize } from "@/lib/format"
 import { applyImportedCv, type BaseProfile } from "@/lib/profile-model"
 import { cn } from "@/lib/utils"
 
@@ -112,17 +112,11 @@ export function CvDropzone({
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-medium">{file.name}</p>
               <p className="text-muted-foreground text-xs">
-                {formatFileSize(file.size)} · prêt à être analysé · {creditCostLabel("cv_import")}
+                {formatFileSize(file.size)} · prêt à être analysé · gratuit
               </p>
             </div>
-            <Button
-              type="button"
-              variant="spark"
-              className={sparkClassName(pending)}
-              disabled={pending}
-              onClick={analyse}
-            >
-              <PendingContent pending={pending} pendingLabel="Analyse en cours…" spark>
+            <Button type="button" disabled={pending} onClick={analyse}>
+              <PendingContent pending={pending} pendingLabel="Analyse en cours…">
                 <UploadIcon />
                 Analyser mon CV
               </PendingContent>
@@ -178,7 +172,7 @@ export function CvDropzone({
               Déposez votre CV ici ou <span className="text-primary underline">parcourir</span>
             </span>
             <span className="text-muted-foreground text-xs">
-              PDF ou DOCX · 5 Mo max. · {creditCostLabel("cv_import")} · le profil se remplit tout
+              PDF ou DOCX · 5 Mo max. · gratuit · le profil se remplit tout
               seul
             </span>
           </button>

@@ -1,9 +1,10 @@
-import { BadRequestException, UnprocessableEntityException } from "@nestjs/common";
-import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
-  InsufficientCreditsException,
-  type CreditsService,
-} from "../credits/credits.service";
+  BadRequestException,
+  HttpException,
+  UnprocessableEntityException,
+} from "@nestjs/common";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { FreeActionLimiter } from "../credits/free-action-limiter";
 import { CvImportService, type CvImportFile } from "./cv-import.service";
 import { recognizeImages } from "./ocr.extractor";
 import { extractPdfContent, renderPdfPages } from "./pdf-text.extractor";
@@ -85,7 +86,7 @@ function makeFile(overrides: Partial<CvImportFile> = {}): CvImportFile {
 
 describe("CvImportService", () => {
   let openRouter: { chat: ReturnType<typeof vi.fn> };
-  let creditsService: CreditsService;
+  let limiter: Pick<FreeActionLimiter, "assertWithinLimit">;
   let service: CvImportService;
 
   beforeEach(() => {
@@ -93,16 +94,13 @@ describe("CvImportService", () => {
     openRouter = {
       chat: vi.fn().mockResolvedValue(JSON.stringify(AI_RESPONSE)),
     };
-    creditsService = {
-      assertSufficientCredits: vi.fn().mockResolvedValue(undefined),
-      consumeCredits: vi.fn().mockResolvedValue(undefined),
-    } as unknown as CreditsService;
+    limiter = { assertWithinLimit: vi.fn() };
     vi.mocked(extractPdfContent).mockImplementation(async (buffer) =>
       pdfContent(buffer.toString("latin1").trim()),
     );
     vi.mocked(renderPdfPages).mockResolvedValue([]);
     vi.mocked(recognizeImages).mockResolvedValue("");
-    service = new CvImportService(openRouter as never, creditsService);
+    service = new CvImportService(openRouter as never, limiter);
   });
 
   it("extracts a normalized profile patch from a PDF upload", async () => {
@@ -117,10 +115,10 @@ describe("CvImportService", () => {
     expect(result.extractedProfile.sections.technicalSkills).toContain("TypeScript");
     expect(result.omittedFields).toContain("identity.email");
     expect(result.qualityLimits.length).toBeGreaterThan(0);
-    expect(creditsService.consumeCredits).toHaveBeenCalledWith({
-      action: "cv_import",
-      userEmail: "user@example.com",
-    });
+    expect(limiter.assertWithinLimit).toHaveBeenCalledWith(
+      "cv_import",
+      "user@example.com",
+    );
   });
 
   it("sends pseudonymised CV text to OpenRouter", async () => {
@@ -200,7 +198,7 @@ describe("CvImportService", () => {
     expect(openRouter.chat).not.toHaveBeenCalled();
   });
 
-  it("rejects without charging credits when the AI extracts nothing", async () => {
+  it("rejects when the AI extracts nothing", async () => {
     openRouter.chat.mockResolvedValue(
       JSON.stringify({ headline: "", identity: {}, sections: { technicalSkills: [] } }),
     );
@@ -208,17 +206,16 @@ describe("CvImportService", () => {
     await expect(
       service.extractProfileFromCv("user@example.com", makeFile()),
     ).rejects.toBeInstanceOf(UnprocessableEntityException);
-    expect(creditsService.consumeCredits).not.toHaveBeenCalled();
   });
 
-  it("refuses before calling the AI when the balance is too low", async () => {
-    vi.mocked(creditsService.assertSufficientCredits).mockRejectedValue(
-      new InsufficientCreditsException("cv_import"),
-    );
+  it("refuses before calling the AI when the daily cap is reached", async () => {
+    vi.mocked(limiter.assertWithinLimit).mockImplementation(() => {
+      throw new HttpException("cap", 429);
+    });
 
     await expect(
       service.extractProfileFromCv("user@example.com", makeFile()),
-    ).rejects.toMatchObject({ status: 402 });
+    ).rejects.toMatchObject({ status: 429 });
     expect(openRouter.chat).not.toHaveBeenCalled();
   });
 });

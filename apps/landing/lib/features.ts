@@ -1,6 +1,5 @@
 import {
   AI_CREDIT_ACTION_CV_GENERATION,
-  AI_CREDIT_ACTION_CV_IMPORT,
   AI_CREDIT_ACTION_INTERVIEW_SESSION,
   AI_CREDIT_ACTION_JOB_DIGEST_RERANK,
   AI_CREDIT_ACTION_LETTER_GENERATION,
@@ -57,7 +56,6 @@ export const featurePages: FeaturePage[] = [
     hero: { name: "cv-editor", path: "/candidatures/cv" },
     blocks: ["cv-editor", "letter-editor", "cv-ats", "translate"],
     actions: [
-      AI_CREDIT_ACTION_CV_IMPORT,
       AI_CREDIT_ACTION_OFFER_ENRICHMENT,
       AI_CREDIT_ACTION_CV_GENERATION,
       AI_CREDIT_ACTION_LETTER_GENERATION,
