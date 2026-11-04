@@ -60,6 +60,23 @@ export class BoardHttpClient {
    * entry instead of merely counting an error against it.
    */
   async getJson<T>(provider: BoardProvider, url: string): Promise<T> {
+    const response = await this.get(provider, url, "application/json");
+
+    return (await response.json()) as T;
+  }
+
+  /** The same guarded read for a provider that answers XML (Personio). */
+  async getText(provider: BoardProvider, url: string): Promise<string> {
+    const response = await this.get(provider, url, "application/xml, text/xml");
+
+    return response.text();
+  }
+
+  private async get(
+    provider: BoardProvider,
+    url: string,
+    accept: string,
+  ): Promise<Response> {
     const limiter = this.limiterFor(provider);
     let lastError: unknown;
 
@@ -68,7 +85,7 @@ export class BoardHttpClient {
         const response = await limiter.run(() => {
           for (const listener of this.requestListeners) listener(provider);
           return this.fetchImpl(url, {
-            headers: { accept: "application/json", "user-agent": BOARD_USER_AGENT },
+            headers: { accept, "user-agent": BOARD_USER_AGENT },
             signal: AbortSignal.timeout(this.timeoutMs),
           });
         });
@@ -101,7 +118,7 @@ export class BoardHttpClient {
           throw new Error(`${provider} answered ${response.status}.`);
         }
 
-        return (await response.json()) as T;
+        return response;
       } catch (error) {
         if (
           error instanceof BoardNotFoundError ||

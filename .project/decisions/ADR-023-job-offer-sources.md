@@ -97,3 +97,17 @@ une ligne en base et évite de redécouvrir ces entreprises plus tard.
   plus vite du produit.
 - Les offres de stage restent moins bien couvertes que les CDI : JobTeaser est hors d'atteinte, et
   France Travail en publie peu. Les logiciels de recrutement compensent en partie.
+
+## Amendement du 2026-11-05 — découverte automatique et trois adaptateurs de plus
+
+- La découverte Common Crawl ne tournait que par script manuel : cinq semaines après la mise en
+  service, le registre ne contenait que les 31 entreprises du jeu de départ. Elle tourne désormais
+  seule chaque jour (`BoardDiscoveryService`, verrou en base, rapport sous `boards_discovery`).
+- L'index répond souvent 504 : chaque requête est retentée (2 s, 10 s, 30 s), la collection la plus
+  récente cède la place aux précédentes, les motifs sont lus page par page.
+- Une entreprise n'est enregistrée qu'après vérification sur l'API de son éditeur et seulement si
+  elle y publie au moins une offre en France ou en télétravail ; les autres sont enregistrées
+  **désactivées** pour ne pas être revérifiées chaque jour. Un échec qui ne dit rien de l'entreprise
+  (délai, 429) n'enregistre rien. Au plus 600 vérifications par jour.
+- Adaptateurs ajoutés : Workable, Recruitee, Personio (flux XML). Welcome Kit reste enregistré sans
+  adaptateur.

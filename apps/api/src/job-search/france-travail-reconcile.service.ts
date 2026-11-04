@@ -15,6 +15,8 @@ const DAY_MS = 24 * HOUR_MS;
 export const RECONCILE_KEY = "france_travail_reconcile";
 /** Checked every hour: a walk stopped by a 429 or a restart starts again soon. */
 const CHECK_INTERVAL_MS = HOUR_MS;
+/** First check after boot. */
+const FIRST_CHECK_MS = 3 * MINUTE_MS;
 /** A walk older than this is due; the licence asks for 24 h at most (ADR-027). */
 const MIN_INTERVAL_MS = 23 * HOUR_MS;
 /** Three hours at a time: a few thousand offers in memory, a cut only at the peak. */
@@ -54,6 +56,7 @@ export interface ReconcileResult {
 export class FranceTravailReconciler implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(FranceTravailReconciler.name);
   private timer: NodeJS.Timeout | null = null;
+  private first: NodeJS.Timeout | null = null;
   private running = false;
   private pausedUntil = 0;
 
@@ -71,15 +74,20 @@ export class FranceTravailReconciler implements OnModuleInit, OnModuleDestroy {
   ) {}
 
   onModuleInit() {
-    this.timer = setInterval(() => {
+    const check = () =>
       void this.run().catch((error: unknown) => {
         this.logger.error(`Reconciliation failed: ${String(error)}`);
       });
-    }, CHECK_INTERVAL_MS);
+
+    // A first check shortly after boot: a fresh deployment must not wait an hour.
+    this.first = setTimeout(check, FIRST_CHECK_MS);
+    this.timer = setInterval(check, CHECK_INTERVAL_MS);
+    this.first.unref?.();
     this.timer.unref?.();
   }
 
   onModuleDestroy() {
+    if (this.first) clearTimeout(this.first);
     if (this.timer) clearInterval(this.timer);
   }
 
