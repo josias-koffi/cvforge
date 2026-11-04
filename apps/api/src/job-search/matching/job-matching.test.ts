@@ -98,10 +98,10 @@ describe("rejectionReason", () => {
     ).toBe("contract");
   });
 
-  it("refuses an offer past the 30-day rule", () => {
+  it("refuses an offer past the 90-day rule", () => {
     expect(
       rejectionReason({
-        job: makeJob({ firstSeenAt: daysAgo(40), publishedAt: daysAgo(45) }),
+        job: makeJob({ firstSeenAt: daysAgo(100), publishedAt: daysAgo(105) }),
         now: NOW,
         project: makeProject(),
       }),
@@ -109,10 +109,10 @@ describe("rejectionReason", () => {
   });
 
   it("reads the age from the oldest date, not the kindest one", () => {
-    // Collected 40 days ago, "published" yesterday: a repost must not pass.
-    const job = makeJob({ firstSeenAt: daysAgo(40), publishedAt: daysAgo(1) });
+    // Collected 100 days ago, "published" yesterday: a repost must not pass.
+    const job = makeJob({ firstSeenAt: daysAgo(100), publishedAt: daysAgo(1) });
 
-    expect(ageInDays(job, NOW)).toBeGreaterThan(39);
+    expect(ageInDays(job, NOW)).toBeGreaterThan(99);
     expect(rejectionReason({ job, now: NOW, project: makeProject() })).toBe("too_old");
   });
 

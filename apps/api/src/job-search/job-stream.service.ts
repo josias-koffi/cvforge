@@ -3,6 +3,7 @@ import { Logger, type OnModuleDestroy, type OnModuleInit } from "@nestjs/common"
 import type { NormalizedJobListing } from "./job-search.types";
 import type { JobSourcesStore } from "./job-sources.types";
 import type { JobStreamCursorsStore } from "./job-stream.types";
+import { DEFAULT_MAX_AGE_DAYS } from "./matching/job-matching";
 import type { StreamSliceResult } from "./sources/france-travail.stream";
 
 const MINUTE_MS = 60_000;
@@ -14,8 +15,8 @@ const DEFAULT_INTERVAL_MINUTES = 5;
  * deduplicator (US-111) absorbs what is read twice.
  */
 export const STREAM_OVERLAP_MS = 2 * MINUTE_MS;
-/** After a long outage, nothing older is read: past 30 days nothing is proposed. */
-export const STREAM_MAX_CATCH_UP_MS = 31 * DAY_MS;
+/** After a long outage, nothing older is read: past the retention window nothing is proposed. */
+export const STREAM_MAX_CATCH_UP_MS = DEFAULT_MAX_AGE_DAYS * DAY_MS;
 /**
  * A catch-up is read an hour at a time, the cursor saved after each: a crash
  * three days into a month of backlog resumes there, not at the start.
@@ -205,7 +206,7 @@ export class JobStreamService implements OnModuleInit, OnModuleDestroy {
   }
 
   /**
-   * Two minutes before the cursor, never more than 31 days back. Without a
+   * Two minutes before the cursor, never more than the retention window back. Without a
    * cursor, the first slice is the last interval: the daily pass and the
    * `--since=31` backfill already hold what came before.
    */

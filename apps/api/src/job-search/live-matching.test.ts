@@ -147,16 +147,28 @@ function createMatcher(input: {
 }
 
 describe("LiveMatcher", () => {
-  it("keeps only the offers a search wants, and forgets the rest", async () => {
+  it("stores every offer, wanted by a search or not", async () => {
     const { deps, matcher } = createMatcher();
 
     const stats = await matcher.handle([PERFECT, CLOSE, UNRELATED, ELSEWHERE]);
 
     expect(deps.deduplicator.attach.mock.calls.map(([offer]) => offer.externalId)).toEqual([
-      "FT1",
-      "FT2",
+      PERFECT.externalId,
+      CLOSE.externalId,
+      UNRELATED.externalId,
+      ELSEWHERE.externalId,
     ]);
-    expect(stats).toMatchObject({ listings: 4, searches: 1, stored: 2 });
+    expect(stats).toMatchObject({ listings: 4, searches: 1, stored: 4 });
+  });
+
+  it("stores an old offer without alerting anyone", async () => {
+    const { alerts, matcher } = createMatcher();
+    const old = { ...PERFECT, publishedAt: "2026-07-01T08:00:00.000Z" };
+
+    const stats = await matcher.handle([old]);
+
+    expect(stats).toMatchObject({ alerts: 0, stored: 1 });
+    expect(alerts).toHaveLength(0);
   });
 
   it("raises an alert above the threshold, with the publication and detection dates", async () => {
@@ -260,10 +272,11 @@ describe("LiveMatcher", () => {
     ]);
   });
 
-  it("does nothing at all without searches", async () => {
-    const { deps, matcher } = createMatcher({ searches: [] });
+  it("still stores the offers without any search to match", async () => {
+    const { alerts, deps, matcher } = createMatcher({ searches: [] });
 
-    expect(await matcher.handle([PERFECT])).toMatchObject({ stored: 0 });
-    expect(deps.deduplicator.attach).not.toHaveBeenCalled();
+    expect(await matcher.handle([PERFECT])).toMatchObject({ alerts: 0, stored: 1 });
+    expect(deps.deduplicator.attach).toHaveBeenCalledTimes(1);
+    expect(alerts).toHaveLength(0);
   });
 });

@@ -1,4 +1,4 @@
-import { and, eq, isNull, sql } from "drizzle-orm";
+import { and, eq, gte, inArray, isNull, lt, sql } from "drizzle-orm";
 import type { Database } from "../database/database.types";
 import { jobListings, jobs } from "../database/schema";
 import type { JobSource } from "./job-search.types";
@@ -39,6 +39,69 @@ export async function closeListingsMissingFrom(
         seen.length > 0
           ? sql`${jobListings.externalId} not in ${seen}`
           : sql`true`,
+      ),
+    )
+    .returning({ jobId: jobListings.jobId });
+
+  for (const jobId of new Set(closed.map((row) => row.jobId))) {
+    await refreshClosedAt(db, jobId, input.at);
+  }
+
+  return closed.length;
+}
+
+/**
+ * Marks adverts as seen without rewriting them: the daily reconciliation
+ * confirms hundreds of thousands, and an upsert of each would rewrite as many
+ * rows of text. Returns the ids we do not hold, which the caller stores.
+ */
+export async function touchListings(
+  db: Database,
+  input: { source: JobSource; externalIds: readonly string[]; at: string },
+): Promise<string[]> {
+  const ids = [...new Set(input.externalIds)];
+  if (ids.length === 0) return [];
+
+  const touched = await db
+    .update(jobListings)
+    .set({ lastSeenAt: new Date(input.at) })
+    .where(
+      and(
+        eq(jobListings.source, input.source),
+        inArray(jobListings.externalId, ids),
+        isNull(jobListings.closedAt),
+      ),
+    )
+    .returning({ externalId: jobListings.externalId });
+
+  const held = new Set(touched.map((row) => row.externalId));
+
+  return ids.filter((id) => !held.has(id));
+}
+
+/**
+ * Closes the open adverts of a source created since `createdSince` that a
+ * complete walk of that period did not find: France Travail no longer lists
+ * them, so they were filled or withdrawn.
+ */
+export async function closeListingsNotSeenSince(
+  db: Database,
+  input: {
+    source: JobSource;
+    seenBefore: string;
+    createdSince: string;
+    at: string;
+  },
+): Promise<number> {
+  const closed = await db
+    .update(jobListings)
+    .set({ closedAt: new Date(input.at) })
+    .where(
+      and(
+        eq(jobListings.source, input.source),
+        isNull(jobListings.closedAt),
+        lt(jobListings.lastSeenAt, new Date(input.seenBefore)),
+        gte(jobListings.publishedAt, new Date(input.createdSince)),
       ),
     )
     .returning({ jobId: jobListings.jobId });

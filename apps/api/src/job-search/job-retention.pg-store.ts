@@ -213,7 +213,7 @@ function strippedRaw(): SQL {
 }
 
 /**
- * Past the 30-day rule (the same age `ageInDays` reads: the oldest of
+ * Past the 90-day rule (the same age `ageInDays` reads: the oldest of
  * publication and first sighting), or closed for as long.
  */
 function expired(before: string): SQL {

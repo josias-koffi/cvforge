@@ -14,6 +14,8 @@ import { findAdvertsByJobIds } from "./jobs.adverts";
 import {
   closeListing,
   closeListingsMissingFrom,
+  closeListingsNotSeenSince,
+  touchListings,
   refreshClosedAt,
 } from "./jobs.closing";
 import {
@@ -96,7 +98,7 @@ export class PgJobsStore implements JobsStore {
    *
    * The canonical wording only changes for a source that outranks the ones
    * already there; the dates always widen, because the oldest sighting is what
-   * the 30-day rule reads.
+   * the 90-day rule reads.
    */
   async attachListing(input: {
     jobId: string;
@@ -283,6 +285,23 @@ export class PgJobsStore implements JobsStore {
     limit: number;
   }): Promise<string[]> {
     return listStaleOpenListings(this.db, input);
+  }
+
+  touchListings(input: {
+    source: JobSource;
+    externalIds: readonly string[];
+    at: string;
+  }) {
+    return touchListings(this.db, input);
+  }
+
+  closeListingsNotSeenSince(input: {
+    source: JobSource;
+    seenBefore: string;
+    createdSince: string;
+    at: string;
+  }) {
+    return closeListingsNotSeenSince(this.db, input);
   }
 
   closeListingsMissingFrom(input: {

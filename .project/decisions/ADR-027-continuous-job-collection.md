@@ -82,7 +82,26 @@ Débit `offres` porté de 4 à **8 appels/s** (`ft.config.ts`) : sous les 10 mes
 de la place à la vérification en direct et aux autres API France Travail. Le compteur d'appels du
 jour, par source, est visible dans l'admin (US-163).
 
-### 4. Ne stocker que ce qui correspond
+### 4. Ne stocker que ce qui correspond — **amendé le 2026-11-04 : on stocke tout**
+
+> **Amendement (2026-11-04).** La page « offres » du candidat ne cherche que dans notre base ; en
+> ne gardant que les correspondances, elle couvrait ≈ 2 % du marché (9 473 offres ouvertes contre
+> 384 298 créées sur 31 jours et 455 655 sur 90, mesuré sur l'API le jour même). Décision du
+> propriétaire : **toutes les offres France Travail sont stockées**, conservées **90 jours**
+> (`DEFAULT_MAX_AGE_DAYS`, une seule valeur pour la fraîcheur, la purge, la resynchronisation et
+> le rattrapage). Le score ne sert plus qu'à décider des alertes, et seules les offres publiées
+> depuis moins de 48 h en déclenchent (un rattrapage ne doit alerter personne). Volume estimé :
+> ≈ 9 Ko par offre, 4 à 5 Go pour 455 000 offres.
+>
+> **Réconciliation quotidienne** (`FranceTravailReconciler`) : une fois par jour, parcourt les 90
+> derniers jours par tranches de 3 h (≈ 3 000 à 4 000 appels). Une offre déjà connue est seulement
+> marquée « vue » ; une offre inconnue est stockée (c'est le rattrapage initial) ; une offre créée
+> dans la période et absente d'un parcours complet est fermée. Un parcours interrompu ou à moins de
+> 1 000 offres ne ferme rien. C'est ce qui tient la règle de licence « resynchronisation ≥ 1×/24 h »
+> à cette échelle, là où la resynchronisation offre par offre est plafonnée à 20 000 par jour.
+> Limite connue : une offre modifiée sans être fermée n'est pas réécrite par ce parcours.
+
+*Texte d'origine, remplacé par l'amendement ci-dessus :*
 
 Chaque nouvelle offre est comparée aux recherches actives avec le score déterministe existant,
 sans appel IA. **Seules les offres qui correspondent à au moins une recherche active sont
