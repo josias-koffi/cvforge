@@ -77,12 +77,6 @@ vars:
   ENABLE_ZDR_STT: "true"
   OPENROUTER_MODEL: mistralai/mistral-small-3.2-24b-instruct
   OPENROUTER_FALLBACK_MODELS: ""
-  # The three the candidate waits for: faster and better written than the
-  # default (measured 2026-11-04, about 4 s against 20 s). The rest stays on
-  # OPENROUTER_MODEL, where the free actions' cost is lowest.
-  OPENROUTER_MODEL_CV_GENERATION: openai/gpt-4.1-mini
-  OPENROUTER_MODEL_LETTER_GENERATION: openai/gpt-4.1-mini
-  OPENROUTER_MODEL_OFFER_STRUCTURING: openai/gpt-4.1-mini
   OPENROUTER_MAX_ATTEMPTS: "3"
   INTERVIEW_REALTIME_MODEL: ""
   INTERVIEW_REALTIME_VOICE: ""
@@ -116,6 +110,12 @@ environments:
       AUTH_COOKIE_NAME: jobspark_session
       EMAIL_FROM: Jobspark <no-reply@koklo.dev>
       R2_BACKUP_BUCKET: koklo-db-backups
+      # Per feature, faster and better written than the default (measured
+      # 2026-11-04: about 4 s against 20 s). The other features stay on
+      # OPENROUTER_MODEL, where the free actions cost least.
+      OPENROUTER_MODEL_CV_GENERATION: openai/gpt-4.1-mini
+      OPENROUTER_MODEL_LETTER_GENERATION: openai/gpt-4.1-mini
+      OPENROUTER_MODEL_OFFER_STRUCTURING: openai/gpt-4.1-mini
   staging:
     branch: develop                   # deploy: auto (default): every push on develop deploys
     volumePrefix: cvspark-staging     # LIVE staging volumes (compose jobspark-staging-rdzqb4)
@@ -123,5 +123,11 @@ environments:
     domains: { landing: jobspark-staging.koklo.dev, web: jobspark-app-staging.koklo.dev, api: jobspark-api-staging.koklo.dev }
     vars:
       AUTH_COOKIE_NAME: jobspark_staging_session
+      # Per feature, faster and better written than the default (measured
+      # 2026-11-04: about 4 s against 20 s). The other features stay on
+      # OPENROUTER_MODEL, where the free actions cost least.
+      OPENROUTER_MODEL_CV_GENERATION: openai/gpt-4.1-mini
+      OPENROUTER_MODEL_LETTER_GENERATION: openai/gpt-4.1-mini
+      OPENROUTER_MODEL_OFFER_STRUCTURING: openai/gpt-4.1-mini
       EMAIL_FROM: Jobspark staging <no-reply@koklo.dev>
       R2_BACKUP_BUCKET: koklo-db-backups-staging
