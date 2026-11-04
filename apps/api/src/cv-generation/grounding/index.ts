@@ -1,4 +1,8 @@
-import type { CVDocumentContent, PromptSafeProfile } from "@cvforge/types";
+import type {
+  CVDocumentContent,
+  Locale,
+  PromptSafeProfile,
+} from "@cvforge/types";
 import {
   groundCertifications,
   groundProjects,
@@ -19,6 +23,7 @@ export * from "./text-normalize";
 export function groundCvContent(
   content: CVDocumentContent,
   profile: PromptSafeProfile,
+  locale: Locale = "fr",
 ): CVDocumentContent {
   const index = buildSourceIndex(profile);
   const sections = profile.profileSections;
@@ -30,9 +35,22 @@ export function groundCvContent(
     profile,
   );
   const languages = groundLanguages(content.languages, index);
-  const experiences = lockExperiences(content.experiences, sections.experiences);
-  const education = lockEducation(content.education, sections.education);
-  const certifications = groundCertifications(content.certifications, index);
+  const experiences = lockExperiences(
+    content.experiences,
+    sections.experiences,
+    locale,
+  );
+  const education = lockEducation(
+    content.education,
+    sections.education,
+    locale,
+  );
+  const certifications = groundCertifications(
+    content.certifications,
+    index,
+    sections.certifications,
+    locale,
+  );
   const projects = groundProjects(content.projects, index);
 
   const removals = [

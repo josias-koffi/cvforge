@@ -1694,3 +1694,9 @@
 - `RomeScoringContext.appellations` : libellés des appellations confirmées (`search_project_rome`, statut `confirmed`), lus par `PgRomeMatchingReader`. `titleScore` les lit via `masculineForm` (« Développeur / Développeuse full-stack » → « Développeur full-stack ») et exige tous leurs mots propres ; un intitulé tapé n'en exige qu'un.
 - `SAME_TITLE_WORD` (job-matching.ts) ramène software/engineer/developer… et les formes féminines au mot français.
 - Rejeu prod : rappel 54 % → 62 %, précision ≈ 85 % ; les manques restants sont des métiers voisins (SRE, DevOps, backend) absents des intitulés visés du propriétaire.
+
+## 2026-11-04 — Réordonnancement par glisser-déposer et dates normalisées
+- Dates structurées en chaîne partielle ISO (`2022`, `2022-03`, `2022-03-15`) dans `packages/types/src/partial-date.ts`. Champs additifs : `start`/`end`/`current` (expériences, profil et CV), `date` (formation, certificats). Les champs texte (`period`, `startDate`, `endDate`, `year`) restent et sont régénérés dans la langue du CV à chaque modification par le sélecteur : ATS, DOCX, entretien et prompts lisent donc toujours du texte. Aucun backfill : une ancienne valeur texte reste affichée tant qu'on ne touche pas à la date.
+- `ListEditor` porte le glisser-déposer (dnd-kit, ids d'interface non enregistrés) pour le profil ET l'éditeur de CV ; types de champ `date` et `period` (`DateField`, `lib/date-patch.ts`).
+- Piège : `normalizeUpdatedCvContent` trie désormais seulement à la génération (`sort: false` à la sauvegarde manuelle), sinon l'ordre choisi était annulé. La traduction reprend les dates structurées de l'original.
+- Lint API en échec sur `applications/offer-input.ts` : antérieur à ce travail.

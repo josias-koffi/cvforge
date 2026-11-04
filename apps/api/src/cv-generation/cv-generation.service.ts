@@ -125,6 +125,7 @@ export class CvGenerationService {
       ...groundCvContent(
         normalizeCvJson(rawJson, request.localFields, request.promptProfile),
         request.promptProfile,
+        offerContext.language,
       ),
       language: offerContext.language,
     };

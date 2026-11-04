@@ -12,7 +12,7 @@ import { CreditPill } from "@/components/credits/credit-pill"
 import { ActionButton } from "@/components/feedback/action-button"
 import { EditorLayout } from "@/components/documents/editor-layout"
 import { TranslateDialog } from "@/components/documents/translate-dialog"
-import { FieldGrid, ListEditor, SpecField, type FieldSpec } from "@/components/documents/list-editor"
+import { FieldGrid, ListEditor, SpecField, type TextSpec } from "@/components/documents/list-editor"
 import { useDocumentEditor } from "@/components/documents/use-document-editor"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -32,7 +32,7 @@ type Candidate = LetterDocumentContent["candidate"]
 type ScalarCandidate = Omit<Candidate, "drivingLicenses" | "links">
 type Body = LetterDocumentContent["body"]
 
-const candidateFields: FieldSpec<ScalarCandidate>[] = [
+const candidateFields: TextSpec<ScalarCandidate>[] = [
   { key: "firstName", label: "Prénom" },
   { key: "lastName", label: "Nom" },
   { key: "email", label: "E-mail" },
@@ -40,12 +40,12 @@ const candidateFields: FieldSpec<ScalarCandidate>[] = [
   { key: "city", label: "Ville" },
 ]
 
-const linkFields: FieldSpec<ContactLink>[] = [
+const linkFields: TextSpec<ContactLink>[] = [
   { key: "label", label: "Libellé" },
   { key: "url", label: "URL" },
 ]
 
-const bodyFields: FieldSpec<Body>[] = [
+const bodyFields: TextSpec<Body>[] = [
   { key: "paragraph1", label: "Introduction", type: "multiline" },
   { key: "paragraph2", label: "Parcours et compétences", type: "multiline" },
   { key: "paragraph3", label: "Motivation pour l'entreprise", type: "multiline" },

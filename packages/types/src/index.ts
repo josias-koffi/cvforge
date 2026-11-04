@@ -18,6 +18,7 @@ export * from "./locale";
 export * from "./market";
 export * from "./match-score";
 export * from "./onboarding";
+export * from "./partial-date";
 export * from "./profile";
 export * from "./public-errors";
 export * from "./rome";

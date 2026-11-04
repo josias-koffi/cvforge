@@ -1,8 +1,10 @@
 import type {
   ExperienceItemProps,
   GroundingRemoval,
+  Locale,
   PromptSafeProfileSections,
 } from "@cvforge/types";
+import { resolvePeriodText } from "@cvforge/types";
 import {
   extractNumbers,
   extractYears,
@@ -26,7 +28,8 @@ export interface ExperienceLockResult {
 function scorePair(source: SourceExperience, generated: ExperienceItemProps) {
   const company =
     normalizeText(source.company) === normalizeText(generated.company) ? 3 : 0;
-  const role = tokenOverlap(tokenize(source.role), tokenize(generated.position)) * 2;
+  const role =
+    tokenOverlap(tokenize(source.role), tokenize(generated.position)) * 2;
   const sourceYears = new Set(extractYears(source.period));
   const years = extractYears(
     `${generated.startDate} ${generated.endDate}`,
@@ -154,6 +157,27 @@ function guardAchievements(
 }
 
 /**
+ * Dates the candidate set with the date picker are exact: they are copied as is,
+ * and the text the model wrote for them is ignored.
+ */
+function structuredDates(source: SourceExperience, locale: Locale) {
+  const { current, end, start } = source;
+  if (!start && !end && !current) return null;
+
+  const text = resolvePeriodText({ current, end, start }, "", "", locale);
+
+  return {
+    endDate: text.end,
+    fields: {
+      ...(current ? { current } : {}),
+      ...(end && !current ? { end } : {}),
+      ...(start ? { start } : {}),
+    },
+    startDate: text.start,
+  };
+}
+
+/**
  * Rebuilds the experience list from the source profile, so the model can only
  * rephrase. Iterating over the source — not the model's output — guarantees the
  * right count and order however the model reordered, merged or added entries.
@@ -161,6 +185,7 @@ function guardAchievements(
 export function lockExperiences(
   generated: ExperienceItemProps[],
   sources: SourceExperience[],
+  locale: Locale = "fr",
 ): ExperienceLockResult {
   const removals: GroundingRemoval[] = [];
   const { matches, usedGenerated } = pairExperiences(sources, generated);
@@ -176,7 +201,8 @@ export function lockExperiences(
   let lockedExperiences = 0;
   const experiences = sources.map((source, sourceIndex) => {
     const match = generated[matches.get(sourceIndex) ?? -1];
-    const dates = reconcileDates(match, source.period);
+    const structured = structuredDates(source, locale);
+    const dates = structured ?? reconcileDates(match, source.period);
 
     if (
       match &&
@@ -194,6 +220,7 @@ export function lockExperiences(
       endDate: dates.endDate,
       position: source.role,
       startDate: dates.startDate,
+      ...structured?.fields,
     };
   });
 

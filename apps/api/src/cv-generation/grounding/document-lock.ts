@@ -3,11 +3,14 @@ import type {
   EducationItemProps,
   GroundingRemoval,
   ProjectItemProps,
+  Locale,
   PromptSafeProfileSections,
 } from "@cvforge/types";
+import { formatPartialDate } from "@cvforge/types";
 import { isSourcedTitle, type SourceIndex } from "./source-index";
 import {
   containsTokenSequence,
+  normalizeText,
   tokenOverlap,
   tokenize,
 } from "./text-normalize";
@@ -46,10 +49,21 @@ function bestEducationMatch(
   return bestIndex;
 }
 
+/** A date picked in the profile wins over the year the model wrote. */
+function sourceYear(
+  source: { date?: string; year: string },
+  locale: Locale,
+): { date?: string; year: string } {
+  return source.date
+    ? { date: source.date, year: formatPartialDate(source.date, locale) }
+    : { year: source.year };
+}
+
 /** Same rule as experiences: identity fields come from the profile, prose from the model. */
 export function lockEducation(
   generated: EducationItemProps[],
   sources: SourceEducation[],
+  locale: Locale = "fr",
 ): { education: EducationItemProps[]; removals: GroundingRemoval[] } {
   const removals: GroundingRemoval[] = [];
   const used = new Set<number>();
@@ -64,7 +78,7 @@ export function lockEducation(
       description: match?.description ?? source.description ?? "",
       institution: source.institution,
       mention: source.honors,
-      year: source.year,
+      ...sourceYear(source, locale),
     };
   });
 
@@ -82,13 +96,24 @@ export function lockEducation(
 export function groundCertifications(
   generated: CertificationItemProps[],
   index: SourceIndex,
+  sources: PromptSafeProfileSections["certifications"] = [],
+  locale: Locale = "fr",
 ): { certifications: CertificationItemProps[]; removals: GroundingRemoval[] } {
   const removals: GroundingRemoval[] = [];
-  const certifications = generated.filter((item) => {
-    if (isSourcedTitle(item.title, index.certifications)) return true;
-    removals.push({ kind: "certification", label: item.title });
-    return false;
-  });
+  const certifications = generated
+    .filter((item) => {
+      if (isSourcedTitle(item.title, index.certifications)) return true;
+      removals.push({ kind: "certification", label: item.title });
+      return false;
+    })
+    .map((item) => {
+      const source = sources.find(
+        (candidate) =>
+          normalizeText(candidate.title) === normalizeText(item.title),
+      );
+
+      return source?.date ? { ...item, ...sourceYear(source, locale) } : item;
+    });
 
   return { certifications, removals };
 }

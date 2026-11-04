@@ -170,4 +170,22 @@ describe("lockExperiences", () => {
     expect(experiences).toEqual([]);
     expect(removals).toHaveLength(1);
   });
+
+  it("copies dates picked in the profile, in the CV language, over the model's text", () => {
+    const picked: SourceExperience = {
+      ...SOURCE,
+      current: true,
+      period: "mars 2021 – Présent",
+      start: "2021-03",
+    };
+
+    const { experiences } = lockExperiences([generated()], [picked], "en");
+
+    expect(experiences[0]).toMatchObject({
+      current: true,
+      endDate: "Present",
+      start: "2021-03",
+      startDate: "Mar 2021",
+    });
+  });
 });

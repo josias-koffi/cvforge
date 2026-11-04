@@ -28,13 +28,17 @@ export interface SummaryBlockProps {
 export interface ExperienceItemProps {
   achievements: string[];
   company: string;
+  current?: boolean;
   description: string;
+  end?: string;
   endDate: string;
   position: string;
+  start?: string;
   startDate: string;
 }
 
 export interface EducationItemProps {
+  date?: string;
   description: string;
   degree: string;
   institution: string;
@@ -53,6 +57,7 @@ export interface SkillsListProps {
 }
 
 export interface CertificationItemProps {
+  date?: string;
   issuer: string;
   title: string;
   year: string;

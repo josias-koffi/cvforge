@@ -1,14 +1,23 @@
 import type { ContactLink, CvGenerationRequest, ImportedCvProfilePatch } from "@cvforge/types"
 
-export type ExperienceEntry = { company: string; period: string; results: string; role: string }
+export type ExperienceEntry = {
+  company: string
+  current?: boolean
+  end?: string
+  period: string
+  results: string
+  role: string
+  start?: string
+}
 export type EducationEntry = {
+  date?: string
   description: string
   degree: string
   honors: string
   institution: string
   year: string
 }
-export type CertificationEntry = { issuer: string; title: string; year: string }
+export type CertificationEntry = { date?: string; issuer: string; title: string; year: string }
 export type LanguageEntry = { language: string; level: string }
 export type ProfilePreferences = {
   availabilityDate: string

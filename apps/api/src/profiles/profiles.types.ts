@@ -1,11 +1,15 @@
 export type ProfileExperienceEntry = {
   company: string;
+  current?: boolean;
+  end?: string;
   period: string;
   results: string;
   role: string;
+  start?: string;
 };
 
 export type ProfileEducationEntry = {
+  date?: string;
   description: string;
   degree: string;
   honors: string;
@@ -14,6 +18,7 @@ export type ProfileEducationEntry = {
 };
 
 export type ProfileCertificationEntry = {
+  date?: string;
   issuer: string;
   title: string;
   year: string;

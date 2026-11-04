@@ -17,8 +17,14 @@ export interface PromptSafeIdentity {
 }
 
 export interface PromptSafeProfileSections {
-  certifications: Array<{ issuer: string; title: string; year: string }>;
+  certifications: Array<{
+    date?: string;
+    issuer: string;
+    title: string;
+    year: string;
+  }>;
   education: Array<{
+    date?: string;
     description?: string;
     degree: string;
     honors: string;
@@ -27,13 +33,20 @@ export interface PromptSafeProfileSections {
   }>;
   experiences: Array<{
     company: string;
+    current?: boolean;
+    end?: string;
     period: string;
     results: string;
     role: string;
+    start?: string;
   }>;
   interests: string;
   languages: Array<{ language: string; level: string }>;
-  personalProjects: Array<{ description: string; link: string; title: string }>;
+  personalProjects: Array<{
+    description: string;
+    link: string;
+    title: string;
+  }>;
   softSkills: string[];
   summary: string;
   technicalSkills: string[];

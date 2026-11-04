@@ -17,14 +17,21 @@ type SetSection = <K extends keyof Sections>(key: K, value: Sections[K]) => void
 const experienceFields: FieldSpec<ExperienceEntry>[] = [
   { key: "role", label: "Poste" },
   { key: "company", label: "Entreprise" },
-  { key: "period", label: "Période", wide: true },
+  {
+    type: "period",
+    key: "start",
+    label: "Période",
+    endKey: "end",
+    currentKey: "current",
+    legacyStartKey: "period",
+  },
   { key: "results", label: "Missions et résultats", type: "multiline" },
 ]
 
 const educationFields: FieldSpec<EducationEntry>[] = [
   { key: "degree", label: "Diplôme" },
   { key: "institution", label: "Établissement" },
-  { key: "year", label: "Année" },
+  { type: "date", key: "date", legacyKey: "year", label: "Date" },
   { key: "honors", label: "Mention" },
   { key: "description", label: "Description", type: "multiline" },
 ]
@@ -43,7 +50,7 @@ const languageFields: FieldSpec<LanguageEntry>[] = [
 const certificationFields: FieldSpec<CertificationEntry>[] = [
   { key: "title", label: "Certification" },
   { key: "issuer", label: "Organisme" },
-  { key: "year", label: "Année" },
+  { type: "date", key: "date", legacyKey: "year", label: "Date" },
 ]
 
 /** The repeated sections of a profile, one card each, in the outline's order. */
