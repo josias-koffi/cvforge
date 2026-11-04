@@ -1,4 +1,4 @@
-import { UnprocessableEntityException } from "@nestjs/common";
+import { Logger, UnprocessableEntityException } from "@nestjs/common";
 import type { DraftApplication, ExtractedOfferFields } from "@cvforge/types";
 import { withOpenRouterHttpErrors } from "../ai/openrouter.exception";
 import type { OpenRouterService } from "../ai/openrouter.service";
@@ -19,6 +19,8 @@ export type OfferMetadata = {
   siteName: string | null;
   title: string | null;
 };
+
+const logger = new Logger("OfferStructuring");
 
 const MAX_EXTRACTED_LIST_ITEMS = 8;
 
@@ -59,6 +61,13 @@ export async function structureOffer(
   );
 
   const payload = extractFirstJsonObject(response);
+
+  // Sizes and key names only: an offer's text is not something to keep in logs.
+  if (!toStringOrNull(payload.title)) {
+    logger.warn(
+      `Model returned no title (text ${offerText.length} chars, source ${sourceType}, keys: ${Object.keys(payload).join(",") || "none"}); falling back to the text's first line.`,
+    );
+  }
 
   return normalizeExtractedFields(payload, { ...metadata, offerText });
 }
