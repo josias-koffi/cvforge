@@ -17,6 +17,9 @@ import {
 import { dateInParis } from "./paris-time";
 import type { RomeMatchingReader } from "./rome-matching.pg-reader";
 
+/** An offer published longer ago is stored but never alerted (catch-ups, backfills). */
+export const ALERT_MAX_AGE_MS = 2 * 86_400_000;
+
 /** Above this score, an offer is "très proche" and worth an alert. */
 export const ALERT_SCORE_THRESHOLD = 60;
 
@@ -37,7 +40,7 @@ type Hit = { entry: SearchEntry; scored: ScoredJob; alertAbove: number | null };
 export interface LiveMatchStats {
   listings: number;
   searches: number;
-  /** Offers that matched at least one search, and were therefore kept. */
+  /** Offers stored: every one the flow brings, matching a search or not. */
   stored: number;
   alerts: number;
   /** Matched, but gone by the time we checked: no alert. */
@@ -61,12 +64,13 @@ export interface LiveMatcherDeps {
 /**
  * Matching as offers arrive (ADR-027 §4, US-165).
  *
- * Each new offer of the continuous collection is scored against every active
- * search with the morning's deterministic score — ROME, skills, contract,
- * place, remote work — and no AI call: the AI ranking stays with the morning.
- * An offer no search wants is forgotten; the national flow would otherwise
- * fill `jobs` with 10 000 to 30 000 offers a day. One that clears a search's
- * alert threshold, and is still online, becomes an `alert` match.
+ * Each new offer of the continuous collection is stored, so the candidate's
+ * own search covers the whole market and not only what a search already wanted
+ * (ADR-027, amended). It is also scored against every active search with the
+ * morning's deterministic score — ROME, skills, contract, place, remote work —
+ * and no AI call: the AI ranking stays with the morning. One that clears a
+ * search's alert threshold, is recent and still online becomes an `alert`
+ * match; an old offer read during a catch-up is stored and alerts nobody.
  */
 export class LiveMatcher {
   private readonly logger = new Logger(LiveMatcher.name);
@@ -91,11 +95,9 @@ export class LiveMatcher {
     const previews = listings.map((listing) => previewJob(listing, detectedAt));
     const hits = await this.score(searches, previews, stats);
 
-    for (const [index, matched] of hits) {
-      const listing = listings[index]!;
-
+    for (const [index, listing] of listings.entries()) {
       try {
-        await this.keep(listing, matched, detectedAt, stats);
+        await this.keep(listing, hits.get(index) ?? [], detectedAt, stats);
       } catch (error) {
         stats.errors.push(`${listing.source}/${listing.externalId}: ${String(error)}`);
       }
@@ -157,6 +159,8 @@ export class LiveMatcher {
     const attached = await this.deps.deduplicator.attach(listing);
     stats.stored += 1;
 
+    if (!this.isFreshForAlert(listing)) return;
+
     const alerting = matched.filter(
       ({ alertAbove, scored }) => alertAbove !== null && scored.score >= alertAbove,
     );
@@ -187,6 +191,16 @@ export class LiveMatcher {
       });
       if (id) stats.alerts += 1;
     }
+  }
+
+  /**
+   * A catch-up reads weeks of offers at once: alerting on them would send a
+   * candidate what they could already have seen. No date counts as fresh.
+   */
+  private isFreshForAlert(listing: NormalizedJobListing): boolean {
+    if (!listing.publishedAt) return true;
+
+    return this.deps.now() - Date.parse(listing.publishedAt) <= ALERT_MAX_AGE_MS;
   }
 
   /**
@@ -230,10 +244,7 @@ export function isRelevantMatch(scored: ScoredJob): boolean {
   );
 }
 
-/**
- * The offer as the score reads a stored job, without storing it: most offers
- * of the national flow match nobody and must leave no trace (ADR-027 §4).
- */
+/** The offer as the score reads a stored job, before it is stored. */
 export function previewJob(listing: NormalizedJobListing, detectedAt: string): StoredJob {
   const seen = new Date(detectedAt);
   const values = newJobValues(seedFromListing(listing), { first: seen, last: seen });

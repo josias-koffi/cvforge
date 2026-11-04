@@ -60,6 +60,7 @@ import {
 } from "./job-stream.types";
 import { SourceCallCounter } from "./source-call-counter";
 import { FranceTravailStreamReader } from "./sources/france-travail.stream";
+import { FranceTravailReconciler } from "./france-travail-reconcile.service";
 
 /** The continuous collection, its matching, its alerts and the call counter (ADR-027). */
 export const jobStreamProviders: Provider[] = [
@@ -197,6 +198,32 @@ export const jobStreamProviders: Provider[] = [
         sourceStates,
         streamSink(matcher, boards),
         resolveJobStreamConfig(process.env),
+      ),
+  },
+  {
+    provide: FranceTravailReconciler,
+    inject: [
+      FtHttpClient,
+      JOB_STREAM_CURSORS_STORE,
+      JOB_SOURCES_STORE,
+      JOBS_STORE,
+      LiveMatcher,
+      BoardsService,
+    ],
+    useFactory: (
+      franceTravail: FtHttpClient,
+      cursors: JobStreamCursorsStore,
+      sourceStates: JobSourcesStore,
+      jobs: JobsStore,
+      matcher: LiveMatcher,
+      boards: BoardsService,
+    ) =>
+      new FranceTravailReconciler(
+        new FranceTravailStreamReader(franceTravail),
+        cursors,
+        sourceStates,
+        jobs,
+        streamSink(matcher, boards),
       ),
   },
   {

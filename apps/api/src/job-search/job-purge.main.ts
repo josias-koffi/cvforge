@@ -4,7 +4,7 @@ import { loadEnvironmentFiles } from "../shared/env";
 import { JobPurgeService } from "./job-purge.service";
 
 /**
- * Anonymizes the closed offers and deletes those past 30 days, once, now
+ * Anonymizes the closed offers and deletes those past 90 days, once, now
  * (US-169). Run again as often as needed: what is done is not done twice.
  *
  *   pnpm --filter @cvforge/api jobs:purge -- --dry-run   (counts, writes nothing)

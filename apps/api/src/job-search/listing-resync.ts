@@ -1,10 +1,11 @@
 import type { JobDeduplicator } from "./dedup/job-deduplicator";
 import type { JobSource, NormalizedJobListing } from "./job-search.types";
 import type { JobsStore } from "./jobs.types";
+import { DEFAULT_MAX_AGE_DAYS } from "./matching/job-matching";
 
 const DAY_MS = 86_400_000;
-/** Past 30 days nothing is proposed: no need to keep those in step. */
-const RESYNC_WINDOW_DAYS = 31;
+/** Past the retention window nothing is proposed: no need to keep those in step. */
+const RESYNC_WINDOW_DAYS = DEFAULT_MAX_AGE_DAYS;
 /**
  * At 8 calls a second, about 40 minutes. Past it, the oldest wait for the
  * next day and the run says so: with only matching offers stored (ADR-027 §4)

@@ -160,6 +160,19 @@ export type JobsStore = {
     seenExternalIds: readonly string[];
     at: string;
   }): Promise<number>;
+  /** Marks adverts seen today; returns the ids not held (see `touchListings`). */
+  touchListings(input: {
+    source: JobSource;
+    externalIds: readonly string[];
+    at: string;
+  }): Promise<string[]>;
+  /** Closes the adverts created since `createdSince` that a full walk did not find. */
+  closeListingsNotSeenSince(input: {
+    source: JobSource;
+    seenBefore: string;
+    createdSince: string;
+    at: string;
+  }): Promise<number>;
   /** Pulls an advert out of a job it was wrongly merged into. */
   detachListing(listingId: string): Promise<StoredJob | null>;
   listRecentFuzzyMatches(limit: number): Promise<JobWithListings[]>;

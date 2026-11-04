@@ -5,7 +5,7 @@ import { listingUrlKeys } from "../jobs.pg-store";
 import { companyKey, simhash, titleKey } from "./job-keys";
 import { matchJob, type MatchMethod } from "./match-job";
 
-/** How far back the fuzzy step looks. Older jobs are past the 30-day rule. */
+/** How far back the fuzzy step looks. Older jobs are past the retention rule. */
 const CANDIDATE_WINDOW_DAYS = 45;
 const MS_PER_DAY = 86_400_000;
 

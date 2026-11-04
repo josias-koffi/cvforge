@@ -29,14 +29,14 @@ function deps(
 }
 
 describe("resyncStaleListings", () => {
-  it("asks for the adverts nobody saw in 24 hours, within the 31 days proposed", async () => {
+  it("asks for the adverts nobody saw in 24 hours, within the 90 days proposed", async () => {
     const input = deps([], {});
 
     await resyncStaleListings(input);
 
     expect(input.jobs.listStaleOpenListings).toHaveBeenCalledWith({
       limit: 20_000,
-      publishedSince: "2026-08-31T06:00:00.000Z",
+      publishedSince: "2026-07-03T06:00:00.000Z",
       seenBefore: "2026-09-30T06:00:00.000Z",
       source: "france_travail",
     });

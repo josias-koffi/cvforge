@@ -82,7 +82,7 @@ export const ORIGIN_LABELS: Record<BoardOrigin, string> = {
 
 /**
  * What a run did: `digest` selects and notifies afterwards, `collect` stops,
- * `purge` anonymizes the closed offers and deletes those past 30 days (US-169).
+ * `purge` anonymizes the closed offers and deletes those past 90 days (US-169).
  */
 export type DigestRunKind = "digest" | "collect" | "purge"
 
@@ -102,7 +102,7 @@ export const COLLECTION_WINDOWS = [1, 7, 31] as const
 export const RUN_KIND_LABELS: Record<DigestRunKind, string> = {
   collect: "Collecte seule",
   digest: "Sélection du matin",
-  purge: "Purge (30 jours)",
+  purge: "Purge (90 jours)",
 }
 
 export const RUN_STATUS_LABELS: Record<DigestRun["status"], string> = {

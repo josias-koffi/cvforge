@@ -58,7 +58,7 @@ function setup(
 }
 
 describe("JobPurgeService (US-169)", () => {
-  it("anonymizes, purges past 30 days and records the figures", async () => {
+  it("anonymizes, purges past 90 days and records the figures", async () => {
     const { finished, purgedBefore, service } = setup();
 
     const stats = await service.run();
@@ -70,7 +70,7 @@ describe("JobPurgeService (US-169)", () => {
       jobsPurged: 5,
       listingsAnonymized: 3,
     });
-    expect(purgedBefore).toEqual(["2026-09-04T10:00:00.000Z"]);
+    expect(purgedBefore).toEqual(["2026-07-06T10:00:00.000Z"]);
     expect(finished).toEqual([{ stats: { ...stats }, status: "done" }]);
   });
 

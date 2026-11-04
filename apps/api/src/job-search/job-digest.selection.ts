@@ -17,6 +17,7 @@ import type { JobSourceAdapter } from "./job-search.types";
 import type { JobsStore } from "./jobs.types";
 import type { JobMatchesStore } from "./matches.types";
 import {
+  DEFAULT_MAX_AGE_DAYS,
   DEFAULT_SELECTION_SIZE,
   selectJobsForProject,
   type ScoredJob,
@@ -45,8 +46,8 @@ export function poolDepartments(project: SearchProject): string[] {
   return [...new Set(departments.filter(Boolean))];
 }
 
-/** How far back a candidate's pool reaches. Past 30 days nothing is proposed. */
-const CANDIDATE_WINDOW_DAYS = 31;
+/** How far back a candidate's pool reaches: the retention window, nothing older is proposed. */
+const CANDIDATE_WINDOW_DAYS = DEFAULT_MAX_AGE_DAYS;
 const CANDIDATE_POOL_SIZE = 500;
 const MS_PER_DAY = 86_400_000;
 
