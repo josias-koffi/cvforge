@@ -20,6 +20,7 @@ import {
 import {
   MANUAL_TEXT_SOURCE_LABEL,
   MIN_OFFER_TEXT_LENGTH,
+  cleanOfferText,
   normalizeOfferText,
   normalizeOfferUrl,
 } from "./offer-input";
@@ -45,7 +46,7 @@ export class OfferImporter {
   ): Promise<OfferExtractionResult> {
     const offerUrl = normalizeOfferUrl(rawUrl);
     const html = await this.fetchOfferHtml(offerUrl);
-    const offerText = extractVisibleTextFromHtml(html);
+    const offerText = cleanOfferText(extractVisibleTextFromHtml(html));
 
     if (offerText.length < MIN_OFFER_TEXT_LENGTH) {
       throw new UnprocessableEntityException(

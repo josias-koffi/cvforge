@@ -39,7 +39,8 @@ export async function structureOffer(
           role: "system",
           content:
             "You extract structured job-offer data. Return JSON only with keys: title, companyName, location, contractType, salaryRange, summary, responsibilities, requirements, keywords, language. " +
-            "keywords: 8 to 20 skills, tools, domains or deliverables the offer asks for, as short noun phrases copied in the offer's exact wording and language (e.g. \"communication interne\", \"newsletters\", \"montage vidéo\", \"Canva\", \"KPIs\"). No verbs, no generic qualities, no company or product names of the employer.",
+            "title: the job title. When the offer never states one outright (it often opens with the company's pitch), infer the most likely job title from the role described; never leave it empty. " +
+            'keywords: 8 to 20 skills, tools, domains or deliverables the offer asks for, as short noun phrases copied in the offer\'s exact wording and language (e.g. "communication interne", "newsletters", "montage vidéo", "Canva", "KPIs"). No verbs, no generic qualities, no company or product names of the employer.',
         },
         {
           role: "user",
@@ -68,14 +69,25 @@ export async function structureOffer(
  * falls back to when structuring it is not possible.
  */
 export function unstructuredOffer(offerText: string) {
-  const firstLine = offerText.split("\n").find((line) => line.trim()) ?? "";
-
   return normalizeExtractedFields({} as ExtractedOfferPayload, {
     description: null,
     offerText,
     siteName: null,
-    title: buildOfferPreview(firstLine, 80) || buildOfferPreview(offerText, 80),
+    title: null,
   });
+}
+
+/**
+ * A title read from the text alone: its first line. What an offer falls back
+ * to when the model returns none, so a pasted text with no stated job title is
+ * still imported — the candidate can correct it on the application.
+ */
+function titleFromText(offerText: string) {
+  const firstLine = offerText.split("\n").find((line) => line.trim()) ?? "";
+
+  return (
+    buildOfferPreview(firstLine.trim(), 80) || buildOfferPreview(offerText, 80)
+  );
 }
 
 function extractFirstJsonObject(rawContent: string) {
@@ -132,7 +144,10 @@ function normalizeExtractedFields(
     title: string | null;
   },
 ): ExtractedOfferFields {
-  const title = toStringOrNull(payload.title) ?? fallback.title;
+  const title =
+    toStringOrNull(payload.title) ??
+    fallback.title ??
+    toStringOrNull(titleFromText(fallback.offerText));
   const summary =
     toStringOrNull(payload.summary) ??
     fallback.description ??
