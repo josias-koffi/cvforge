@@ -9,8 +9,8 @@ const DAY_MS = 24 * 60 * 60 * 1000;
  * this cap stops one account from looping on them.
  */
 export const FREE_ACTION_DAILY_LIMITS = {
-  cv_import: 20,
-  cv_translation: 30,
+  cv_import: 5,
+  cv_translation: 10,
 } as const;
 
 export type FreeAction = keyof typeof FREE_ACTION_DAILY_LIMITS;

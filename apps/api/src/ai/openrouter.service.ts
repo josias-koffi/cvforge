@@ -73,10 +73,16 @@ export class OpenRouterService {
   }
 
   private buildModelChain(options: ChatOptions): string[] {
-    return buildChain(
-      options.model ?? this.config.defaultModel,
-      this.config.fallbackModels,
-    );
+    const { defaultModel, fallbackModels, featureModels } = this.config;
+    const featureModel = options.feature && featureModels?.[options.feature];
+
+    // A feature's own model goes first; the default model stays the next
+    // resort, so a feature pointed at a model that fails still answers.
+    if (!options.model && featureModel) {
+      return buildChain(featureModel, [defaultModel, ...fallbackModels]);
+    }
+
+    return buildChain(options.model ?? defaultModel, fallbackModels);
   }
 
   private buildRequestBody(

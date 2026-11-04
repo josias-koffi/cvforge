@@ -1,3 +1,4 @@
+import { aiFeatures, type AiFeature } from '@cvforge/types';
 import { nonEmpty, parsePositiveInt, parseModelList } from './openrouter.env';
 
 export interface OpenRouterConfig {
@@ -6,6 +7,13 @@ export interface OpenRouterConfig {
   defaultModel: string;
   /** Tried in order when every provider of `defaultModel` is exhausted. */
   fallbackModels: string[];
+  /**
+   * A model per feature, from `OPENROUTER_MODEL_<FEATURE>` (e.g.
+   * `OPENROUTER_MODEL_CV_GENERATION`). A feature without one uses
+   * `defaultModel`; one with one tries it first, then `defaultModel`, then the
+   * fallbacks.
+   */
+  featureModels?: Partial<Record<AiFeature, string>>;
   maxAttempts: number;
   enableZdrChat: boolean;
   enableZdrStt: boolean;
@@ -39,6 +47,19 @@ const DEFAULT_FALLBACK_MODELS = [
 
 const DEFAULT_MAX_ATTEMPTS = 3;
 
+export function resolveFeatureModels(
+  env: NodeJS.ProcessEnv,
+): Partial<Record<AiFeature, string>> {
+  const models: Partial<Record<AiFeature, string>> = {};
+
+  for (const feature of aiFeatures) {
+    const model = nonEmpty(env[`OPENROUTER_MODEL_${feature.toUpperCase()}`]);
+    if (model) models[feature] = model;
+  }
+
+  return models;
+}
+
 export function resolveOpenRouterConfig(): OpenRouterConfig {
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) throw new Error('OPENROUTER_API_KEY environment variable is required');
@@ -50,6 +71,7 @@ export function resolveOpenRouterConfig(): OpenRouterConfig {
       process.env.OPENROUTER_FALLBACK_MODELS,
       DEFAULT_FALLBACK_MODELS,
     ),
+    featureModels: resolveFeatureModels(process.env),
     maxAttempts: parsePositiveInt(
       process.env.OPENROUTER_MAX_ATTEMPTS,
       DEFAULT_MAX_ATTEMPTS,

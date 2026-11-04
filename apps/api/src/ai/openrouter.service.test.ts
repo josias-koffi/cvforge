@@ -57,6 +57,59 @@ describe('OpenRouterService', () => {
     expect(body.transforms).toEqual([]);
   });
 
+  describe('per-feature models', () => {
+    const featureModels = { cv_generation: 'openai/gpt-4.1-mini' };
+    const sentModels = () =>
+      fetchMock.mock.calls.map(
+        ([, init]) => JSON.parse((init as RequestInit).body as string).model,
+      );
+
+    it('sends a feature with its own model to that model', async () => {
+      await makeService({ featureModels }).chat(MESSAGES, { feature: 'cv_generation' });
+
+      expect(sentModels()).toEqual(['openai/gpt-4.1-mini']);
+    });
+
+    it('keeps the default model for every other feature', async () => {
+      const svc = makeService({ featureModels });
+      await svc.chat(MESSAGES, { feature: 'cv_import' });
+      await svc.chat(MESSAGES);
+
+      expect(sentModels()).toEqual([
+        'mistralai/mistral-small-2603',
+        'mistralai/mistral-small-2603',
+      ]);
+    });
+
+    it('lets an explicit model win over the feature model', async () => {
+      await makeService({ featureModels }).chat(MESSAGES, {
+        feature: 'cv_generation',
+        model: 'google/gemini-2.5-flash',
+      });
+
+      expect(sentModels()).toEqual(['google/gemini-2.5-flash']);
+    });
+
+    it('falls back to the default model, then the fallbacks, when the feature model fails', async () => {
+      fetchMock
+        .mockImplementationOnce(() => makeErrorResponse(404))
+        .mockImplementationOnce(() => makeResponse('From the default model'));
+
+      const svc = makeService({
+        featureModels,
+        fallbackModels: ['openai/gpt-4.1-nano'],
+      });
+
+      await expect(
+        svc.chat(MESSAGES, { feature: 'cv_generation' }),
+      ).resolves.toBe('From the default model');
+      expect(sentModels()).toEqual([
+        'openai/gpt-4.1-mini',
+        'mistralai/mistral-small-2603',
+      ]);
+    });
+  });
+
   it('uses the default model from config', async () => {
     const svc = new OpenRouterService(BASE_CONFIG);
     await svc.chat(MESSAGES);
