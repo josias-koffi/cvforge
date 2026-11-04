@@ -93,12 +93,22 @@ export function isPlausibleBoardToken(boardToken: string): boolean {
   );
 }
 
-/** The index query for one pattern, newest crawl first. */
-export function crawlQueryUrl(collection: string, pattern: string): string {
+/**
+ * The index query for one pattern. `page` reads one page of the answer and
+ * `pageCount` asks only how many there are: an unbounded wildcard query is
+ * what the index answers with a 504.
+ */
+export function crawlQueryUrl(
+  collection: string,
+  pattern: string,
+  options: { page?: number; pageCount?: boolean } = {},
+): string {
   const url = new URL(`${CRAWL_INDEX_URL}/${collection}-index`);
   url.searchParams.set("url", pattern);
   url.searchParams.set("output", "json");
   url.searchParams.set("fl", "url");
+  if (options.pageCount) url.searchParams.set("showNumPages", "true");
+  if (options.page !== undefined) url.searchParams.set("page", String(options.page));
 
   return url.toString();
 }

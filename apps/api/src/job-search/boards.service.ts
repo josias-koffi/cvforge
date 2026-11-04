@@ -17,7 +17,10 @@ import { AshbyBoard } from "./sources/boards/ashby.board";
 import { detectAtsBoard, type BoardProvider } from "./sources/boards/detect-board";
 import { GreenhouseBoard } from "./sources/boards/greenhouse.board";
 import { LeverBoard } from "./sources/boards/lever.board";
+import { PersonioBoard } from "./sources/boards/personio.board";
+import { RecruiteeBoard } from "./sources/boards/recruitee.board";
 import { SmartRecruitersBoard } from "./sources/boards/smartrecruiters.board";
+import { WorkableBoard } from "./sources/boards/workable.board";
 
 export interface BoardCollectionReport {
   boardsRead: number;
@@ -52,10 +55,10 @@ function toSeen(listings: readonly NormalizedJobListing[]): SeenPosting[] {
  * Reads every company in the registry, and grows the registry from the links
  * the product already sees.
  *
- * Four providers have an adapter: Greenhouse, Lever, Ashby, SmartRecruiters.
- * The others (Workable, Recruitee, Personio, Welcome Kit) are still
- * *registered* when a link points at them — their companies are collected the
- * day their adapter lands, instead of being lost in the meantime.
+ * Seven providers have an adapter: Greenhouse, Lever, Ashby, SmartRecruiters,
+ * Workable, Recruitee and Personio. Welcome Kit is still *registered* when a
+ * link points at it — its companies are collected the day its adapter lands,
+ * instead of being lost in the meantime.
  */
 @Injectable()
 export class BoardsService {
@@ -72,7 +75,10 @@ export class BoardsService {
       ["ashby", new AshbyBoard(http)],
       ["greenhouse", new GreenhouseBoard(http)],
       ["lever", new LeverBoard(http)],
+      ["personio", new PersonioBoard(http)],
+      ["recruitee", new RecruiteeBoard(http)],
       ["smartrecruiters", new SmartRecruitersBoard(http)],
+      ["workable", new WorkableBoard(http)],
     ]);
   }
 
@@ -252,6 +258,11 @@ export class BoardsService {
         `Could not record the postings of ${board.provider}/${board.boardToken}: ${String(error)}`,
       );
     }
+  }
+
+  /** The adapters by provider, for the discovery to verify a company with. */
+  verifiers(): Partial<Record<BoardProvider, CompanyBoardAdapter>> {
+    return Object.fromEntries(this.adapters);
   }
 
   /** The providers a company can actually be collected from today. */

@@ -53,6 +53,9 @@ export const IDENTIFYING_RAW_PATHS: Partial<Record<JobSource, string[][]>> = {
     ["apply", "phone"],
     ["apply", "email"],
   ],
+  // The employer's name and the recruiter's own inbox.
+  personio: [["subcompany"]],
+  recruitee: [["company_name"], ["mailbox_email"]],
   smartrecruiters: [["company"]],
 };
 

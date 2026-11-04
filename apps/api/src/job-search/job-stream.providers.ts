@@ -61,6 +61,9 @@ import {
 import { SourceCallCounter } from "./source-call-counter";
 import { FranceTravailStreamReader } from "./sources/france-travail.stream";
 import { FranceTravailReconciler } from "./france-travail-reconcile.service";
+import { BoardDiscoveryService } from "./board-discovery.service";
+import { CrawlRunner } from "./sources/boards/crawl-runner";
+import { JOB_BOARDS_STORE, type JobBoardsStore } from "./boards.types";
 
 /** The continuous collection, its matching, its alerts and the call counter (ADR-027). */
 export const jobStreamProviders: Provider[] = [
@@ -224,6 +227,19 @@ export const jobStreamProviders: Provider[] = [
         sourceStates,
         jobs,
         streamSink(matcher, boards),
+      ),
+  },
+  {
+    provide: BoardDiscoveryService,
+    inject: [BoardsService, JOB_BOARDS_STORE, JOB_STREAM_CURSORS_STORE],
+    useFactory: (
+      boards: BoardsService,
+      store: JobBoardsStore,
+      cursors: JobStreamCursorsStore,
+    ) =>
+      new BoardDiscoveryService(
+        new CrawlRunner({ store, verifiers: boards.verifiers() }),
+        cursors,
       ),
   },
   {

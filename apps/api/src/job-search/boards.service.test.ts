@@ -194,7 +194,7 @@ describe("BoardsService.collect", () => {
 
   it("leaves a provider with no adapter completely alone", async () => {
     const { fetches, store } = createStore([
-      makeBoard({ boardToken: "gorgias", provider: "workable" }),
+      makeBoard({ boardToken: "gorgias", provider: "welcomekit" }),
     ]);
     const http = createHttp(() => jsonResponse({}, 500));
 
