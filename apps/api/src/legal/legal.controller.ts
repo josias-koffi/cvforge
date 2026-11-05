@@ -3,6 +3,7 @@ import { AuthService } from "../auth/auth.service";
 import { requireAdminSession, type CookieRequest } from "../auth/request-session";
 import { LegalDocumentsService } from "./legal.service";
 import { parseLegalDocumentInput, parseLegalDocumentSlug } from "./legal.validation";
+import { Public } from "../auth/public.decorator";
 
 @Controller("admin/legal")
 export class AdminLegalController {
@@ -52,6 +53,7 @@ export class AdminLegalController {
 }
 
 /** Unauthenticated, for the landing site. Drafts are never served here. */
+@Public()
 @Controller("public/legal")
 export class PublicLegalController {
   constructor(

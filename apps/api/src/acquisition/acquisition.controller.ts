@@ -1,6 +1,7 @@
 import { Body, Controller, HttpCode, Inject, Post, Req } from "@nestjs/common";
 import { clientIp } from "../shared/rate-limit/rate-limit.middleware";
 import { AcquisitionEventsService } from "./acquisition-events.service";
+import { Public } from "../auth/public.decorator";
 
 type EventRequestLike = Parameters<typeof clientIp>[0];
 
@@ -8,6 +9,7 @@ type EventRequestLike = Parameters<typeof clientIp>[0];
  * The landing's funnel events. Public like the scan itself, but it spends
  * nothing: a closed-list row, at most once per visitor, step and day.
  */
+@Public()
 @Controller("public/events")
 export class PublicAcquisitionEventsController {
   constructor(

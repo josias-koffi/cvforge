@@ -14,6 +14,7 @@ import { AuthService } from "../auth/auth.service";
 import { requireAdminSession, type CookieRequest } from "../auth/request-session";
 import { parseCreditOfferInput } from "./offers.validation";
 import { CreditOffersService } from "./offers.service";
+import { Public } from "../auth/public.decorator";
 
 const uuid = new ParseUUIDPipe({ version: "4" });
 
@@ -73,6 +74,7 @@ export class AdminCreditOffersController {
 }
 
 /** Unauthenticated catalogue for the landing site and the credits page. */
+@Public()
 @Controller("public/credit-offers")
 export class PublicCreditOffersController {
   constructor(

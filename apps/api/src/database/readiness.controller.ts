@@ -6,7 +6,9 @@ import {
 } from "@nestjs/common";
 import { sql } from "drizzle-orm";
 import { DATABASE, type Database } from "./database.types";
+import { Public } from "../auth/public.decorator";
 
+@Public()
 @Controller("ready")
 export class ReadinessController {
   constructor(@Inject(DATABASE) private readonly db: Database) {}

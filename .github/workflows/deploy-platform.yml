@@ -36,10 +36,29 @@ jobs:
       environment: ${{ inputs.environment }}
       image_tag: ${{ inputs.image_tag }}
 
+  # Nothing is built, pushed or deployed with a known high or critical flaw in
+  # a dependency that ships. Dev-only tooling is out of scope (--prod).
+  audit:
+    name: Audit dependencies
+    needs: resolve
+    if: needs.resolve.outputs.build == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Audit production dependencies
+        run: |
+          corepack enable
+          pnpm audit --prod --audit-level=high
+
   build:
     name: Build & push ${{ matrix.service }}
     if: needs.resolve.outputs.build == 'true'
-    needs: resolve
+    needs: [resolve, audit]
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -177,9 +196,41 @@ jobs:
         if: always()
         run: docker rm -f api-verify
 
+  # The images just pushed are scanned for known flaws with a fix available
+  # (base image and installed packages). Critical only: a high in an upstream
+  # base image must not hold a release hostage; the audit job covers our own
+  # dependencies down to high.
+  scan-images:
+    name: Scan ${{ matrix.service }}
+    needs: [resolve, build]
+    if: ${{ !failure() && !cancelled() && needs.resolve.outputs.build == 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    strategy:
+      fail-fast: false
+      matrix:
+        service: [jobspark-web, jobspark-landing, jobspark-api, jobspark-puppeteer]
+    steps:
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Trivy
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ env.OWNER }}/${{ matrix.service }}:${{ needs.resolve.outputs.image_tag }}
+          severity: CRITICAL
+          ignore-unfixed: true
+          vuln-type: os,library
+          exit-code: "1"
+
   deploy:
     name: Deploy
-    needs: [resolve, verify-image]
+    needs: [resolve, verify-image, scan-images]
     if: ${{ !failure() && !cancelled() && needs.resolve.outputs.deploy == 'true' }}
     uses: josias-koffi/infra/.github/workflows/deploy.yml@main
     with:

@@ -12,6 +12,8 @@ import {
 } from "@nestjs/common";
 import { AuthMailerService } from "./auth-mailer.service";
 import { AuthService } from "./auth.service";
+import { requireAdminSession } from "./request-session";
+import { Public } from "./public.decorator";
 
 type CookieResponse = {
   cookie: (name: string, value: string, options: object) => void;
@@ -31,6 +33,7 @@ export class AuthController {
     @Inject(AuthMailerService) private readonly authMailer: AuthMailerService,
   ) {}
 
+  @Public()
   @Post("passwordless/request")
   async requestMagicLink(
     @Body() body: { consentAccepted?: boolean; email?: string },
@@ -50,7 +53,9 @@ export class AuthController {
   }
 
   @Get("email/health")
-  getEmailHealth() {
+  getEmailHealth(@Req() request: RequestLike) {
+    requireAdminSession(this.authService, request);
+
     return this.authMailer.getHealth();
   }
 
@@ -66,11 +71,13 @@ export class AuthController {
     );
   }
 
+  @Public()
   @Get("invitations/preview")
   async previewInvitation(@Query("token") token: string) {
     return this.authService.previewInvitation(token);
   }
 
+  @Public()
   @Post("invitations/consume")
   async consumeInvitation(
     @Body() body: { consentAccepted?: boolean; token?: string },
@@ -88,6 +95,7 @@ export class AuthController {
     };
   }
 
+  @Public()
   @Get("passwordless/consume")
   async consumeMagicLink(
     @Query("token") token: string,
@@ -101,6 +109,7 @@ export class AuthController {
     return response.redirect(302, result.redirectUrl);
   }
 
+  @Public()
   @Post("passwordless/consume")
   async consumeMagicLinkForApi(
     @Body() body: { token?: string; redirectTo?: string },
@@ -155,6 +164,7 @@ export class AuthController {
     };
   }
 
+  @Public()
   @Post("logout")
   logout(@Res({ passthrough: true }) response: CookieResponse) {
     const cookie = this.authService.clearSessionCookie();

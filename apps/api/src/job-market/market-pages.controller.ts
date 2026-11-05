@@ -1,12 +1,14 @@
 import { Controller, Get, Inject, Param } from "@nestjs/common";
 import type { MarketPageEntry, PublicMarketPage } from "@cvforge/types";
 import { MarketPagesService } from "./market-pages.service";
+import { Public } from "../auth/public.decorator";
 
 /**
  * The job × department pages of the landing (US-138). Read by the landing's
  * server when it renders or revalidates a page, not by visitors: left out of
  * the rate limit, like `public/legal` (ADR-022). Reads only, nothing queued.
  */
+@Public()
 @Controller("public/market-pages")
 export class PublicMarketPagesController {
   constructor(
