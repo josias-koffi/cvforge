@@ -40,7 +40,10 @@ COPY --from=builder /workspace/packages/ats-score/package.json ./packages/ats-sc
 COPY --from=builder /workspace/packages/document-renderer/package.json ./packages/document-renderer/package.json
 COPY --from=builder /workspace/packages/types/package.json ./packages/types/package.json
 COPY --from=builder /workspace/packages/config/package.json ./packages/config/package.json
-RUN pnpm install --frozen-lockfile --prod
+RUN pnpm install --frozen-lockfile --prod \
+    # The runtime starts with plain node: pnpm's own bundled dependencies (a
+    # vulnerable tar among them) have no business shipping in the image.
+    && rm -rf /root/.cache/node/corepack
 
 COPY --from=builder /workspace/apps/api/dist ./apps/api/dist
 COPY --from=builder /workspace/apps/api/drizzle ./apps/api/drizzle
