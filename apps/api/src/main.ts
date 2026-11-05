@@ -5,7 +5,9 @@ import { AppModule } from "./app.module";
 import { AuthMailerService } from "./auth/auth-mailer.service";
 import { loadEnvironmentFiles } from "./shared/env";
 
-const INTERVIEW_AUDIO_BODY_LIMIT = "16mb";
+// Interview audio goes browser-to-OpenAI and CV files arrive as multipart, so
+// nothing sent as JSON is large: 16 MB let one request cost that much memory.
+const JSON_BODY_LIMIT = "2mb";
 
 export async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
@@ -15,10 +17,10 @@ export async function bootstrap() {
   // Company logos are <img> targets on another origin (the web app), so the
   // default same-origin resource policy would block them.
   app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
-  app.useBodyParser("json", { limit: INTERVIEW_AUDIO_BODY_LIMIT });
+  app.useBodyParser("json", { limit: JSON_BODY_LIMIT });
   app.useBodyParser("urlencoded", {
     extended: true,
-    limit: INTERVIEW_AUDIO_BODY_LIMIT,
+    limit: JSON_BODY_LIMIT,
   });
   app.enableCors({
     credentials: true,

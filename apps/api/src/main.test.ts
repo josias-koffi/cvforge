@@ -48,10 +48,10 @@ describe("bootstrap", () => {
       rawBody: true,
     });
     expect(app.use).toHaveBeenCalledTimes(1);
-    expect(app.useBodyParser).toHaveBeenCalledWith("json", { limit: "16mb" });
+    expect(app.useBodyParser).toHaveBeenCalledWith("json", { limit: "2mb" });
     expect(app.useBodyParser).toHaveBeenCalledWith("urlencoded", {
       extended: true,
-      limit: "16mb",
+      limit: "2mb",
     });
     expect(app.enableCors).toHaveBeenCalledWith({
       credentials: true,
