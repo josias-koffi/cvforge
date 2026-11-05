@@ -11,11 +11,13 @@ import type { PublicJobMarketResponse } from "@cvforge/types";
 import { ToolQueriesService } from "../acquisition/tool-queries.service";
 import { LeadCaptureService } from "../leads/lead-capture.service";
 import { JobMarketService } from "./job-market.service";
+import { Public } from "../auth/public.decorator";
 
 /**
  * The free "does this job hire near me?" tool (US-137). No session: a visitor
  * tries it before signing up. Every route is metered by `RateLimitMiddleware`.
  */
+@Public()
 @Controller("public/job-market")
 export class PublicJobMarketController {
   constructor(

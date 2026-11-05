@@ -16,6 +16,7 @@ import { AtsUnlockService, type AtsUnlockResponse } from "./ats-unlock.service";
 import type { PublicAtsScanResponse } from "./ats.types";
 import { MAX_SCAN_BYTES, readOfferText } from "./ats.validation";
 import type { CvSourceFile } from "../cv-generation/cv-text-extraction";
+import { Public } from "../auth/public.decorator";
 
 const uuid = new ParseUUIDPipe({ version: "4" });
 
@@ -33,6 +34,7 @@ type ScanRequestLike = {
  * budget), and by the budget check inside the service. No session is read: the
  * whole point is that a visitor can try the product before signing up.
  */
+@Public()
 @Controller("public/ats-scan")
 export class PublicAtsScanController {
   constructor(

@@ -13,11 +13,13 @@ import { acceptedOfferText, MAX_SCAN_BYTES } from "../ats/ats.validation";
 import type { CvSourceFile } from "../cv-generation/cv-text-extraction";
 import { LeadCaptureService } from "../leads/lead-capture.service";
 import { KeywordMatchService } from "./keyword-match.service";
+import { Public } from "../auth/public.decorator";
 
 /**
  * The free CV ↔ offer comparator (US-136). No session: a visitor tries it
  * before signing up. Both routes are metered by `RateLimitMiddleware`.
  */
+@Public()
 @Controller("public/keyword-match")
 export class PublicKeywordMatchController {
   constructor(

@@ -15,11 +15,13 @@ import type {
 import { ToolQueriesService } from "../acquisition/tool-queries.service";
 import { LeadCaptureService } from "../leads/lead-capture.service";
 import { CompanyCheckService } from "./company-check.service";
+import { Public } from "../auth/public.decorator";
 
 /**
  * The free "check an employer" tool (US-139). No session: a visitor tries it
  * before signing up. Every route is metered by `RateLimitMiddleware`.
  */
+@Public()
 @Controller("public/company-check")
 export class PublicCompanyCheckController {
   constructor(

@@ -1,4 +1,5 @@
 import { Module } from "@nestjs/common";
+import { APP_GUARD } from "@nestjs/core";
 import { PgAuthAccountStore } from "./auth.pg-store";
 import { MailModule } from "../mail/mail.module";
 import { DATABASE, type Database } from "../database/database.types";
@@ -6,6 +7,7 @@ import { AuthMailerService } from "./auth-mailer.service";
 import { AuthController } from "./auth.controller";
 import { AuthService } from "./auth.service";
 import { resolveAuthConfig } from "./auth.config";
+import { SessionGuard } from "./session.guard";
 import { SessionStateMiddleware } from "./session-state.middleware";
 import { AUTH_ACCOUNT_STORE, type AuthAccountStore } from "./auth.types";
 
@@ -31,6 +33,8 @@ import { AUTH_ACCOUNT_STORE, type AuthAccountStore } from "./auth.types";
         new SessionStateMiddleware(authService),
     },
     AuthMailerService,
+    // Private by default: routes opt out with @Public().
+    { provide: APP_GUARD, useClass: SessionGuard },
   ],
   exports: [AUTH_ACCOUNT_STORE, AuthService, AuthMailerService, SessionStateMiddleware],
 })

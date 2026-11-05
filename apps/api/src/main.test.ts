@@ -14,7 +14,8 @@ function createAppMock() {
   };
 }
 
-vi.mock("@nestjs/core", () => ({
+vi.mock("@nestjs/core", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@nestjs/core")>()),
   NestFactory: {
     create: createMock,
   },

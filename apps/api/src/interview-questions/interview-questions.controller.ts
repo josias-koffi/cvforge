@@ -3,6 +3,7 @@ import type { PublicInterviewQuestionsResponse } from "@cvforge/types";
 import { acceptedOfferText } from "../ats/ats.validation";
 import { LeadCaptureService } from "../leads/lead-capture.service";
 import { InterviewQuestionsService } from "./interview-questions.service";
+import { Public } from "../auth/public.decorator";
 
 /**
  * The free "likely interview questions" tool (US-141). No session: a visitor
@@ -10,6 +11,7 @@ import { InterviewQuestionsService } from "./interview-questions.service";
  * `RateLimitMiddleware`, the questions under a daily budget since each one
  * is a model call.
  */
+@Public()
 @Controller("public/interview-questions")
 export class PublicInterviewQuestionsController {
   constructor(

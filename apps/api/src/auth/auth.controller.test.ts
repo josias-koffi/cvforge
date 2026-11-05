@@ -4,6 +4,7 @@ import { AuthMailerService } from "./auth-mailer.service";
 import type { AuthConfig } from "./auth.types";
 import { createInMemoryAccountStore } from "./testing/in-memory-account-store";
 import { AuthController } from "./auth.controller";
+import { SessionCookieCodec } from "./session-cookie";
 import { AuthService } from "./auth.service";
 
 const config: AuthConfig = {
@@ -75,11 +76,19 @@ describe("AuthController", () => {
     } as unknown as AuthMailerService;
     const controller = new AuthController(service, mailer);
 
-    expect(controller.getEmailHealth()).toEqual({
+    const codec = new SessionCookieCodec(config);
+    const cookieFor = (role: "admin" | "user") => {
+      const { name, value } = codec.serialize(codec.createSession("a@example.com", role));
+      return { headers: { cookie: `${name}=${value}` } };
+    };
+
+    expect(controller.getEmailHealth(cookieFor("admin"))).toEqual({
       emailFromConfigured: true,
       ready: true,
       smtpEnabled: true,
     });
+    expect(() => controller.getEmailHealth(cookieFor("user"))).toThrow(ForbiddenException);
+    expect(() => controller.getEmailHealth({ headers: {} })).toThrow(UnauthorizedException);
   });
 
   it("should create and consume an admin invitation through the controller", async () => {

@@ -1,8 +1,10 @@
 import { Controller, Get } from "@nestjs/common";
+import { Public } from "./auth/public.decorator";
 
 /** Set from the image tag at deploy time; empty when running from source. */
 const VERSION = process.env.APP_VERSION?.trim() ?? "";
 
+@Public()
 @Controller("health")
 export class AppController {
   /**

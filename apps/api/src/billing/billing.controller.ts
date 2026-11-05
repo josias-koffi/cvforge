@@ -13,6 +13,7 @@ import { AuthService } from "../auth/auth.service";
 import { requireSession, type CookieRequest } from "../auth/request-session";
 import { CheckoutService } from "./checkout.service";
 import { StripeWebhookService } from "./stripe-webhook.service";
+import { Public } from "../auth/public.decorator";
 
 type StripeWebhookRequest = {
   headers: { "stripe-signature"?: string };
@@ -63,6 +64,7 @@ export class BillingController {
     return { orders: await this.checkout.listOrdersForUser(session.email) };
   }
 
+  @Public()
   @Post("stripe/webhook")
   @HttpCode(200)
   handleStripeWebhook(@Req() request: StripeWebhookRequest) {
