@@ -71,8 +71,29 @@ export function featureRewrites() {
 
 
 /**
- * Headers every response carries. No CSP yet: Next's inline bootstrap scripts
- * need nonces, to be rolled out in report-only mode first.
+ * Report-Only, and deliberately looser than the app's: the landing is
+ * statically generated, so Next cannot stamp a per-request nonce on its inline
+ * scripts and 'unsafe-inline' stays for now. It still reports any third-party
+ * script, frame, connection or form target, and forbids framing, plugins and
+ * <base> hijacking. Tightening scripts needs hash-based CSP (Next's SRI).
+ */
+export const LANDING_CSP = [
+  "default-src 'self'",
+  "script-src 'self' 'unsafe-inline'",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: blob:",
+  "font-src 'self' data:",
+  "connect-src 'self'",
+  "frame-src 'none'",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  "frame-ancestors 'none'",
+  "report-uri /api/csp-report",
+].join("; ")
+
+/**
+ * Headers every response carries. The CSP rides along, Report-Only (see LANDING_CSP).
  */
 export function securityHeaders() {
   return [
@@ -81,6 +102,7 @@ export function securityHeaders() {
     { key: "X-Frame-Options", value: "DENY" },
     { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
     { key: "Permissions-Policy", value: "camera=(), geolocation=(), microphone=()" },
+    { key: "Content-Security-Policy-Report-Only", value: LANDING_CSP },
   ]
 }
 

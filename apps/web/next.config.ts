@@ -2,8 +2,7 @@ import type { NextConfig } from "next"
 
 
 /**
- * Headers every response carries. No CSP yet: Next's inline bootstrap scripts
- * need nonces, to be rolled out in report-only mode first.
+ * Headers every response carries. The CSP is set per request by proxy.ts (it needs a nonce).
  */
 export function securityHeaders() {
   return [

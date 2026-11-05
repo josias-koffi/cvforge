@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { headers } from "next/headers"
 import { Geist_Mono, Inter } from "next/font/google"
 
 import "./globals.css"
@@ -23,11 +24,15 @@ export const metadata: Metadata = {
     "Un profil. Une offre. Une étincelle. Jobspark adapte votre CV et votre lettre à chaque offre, prêts pour l'ATS en quelques secondes.",
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  // next-themes writes an inline script to avoid a flash of the wrong theme;
+  // the CSP only lets it run with the request's nonce (set by proxy.ts).
+  const nonce = (await headers()).get("x-nonce") ?? undefined
+
   return (
     <html
       lang="fr"
@@ -35,7 +40,7 @@ export default function RootLayout({
       className={cn("antialiased", fontMono.variable, "font-sans", inter.variable)}
     >
       <body>
-        <ThemeProvider>
+        <ThemeProvider nonce={nonce}>
           <TooltipProvider>{children}</TooltipProvider>
           <Toaster position="top-right" />
         </ThemeProvider>
