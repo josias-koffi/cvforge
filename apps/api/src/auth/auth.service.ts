@@ -325,7 +325,13 @@ export class AuthService {
       );
     }
 
-    return (await this.accountStore.demoteToUser(email)) as AuthAccountRecord;
+    const demoted = (await this.accountStore.demoteToUser(email)) as AuthAccountRecord;
+
+    // The role travels inside the signed cookie, so a live admin session would
+    // keep its rights until it expires: kill every session issued before now.
+    await this.accountStore.revokeSessions(email, new Date().toISOString());
+
+    return demoted;
   }
 
   /**

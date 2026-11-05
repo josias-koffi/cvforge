@@ -1,7 +1,7 @@
 # Jobspark landing site (Next.js standalone output)
 
 # Stage 1: Install dependencies
-FROM node:20-alpine AS deps
+FROM node:22-alpine AS deps
 WORKDIR /workspace
 RUN corepack enable
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
@@ -24,7 +24,7 @@ RUN pnpm --filter @cvforge/types build
 RUN pnpm --filter @cvforge/landing build
 
 # Stage 3: Minimal runtime
-FROM node:20-alpine AS runner
+FROM node:22-alpine AS runner
 WORKDIR /workspace
 # APP_URL is read per request by /login, so it stays a runtime variable.
 ENV NODE_ENV=production \

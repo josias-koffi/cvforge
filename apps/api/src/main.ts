@@ -1,4 +1,5 @@
 import { NestFactory } from "@nestjs/core";
+import helmet from "helmet";
 import type { NestExpressApplication } from "@nestjs/platform-express";
 import { AppModule } from "./app.module";
 import { AuthMailerService } from "./auth/auth-mailer.service";
@@ -11,6 +12,9 @@ export async function bootstrap() {
     bodyParser: false,
     rawBody: true,
   });
+  // Company logos are <img> targets on another origin (the web app), so the
+  // default same-origin resource policy would block them.
+  app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
   app.useBodyParser("json", { limit: INTERVIEW_AUDIO_BODY_LIMIT });
   app.useBodyParser("urlencoded", {
     extended: true,

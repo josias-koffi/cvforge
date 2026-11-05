@@ -69,6 +69,21 @@ export function featureRewrites() {
   ])
 }
 
+
+/**
+ * Headers every response carries. No CSP yet: Next's inline bootstrap scripts
+ * need nonces, to be rolled out in report-only mode first.
+ */
+export function securityHeaders() {
+  return [
+    { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains" },
+    { key: "X-Content-Type-Options", value: "nosniff" },
+    { key: "X-Frame-Options", value: "DENY" },
+    { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+    { key: "Permissions-Policy", value: "camera=(), geolocation=(), microphone=()" },
+  ]
+}
+
 const nextConfig: NextConfig = {
   output: "standalone",
   outputFileTracingRoot: new URL("../../", import.meta.url).pathname,
@@ -77,6 +92,9 @@ const nextConfig: NextConfig = {
   // The story page has one route; each locale exposes it under its own slug.
   // The legal documents work the same way, so a link shared in one language
   // lands on the reader's own wording rather than on a 404.
+  async headers() {
+    return [{ source: "/:path*", headers: securityHeaders() }]
+  },
   async redirects() {
     return [
       { source: "/fr/story", destination: "/fr/histoire", permanent: true },
