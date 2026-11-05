@@ -2,12 +2,11 @@ import { parseLeadIntent, publicError, type LeadIntent } from "@cvforge/types";
 import { BadRequestException, Injectable } from "@nestjs/common";
 import type { AuthMailerService } from "../auth/auth-mailer.service";
 import type { AuthService } from "../auth/auth.service";
+import { isPlainEmailAddress } from "../shared/email-address";
 
 export const CONSENT_REQUIRED_MESSAGE =
   "Vous devez accepter les conditions pour recevoir votre rapport.";
 export const INVALID_EMAIL_MESSAGE = "Une adresse email valide est requise.";
-
-const EMAIL = /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i;
 
 export type LeadRequest = { email: unknown; consentAccepted: unknown };
 
@@ -33,7 +32,7 @@ export class LeadCaptureService {
         ? request.email.trim().toLowerCase()
         : "";
 
-    if (!EMAIL.test(email)) {
+    if (!isPlainEmailAddress(email)) {
       throw new BadRequestException(
         publicError("INVALID_EMAIL", INVALID_EMAIL_MESSAGE),
       );
