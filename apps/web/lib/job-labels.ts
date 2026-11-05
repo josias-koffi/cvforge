@@ -38,6 +38,7 @@ export const SOURCE_LABELS: Record<string, string> = {
   smartrecruiters: "Site de l'entreprise",
   welcomekit: "Welcome to the Jungle",
   workable: "Site de l'entreprise",
+  workday: "Site de l'entreprise",
 }
 
 /**
@@ -52,6 +53,7 @@ export const PROVIDER_LABELS: Record<string, string> = {
   recruitee: "Recruitee",
   smartrecruiters: "SmartRecruiters",
   workable: "Workable",
+  workday: "Workday",
 }
 
 /** "France Travail", or "Site de l'entreprise (Lever)". */

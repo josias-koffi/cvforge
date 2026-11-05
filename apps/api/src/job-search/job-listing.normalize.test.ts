@@ -135,3 +135,24 @@ describe("htmlToText", () => {
     expect(htmlToText("<script>alert(1)</script><p>Texte</p>")).toBe("Texte");
   });
 });
+
+describe("classifyContract and the word « vie »", () => {
+  it("does not read an ordinary description as a volontariat international", () => {
+    expect(
+      classifyContract({
+        description: "Un équilibre vie professionnelle / vie personnelle, en CDI.",
+        title: "Batch Release Specialist",
+      }),
+    ).toBe("cdi");
+  });
+
+  it("still reads the acronym in a title, and the full name anywhere", () => {
+    expect(classifyContract({ title: "Ingénieur commercial VIE Singapour (H/F)" })).toBe("vie");
+    expect(classifyContract({ description: "Mission en V.I.E. à Singapour" })).toBe("vie");
+    expect(classifyContract({ description: "Volontariat International en Entreprise" })).toBe("vie");
+  });
+
+  it("ignores the lowercase word in a title", () => {
+    expect(classifyContract({ title: "Conseiller d'éducation - vie scolaire" })).toBe("unknown");
+  });
+});

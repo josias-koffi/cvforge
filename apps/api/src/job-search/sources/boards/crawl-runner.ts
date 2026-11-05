@@ -224,6 +224,9 @@ export class CrawlRunner {
         }
       }
 
+      // A crawl that announced pages but served none is as good as absent.
+      if (pagesRead === 0) continue;
+
       const plausible = boards.filter((board) => isPlausibleBoardToken(board.boardToken));
       this.log(`${pattern}: ${plausible.length} candidate(s) from ${collection}`);
 

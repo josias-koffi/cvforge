@@ -62,6 +62,7 @@ import { SourceCallCounter } from "./source-call-counter";
 import { FranceTravailStreamReader } from "./sources/france-travail.stream";
 import { FranceTravailReconciler } from "./france-travail-reconcile.service";
 import { BoardDiscoveryService } from "./board-discovery.service";
+import { importSeededBoards } from "./sources/boards/boards-seed";
 import { CrawlRunner } from "./sources/boards/crawl-runner";
 import { JOB_BOARDS_STORE, type JobBoardsStore } from "./boards.types";
 
@@ -240,6 +241,7 @@ export const jobStreamProviders: Provider[] = [
       new BoardDiscoveryService(
         new CrawlRunner({ store, verifiers: boards.verifiers() }),
         cursors,
+        () => importSeededBoards(boards),
       ),
   },
   {

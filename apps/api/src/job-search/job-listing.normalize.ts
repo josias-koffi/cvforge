@@ -20,7 +20,10 @@ const CONTRACT_PATTERNS: Array<[SearchContractType, RegExp]> = [
     "stage",
     /\b(stage|stagiaire|internship|intern|trainee|praktikum|summer analyst)\b/,
   ],
-  ["vie", /\b(vie|vive|volontariat international)\b/],
+  // "vie" alone is a French word ("vie professionnelle"): only the full name
+  // matches anywhere; the acronym is read separately, in the title and the
+  // employment type alone (see `classifyContract`).
+  ["vie", /\b(volontariat international|v i e)\b/],
   ["interim", /\b(interim|int[eé]rimaire|temp agency|temporary staffing)\b/],
   [
     "freelance",
@@ -53,12 +56,17 @@ export function classifyContract(input: {
   // last because it often *mentions* other contracts ("nos alternants…").
   const ordered = [input.title, input.employmentType, input.description];
 
-  for (const field of ordered) {
+  for (const [index, field] of ordered.entries()) {
     const haystack = fold(field ?? "");
     if (!haystack) continue;
+    // The title (0) and the employment type (1) state the intent; the
+    // description (2) only mentions things.
+    const states = index < 2;
 
     for (const [contract, pattern] of CONTRACT_PATTERNS) {
       if (pattern.test(haystack)) return contract;
+      // The uppercase acronym "VIE" next to a job title, never the word "vie".
+      if (contract === "vie" && states && /\bVIE\b/.test(field ?? "")) return contract;
     }
   }
 

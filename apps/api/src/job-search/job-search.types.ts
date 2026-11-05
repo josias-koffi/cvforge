@@ -13,6 +13,7 @@ export const jobSources = [
   "recruitee",
   "personio",
   "welcomekit",
+  "workday",
 ] as const;
 export type JobSource = (typeof jobSources)[number];
 

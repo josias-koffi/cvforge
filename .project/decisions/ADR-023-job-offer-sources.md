@@ -111,3 +111,20 @@ une ligne en base et évite de redécouvrir ces entreprises plus tard.
   (délai, 429) n'enregistre rien. Au plus 600 vérifications par jour.
 - Adaptateurs ajoutés : Workable, Recruitee, Personio (flux XML). Welcome Kit reste enregistré sans
   adaptateur.
+
+## Amendement du 2026-11-05 (2) — Workday, liste fermée
+
+- Quatre grands groupes lus sur leur site carrière Workday : Sanofi, Air Liquide, Eiffage, Renault
+  (`sources/boards/workday.config.ts`). Vérifiés à la main le 2026-11-04 : le `robots.txt` du locataire
+  ne vise ni la liste d'offres ni le site, aucune CGU contraire trouvée. Thales et Kering (leur
+  `robots.txt` interdit tout le site) sont exclus.
+- **Pas de détection automatique** des adresses Workday (`detect-board.ts` les ignore volontairement) :
+  les liens des offres France Travail enregistreraient sinon n'importe quel locataire. Ajouter une
+  entreprise est une décision, à documenter ici.
+- L'adaptateur relit le `robots.txt` à chaque passage (mémoire d'une heure) et s'arrête s'il interdit
+  `/wday/cxs/<locataire>/<site>/jobs` ou `/<site>/`.
+- Liste demandée « France » par la facette pays de Workday ; description lue offre par offre, au plus
+  400 nouvelles par passage, jamais deux fois (mémoire du processus). Une liste s'arrête à 2 000
+  offres : Eiffage et Airbus la touchent.
+- Airbus, Engie, Euronext : mentions légales du site institutionnel interdisant l'extraction —
+  **non activées** tant qu'un avis n'a pas été pris.

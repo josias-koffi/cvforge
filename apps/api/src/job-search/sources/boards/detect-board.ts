@@ -10,6 +10,7 @@ export const boardProviders = [
   "recruitee",
   "personio",
   "welcomekit",
+  "workday",
 ] as const;
 export type BoardProvider = (typeof boardProviders)[number];
 

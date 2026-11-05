@@ -111,13 +111,37 @@ describe("FranceTravailReconciler", () => {
 
     expect(await reconciler.run()).toMatchObject({ status: "failed" });
     expect(jobs.closeListingsNotSeenSince).not.toHaveBeenCalled();
-    expect(cursors.cursorAt).toBeNull();
+    // Not moved to the walk's start: only the lease placeholder (epoch) is there.
+    expect(cursors.cursorAt).toEqual(new Date(0));
   });
 
   it("closes nothing when the walk finds too few offers to be credible", async () => {
     const { jobs, reconciler } = setup({});
 
     expect(await reconciler.run()).toMatchObject({ seen: 0, status: "failed" });
+    expect(jobs.closeListingsNotSeenSince).not.toHaveBeenCalled();
+  });
+
+  it("keeps its lease alive during the walk, without moving the cursor of the last complete one", async () => {
+    const { cursors, reconciler } = setup({ cursorAt: new Date(NOW - 30 * HOUR), read: credible });
+    const advance = vi.spyOn(cursors, "advance");
+
+    await reconciler.run();
+
+    // One renewal per chunk, all at the previous cursor, then the final move.
+    expect(advance).toHaveBeenCalledTimes(721);
+    expect(advance.mock.calls[0]![2]).toEqual(new Date(NOW - 30 * HOUR));
+    expect(advance.mock.calls[720]![2]).toEqual(new Date(NOW));
+  });
+
+  it("stops after the current chunk when the process shuts down, closing nothing", async () => {
+    const { jobs, reader, reconciler } = setup({ read: credible });
+    vi.mocked(reader.read).mockImplementation(async (from: Date) => {
+      void reconciler.onModuleDestroy();
+      return credible(from);
+    });
+
+    expect(await reconciler.run()).toMatchObject({ reason: "shutdown, nothing closed", status: "failed" });
     expect(jobs.closeListingsNotSeenSince).not.toHaveBeenCalled();
   });
 

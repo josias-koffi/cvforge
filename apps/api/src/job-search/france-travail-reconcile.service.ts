@@ -21,8 +21,12 @@ const FIRST_CHECK_MS = 3 * MINUTE_MS;
 const MIN_INTERVAL_MS = 23 * HOUR_MS;
 /** Three hours at a time: a few thousand offers in memory, a cut only at the peak. */
 const CHUNK_MS = 3 * HOUR_MS;
-/** A walk takes minutes; a process that dies mid-walk frees it this late. */
-const LEASE_MS = 6 * HOUR_MS;
+/**
+ * Renewed after every chunk of the walk: a process that dies mid-walk (a
+ * deployment, a crash) frees the next check within this time instead of
+ * holding the walk for hours.
+ */
+const LEASE_MS = 20 * MINUTE_MS;
 /** Ids sent to the database at once. */
 const TOUCH_BATCH = 1_000;
 /**
@@ -58,6 +62,8 @@ export class FranceTravailReconciler implements OnModuleInit, OnModuleDestroy {
   private timer: NodeJS.Timeout | null = null;
   private first: NodeJS.Timeout | null = null;
   private running = false;
+  private stopping = false;
+  private current: Promise<unknown> = Promise.resolve();
   private pausedUntil = 0;
 
   constructor(
@@ -75,7 +81,7 @@ export class FranceTravailReconciler implements OnModuleInit, OnModuleDestroy {
 
   onModuleInit() {
     const check = () =>
-      void this.run().catch((error: unknown) => {
+      this.current = this.run().catch((error: unknown) => {
         this.logger.error(`Reconciliation failed: ${String(error)}`);
       });
 
@@ -86,9 +92,13 @@ export class FranceTravailReconciler implements OnModuleInit, OnModuleDestroy {
     this.timer.unref?.();
   }
 
-  onModuleDestroy() {
+  /** A walk under way stops after its current chunk and frees the lease. */
+  async onModuleDestroy() {
+    this.stopping = true;
     if (this.first) clearTimeout(this.first);
     if (this.timer) clearInterval(this.timer);
+
+    await this.current;
   }
 
   async run(): Promise<ReconcileResult> {
@@ -112,7 +122,7 @@ export class FranceTravailReconciler implements OnModuleInit, OnModuleDestroy {
     try {
       const due =
         !lease.cursorAt || this.now() - lease.cursorAt.getTime() >= MIN_INTERVAL_MS;
-      if (due) result = await this.walk();
+      if (due) result = await this.walk(lease.cursorAt);
 
       return result;
     } finally {
@@ -127,12 +137,19 @@ export class FranceTravailReconciler implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  private async walk(): Promise<ReconcileResult> {
+  private async walk(lastDone: Date | null): Promise<ReconcileResult> {
     const startedAt = this.now();
     const from = startedAt - DEFAULT_MAX_AGE_DAYS * DAY_MS;
     const tally = { calls: 0, seen: 0, stored: 0 };
 
     for (let start = from; start < startedAt; start += CHUNK_MS) {
+      if (this.stopping) {
+        return { ...tally, reason: "shutdown, nothing closed", status: "failed" };
+      }
+      // Still alive: keep the lease. The cursor is not moved (it marks the
+      // last *complete* walk), the epoch stands in before the first one.
+      await this.cursors.advance(RECONCILE_KEY, this.owner, lastDone ?? new Date(0), LEASE_MS);
+
       const end = Math.min(start + CHUNK_MS, startedAt);
       const slice = await this.reader.read(new Date(start), new Date(end));
 
