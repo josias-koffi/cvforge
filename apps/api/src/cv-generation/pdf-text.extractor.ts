@@ -15,6 +15,9 @@ const PDFJS_SPECIFIER = "pdfjs-dist/legacy/build/pdf.mjs";
 const MAX_PDF_PAGES = 50;
 // 2x the PDF user space (~144 dpi) keeps body text legible for OCR without huge bitmaps.
 const RENDER_SCALE = 2;
+// A PDF chooses its own page size: without a cap a 14,400 pt page renders to a
+// multi-gigabyte canvas. 16 megapixels is a dense A4 at ~270 dpi.
+const MAX_RENDER_PIXELS = 16_000_000;
 
 // pdfjs-dist ships ESM only; a Function-wrapped import stops tsc (commonjs) from rewriting it to require().
 // VM-based runners (vitest) reject that native import, where the transpiled import() works instead.
@@ -107,7 +110,9 @@ function averageColumnSuspicion(
 export async function renderPdfPages(buffer: Buffer, maxPages: number): Promise<Buffer[]> {
   const { results } = await withPdfDocument(buffer, maxPages, async (document, pageNumber) => {
     const page = await document.getPage(pageNumber);
-    const viewport = page.getViewport({ scale: RENDER_SCALE });
+    const unit = page.getViewport({ scale: 1 });
+    const scale = Math.min(RENDER_SCALE, Math.sqrt(MAX_RENDER_PIXELS / Math.max(1, unit.width * unit.height)));
+    const viewport = page.getViewport({ scale });
     const factory = document.canvasFactory as { create(width: number, height: number): RenderedCanvas };
     const { canvas, context } = factory.create(Math.ceil(viewport.width), Math.ceil(viewport.height));
 

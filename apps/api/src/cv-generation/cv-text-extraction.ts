@@ -1,5 +1,6 @@
 import { BadRequestException } from "@nestjs/common";
 import mammoth from "mammoth";
+import { assertDocxIsNotABomb, assertFileMatchesKind } from "./cv-file-guard";
 import { recognizeImages } from "./ocr.extractor";
 import type { PdfTextExtraction } from "./pdf-signals";
 import { extractPdfContent, renderPdfPages } from "./pdf-text.extractor";
@@ -47,12 +48,16 @@ export async function extractCvText(
   const filename = file.originalname.toLowerCase();
 
   if (file.mimetype === DOCX_MIME || filename.endsWith(".docx")) {
+    assertFileMatchesKind(file.buffer, "docx");
+    assertDocxIsNotABomb(file.buffer);
     const result = await mammoth.extractRawText({ buffer: file.buffer });
 
     return { kind: "docx", text: result.value.trim() };
   }
 
   if (file.mimetype === "application/pdf" || filename.endsWith(".pdf")) {
+    assertFileMatchesKind(file.buffer, "pdf");
+
     return extractFromPdf(file.buffer, allowOcr);
   }
 

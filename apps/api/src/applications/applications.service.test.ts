@@ -9,6 +9,17 @@ import {
 import type { DraftApplication } from "@cvforge/types";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ApplicationsService } from "./applications.service";
+// The real fetcher refuses to reach a test double; these tests drive the
+// importer through the global fetch they already stub.
+vi.mock("../shared/safe-fetch", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../shared/safe-fetch")>()),
+  fetchPublicPage: async (url: string) => {
+    const response = await fetch(url);
+
+    return { status: response.status, text: await response.text() };
+  },
+}));
+
 import type {
   ApplicationsStore,
   StoredApplication,

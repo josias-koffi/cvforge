@@ -13,6 +13,7 @@ import {
 import { AuthService } from "../auth/auth.service";
 import { ApplicationsService } from "./applications.service";
 import type { OfferUpdateInput } from "./applications.types";
+import { UserRateLimit } from "../shared/rate-limit/user-rate-limit.decorator";
 
 type RequestLike = {
   headers: {
@@ -91,6 +92,7 @@ export class ApplicationsController {
     };
   }
 
+  @UserRateLimit("offer-import", 30, 100)
   @Post(":applicationId/re-extract")
   async reExtractOffer(
     @Param("applicationId") applicationId: string,
@@ -108,6 +110,7 @@ export class ApplicationsController {
     };
   }
 
+  @UserRateLimit("offer-import", 30, 100)
   @Post("import-from-url")
   async importFromUrl(
     @Body() body: { url?: string },
@@ -123,6 +126,7 @@ export class ApplicationsController {
     };
   }
 
+  @UserRateLimit("offer-import", 30, 100)
   @Post("import-from-text")
   async importFromText(
     @Body() body: { offerText?: string },

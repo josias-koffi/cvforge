@@ -19,6 +19,7 @@ import { AuthService } from "../auth/auth.service";
 import { InterviewProgressService } from "./interview-progress.service";
 import { InterviewRealtimeService } from "./interview-realtime.service";
 import { InterviewService } from "./interview.service";
+import { UserRateLimit } from "../shared/rate-limit/user-rate-limit.decorator";
 
 type RequestLike = {
   headers: { cookie?: string };
@@ -36,6 +37,7 @@ export class InterviewController {
     @Inject(AuthService) private readonly authService: AuthService,
   ) {}
 
+  @UserRateLimit("interview-start", 20, 60)
   @Post("sessions")
   startSession(
     @Body() body: InterviewSessionStartRequest | undefined,
@@ -81,6 +83,7 @@ export class InterviewController {
    * The audio then flows between the browser and OpenAI directly, while the
    * server follows the call on its own line (ADR-026).
    */
+  @UserRateLimit("interview-start", 20, 60)
   @Post("sessions/:sessionId/realtime")
   startRealtimeCall(
     @Param("sessionId") sessionId: string,
