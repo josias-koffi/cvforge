@@ -1,12 +1,12 @@
 import { BadRequestException } from "@nestjs/common";
 import { createHash } from "node:crypto";
+import { isPlainEmailAddress } from "../shared/email-address";
 import type { AuthConsentRecord, AuthRole } from "./auth.types";
 
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const CONSENT_VERSION = "2026-04-mvp";
 
 export function isValidEmail(email: string) {
-  return EMAIL_PATTERN.test(email);
+  return isPlainEmailAddress(email);
 }
 
 /** Tokens are stored hashed: a leaked table cannot be replayed as links. */
