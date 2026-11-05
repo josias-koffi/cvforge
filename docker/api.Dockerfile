@@ -50,6 +50,9 @@ COPY --from=builder /workspace/packages/types/dist ./packages/types/dist
 
 RUN mkdir -p /workspace/.data && chown -R "${HOST_UID}:${HOST_GID}" /workspace/.data
 
+# Never root: the only writable path is the data directory chowned above.
+USER ${HOST_UID}:${HOST_GID}
+
 EXPOSE 3333
 
 # Pending SQL migrations run first; a failed migration keeps the new version

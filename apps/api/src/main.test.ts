@@ -9,6 +9,7 @@ function createAppMock() {
     get: getMock,
     listen: vi.fn().mockResolvedValue(undefined),
     set: vi.fn(),
+    use: vi.fn(),
     useBodyParser: vi.fn(),
   };
 }
@@ -45,6 +46,7 @@ describe("bootstrap", () => {
       bodyParser: false,
       rawBody: true,
     });
+    expect(app.use).toHaveBeenCalledTimes(1);
     expect(app.useBodyParser).toHaveBeenCalledWith("json", { limit: "16mb" });
     expect(app.useBodyParser).toHaveBeenCalledWith("urlencoded", {
       extended: true,

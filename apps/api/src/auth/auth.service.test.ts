@@ -328,6 +328,23 @@ describe("AuthService", () => {
     await expect(service.consumeInvitation(invitationToken, false)).rejects.toThrow(/consent/i);
   });
 
+  it("should revoke the sessions of a demoted admin", async () => {
+    const store = createInMemoryAccountStore();
+    const service = new AuthService(config, store);
+
+    await store.resolveRole("admin@example.com");
+    await store.assignInvitedRole("second@example.com", "admin", {
+      acceptedAt: "2026-04-19T20:19:09.000Z",
+      source: "invitation",
+      version: "2026-04-mvp",
+    });
+    expect((await service.readAccountState("second@example.com"))?.sessionsValidFrom).toBeNull();
+
+    await service.demoteAccountToUser("second@example.com", "user");
+
+    expect((await service.readAccountState("second@example.com"))?.sessionsValidFrom).not.toBeNull();
+  });
+
   it("should demote an admin while keeping at least one admin", async () => {
     const store = createInMemoryAccountStore();
     const service = new AuthService(config, store);
