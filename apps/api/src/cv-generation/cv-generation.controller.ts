@@ -26,6 +26,7 @@ import { AuthService } from "../auth/auth.service";
 import { CvImportService, type CvImportFile } from "./cv-import.service";
 import { CvPdfExportService } from "./cv-pdf-export.service";
 import { CvGenerationService } from "./cv-generation.service";
+import { UserRateLimit } from "../shared/rate-limit/user-rate-limit.decorator";
 
 type RequestLike = {
   headers: { cookie?: string };
@@ -43,6 +44,7 @@ export class CvGenerationController {
     @Inject(AuthService) private readonly authService: AuthService,
   ) {}
 
+  @UserRateLimit("ai-generation", 30, 150)
   @Post(":applicationId/generate-cv")
   async generateCv(
     @Param("applicationId") applicationId: string,
@@ -66,6 +68,7 @@ export class CvGenerationController {
     return { cvContent };
   }
 
+  @UserRateLimit("cv-import", 10, 30)
   @Post("cv-import/extract")
   @UseInterceptors(
     FileInterceptor("cvFile", {
@@ -87,6 +90,7 @@ export class CvGenerationController {
     return this.cvImportService.extractProfileFromCv(session.email, file);
   }
 
+  @UserRateLimit("ai-generation", 30, 150)
   @Post(":applicationId/generate-letter")
   async generateLetter(
     @Param("applicationId") applicationId: string,
@@ -110,6 +114,7 @@ export class CvGenerationController {
     return { letterContent };
   }
 
+  @UserRateLimit("ai-generation", 30, 150)
   @Post(":applicationId/cv/translate")
   async translateCv(
     @Param("applicationId") applicationId: string,
@@ -133,6 +138,7 @@ export class CvGenerationController {
     return { cvContent };
   }
 
+  @UserRateLimit("ai-generation", 30, 150)
   @Post(":applicationId/letter/translate")
   async translateLetter(
     @Param("applicationId") applicationId: string,

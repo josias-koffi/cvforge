@@ -1,5 +1,6 @@
 import {
   BadGatewayException,
+  BadRequestException,
   Logger,
   UnprocessableEntityException,
 } from "@nestjs/common";
@@ -9,6 +10,11 @@ import {
   APPLICATION_SOURCE_URL,
   type ExtractedOfferFields,
 } from "@cvforge/types";
+import {
+  BlockedUrlError,
+  fetchPublicPage,
+  type SafeFetchResult,
+} from "../shared/safe-fetch";
 import type { OpenRouterService } from "../ai/openrouter.service";
 import type { CreditsService } from "../credits/credits.service";
 import type { OfferExtractionResult } from "./applications.types";
@@ -126,29 +132,31 @@ export class OfferImporter {
   }
 
   private async fetchOfferHtml(offerUrl: string) {
-    let response: Response;
+    let page: SafeFetchResult;
 
     try {
-      response = await fetch(offerUrl, {
-        headers: {
-          Accept: "text/html,application/xhtml+xml",
-          "User-Agent":
-            "Mozilla/5.0 (compatible; CVforgeBot/1.0; +https://cvforge.app)",
-        },
+      page = await fetchPublicPage(offerUrl, {
+        userAgent: "Mozilla/5.0 (compatible; CVforgeBot/1.0; +https://cvforge.app)",
       });
-    } catch {
+    } catch (error) {
+      if (error instanceof BlockedUrlError) {
+        throw new BadRequestException(
+          "Cette adresse n'est pas une page web publique accessible.",
+        );
+      }
+
       throw new BadGatewayException(
         "Impossible de recuperer cette offre depuis l'URL fournie.",
       );
     }
 
-    if (!response.ok) {
+    if (page.status < 200 || page.status >= 300) {
       throw new BadGatewayException(
         "Le site cible a refuse ou interrompu la recuperation de l'offre.",
       );
     }
 
-    const html = await response.text();
+    const html = page.text;
 
     if (!html.trim()) {
       throw new UnprocessableEntityException(

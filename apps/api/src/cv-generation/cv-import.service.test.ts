@@ -76,7 +76,7 @@ const AI_RESPONSE = {
 
 function makeFile(overrides: Partial<CvImportFile> = {}): CvImportFile {
   return {
-    buffer: Buffer.from(RAW_CV_TEXT, "latin1"),
+    buffer: Buffer.from(`%PDF-1.4\n${RAW_CV_TEXT}`, "latin1"),
     mimetype: "application/pdf",
     originalname: "cv.pdf",
     size: Buffer.byteLength(RAW_CV_TEXT),
@@ -151,7 +151,7 @@ describe("CvImportService", () => {
     await expect(
       service.extractProfileFromCv(
         "user@example.com",
-        makeFile({ buffer: Buffer.from("short"), size: 5 }),
+        makeFile({ buffer: Buffer.from("%PDF-short"), size: 10 }),
       ),
     ).rejects.toBeInstanceOf(UnprocessableEntityException);
   });

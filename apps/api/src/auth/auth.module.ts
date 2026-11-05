@@ -2,6 +2,7 @@ import { Module } from "@nestjs/common";
 import { APP_GUARD } from "@nestjs/core";
 import { PgAuthAccountStore } from "./auth.pg-store";
 import { MailModule } from "../mail/mail.module";
+import { RateLimitModule } from "../shared/rate-limit/rate-limit.module";
 import { DATABASE, type Database } from "../database/database.types";
 import { AuthMailerService } from "./auth-mailer.service";
 import { AuthController } from "./auth.controller";
@@ -12,7 +13,7 @@ import { SessionStateMiddleware } from "./session-state.middleware";
 import { AUTH_ACCOUNT_STORE, type AuthAccountStore } from "./auth.types";
 
 @Module({
-  imports: [MailModule],
+  imports: [MailModule, RateLimitModule],
   controllers: [AuthController],
   providers: [
     {
