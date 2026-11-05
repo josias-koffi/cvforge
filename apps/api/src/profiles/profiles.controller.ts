@@ -10,6 +10,7 @@ import {
 import { AuthService } from "../auth/auth.service";
 import { ProfilesService } from "./profiles.service";
 import type { StoredProfileRegistry } from "./profiles.types";
+import { assertStorableRegistry } from "./profiles.validation";
 
 type RequestLike = {
   headers: { cookie?: string };
@@ -55,6 +56,8 @@ export class ProfilesController {
     ) {
       return { registry: await this.profilesService.getRegistry(session.email) };
     }
+
+    assertStorableRegistry(body.registry);
 
     return {
       registry: await this.profilesService.saveRegistry(session.email, body.registry),
