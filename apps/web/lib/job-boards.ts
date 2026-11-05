@@ -14,6 +14,7 @@ export const BOARD_PROVIDERS = [
   "recruitee",
   "personio",
   "welcomekit",
+  "workday",
 ] as const
 
 export type BoardProvider = (typeof BOARD_PROVIDERS)[number]
@@ -69,6 +70,7 @@ export const PROVIDER_LABELS: Record<BoardProvider, string> = {
   smartrecruiters: "SmartRecruiters",
   welcomekit: "Welcome Kit",
   workable: "Workable",
+  workday: "Workday",
 }
 
 export const ORIGIN_LABELS: Record<BoardOrigin, string> = {

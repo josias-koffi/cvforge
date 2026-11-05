@@ -32,24 +32,35 @@ function setup(options: { answered?: boolean; cursorAt?: Date | null; fails?: bo
     }),
   };
 
-  return { cursors, runner, service: new BoardDiscoveryService(runner, cursors, () => NOW, "me") };
+  const seed = vi.fn(async () => ({ registered: 118, skipped: 0 }));
+
+  return {
+    cursors,
+    runner,
+    seed,
+    service: new BoardDiscoveryService(runner, cursors, seed, () => NOW, "me"),
+  };
 }
 
 describe("BoardDiscoveryService", () => {
   it("runs, reports and marks the day done", async () => {
-    const { cursors, runner, service } = setup();
+    const { cursors, runner, seed, service } = setup();
 
     expect(await service.run()).toMatchObject({ registered: 3, status: "done" });
     expect(runner.run).toHaveBeenCalledTimes(1);
+    // The shipped list goes in before the crawl looks for anything new.
+    expect(seed).toHaveBeenCalledTimes(1);
+    expect(seed.mock.invocationCallOrder[0]).toBeLessThan(runner.run.mock.invocationCallOrder[0]!);
     expect(cursors.cursorAt).toEqual(new Date(NOW));
     expect(cursors.reports.get(DISCOVERY_KEY)).toMatchObject({ status: "done" });
   });
 
   it("waits for the next day once a run is done", async () => {
-    const { runner, service } = setup({ cursorAt: new Date(NOW - 5 * HOUR) });
+    const { runner, seed, service } = setup({ cursorAt: new Date(NOW - 5 * HOUR) });
 
     expect(await service.run()).toEqual({ reason: "not due", status: "skipped" });
     expect(runner.run).not.toHaveBeenCalled();
+    expect(seed).not.toHaveBeenCalled();
   });
 
   it("does not count a run as done when no crawl answered, so the next check retries", async () => {

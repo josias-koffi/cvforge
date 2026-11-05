@@ -102,6 +102,24 @@ describe("CrawlRunner", () => {
     expect(report.registered).toBe(1);
   });
 
+  it("tries the previous crawl when the newest announces pages but serves none", async () => {
+    const { runner } = setup({
+      answers: {
+        ...base,
+        "CC-MAIN-2026-43-index?url=boards.greenhouse.io%2F*&output=json&fl=url&showNumPages": '{"pages":3}',
+        "CC-MAIN-2026-39-index?url=boards.greenhouse.io%2F*&output=json&fl=url&showNumPages": '{"pages":1}',
+        "CC-MAIN-2026-39-index?url=boards.greenhouse.io%2F*&output=json&fl=url&page=0": lines(
+          "https://boards.greenhouse.io/alpha/jobs/1",
+        ),
+      },
+    });
+
+    const report = await runner.run({ provider: "greenhouse" });
+
+    const greenhouse = report.patterns.find((entry) => entry.pattern === "boards.greenhouse.io/*");
+    expect(greenhouse).toMatchObject({ candidates: 1, collection: "CC-MAIN-2026-39" });
+  });
+
   it("reports the patterns no crawl could answer, and registers nothing", async () => {
     const { registered, runner } = setup({ answers: {} });
 

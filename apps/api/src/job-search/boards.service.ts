@@ -21,6 +21,7 @@ import { PersonioBoard } from "./sources/boards/personio.board";
 import { RecruiteeBoard } from "./sources/boards/recruitee.board";
 import { SmartRecruitersBoard } from "./sources/boards/smartrecruiters.board";
 import { WorkableBoard } from "./sources/boards/workable.board";
+import { WorkdayBoard } from "./sources/boards/workday.board";
 
 export interface BoardCollectionReport {
   boardsRead: number;
@@ -79,6 +80,7 @@ export class BoardsService {
       ["recruitee", new RecruiteeBoard(http)],
       ["smartrecruiters", new SmartRecruitersBoard(http)],
       ["workable", new WorkableBoard(http)],
+      ["workday", new WorkdayBoard(http)],
     ]);
   }
 

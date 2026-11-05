@@ -261,6 +261,7 @@ const SOURCE_PRIORITY: Record<JobSource, number> = {
   smartrecruiters: 100,
   welcomekit: 100,
   workable: 100,
+  workday: 100,
 };
 
 export function sourcePriority(source: JobSource): number {

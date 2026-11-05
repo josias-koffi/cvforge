@@ -34,6 +34,8 @@ export const BOARD_REQUESTS_PER_SECOND: Record<BoardProvider, number> = {
   smartrecruiters: 2,
   welcomekit: 1,
   workable: 1,
+  // Large employers' own Workday tenants: gentle, and only a closed list of them.
+  workday: 1,
 };
 
 export class BoardHttpClient {
@@ -65,9 +67,27 @@ export class BoardHttpClient {
     return (await response.json()) as T;
   }
 
-  /** The same guarded read for a provider that answers XML (Personio). */
-  async getText(provider: BoardProvider, url: string): Promise<string> {
-    const response = await this.get(provider, url, "application/xml, text/xml");
+  /** A JSON search sent as a POST, with the same guards (Workday's job list). */
+  async postJson<T>(provider: BoardProvider, url: string, body: unknown): Promise<T> {
+    const response = await this.get(provider, url, "application/json", {
+      body: JSON.stringify(body),
+      headers: { "content-type": "application/json" },
+      method: "POST",
+    });
+
+    return (await response.json()) as T;
+  }
+
+  /**
+   * The same guarded read for a provider that answers XML (Personio) or plain
+   * text (a robots.txt, which Workday refuses with a 406 if asked for XML).
+   */
+  async getText(
+    provider: BoardProvider,
+    url: string,
+    accept = "application/xml, text/xml",
+  ): Promise<string> {
+    const response = await this.get(provider, url, accept);
 
     return response.text();
   }
@@ -76,6 +96,7 @@ export class BoardHttpClient {
     provider: BoardProvider,
     url: string,
     accept: string,
+    request: { method?: string; body?: string; headers?: Record<string, string> } = {},
   ): Promise<Response> {
     const limiter = this.limiterFor(provider);
     let lastError: unknown;
@@ -85,7 +106,14 @@ export class BoardHttpClient {
         const response = await limiter.run(() => {
           for (const listener of this.requestListeners) listener(provider);
           return this.fetchImpl(url, {
-            headers: { accept, "user-agent": BOARD_USER_AGENT },
+            ...(request.body === undefined
+              ? {}
+              : { body: request.body, method: request.method ?? "POST" }),
+            headers: {
+              accept,
+              "user-agent": BOARD_USER_AGENT,
+              ...request.headers,
+            },
             signal: AbortSignal.timeout(this.timeoutMs),
           });
         });

@@ -12,7 +12,7 @@ const MIN_INTERVAL_MS = 23 * HOUR_MS;
 /** First check shortly after boot, so a fresh deployment does not wait an hour. */
 const FIRST_CHECK_MS = 3 * 60_000;
 /** A run is bounded by its verification budget; a dead process frees this late. */
-const LEASE_MS = 3 * HOUR_MS;
+const LEASE_MS = 90 * 60_000;
 
 export type DiscoveryRunResult =
   | { status: "skipped"; reason: string }
@@ -39,6 +39,12 @@ export class BoardDiscoveryService implements OnModuleInit, OnModuleDestroy {
   constructor(
     private readonly runner: Pick<CrawlRunner, "run">,
     private readonly cursors: JobStreamCursorsStore,
+    /**
+     * Registers the shipped list first. Replaying it is harmless (it never
+     * re-enables a board an admin switched off), and without it a new batch
+     * of companies would wait for somebody to run `boards:seed` by hand.
+     */
+    private readonly seed: () => Promise<unknown> = async () => {},
     private readonly now: () => number = Date.now,
     private readonly owner: string = randomUUID(),
   ) {}
@@ -55,9 +61,11 @@ export class BoardDiscoveryService implements OnModuleInit, OnModuleDestroy {
     this.timer.unref?.();
   }
 
-  onModuleDestroy() {
+  /** Frees a lease this process holds: a deployment must not lock the run. */
+  async onModuleDestroy() {
     if (this.first) clearTimeout(this.first);
     if (this.timer) clearInterval(this.timer);
+    if (this.running) await this.cursors.release(DISCOVERY_KEY, this.owner);
   }
 
   async run(): Promise<DiscoveryRunResult> {
@@ -76,6 +84,7 @@ export class BoardDiscoveryService implements OnModuleInit, OnModuleDestroy {
 
       const startedAt = this.now();
       try {
+        await this.seed();
         const report = await this.runner.run();
         result = { ...report, status: "done" };
 
