@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { AuthService } from "../../auth/auth.service";
 import { FeatureModelsAdminService } from "./feature-models.admin.service";
 import { FeatureModelsController } from "./feature-models.controller";
-import { parseModelChoice, parseRoutableFeature } from "./feature-models.validation";
+import { parseBalance, parseModelChoice, parseRoutableFeature } from "./feature-models.validation";
 
 const CLAUDE = { model: "claude-haiku-5-5", provider: "anthropic" as const };
 
@@ -16,13 +16,24 @@ function makeService(anthropicApiKey: string | undefined = "key") {
   };
   const router = { invalidate: vi.fn() };
   const audit = { recordAiModelChange: vi.fn().mockResolvedValue(undefined) };
-  const service = new FeatureModelsAdminService(store, router, audit as never, {
-    anthropicApiKey,
-    defaultModel: "default/model",
-    featureModels: { cv_generation: "openai/gpt-4.1-mini" },
-  });
+  const credit = {
+    clear: vi.fn().mockResolvedValue(undefined),
+    readSummary: vi.fn().mockResolvedValue(null),
+    save: vi.fn().mockResolvedValue(undefined),
+  };
+  const service = new FeatureModelsAdminService(
+    store,
+    router,
+    audit as never,
+    {
+      anthropicApiKey,
+      defaultModel: "default/model",
+      featureModels: { cv_generation: "openai/gpt-4.1-mini" },
+    },
+    credit,
+  );
 
-  return { audit, router, service, store };
+  return { audit, credit, router, service, store };
 }
 
 describe("FeatureModelsAdminService", () => {
@@ -65,6 +76,16 @@ describe("FeatureModelsAdminService", () => {
     expect(store.save).not.toHaveBeenCalled();
   });
 
+  it("saves the balance, and removes it on null", async () => {
+    const { credit, service } = makeService();
+
+    await service.setAnthropicBalance(180.5);
+    expect(credit.save).toHaveBeenCalledWith(180.5);
+
+    await service.setAnthropicBalance(null);
+    expect(credit.clear).toHaveBeenCalled();
+  });
+
   it("audits a return to the default", async () => {
     const { audit, router, service, store } = makeService();
 
@@ -98,6 +119,19 @@ describe("validation", () => {
     expect(() => parseModelChoice(body)).toThrow(BadRequestException);
   });
 
+  it("reads a balance, or null to remove it", () => {
+    expect(parseBalance({ balanceUsd: 200 })).toBe(200);
+    expect(parseBalance({ balanceUsd: 0 })).toBe(0);
+    expect(parseBalance({ balanceUsd: null })).toBeNull();
+  });
+
+  it.each([[{ balanceUsd: -1 }], [{ balanceUsd: "200" }], [{}], [{ balanceUsd: 2_000_000 }]])(
+    "rejects the balance %j",
+    (body) => {
+      expect(() => parseBalance(body)).toThrow(BadRequestException);
+    },
+  );
+
   it("refuses the voice features, which do not run on this pipeline", () => {
     expect(parseRoutableFeature("cv_import")).toBe("cv_import");
     expect(() => parseRoutableFeature("interview_voice")).toThrow(BadRequestException);
@@ -113,6 +147,7 @@ describe("FeatureModelsController", () => {
       choose: vi.fn().mockResolvedValue({}),
       overview: vi.fn().mockResolvedValue({}),
       reset: vi.fn().mockResolvedValue({}),
+      setAnthropicBalance: vi.fn().mockResolvedValue({}),
     };
     const authService = {
       readSessionFromCookieHeader: vi.fn().mockReturnValue({ email: "a@example.com", role }),
@@ -141,6 +176,9 @@ describe("FeatureModelsController", () => {
     expect(() => controller.overview(request)).toThrow(ForbiddenException);
     expect(() => controller.choose("cv_import", CLAUDE, request)).toThrow(ForbiddenException);
     expect(() => controller.reset("cv_import", request)).toThrow(ForbiddenException);
+    expect(() => controller.setAnthropicBalance({ balanceUsd: 1 }, request)).toThrow(
+      ForbiddenException,
+    );
     expect(models.choose).not.toHaveBeenCalled();
   });
 });

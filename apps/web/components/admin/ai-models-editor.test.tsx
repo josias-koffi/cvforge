@@ -6,11 +6,13 @@ import { AiModelsEditor } from "@/components/admin/ai-models-editor"
 
 vi.mock("@/app/(app)/admin/ai-models/actions", () => ({
   chooseAiModel: vi.fn(),
+  saveAnthropicBalance: vi.fn(),
   resetAiModel: vi.fn(),
 }))
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }))
 
 const OVERVIEW: AiFeatureModelsOverview = {
+  anthropicCredit: null,
   anthropicEnabled: true,
   features: [
     { choice: null, defaultModel: "openai/gpt-4.1-mini", feature: "cv_generation" },
@@ -30,6 +32,33 @@ describe("AiModelsEditor", () => {
     expect(html).toContain("openai/gpt-4.1-mini")
     expect(html).toContain("Import de CV")
     expect(html).toContain('aria-label="Modèle pour Import de CV"')
+  })
+
+  it("offers a labelled field for the Claude balance", () => {
+    const html = renderToStaticMarkup(<AiModelsEditor overview={OVERVIEW} />)
+
+    expect(html).toContain("Solde Claude actuel")
+    expect(html).toContain('for="anthropic-balance"')
+    expect(html).not.toContain("Retirer")
+  })
+
+  it("shows the estimate once a balance is entered", () => {
+    const html = renderToStaticMarkup(
+      <AiModelsEditor
+        overview={{
+          ...OVERVIEW,
+          anthropicCredit: {
+            recordedAt: "2026-11-08T10:00:00.000Z",
+            recordedUsd: 200,
+            remainingUsd: 195.5,
+            spentUsd: 4.5,
+          },
+        }}
+      />
+    )
+
+    expect(html).toContain("195,50")
+    expect(html).toContain("Retirer")
   })
 
   it("says why Claude cannot be picked without a key", () => {

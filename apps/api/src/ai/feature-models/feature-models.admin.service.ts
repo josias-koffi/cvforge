@@ -7,6 +7,7 @@ import {
 import { BadRequestException } from "@nestjs/common";
 import type { AdminAuditService } from "../../admin/admin-audit.service";
 import type { OpenRouterConfig } from "../openrouter.config";
+import type { PgAnthropicCreditStore } from "./anthropic-credit.pg-store";
 import type { FeatureModelRouter } from "./feature-model.router";
 import type { PgFeatureModelsStore } from "./feature-models.pg-store";
 
@@ -22,13 +23,18 @@ export class FeatureModelsAdminService {
     private readonly router: Pick<FeatureModelRouter, "invalidate">,
     private readonly audit: Pick<AdminAuditService, "recordAiModelChange">,
     private readonly deployment: DeploymentModels,
+    private readonly credit: Pick<PgAnthropicCreditStore, "clear" | "readSummary" | "save">,
   ) {}
 
   async overview(): Promise<AiFeatureModelsOverview> {
-    const rows = await this.store.listAll();
+    const [rows, anthropicCredit] = await Promise.all([
+      this.store.listAll(),
+      this.credit.readSummary(),
+    ]);
     const choiceOf = new Map(rows.map((row) => [row.feature, row]));
 
     return {
+      anthropicCredit,
       anthropicEnabled: Boolean(this.deployment.anthropicApiKey),
       features: routableAiFeatures.map((feature) => {
         const row = choiceOf.get(feature);
@@ -40,6 +46,14 @@ export class FeatureModelsAdminService {
         };
       }),
     };
+  }
+
+  /** `null` removes the figure, and the estimate with it. */
+  async setAnthropicBalance(balanceUsd: number | null) {
+    if (balanceUsd === null) await this.credit.clear();
+    else await this.credit.save(balanceUsd);
+
+    return this.overview();
   }
 
   async choose(feature: AiFeature, choice: AiModelChoice, actorEmail: string) {

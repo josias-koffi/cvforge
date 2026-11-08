@@ -4,6 +4,7 @@ import {
   type AiFeature,
   type OpenRouterBalanceSummary,
 } from "@cvforge/types";
+import type { PgAnthropicCreditStore } from "../../ai/feature-models/anthropic-credit.pg-store";
 import type { OpenRouterBalanceService } from "../../ai/openrouter-balance.service";
 import type { PgRevenueStore } from "../revenue/revenue.pg-store";
 import {
@@ -26,8 +27,7 @@ export class AiCostMetricsService {
     private readonly revenue: Pick<PgRevenueStore, "readCreditValueCents">,
     private readonly balance: BalanceReader,
     private readonly usdToEurRate: number,
-    /** Prepaid Claude credit in USD; null when none is declared. */
-    private readonly anthropicCreditUsd: number | null = null,
+    private readonly anthropicCredit: Pick<PgAnthropicCreditStore, "readSummary">,
   ) {}
 
   async read(window: ResolvedWindow): Promise<AiCostMetrics> {
@@ -35,7 +35,7 @@ export class AiCostMetricsService {
     // Units billed before tracking began have no cost to set against them:
     // counting them would make every unit look cheaper than it is.
     const measured = clampToTracking(window.current, trackingSince);
-    const [current, previous, series, features, models, credits, creditValue, balance, anthropicSpend] =
+    const [current, previous, series, features, models, credits, creditValue, balance, anthropicCredit] =
       await Promise.all([
         this.store.readTotals(window.current),
         window.previous ? this.store.readTotals(window.previous) : Promise.resolve(null),
@@ -45,21 +45,14 @@ export class AiCostMetricsService {
         this.store.readCreditsCharged(measured),
         this.revenue.readCreditValueCents(),
         this.balance.isEnabled ? this.balance.getBalance() : Promise.resolve(null),
-        this.store.readAnthropicSpend(),
+        this.anthropicCredit.readSummary(),
       ]);
     // The daily pace is read over the days actually measured, not the whole
     // period: a week that started being tracked this morning is one day.
     const days = rangeDays(measured, window.now, trackingSince);
 
     return {
-      anthropicCredit:
-        this.anthropicCreditUsd === null
-          ? null
-          : {
-              creditUsd: this.anthropicCreditUsd,
-              remainingUsd: Math.max(this.anthropicCreditUsd - anthropicSpend, 0),
-              spentUsd: anthropicSpend,
-            },
+      anthropicCredit,
       balance: summarizeBalance(balance, current.costUsd, days),
       creditValueEurCents: creditValue === null ? null : Math.round(creditValue * 10) / 10,
       features,

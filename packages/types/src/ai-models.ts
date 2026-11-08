@@ -1,3 +1,4 @@
+import type { AnthropicCreditSummary } from "./admin-metrics";
 import { aiFeatures, type AiFeature } from "./ai-usage";
 
 /** Who a text call can be sent to. */
@@ -85,5 +86,7 @@ export type AiFeatureModelRow = {
 export type AiFeatureModelsOverview = {
   /** False until ANTHROPIC_API_KEY is set: Claude cannot be picked. */
   anthropicEnabled: boolean;
+  /** Null until a balance is entered. */
+  anthropicCredit: AnthropicCreditSummary | null;
   features: AiFeatureModelRow[];
 };

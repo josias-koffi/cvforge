@@ -2,7 +2,7 @@ import { Body, Controller, Delete, Get, Inject, Param, Put, Req } from "@nestjs/
 import { AuthService } from "../../auth/auth.service";
 import { requireAdminSession, type CookieRequest } from "../../auth/request-session";
 import { FeatureModelsAdminService } from "./feature-models.admin.service";
-import { parseModelChoice, parseRoutableFeature } from "./feature-models.validation";
+import { parseBalance, parseModelChoice, parseRoutableFeature } from "./feature-models.validation";
 
 @Controller("admin/ai-models")
 export class FeatureModelsController {
@@ -16,6 +16,13 @@ export class FeatureModelsController {
     requireAdminSession(this.authService, request);
 
     return this.models.overview();
+  }
+
+  @Put("anthropic-balance")
+  setAnthropicBalance(@Body() body: unknown, @Req() request: CookieRequest) {
+    requireAdminSession(this.authService, request);
+
+    return this.models.setAnthropicBalance(parseBalance(body));
   }
 
   @Put(":feature")

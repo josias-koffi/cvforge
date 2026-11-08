@@ -8,6 +8,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { formatUsd } from "@/lib/admin-metrics/format"
+import { formatDate } from "@/lib/format"
 
 /** A countdown from our own records: a standard API key cannot read the balance. */
 export function AnthropicCreditCard({ credit }: { credit: AnthropicCreditSummary }) {
@@ -21,11 +22,12 @@ export function AnthropicCreditCard({ credit }: { credit: AnthropicCreditSummary
       </CardHeader>
       <CardContent className="space-y-2 text-sm">
         <p>
-          {formatUsd(credit.spentUsd)} consommés sur {formatUsd(credit.creditUsd)}.
+          {formatUsd(credit.spentUsd)} consommés sur les{" "}
+          {formatUsd(credit.recordedUsd)} relevés le {formatDate(credit.recordedAt)}.
         </p>
         <p className="text-xs text-muted-foreground">
-          Calculé d&apos;après les appels enregistrés et les tarifs publiés. Le solde
-          exact se lit sur la console Claude.
+          Calculé d&apos;après les appels enregistrés et les tarifs publiés. Après une
+          recharge, saisissez le nouveau solde dans Modèles IA.
         </p>
       </CardContent>
     </Card>

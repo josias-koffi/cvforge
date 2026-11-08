@@ -63,3 +63,10 @@ export const aiFeatureModels = pgTable("ai_feature_models", {
   model: text("model").notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+/** A prepaid balance as the admin read it, and when: the start of the countdown. */
+export const aiProviderBalances = pgTable("ai_provider_balances", {
+  provider: text("provider").$type<AiModelProvider>().primaryKey(),
+  balanceUsd: numeric("balance_usd", { precision: 12, scale: 6, mode: "number" }).notNull(),
+  recordedAt: timestamp("recorded_at", { withTimezone: true }).notNull().defaultNow(),
+});

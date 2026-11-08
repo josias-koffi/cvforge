@@ -170,7 +170,10 @@ export type OpenRouterBalanceSummary = {
 };
 
 export type AnthropicCreditSummary = {
-  creditUsd: number;
+  /** The balance the admin read on the Claude console, and when. */
+  recordedUsd: number;
+  recordedAt: string;
+  /** Spent since that reading, from our own records. */
   spentUsd: number;
   remainingUsd: number;
 };
@@ -196,7 +199,7 @@ export type AiCostMetrics = {
   balance: OpenRouterBalanceSummary;
   /**
    * Estimated from our own records: a standard API key cannot read the real
-   * balance. Null when ANTHROPIC_CREDIT_USD is not set.
+   * balance. Null until a balance is entered in /admin/ai-models.
    */
   anthropicCredit: AnthropicCreditSummary | null;
 };

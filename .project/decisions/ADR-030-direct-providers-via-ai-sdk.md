@@ -36,8 +36,9 @@ Every text feature already went through `OpenRouterService.chat()` with a
   is on `node:22-alpine` (22.23 when checked).
 - Current Claude models reject `temperature` and reason by default, which counts as
   output. `anthropic.profiles.ts` sets an output floor and an effort per feature.
-- A standard key cannot read the Anthropic balance. The cockpit shows an estimate:
-  `ANTHROPIC_CREDIT_USD` minus the recorded spend.
+- A standard key cannot read the Anthropic balance. The admin types the balance
+  read on the console in `/admin/ai-models`; the cockpit counts down the calls
+  recorded since that entry, and shows the result as an estimate.
 - Rates are maintained by hand and must follow Anthropic's published list.
 - The privacy policy must name Anthropic before a feature is switched to Claude.
 - `OpenRouterService` now has a misleading name; renaming it touches seven modules

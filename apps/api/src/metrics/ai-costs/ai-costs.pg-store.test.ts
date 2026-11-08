@@ -31,14 +31,6 @@ describe("PgAiCostsStore across providers", () => {
     await database.reset();
   });
 
-  it("counts only direct Claude calls against the prepaid credit", async () => {
-    await insert("anthropic", "claude-haiku-5-5", 1.5);
-    await insert("anthropic", "claude-sonnet-5-5", 2);
-    await insert("openrouter", "anthropic/claude-haiku-5-5", 9);
-
-    await expect(store.readAnthropicSpend()).resolves.toBe(3.5);
-  });
-
   it("keeps a model apart per provider", async () => {
     await insert("anthropic", "same/model", 1);
     await insert("openrouter", "same/model", 2);

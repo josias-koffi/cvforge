@@ -1710,3 +1710,4 @@
 - Après modification de `packages/types`, relancer son build : vitest résout `dist/`.
 - `ENABLE_ZDR_CHAT` du manifest n'est transmis par aucun compose : `data_collection: deny` n'est donc pas envoyé en prod. Non corrigé (hors périmètre, l'activer change le routage).
 - Lint API en échec sur `applications/offer-input.ts` : antérieur à ce travail.
+- Solde Claude : table `ai_provider_balances` (migration 0060), saisi dans `/admin/ai-models`. L'estimation décompte seulement les appels `provider = anthropic` postérieurs à la saisie (`PgAnthropicCreditStore`). Pas de variable d'environnement, pas d'audit : c'est un chiffre d'affichage.
