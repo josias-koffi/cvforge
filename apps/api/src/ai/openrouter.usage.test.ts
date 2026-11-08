@@ -19,7 +19,7 @@ const CONFIG: OpenRouterConfig = {
 };
 const NO_SLEEP_HOOKS = { random: () => 0, sleep: () => Promise.resolve() };
 const MESSAGES = [{ content: "Hello", role: "user" as const }];
-const USAGE = { completion_tokens: 30, cost: 0.0042, prompt_tokens: 500 };
+const USAGE = { completion_tokens: 30, cost: 0.0042, prompt_tokens: 500, total_tokens: 530 };
 
 function collector() {
   const events: AiUsageEvent[] = [];
@@ -40,21 +40,6 @@ function json(body: unknown, status = 200) {
   );
 }
 
-function sse(lines: string[]) {
-  const encoder = new TextEncoder();
-  return Promise.resolve(
-    new Response(
-      new ReadableStream<Uint8Array>({
-        start(controller) {
-          for (const line of lines) controller.enqueue(encoder.encode(line));
-          controller.close();
-        },
-      }),
-      { headers: { "content-type": "text/event-stream" }, status: 200 },
-    ),
-  );
-}
-
 describe("AI usage recording", () => {
   const fetchMock = vi.fn();
 
@@ -69,7 +54,7 @@ describe("AI usage recording", () => {
 
   it("files a completion's feature, model, tokens and cost", async () => {
     fetchMock.mockImplementation(() =>
-      json({ choices: [{ message: { content: "ok" } }], usage: USAGE }),
+      json({ choices: [{ finish_reason: "stop", message: { content: "ok", role: "assistant" } }], usage: USAGE }),
     );
     const { events, recorder } = collector();
 
@@ -86,6 +71,7 @@ describe("AI usage recording", () => {
         fellBack: false,
         model: "primary/chat",
         promptTokens: 500,
+        provider: "openrouter",
         status: "ok",
       }),
     ]);
@@ -93,7 +79,7 @@ describe("AI usage recording", () => {
 
   it("never sends the feature tag to OpenRouter", async () => {
     fetchMock.mockImplementation(() =>
-      json({ choices: [{ message: { content: "ok" } }] }),
+      json({ choices: [{ finish_reason: "stop", message: { content: "ok", role: "assistant" } }] }),
     );
 
     await new OpenRouterService(CONFIG, NO_SLEEP_HOOKS).chat(MESSAGES, {
@@ -108,7 +94,7 @@ describe("AI usage recording", () => {
     fetchMock
       .mockImplementationOnce(() => json({ error: "busy" }, 429))
       .mockImplementationOnce(() =>
-        json({ choices: [{ message: { content: "ok" } }], usage: USAGE }),
+        json({ choices: [{ finish_reason: "stop", message: { content: "ok", role: "assistant" } }], usage: USAGE }),
       );
     const { events, recorder } = collector();
 
@@ -131,27 +117,5 @@ describe("AI usage recording", () => {
     expect(events).toEqual([
       expect.objectContaining({ costUsd: 0, feature: "other", status: "error" }),
     ]);
-  });
-
-  it("reads a stream's usage from its last chunk", async () => {
-    fetchMock.mockImplementation(() =>
-      sse([
-        `data: ${JSON.stringify({ choices: [{ delta: { content: "Hi" } }] })}\n`,
-        `data: ${JSON.stringify({ choices: [{ delta: {} }], usage: USAGE })}\n`,
-        "data: [DONE]\n",
-      ]),
-    );
-    const { events, recorder } = collector();
-    const service = new OpenRouterService(CONFIG, NO_SLEEP_HOOKS, recorder);
-
-    const chunks: string[] = [];
-    for await (const chunk of service.streamChat(MESSAGES, {
-      feature: "other",
-    })) {
-      chunks.push(chunk);
-    }
-
-    expect(chunks).toEqual(["Hi"]);
-    expect(events[0]).toMatchObject({ costUsd: 0.0042, promptTokens: 500 });
   });
 });

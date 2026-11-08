@@ -1,4 +1,5 @@
 import type { AcquisitionTool } from "./acquisition";
+import type { AiBillingProvider } from "./ai-models";
 import type { AiFeature } from "./ai-usage";
 
 /**
@@ -132,6 +133,8 @@ export type AiFeatureCost = {
 };
 
 export type AiModelCost = {
+  /** Who billed these calls: Anthropic, OpenRouter or OpenAI. */
+  provider: AiBillingProvider;
   model: string;
   calls: number;
   costUsd: number;
@@ -166,6 +169,12 @@ export type OpenRouterBalanceSummary = {
   stale: boolean;
 };
 
+export type AnthropicCreditSummary = {
+  creditUsd: number;
+  spentUsd: number;
+  remainingUsd: number;
+};
+
 export type AiCostMetrics = {
   window: MetricsWindow;
   usdToEurRate: number;
@@ -185,6 +194,11 @@ export type AiCostMetrics = {
   /** Average price a credit sold for, all time; null before any sale. */
   creditValueEurCents: number | null;
   balance: OpenRouterBalanceSummary;
+  /**
+   * Estimated from our own records: a standard API key cannot read the real
+   * balance. Null when ANTHROPIC_CREDIT_USD is not set.
+   */
+  anthropicCredit: AnthropicCreditSummary | null;
 };
 
 /* ------------------------------------------------------------------- usage */

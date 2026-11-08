@@ -17,6 +17,7 @@ import {
   ChartSummary,
   MetricsTrendCard,
 } from "@/components/admin/metrics/metrics-trend-card"
+import { AnthropicCreditCard } from "@/components/admin/metrics/anthropic-credit-card"
 import { OpenRouterBalanceCard } from "@/components/admin/metrics/openrouter-balance-card"
 import {
   Empty,
@@ -86,8 +87,9 @@ export function AiCostSections({ data }: { data: AiCostMetrics }) {
   return (
     <>
       <p className="px-4 text-sm text-muted-foreground lg:px-6">
-        Suivi depuis le {formatDate(data.trackingSince)}. Montants OpenRouter en
-        dollars, convertis au taux fixe de {data.usdToEurRate} € pour 1 $.
+        Suivi depuis le {formatDate(data.trackingSince)}. Montants en dollars,
+        convertis au taux fixe de {data.usdToEurRate} € pour 1 $. Coût réel pour
+        OpenRouter, calculé sur les tarifs publiés pour Claude et OpenAI.
       </p>
       <KpiRow items={aiCostKpis(data)} />
       <MetricsGrid>
@@ -109,6 +111,9 @@ export function AiCostSections({ data }: { data: AiCostMetrics }) {
           title="Coût par usage"
         />
         <OpenRouterBalanceCard balance={data.balance} />
+        {data.anthropicCredit ? (
+          <AnthropicCreditCard credit={data.anthropicCredit} />
+        ) : null}
         <div className="@3xl/main:col-span-2">
           <UnitEconomicsTable units={data.units} />
         </div>

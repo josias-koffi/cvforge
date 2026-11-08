@@ -26,6 +26,7 @@ import { OpenRouterBalanceAlertService } from "./openrouter-balance-alert.servic
           db,
           balanceService,
           resolveMetricsConfig(process.env).usdToEurRate,
+          resolveMetricsConfig(process.env).anthropicCreditUsd,
         ),
     },
     {

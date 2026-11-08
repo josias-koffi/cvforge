@@ -1700,3 +1700,13 @@
 - `ListEditor` porte le glisser-déposer (dnd-kit, ids d'interface non enregistrés) pour le profil ET l'éditeur de CV ; types de champ `date` et `period` (`DateField`, `lib/date-patch.ts`).
 - Piège : `normalizeUpdatedCvContent` trie désormais seulement à la génération (`sort: false` à la sauvegarde manuelle), sinon l'ordre choisi était annulé. La traduction reprend les dates structurées de l'original.
 - Lint API en échec sur `applications/offer-input.ts` : antérieur à ce travail.
+
+## 2026-11-08 — Claude en direct et OpenRouter via le Vercel AI SDK (US-181, ADR-030)
+- `chat()` inchangé pour les 11 sites d'appel. Chaque tentative passe par `ai/llm-attempt.ts` ; `llm-model.factory.ts` construit l'appel par provider. `maxRetries: 0` : `runModelChain` garde seul retries et bascule.
+- Le SDK v7 est ESM-only, l'API CommonJS : ça marche par `require(esm)`, Node ≥ 22.12 obligatoire. Vérifié sur l'image `node:22-alpine` contre PostgreSQL 16.
+- Une chaîne contient des `LlmTarget`. Un échec permanent passe à la cible suivante seulement si elle est chez un autre provider : crédit Claude épuisé (400) = bascule OpenRouter.
+- Pièges Claude : pas de `temperature` (400), la réflexion compte en sortie donc `anthropic.profiles.ts` impose un plancher de `maxOutputTokens` et un `effort`. Tarifs dans `packages/types/src/ai-models.ts`, à tenir à jour à la main.
+- Le provider OpenRouter du SDK envoie le message `system` en tableau de parties, plus en chaîne ; il rejette aussi une réponse sans `role` ni `total_tokens` (fixtures de test à jour).
+- Après modification de `packages/types`, relancer son build : vitest résout `dist/`.
+- `ENABLE_ZDR_CHAT` du manifest n'est transmis par aucun compose : `data_collection: deny` n'est donc pas envoyé en prod. Non corrigé (hors périmètre, l'activer change le routage).
+- Lint API en échec sur `applications/offer-input.ts` : antérieur à ce travail.

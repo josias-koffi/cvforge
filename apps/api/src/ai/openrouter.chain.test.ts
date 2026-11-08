@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { openRouterTarget, type LlmTarget } from "./llm-types";
 import { buildChain, runModelChain } from "./openrouter.chain";
 import { OpenRouterRequestError } from "./openrouter.error";
 import { DEFAULT_RETRY_POLICY } from "./openrouter.retry";
@@ -19,20 +20,51 @@ function failWith(status: number) {
 }
 
 function run(chain: string[], attempt: (model: string) => Promise<string>) {
-  return runModelChain(chain, attempt, POLICY, NO_SLEEP_HOOKS);
+  return runModelChain(
+    chain.map(openRouterTarget),
+    (target) => attempt(target.model),
+    POLICY,
+    NO_SLEEP_HOOKS,
+  );
 }
 
 describe("buildChain", () => {
+  const target = openRouterTarget;
+
   it("puts the primary first and never repeats it", () => {
-    expect(buildChain("a/one", ["b/two", "a/one", "c/three"])).toEqual([
-      "a/one",
-      "b/two",
-      "c/three",
-    ]);
+    expect(
+      buildChain(target("a/one"), [target("b/two"), target("a/one"), target("c/three")]),
+    ).toEqual([target("a/one"), target("b/two"), target("c/three")]);
   });
 
   it("is just the primary when there are no fallbacks", () => {
-    expect(buildChain("a/one", [])).toEqual(["a/one"]);
+    expect(buildChain(target("a/one"), [])).toEqual([target("a/one")]);
+  });
+});
+
+describe("runModelChain across providers", () => {
+  const CLAUDE: LlmTarget = { model: "claude-haiku-5-5", provider: "anthropic" };
+  const BACKUP = openRouterTarget("b/two");
+
+  it.each([400, 401, 403])("hands a %i from Claude over to OpenRouter", async (status) => {
+    const attempt = vi
+      .fn()
+      .mockRejectedValueOnce(failWith(status))
+      .mockResolvedValueOnce("from openrouter");
+
+    await expect(
+      runModelChain([CLAUDE, BACKUP], attempt, POLICY, NO_SLEEP_HOOKS),
+    ).resolves.toBe("from openrouter");
+    expect(attempt.mock.calls.map(([target]) => target)).toEqual([CLAUDE, BACKUP]);
+  });
+
+  it("still aborts on a permanent error inside one provider", async () => {
+    const attempt = vi.fn().mockRejectedValue(failWith(400));
+
+    await expect(
+      runModelChain([BACKUP, openRouterTarget("c/three")], attempt, POLICY, NO_SLEEP_HOOKS),
+    ).rejects.toMatchObject({ status: 400 });
+    expect(attempt).toHaveBeenCalledTimes(1);
   });
 });
 

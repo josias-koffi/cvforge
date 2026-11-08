@@ -110,6 +110,7 @@ export class InterviewRealtimeService {
               ? this.realtime.model
               : this.realtime.transcriptionModel,
           promptTokens: usage.inputTokens,
+          provider: "openai",
           status: "ok",
         });
       },

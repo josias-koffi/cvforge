@@ -67,7 +67,7 @@ describe("buildInsights", () => {
         aiCosts: {
           ...input().aiCosts,
           balance: { enabled: true, remainingUsd: 3, runwayDays: 4, stale: false },
-          models: [{ averageDurationMs: 0, calls: 40, completionTokens: 0, costUsd: 1, errorRate: 12.5, fallbackRate: 0, model: "mistral", promptTokens: 0 }],
+          models: [{ averageDurationMs: 0, calls: 40, completionTokens: 0, costUsd: 1, errorRate: 12.5, fallbackRate: 0, model: "mistral", promptTokens: 0, provider: "openrouter" }],
         },
       }),
     );

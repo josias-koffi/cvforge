@@ -63,7 +63,8 @@ const WINDOW = {
 const SNAPSHOT = {
   acquisition: { funnels: [], publicAts: { scans: 0, unlockRate: null, unlocked: 0 }, series: [], window: WINDOW },
   aiCosts: {
-    balance: { enabled: false, remainingUsd: null, runwayDays: null, stale: false },
+    anthropicCredit: null,
+  balance: { enabled: false, remainingUsd: null, runwayDays: null, stale: false },
     creditValueEurCents: null,
     features: [],
     kpis: { averageCallCostUsd: EMPTY_KPI, calls: EMPTY_KPI, costUsd: EMPTY_KPI, errorRate: EMPTY_KPI },

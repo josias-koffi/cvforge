@@ -47,6 +47,7 @@
     "drizzle-kit": "0.31.10"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "4.0.97",
     "@cvforge/ats-score": "workspace:*",
     "@cvforge/document-renderer": "workspace:*",
     "@cvforge/types": "workspace:*",
@@ -54,8 +55,10 @@
     "@nestjs/common": "^11.2.8",
     "@nestjs/core": "^11.2.8",
     "@nestjs/platform-express": "^11.2.8",
+    "@openrouter/ai-sdk-provider": "3.1.0",
     "@tesseract.js-data/eng": "1.0.0",
     "@tesseract.js-data/fra": "1.0.0",
+    "ai": "7.0.163",
     "docx": "^9.6.1",
     "drizzle-orm": "0.45.2",
     "helmet": "^8.3.0",

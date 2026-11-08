@@ -5,6 +5,7 @@ import { AppController } from "./app.controller";
 import { AuthModule } from "./auth/auth.module";
 import { SessionStateMiddleware } from "./auth/session-state.middleware";
 import { SmtpModule } from "./smtp/smtp.module";
+import { FeatureModelsModule } from "./ai/feature-models/feature-models.module";
 import { OpenRouterModule } from "./ai/openrouter.module";
 import { ApplicationsModule } from "./applications/applications.module";
 import { ApplicationRetentionModule } from "./application-retention/application-retention.module";
@@ -44,6 +45,7 @@ import { rateLimitedRoutes } from "./shared/rate-limit/rate-limit.policies";
     AuthModule,
     SmtpModule,
     OpenRouterModule,
+    FeatureModelsModule,
     ApplicationsModule,
     ApplicationRetentionModule,
     AtsModule,

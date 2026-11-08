@@ -3,6 +3,7 @@ import {
   ADMIN_AUDIT_ACCOUNT_DELETED,
   ADMIN_AUDIT_ACCOUNT_REACTIVATED,
   ADMIN_AUDIT_ACCOUNT_SUSPENDED,
+  ADMIN_AUDIT_AI_MODEL_CHANGED,
   ADMIN_AUDIT_CREDITS_GRANTED,
   ADMIN_AUDIT_LEGAL_PUBLISHED,
   ADMIN_AUDIT_ROLE_DEMOTED,
@@ -10,6 +11,7 @@ import {
   adminAuditActions,
   type AdminAuditAction,
   type AdminAuditEntry,
+  type AiFeature,
   type LegalDocumentSlug,
 } from "@cvforge/types";
 import type {
@@ -123,6 +125,19 @@ export class AdminAuditService {
     return this.record(ADMIN_AUDIT_LEGAL_PUBLISHED, {
       actorEmail: input.actorEmail,
       metadata: { legalSlug: input.slug, legalVersion: input.version },
+      targetEmail: null,
+    });
+  }
+
+  /** `model` is `provider:model`, or null for a return to the default. */
+  recordAiModelChange(input: {
+    actorEmail: string;
+    feature: AiFeature;
+    model: string | null;
+  }) {
+    return this.record(ADMIN_AUDIT_AI_MODEL_CHANGED, {
+      actorEmail: input.actorEmail,
+      metadata: { aiFeature: input.feature, aiModel: input.model },
       targetEmail: null,
     });
   }

@@ -21,6 +21,9 @@ describe("AiCostSections", () => {
     expect(content).toContain("openai/gpt-5-mini")
     expect(content).toContain("Environ 5 jours d'autonomie")
     expect(content).toContain("À recharger")
+    expect(content).toContain("OpenRouter")
+    expect(content).toContain("Crédit Claude restant (estimation)")
+    expect(content).toContain("200,00 $US")
     // A unit that loses money is flagged in red.
     expect(html).toMatch(/text-destructive[^>]*>-25 %/)
   })

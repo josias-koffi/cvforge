@@ -29,13 +29,24 @@ export class CockpitService {
   readonly market: MarketMetricsService;
   readonly acquisition: AcquisitionMetricsService;
 
-  constructor(db: Database, balance: BalanceReader, usdToEurRate: number) {
+  constructor(
+    db: Database,
+    balance: BalanceReader,
+    usdToEurRate: number,
+    anthropicCreditUsd: number | null = null,
+  ) {
     const activity = new PgActivityStore(db);
     const revenueStore = new PgRevenueStore(db);
     const aiCostsStore = new PgAiCostsStore(db);
 
     this.revenue = new RevenueMetricsService(revenueStore, activity);
-    this.aiCosts = new AiCostMetricsService(aiCostsStore, revenueStore, balance, usdToEurRate);
+    this.aiCosts = new AiCostMetricsService(
+      aiCostsStore,
+      revenueStore,
+      balance,
+      usdToEurRate,
+      anthropicCreditUsd,
+    );
     this.usage = new UsageMetricsService(new PgUsageStore(db));
     this.market = new MarketMetricsService(new PgMarketStore(db));
     this.acquisition = new AcquisitionMetricsService(new PgAcquisitionMetricsStore(db));

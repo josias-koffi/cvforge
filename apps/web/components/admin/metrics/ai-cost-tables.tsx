@@ -24,7 +24,7 @@ import {
   formatUsd,
   ratio,
 } from "@/lib/admin-metrics/format"
-import { aiFeatureLabels, creditActionLabel } from "@/lib/admin-metrics/labels"
+import { aiFeatureLabels, aiProviderLabels, creditActionLabel } from "@/lib/admin-metrics/labels"
 
 /** Below this margin a unit barely pays for its AI: the cockpit insights use the same 30 %. */
 export const THIN_MARGIN_RATE = 30
@@ -188,6 +188,7 @@ export function ModelsTable({ models }: { models: AiCostMetrics["models"] }) {
         <TableHeader>
           <TableRow>
             <TableHead>Modèle</TableHead>
+            <TableHead>Fournisseur</TableHead>
             <TableHead className="text-right">Appels</TableHead>
             <TableHead className="text-right">Tokens</TableHead>
             <TableHead className="text-right">Coût</TableHead>
@@ -198,8 +199,9 @@ export function ModelsTable({ models }: { models: AiCostMetrics["models"] }) {
         </TableHeader>
         <TableBody>
           {models.map((row) => (
-            <TableRow key={row.model}>
+            <TableRow key={`${row.provider}:${row.model}`}>
               <TableCell className="font-mono text-xs">{row.model}</TableCell>
+              <TableCell>{aiProviderLabels[row.provider]}</TableCell>
               <TableCell className={NUMERIC}>
                 {formatCount(row.calls)}
               </TableCell>

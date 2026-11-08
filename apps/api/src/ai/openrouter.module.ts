@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { DATABASE, type Database } from '../database/database.types';
 import type { AiUsageRecorder } from './ai-usage';
+import { FeatureModelRouter } from './feature-models/feature-model.router';
+import { PgFeatureModelsStore } from './feature-models/feature-models.pg-store';
 import { PgAiUsageRecorder } from './ai-usage.pg-recorder';
 import { resolveOpenRouterBalanceConfig } from './openrouter-balance.config';
 import { OpenRouterBalanceService } from './openrouter-balance.service';
@@ -14,6 +16,7 @@ export const OPENROUTER_BALANCE_SERVICE = Symbol('OPENROUTER_BALANCE_SERVICE');
 /** The live interview's voice, straight to OpenAI rather than via OpenRouter (ADR-026). */
 export const OPENAI_REALTIME_SERVICE = Symbol('OPENAI_REALTIME_SERVICE');
 export const AI_USAGE_RECORDER = Symbol('AI_USAGE_RECORDER');
+export const FEATURE_MODEL_ROUTER = Symbol('FEATURE_MODEL_ROUTER');
 
 @Module({
   providers: [
@@ -24,10 +27,15 @@ export const AI_USAGE_RECORDER = Symbol('AI_USAGE_RECORDER');
       useFactory: (db: Database) => new PgAiUsageRecorder(db),
     },
     {
+      provide: FEATURE_MODEL_ROUTER,
+      inject: [DATABASE],
+      useFactory: (db: Database) => new FeatureModelRouter(new PgFeatureModelsStore(db)),
+    },
+    {
       provide: OPENROUTER_SERVICE,
-      inject: [AI_USAGE_RECORDER],
-      useFactory: (recorder: AiUsageRecorder) =>
-        new OpenRouterService(resolveOpenRouterConfig(), {}, recorder),
+      inject: [AI_USAGE_RECORDER, FEATURE_MODEL_ROUTER],
+      useFactory: (recorder: AiUsageRecorder, router: FeatureModelRouter) =>
+        new OpenRouterService(resolveOpenRouterConfig(), {}, recorder, router),
     },
     {
       provide: OPENROUTER_BALANCE_SERVICE,
@@ -46,6 +54,7 @@ export const AI_USAGE_RECORDER = Symbol('AI_USAGE_RECORDER');
     OPENROUTER_BALANCE_SERVICE,
     OPENAI_REALTIME_SERVICE,
     AI_USAGE_RECORDER,
+    FEATURE_MODEL_ROUTER,
   ],
 })
 export class OpenRouterModule {}

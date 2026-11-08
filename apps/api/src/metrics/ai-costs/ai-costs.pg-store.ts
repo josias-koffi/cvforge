@@ -78,10 +78,11 @@ export class PgAiCostsStore {
         fallbacks: sql<string>`count(*) filter (where ${aiUsageEvents.fellBack})`,
         model: aiUsageEvents.model,
         promptTokens: sum(aiUsageEvents.promptTokens),
+        provider: aiUsageEvents.provider,
       })
       .from(aiUsageEvents)
       .where(inRange(aiUsageEvents.createdAt, range))
-      .groupBy(aiUsageEvents.model)
+      .groupBy(aiUsageEvents.model, aiUsageEvents.provider)
       .orderBy(sql`sum(${aiUsageEvents.costUsd}) desc`);
 
     return rows.map((row) => ({
@@ -93,7 +94,18 @@ export class PgAiCostsStore {
       fallbacks: toNumber(row.fallbacks),
       model: row.model,
       promptTokens: toNumber(row.promptTokens),
+      provider: row.provider,
     }));
+  }
+
+  /** Everything computed against Anthropic's prepaid credit, all time. */
+  async readAnthropicSpend(): Promise<number> {
+    const [row] = await this.db
+      .select({ costUsd: sum(aiUsageEvents.costUsd) })
+      .from(aiUsageEvents)
+      .where(eq(aiUsageEvents.provider, "anthropic"));
+
+    return toNumber(row?.costUsd);
   }
 
   /** The first call ever recorded: costs before it were never measured. */

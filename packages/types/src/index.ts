@@ -1,3 +1,4 @@
+import type { AiFeature } from "./ai-usage";
 import type { JobAlertPreferences } from "./job-alerts";
 import type { Locale } from "./locale";
 
@@ -7,6 +8,7 @@ export * from "./driving-license";
 export * from "./grounding";
 export * from "./acquisition";
 export * from "./admin-metrics";
+export * from "./ai-models";
 export * from "./ai-usage";
 export * from "./companies";
 export * from "./company-check";
@@ -76,6 +78,8 @@ export const ADMIN_AUDIT_CREDITS_GRANTED = "credits_granted" as const;
 export const ADMIN_AUDIT_SESSIONS_REVOKED = "sessions_revoked" as const;
 /** Publishing a legal document is an opposable decision; it is logged too. */
 export const ADMIN_AUDIT_LEGAL_PUBLISHED = "legal_published" as const;
+/** Which model answers a feature changes its cost and its quality. */
+export const ADMIN_AUDIT_AI_MODEL_CHANGED = "ai_model_changed" as const;
 
 export const adminAuditActions = [
   ADMIN_AUDIT_ACCOUNT_SUSPENDED,
@@ -85,6 +89,7 @@ export const adminAuditActions = [
   ADMIN_AUDIT_CREDITS_GRANTED,
   ADMIN_AUDIT_SESSIONS_REVOKED,
   ADMIN_AUDIT_LEGAL_PUBLISHED,
+  ADMIN_AUDIT_AI_MODEL_CHANGED,
 ] as const;
 export type AdminAuditAction = (typeof adminAuditActions)[number];
 
@@ -102,6 +107,9 @@ export interface AdminAuditEntry {
     /** Which legal document was published, and at which version. */
     legalSlug?: LegalDocumentSlug;
     legalVersion?: number;
+    /** Which feature changed model, and to what; null means back to the default. */
+    aiFeature?: AiFeature;
+    aiModel?: string | null;
   };
   createdAt: string;
 }

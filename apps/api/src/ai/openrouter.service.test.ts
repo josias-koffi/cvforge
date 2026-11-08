@@ -28,7 +28,7 @@ const MESSAGES: ChatMessage[] = [{ role: 'user', content: 'Hello' }];
 function makeResponse(content: string, status = 200) {
   return Promise.resolve(
     new Response(
-      JSON.stringify({ choices: [{ message: { content } }] }),
+      JSON.stringify({ choices: [{ finish_reason: 'stop', message: { content, role: 'assistant' } }] }),
       { status, headers: { 'Content-Type': 'application/json' } },
     ),
   );
@@ -160,7 +160,7 @@ describe('OpenRouterService', () => {
     await svc.chat(MESSAGES);
 
     const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
-    expect((init.headers as Record<string, string>)['Authorization']).toBe('Bearer test-key');
+    expect(new Headers(init.headers).get('authorization')).toBe('Bearer test-key');
   });
 
   it('returns the text content from the response', async () => {
@@ -175,7 +175,7 @@ describe('OpenRouterService', () => {
       Promise.resolve(new Response('{"error":"model not found"}', { status: 404, statusText: 'Not Found' })),
     );
     const svc = new OpenRouterService(BASE_CONFIG);
-    await expect(svc.chat(MESSAGES)).rejects.toThrow('OpenRouter request failed (mistralai/mistral-small-2603): 404');
+    await expect(svc.chat(MESSAGES)).rejects.toThrow('AI request failed (mistralai/mistral-small-2603): 404');
   });
 
   it('throws when response has no choices content', async () => {
@@ -189,37 +189,6 @@ describe('OpenRouterService', () => {
     );
     const svc = new OpenRouterService(BASE_CONFIG);
     await expect(svc.chat(MESSAGES)).rejects.toThrow('no content');
-  });
-
-  it('streams chat completion chunks via streamChat', async () => {
-    const ssePayload = [
-      'data: {"choices":[{"delta":{"content":"Bonne "}}]}\n',
-      'data: {"choices":[{"delta":{"content":"reponse!"}}]}\n',
-      'data: [DONE]\n',
-    ].join('\n');
-
-    const sseBody = new ReadableStream({
-      start(controller) {
-        controller.enqueue(new TextEncoder().encode(ssePayload));
-        controller.close();
-      },
-    });
-
-    fetchMock.mockImplementation(() =>
-      Promise.resolve(new Response(sseBody, { status: 200 })),
-    );
-
-    const svc = new OpenRouterService(BASE_CONFIG);
-    const collected: string[] = [];
-    for await (const chunk of svc.streamChat(MESSAGES)) {
-      collected.push(chunk);
-    }
-
-    expect(collected).toEqual(['Bonne ', 'reponse!']);
-
-    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
-    const body = JSON.parse(init.body as string);
-    expect(body.stream).toBe(true);
   });
 
   it('omits data_collection on chat when enableZdrChat is false', async () => {
@@ -257,15 +226,6 @@ describe('OpenRouterService', () => {
       order: ['mistral'],
       require_parameters: true,
     });
-  });
-
-  it('throws on non-OK response from streamChat', async () => {
-    fetchMock.mockImplementation(() =>
-      Promise.resolve(new Response('{"error":"model not found"}', { status: 404, statusText: 'Not Found' })),
-    );
-    const svc = new OpenRouterService(BASE_CONFIG);
-    const gen = svc.streamChat(MESSAGES);
-    await expect(gen.next()).rejects.toThrow('OpenRouter stream failed (mistralai/mistral-small-2603): 404');
   });
 
   /** Each request carries exactly one model; the chain is walked by us. */
@@ -387,7 +347,7 @@ describe('OpenRouterService', () => {
     fetchMock.mockImplementation(() => makeErrorResponse(429));
 
     await expect(makeService({ maxAttempts: 2 }).chat(MESSAGES)).rejects.toThrow(
-      'OpenRouter request failed (mistralai/mistral-small-2603): 429',
+      'AI request failed (mistralai/mistral-small-2603): 429',
     );
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
@@ -419,25 +379,4 @@ describe('OpenRouterService', () => {
     await expect(makeService().chat(MESSAGES)).resolves.toBe('Recovered');
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
-
-  it('retries a 429 on streamChat too', async () => {
-    const sseBody = new ReadableStream({
-      start(controller) {
-        controller.enqueue(
-          new TextEncoder().encode('data: {"choices":[{"delta":{"content":"hi"}}]}\n\ndata: [DONE]\n'),
-        );
-        controller.close();
-      },
-    });
-    fetchMock
-      .mockImplementationOnce(() => makeErrorResponse(429))
-      .mockImplementationOnce(() => Promise.resolve(new Response(sseBody, { status: 200 })));
-
-    const collected: string[] = [];
-    for await (const chunk of makeService().streamChat(MESSAGES)) collected.push(chunk);
-
-    expect(collected).toEqual(['hi']);
-    expect(fetchMock).toHaveBeenCalledTimes(2);
-  });
-
 });

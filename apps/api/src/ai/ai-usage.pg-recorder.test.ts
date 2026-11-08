@@ -31,6 +31,7 @@ describe("PgAiUsageRecorder", () => {
       fellBack: true,
       feature: "cv_generation",
       model: "openai/gpt-4.1-nano",
+      provider: "openrouter",
       promptTokens: 500,
       status: "ok",
     });
@@ -42,6 +43,7 @@ describe("PgAiUsageRecorder", () => {
         feature: "cv_generation",
         fellBack: true,
         model: "openai/gpt-4.1-nano",
+        provider: "openrouter",
         promptTokens: 500,
       }),
     ]);
@@ -55,6 +57,7 @@ describe("PgAiUsageRecorder", () => {
         durationMs: 0,
         fellBack: false,
         feature: "other",
+        provider: "openrouter",
         model: "m",
         promptTokens: 0,
         status: "pending" as never,
