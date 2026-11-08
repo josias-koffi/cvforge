@@ -1,4 +1,4 @@
-import type { AiFeature } from "@cvforge/types";
+import type { AiBillingProvider, AiFeature, AiModelProvider } from "@cvforge/types";
 import { sql } from "drizzle-orm";
 import {
   boolean,
@@ -13,7 +13,7 @@ import {
 } from "drizzle-orm/pg-core";
 
 /**
- * One row per call to OpenRouter (US-154), with what the provider says it cost.
+ * One row per AI call (US-154), with what it cost.
  *
  * Before this, the only cost we knew was the account's spend since it was
  * opened: nothing said what a CV costs, which model is expensive, or whether a
@@ -26,11 +26,16 @@ export const aiUsageEvents = pgTable(
   {
     id: uuid("id").primaryKey().defaultRandom(),
     feature: text("feature").$type<AiFeature>().notNull(),
+    /** Who billed the call, so each prepaid balance can be followed. */
+    provider: text("provider").$type<AiBillingProvider>().notNull().default("openrouter"),
     /** The model that answered, which is not the primary after a fallback. */
     model: text("model").notNull(),
     promptTokens: integer("prompt_tokens").notNull().default(0),
     completionTokens: integer("completion_tokens").notNull().default(0),
-    /** OpenRouter's `usage.cost`, in USD. Zero for a failed call. */
+    /**
+     * In USD. OpenRouter's `usage.cost` as charged; computed from the published
+     * rates for a direct provider, which returns tokens only. Zero for a failure.
+     */
     costUsd: numeric("cost_usd", { precision: 12, scale: 6, mode: "number" })
       .notNull()
       .default(0),
@@ -47,3 +52,14 @@ export const aiUsageEvents = pgTable(
     check("ai_usage_events_status_valid", sql`${table.status} in ('ok', 'error')`),
   ],
 );
+
+/**
+ * The admin's model for a feature. No row means the deployment's own chain, so
+ * an empty table is exactly the behaviour from before this table existed.
+ */
+export const aiFeatureModels = pgTable("ai_feature_models", {
+  feature: text("feature").$type<AiFeature>().primaryKey(),
+  provider: text("provider").$type<AiModelProvider>().notNull(),
+  model: text("model").notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});

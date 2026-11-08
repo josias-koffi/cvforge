@@ -17,6 +17,8 @@ export interface OpenRouterConfig {
   maxAttempts: number;
   enableZdrChat: boolean;
   enableZdrStt: boolean;
+  /** Optional: without it Claude cannot be picked and everything uses OpenRouter. */
+  anthropicApiKey?: string;
 }
 
 /**
@@ -78,5 +80,6 @@ export function resolveOpenRouterConfig(): OpenRouterConfig {
     ),
     enableZdrChat: process.env.ENABLE_ZDR_CHAT === 'true',
     enableZdrStt: process.env.ENABLE_ZDR_STT === 'true',
+    anthropicApiKey: nonEmpty(process.env.ANTHROPIC_API_KEY),
   };
 }

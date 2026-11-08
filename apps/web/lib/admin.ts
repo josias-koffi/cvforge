@@ -33,7 +33,9 @@ export const auditActionLabels = {
   account_deleted: "Compte supprime",
   account_reactivated: "Compte reactive",
   account_suspended: "Compte suspendu",
+  ai_model_changed: "Modele IA modifie",
   credits_granted: "Credits attribues",
+  legal_published: "Document legal publie",
   role_demoted: "Retrograde en utilisateur",
   sessions_revoked: "Sessions revoquees",
 } as const
@@ -46,7 +48,12 @@ export type AdminAuditEntry = {
   action: AdminAuditAction
   targetEmail: string | null
   note: string | null
-  metadata: { credits?: number; previousRole?: "admin" | "user" }
+  metadata: {
+    credits?: number
+    previousRole?: "admin" | "user"
+    aiFeature?: string
+    aiModel?: string | null
+  }
   createdAt: string
 }
 

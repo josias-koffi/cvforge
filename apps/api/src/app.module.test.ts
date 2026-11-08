@@ -6,6 +6,7 @@ import { AppController } from "./app.controller";
 import { AppModule } from "./app.module";
 import { AuthModule } from "./auth/auth.module";
 import { SmtpModule } from "./smtp/smtp.module";
+import { FeatureModelsModule } from "./ai/feature-models/feature-models.module";
 import { OpenRouterModule } from "./ai/openrouter.module";
 import { ApplicationsModule } from "./applications/applications.module";
 import { ApplicationRetentionModule } from "./application-retention/application-retention.module";
@@ -48,6 +49,7 @@ describe("AppModule", () => {
       AuthModule,
       SmtpModule,
       OpenRouterModule,
+      FeatureModelsModule,
       ApplicationsModule,
       ApplicationRetentionModule,
       AtsModule,

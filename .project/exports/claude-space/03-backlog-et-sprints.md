@@ -32,6 +32,7 @@
 | E28 | 035 | Durées de conservation des offres et des candidatures | Une offre fermée est anonymisée tout de suite (licence France Travail), toute offre est purgée après 30 jours sauf si une candidature active s'y rattache, et une candidature sans activité depuis un an est supprimée après un rappel ; la politique de confidentialité l'annonce | 035 | Demande propriétaire du 2026-09-28 ; à livrer avant E27 |
 | E29 | 036 | Postuler depuis sa propre boîte mail | Le candidat connecte Gmail ou Outlook (permission d'envoi seule) et envoie CV et lettre au recruteur depuis CVForge, depuis sa vraie adresse ; brouillon pré-rempli pour les autres messageries ; envoi gratuit, un destinataire par envoi, 20 par jour | 036 | **Hors vision** — demande propriétaire du 2026-09-28 ; ADR-028 |
 | E30 | 037 | Plus d'entreprises : Workday et les logiciels vus sur JobTeaser | Les offres que JobTeaser relaie sont lues à la source, dans le logiciel de recrutement de l'entreprise : adaptateur Workday (sitemap + `JobPosting`), adaptateurs Workable, Recruitee, Personio et Welcome Kit, ajout en masse d'entreprises depuis l'admin ; `robots.txt` respecté, CGU relues, retrait sur demande, affichage minimal ; JobTeaser n'est jamais lu par un programme | 037 | Demande propriétaire du 2026-09-28 ; ADR-029 ; étend E19/E20 |
+| E31 | hors sprint | Modèle IA par fonctionnalité | Claude en direct et OpenRouter via le Vercel AI SDK ; choix du modèle par fonctionnalité dans l'admin ; coût par fournisseur et crédit Claude estimé dans le cockpit | — | **Hors vision** — demande propriétaire du 2026-11-08 ; ADR-030 |
 
 ## Estimate Scale
 
@@ -174,6 +175,7 @@ Référence de gate: le spec impose des branches courtes et des PRs <= 400 ligne
 | US-178 | Adaptateur Workday : détection `{tenant}.wd{N}.myworkdayjobs.com`, sitemap puis `JobPosting` des offres nouvelles, filtre France et 30 jours, contrat déduit du titre, offres gardées seulement si elles correspondent à une recherche active | E30 | M | P0 | 037 | Demande propriétaire du 2026-09-28 ; banc d'essai sur 5 entreprises |
 | US-179 | Ajout en masse d'entreprises (100 URL d'offres) dans `/admin/job-search`, tableau « Logiciels à couvrir », Common Crawl sur `*.myworkdayjobs.com` | E30 | S | P1 | 037 | Demande propriétaire du 2026-09-28 |
 | US-180 | Adaptateurs Workable, Recruitee, Personio et Welcome Kit (reconnus mais jamais collectés), conditions d'utilisation relues avant production | E30 | M | P1 | 037 | Décision du 2026-09-22 restée sans adaptateur |
+| US-181 | Choix du modèle par fonctionnalité dans `/admin/ai-models`, Claude en direct et OpenRouter via le Vercel AI SDK, coût et crédit Claude dans le cockpit (ADR-030) | E31 | M | P1 | hors sprint | Demande propriétaire du 2026-11-08 |
 
 ## Critères d'acceptation détaillés — E16
 

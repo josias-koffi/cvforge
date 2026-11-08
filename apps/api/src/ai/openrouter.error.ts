@@ -1,3 +1,5 @@
+import { APICallError, NoContentGeneratedError } from "ai";
+
 /**
  * OpenRouter surfaces two very different kinds of 429: its own platform limits,
  * and an upstream provider throttling the shared credit pool (the common case
@@ -47,28 +49,45 @@ export function isModelUnavailable(error: unknown): boolean {
   return error instanceof OpenRouterRequestError && error.status === 404;
 }
 
+/** Stands in for an HTTP status when no answer ever came back. */
+const NO_RESPONSE_STATUS = 502;
+
+/** A 200 with nothing in it: a refusal, or an upstream that gave up silently. */
+const EMPTY_CONTENT_STATUS = 422;
+
+export function buildEmptyContentError(model: string): OpenRouterRequestError {
+  return new OpenRouterRequestError(
+    `AI response contained no content (${model})`,
+    EMPTY_CONTENT_STATUS,
+    "",
+    null,
+    null,
+    model,
+  );
+}
+
 /**
- * Builds the error from a failed response, reading the body only once: the
- * caller cannot re-read it afterwards, so the raw text is kept in `detail`.
+ * Brings the SDK's errors back to the one the retry policy and the HTTP mapping
+ * understand. A socket failure stays the `TypeError` that counts as transient.
  */
-export async function buildOpenRouterError(
-  response: Response,
-  operation: string,
-  model: string | null = null,
-): Promise<OpenRouterRequestError> {
-  let detail = "";
-  try {
-    detail = await response.text();
-  } catch {
-    // A body that cannot be read must not hide the status code.
+export function toLlmRequestError(error: unknown, model: string): unknown {
+  if (NoContentGeneratedError.isInstance(error)) return buildEmptyContentError(model);
+  if (!APICallError.isInstance(error)) return error;
+  if (error.cause instanceof TypeError) return error.cause;
+
+  // A 2xx the SDK refused to parse holds no usable answer, like an empty one.
+  if (error.statusCode !== undefined && error.statusCode < 300) {
+    return buildEmptyContentError(model);
   }
 
+  const status = error.statusCode ?? NO_RESPONSE_STATUS;
+  const detail = error.responseBody ?? "";
+
   return new OpenRouterRequestError(
-    `${operation}${model ? ` (${model})` : ""}: ${response.status} ${response.statusText}` +
-      `${detail ? ` — ${detail}` : ""}`,
-    response.status,
+    `AI request failed (${model}): ${status}${detail ? ` — ${detail}` : ""}`,
+    status,
     detail,
-    parseRetryAfterMs(response.headers.get("Retry-After")),
+    parseRetryAfterMs(error.responseHeaders?.["retry-after"] ?? null),
     parseProviderName(detail),
     model,
   );

@@ -39,6 +39,10 @@ function detailOf(entry: AdminAuditEntry) {
     parts.push(`ancien rôle : ${entry.metadata.previousRole}`)
   }
 
+  if (entry.metadata.aiFeature) {
+    parts.push(`${entry.metadata.aiFeature} → ${entry.metadata.aiModel ?? "défaut"}`)
+  }
+
   if (entry.note) {
     parts.push(entry.note)
   }

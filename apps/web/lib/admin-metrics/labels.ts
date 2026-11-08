@@ -1,4 +1,4 @@
-import type { AcquisitionTool, AiFeature } from "@cvforge/types"
+import type { AcquisitionTool, AiBillingProvider, AiFeature } from "@cvforge/types"
 
 /** What each tagged AI call was for, in the owner's words. */
 export const aiFeatureLabels: Record<AiFeature, string> = {
@@ -16,6 +16,12 @@ export const aiFeatureLabels: Record<AiFeature, string> = {
   job_digest_rerank: "Tri des offres du jour",
   job_alert_enrich: "Analyse IA des alertes",
   other: "Autre",
+}
+
+export const aiProviderLabels: Record<AiBillingProvider, string> = {
+  anthropic: "Claude (direct)",
+  openai: "OpenAI (direct)",
+  openrouter: "OpenRouter",
 }
 
 /** The landing's free tools, named as the visitor sees them. */

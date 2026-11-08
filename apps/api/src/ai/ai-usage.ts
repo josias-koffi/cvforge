@@ -1,9 +1,10 @@
 import { Logger } from "@nestjs/common";
-import type { AiFeature } from "@cvforge/types";
+import type { AiBillingProvider, AiFeature } from "@cvforge/types";
 
 /** One AI call as the cockpit counts it (US-154). */
 export type AiUsageEvent = {
   feature: AiFeature;
+  provider: AiBillingProvider;
   model: string;
   promptTokens: number;
   completionTokens: number;
@@ -39,36 +40,13 @@ function count(value: unknown): number {
     : 0;
 }
 
-/**
- * OpenRouter's `usage` object to our figures, or null when the payload has
- * none. OpenRouter always sends it — on the body of a completion, on the last
- * chunk of a stream — and `cost` is what the account is actually charged.
- */
-export function readUsage(payload: unknown): UsageFigures | null {
-  if (!payload || typeof payload !== "object") return null;
-  const usage = (payload as { usage?: unknown }).usage;
-  if (!usage || typeof usage !== "object") return null;
-  const raw = usage as Record<string, unknown>;
+/** What OpenRouter charged for a call, from the SDK's provider metadata. */
+export function readCost(providerMetadata: unknown): number {
+  const metadata = providerMetadata as
+    | { openrouter?: { usage?: { cost?: unknown } } }
+    | undefined;
 
-  return {
-    completionTokens: Math.round(count(raw.completion_tokens)),
-    costUsd: count(raw.cost),
-    promptTokens: Math.round(count(raw.prompt_tokens)),
-  };
-}
-
-/** The same, from one SSE line; null for any line that carries no usage. */
-export function readUsageFrame(line: string): UsageFigures | null {
-  const trimmed = line.trim();
-  if (!trimmed.startsWith("data:")) return null;
-  const payload = trimmed.slice(5).trim();
-  if (!payload.includes('"usage"')) return null;
-
-  try {
-    return readUsage(JSON.parse(payload));
-  } catch {
-    return null;
-  }
+  return count(metadata?.openrouter?.usage?.cost);
 }
 
 const logger = new Logger("AiUsage");

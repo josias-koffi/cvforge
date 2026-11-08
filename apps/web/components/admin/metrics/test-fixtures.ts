@@ -135,6 +135,7 @@ export const EMPTY_REVENUE: RevenueMetrics = {
 }
 
 export const AI_COSTS: AiCostMetrics = {
+  anthropicCredit: { creditUsd: 215, remainingUsd: 200, spentUsd: 15 },
   balance: { enabled: true, remainingUsd: 12.5, runwayDays: 5.4, stale: false },
   creditValueEurCents: 40,
   features: [
@@ -163,6 +164,7 @@ export const AI_COSTS: AiCostMetrics = {
       fallbackRate: 10,
       model: "openai/gpt-5-mini",
       promptTokens: 50000,
+      provider: "openrouter",
     },
   ],
   series: [{ cv_generation: 1.2, date: "2026-09-25" }],
@@ -190,6 +192,7 @@ export const AI_COSTS: AiCostMetrics = {
 }
 
 export const EMPTY_AI_COSTS: AiCostMetrics = {
+  anthropicCredit: null,
   balance: {
     enabled: false,
     remainingUsd: null,
