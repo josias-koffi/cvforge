@@ -5,6 +5,7 @@ import { AuthModule } from "../../auth/auth.module";
 import { DATABASE, type Database } from "../../database/database.types";
 import { resolveOpenRouterConfig } from "../openrouter.config";
 import { FEATURE_MODEL_ROUTER, OpenRouterModule } from "../openrouter.module";
+import { PgAnthropicCreditStore } from "./anthropic-credit.pg-store";
 import type { FeatureModelRouter } from "./feature-model.router";
 import { FeatureModelsAdminService } from "./feature-models.admin.service";
 import { FeatureModelsController } from "./feature-models.controller";
@@ -23,6 +24,7 @@ import { PgFeatureModelsStore } from "./feature-models.pg-store";
           router,
           audit,
           resolveOpenRouterConfig(),
+          new PgAnthropicCreditStore(db),
         ),
     },
   ],

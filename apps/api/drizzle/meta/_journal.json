@@ -421,6 +421,13 @@
       "when": 1794400000000,
       "tag": "0059_ai_feature_models",
       "breakpoints": true
+    },
+    {
+      "idx": 60,
+      "version": "7",
+      "when": 1794500000000,
+      "tag": "0060_ai_provider_balances",
+      "breakpoints": true
     }
   ]
 }

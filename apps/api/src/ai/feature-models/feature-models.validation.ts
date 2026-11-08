@@ -37,3 +37,22 @@ export function parseModelChoice(body: unknown): AiModelChoice {
 
   return { model, provider };
 }
+
+const MAX_BALANCE_USD = 1_000_000;
+
+/** A balance in dollars, or `null` to remove it. */
+export function parseBalance(body: unknown): number | null {
+  const { balanceUsd } = (body ?? {}) as Record<string, unknown>;
+  if (balanceUsd === null) return null;
+
+  if (
+    typeof balanceUsd !== "number" ||
+    !Number.isFinite(balanceUsd) ||
+    balanceUsd < 0 ||
+    balanceUsd > MAX_BALANCE_USD
+  ) {
+    throw new BadRequestException("Solde invalide.");
+  }
+
+  return balanceUsd;
+}

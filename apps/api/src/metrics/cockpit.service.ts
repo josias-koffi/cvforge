@@ -1,3 +1,4 @@
+import { PgAnthropicCreditStore } from "../ai/feature-models/anthropic-credit.pg-store";
 import type { OpenRouterBalanceService } from "../ai/openrouter-balance.service";
 import type { Database } from "../database/database.types";
 import { PgAcquisitionMetricsStore } from "./acquisition/acquisition.pg-store";
@@ -29,12 +30,7 @@ export class CockpitService {
   readonly market: MarketMetricsService;
   readonly acquisition: AcquisitionMetricsService;
 
-  constructor(
-    db: Database,
-    balance: BalanceReader,
-    usdToEurRate: number,
-    anthropicCreditUsd: number | null = null,
-  ) {
+  constructor(db: Database, balance: BalanceReader, usdToEurRate: number) {
     const activity = new PgActivityStore(db);
     const revenueStore = new PgRevenueStore(db);
     const aiCostsStore = new PgAiCostsStore(db);
@@ -45,7 +41,7 @@ export class CockpitService {
       revenueStore,
       balance,
       usdToEurRate,
-      anthropicCreditUsd,
+      new PgAnthropicCreditStore(db),
     );
     this.usage = new UsageMetricsService(new PgUsageStore(db));
     this.market = new MarketMetricsService(new PgMarketStore(db));

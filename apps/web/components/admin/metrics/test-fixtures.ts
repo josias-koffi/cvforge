@@ -135,7 +135,12 @@ export const EMPTY_REVENUE: RevenueMetrics = {
 }
 
 export const AI_COSTS: AiCostMetrics = {
-  anthropicCredit: { creditUsd: 215, remainingUsd: 200, spentUsd: 15 },
+  anthropicCredit: {
+    recordedAt: "2026-09-20T00:00:00.000Z",
+    recordedUsd: 215,
+    remainingUsd: 200,
+    spentUsd: 15,
+  },
   balance: { enabled: true, remainingUsd: 12.5, runwayDays: 5.4, stale: false },
   creditValueEurCents: 40,
   features: [

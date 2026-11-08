@@ -98,16 +98,6 @@ export class PgAiCostsStore {
     }));
   }
 
-  /** Everything computed against Anthropic's prepaid credit, all time. */
-  async readAnthropicSpend(): Promise<number> {
-    const [row] = await this.db
-      .select({ costUsd: sum(aiUsageEvents.costUsd) })
-      .from(aiUsageEvents)
-      .where(eq(aiUsageEvents.provider, "anthropic"));
-
-    return toNumber(row?.costUsd);
-  }
-
   /** The first call ever recorded: costs before it were never measured. */
   async readTrackingSince(): Promise<Date | null> {
     const [row] = await this.db

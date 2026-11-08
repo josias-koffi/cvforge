@@ -39,3 +39,10 @@ export async function resetAiModel(feature: AiFeature) {
     "Retour au modèle par défaut."
   )
 }
+
+export async function saveAnthropicBalance(balanceUsd: number | null) {
+  return mutateModel(
+    () => api("/admin/ai-models/anthropic-balance", { body: { balanceUsd }, method: "PUT" }),
+    balanceUsd === null ? "Solde retiré." : "Solde enregistré."
+  )
+}

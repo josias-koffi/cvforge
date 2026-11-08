@@ -11,6 +11,7 @@ import {
 import { useState } from "react"
 
 import { chooseAiModel, resetAiModel } from "@/app/(app)/admin/ai-models/actions"
+import { AnthropicBalanceForm } from "@/components/admin/anthropic-balance-form"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -62,6 +63,7 @@ export function AiModelsEditor({ overview }: { overview: AiFeatureModelsOverview
           </AlertDescription>
         </Alert>
       )}
+      <AnthropicBalanceForm credit={overview.anthropicCredit} />
       <div className="rounded-lg border">
         <Table>
           <TableHeader>
