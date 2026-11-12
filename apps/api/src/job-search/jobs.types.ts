@@ -65,11 +65,25 @@ export interface JobAdverts {
   details: OfferDetails | null;
 }
 
+/** A circle around a city: the offers within it, by coordinates. */
+export interface JobSearchNear {
+  latitude: number;
+  longitude: number;
+  radiusKm: number;
+  /**
+   * The departments the circle reaches: where an offer with no coordinates
+   * is kept, since its distance cannot be measured.
+   */
+  departments: readonly string[];
+}
+
 /** What a candidate can narrow their own search by. */
 export interface JobSearchFilters {
   /** Words looked for in the title and the advert. */
   query: string;
   departments: readonly string[];
+  /** Around a city (`?ville=`), on top of the departments if both are given. */
+  near?: JobSearchNear;
   contractTypes: readonly (SearchContractType | "unknown")[];
   remoteOnly: boolean;
   /** Offers first collected in the last N days. */
@@ -131,13 +145,13 @@ export type JobsStore = {
   searchJobs(filters: JobSearchFilters): Promise<{
     jobs: StoredJob[];
     total: number;
-    /**
-     * How many offers the base holds at all, criteria aside. It tells "your
-     * search matched nothing" apart from "we have nothing yet" — two very
-     * different things to say to a candidate.
-     */
-    available: number;
   }>;
+  /**
+   * How many offers the base holds at all, criteria aside, within the last
+   * `maxAgeDays`. It tells "your search matched nothing" apart from "we have
+   * nothing yet" — two very different things to say to a candidate.
+   */
+  countAvailableJobs(maxAgeDays: number): Promise<number>;
   /** Closes the advert, and the job once its last advert is closed. */
   closeListing(
     source: JobSource,

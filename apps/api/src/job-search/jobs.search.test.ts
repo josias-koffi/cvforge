@@ -187,7 +187,7 @@ describe("PgJobsStore.searchJobs", () => {
     const found = await store.searchJobs({ ...BASE, query: "introuvable" });
 
     expect(found.total).toBe(0);
-    expect(found.available).toBe(4);
+    expect(await store.countAvailableJobs(BASE.maxAgeDays)).toBe(4);
   });
 
   it("dates an offer by its publication, not by the day we imported it", async () => {
@@ -251,7 +251,7 @@ describe("PgJobsStore.searchJobs", () => {
       });
 
       expect(found.jobs.map((job) => job.title)).toEqual(["Développeur fresh"]);
-      expect(found.available).toBe(1);
+      expect(await store.countAvailableJobs(1)).toBe(1);
     });
   });
 
@@ -269,5 +269,90 @@ describe("PgJobsStore.searchJobs", () => {
 
     expect(found.jobs[0]?.title).toBe("Chef de partie (H/F)");
     expect(found.total).toBe(2);
+  });
+
+  it("matches the start of a word, so a few letters are enough", async () => {
+    const found = await store.searchJobs({ ...BASE, query: "dev" });
+
+    expect(found.total).toBe(2);
+  });
+
+  it("reads tsquery operators as plain text instead of failing", async () => {
+    for (const query of ["c++", "a & b", "l'équipe", "!:*|", "node.js"]) {
+      await expect(store.searchJobs({ ...BASE, query })).resolves.toBeDefined();
+    }
+  });
+
+  it("folds the ligatures the way the index does", async () => {
+    await deduplicator.attach(
+      makeListing({
+        externalId: "coeur",
+        source: "france_travail",
+        title: "Chargé de mission cœur de ville",
+      }),
+    );
+
+    const found = await store.searchJobs({ ...BASE, query: "cœur" });
+
+    expect(found.jobs[0]?.title).toContain("cœur");
+  });
+
+  describe("around a city", () => {
+    const nantes20 = {
+      departments: ["44", "49", "85"],
+      latitude: 47.2382,
+      longitude: -1.5603,
+      radiusKm: 20,
+    };
+
+    beforeEach(async () => {
+      await testDatabase.reset();
+      for (const [externalId, latitude, longitude, department] of [
+        ["reze", 47.1833, -1.55, "44"],
+        ["saint-nazaire", 47.2735, -2.2138, "44"],
+        ["nowhere-44", null, null, "44"],
+        ["nowhere-69", null, null, "69"],
+      ] as const) {
+        await deduplicator.attach(
+          makeListing({
+            department,
+            externalId,
+            latitude,
+            longitude,
+            source: "france_travail",
+            title: `Poste ${externalId}`,
+          }),
+        );
+      }
+    });
+
+    it("keeps the offers within the radius, by distance", async () => {
+      const found = await store.searchJobs({ ...BASE, near: nantes20 });
+      const titles = found.jobs.map((job) => job.title).sort();
+
+      // Rezé is 6 km away; Saint-Nazaire, in the same department, 50 km.
+      expect(titles).toContain("Poste reze");
+      expect(titles).not.toContain("Poste saint-nazaire");
+    });
+
+    it("keeps an offer without coordinates in a department the circle reaches", async () => {
+      const found = await store.searchJobs({ ...BASE, near: nantes20 });
+      const titles = found.jobs.map((job) => job.title);
+
+      expect(titles).toContain("Poste nowhere-44");
+      expect(titles).not.toContain("Poste nowhere-69");
+      expect(found.total).toBe(2);
+    });
+
+    it("widens with the radius", async () => {
+      const found = await store.searchJobs({
+        ...BASE,
+        near: { ...nantes20, radiusKm: 100 },
+      });
+
+      expect(found.jobs.map((job) => job.title)).toContain(
+        "Poste saint-nazaire",
+      );
+    });
   });
 });

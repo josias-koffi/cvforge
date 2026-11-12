@@ -6,6 +6,7 @@ import { toast } from "sonner"
 
 import { setMatchStatus } from "@/app/(app)/offres-du-jour/actions"
 import { OfferCard } from "@/components/job-search/offer-card"
+import { OFFER_GRID_COLUMNS } from "@/components/job-search/offer-grid-skeleton"
 import { OfferSheet } from "@/components/job-search/offer-sheet"
 import type { JobCardOffer } from "@/lib/job-search"
 
@@ -27,10 +28,13 @@ export const OFFER_PARAM = "offre"
 export function OfferGrid({
   offers,
   fresh = false,
+  columns = OFFER_GRID_COLUMNS,
 }: {
   offers: JobCardOffer[]
   /** Each card says to the minute how fresh its offer is (US-167). */
   fresh?: boolean
+  /** Another set of grid classes, for a grid that shares its row. */
+  columns?: string
 }) {
   const params = useSearchParams()
   const [dismissed, setDismissed] = useState<string[]>([])
@@ -116,7 +120,7 @@ export function OfferGrid({
 
   return (
     <>
-      <div className="grid grid-cols-1 gap-4 @xl/main:grid-cols-2 @5xl/main:grid-cols-3">
+      <div className={columns}>
         {visible.map((offer) => (
           <OfferCard
             key={offer.job.id}

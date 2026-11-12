@@ -1,6 +1,7 @@
 import {
   and,
   asc,
+  between,
   count,
   desc,
   eq,
@@ -10,12 +11,17 @@ import {
   lt,
   or,
   sql,
-  type AnyColumn,
 } from "drizzle-orm";
 import type { Database } from "../database/database.types";
-import { jobListings, jobs } from "../database/schema";
+import {
+  JOBS_AGE_SQL,
+  JOBS_SEARCH_VECTOR_SQL,
+  JOBS_TITLE_VECTOR_SQL,
+  jobListings,
+  jobs,
+} from "../database/schema";
 import type { MatchCandidate } from "./dedup/match-job";
-import type { JobSearchFilters, StoredJob } from "./jobs.types";
+import type { JobSearchFilters, JobSearchNear, StoredJob } from "./jobs.types";
 import { toJob } from "./jobs.rows";
 
 /**
@@ -27,27 +33,17 @@ const MS_PER_DAY = 86_400_000;
 /** More words than this and the query stops narrowing anything useful. */
 const MAX_SEARCH_WORDS = 6;
 
-/**
- * Accents, folded in SQL.
- *
- * `ilike` ignores case but not accents, so a candidate typing "developpeur"
- * found nothing while the table was full of "Développeur". `unaccent()` would
- * mean a Postgres extension — a schema decision — where `translate()` is
- * standard SQL and costs nothing at this volume.
- */
-const ACCENTED_CHARS = "àáâãäåçèéêëìíîïñòóôõöùúûüýÿœæ";
-const PLAIN_CHARS = "aaaaaaceeeeiiiinooooouuuuyyoa";
-
-function folded(column: AnyColumn) {
-  return sql`translate(lower(${column}), ${ACCENTED_CHARS}, ${PLAIN_CHARS})`;
-}
-
 /** Same folding as the database does, applied to what the candidate typed. */
 function foldWord(word: string): string {
-  return word
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase();
+  return (
+    word
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      // The ligatures NFD leaves alone, folded as `translate()` folds them.
+      .replace(/œ/g, "o")
+      .replace(/æ/g, "a")
+  );
 }
 
 export async function findOpenJobs(
@@ -86,44 +82,105 @@ export async function findOpenJobs(
 }
 
 /**
- * The candidate's own search.
- *
- * The words are matched with `ilike` on the title and the advert: this table
- * holds the offers of the last weeks, not a search engine's index, and a
- * full-text index would be a schema decision to take on real volume rather
- * than on a guess.
+ * The words of a search, folded the way the index folds the text, at most
+ * `MAX_SEARCH_WORDS`. Anything but letters and digits splits a word: "c++"
+ * becomes "c", and tsquery's own operators (`&`, `|`, `!`, `:`, `'`) never
+ * reach `to_tsquery` — they are what would make it throw.
  */
-export async function searchJobs(db: Database, filters: JobSearchFilters) {
-  const words = filters.query
-    .split(/\s+/)
-    .map((word) => word.trim())
+function searchWords(query: string): string[] {
+  return foldWord(query)
+    .split(/[^\p{L}\p{N}]+/u)
     .filter((word) => word.length > 1)
     .slice(0, MAX_SEARCH_WORDS);
-  const departments = [...new Set(filters.departments.filter(Boolean))];
-  // What the base holds at all: still open, and recent enough to show.
-  //
-  // The age is the oldest of "published at the source" and "first seen by
-  // us", like `ageInDays` in the scoring. Reading `firstSeenAt` alone would
-  // date an offer from the day we imported it: a back-fill over a month
-  // would make every advert of that month look published today.
-  const cutoff = new Date(Date.now() - filters.maxAgeDays * MS_PER_DAY);
-  const publishedOrSeen = sql`least(coalesce(${jobs.publishedAt}, ${jobs.firstSeenAt}), ${jobs.firstSeenAt})`;
-  const available = [
-    isNull(jobs.closedAt),
-    sql`${publishedOrSeen} >= ${cutoff}`,
-  ];
-  const conditions = [
-    ...available,
-    // Every word has to appear somewhere: two words narrow, they do not widen.
-    ...words.map((word) => {
-      const needle = `%${foldWord(word)}%`;
+}
 
-      return or(
-        sql`${folded(jobs.title)} like ${needle}`,
-        sql`${folded(jobs.description)} like ${needle}`,
-        sql`${folded(jobs.companyName)} like ${needle}`,
-      );
-    }),
+/** Every word as a prefix, all of them required: "dev react" → `dev:* & react:*`. */
+function prefixQuery(words: readonly string[]) {
+  return sql`to_tsquery('simple', ${words.map((word) => `${word}:*`).join(" & ")})`;
+}
+
+// Raw SQL, not bound parameters: the planner only uses an expression index
+// for the very same expression, and it does not match `$1` against a literal.
+const searchVector = sql.raw(`(${JOBS_SEARCH_VECTOR_SQL})`);
+const titleVector = sql.raw(JOBS_TITLE_VECTOR_SQL);
+
+/**
+ * The age of an offer: the oldest of "published at the source" and "first
+ * seen by us", like `ageInDays` in the scoring. Reading `firstSeenAt` alone
+ * would date an offer from the day we imported it: a back-fill over a month
+ * would make every advert of that month look published today. Indexed as
+ * `jobs_open_age_idx`, written the same way.
+ */
+const publishedOrSeen = sql.raw(JOBS_AGE_SQL);
+
+const EARTH_RADIUS_KM = 6371;
+/** Kilometres in a degree of latitude, for the bounding box. */
+const KM_PER_DEGREE = 111.32;
+
+/**
+ * Within `radiusKm` of a point: a bounding box first, which an index on the
+ * coordinates serves, then the exact great-circle distance — the same
+ * formula as `haversineKm`. An offer with no coordinates is kept when it is
+ * in a department the circle reaches.
+ */
+function nearCondition(near: JobSearchNear) {
+  const latitudeSpan = near.radiusKm / KM_PER_DEGREE;
+  const longitudeSpan =
+    near.radiusKm /
+    (KM_PER_DEGREE * Math.max(Math.cos((near.latitude * Math.PI) / 180), 0.01));
+  const distance = sql`${2 * EARTH_RADIUS_KM} * asin(sqrt(
+    power(sin(radians(${jobs.latitude} - ${near.latitude}) / 2), 2)
+    + cos(radians(${near.latitude})) * cos(radians(${jobs.latitude}))
+    * power(sin(radians(${jobs.longitude} - ${near.longitude}) / 2), 2)
+  ))`;
+  const measured = and(
+    between(
+      jobs.latitude,
+      near.latitude - latitudeSpan,
+      near.latitude + latitudeSpan,
+    ),
+    between(
+      jobs.longitude,
+      near.longitude - longitudeSpan,
+      near.longitude + longitudeSpan,
+    ),
+    sql`${distance} <= ${near.radiusKm}`,
+  );
+
+  return near.departments.length > 0
+    ? or(
+        measured,
+        and(
+          or(isNull(jobs.latitude), isNull(jobs.longitude)),
+          inArray(jobs.department, [...near.departments]),
+        ),
+      )
+    : measured;
+}
+
+/** What the base holds at all: still open, and recent enough to show. */
+function availableConditions(maxAgeDays: number) {
+  const cutoff = new Date(Date.now() - maxAgeDays * MS_PER_DAY);
+
+  return [isNull(jobs.closedAt), sql`${publishedOrSeen} >= ${cutoff}`];
+}
+
+/**
+ * The candidate's own search.
+ *
+ * A full-text search on the folded title, company and advert
+ * (`jobs_search_idx`): every word has to start a word of the offer, so "dev"
+ * finds "Développeur". It replaced `like '%word%'` on the whole advert, which
+ * read the 1.2 GB table in full — 13 s per search at 500,000 offers.
+ */
+export async function searchJobs(db: Database, filters: JobSearchFilters) {
+  const words = searchWords(filters.query);
+  const departments = [...new Set(filters.departments.filter(Boolean))];
+  const conditions = [
+    ...availableConditions(filters.maxAgeDays),
+    ...(words.length > 0
+      ? [sql`${searchVector} @@ ${prefixQuery(words)}`]
+      : []),
     ...(departments.length > 0
       ? [
           filters.remoteOnly
@@ -131,7 +188,15 @@ export async function searchJobs(db: Database, filters: JobSearchFilters) {
             : inArray(jobs.department, departments),
         ]
       : []),
-    ...(filters.remoteOnly && departments.length === 0
+    ...(filters.near
+      ? [
+          // Remote work is not somewhere else: it fits every city.
+          filters.remoteOnly
+            ? or(nearCondition(filters.near), eq(jobs.remote, true))
+            : nearCondition(filters.near),
+        ]
+      : []),
+    ...(filters.remoteOnly && departments.length === 0 && !filters.near
       ? [eq(jobs.remote, true)]
       : []),
     ...(filters.contractTypes.length > 0
@@ -139,8 +204,11 @@ export async function searchJobs(db: Database, filters: JobSearchFilters) {
       : []),
   ];
 
+  // Relevance: how many of the words the title holds. The title alone is
+  // short to read, where ranking on the whole advert would re-read every
+  // matching description.
   const titleHits = words.map(
-    (word) => sql`(${folded(jobs.title)} like ${`%${foldWord(word)}%`})::int`,
+    (word) => sql`(${titleVector} @@ ${prefixQuery([word])})::int`,
   );
   const order =
     filters.sort === "recent"
@@ -151,27 +219,37 @@ export async function searchJobs(db: Database, filters: JobSearchFilters) {
             : []),
           desc(jobs.firstSeenAt),
         ];
-  const rows = await db
-    .select()
-    .from(jobs)
-    .where(and(...conditions))
-    .orderBy(...order)
-    .limit(filters.limit)
-    .offset(filters.offset);
-  const [counted] = await db
-    .select({ total: count() })
-    .from(jobs)
-    .where(and(...conditions));
-  const [held] = await db
-    .select({ total: count() })
-    .from(jobs)
-    .where(and(...available));
+  const [rows, [counted]] = await Promise.all([
+    db
+      .select()
+      .from(jobs)
+      .where(and(...conditions))
+      .orderBy(...order)
+      .limit(filters.limit)
+      .offset(filters.offset),
+    db
+      .select({ total: count() })
+      .from(jobs)
+      .where(and(...conditions)),
+  ]);
 
   return {
-    available: Number(held?.total ?? 0),
     jobs: rows.map(toJob),
     total: Number(counted?.total ?? 0),
   };
+}
+
+/**
+ * How many offers the base holds at all, criteria aside: it tells "your
+ * search matched nothing" apart from "we have nothing yet".
+ */
+export async function countAvailableJobs(db: Database, maxAgeDays: number) {
+  const [held] = await db
+    .select({ total: count() })
+    .from(jobs)
+    .where(and(...availableConditions(maxAgeDays)));
+
+  return Number(held?.total ?? 0);
 }
 
 /**

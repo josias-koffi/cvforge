@@ -149,7 +149,12 @@ export interface OfferSearchResult {
 
 export interface OfferSearchFilters {
   q?: string
+  /** Kept for older links; the page now searches around a city. */
   departement?: string
+  /** The INSEE code of the commune the search is centred on. */
+  ville?: string
+  /** Around `ville`, in km: 10, 20, 30, 50 or 100. */
+  rayon?: string
   contrat?: string
   teletravail?: string
   /** Published within 1, 3 or 7 days (US-167). */
@@ -157,6 +162,13 @@ export interface OfferSearchFilters {
   /** `recent`: the latest published first. */
   tri?: string
   page?: string
+}
+
+export interface OfferSearchPlace {
+  code: string
+  name: string
+  department: string
+  radiusKm: number
 }
 
 export async function searchOffers(filters: OfferSearchFilters) {
@@ -167,10 +179,14 @@ export async function searchOffers(filters: OfferSearchFilters) {
     available: number
     page: number
     pageSize: number
+    /** The city searched around, named: the URL only holds its code. */
+    place: OfferSearchPlace | null
   }>("/job-search/offers", {
     query: {
       contrat: filters.contrat,
       departement: filters.departement,
+      rayon: filters.rayon,
+      ville: filters.ville,
       page: filters.page,
       publiee: filters.publiee,
       q: filters.q,

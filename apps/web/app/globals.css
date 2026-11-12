@@ -232,6 +232,16 @@
   animation: var(--animate-spark-shimmer);
 }
 
+/* Indeterminate progress bar: a third of the track, sliding across. */
+@keyframes offer-search-progress {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(300%);
+  }
+}
+
 /* Staggered entrance: set --stagger on the element (0, 1, 2…). */
 @utility rise-in {
   animation: var(--animate-rise-in);

@@ -20,6 +20,13 @@ import type {
 } from "./matches.types";
 import type { OfferDetails } from "./offer-details.types";
 
+/**
+ * How long the "offers in the base" figure is reused. It counts the whole
+ * table and only moves with the morning collection: recounting it on every
+ * search would cost as much as the search itself.
+ */
+const AVAILABLE_TTL_MS = 5 * 60_000;
+
 /** Enough text for the offer analysis to have something to read. */
 const MIN_OFFER_TEXT_LENGTH = 160;
 
@@ -56,6 +63,10 @@ export type ApplyOutcome =
 @Injectable()
 export class JobMatchesService {
   private readonly logger = new Logger(JobMatchesService.name);
+  private readonly availableCache = new Map<
+    number,
+    { count: number; at: number }
+  >();
 
   constructor(
     private readonly matches: JobMatchesStore,
@@ -99,14 +110,15 @@ export class JobMatchesService {
     total: number;
     available: number;
   }> {
-    const found = await this.jobs.searchJobs(filters);
-    const statuses = await this.matches.listStatusesByJobIds(
-      userEmail,
-      found.jobs.map((job) => job.id),
-    );
-    const adverts = await this.jobs.findAdvertsByJobIds(
-      found.jobs.map((job) => job.id),
-    );
+    const [found, available] = await Promise.all([
+      this.jobs.searchJobs(filters),
+      this.countAvailable(filters.maxAgeDays),
+    ]);
+    const jobIds = found.jobs.map((job) => job.id);
+    const [statuses, adverts] = await Promise.all([
+      this.matches.listStatusesByJobIds(userEmail, jobIds),
+      this.jobs.findAdvertsByJobIds(jobIds),
+    ]);
     const offers: OfferSearchResult[] = [];
 
     for (const job of found.jobs) {
@@ -126,7 +138,21 @@ export class JobMatchesService {
       });
     }
 
-    return { available: found.available, offers, total: found.total };
+    return { available, offers, total: found.total };
+  }
+
+  private async countAvailable(maxAgeDays: number): Promise<number> {
+    const cached = this.availableCache.get(maxAgeDays);
+
+    if (cached && this.now() - cached.at < AVAILABLE_TTL_MS) {
+      return cached.count;
+    }
+
+    const count = await this.jobs.countAvailableJobs(maxAgeDays);
+
+    this.availableCache.set(maxAgeDays, { at: this.now(), count });
+
+    return count;
   }
 
   /**

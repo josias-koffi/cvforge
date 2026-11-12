@@ -14,6 +14,38 @@ import {
 import type { ListingCompetence } from "../../job-search/job-search.types";
 
 /**
+ * Accents and case, folded the way the candidate's search folds what they
+ * type. `translate()` is IMMUTABLE, so an index can hold its output —
+ * `unaccent()` is not.
+ */
+const ACCENTED_CHARS = "àáâãäåçèéêëìíîïñòóôõöùúûüýÿœæ";
+const PLAIN_CHARS = "aaaaaaceeeeiiiinooooouuuuyyoa";
+
+function foldedVector(column: string) {
+  return `to_tsvector('simple'::regconfig, translate(lower("jobs"."${column}"), '${ACCENTED_CHARS}', '${PLAIN_CHARS}'))`;
+}
+
+/** The folded title alone, what relevance ranks on. */
+export const JOBS_TITLE_VECTOR_SQL = foldedVector("title");
+
+/**
+ * What the candidate's search reads, as `jobs_search_idx` holds it: title
+ * first, company next, the advert last. A query has to repeat it to the
+ * character for the planner to use the index.
+ */
+export const JOBS_SEARCH_VECTOR_SQL = [
+  `setweight(${JOBS_TITLE_VECTOR_SQL}, 'A')`,
+  `setweight(${foldedVector("company_name")}, 'B')`,
+  `setweight(${foldedVector("description")}, 'C')`,
+].join(" || ");
+
+/**
+ * An offer's age: the oldest of "published at the source" and "first seen by
+ * us". Indexed as `jobs_open_age_idx`.
+ */
+export const JOBS_AGE_SQL = `least(coalesce("jobs"."published_at", "jobs"."first_seen_at"), "jobs"."first_seen_at")`;
+
+/**
  * One offer, as the candidate sees it — whatever number of sources publish it.
  *
  * The canonical fields are copied from the most trustworthy advert (the
@@ -68,6 +100,22 @@ export const jobs = pgTable(
     index("jobs_rome_code_idx").on(table.romeCode),
     index("jobs_open_idx").on(table.closedAt, table.firstSeenAt),
     index("jobs_title_key_idx").on(table.titleKey),
+    // The candidate's own search, over open offers only (migration 0061).
+    index("jobs_search_idx")
+      .using("gin", sql.raw(`(${JOBS_SEARCH_VECTOR_SQL})`))
+      .where(sql`"closed_at" IS NULL`),
+    index("jobs_open_age_idx")
+      .on(sql.raw(`(${JOBS_AGE_SQL})`))
+      .where(sql`"closed_at" IS NULL`),
+    index("jobs_open_department_idx")
+      .on(table.department)
+      .where(sql`"closed_at" IS NULL`),
+    index("jobs_open_contract_idx")
+      .on(table.contractType)
+      .where(sql`"closed_at" IS NULL`),
+    index("jobs_open_coordinates_idx")
+      .on(table.latitude, table.longitude)
+      .where(sql`"closed_at" IS NULL AND "latitude" IS NOT NULL`),
   ],
 );
 
@@ -128,7 +176,9 @@ export const jobListings = pgTable(
     index("job_listings_job_idx").on(table.jobId),
     index("job_listings_to_anonymize_idx")
       .on(table.jobId)
-      .where(sql`${table.closedAt} is not null and ${table.anonymizedAt} is null`),
+      .where(
+        sql`${table.closedAt} is not null and ${table.anonymizedAt} is null`,
+      ),
     check(
       "job_listings_match_method_valid",
       sql`${table.matchMethod} in ('new', 'url', 'strict_key', 'fuzzy', 'manual')`,

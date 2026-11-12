@@ -155,6 +155,7 @@ function createService(
           { details: null, listings: options.listings ?? [makeListing()] },
         ]),
       ),
+    countAvailableJobs: vi.fn(async () => 42),
     searchJobs: async () => ({
       jobs: options.searchResults ?? [makeJob()],
       total: (options.searchResults ?? [makeJob()]).length,
@@ -178,6 +179,7 @@ function createService(
     created,
     importFromText,
     importFromUrl,
+    jobs,
     service: new JobMatchesService(
       matches,
       jobs,
@@ -236,6 +238,30 @@ describe("JobMatchesService.searchOffers", () => {
       status: "saved",
     });
     expect(found.offers[0]?.listings).toHaveLength(1);
+  });
+
+  it("counts the base once, not on every search", async () => {
+    // The figure counts the whole table and only moves with the morning
+    // collection: recounting it per search doubled the cost of a search.
+    const harness = createService({ knownStatuses: new Map() });
+    const filters = {
+      contractTypes: [],
+      departments: [],
+      limit: 20,
+      maxAgeDays: 30,
+      offset: 0,
+      query: "",
+      remoteOnly: false,
+    };
+
+    await harness.service.searchOffers("user@example.com", filters);
+    const second = await harness.service.searchOffers(
+      "user@example.com",
+      filters,
+    );
+
+    expect(second.available).toBe(42);
+    expect(harness.jobs.countAvailableJobs).toHaveBeenCalledTimes(1);
   });
 
   it("shows no score for an offer nothing ranked", async () => {
