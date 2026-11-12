@@ -2,12 +2,16 @@ import type { Metadata } from "next"
 import { Geist_Mono, Inter } from "next/font/google"
 import { notFound } from "next/navigation"
 
+import { LEGAL_DOCUMENT_PRIVACY } from "@cvforge/types"
+
 import "../globals.css"
+import { CookieConsent } from "@/components/cookie-consent"
 import { SiteFooter } from "@/components/site-footer"
 import { SiteHeader } from "@/components/site-header"
 import { ThemeProvider } from "@/components/theme"
 import { getDictionary } from "@/lib/dictionaries"
 import { hasLocale, homePath, locales } from "@/lib/i18n"
+import { legalPath } from "@/lib/legal"
 import { pageMetadata } from "@/lib/seo"
 import { siteUrl } from "@/lib/site"
 import { cn } from "@/lib/utils"
@@ -71,6 +75,10 @@ export default async function LocaleLayout({
           />
           <main className="flex-1">{children}</main>
           <SiteFooter locale={locale} dict={dict} />
+          <CookieConsent
+            dict={dict.cookieConsent}
+            privacyHref={legalPath(locale, LEGAL_DOCUMENT_PRIVACY)}
+          />
         </ThemeProvider>
       </body>
     </html>

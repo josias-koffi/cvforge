@@ -1711,3 +1711,11 @@
 - `ENABLE_ZDR_CHAT` du manifest n'est transmis par aucun compose : `data_collection: deny` n'est donc pas envoyé en prod. Non corrigé (hors périmètre, l'activer change le routage).
 - Lint API en échec sur `applications/offer-input.ts` : antérieur à ce travail.
 - Solde Claude : table `ai_provider_balances` (migration 0060), saisi dans `/admin/ai-models`. L'estimation décompte seulement les appels `provider = anthropic` postérieurs à la saisie (`PgAnthropicCreditStore`). Pas de variable d'environnement, pas d'audit : c'est un chiffre d'affichage.
+
+## 2026-11-12 — Bandeau cookies et GA4 via GTM sur la landing
+- Add-on infra `analytics: {}` dans le manifest : infra crée un conteneur GTM `jobspark` (partagé par les environnements) et un flux GA4 par environnement, et injecte `GTM_CONTAINER_ID` dans le compose. Seul le service landing le lit.
+- La landing est statique : l'ID est lu au runtime par `/api/analytics-config` (même principe que `/login`). Sans ID valide, pas de bandeau ni de lien « Gérer les cookies ».
+- GTM n'est même pas téléchargé avant « Accepter » (Consent Mode : tout refusé par défaut, puis `analytics_storage` accordé). Le choix est gardé 6 mois dans le cookie `jobspark_consent` (`v1.granted|denied`). Un refus après un accord supprime `_ga*` sur l'hôte et ses domaines parents.
+- Pas de bibliothèque de CMP, donc pas d'ADR. CSP (Report-Only) ouverte à `*.googletagmanager.com`, `*.google-analytics.com`, `*.analytics.google.com`.
+- Piège : `next dev` recharge la page en boucle dans Chrome headless, même sans le bandeau. Les tests navigateur se font sur `next build && next start`.
+- La politique de confidentialité (back-office `/admin/legal`) doit mentionner Google Analytics : c'est du contenu en base, pas du code.

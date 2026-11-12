@@ -22,6 +22,7 @@ Public showcase site. Same stack as `apps/web` (Next 16, Tailwind v4, shadcn `ra
 - **Theme tokens** in `app/globals.css` mirror `apps/web/app/globals.css`; copy changes across when they should be shared.
 - Testimonials are placeholders behind `NEXT_PUBLIC_SHOW_TESTIMONIALS`; do not enable it until real reviews replace them.
 - Animations use `motion` and must stay behind `prefers-reduced-motion` (`components/reveal.tsx`).
+- **No third-party script before consent**: Google Tag Manager is loaded only by `components/cookie-consent.tsx`, after "Accepter", from the container id `/api/analytics-config` reads at request time (`GTM_CONTAINER_ID`). Without that id there is no banner. A new tracker goes in the GTM container, never in the code; a new purpose (advertising…) bumps the version in `lib/consent.ts` so everyone is asked again.
 
 ## Screenshots
 
@@ -61,3 +62,4 @@ pnpm --filter @cvforge/landing build
 | `NEXT_PUBLIC_SITE_URL`          | build + runtime, canonical URLs / sitemap / OG images | `http://localhost:3101` |
 | `NEXT_PUBLIC_SHOW_TESTIMONIALS` | build, `true` shows the testimonials section | off                     |
 | `NEXT_DIST_DIR`                 | dev in docker-compose                        | `.next`                 |
+| `GTM_CONTAINER_ID`              | runtime, GTM container loaded after cookie consent (infra add-on `analytics`) | none: no banner, no analytics |

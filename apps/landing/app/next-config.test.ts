@@ -1,7 +1,11 @@
 import { legalDocumentSlugs } from "@cvforge/types"
 import { describe, expect, it } from "vitest"
 
-import nextConfig, { legalRedirects, resolveNextDistDir } from "../next.config"
+import nextConfig, {
+  LANDING_CSP,
+  legalRedirects,
+  resolveNextDistDir,
+} from "../next.config"
 import { locales } from "../lib/i18n"
 import { atsPath } from "../lib/ats"
 import {
@@ -13,6 +17,19 @@ import {
 import { legalPath } from "../lib/legal"
 
 describe("landing next config", () => {
+  it("lets GTM and GA4 load and report, and no other third party", () => {
+    const directive = (name: string) =>
+      LANDING_CSP.split("; ").find((d) => d.startsWith(`${name} `))
+    expect(directive("script-src")).toBe(
+      "script-src 'self' 'unsafe-inline' https://*.googletagmanager.com"
+    )
+    for (const name of ["connect-src", "img-src"]) {
+      expect(directive(name)).toContain("https://*.google-analytics.com")
+      expect(directive(name)).toContain("https://*.analytics.google.com")
+    }
+    expect(directive("frame-src")).toBe("frame-src 'none'")
+  })
+
   it("builds a standalone server without overriding distDir by default", () => {
     expect(nextConfig.output).toBe("standalone")
     expect(nextConfig.distDir).toBeUndefined()
