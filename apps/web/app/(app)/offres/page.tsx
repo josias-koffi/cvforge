@@ -3,8 +3,16 @@ import Link from "next/link"
 import { SearchIcon, SparklesIcon } from "lucide-react"
 
 import { OfferGrid } from "@/components/job-search/offer-grid"
-import { PagePagination } from "@/components/data-table/page-pagination"
-import { OfferSearchForm } from "@/components/job-search/offer-search-form"
+import { RESULTS_GRID_COLUMNS } from "@/components/job-search/offer-grid-skeleton"
+import { OfferFilters } from "@/components/job-search/offer-filters"
+import {
+  OfferEmptySuggestions,
+  OfferResultsBody,
+  OfferResultsHeader,
+  OfferResultsPagination,
+} from "@/components/job-search/offer-results"
+import { OfferSearchBar } from "@/components/job-search/offer-search-bar"
+import { OfferSearchProvider } from "@/components/job-search/offer-search-provider"
 import { PageHeader } from "@/components/layout/page-header"
 import { Button } from "@/components/ui/button"
 import {
@@ -16,7 +24,8 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty"
 import { Separator } from "@/components/ui/separator"
-import { searchOffers } from "@/lib/job-search"
+import { searchOffers, type OfferSearchFilters } from "@/lib/job-search"
+import { DEFAULT_WINDOW_DAYS, OFFER_RESULTS_ID } from "@/lib/offer-search"
 
 export const metadata: Metadata = { title: "Rechercher une offre" }
 
@@ -26,20 +35,23 @@ function readParam(value: string | string[] | undefined) {
 
 /**
  * The candidate searching our own offers, instead of waiting for the morning
- * selection. Same pool, their own criteria.
+ * selection. Same pool, their own criteria: words and place in the bar, the
+ * rest in a column beside the results, each applied as soon as it changes.
  */
 export default async function OfferSearchPage(props: PageProps<"/offres">) {
   const params = await props.searchParams
-  const filters = {
+  const filters: OfferSearchFilters = {
     contrat: readParam(params.contrat),
     departement: readParam(params.departement),
     page: readParam(params.page),
     publiee: readParam(params.publiee),
     q: readParam(params.q),
+    rayon: readParam(params.rayon),
     teletravail: readParam(params.teletravail),
     tri: readParam(params.tri),
+    ville: readParam(params.ville),
   }
-  const { available, offers, page, pageSize, total } =
+  const { available, offers, page, pageSize, place, total } =
     await searchOffers(filters)
   const visible = offers.filter((offer) => offer.status !== "dismissed")
   const lastPage = Math.max(1, Math.ceil(total / pageSize))
@@ -48,7 +60,7 @@ export default async function OfferSearchPage(props: PageProps<"/offres">) {
     <>
       <PageHeader
         title="Rechercher une offre"
-        description="Toutes les offres collectées ces 30 derniers jours, à vous de fouiller."
+        description={`Toutes les offres collectées ces ${DEFAULT_WINDOW_DAYS} derniers jours, encore ouvertes.`}
         actions={
           <Button asChild variant="outline">
             <Link href="/offres-du-jour">
@@ -58,60 +70,76 @@ export default async function OfferSearchPage(props: PageProps<"/offres">) {
           </Button>
         }
       />
-      <div className="flex flex-col gap-4 px-4 lg:px-6">
-        <OfferSearchForm filters={filters} />
+      <OfferSearchProvider filters={filters} place={place}>
+        <div className="flex flex-col gap-6 px-4 lg:px-6">
+          <OfferSearchBar />
 
-        <p className="text-sm text-muted-foreground">
-          {total === 0
-            ? "Aucune offre ne correspond."
-            : `${total} offre(s) sur ${available} en base — page ${page} sur ${lastPage}.`}
-        </p>
+          <div className="grid grid-cols-1 gap-6 @4xl/main:grid-cols-[15rem_minmax(0,1fr)]">
+            <OfferFilters />
 
-        {visible.length === 0 ? (
-          <Empty>
-            <EmptyHeader>
-              <EmptyMedia variant="icon">
-                <SearchIcon />
-              </EmptyMedia>
-              <EmptyTitle>
-                {available === 0 ? "Notre base est encore vide" : "Rien trouvé"}
-              </EmptyTitle>
-              <EmptyDescription>
-                {available === 0
-                  ? "Les offres sont collectées chaque matin à partir des recherches configurées. Décrivez la vôtre dans « Ma recherche » : dès la collecte suivante, elles apparaîtront ici."
-                  : "Essayez moins de mots, ou élargissez le département. Notre base ne contient que les offres collectées ces 30 derniers jours."}
-              </EmptyDescription>
-            </EmptyHeader>
-            {available === 0 ? (
-              <EmptyContent>
-                <Button asChild>
-                  <Link href="/ma-recherche">Configurer ma recherche</Link>
-                </Button>
-              </EmptyContent>
-            ) : null}
-          </Empty>
-        ) : (
-          // Sorted by date, the cards say it to the minute (US-167).
-          <OfferGrid
-            offers={visible}
-            fresh={filters.tri === "recent" || filters.publiee !== undefined}
-          />
-        )}
+            <section
+              id={OFFER_RESULTS_ID}
+              aria-label="Résultats"
+              // Scrolled to on a page change: stops under the sticky header.
+              className="@container/results flex min-w-0 scroll-mt-[calc(var(--page-header-height,0px)+1.5rem)] flex-col gap-4"
+            >
+              <OfferResultsHeader available={available} total={total} />
 
-        {lastPage > 1 ? (
-          <footer className="flex flex-col gap-4 pb-4">
-            <Separator />
-            <PagePagination
-              page={page}
-              lastPage={lastPage}
-              path="/offres"
-              // The criteria are carried over, the open offer is not: it is
-              // not on the page being asked for.
-              params={filters}
-            />
-          </footer>
-        ) : null}
-      </div>
+              <OfferResultsBody>
+                {visible.length === 0 ? (
+                  <Empty className="border">
+                    <EmptyHeader>
+                      <EmptyMedia variant="icon">
+                        <SearchIcon />
+                      </EmptyMedia>
+                      <EmptyTitle>
+                        {available === 0
+                          ? "Notre base est encore vide"
+                          : "Aucune offre ne correspond"}
+                      </EmptyTitle>
+                      <EmptyDescription>
+                        {available === 0
+                          ? "Les offres sont collectées chaque matin à partir des recherches configurées. Décrivez la vôtre dans « Ma recherche » : dès la collecte suivante, elles apparaîtront ici."
+                          : "Essayez moins de mots, un rayon plus large, ou retirez un filtre."}
+                      </EmptyDescription>
+                    </EmptyHeader>
+                    <EmptyContent>
+                      {available === 0 ? (
+                        <Button asChild>
+                          <Link href="/ma-recherche">
+                            Configurer ma recherche
+                          </Link>
+                        </Button>
+                      ) : (
+                        <OfferEmptySuggestions />
+                      )}
+                    </EmptyContent>
+                  </Empty>
+                ) : (
+                  // Sorted by date, the cards say it to the minute (US-167).
+                  <OfferGrid
+                    offers={visible}
+                    columns={RESULTS_GRID_COLUMNS}
+                    fresh={
+                      filters.tri === "recent" || filters.publiee !== undefined
+                    }
+                  />
+                )}
+
+                {lastPage > 1 ? (
+                  <footer className="flex flex-col gap-4 pt-6 pb-4">
+                    <Separator />
+                    <p className="text-center text-sm text-muted-foreground">
+                      Page {page} sur {lastPage}
+                    </p>
+                    <OfferResultsPagination page={page} lastPage={lastPage} />
+                  </footer>
+                ) : null}
+              </OfferResultsBody>
+            </section>
+          </div>
+        </div>
+      </OfferSearchProvider>
     </>
   )
 }

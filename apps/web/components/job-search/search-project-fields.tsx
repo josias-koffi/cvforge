@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useState } from "react"
 import { DEFAULT_SEARCH_RADIUS_KM, type SearchLocation } from "@cvforge/types"
 import { X } from "lucide-react"
 
@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { type Commune, useCommuneSearch } from "@/hooks/use-commune-search"
 
 /** One entry per line, blank lines and surrounding spaces ignored. */
 export function fromLines(value: string) {
@@ -56,16 +57,6 @@ export function LinesTextarea({
   )
 }
 
-type Commune = {
-  code: string
-  nom: string
-  departement?: { code: string }
-  centre?: { coordinates: [number, number] }
-}
-
-const GEO_API = "https://geo.api.gouv.fr/communes"
-const SEARCH_DEBOUNCE_MS = 250
-
 /**
  * Where the candidate wants to work, picked from the official commune
  * directory so the INSEE code and the department come with it — those are what
@@ -79,31 +70,7 @@ export function LocationPicker({
   onChange: (next: SearchLocation[]) => void
 }) {
   const [query, setQuery] = useState("")
-  const [matches, setMatches] = useState<Commune[]>([])
-  const abortRef = useRef<AbortController | null>(null)
-
-  useEffect(() => {
-    const term = query.trim()
-
-    if (term.length < 2) return
-
-    const timer = setTimeout(async () => {
-      abortRef.current?.abort()
-      const controller = new AbortController()
-      abortRef.current = controller
-
-      try {
-        const url = `${GEO_API}?nom=${encodeURIComponent(term)}&fields=departement,centre&boost=population&limit=5`
-        const response = await fetch(url, { signal: controller.signal })
-        setMatches(response.ok ? ((await response.json()) as Commune[]) : [])
-      } catch {
-        // Offline or aborted: the field still accepts a plain city name.
-        setMatches([])
-      }
-    }, SEARCH_DEBOUNCE_MS)
-
-    return () => clearTimeout(timer)
-  }, [query])
+  const { matches } = useCommuneSearch(query)
 
   const add = (commune: Commune) => {
     const [longitude, latitude] = commune.centre?.coordinates ?? [null, null]
@@ -122,7 +89,6 @@ export function LocationPicker({
       },
     ])
     setQuery("")
-    setMatches([])
   }
 
   const setRadius = (inseeCode: string, radiusKm: number) =>
@@ -141,10 +107,7 @@ export function LocationPicker({
           autoComplete="off"
           placeholder="Nantes, Lyon, Paris…"
           value={query}
-          onChange={(event) => {
-            setQuery(event.target.value)
-            if (event.target.value.trim().length < 2) setMatches([])
-          }}
+          onChange={(event) => setQuery(event.target.value)}
         />
         {matches.length > 0 && (
           <ul className="divide-y divide-border rounded-md border border-border bg-popover text-sm">

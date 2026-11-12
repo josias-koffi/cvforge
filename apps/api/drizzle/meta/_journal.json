@@ -428,6 +428,13 @@
       "when": 1794500000000,
       "tag": "0060_ai_provider_balances",
       "breakpoints": true
+    },
+    {
+      "idx": 61,
+      "version": "7",
+      "when": 1794600000000,
+      "tag": "0061_jobs_search_index",
+      "breakpoints": true
     }
   ]
 }

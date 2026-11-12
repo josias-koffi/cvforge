@@ -18,6 +18,7 @@ import { requireSession } from "../auth/request-session";
 import { JobMatchesService } from "./job-matches.service";
 import { jobMatchStatuses, type JobMatchStatus } from "./matches.types";
 import { DEFAULT_MAX_AGE_DAYS } from "./matching/job-matching";
+import { readOfferPlace } from "./offer-place";
 
 /** Contracts a candidate can filter their own search by. */
 const jobContractFilters = [
@@ -84,6 +85,8 @@ export class JobMatchesController {
   async searchOffers(
     @Query("q") query: string | undefined,
     @Query("departement") department: string | undefined,
+    @Query("ville") city: string | undefined,
+    @Query("rayon") radius: string | undefined,
     @Query("contrat") contract: string | undefined,
     @Query("teletravail") remote: string | undefined,
     @Query("publiee") publishedWithin: string | undefined,
@@ -93,9 +96,11 @@ export class JobMatchesController {
   ) {
     const session = requireSession(this.authService, request);
     const pageNumber = readPage(page);
+    const around = readOfferPlace(city, radius);
     const found = await this.matches.searchOffers(session.email, {
       contractTypes: readContracts(contract),
       departments: readDepartments(department),
+      near: around?.near,
       limit: PAGE_SIZE,
       maxAgeDays: readPublishedWithin(publishedWithin),
       offset: (pageNumber - 1) * PAGE_SIZE,
@@ -104,7 +109,13 @@ export class JobMatchesController {
       sort: sort === "recent" ? "recent" : "relevance",
     });
 
-    return { ...found, page: pageNumber, pageSize: PAGE_SIZE };
+    return {
+      ...found,
+      page: pageNumber,
+      pageSize: PAGE_SIZE,
+      // The city as the page shows it back: the URL only holds its code.
+      place: around?.place ?? null,
+    };
   }
 
   @Patch("offers/:jobId")

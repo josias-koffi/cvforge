@@ -21,15 +21,37 @@ export function PagePagination({
   lastPage,
   params,
   path,
+  onNavigate,
 }: {
   page: number
   lastPage: number
   params: Record<string, string | undefined>
   path: string
+  /**
+   * Takes over a plain click, so the page can show its own loader. The links
+   * stay real: a middle click or Ctrl+click still opens the page in a tab.
+   */
+  onNavigate?: (page: number) => void
 }) {
   if (lastPage <= 1) return null
 
   const href = (target: number) => pageHref(path, params, target)
+  const go = (target: number) =>
+    onNavigate
+      ? (event: React.MouseEvent<HTMLAnchorElement>) => {
+          if (
+            event.button !== 0 ||
+            event.metaKey ||
+            event.ctrlKey ||
+            event.shiftKey ||
+            event.altKey
+          ) {
+            return
+          }
+          event.preventDefault()
+          onNavigate(target)
+        }
+      : undefined
   const atStart = page <= 1
   const atEnd = page >= lastPage
 
@@ -40,6 +62,7 @@ export function PagePagination({
           <PaginationPrevious
             text="Précédente"
             href={atStart ? undefined : href(page - 1)}
+            onClick={atStart ? undefined : go(page - 1)}
             aria-disabled={atStart || undefined}
             className={atStart ? "pointer-events-none opacity-50" : undefined}
           />
@@ -54,6 +77,7 @@ export function PagePagination({
             <PaginationItem key={slot}>
               <PaginationLink
                 href={href(slot)}
+                onClick={go(slot)}
                 isActive={slot === page}
                 aria-label={`Page ${slot}`}
               >
@@ -67,6 +91,7 @@ export function PagePagination({
           <PaginationNext
             text="Suivante"
             href={atEnd ? undefined : href(page + 1)}
+            onClick={atEnd ? undefined : go(page + 1)}
             aria-disabled={atEnd || undefined}
             className={atEnd ? "pointer-events-none opacity-50" : undefined}
           />

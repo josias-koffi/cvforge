@@ -29,6 +29,7 @@ import {
 import {
   findMatchCandidates,
   findOpenJobs,
+  countAvailableJobs,
   listStaleOpenListings,
   searchJobs,
 } from "./jobs.search";
@@ -272,6 +273,10 @@ export class PgJobsStore implements JobsStore {
 
   searchJobs(filters: JobSearchFilters) {
     return searchJobs(this.db, filters);
+  }
+
+  countAvailableJobs(maxAgeDays: number) {
+    return countAvailableJobs(this.db, maxAgeDays);
   }
 
   closeListing(source: JobSource, externalId: string, at: string) {

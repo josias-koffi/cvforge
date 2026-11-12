@@ -35,4 +35,19 @@ describe("PagePagination", () => {
     expect(markup).toContain("pointer-events-none")
     expect(markup).toContain('aria-disabled="true"')
   })
+
+  it("keeps real links when the page takes over the clicks", () => {
+    // A middle click or Ctrl+click must still open the page in a new tab.
+    const markup = renderToStaticMarkup(
+      <PagePagination
+        page={1}
+        lastPage={3}
+        path="/offres"
+        params={{ q: "react" }}
+        onNavigate={() => {}}
+      />
+    )
+
+    expect(markup).toContain('href="/offres?q=react&amp;page=2"')
+  })
 })
