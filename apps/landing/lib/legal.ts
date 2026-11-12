@@ -3,7 +3,11 @@ import { legalDocumentSlugs, type LegalDocumentSlug } from "@cvforge/types"
 import { locales, type Locale } from "@/lib/i18n"
 
 /** Shared with the back-office preview, so both render the same text. */
-export { parseLegalBody, type LegalBlock } from "@cvforge/types"
+export {
+  parseLegalBody,
+  parseLegalInline,
+  type LegalBlock,
+} from "@cvforge/types"
 
 /**
  * The URL each document is served under, per language. The slug is the

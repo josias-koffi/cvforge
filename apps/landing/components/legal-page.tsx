@@ -1,12 +1,57 @@
-import type { PublicLegalDocument } from "@cvforge/types"
+import type { LegalInline, PublicLegalDocument } from "@cvforge/types"
 
 import { Section } from "@/components/section"
 import type { Locale } from "@/lib/i18n"
-import { parseLegalBody } from "@/lib/legal"
+import { parseLegalBody, parseLegalInline } from "@/lib/legal"
+
+const LINK_CLASS =
+  "rounded-sm font-medium text-foreground underline underline-offset-4 hover:text-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+
+/** Links, bold and italics inside a block, as React elements. */
+function InlineNodes({ nodes }: { nodes: LegalInline[] }) {
+  return nodes.map((node, index) => {
+    if (node.type === "text") return node.text
+
+    if (node.type === "strong") {
+      return (
+        <strong key={index} className="font-semibold text-foreground">
+          <InlineNodes nodes={node.children} />
+        </strong>
+      )
+    }
+
+    if (node.type === "emphasis") {
+      return (
+        <em key={index}>
+          <InlineNodes nodes={node.children} />
+        </em>
+      )
+    }
+
+    // Another site opens beside the document, which stays where it was read.
+    const external = /^https?:\/\//i.test(node.href)
+
+    return (
+      <a
+        key={index}
+        href={node.href}
+        className={LINK_CLASS}
+        {...(external ? { rel: "noopener noreferrer", target: "_blank" } : {})}
+      >
+        <InlineNodes nodes={node.children} />
+      </a>
+    )
+  })
+}
+
+function Inline({ text }: { text: string }) {
+  return <InlineNodes nodes={parseLegalInline(text)} />
+}
 
 /**
  * Renders a published document as React elements. The body is parsed into
- * typed blocks and never injected as HTML — see `parseLegalBody`.
+ * typed blocks and inline runs, and never injected as HTML — see
+ * `parseLegalBody` and `parseLegalInline`.
  */
 export function LegalPage({
   document,
@@ -35,32 +80,55 @@ export function LegalPage({
         <div className="mt-12 flex flex-col gap-6">
           {blocks.map((block, index) => {
             if (block.type === "heading") {
-              return (
+              return block.level === 3 ? (
+                <h3 key={index} className="mt-2 text-lg font-medium">
+                  <Inline text={block.text} />
+                </h3>
+              ) : (
                 <h2
                   key={index}
                   className="mt-6 text-xl font-medium tracking-tight"
                 >
-                  {block.text}
+                  <Inline text={block.text} />
                 </h2>
               )
             }
 
             if (block.type === "list") {
+              const List = block.ordered ? "ol" : "ul"
+
               return (
-                <ul
+                <List
                   key={index}
-                  className="flex list-disc flex-col gap-2 pl-5 text-muted-foreground"
+                  className={`flex flex-col gap-2 pl-5 text-muted-foreground ${block.ordered ? "list-decimal" : "list-disc"}`}
                 >
-                  {block.items.map((item) => (
-                    <li key={item}>{item}</li>
+                  {block.items.map((item, itemIndex) => (
+                    <li key={itemIndex}>
+                      <Inline text={item} />
+                    </li>
                   ))}
-                </ul>
+                </List>
               )
+            }
+
+            if (block.type === "quote") {
+              return (
+                <blockquote
+                  key={index}
+                  className="border-l-2 pl-4 text-pretty text-muted-foreground italic"
+                >
+                  <Inline text={block.text} />
+                </blockquote>
+              )
+            }
+
+            if (block.type === "rule") {
+              return <hr key={index} className="border-border" />
             }
 
             return (
               <p key={index} className="text-pretty text-muted-foreground">
-                {block.text}
+                <Inline text={block.text} />
               </p>
             )
           })}
