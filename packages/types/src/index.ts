@@ -15,6 +15,7 @@ export * from "./company-check";
 export * from "./company-pages";
 export * from "./hiring-companies";
 export * from "./job-alerts";
+export * from "./legal-body";
 export * from "./lead";
 export * from "./locale";
 export * from "./market";
@@ -918,9 +919,9 @@ export function isLegalDocumentSlug(value: unknown): value is LegalDocumentSlug 
 }
 
 /**
- * A published document, as the landing renders it. `body` is plain text in the
- * convention `parseLegalBody` reads: "## " opens a sub-heading, "- " a list
- * item, blank lines separate blocks. Never HTML — nothing renders it as markup.
+ * A published document, as the landing renders it. `body` is the plain-text
+ * markdown subset `parseLegalBody` reads (see `legal-body.ts`). Never HTML —
+ * nothing renders it as markup.
  */
 export interface PublicLegalDocument {
   slug: LegalDocumentSlug;
@@ -943,78 +944,3 @@ export type LegalDocumentInput = {
   body: LocalizedText;
 };
 
-/**
- * A legal document is plain text, and it is rendered as React elements — never
- * as HTML. That is the whole point of parsing it ourselves rather than pulling
- * in a markdown engine: a document edited from the back-office can never put
- * markup on the page.
- *
- * The convention, deliberately small:
- * - a line starting with "## " opens a sub-heading;
- * - a line starting with "- " is a list item;
- * - anything else is a paragraph, blocks being separated by blank lines.
- */
-export type LegalBlock =
-  | { type: "heading"; text: string }
-  | { type: "paragraph"; text: string }
-  | { type: "list"; items: string[] }
-
-const HEADING_PREFIX = "## "
-const LIST_PREFIX = "- "
-
-export function parseLegalBody(body: string): LegalBlock[] {
-  const blocks: LegalBlock[] = []
-  let paragraph: string[] = []
-  let list: string[] = []
-
-  const flush = () => {
-    if (paragraph.length > 0) {
-      blocks.push({ type: "paragraph", text: paragraph.join(" ") })
-      paragraph = []
-    }
-
-    if (list.length > 0) {
-      blocks.push({ type: "list", items: list })
-      list = []
-    }
-  }
-
-  for (const rawLine of body.split("\n")) {
-    const line = rawLine.trim()
-
-    if (!line) {
-      flush()
-      continue
-    }
-
-    if (line.startsWith(HEADING_PREFIX)) {
-      flush()
-      const text = line.slice(HEADING_PREFIX.length).trim()
-      if (text) {
-        blocks.push({ type: "heading", text })
-      }
-      continue
-    }
-
-    if (line.startsWith(LIST_PREFIX)) {
-      if (paragraph.length > 0) {
-        flush()
-      }
-      const item = line.slice(LIST_PREFIX.length).trim()
-      if (item) {
-        list.push(item)
-      }
-      continue
-    }
-
-    if (list.length > 0) {
-      flush()
-    }
-
-    paragraph.push(line)
-  }
-
-  flush()
-
-  return blocks
-}
