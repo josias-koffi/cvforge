@@ -1,6 +1,7 @@
 import type { AiCreditAction, LegalDocumentSlug } from "@cvforge/types"
 
 import type { CompanyCheckDictionary } from "./company-check/types"
+import type { CookieConsentDictionary } from "./cookie-consent/types"
 import type { FeaturePagesDictionary } from "./feature-pages/types"
 import type { InterviewQuestionsDictionary } from "./interview-questions/types"
 
@@ -303,6 +304,8 @@ export interface LandingDictionary {
   featurePages: FeaturePagesDictionary
   /** The free "check an employer" tool (US-139). */
   companyCheck: CompanyCheckDictionary
+  /** The cookie banner, shown only where analytics is on. */
+  cookieConsent: CookieConsentDictionary
   /** The free "likely interview questions" tool (US-141). */
   interviewQuestions: InterviewQuestionsDictionary
   /**

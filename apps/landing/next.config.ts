@@ -77,13 +77,24 @@ export function featureRewrites() {
  * script, frame, connection or form target, and forbids framing, plugins and
  * <base> hijacking. Tightening scripts needs hash-based CSP (Next's SRI).
  */
+/**
+ * Google Tag Manager and GA4, loaded only after the cookie banner's "Accepter"
+ * (components/cookie-consent.tsx). Google's own list for a GA4 tag.
+ */
+const GOOGLE_TAG_HOSTS = "https://*.googletagmanager.com"
+const GOOGLE_ANALYTICS_HOSTS = [
+  "https://*.google-analytics.com",
+  "https://*.analytics.google.com",
+  GOOGLE_TAG_HOSTS,
+].join(" ")
+
 export const LANDING_CSP = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline'",
+  `script-src 'self' 'unsafe-inline' ${GOOGLE_TAG_HOSTS}`,
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob:",
+  `img-src 'self' data: blob: ${GOOGLE_ANALYTICS_HOSTS}`,
   "font-src 'self' data:",
-  "connect-src 'self'",
+  `connect-src 'self' ${GOOGLE_ANALYTICS_HOSTS}`,
   "frame-src 'none'",
   "object-src 'none'",
   "base-uri 'self'",

@@ -71,6 +71,10 @@ services:
       # Credit offers for the pricing section. Public host, never `http://api`:
       # see the web service above.
       API_INTERNAL_URL: https://${API_DOMAIN}
+      # GTM container of the app, from the infra add-on `analytics`; read at
+      # request time (/api/analytics-config), loaded only after the visitor's
+      # consent. Empty: no banner, no analytics.
+      GTM_CONTAINER_ID: ${GTM_CONTAINER_ID:-}
     expose:
       - "3001"
     healthcheck:

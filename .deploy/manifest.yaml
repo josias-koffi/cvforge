@@ -24,6 +24,11 @@ compose:
       service: api
       prefix: { production: api-data/production/, staging: api-data/staging/ }
 
+# GA4 through GTM, for the landing only (infra add-on): a container `jobspark`
+# shared by both environments, one GA4 stream each. Injected as
+# GTM_CONTAINER_ID / GA_MEASUREMENT_ID; only the landing service reads it.
+analytics: {}
+
 databases:
   postgres: { type: postgres, service: postgres, database: cvforge, user: cvforge }
 

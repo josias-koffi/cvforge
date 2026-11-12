@@ -3,6 +3,7 @@ import Link from "next/link"
 import type { ReactNode } from "react"
 
 import { Brand } from "@/components/brand"
+import { CookieSettingsButton } from "@/components/cookie-consent"
 import { buildFeatureLinks, buildNavLinks } from "@/components/site-header"
 import type { LandingDictionary } from "@/content/types"
 import { homePath, type Locale } from "@/lib/i18n"
@@ -21,7 +22,10 @@ export function SiteFooter({
   dict,
 }: {
   locale: Locale
-  dict: Pick<LandingDictionary, "nav" | "footer" | "legal" | "featurePages">
+  dict: Pick<
+    LandingDictionary,
+    "nav" | "footer" | "legal" | "featurePages" | "cookieConsent"
+  >
 }) {
   return (
     <footer className="border-t bg-card">
@@ -42,6 +46,9 @@ export function SiteFooter({
           </FooterNav>
           <FooterNav title={dict.footer.legal}>
             <LinkList links={buildLegalLinks(locale, dict.legal)} columns={1} />
+            <div className="mt-2 text-sm">
+              <CookieSettingsButton label={dict.cookieConsent.manage} />
+            </div>
           </FooterNav>
         </div>
       </div>

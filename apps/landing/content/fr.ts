@@ -1,6 +1,7 @@
 import { welcomeApplications } from "./welcome"
 
 import { companyCheckFr } from "./company-check/fr"
+import { cookieConsentFr } from "./cookie-consent/fr"
 import { featurePagesFr } from "./feature-pages/fr"
 import { interviewQuestionsFr } from "./interview-questions/fr"
 import type { LandingDictionary } from "./types"
@@ -607,6 +608,7 @@ export const fr: LandingDictionary = {
   },
   featurePages: featurePagesFr,
   companyCheck: companyCheckFr,
+  cookieConsent: cookieConsentFr,
   interviewQuestions: interviewQuestionsFr,
   jobMarket: {
     metaTitle: "Ce métier recrute-t-il près de chez moi ? Tension, offres, salaire",

@@ -1,6 +1,7 @@
 import { welcomeApplications } from "./welcome"
 
 import { companyCheckEn } from "./company-check/en"
+import { cookieConsentEn } from "./cookie-consent/en"
 import { featurePagesEn } from "./feature-pages/en"
 import { interviewQuestionsEn } from "./interview-questions/en"
 import type { LandingDictionary } from "./types"
@@ -600,6 +601,7 @@ export const en: LandingDictionary = {
   },
   featurePages: featurePagesEn,
   companyCheck: companyCheckEn,
+  cookieConsent: cookieConsentEn,
   interviewQuestions: interviewQuestionsEn,
   jobMarket: {
     metaTitle: "Is this job hiring near me? Demand, openings, salary",
