@@ -1,6 +1,7 @@
-import { describe, expect, it } from "vitest"
+import { NextRequest } from "next/server"
+import { afterEach, describe, expect, it, vi } from "vitest"
 
-import { config } from "./proxy"
+import { config, proxy } from "./proxy"
 
 /** Next anchors the matcher against the whole path; an unanchored RegExp would
  *  match `/api/ats-scan` from its fourth character and hide the bug. */
@@ -41,5 +42,29 @@ describe("the proxy matcher", () => {
     expect(matches("/favicon.ico")).toBe(false)
     expect(matches("/screenshots/light/dashboard.webp")).toBe(false)
     expect(matches("/sitemap.xml")).toBe(false)
+  })
+})
+
+describe("the noindex outside production", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs()
+  })
+
+  const request = (path: string) =>
+    new NextRequest(`https://jobspark-staging.koklo.dev${path}`)
+
+  it("marks every page of staging noindex, redirects included", () => {
+    vi.stubEnv("DEPLOY_ENV", "staging")
+    expect(proxy(request("/fr")).headers.get("x-robots-tag")).toBe(
+      "noindex, nofollow"
+    )
+    expect(proxy(request("/")).headers.get("x-robots-tag")).toBe(
+      "noindex, nofollow"
+    )
+  })
+
+  it("leaves production indexable", () => {
+    vi.stubEnv("DEPLOY_ENV", "production")
+    expect(proxy(request("/fr")).headers.get("x-robots-tag")).toBeNull()
   })
 })
