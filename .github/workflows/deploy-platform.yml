@@ -4,6 +4,11 @@ name: Deploy
 # deploys which environment, and whether a push is enough or a manual run is
 # needed, come from .deploy/manifest.yaml (environments.<env>.branch / deploy).
 #
+# The deploy itself runs in the infra repo (deploy-app.yml), with the platform
+# credentials and the app's secrets of the infra environments jobspark-staging
+# and jobspark-production. This repo only holds INFRA_DEPLOY_TOKEN, which can
+# start a deploy and never read a credential.
+#
 #   manual run : Actions → Deploy → Run workflow, from the environment's branch;
 #                image_tag to promote / roll back to an existing tag;
 #                plan_only to only show the plan.
@@ -232,12 +237,13 @@ jobs:
     name: Deploy
     needs: [resolve, verify-image, scan-images]
     if: ${{ !failure() && !cancelled() && needs.resolve.outputs.deploy == 'true' }}
-    uses: josias-koffi/infra/.github/workflows/deploy.yml@main
+    uses: josias-koffi/infra/.github/workflows/dispatch-deploy.yml@main
     with:
       environment: ${{ needs.resolve.outputs.environment }}
       image_tag: ${{ needs.resolve.outputs.image_tag }}
       plan_only: ${{ inputs.plan_only == true }}
-    secrets: inherit
+    secrets:
+      INFRA_DEPLOY_TOKEN: ${{ secrets.INFRA_DEPLOY_TOKEN }}
 
   # The platform's smoke test proves the domains answer; this proves they serve
   # the tag just deployed (a stack can report success without replacing a
