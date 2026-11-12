@@ -75,6 +75,9 @@ services:
       # request time (/api/analytics-config), loaded only after the visitor's
       # consent. Empty: no banner, no analytics.
       GTM_CONTAINER_ID: ${GTM_CONTAINER_ID:-}
+      # production: indexable, robots.txt with its sitemap. Anything else
+      # (staging, empty): every page answers X-Robots-Tag noindex.
+      DEPLOY_ENV: ${DEPLOY_ENV:-}
     expose:
       - "3001"
     healthcheck:

@@ -62,4 +62,5 @@ pnpm --filter @cvforge/landing build
 | `NEXT_PUBLIC_SITE_URL`          | build + runtime, canonical URLs / sitemap / OG images | `http://localhost:3101` |
 | `NEXT_PUBLIC_SHOW_TESTIMONIALS` | build, `true` shows the testimonials section | off                     |
 | `NEXT_DIST_DIR`                 | dev in docker-compose                        | `.next`                 |
+| `DEPLOY_ENV`                    | runtime, `production` makes the site indexable (robots.txt, no X-Robots-Tag) | not indexable |
 | `GTM_CONTAINER_ID`              | runtime, GTM container loaded after cookie consent (infra add-on `analytics`) | none: no banner, no analytics |

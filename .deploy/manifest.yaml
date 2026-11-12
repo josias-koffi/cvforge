@@ -96,6 +96,7 @@ vars:
   EMAIL_REPLY_TO: Jobspark <support@jobspark.koklo.dev>
   RESTORE_CHECK_ALERT_TO: ${secrets.ALERT_EMAIL}   # kept out of the repo
   RESTORE_CHECK_ENV: ${env}
+  DEPLOY_ENV: ${env}                 # the landing is indexable in production only
   RESTORE_CHECK_REV: ${compose_sha}
   R2_BACKUP_ENDPOINT: ${secrets.R2_ENDPOINT}
   R2_BACKUP_ACCESS_KEY: ${secrets.R2_BACKUP_ACCESS_KEY_ID}

@@ -1,9 +1,22 @@
 import { NextResponse, type NextRequest } from "next/server"
 
 import { locales, negotiateLocale } from "@/lib/i18n"
+import { isIndexable, NOINDEX_HEADER } from "@/lib/site"
 
-/** Sends locale-less paths (e.g. "/") to the visitor's preferred language. */
+/**
+ * Sends locale-less paths (e.g. "/") to the visitor's preferred language, and
+ * marks every page noindex outside production (the pages are static HTML: the
+ * deployment is only known here, at request time).
+ */
 export function proxy(request: NextRequest) {
+  const response = route(request)
+  if (!isIndexable()) {
+    response.headers.set(...NOINDEX_HEADER)
+  }
+  return response
+}
+
+function route(request: NextRequest) {
   const { pathname } = request.nextUrl
   const hasLocalePrefix = locales.some(
     (locale) => pathname === `/${locale}` || pathname.startsWith(`/${locale}/`)
