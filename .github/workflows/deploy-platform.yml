@@ -263,11 +263,16 @@ jobs:
           for target in "api https://${API_DOMAIN}/health" "web https://${WEB_DOMAIN}/version"; do
             set -- ${target}
             service="$1"; url="$2"
-            for attempt in $(seq 1 10); do
-              running=$(curl -fsS --retry 3 --retry-delay 5 --retry-all-errors "${url}" \
-                | python3 -c 'import json,sys; print(json.load(sys.stdin).get("version",""))')
+            # Up to 15 minutes: the API serves only once its migrations are
+            # done, and a migration on a large table takes minutes (404 from
+            # Traefik meanwhile). A wrong version is still an error at the end.
+            for attempt in $(seq 1 90); do
+              running=$(curl -fsS "${url}" 2>/dev/null \
+                | python3 -c 'import json,sys
+          try: print(json.load(sys.stdin).get("version",""))
+          except ValueError: print("")') || running=""
               [ "${running}" = "${IMAGE_TAG}" ] && break
-              echo "${service}: serving '${running}', waiting for '${IMAGE_TAG}' (${attempt}/10)"
+              echo "${service}: serving '${running:-nothing yet}', waiting for '${IMAGE_TAG}' (${attempt}/90)"
               sleep 10
             done
             [ "${running}" = "${IMAGE_TAG}" ] || { echo "::error::${service} serves '${running}' instead of '${IMAGE_TAG}'."; exit 1; }
