@@ -307,6 +307,17 @@ pipeline's file and nothing references it any more. On VPS20, remove the stopped
 
 ## Operations
 
+- Migrations: the API container runs them before it serves (`migrate.main`),
+  after waiting up to 2 minutes for Postgres, and starts only once the
+  compose's `postgres` is healthy. Until they are done Traefik answers 404 on
+  the API domain, and the deploy's *Assert the deployed version* waits up to
+  15 minutes. **An index on a large table (`LARGE_TABLES`: `jobs`) never goes
+  in a migration**: the migrator runs them in one transaction, where
+  `CONCURRENTLY` is refused, so the API stays down for the whole build (about
+  20 minutes on 2026-11-13 for `0061`). Add it to `CONCURRENT_INDEXES`
+  (`apps/api/src/database/concurrent-indexes.ts`) instead: the API builds it
+  with `CREATE INDEX CONCURRENTLY` once it serves (`[indexes]` lines in its
+  logs), and `migrations-guard.test.ts` fails a migration that does otherwise.
 - Logs and shells: the Dokploy UI, per service, in the `jobspark` project.
 - Backups, two independent copies per environment:
   1. On-VPS: the `db_backup` sidecar dumps the whole database at 00:00 UTC in

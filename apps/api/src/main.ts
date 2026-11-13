@@ -3,6 +3,8 @@ import helmet from "helmet";
 import type { NestExpressApplication } from "@nestjs/platform-express";
 import { AppModule } from "./app.module";
 import { AuthMailerService } from "./auth/auth-mailer.service";
+import { buildIndexesInBackground } from "./database/database.client";
+import { resolveDatabaseConfig } from "./database/database.config";
 import { loadEnvironmentFiles } from "./shared/env";
 
 // Interview audio goes browser-to-OpenAI and CV files arrive as multipart, so
@@ -43,6 +45,9 @@ export async function bootstrap() {
   }
 
   await app.listen(process.env.PORT ?? 3333);
+
+  // Large-table indexes, built while the API already serves (not awaited).
+  void buildIndexesInBackground(resolveDatabaseConfig(process.env));
 
   return app;
 }

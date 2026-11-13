@@ -90,6 +90,11 @@ services:
   api:
     image: ghcr.io/josias-koffi/jobspark-api:${IMAGE_TAG}
     restart: unless-stopped
+    # The migrations run first thing: wait for a Postgres that accepts
+    # connections (on 2026-11-13 they ran one second too early, ECONNREFUSED).
+    depends_on:
+      postgres:
+        condition: service_healthy
     environment:
       NODE_ENV: production
       NEXT_PUBLIC_API_URL: https://${API_DOMAIN}
