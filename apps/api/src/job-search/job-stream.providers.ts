@@ -34,8 +34,9 @@ import {
 import { OPENROUTER_SERVICE } from "../ai/openrouter.module";
 import type { OpenRouterService } from "../ai/openrouter.service";
 import { CreditsService } from "../credits/credits.service";
-import { resolveAuthConfig } from "../auth/auth.config";
 import { NotificationsService } from "../notifications/notifications.service";
+import { JobAlertInbox } from "../notifications/job-alert-inbox";
+import { PushNotifier } from "../notifications/push-notifier";
 import {
   ROME_MATCHING_READER,
   type RomeMatchingReader,
@@ -73,20 +74,24 @@ export const jobStreamProviders: Provider[] = [
     inject: [
       ALERT_MATCHES_STORE,
       NotificationsService,
+      JobAlertInbox,
+      PushNotifier,
       JOB_STREAM_CURSORS_STORE,
     ],
     useFactory: (
       alerts: AlertMatchesStore,
       notifications: NotificationsService,
+      inbox: JobAlertInbox,
+      push: PushNotifier,
       cursors: JobStreamCursorsStore,
     ) =>
       new JobAlertDispatcher(
         alerts,
         notifications,
+        inbox,
+        push,
         cursors,
         resolveJobAlertConfig(process.env),
-        // Same base as the magic links and the morning e-mail.
-        resolveAuthConfig(process.env).appUrl,
       ),
   },
   {

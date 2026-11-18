@@ -55,3 +55,23 @@ export const notificationPreferences = pgTable("notification_preferences", {
     .notNull()
     .defaultNow(),
 });
+
+/**
+ * One row per browser that accepted push notifications. The endpoint is the
+ * push service's address for that browser, unique by construction; the keys
+ * encrypt the payload. A push service answering 404/410 means the browser
+ * dropped it: the row goes.
+ */
+export const pushSubscriptions = pgTable(
+  "push_subscriptions",
+  {
+    endpoint: text("endpoint").primaryKey(),
+    userEmail: text("user_email").notNull(),
+    p256dh: text("p256dh").notNull(),
+    auth: text("auth").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [index("push_subscriptions_user_idx").on(table.userEmail)],
+);

@@ -7,11 +7,9 @@ import {
   composeApplicationDeletionWarningEmail,
   composeApplicationFollowUpEmail,
   composeCreditPurchaseEmail,
-  composeJobAlertEmail,
   composeJobDigestEmail,
   type ComposedEmail,
   type ExpiringApplicationLine,
-  type JobAlertEmailInput,
   type JobDigestEmailInput,
 } from "../mail/emails";
 import { absoluteAppUrl } from "../mail/mail-brand";
@@ -73,19 +71,6 @@ export class NotificationsMailerService {
 
   async sendJobDigestEmail(input: JobDigestEmailInput & { to: string }) {
     await this.sendMail(input.to, composeJobDigestEmail(this.mailConfig, input));
-  }
-
-  /**
-   * True once handed to the transport; false when delivery is not configured,
-   * so the alert stays pending and the morning recap takes it over (US-166).
-   * Throws when the transport refuses it.
-   */
-  async sendJobAlertEmail(input: JobAlertEmailInput & { to: string }): Promise<boolean> {
-    if (!this.getDeliveryStatus().ready) return false;
-
-    await this.sendMail(input.to, composeJobAlertEmail(this.mailConfig, input));
-
-    return true;
   }
 
   /** True once handed to the transport; false when delivery is not configured. */

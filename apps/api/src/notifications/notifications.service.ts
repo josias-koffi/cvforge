@@ -16,10 +16,7 @@ import type {
   NotificationsStore,
 } from "./notifications.types";
 import { NotificationsMailerService } from "./notifications-mailer.service";
-import type {
-  ExpiringApplicationLine,
-  JobAlertEmailInput,
-} from "../mail/emails";
+import type { ExpiringApplicationLine } from "../mail/emails";
 import {
   createDefaultPreferences,
   mergePreferences,
@@ -79,6 +76,20 @@ export class NotificationsService {
     };
 
     return this.notificationsStore.save(updatedNotification);
+  }
+
+  /** "Tout marquer comme lu": returns how many were unread. */
+  async markAllAsRead(userEmail: string): Promise<number> {
+    const unread = (await this.listNotifications(userEmail)).filter(
+      (notification) => !notification.readAt,
+    );
+    const readAt = new Date().toISOString();
+
+    for (const notification of unread) {
+      await this.notificationsStore.save({ ...notification, readAt });
+    }
+
+    return unread.length;
   }
 
   async getPreferences(
@@ -281,17 +292,6 @@ export class NotificationsService {
   /** What the alert dispatcher and the live matcher read (US-166). */
   async readJobAlertPreferences(userEmail: string): Promise<JobAlertPreferences> {
     return (await this.readPreferences(userEmail)).jobAlerts;
-  }
-
-  /**
-   * The "Nouvelle offre pour vous" e-mail. Free: no credit is involved
-   * (US-166). Returns false when e-mail delivery is not configured.
-   */
-  sendJobAlertEmail(input: Omit<JobAlertEmailInput, "preferencesUrl"> & {
-    to: string;
-    preferencesUrl: string;
-  }): Promise<boolean> {
-    return this.notificationsMailer.sendJobAlertEmail(input);
   }
 
   private async readPreferences(userEmail: string) {

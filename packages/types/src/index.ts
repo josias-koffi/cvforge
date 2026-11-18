@@ -1,5 +1,5 @@
 import type { AiFeature } from "./ai-usage";
-import type { JobAlertPreferences } from "./job-alerts";
+import type { JobAlertPreferences, JobAlertVerdict } from "./job-alerts";
 import type { Locale } from "./locale";
 
 export * from "./departments";
@@ -70,6 +70,8 @@ export const NOTIFICATION_TYPE_OPENROUTER_LOW_BALANCE =
 /** Applications untouched for a year are deleted in 15 days (US-170). */
 export const NOTIFICATION_TYPE_APPLICATION_DELETION_WARNING =
   "application_deletion_warning" as const;
+/** New offers matching the search, in the app and pushed to the devices (E27). */
+export const NOTIFICATION_TYPE_JOB_ALERT = "job_alert" as const;
 
 export const ADMIN_AUDIT_ACCOUNT_SUSPENDED = "account_suspended" as const;
 export const ADMIN_AUDIT_ACCOUNT_REACTIVATED = "account_reactivated" as const;
@@ -156,6 +158,7 @@ export const notificationTypes = [
   NOTIFICATION_TYPE_JOB_DIGEST,
   NOTIFICATION_TYPE_OPENROUTER_LOW_BALANCE,
   NOTIFICATION_TYPE_APPLICATION_DELETION_WARNING,
+  NOTIFICATION_TYPE_JOB_ALERT,
 ] as const;
 export type NotificationType = (typeof notificationTypes)[number];
 export type TemplateKind =
@@ -729,7 +732,33 @@ export interface InAppNotification {
     /** The day of the selection this notification announces. */
     digestDate?: string;
     matchCount?: number;
+    /** Job alerts only: the offers the notification announces. */
+    offers?: JobAlertNotificationOffer[];
+    /** Job alerts only: also pushed to the devices (2 a day at most). */
+    pushed?: boolean;
   };
+}
+
+/** One offer of a job-alert notification, enough to list it without a lookup. */
+export interface JobAlertNotificationOffer {
+  jobId: string;
+  title: string;
+  companyName: string;
+  locationLabel: string;
+  sourceLabel: string;
+  /** The paid analysis' verdict, when the candidate has the option. */
+  verdict: JobAlertVerdict | null;
+}
+
+/** A browser's push subscription, as `PushSubscription.toJSON()` gives it. */
+export interface PushSubscriptionInput {
+  endpoint: string;
+  keys: { p256dh: string; auth: string };
+}
+
+/** Null when the server has no VAPID keys: push is then not offered. */
+export interface PushConfigResponse {
+  publicKey: string | null;
 }
 
 export interface NotificationSummary {

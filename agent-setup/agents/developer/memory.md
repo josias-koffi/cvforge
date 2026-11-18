@@ -1719,3 +1719,9 @@
 - Pas de bibliothèque de CMP, donc pas d'ADR. CSP (Report-Only) ouverte à `*.googletagmanager.com`, `*.google-analytics.com`, `*.analytics.google.com`.
 - Piège : `next dev` recharge la page en boucle dans Chrome headless, même sans le bandeau. Les tests navigateur se font sur `next build && next start`.
 - La politique de confidentialité (back-office `/admin/legal`) doit mentionner Google Analytics : c'est du contenu en base, pas du code.
+
+## 2026-11-18 — Alertes d'offres : in-app + Web Push, plus d'e-mail (ADR-031)
+- `JobAlertDispatcher` écrit une notification `job_alert` via `JobAlertInbox` (`notifications/job-alert-inbox.ts`), marque les alertes, puis pousse avec `PushNotifier` (2 push/jour max, `JOB_ALERT_DAILY_PUSH_CAP`). Le gabarit e-mail d'alerte est supprimé.
+- Push : `web-push`, table `push_subscriptions` (migration 0062), service worker `apps/web/public/sw.js`, hook `components/notifications/use-push.ts`. Sans `VAPID_*`, le push n'est pas proposé.
+- Piège : `@cvforge/types` est lu depuis `dist/` par les tests API. Après avoir ajouté une constante, lancer `pnpm --filter @cvforge/types build`, sinon elle vaut `undefined` (la colonne `type` arrive à null).
+- Lint web : `react-hooks/set-state-in-effect` interdit `setState` dans un effet → lectures navigateur via `useSyncExternalStore`.

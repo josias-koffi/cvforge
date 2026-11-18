@@ -57,8 +57,9 @@ export function JobAlertPreferences({
         <FieldContent>
           <FieldLabel htmlFor="job-alerts">Alertes nouvelles offres</FieldLabel>
           <FieldDescription>
-            Un e-mail dans les minutes qui suivent la publication d&apos;une
-            offre qui vous correspond. Gratuit.
+            Une notification dans l&apos;app, et sur vos appareils si vous les
+            activez, dans les minutes qui suivent la publication d&apos;une
+            offre qui vous correspond. Plus d&apos;e-mail. Gratuit.
           </FieldDescription>
         </FieldContent>
         <Switch
@@ -106,9 +107,10 @@ export function JobAlertPreferences({
           ))}
         </ToggleGroup>
         <FieldDescription>
-          Rien entre 21 h et 7 h : ce qui arrive la nuit part en un seul e-mail
-          à 7 h. Au-delà de 10 offres dans la journée, elles sont regroupées
-          toutes les heures.
+          Rien entre 21 h et 7 h : ce qui arrive la nuit vous attend à 7 h, en
+          une seule notification. Au-delà de 10 offres dans la journée, elles
+          sont regroupées toutes les heures. 2 notifications sur vos appareils
+          par jour au plus, les suivantes restent dans l&apos;app.
         </FieldDescription>
       </Field>
       <Separator />

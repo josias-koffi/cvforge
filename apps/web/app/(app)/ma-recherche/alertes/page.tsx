@@ -1,9 +1,14 @@
 import type { Metadata } from "next"
-import type { NotificationPreferencesResponse } from "@cvforge/types"
+import type {
+  NotificationPreferencesResponse,
+  PushConfigResponse,
+} from "@cvforge/types"
 
 import { SearchProjectAlerts } from "@/components/job-search/search-project-alerts"
 import { SearchTabBody } from "@/components/job-search/search-tab-body"
 import { JobAlertPreferences } from "@/components/notifications/job-alert-preferences"
+import { PushToggle } from "@/components/notifications/push-toggle"
+import { Separator } from "@/components/ui/separator"
 import {
   Card,
   CardContent,
@@ -26,9 +31,10 @@ export default async function SearchAlertsPage(
   props: PageProps<"/ma-recherche/alertes">
 ) {
   const { selected } = await loadSelectedProfile(props.searchParams)
-  const [{ searchProject, rome }, preferences] = await Promise.all([
+  const [{ searchProject, rome }, preferences, push] = await Promise.all([
     loadSearchProject(selected.id),
     api<NotificationPreferencesResponse>("/notifications/preferences"),
+    api<PushConfigResponse>("/notifications/push"),
   ])
 
   return (
@@ -46,15 +52,19 @@ export default async function SearchAlertsPage(
             <CardHeader>
               <CardTitle>Alertes nouvelles offres</CardTitle>
               <CardDescription>
-                {preferences.emailDeliveryReady
-                  ? "Soyez parmi les premiers à postuler. Ces réglages valent pour toutes vos recherches."
-                  : "L'envoi d'e-mails n'est pas configuré sur ce serveur."}
+                Soyez parmi les premiers à postuler. Ces réglages valent pour
+                toutes vos recherches.
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="flex flex-col gap-6">
+              {push.publicKey ? (
+                <>
+                  <PushToggle publicKey={push.publicKey} />
+                  <Separator />
+                </>
+              ) : null}
               <JobAlertPreferences
                 preferences={preferences.preferences.jobAlerts}
-                disabled={!preferences.emailDeliveryReady}
               />
             </CardContent>
           </Card>

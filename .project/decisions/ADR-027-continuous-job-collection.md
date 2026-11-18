@@ -128,6 +128,14 @@ immédiat (`JOB_ALERT_DAILY_IMMEDIATE_CAP`), au-delà regroupées toutes les heu
 7 h, la nuit part en un e-mail à 7 h ; `List-Unsubscribe` sur chaque envoi. Une alerte plus vieille
 que 24 h, ou dont l'offre a été fermée, ne part pas : le récap s'en charge. Gratuites.
 
+> **Amendement (2026-11-18, décision du propriétaire).** Les alertes ne partent plus par e-mail :
+> elles épuisaient le quota gratuit de Resend et un utilisateur s'est plaint qu'elles encombraient
+> sa boîte. Chaque lot devient une notification dans l'app (`job_alert`, offres dans
+> `metadata.offers`) et, pour les navigateurs qui l'ont accepté, une notification push (Web Push,
+> ADR-031). **2 push par jour et par candidat au plus** (`JOB_ALERT_DAILY_PUSH_CAP`), les
+> suivantes restent dans l'app. Rythme, plafond de 10, heures calmes et fenêtre de 24 h inchangés.
+> Seuls e-mails restants : le récap du matin, les relances, l'avis de suppression et le reçu d'achat.
+
 ### 4 ter. L'analyse IA des alertes, payante et à côté de l'offre (US-168)
 
 Option du candidat, désactivée par défaut : 1 crédit par jour (heure de Paris) où au moins une

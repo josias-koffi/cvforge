@@ -1,22 +1,37 @@
-import type { NotificationSummary } from "@cvforge/types"
+import type {
+  NotificationPreferencesResponse,
+  NotificationSummary,
+  PushConfigResponse,
+} from "@cvforge/types"
 
 import { Suspense } from "react"
 
 import { FlashToast } from "@/components/feedback/flash-toast"
 import { AppSidebar } from "@/components/layout/app-sidebar"
+import { PushPromptBanner } from "@/components/notifications/push-prompt-banner"
 import { SiteHeader } from "@/components/layout/site-header"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { api } from "@/lib/api"
 import { getCreditBalance } from "@/lib/credits"
 import { requireSession } from "@/lib/session"
 
-async function loadSidebarCounters() {
-  const [credits, notifications] = await Promise.allSettled([
+async function loadShellData() {
+  const [credits, notifications, push, preferences] = await Promise.allSettled([
     getCreditBalance(),
     api<{ summary: NotificationSummary }>("/notifications/summary"),
+    api<PushConfigResponse>("/notifications/push"),
+    api<NotificationPreferencesResponse>("/notifications/preferences"),
   ])
+  const alertsEnabled =
+    preferences.status === "fulfilled" &&
+    preferences.value.preferences.jobAlerts.enabled
 
   return {
+    // The push prompt only makes sense to a candidate who wants alerts.
+    pushPublicKey:
+      push.status === "fulfilled" && alertsEnabled
+        ? push.value.publicKey
+        : null,
     balance: credits.status === "fulfilled" ? credits.value.balance : null,
     unreadCount:
       notifications.status === "fulfilled"
@@ -27,7 +42,7 @@ async function loadSidebarCounters() {
 
 export default async function AppLayout({ children }: LayoutProps<"/">) {
   const session = await requireSession()
-  const { balance, unreadCount } = await loadSidebarCounters()
+  const { balance, pushPublicKey, unreadCount } = await loadShellData()
 
   return (
     // The shell is exactly one screen high: the header and the sidebar stay
@@ -56,6 +71,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
           <FlashToast />
         </Suspense>
         <div className="@container/main flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto py-4 *:shrink-0 motion-safe:animate-in motion-safe:duration-300 motion-safe:fade-in md:py-6">
+          <PushPromptBanner publicKey={pushPublicKey} />
           {children}
         </div>
       </SidebarInset>
