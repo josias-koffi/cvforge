@@ -1,12 +1,16 @@
 import { randomUUID } from "node:crypto";
-import type { JobAlertPreferences } from "@cvforge/types";
+import type {
+  JobAlertNotificationOffer,
+  JobAlertPreferences,
+} from "@cvforge/types";
 import {
   Logger,
   type OnModuleDestroy,
   type OnModuleInit,
 } from "@nestjs/common";
-import type { JobAlertOffer } from "../mail/emails";
+import type { JobAlertInbox } from "../notifications/job-alert-inbox";
 import type { NotificationsService } from "../notifications/notifications.service";
+import type { PushNotifier } from "../notifications/push-notifier";
 import type {
   AlertMatchesStore,
   AlertSendHistory,
@@ -20,33 +24,46 @@ const MINUTE_MS = 60_000;
 const HOUR_MS = 60 * MINUTE_MS;
 /** Checked every minute: an immediate alert leaves within a minute or two. */
 const DISPATCH_INTERVAL_MS = MINUTE_MS;
-/** Nothing goes out from 21:00 to 7:00, Paris time; 7:00 sends one e-mail. */
+/** Nothing goes out from 21:00 to 7:00, Paris time; 7:00 sends one notification. */
 export const QUIET_HOURS = { from: 21, until: 7 } as const;
 /** Default of `JOB_ALERT_DAILY_IMMEDIATE_CAP`, decided by the owner on 2026-10-02. */
 const DEFAULT_DAILY_IMMEDIATE_CAP = 10;
+/** Default of `JOB_ALERT_DAILY_PUSH_CAP`, decided by the owner on 2026-11-18. */
+const DEFAULT_DAILY_PUSH_CAP = 2;
 /** An alert older than this is the morning recap's business, not an alert's. */
 const PENDING_WINDOW_MS = 24 * HOUR_MS;
 const PENDING_BATCH = 500;
-/** Offers named in one grouped e-mail; the rest follow in the next one. */
-export const MAX_OFFERS_PER_EMAIL = 20;
+/** Offers named in one grouped notification; the rest follow in the next one. */
+export const MAX_OFFERS_PER_NOTIFICATION = 20;
 const LEASE_MS = 5 * MINUTE_MS;
 export const ALERTS_STREAM_KEY = "job_alerts";
 
 export interface JobAlertConfig {
   /** Offers a day sent one by one; past it, the candidate gets them grouped hourly. */
   dailyImmediateCap: number;
+  /** Notifications a day that also buzz the devices; past it, in the app only. */
+  dailyPushCap: number;
 }
 
 /** Always on: a candidate's own preferences decide whether alerts reach them. */
 export function resolveJobAlertConfig(
   env: NodeJS.ProcessEnv = process.env,
 ): JobAlertConfig {
-  const cap = Number(env.JOB_ALERT_DAILY_IMMEDIATE_CAP);
-
   return {
-    dailyImmediateCap:
-      Number.isInteger(cap) && cap >= 0 ? cap : DEFAULT_DAILY_IMMEDIATE_CAP,
+    dailyImmediateCap: readCap(
+      env.JOB_ALERT_DAILY_IMMEDIATE_CAP,
+      DEFAULT_DAILY_IMMEDIATE_CAP,
+    ),
+    dailyPushCap: readCap(env.JOB_ALERT_DAILY_PUSH_CAP, DEFAULT_DAILY_PUSH_CAP),
   };
+}
+
+function readCap(value: string | undefined, fallback: number): number {
+  const cap = Number(value);
+
+  return value !== undefined && Number.isInteger(cap) && cap >= 0
+    ? cap
+    : fallback;
 }
 
 export type AlertDispatchResult =
@@ -54,25 +71,24 @@ export type AlertDispatchResult =
   | { status: "locked" }
   | {
       status: "done";
-      emails: number;
+      notifications: number;
+      pushed: number;
       offers: number;
       waiting: number;
       errors: string[];
     };
 
-type Notifications = Pick<
-  NotificationsService,
-  "readJobAlertPreferences" | "sendJobAlertEmail"
->;
+type Notifications = Pick<NotificationsService, "readJobAlertPreferences">;
 
 /**
- * Sends the "Nouvelle offre pour vous" e-mails (E27, US-166).
+ * Raises the "Nouvelle offre pour vous" notifications (E27, US-166): in the
+ * app, and pushed to the devices the candidate enabled. No e-mail any more —
+ * they used up the sending quota and cluttered inboxes (2026-11-18).
  *
- * Runs on its own timer, apart from the collection: a mail server that fails
- * costs an alert its minute, never the collection its slice. Each candidate's
+ * Runs on its own timer, apart from the collection. Each candidate's
  * preferences decide the rhythm; three guards keep it from turning into spam
- * — a daily cap past which alerts are grouped, quiet hours, and the
- * unsubscribe link of every e-mail. Free: no credit is involved.
+ * — a daily cap past which alerts are grouped, quiet hours, and at most
+ * `dailyPushCap` pushes a day, the rest waiting in the app. Free: no credit.
  */
 export class JobAlertDispatcher implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(JobAlertDispatcher.name);
@@ -85,9 +101,10 @@ export class JobAlertDispatcher implements OnModuleInit, OnModuleDestroy {
       "listPending" | "sendHistory" | "markAlertSent"
     >,
     private readonly notifications: Notifications,
+    private readonly inbox: Pick<JobAlertInbox, "add" | "countPushed">,
+    private readonly push: Pick<PushNotifier, "notify">,
     private readonly cursors: JobStreamCursorsStore,
     private readonly config: JobAlertConfig,
-    private readonly appUrl: string,
     private readonly now: () => number = Date.now,
     private readonly owner: string = randomUUID(),
   ) {}
@@ -139,9 +156,10 @@ export class JobAlertDispatcher implements OnModuleInit, OnModuleDestroy {
       dateInParis(now),
     );
     const result = {
-      emails: 0,
       errors: [] as string[],
+      notifications: 0,
       offers: 0,
+      pushed: 0,
       status: "done" as const,
       waiting: 0,
     };
@@ -153,14 +171,15 @@ export class JobAlertDispatcher implements OnModuleInit, OnModuleDestroy {
           userAlerts,
           history.get(userEmail) ?? { lastSentAt: null, sentToday: 0 },
         );
-        if (sent === 0) result.waiting += userAlerts.length;
+        if (sent.offers === 0) result.waiting += userAlerts.length;
         else {
-          result.emails += 1;
-          result.offers += sent;
+          result.notifications += 1;
+          result.offers += sent.offers;
+          if (sent.pushed) result.pushed += 1;
         }
       } catch (error) {
-        // One candidate whose e-mail fails waits for the next minute; the
-        // others are not held up.
+        // One candidate whose notification fails waits for the next minute;
+        // the others are not held up.
         result.errors.push(`${userEmail}: ${String(error)}`);
       }
     }
@@ -174,60 +193,74 @@ export class JobAlertDispatcher implements OnModuleInit, OnModuleDestroy {
     return result;
   }
 
-  /** Returns how many offers went out to this candidate, 0 when they wait. */
+  /** How many offers went out to this candidate, 0 when they wait. */
   private async dispatchUser(
     userEmail: string,
     pending: PendingAlert[],
     history: AlertSendHistory,
-  ): Promise<number> {
+  ): Promise<{ offers: number; pushed: boolean }> {
+    const waiting = { offers: 0, pushed: false };
     const preferences =
       await this.notifications.readJobAlertPreferences(userEmail);
     // Turned off since: the morning recap takes the pending ones over.
-    if (!preferences.enabled) return 0;
+    if (!preferences.enabled) return waiting;
 
     const now = this.now();
     if (!dueNow(preferences, history, this.config.dailyImmediateCap, now))
-      return 0;
+      return waiting;
 
     const batch = sendable(pending, preferences, now).slice(
       0,
-      MAX_OFFERS_PER_EMAIL,
+      MAX_OFFERS_PER_NOTIFICATION,
     );
-    if (batch.length === 0) return 0;
+    const [first] = batch;
+    if (!first) return waiting;
 
-    const sent = await this.notifications.sendJobAlertEmail({
-      now: new Date(now).toISOString(),
-      offers: batch.map((alert) => this.toOffer(alert, preferences.aiAnalysis)),
-      offersUrl: `${this.appUrl}/offres-du-jour`,
-      preferencesUrl: `${this.appUrl}/notifications`,
-      to: userEmail,
+    const pushedToday = await this.inbox.countPushed(
+      userEmail,
+      dateInParis(now),
+    );
+    const pushed = pushedToday < this.config.dailyPushCap;
+    const notification = await this.inbox.add({
+      offers: batch.map((alert) => toOffer(alert, preferences.aiAnalysis)),
+      pushed,
+      reasons: alertReasons(first),
+      userEmail,
     });
-    // Delivery not configured: nothing is marked, the recap takes them over.
-    if (!sent) return 0;
 
     await this.alerts.markAlertSent(
       batch.map((alert) => alert.id),
       new Date(now).toISOString(),
     );
 
-    return batch.length;
-  }
+    // After the alerts are marked: a push service that fails must not get
+    // the same offers announced again next minute.
+    if (pushed) {
+      await this.push.notify(userEmail, {
+        body: notification.message,
+        tag: "job-alert",
+        title: notification.title,
+        url: notification.linkHref,
+      });
+    }
 
-  private toOffer(alert: PendingAlert, withAnalysis: boolean): JobAlertOffer {
-    return {
-      // Beside the offer, never in its place; said so when it is missing.
-      analysis: withAnalysis ? alert.aiAnalysis : null,
-      analysisMissing: withAnalysis && !alert.aiAnalysis,
-      // Straight into the application, the tailored CV already generating (US-167).
-      applyUrl: `${this.appUrl}/offres-du-jour/postuler/${encodeURIComponent(alert.jobId)}`,
-      companyName: alert.companyName,
-      locationLabel: alert.locationLabel,
-      publishedAt: alert.publishedAt ?? alert.detectedAt,
-      reasons: alertReasons(alert),
-      sourceLabel: sourceLabel(alert.source),
-      title: alert.title,
-    };
+    return { offers: batch.length, pushed };
   }
+}
+
+function toOffer(
+  alert: PendingAlert,
+  withAnalysis: boolean,
+): JobAlertNotificationOffer {
+  return {
+    companyName: alert.companyName,
+    jobId: alert.jobId,
+    locationLabel: alert.locationLabel,
+    sourceLabel: sourceLabel(alert.source),
+    title: alert.title,
+    // Beside the offer, never in its place.
+    verdict: withAnalysis ? (alert.aiAnalysis?.verdict ?? null) : null,
+  };
 }
 
 /**

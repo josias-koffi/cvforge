@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
@@ -10,6 +11,12 @@ import {
 } from "@nestjs/common";
 import { AuthService } from "../auth/auth.service";
 import { NotificationsService } from "./notifications.service";
+import { PushNotifier } from "./push-notifier";
+import {
+  PUSH_SUBSCRIPTIONS_STORE,
+  type PushSubscriptionsStore,
+} from "./push-subscriptions.pg-store";
+import { readPushSubscription } from "./push-subscription-input";
 
 type RequestLike = {
   headers: { cookie?: string };
@@ -21,6 +28,9 @@ export class NotificationsController {
     @Inject(NotificationsService)
     private readonly notificationsService: NotificationsService,
     @Inject(AuthService) private readonly authService: AuthService,
+    @Inject(PushNotifier) private readonly pushNotifier: PushNotifier,
+    @Inject(PUSH_SUBSCRIPTIONS_STORE)
+    private readonly pushSubscriptions: PushSubscriptionsStore,
   ) {}
 
   @Get()
@@ -83,6 +93,51 @@ export class NotificationsController {
       },
       jobAlerts: body.jobAlerts,
     });
+  }
+
+  @Post("read-all")
+  async markAllAsRead(@Req() request: RequestLike) {
+    const session = this.readSession(request);
+
+    return {
+      marked: await this.notificationsService.markAllAsRead(session.email),
+    };
+  }
+
+  /** The VAPID public key the browser subscribes with; null when push is off. */
+  @Get("push")
+  getPushConfig(@Req() request: RequestLike) {
+    this.readSession(request);
+
+    return { publicKey: this.pushNotifier.publicKey };
+  }
+
+  @Post("push/subscribe")
+  async subscribePush(@Body() body: unknown, @Req() request: RequestLike) {
+    const session = this.readSession(request);
+    const subscription = readPushSubscription(body);
+
+    if (!subscription || !this.pushNotifier.publicKey) {
+      throw new BadRequestException("Abonnement aux notifications invalide.");
+    }
+
+    await this.pushSubscriptions.save(session.email, subscription);
+
+    return { subscribed: true };
+  }
+
+  @Post("push/unsubscribe")
+  async unsubscribePush(
+    @Body() body: { endpoint?: unknown },
+    @Req() request: RequestLike,
+  ) {
+    const session = this.readSession(request);
+
+    if (typeof body.endpoint === "string") {
+      await this.pushSubscriptions.remove(session.email, body.endpoint);
+    }
+
+    return { subscribed: false };
   }
 
   @Post(":notificationId/read")

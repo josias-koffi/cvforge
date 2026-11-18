@@ -1,8 +1,11 @@
 import {
   APPLICATION_STATUS_SENT,
+  JOB_ALERT_VERDICT_LABELS,
   NOTIFICATION_TYPE_APPLICATION_FOLLOW_UP,
+  NOTIFICATION_TYPE_JOB_ALERT,
   type ApplicationStatusHistoryEntry,
   type InAppNotification,
+  type JobAlertNotificationOffer,
 } from "@cvforge/types";
 import { randomUUID } from "node:crypto";
 import type { StoredApplication } from "../applications/applications.types";
@@ -65,4 +68,61 @@ export function buildReminderNotification(
     type: NOTIFICATION_TYPE_APPLICATION_FOLLOW_UP,
     userEmail: application.userEmail,
   };
+}
+
+/**
+ * One notification per batch of alerts (E27): a single offer is named with
+ * its company and why it matches; several are counted, the first ones named.
+ * The source stays cited, as the France Travail licence asks.
+ */
+export function buildJobAlertNotification(input: {
+  userEmail: string;
+  offers: JobAlertNotificationOffer[];
+  reasons: string[];
+  pushed: boolean;
+  createdAt: string;
+}): InAppNotification {
+  const [first, ...others] = input.offers;
+  if (!first) throw new Error("A job alert needs at least one offer.");
+
+  const single = others.length === 0;
+  const verdict = first.verdict
+    ? ` Analyse IA : ${JOB_ALERT_VERDICT_LABELS[first.verdict].toLowerCase()}.`
+    : "";
+
+  return {
+    createdAt: input.createdAt,
+    id: randomUUID(),
+    linkHref: single
+      ? `/offres-du-jour/postuler/${encodeURIComponent(first.jobId)}`
+      : "/offres-du-jour",
+    message: single
+      ? [
+          `${offerWhere(first)}.`,
+          input.reasons.length > 0 ? `Pour ${input.reasons.join(", ")}.` : "",
+          `Source : ${first.sourceLabel}.${verdict}`,
+        ]
+          .filter(Boolean)
+          .join(" ")
+      : `${input.offers
+          .slice(0, 3)
+          .map((offer) => offer.title)
+          .join(" · ")}${input.offers.length > 3 ? ` et ${input.offers.length - 3} autre(s)` : ""}.`,
+    metadata: {
+      matchCount: input.offers.length,
+      offers: input.offers,
+      pushed: input.pushed,
+    },
+    readAt: null,
+    title: single
+      ? `Nouvelle offre : ${first.title}`
+      : `${input.offers.length} nouvelles offres pour vous`,
+    type: NOTIFICATION_TYPE_JOB_ALERT,
+    userEmail: input.userEmail,
+  };
+}
+
+function offerWhere(offer: JobAlertNotificationOffer) {
+  return [offer.companyName, offer.locationLabel].filter(Boolean).join(", ") ||
+    "Offre publiée à l'instant";
 }

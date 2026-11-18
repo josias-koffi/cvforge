@@ -18,11 +18,6 @@ export {
   type ApplicationDeletionWarningEmailInput,
   type ExpiringApplicationLine,
 } from "./application-deletion-email";
-export {
-  composeJobAlertEmail,
-  type JobAlertEmailInput,
-  type JobAlertOffer,
-} from "./job-alert-email";
 
 /**
  * The content of every Jobspark e-mail. Pure functions: the mailers add the

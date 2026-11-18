@@ -4,7 +4,11 @@ import type {
 } from "@cvforge/types";
 import { and, desc, eq } from "drizzle-orm";
 import type { Database } from "../database/database.types";
-import { notificationPreferences, notifications } from "../database/schema";
+import {
+  notificationPreferences,
+  notifications,
+  pushSubscriptions,
+} from "../database/schema";
 import {
   readEmailPreferences,
   readJobAlertPreferences,
@@ -128,7 +132,7 @@ export class PgNotificationsStore implements NotificationsStore {
   /**
    * Account purge. The file store dropped the notifications and left the
    * preferences row behind, which kept an email address on file after the
-   * account was gone; both go now. The count stays the number of
+   * account was gone; both go now, with the push subscriptions. The count stays the number of
    * notifications, which is what the privacy summary reports.
    */
   deleteByUserEmail(userEmail: string) {
@@ -141,6 +145,10 @@ export class PgNotificationsStore implements NotificationsStore {
       await tx
         .delete(notificationPreferences)
         .where(eq(notificationPreferences.userEmail, userEmail));
+      // The browsers' push addresses are the account's too.
+      await tx
+        .delete(pushSubscriptions)
+        .where(eq(pushSubscriptions.userEmail, userEmail));
 
       return deleted.length;
     });

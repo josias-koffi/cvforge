@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache"
 import type {
   JobAlertPreferences,
   NotificationEmailPreferences,
+  PushSubscriptionInput,
 } from "@cvforge/types"
 
 import { api, runAction } from "@/lib/api"
@@ -17,6 +18,39 @@ export async function markNotificationRead(notificationId: string) {
 
   revalidatePath("/", "layout")
   return result
+}
+
+export async function markAllNotificationsRead() {
+  const result = await runAction(
+    () => api("/notifications/read-all", { method: "POST" }),
+    "Tout est marqué comme lu."
+  )
+
+  revalidatePath("/", "layout")
+  return result
+}
+
+/** This browser now receives the job alerts (E27). */
+export async function subscribePush(subscription: PushSubscriptionInput) {
+  return runAction(
+    () =>
+      api("/notifications/push/subscribe", {
+        body: subscription,
+        method: "POST",
+      }),
+    "Notifications activées sur cet appareil."
+  )
+}
+
+export async function unsubscribePush(endpoint: string) {
+  return runAction(
+    () =>
+      api("/notifications/push/unsubscribe", {
+        body: { endpoint },
+        method: "POST",
+      }),
+    "Notifications désactivées sur cet appareil."
+  )
 }
 
 export async function updateEmailPreference(
