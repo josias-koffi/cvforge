@@ -187,8 +187,14 @@ export function scoreJob(input: ScoreInput): ScoredJob {
   const romeSkills = rome
     ? romeSkillsMatch(job, rome)
     : { matched: [], missing: [], ratio: 0 };
-  const titleWordsScore = titleScore(job, project, rome?.appellations ?? []);
-  const romeTitle = romeTitleScore(job, rome?.projectCodes ?? []);
+  const appellations = rome?.appellations ?? [];
+  const titleWordsScore = titleScore(job, project, appellations);
+  const romeTitle = namesOtherTrade(
+    new Set(titleWords(job.title)),
+    candidateTitleWords(project, appellations),
+  )
+    ? 0
+    : romeTitleScore(job, rome?.projectCodes ?? []);
   const breakdown: ScoreBreakdown = {
     experience: SCORE_WEIGHTS.experience * experienceScore(job, project),
     freshness: SCORE_WEIGHTS.freshness * freshnessScore(job, now),
@@ -271,12 +277,25 @@ const GENERIC_TITLE_WORDS = new Set([
 /**
  * Words naming a trade of their own: an "Ingénieur commercial logiciels" is a
  * salesman, whatever the candidate's "Ingénieur logiciel" shares with it.
+ *
+ * They also outweigh the offer's ROME code. France Travail files hardware and
+ * electrical engineers under M1818 "Ingénieur d'étude informatique": on the
+ * owner's feed (production, 2026-11-18) that code alone sent every
+ * "Ingénieur Hardware" to a fullstack developer.
  */
 const OTHER_TRADE_TITLE_WORDS = new Set([
   "achat",
   "acheteur",
+  "automaticien",
+  "automatisme",
   "commercial",
   "commerciale",
+  "electricien",
+  "electrique",
+  "electronique",
+  "electrotechnique",
+  "hardware",
+  "mecanique",
   "sale",
   "vendeur",
   "vente",
@@ -314,11 +333,7 @@ function roleScore(
   needs: "any" | "all",
 ): number {
   if (words.length === 0) return 0;
-
-  const otherTrade = [...title].some(
-    (word) => OTHER_TRADE_TITLE_WORDS.has(word) && !words.includes(word),
-  );
-  if (otherTrade) return 0;
+  if (namesOtherTrade(title, words)) return 0;
 
   const specific = words.filter((word) => !GENERIC_TITLE_WORDS.has(word));
   const found =
@@ -331,6 +346,27 @@ function roleScore(
   if (!found) return 0;
 
   return words.filter((word) => title.has(word)).length / words.length;
+}
+
+/** The offer's title names a trade the candidate's own words do not. */
+function namesOtherTrade(
+  title: ReadonlySet<string>,
+  candidateWords: readonly string[],
+): boolean {
+  return [...title].some(
+    (word) => OTHER_TRADE_TITLE_WORDS.has(word) && !candidateWords.includes(word),
+  );
+}
+
+/** Every word of the titles the candidate typed or confirmed. */
+function candidateTitleWords(
+  project: SearchProject,
+  appellations: readonly string[],
+): string[] {
+  return [
+    ...targetRoles(project).flatMap(titleWords),
+    ...appellations.flatMap((label) => titleWords(masculineForm(label))),
+  ];
 }
 
 /**

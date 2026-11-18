@@ -5,7 +5,7 @@ import {
 } from "@cvforge/types";
 import type { ListingCompetence } from "../job-search.types";
 import type { StoredJob } from "../jobs.types";
-import { hasTradeEvidence, scoreJob } from "./job-matching";
+import { hasTradeEvidence, scoreJob, type ScoredJob } from "./job-matching";
 import type { RomeCompetenceRef, RomeScoringContext } from "./rome-matching";
 
 /**
@@ -54,6 +54,8 @@ export interface EvalPair {
 export interface EvalPrediction {
   id: string;
   relevant: boolean;
+  /** Which signal made the trade: what to fix when an offer is wrong. */
+  evidence: ScoredJob["evidence"];
   title: number;
   skills: number;
   score: number;
@@ -93,6 +95,7 @@ export function predictRelevance(
     return [
       {
         id: pair.id,
+        evidence: scored.evidence,
         relevant: hasTradeEvidence(scored),
         score: scored.score,
         skills: scored.breakdown.skills,
