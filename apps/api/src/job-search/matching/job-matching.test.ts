@@ -572,6 +572,34 @@ describe("the trade, on the owner's search (production, 2026-10-08)", () => {
     expect(evidenceFor("Ingénieur commercial logiciels - CDI (H/F)")).toBe(false);
   });
 
+  it("does not let a broad ROME code carry a hardware or electrical offer", () => {
+    const romeEvidenceFor = (title: string, project = owner) =>
+      hasTradeEvidence(
+        scoreJob({
+          job: makeJob({ romeCode: "M1818", title }),
+          now: NOW,
+          project,
+          rome: {
+            genericCodes: new Set(),
+            metierCompetences: new Map(),
+            profileCompetences: [],
+            projectCodes: ["M1818"],
+          },
+          skills: [],
+        }),
+      );
+
+    expect(romeEvidenceFor("Ingénieur Hardware (H/F)")).toBe(false);
+    expect(romeEvidenceFor("Ingénieur d'Études Électroniques et Hardware (H/F)")).toBe(false);
+    expect(romeEvidenceFor("INGENIEUR CONTRÔLE-COMMANDES DE MACHINES ELECTRIQUES H/F")).toBe(false);
+    // The code still carries an offer whose title names no other trade…
+    expect(romeEvidenceFor("Chargé.e d'études - expert.e informatique (H/F)")).toBe(true);
+    // …and a hardware engineer's own search keeps its hardware offers.
+    expect(
+      romeEvidenceFor("Ingénieur Hardware (H/F)", makeProject({ targetRoles: ["Ingénieur hardware"] })),
+    ).toBe(true);
+  });
+
   it("does not count the skills every trade names", () => {
     const skills = ["Développement", "Architecture", "NestJS"];
 
