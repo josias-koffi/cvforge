@@ -46,7 +46,9 @@ export function AgentTokensList({ tokens }: { tokens: AgentTokenSummary[] }) {
       </CardHeader>
       <CardContent>
         {tokens.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Aucun agent connecté.</p>
+          <p className="text-sm text-muted-foreground">
+            Aucun agent connecté. Créez un jeton avec « Connecter un agent ».
+          </p>
         ) : (
           <Table>
             <TableHeader>
