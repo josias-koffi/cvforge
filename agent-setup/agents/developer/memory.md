@@ -1725,3 +1725,11 @@
 - Push : `web-push`, table `push_subscriptions` (migration 0062), service worker `apps/web/public/sw.js`, hook `components/notifications/use-push.ts`. Sans `VAPID_*`, le push n'est pas proposé.
 - Piège : `@cvforge/types` est lu depuis `dist/` par les tests API. Après avoir ajouté une constante, lancer `pnpm --filter @cvforge/types build`, sinon elle vaut `undefined` (la colonne `type` arrive à null).
 - Lint web : `react-hooks/set-state-in-effect` interdit `setState` dans un effet → lectures navigateur via `useSyncExternalStore`.
+
+## 2026-11-25 — Serveur MCP pour agents personnels (E32, ADR-032)
+- Module `apps/api/src/agent-access/` : jetons `jsk_` (SHA-256 seul en base, migration 0063, cascade sur `auth_accounts`), `POST /mcp` en Streamable HTTP sans état (`@modelcontextprotocol/sdk` 1.32.2 + zod 4), un `McpServer` par requête lié au principal ; outils dans `mcp/tools/*`, filtrés par scopes (`toolsForPrincipal`), coût réservé sur le plafond du jeton par `runTool`.
+- Le jeton n'ouvre que `/mcp` : `SessionGuard` ne lit jamais `Authorization`. `GET`/`DELETE /mcp` publics en 405 : un 401 enverrait le client MCP chercher OAuth.
+- Piège : `server.registerTool` fait exploser l'inférence TS (TS2589) sur une liste hétérogène de schémas → appelé via une signature lâche.
+- Piège : ajouter `zod@^3` dans l'API rétrogradait le zod de `ai` (4.6.7) dans le lockfile ; rester sur zod 4.
+- `buildGenerationRequest` vit maintenant dans `@cvforge/types` (web et MCP envoient la même pseudonymisation) ; la recherche `/offres` se lit par `job-search/offer-search-query.ts`.
+- Reste : page `/compte/agents` à vérifier en vrai, texte de confidentialité à coller dans `/admin/legal`, e2e Claude Code.
