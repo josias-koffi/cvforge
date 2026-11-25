@@ -8,8 +8,9 @@ import {
 } from "@/components/ui/card"
 
 /**
- * The server address, for agents set up by hand (Claude Desktop, Cursor…):
- * the URL plus an `Authorization: Bearer` header carrying a token.
+ * The server address. Pasted in claude.ai, ChatGPT or any MCP client, it
+ * starts the OAuth sign-in (ADR-033); set up by hand, it goes with an
+ * `Authorization: Bearer` header carrying a token.
  */
 export function McpEndpointCard({ mcpUrl }: { mcpUrl: string }) {
   return (
@@ -17,8 +18,11 @@ export function McpEndpointCard({ mcpUrl }: { mcpUrl: string }) {
       <CardHeader>
         <CardTitle>Adresse du serveur MCP</CardTitle>
         <CardDescription>
-          Pour un agent configuré à la main : indiquez cette adresse (transport
-          HTTP) et ajoutez l&apos;en-tête{" "}
+          Dans Claude (claude.ai, l&apos;app ou mobile : Connecteurs › Ajouter
+          un connecteur personnalisé), ChatGPT ou tout agent compatible MCP,
+          collez cette adresse : l&apos;agent vous enverra sur JobSpark pour
+          autoriser l&apos;accès. Pour un agent configuré à la main, ajoutez
+          plutôt l&apos;en-tête{" "}
           <code className="text-xs">Authorization: Bearer &lt;jeton&gt;</code>{" "}
           avec un jeton créé via « Connecter un agent ».
         </CardDescription>

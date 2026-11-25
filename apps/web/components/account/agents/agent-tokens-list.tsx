@@ -67,9 +67,16 @@ export function AgentTokensList({ tokens }: { tokens: AgentTokenSummary[] }) {
                 return (
                   <TableRow key={token.id}>
                     <TableCell>
-                      <div className="font-medium">{token.name}</div>
+                      <div className="flex items-center gap-2 font-medium">
+                        {token.name}
+                        {token.source === "oauth" ? (
+                          <Badge variant="info">OAuth</Badge>
+                        ) : null}
+                      </div>
                       <div className="text-xs text-muted-foreground">
-                        jsk_…{token.lastFour}
+                        {token.source === "oauth"
+                          ? "Connecté depuis l'agent"
+                          : `jsk_…${token.lastFour}`}
                       </div>
                     </TableCell>
                     <TableCell>
