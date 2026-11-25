@@ -1,4 +1,4 @@
-import type { ContactLink, CvGenerationRequest, ImportedCvProfilePatch } from "@cvforge/types"
+import type { ContactLink, ImportedCvProfilePatch } from "@cvforge/types"
 
 export type ExperienceEntry = {
   company: string
@@ -129,30 +129,8 @@ export function isProfileReady(profile: BaseProfile) {
   )
 }
 
-/** Personal identifiers stay local; only pseudonymised data reaches the prompt. */
-export function buildGenerationRequest(profile: BaseProfile): CvGenerationRequest {
-  return {
-    localFields: {
-      drivingLicenses: profile.identity.drivingLicenses,
-      email: profile.identity.email.trim(),
-      lastName: profile.identity.lastName.trim(),
-      links: profile.identity.links
-        .map((link) => ({ label: link.label.trim(), url: link.url.trim() }))
-        .filter((link) => link.label && link.url),
-      phone: profile.identity.phone.trim(),
-    },
-    promptProfile: {
-      headline: profile.headline.trim(),
-      identity: {
-        candidateToken: "[CANDIDATE]",
-        city: profile.identity.city.trim(),
-        firstName: profile.identity.firstName.trim(),
-      },
-      preferences: profile.preferences,
-      profileSections: profile.sections,
-    },
-  }
-}
+/** Personal identifiers stay local; only pseudonymised data reaches the prompt (shared with the API). */
+export { buildGenerationRequest } from "@cvforge/types"
 
 function pickList<T>(incoming: T[] | undefined, current: T[]) {
   return incoming && incoming.length > 0 ? incoming : current

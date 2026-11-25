@@ -17,29 +17,16 @@ import { AuthService } from "../auth/auth.service";
 import { requireSession } from "../auth/request-session";
 import { JobMatchesService } from "./job-matches.service";
 import { jobMatchStatuses, type JobMatchStatus } from "./matches.types";
-import { DEFAULT_MAX_AGE_DAYS } from "./matching/job-matching";
-import { readOfferPlace } from "./offer-place";
-
-/** Contracts a candidate can filter their own search by. */
-const jobContractFilters = [
-  "cdi",
-  "cdd",
-  "interim",
-  "freelance",
-  "stage",
-  "alternance",
-  "vie",
-  "unknown",
-] as const;
+import {
+  OFFER_SEARCH_PAGE_SIZE,
+  readOfferSearchQuery,
+} from "./offer-search-query";
 
 type RequestLike = {
   headers: { cookie?: string };
 };
 
 const MAX_HISTORY = 100;
-const PUBLISHED_WITHIN_DAYS = [1, 3, 7];
-const PAGE_SIZE = 20;
-const MAX_QUERY_CHARS = 120;
 
 /** The candidate's own offers of the day. */
 @Controller("job-search")
@@ -95,26 +82,27 @@ export class JobMatchesController {
     @Req() request: RequestLike,
   ) {
     const session = requireSession(this.authService, request);
-    const pageNumber = readPage(page);
-    const around = readOfferPlace(city, radius);
-    const found = await this.matches.searchOffers(session.email, {
-      contractTypes: readContracts(contract),
-      departments: readDepartments(department),
-      near: around?.near,
-      limit: PAGE_SIZE,
-      maxAgeDays: readPublishedWithin(publishedWithin),
-      offset: (pageNumber - 1) * PAGE_SIZE,
-      query: (query ?? "").slice(0, MAX_QUERY_CHARS),
-      remoteOnly: remote === "1" || remote === "true",
-      sort: sort === "recent" ? "recent" : "relevance",
+    const search = readOfferSearchQuery({
+      contrat: contract,
+      departement: department,
+      page,
+      publiee: publishedWithin,
+      q: query,
+      rayon: radius,
+      teletravail: remote,
+      tri: sort,
+      ville: city,
     });
+    const found = await this.matches.searchOffers(
+      session.email,
+      search.filters,
+    );
 
     return {
       ...found,
-      page: pageNumber,
-      pageSize: PAGE_SIZE,
-      // The city as the page shows it back: the URL only holds its code.
-      place: around?.place ?? null,
+      page: search.page,
+      pageSize: OFFER_SEARCH_PAGE_SIZE,
+      place: search.place,
     };
   }
 
@@ -184,39 +172,8 @@ function readStatus(value: string | undefined): JobMatchStatus {
   return value as JobMatchStatus;
 }
 
-/** "44,75" — departments as the commune picker writes them. */
-function readDepartments(value: string | undefined): string[] {
-  return (value ?? "")
-    .split(",")
-    .map((entry) => entry.trim().toUpperCase())
-    .filter((entry) => /^(\d{2}|2[AB]|\d{3})$/.test(entry))
-    .slice(0, 10);
-}
-
-function readContracts(value: string | undefined) {
-  return (value ?? "")
-    .split(",")
-    .map((entry) => entry.trim())
-    .filter((entry) =>
-      (jobContractFilters as readonly string[]).includes(entry),
-    ) as Array<(typeof jobContractFilters)[number]>;
-}
-
-function readPage(value: string | undefined): number {
-  const parsed = Number(value);
-
-  return Number.isInteger(parsed) && parsed > 0 ? Math.min(parsed, 50) : 1;
-}
-
 function readDate(value: string | undefined): string | null {
   const date = value?.trim() ?? "";
 
   return /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : null;
-}
-
-/** "Publiée depuis" (US-167): 1, 3 or 7 days; anything else, the whole month. */
-function readPublishedWithin(value: string | undefined): number {
-  const days = Number(value);
-
-  return PUBLISHED_WITHIN_DAYS.includes(days) ? days : DEFAULT_MAX_AGE_DAYS;
 }

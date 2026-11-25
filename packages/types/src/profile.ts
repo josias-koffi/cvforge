@@ -86,6 +86,52 @@ export interface CvGenerationRequest {
   profileId?: string;
 }
 
+/** What a generation request is built from: the web editor's profile or the stored one. */
+export interface GenerationSourceProfile {
+  headline: string;
+  identity: {
+    city: string;
+    drivingLicenses: string[];
+    email: string;
+    firstName: string;
+    lastName: string;
+    links: ContactLink[];
+    phone: string;
+  };
+  preferences: ProfilePreferences;
+  sections: PromptSafeProfileSections;
+}
+
+/**
+ * Personal identifiers stay local; only pseudonymised data reaches the prompt.
+ * Shared by the web app and the MCP tools (ADR-032) so both send the same.
+ */
+export function buildGenerationRequest(
+  profile: GenerationSourceProfile,
+): CvGenerationRequest {
+  return {
+    localFields: {
+      drivingLicenses: profile.identity.drivingLicenses,
+      email: profile.identity.email.trim(),
+      lastName: profile.identity.lastName.trim(),
+      links: profile.identity.links
+        .map((link) => ({ label: link.label.trim(), url: link.url.trim() }))
+        .filter((link) => link.label && link.url),
+      phone: profile.identity.phone.trim(),
+    },
+    promptProfile: {
+      headline: profile.headline.trim(),
+      identity: {
+        candidateToken: "[CANDIDATE]",
+        city: profile.identity.city.trim(),
+        firstName: profile.identity.firstName.trim(),
+      },
+      preferences: profile.preferences,
+      profileSections: profile.sections,
+    },
+  };
+}
+
 export interface LetterGenerationRequest extends CvGenerationRequest {
   refinement?: string;
 }
