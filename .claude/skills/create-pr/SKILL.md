@@ -13,7 +13,6 @@ Open a pull request that is small, correct, and traceable to a task.
 ## Preconditions
 - [ ] `push-to-github` completed (branch pushed, commits clean)
 - [ ] Task acceptance criteria listed in the description
-- [ ] Diff ≤ 400 lines
 
 ## Procedure (strict order)
 1. Verify the branch is pushed and tracks a remote.
@@ -28,7 +27,6 @@ Open a pull request that is small, correct, and traceable to a task.
 ## Checks
 - [ ] Title matches Conventional Commit
 - [ ] Body lists every acceptance criterion
-- [ ] Diff ≤ 400 lines
 - [ ] All required CI checks configured
 
 ## On failure

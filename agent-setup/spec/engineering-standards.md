@@ -51,7 +51,6 @@ Versioning:
 
 - One long-lived branch: `main` (always deployable)
 - Short-lived feature branches: max **2 days** before merge
-- PRs: max **400 lines** of diff (hard review limit)
 - Feature flags for incomplete features merged to main
 
 ## 5. ADRs for stack changes (blocking)
