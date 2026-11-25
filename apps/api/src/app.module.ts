@@ -1,6 +1,7 @@
 import { Module, type MiddlewareConsumer, type NestModule } from "@nestjs/common";
 import { AcquisitionModule } from "./acquisition/acquisition.module";
 import { AdminModule } from "./admin/admin.module";
+import { AgentAccessModule } from "./agent-access/agent-access.module";
 import { AppController } from "./app.controller";
 import { AuthModule } from "./auth/auth.module";
 import { SessionStateMiddleware } from "./auth/session-state.middleware";
@@ -57,6 +58,7 @@ import { rateLimitedRoutes } from "./shared/rate-limit/rate-limit.policies";
     CreditsModule,
     DatabaseModule,
     NotificationsModule,
+    AgentAccessModule,
     CreditOffersModule,
     LegalDocumentsModule,
     OnboardingModule,

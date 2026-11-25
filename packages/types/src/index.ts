@@ -7,6 +7,7 @@ export * from "./documents";
 export * from "./driving-license";
 export * from "./grounding";
 export * from "./acquisition";
+export * from "./agent-access";
 export * from "./admin-metrics";
 export * from "./ai-models";
 export * from "./ai-usage";
@@ -192,7 +193,6 @@ export interface ServiceHealth {
   /** Image tag actually serving the request; empty outside a deployment. */
   version: string;
 }
-
 
 export interface ExtractedOfferFields {
   companyName: string | null;
@@ -868,7 +868,6 @@ export interface DraftApplication {
   deletionScheduledAt?: string | null;
 }
 
-
 export interface TemplateLayoutItem {
   type: string;
   props: Record<string, unknown> & { id?: string };
@@ -943,7 +942,9 @@ export const legalDocumentSlugs = [
 ] as const;
 export type LegalDocumentSlug = (typeof legalDocumentSlugs)[number];
 
-export function isLegalDocumentSlug(value: unknown): value is LegalDocumentSlug {
+export function isLegalDocumentSlug(
+  value: unknown,
+): value is LegalDocumentSlug {
   return legalDocumentSlugs.some((slug) => slug === value);
 }
 
@@ -961,7 +962,10 @@ export interface PublicLegalDocument {
 }
 
 /** The same document in the back-office, where a draft has no publication. */
-export interface AdminLegalDocument extends Omit<PublicLegalDocument, "publishedAt"> {
+export interface AdminLegalDocument extends Omit<
+  PublicLegalDocument,
+  "publishedAt"
+> {
   id: string;
   /** Null while the document has never been published. */
   publishedAt: string | null;
@@ -972,4 +976,3 @@ export type LegalDocumentInput = {
   title: LocalizedText;
   body: LocalizedText;
 };
-

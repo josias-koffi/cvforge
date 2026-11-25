@@ -34,6 +34,13 @@ const EXPECTED_PUBLIC_ROUTES = [
   "POST|auth/passwordless/consume|",
   "POST|auth/passwordless/request|",
   "POST|billing/stripe/webhook|",
+  // ADR-032: admitted by an agent token, not a cookie. GET/DELETE only answer
+  // 405 — a 401 there would send MCP clients looking for OAuth.
+  "POST|mcp|",
+  "GET|mcp|",
+  "DELETE|mcp|",
+  // A signed, single-use, 10-minute link is the credential.
+  "GET|mcp/files/:token|",
 ];
 
 function publicRoutes() {

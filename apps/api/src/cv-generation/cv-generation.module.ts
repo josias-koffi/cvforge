@@ -72,5 +72,6 @@ import { CvPdfExportService } from "./cv-pdf-export.service";
       ) => new CvImportService(openRouterService),
     },
   ],
+  exports: [CvGenerationService, CvPdfExportService],
 })
 export class CvGenerationModule {}
