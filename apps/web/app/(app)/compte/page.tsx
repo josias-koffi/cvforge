@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import Link from "next/link"
 
 import {
   DeleteAccountCard,
@@ -6,6 +7,13 @@ import {
 } from "@/components/account/account-privacy-cards"
 import { PageHeader } from "@/components/layout/page-header"
 import { Button } from "@/components/ui/button"
+import {
+  Card,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
 import { legalPath } from "@/lib/config"
 import { requireSession } from "@/lib/session"
 
@@ -28,6 +36,20 @@ export default async function AccountPage() {
         }
       />
       <div className="grid gap-4 px-4 lg:grid-cols-2 lg:px-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Agents connectés</CardTitle>
+            <CardDescription>
+              Laissez votre agent IA (Claude Code, avec Chrome) enrichir votre
+              profil, générer vos CV et lettres et préparer vos candidatures.
+            </CardDescription>
+          </CardHeader>
+          <CardFooter>
+            <Button variant="outline" asChild>
+              <Link href="/compte/agents">Gérer les agents</Link>
+            </Button>
+          </CardFooter>
+        </Card>
         <ExportDataCard />
         <DeleteAccountCard email={session.email} />
       </div>
