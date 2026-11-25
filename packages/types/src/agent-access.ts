@@ -73,6 +73,25 @@ export type AgentTokenSummary = {
   lastUsedAt: string | null;
   revokedAt: string | null;
   status: "active" | "expired" | "revoked";
+  /** "oauth": granted from an agent's consent screen (ADR-033), not pasted. */
+  source: "personal" | "oauth";
+};
+
+/** What the consent page shows about a pending OAuth authorization. */
+export type OAuthConsentRequest = {
+  clientName: string;
+  /** Where the browser goes back to, as the user should check it. */
+  redirectHost: string;
+  /** "cimd": the client is known by its published metadata; "dcr": it registered itself. */
+  clientKind: "cimd" | "dcr";
+  requestedScopes: AgentScope[];
+};
+
+export type OAuthConsentDecision = {
+  request: string;
+  approve: boolean;
+  scopes?: AgentScope[];
+  dailyCreditCap?: number;
 };
 
 export type AgentTokenCreateRequest = {

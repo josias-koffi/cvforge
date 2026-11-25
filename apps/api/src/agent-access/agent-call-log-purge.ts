@@ -4,11 +4,17 @@ import {
   type OnModuleInit,
 } from "@nestjs/common";
 import type { AgentTokensStore } from "./agent-tokens.pg-store";
+import type { OAuthStore } from "./oauth/oauth.pg-store";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 export const AGENT_CALL_LOG_RETENTION_DAYS = 90;
+export const IDLE_OAUTH_CLIENT_DAYS = 30;
 
-/** Drops the agents' activity log past 90 days (ADR-032 §9), once a day. */
+/**
+ * Once a day: drops the agents' activity log past 90 days (ADR-032 §9), and
+ * the self-registered OAuth clients nobody connected with in 30 days
+ * (ADR-033: Claude registers a new one on each connection without CIMD).
+ */
 export class AgentCallLogPurge implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(AgentCallLogPurge.name);
   private timer: ReturnType<typeof setInterval> | null = null;
@@ -16,6 +22,7 @@ export class AgentCallLogPurge implements OnModuleInit, OnModuleDestroy {
 
   constructor(
     private readonly store: Pick<AgentTokensStore, "purgeCallsBefore">,
+    private readonly oauth: Pick<OAuthStore, "purgeIdleClients">,
     private readonly now: () => number = Date.now,
   ) {}
 
@@ -31,9 +38,14 @@ export class AgentCallLogPurge implements OnModuleInit, OnModuleDestroy {
     await this.pending;
   }
 
-  run() {
-    return this.store.purgeCallsBefore(
-      new Date(this.now() - AGENT_CALL_LOG_RETENTION_DAYS * DAY_MS),
+  async run() {
+    const now = this.now();
+
+    await this.store.purgeCallsBefore(
+      new Date(now - AGENT_CALL_LOG_RETENTION_DAYS * DAY_MS),
+    );
+    await this.oauth.purgeIdleClients(
+      new Date(now - IDLE_OAUTH_CLIENT_DAYS * DAY_MS),
     );
   }
 

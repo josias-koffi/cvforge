@@ -84,6 +84,7 @@ const paidTool = defineTool({
 });
 
 let server: Server;
+let lastChallenge = "";
 let url: URL;
 
 async function connect(token: string) {
@@ -103,6 +104,12 @@ describe("McpController", () => {
       gate,
       ledger as unknown as AgentTokensService,
       [...readTools(deps), paidTool],
+      {
+        appUrl: "http://app.test",
+        issuer: "http://api.test",
+        mcpUrl: "http://api.test/mcp",
+        sessionSecret: "s",
+      },
     );
 
     server = createServer((request, response) => {
@@ -115,6 +122,7 @@ describe("McpController", () => {
         } catch (error) {
           response.statusCode =
             error instanceof HttpException ? error.getStatus() : 500;
+          lastChallenge = String(response.getHeader("WWW-Authenticate") ?? "");
           response.end();
         }
       });
@@ -127,8 +135,13 @@ describe("McpController", () => {
 
   afterAll(() => new Promise((resolve) => server.close(resolve)));
 
-  it("refuses a request without a valid token", async () => {
+  it("refuses a bad token with a 401 pointing at our OAuth metadata", async () => {
     await expect(connect("jsk_unknown")).rejects.toThrow();
+    expect(lastChallenge).toContain(
+      'resource_metadata="http://api.test/.well-known/oauth-protected-resource/mcp"',
+    );
+    expect(lastChallenge).toContain('error="invalid_token"');
+    expect(lastChallenge).toContain("offline_access");
   });
 
   it("lists only the tools the token's scopes allow", async () => {

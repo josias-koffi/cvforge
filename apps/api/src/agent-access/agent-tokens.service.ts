@@ -53,6 +53,7 @@ export function toAgentTokenSummary(
     name: record.name,
     revokedAt: record.revokedAt?.toISOString() ?? null,
     scopes: record.scopes,
+    source: record.oauthClientId ? "oauth" : "personal",
     status: record.revokedAt
       ? "revoked"
       : record.expiresAt <= now
@@ -127,7 +128,12 @@ export class AgentTokensService {
     const record = await this.store.findByHash(hashAgentToken(rawToken));
     const now = this.now();
 
-    if (!record || record.revokedAt || record.expiresAt <= now) {
+    if (
+      !record ||
+      record.revokedAt ||
+      record.expiresAt <= now ||
+      (record.accessExpiresAt && record.accessExpiresAt <= now)
+    ) {
       return null;
     }
 

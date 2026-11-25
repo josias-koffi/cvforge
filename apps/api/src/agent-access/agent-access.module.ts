@@ -30,6 +30,27 @@ import {
   resolveMcpAllowedOrigins,
 } from "./mcp/mcp-request-gate";
 import { mcpToolsProvider } from "./mcp/mcp-tools.provider";
+import { fetchPublicPage } from "../shared/safe-fetch";
+import { OAuthClients } from "./oauth/oauth-clients";
+import { OAuthController } from "./oauth/oauth.controller";
+import {
+  OAUTH_CONFIG,
+  resolveOAuthConfig,
+  type OAuthConfig,
+} from "./oauth/oauth.config";
+import {
+  OAUTH_STORE,
+  PgOAuthStore,
+  type OAuthStore,
+} from "./oauth/oauth.pg-store";
+import { OAuthService } from "./oauth/oauth.service";
+
+/** Client metadata documents are small JSON files on a public host. */
+const CIMD_FETCH = {
+  accept: "application/json",
+  maxBytes: 64 * 1024,
+  timeoutMs: 5_000,
+};
 
 @Module({
   imports: [
@@ -42,7 +63,12 @@ import { mcpToolsProvider } from "./mcp/mcp-tools.provider";
     ProfilesModule,
     RateLimitModule,
   ],
-  controllers: [AgentTokensController, McpController, McpFilesController],
+  controllers: [
+    AgentTokensController,
+    McpController,
+    McpFilesController,
+    OAuthController,
+  ],
   providers: [
     {
       provide: AGENT_TOKENS_STORE,
@@ -50,9 +76,34 @@ import { mcpToolsProvider } from "./mcp/mcp-tools.provider";
       useFactory: (db: Database) => new PgAgentTokensStore(db),
     },
     {
+      provide: OAUTH_CONFIG,
+      useFactory: () => resolveOAuthConfig(process.env),
+    },
+    {
+      provide: OAUTH_STORE,
+      inject: [DATABASE],
+      useFactory: (db: Database) => new PgOAuthStore(db),
+    },
+    {
+      provide: OAuthClients,
+      inject: [OAUTH_STORE],
+      useFactory: (store: OAuthStore) =>
+        new OAuthClients(store, (url) => fetchPublicPage(url, CIMD_FETCH)),
+    },
+    {
+      provide: OAuthService,
+      inject: [OAUTH_CONFIG, OAuthClients, OAUTH_STORE],
+      useFactory: (
+        config: OAuthConfig,
+        clients: OAuthClients,
+        store: OAuthStore,
+      ) => new OAuthService(config, clients, store),
+    },
+    {
       provide: AgentCallLogPurge,
-      inject: [AGENT_TOKENS_STORE],
-      useFactory: (store: AgentTokensStore) => new AgentCallLogPurge(store),
+      inject: [AGENT_TOKENS_STORE, OAUTH_STORE],
+      useFactory: (store: AgentTokensStore, oauth: OAuthStore) =>
+        new AgentCallLogPurge(store, oauth),
     },
     {
       provide: AgentTokensService,

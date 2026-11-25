@@ -36,8 +36,20 @@ export const agentTokens = pgTable(
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
     lastUsedAt: timestamp("last_used_at", { withTimezone: true }),
     revokedAt: timestamp("revoked_at", { withTimezone: true }),
+    /** Set when the token came from an OAuth grant (ADR-033). */
+    oauthClientId: text("oauth_client_id"),
+    /** The MCP URL an OAuth token was issued for (RFC 8707). */
+    resource: text("resource"),
+    /** OAuth access tokens live 1 h; `expires_at` is then the grant's end. */
+    accessExpiresAt: timestamp("access_expires_at", { withTimezone: true }),
+    refreshHash: text("refresh_hash").unique(),
+    /** The refresh token just rotated out: seeing it again revokes the grant. */
+    previousRefreshHash: text("previous_refresh_hash"),
   },
-  (table) => [index("agent_tokens_user_idx").on(table.userEmail)],
+  (table) => [
+    index("agent_tokens_user_idx").on(table.userEmail),
+    index("agent_tokens_previous_refresh_idx").on(table.previousRefreshHash),
+  ],
 );
 
 /** One row per MCP tool call: what ran, never what it carried. */
@@ -63,4 +75,39 @@ export const agentToolCalls = pgTable(
       table.createdAt,
     ),
   ],
+);
+
+/** OAuth clients: registered (DCR) or known by their metadata URL (CIMD). */
+export const oauthClients = pgTable("oauth_clients", {
+  clientId: text("client_id").primaryKey(),
+  kind: text("kind").$type<"dcr" | "cimd">().notNull(),
+  clientName: text("client_name").notNull(),
+  redirectUris: jsonb("redirect_uris").$type<string[]>().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  fetchedAt: timestamp("fetched_at", { withTimezone: true }),
+  lastUsedAt: timestamp("last_used_at", { withTimezone: true }),
+});
+
+/** One-time authorization codes, 10 minutes, stored hashed. */
+export const oauthCodes = pgTable(
+  "oauth_codes",
+  {
+    codeHash: text("code_hash").primaryKey(),
+    clientId: text("client_id").notNull(),
+    userEmail: text("user_email")
+      .notNull()
+      .references(() => authAccounts.email, { onDelete: "cascade" }),
+    redirectUri: text("redirect_uri").notNull(),
+    codeChallenge: text("code_challenge").notNull(),
+    resource: text("resource").notNull(),
+    scopes: jsonb("scopes").$type<AgentScope[]>().notNull(),
+    dailyCreditCap: integer("daily_credit_cap").notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    usedAt: timestamp("used_at", { withTimezone: true }),
+    /** The token the code was exchanged for: revoked if the code comes back. */
+    tokenId: uuid("token_id"),
+  },
+  (table) => [index("oauth_codes_user_idx").on(table.userEmail)],
 );

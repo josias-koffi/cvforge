@@ -26,6 +26,11 @@ function makeRecord(
     spentDay: null,
     tokenHash: "hash",
     userEmail: EMAIL,
+    accessExpiresAt: null,
+    oauthClientId: null,
+    previousRefreshHash: null,
+    refreshHash: null,
+    resource: null,
     ...overrides,
   };
 }

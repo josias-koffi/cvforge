@@ -33,6 +33,7 @@ export type NewAgentToolCall = {
 
 export type AgentTokensStore = {
   insert: (token: NewAgentToken) => Promise<AgentTokenRecord>;
+  /** Personal tokens still usable (OAuth grants are not counted). */
   countActive: (userEmail: string, now: Date) => Promise<number>;
   listByUserEmail: (userEmail: string) => Promise<AgentTokenRecord[]>;
   findByHash: (tokenHash: string) => Promise<AgentTokenRecord | null>;
@@ -68,6 +69,8 @@ export class PgAgentTokensStore implements AgentTokensStore {
         and(
           eq(agentTokens.userEmail, userEmail),
           isNull(agentTokens.revokedAt),
+          // OAuth grants come and go with each reconnection: not counted.
+          isNull(agentTokens.oauthClientId),
           gt(agentTokens.expiresAt, now),
         ),
       );
