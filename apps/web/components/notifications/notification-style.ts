@@ -9,6 +9,7 @@ import {
   TriangleAlertIcon,
   type LucideIcon,
 } from "lucide-react"
+import { APP_TIME_ZONE } from "@/lib/format"
 
 /** One icon and one tint per kind, so the list reads at a glance. */
 export const NOTIFICATION_STYLES: Record<
@@ -53,23 +54,22 @@ export const FALLBACK_STYLE = {
   tint: "bg-muted text-muted-foreground",
 }
 
-const PARIS = "Europe/Paris"
 const dayKeyFormatter = new Intl.DateTimeFormat("fr-CA", {
   day: "2-digit",
   month: "2-digit",
-  timeZone: PARIS,
+  timeZone: APP_TIME_ZONE,
   year: "numeric",
 })
 const dayLabelFormatter = new Intl.DateTimeFormat("fr-FR", {
   day: "numeric",
   month: "long",
-  timeZone: PARIS,
+  timeZone: APP_TIME_ZONE,
   weekday: "long",
 })
 const timeFormatter = new Intl.DateTimeFormat("fr-FR", {
   hour: "2-digit",
   minute: "2-digit",
-  timeZone: PARIS,
+  timeZone: APP_TIME_ZONE,
 })
 
 /** `YYYY-MM-DD` in Paris: the server may run in UTC, the candidate does not. */

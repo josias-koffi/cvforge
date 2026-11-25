@@ -7,6 +7,7 @@ import {
   interviewCostLabel,
   formatCredits,
   formatDate,
+  formatDateTime,
   formatPrice,
   formatRelativeDays,
   formatTime,
@@ -43,6 +44,16 @@ describe("format helpers", () => {
 
   it("gives each application status a distinct semantic badge", () => {
     expect(new Set(Object.values(statusVariants)).size).toBe(5)
+  })
+})
+
+describe("time zone", () => {
+  // The server renders in UTC and the browser in local time: both must show
+  // French time, or the same page says 14:06 then 15:06 (and React warns).
+  it("shows French time whatever the machine's time zone", () => {
+    expect(formatDateTime("2026-11-25T14:06:00.000Z")).toContain("15:06")
+    expect(formatTime("2026-07-01T22:30:00.000Z")).toBe("00:30")
+    expect(formatDate("2026-11-25T23:30:00.000Z")).toContain("26")
   })
 })
 

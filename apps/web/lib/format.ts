@@ -25,8 +25,16 @@ export const statusVariants: Record<
   sent: "info",
 }
 
+/**
+ * Every date and time the app shows is in French time. Without it, a page
+ * rendered on the server (UTC) and the same page in the browser disagree by
+ * an hour or two, and React warns about the mismatch.
+ */
+export const APP_TIME_ZONE = "Europe/Paris"
+
 const dateFormatter = new Intl.DateTimeFormat("fr-FR", {
   day: "2-digit",
+  timeZone: APP_TIME_ZONE,
   month: "short",
   year: "numeric",
 })
@@ -34,6 +42,7 @@ const dateFormatter = new Intl.DateTimeFormat("fr-FR", {
 const dateTimeFormatter = new Intl.DateTimeFormat("fr-FR", {
   dateStyle: "medium",
   timeStyle: "short",
+  timeZone: APP_TIME_ZONE,
 })
 
 export function formatDate(value: string | null | undefined) {
@@ -43,6 +52,7 @@ export function formatDate(value: string | null | undefined) {
 const timeFormatter = new Intl.DateTimeFormat("fr-FR", {
   hour: "2-digit",
   minute: "2-digit",
+  timeZone: APP_TIME_ZONE,
 })
 
 /** Clock time alone, for a transcript where the date is already in the header. */

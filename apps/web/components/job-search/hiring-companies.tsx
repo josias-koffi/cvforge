@@ -29,6 +29,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty"
+import { APP_TIME_ZONE } from "@/lib/format"
 
 const EMPTY_STATES = {
   no_location: {
@@ -59,6 +60,7 @@ export const HIRING_COMPANIES_PAGE_SIZE = 24
 const dateFormat = new Intl.DateTimeFormat("fr-FR", {
   day: "numeric",
   month: "long",
+  timeZone: APP_TIME_ZONE,
 })
 
 /**

@@ -1,4 +1,5 @@
 import type { JobMatch } from "@/lib/job-search"
+import { APP_TIME_ZONE } from "@/lib/format"
 
 /**
  * How fresh an offer is, and which ones arrived since the candidate last
@@ -21,7 +22,7 @@ export const OFFERS_VISIT_COOKIE = "jobspark_offers_visit"
 const parisDate = new Intl.DateTimeFormat("fr-FR", {
   day: "numeric",
   month: "short",
-  timeZone: "Europe/Paris",
+  timeZone: APP_TIME_ZONE,
 })
 
 /** « à l'instant », « il y a 12 min », « il y a 3 h », then « le 2 oct. ». */

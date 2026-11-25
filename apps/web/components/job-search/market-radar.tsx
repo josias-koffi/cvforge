@@ -28,6 +28,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty"
+import { APP_TIME_ZONE } from "@/lib/format"
 
 /** France Travail's scale: from "élevée", recruiters struggle to hire. */
 const TENSE_FROM = 4
@@ -39,7 +40,10 @@ const euros = new Intl.NumberFormat("fr-FR", {
   maximumFractionDigits: 0,
   style: "currency",
 })
-const day = new Intl.DateTimeFormat("fr-FR", { dateStyle: "long" })
+const day = new Intl.DateTimeFormat("fr-FR", {
+  dateStyle: "long",
+  timeZone: APP_TIME_ZONE,
+})
 
 /**
  * "Le marché de votre métier" (US-128): one card per confirmed job, and in it

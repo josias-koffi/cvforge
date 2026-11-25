@@ -4,6 +4,7 @@ import type {
 } from "@cvforge/types"
 
 import { metricLabels } from "@/lib/interview/labels"
+import { APP_TIME_ZONE } from "@/lib/format"
 
 export type ProgressPoint = {
   /** Short date for the axis, e.g. "24 avr.". */
@@ -20,6 +21,7 @@ export type ProgressSeries = {
 const axisFormatter = new Intl.DateTimeFormat("fr-FR", {
   day: "numeric",
   month: "short",
+  timeZone: APP_TIME_ZONE,
 })
 
 function toAxisLabel(iso: string) {

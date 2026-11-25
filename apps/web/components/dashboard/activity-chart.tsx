@@ -5,8 +5,13 @@ import * as React from "react"
 import { TrendCard } from "@/components/charts/trend-card"
 import { type ChartConfig } from "@/components/ui/chart"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
+import { APP_TIME_ZONE } from "@/lib/format"
 
-export type ActivityPoint = { date: string; imported: number; documents: number }
+export type ActivityPoint = {
+  date: string
+  imported: number
+  documents: number
+}
 
 const chartConfig = {
   imported: { label: "Candidatures créées", color: "var(--primary)" },
@@ -22,10 +27,12 @@ const ranges = [
 const dayFormatter = new Intl.DateTimeFormat("fr-FR", {
   day: "numeric",
   month: "short",
+  timeZone: APP_TIME_ZONE,
 })
 const longDayFormatter = new Intl.DateTimeFormat("fr-FR", {
   day: "numeric",
   month: "long",
+  timeZone: APP_TIME_ZONE,
 })
 
 export function ActivityChart({ points }: { points: ActivityPoint[] }) {
@@ -75,7 +82,9 @@ export function ActivityChart({ points }: { points: ActivityPoint[] }) {
         { key: "imported", stackId: "a" },
       ]}
       title="Activité"
-      tooltipLabelFormatter={(value) => longDayFormatter.format(new Date(String(value)))}
+      tooltipLabelFormatter={(value) =>
+        longDayFormatter.format(new Date(String(value)))
+      }
       xFormatter={(value) => dayFormatter.format(new Date(value))}
       xKey="date"
     />
