@@ -29,6 +29,35 @@ Décision : `ADR-032`. Épic : `E32`, sprint 038.
    en un clic. « Me déconnecter partout » et la suspension du compte coupent
    aussi les jetons.
 
+## Depuis Claude en ligne, ChatGPT ou tout agent MCP (OAuth, ADR-033)
+
+1. Copier l'adresse affichée dans **Agents connectés › Jetons** (`https://<api>/mcp`).
+2. La coller :
+   - **claude.ai** (web, app, mobile) : Paramètres › Connecteurs › Ajouter un connecteur
+     personnalisé ;
+   - **ChatGPT** : mode développeur › connecteur / app ;
+   - **Claude Code** : `claude mcp add --transport http jobspark https://<api>/mcp`, sans
+     en-tête. Claude Code ouvre le navigateur.
+3. L'agent ouvre la page JobSpark « Autoriser … ». Elle affiche le nom de l'agent, l'adresse de
+   retour, les permissions et le plafond de crédits par jour. On choisit, puis on clique
+   « Autoriser ».
+4. La connexion apparaît dans **Agents connectés** avec le badge « OAuth ». Elle se révoque
+   comme un jeton.
+
+Sous le capot :
+- `/mcp` répond 401 avec `WWW-Authenticate: Bearer resource_metadata=…`.
+- Métadonnées : `/.well-known/oauth-protected-resource/mcp` (RFC 9728) et
+  `/.well-known/oauth-authorization-server` (RFC 8414).
+- Endpoints : `/oauth/authorize`, `/oauth/token`, `/oauth/register` (DCR), `/oauth/revoke`.
+- Clients : CIMD (le `client_id` est l'URL d'un document lu via `safe-fetch`) ou DCR.
+- PKCE S256 obligatoire, `iss` dans chaque réponse d'autorisation (RFC 9207).
+- Jeton d'accès valable 1 h, jeton de rafraîchissement valable 30 jours, renouvelé à chaque
+  usage. Si un ancien jeton de rafraîchissement revient, la connexion est révoquée.
+- Les connexions OAuth ne comptent pas dans les 10 jetons personnels.
+- Les clients enregistrés via DCR qui ne se connectent pas sont purgés après 30 jours.
+- Limite par IP large sur `/oauth/*` : tous les utilisateurs de claude.ai arrivent depuis
+  `160.79.104.0/21`.
+
 ## Outils exposés
 
 | Outil | Permission | Crédits |
@@ -97,6 +126,10 @@ l'e-mail et le téléphone du profil se lisent mais ne se modifient pas.
 > dépensés, date), sans leur contenu, pendant 90 jours. Vous pouvez révoquer
 > un jeton à tout moment ; la suppression de votre compte efface les jetons et
 > le journal.
+>
+> Vous pouvez aussi autoriser un agent directement depuis son application (Claude, ChatGPT…) :
+> la page « Autoriser » de JobSpark vous montre alors qui demande l'accès, avec quelles
+> permissions et quel plafond de crédits, avant que vous ne validiez.
 
 Ligne à ajouter à la section sur les durées de conservation, si la politique en a une :
 
@@ -116,6 +149,10 @@ Ligne à ajouter à la section sur les durées de conservation, si la politique 
 > actions (action name, outcome, credits spent, date), without their content,
 > for 90 days. You can revoke a token at any time; deleting your account
 > erases your tokens and the log.
+>
+> You can also authorize an agent right from its own app (Claude, ChatGPT…): JobSpark's
+> "Authorize" page then shows who is asking for access, with which permissions and which
+> credit cap, before you confirm.
 
 Retention line:
 

@@ -25,36 +25,36 @@ Décision d'architecture : **ADR-033** (`decisions/ADR-033-oauth-for-mcp-clients
 
 ## ✅ Tasks (3–8 max)
 
-- [ ] **[US-189]** `/mcp` en serveur de ressources OAuth
+- [x] **[US-189]** `/mcp` en serveur de ressources OAuth
   - Agent: `developer`
   - Critères d'acceptation :
-    - [ ] Sans jeton valide : 401 avec `WWW-Authenticate: Bearer resource_metadata="…", scope="…"`.
-    - [ ] `/.well-known/oauth-protected-resource/mcp` (et sans suffixe) : `resource` = adresse
+    - [x] Sans jeton valide : 401 avec `WWW-Authenticate: Bearer resource_metadata="…", scope="…"`.
+    - [x] `/.well-known/oauth-protected-resource/mcp` (et sans suffixe) : `resource` = adresse
           exacte de `/mcp`, `authorization_servers` = notre émetteur.
-- [ ] **[US-190]** Serveur d'autorisation
+- [x] **[US-190]** Serveur d'autorisation
   - Agent: `developer`
   - Critères d'acceptation :
-    - [ ] `/.well-known/oauth-authorization-server` : S256, `none`, CIMD, `iss` RFC 9207, scopes
+    - [x] `/.well-known/oauth-authorization-server` : S256, `none`, CIMD, `iss` RFC 9207, scopes
           dont `offline_access`.
-    - [ ] `authorize` → page de consentement de l'app ; erreurs de client/redirection jamais
+    - [x] `authorize` → page de consentement de l'app ; erreurs de client/redirection jamais
           redirigées ; refus → `access_denied` avec `state` et `iss`.
-    - [ ] `token` (form-encoded) : code à usage unique (10 min), vérifieur PKCE, redirection et
+    - [x] `token` (form-encoded) : code à usage unique (10 min), vérifieur PKCE, redirection et
           `resource` vérifiés ; jeton d'accès 1 h ; rafraîchissement 30 j tournant ; réutilisation
           d'un ancien jeton de rafraîchissement → connexion révoquée.
-    - [ ] `revoke` ; réponses `Cache-Control: no-store`.
-- [ ] **[US-191]** Clients OAuth
+    - [x] `revoke` ; réponses `Cache-Control: no-store`.
+- [x] **[US-191]** Clients OAuth
   - Agent: `developer`
   - Critères d'acceptation :
-    - [ ] CIMD : `client_id` https lu par `safe-fetch` (pas d'adresse privée, délai, taille),
+    - [x] CIMD : `client_id` https lu par `safe-fetch` (pas d'adresse privée, délai, taille),
           `client_id` du document identique, redirection listée ; cache 24 h.
-    - [ ] DCR : clients publics seulement, redirections https ou loopback.
-    - [ ] Clients DCR sans connexion purgés après 30 jours.
-- [ ] **[US-192]** Consentement et gestion
+    - [x] DCR : clients publics seulement, redirections https ou loopback.
+    - [x] Clients DCR sans connexion purgés après 30 jours.
+- [x] **[US-192]** Consentement et gestion
   - Agent: `developer`
   - Critères d'acceptation :
-    - [ ] `/autoriser-agent` : nom du client, hôte de redirection, permissions (préréglages),
+    - [x] `/autoriser-agent` : nom du client, hôte de redirection, permissions (préréglages),
           plafond de crédits ; Autoriser / Refuser ; sans session, invitation à se connecter.
-    - [ ] `/compte/agents` : une connexion OAuth porte le nom du client, un badge « OAuth »,
+    - [x] `/compte/agents` : une connexion OAuth porte le nom du client, un badge « OAuth »,
           se révoque comme un jeton.
 - [ ] **[US-193]** Limites, essais réels, confidentialité
   - Agent: `developer`
@@ -62,7 +62,7 @@ Décision d'architecture : **ADR-033** (`decisions/ADR-033-oauth-for-mcp-clients
     - [ ] Limites par IP sur `/oauth/*` (larges : Claude sort d'un même bloc d'adresses).
     - [ ] Essai réel : claude.ai (connecteur personnalisé), Claude Code (`claude mcp add` sans
           en-tête), ChatGPT si un compte développeur est disponible.
-    - [ ] Texte de confidentialité étendu dans `docs/agent-mcp.md`.
+    - [x] Texte de confidentialité étendu dans `docs/agent-mcp.md`.
 
 ## 📊 Sprint DoD
 
@@ -83,4 +83,8 @@ Décision d'architecture : **ADR-033** (`decisions/ADR-033-oauth-for-mcp-clients
 
 ## 🔁 Workflow Runs
 
-— aucun pour l'instant.
+- 2026-11-25 — préprod : parcours OAuth complet avec le client OAuth du SDK MCP (découverte
+  depuis le 401, DCR, consentement dans Chrome, retour loopback avec `code` + `iss`, échange,
+  23 outils, rafraîchissement tournant) ; rejeu d'un ancien jeton de rafraîchissement →
+  `invalid_grant` et connexion révoquée ; redirection non déclarée → 400. Reste : claude.ai
+  et ChatGPT en vrai.
