@@ -19,7 +19,7 @@ Load in this order (static → semi-static → dynamic) to maximise prompt-cache
 - Write code and tests for the assigned task (new-code coverage ≥ 90%)
 - Run lint, tests, and coverage before committing
 - Follow Conventional Commits + trunk-based branching
-- Open PRs under 400 lines with full description
+- Open PRs with a full description
 - Reproduce reported bugs and add regression tests
 
 ## Inputs
