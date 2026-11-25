@@ -83,7 +83,7 @@ l'e-mail et le téléphone du profil se lisent mais ne se modifient pas.
 - Transport : Streamable HTTP **sans état** (`POST /mcp`, réponses JSON).
   `GET` et `DELETE /mcp` répondent 405.
 
-## Texte de confidentialité à ajouter (`/admin/legal`, propriétaire)
+## Texte de confidentialité à ajouter (`/admin/legal` › Politique de confidentialité, section « Destinataires des données »)
 
 > **Agents connectés.** Si vous créez un jeton d'agent dans « Agents
 > connectés », l'agent IA de votre choix (par exemple Claude Code) peut lire
@@ -97,3 +97,27 @@ l'e-mail et le téléphone du profil se lisent mais ne se modifient pas.
 > dépensés, date), sans leur contenu, pendant 90 jours. Vous pouvez révoquer
 > un jeton à tout moment ; la suppression de votre compte efface les jetons et
 > le journal.
+
+Ligne à ajouter à la section sur les durées de conservation, si la politique en a une :
+
+> Jetons d'agent : empreinte conservée jusqu'à révocation, expiration ou
+> suppression du compte ; journal des actions des agents : 90 jours.
+
+### Version anglaise (même document, champ anglais)
+
+> **Connected agents.** If you create an agent token under "Agents
+> connectés" (Connected agents), the AI agent of your choice (for example
+> Claude Code) can read and use your account data within the permissions you
+> selected: your profile (including your name, e-mail address and phone
+> number), job offers, alerts, applications, CVs, cover letters and credit
+> balance. This data is then processed by that agent's provider, under its
+> own terms; JobSpark has no control over that processing. We only keep a
+> fingerprint of the token (never the token itself) and a log of the agent's
+> actions (action name, outcome, credits spent, date), without their content,
+> for 90 days. You can revoke a token at any time; deleting your account
+> erases your tokens and the log.
+
+Retention line:
+
+> Agent tokens: fingerprint kept until revoked, expired or the account is
+> deleted; agent activity log: 90 days.
