@@ -5,20 +5,12 @@ import type {
   AgentTokenCreateResponse,
 } from "@cvforge/types"
 
+import { publicMcpUrl } from "@/lib/agent-mcp"
 import { api, ApiError, runAction, type ActionResult } from "@/lib/api"
 import { requireSession } from "@/lib/session"
 
 export type CreateAgentTokenResult =
   { ok: true; token: string; mcpUrl: string } | { ok: false; message: string }
-
-/** The URL an agent reaches, as seen from outside (never the internal one). */
-function publicMcpUrl() {
-  const base = (
-    process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3333"
-  ).replace(/\/$/, "")
-
-  return `${base}/mcp`
-}
 
 export async function createAgentToken(
   request: AgentTokenCreateRequest
