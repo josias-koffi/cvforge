@@ -10,6 +10,8 @@ export const RATE_LIMITED_MESSAGE =
   "Trop d'analyses demandees depuis cette adresse. Reessayez plus tard.";
 export const BUDGET_EXHAUSTED_MESSAGE =
   "L'analyse gratuite est momentanement indisponible. Reessayez demain.";
+export const OAUTH_RATE_LIMITED_MESSAGE =
+  "Trop de demandes de connexion depuis cette adresse. Reessayez plus tard.";
 export const EVENTS_REJECTED_MESSAGE =
   "Trop d'evenements. Reessayez plus tard.";
 
@@ -79,6 +81,29 @@ export function resolveRateLimitPolicies(
         },
       ],
       routes: ["public/events"],
+    },
+    // The OAuth endpoints MCP clients call (ADR-033). Wide: every claude.ai
+    // user connects from the same few Anthropic addresses (160.79.104.0/21),
+    // so a tight per-IP allowance would lock all of them out at once.
+    {
+      budgetMessage: OAUTH_RATE_LIMITED_MESSAGE,
+      globalBudget: null,
+      limitedMessage: OAUTH_RATE_LIMITED_MESSAGE,
+      matches: (path) =>
+        /\/oauth\/(authorize|token|register|revoke)\/?$/i.test(path),
+      name: "oauth",
+      perIp: perIpRules(
+        env.OAUTH_HOURLY_LIMIT,
+        1_000,
+        env.OAUTH_DAILY_LIMIT,
+        10_000,
+      ),
+      routes: [
+        "oauth/authorize",
+        "oauth/token",
+        "oauth/register",
+        "oauth/revoke",
+      ],
     },
     // No model call, but parsing a PDF costs CPU on the API process: the
     // budget caps that, far above what real visitors need (US-136).
@@ -199,7 +224,10 @@ function freeToolPolicies(
       globalBudget: {
         key: `global:${name}`,
         rule: {
-          limit: readPositiveInt(env[`${envPrefix}_DAILY_BUDGET`], limits.budget),
+          limit: readPositiveInt(
+            env[`${envPrefix}_DAILY_BUDGET`],
+            limits.budget,
+          ),
           windowMs: DAY_MS,
         },
       },

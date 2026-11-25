@@ -1,4 +1,5 @@
-import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
+import { randomBytes } from "node:crypto";
+import { SignedPayload } from "../signed-payload";
 
 export const SIGNED_FILE_TTL_MS = 10 * 60 * 1000;
 
@@ -25,29 +26,23 @@ export type SignedFileClaim = {
  */
 export class SignedFiles {
   private readonly used = new Map<string, number>();
-  private readonly key: Buffer;
+  private readonly signer: SignedPayload;
 
   constructor(
     sessionSecret: string,
     private readonly baseUrl: string,
     private readonly clock: () => number = () => Date.now(),
   ) {
-    // A key of its own, so a link signature can never pass for a session one.
-    this.key = createHmac("sha256", sessionSecret)
-      .update("agent-signed-files")
-      .digest();
+    this.signer = new SignedPayload(sessionSecret, "agent-signed-files");
   }
 
   issue(claim: Omit<SignedFileClaim, "expiresAt" | "nonce">) {
     const expiresAt = this.clock() + SIGNED_FILE_TTL_MS;
-    const payload = Buffer.from(
-      JSON.stringify({
-        ...claim,
-        expiresAt,
-        nonce: randomBytes(12).toString("base64url"),
-      }),
-    ).toString("base64url");
-    const token = `${payload}.${this.sign(payload)}`;
+    const token = this.signer.sign({
+      ...claim,
+      expiresAt,
+      nonce: randomBytes(12).toString("base64url"),
+    });
 
     return {
       expiresAt: new Date(expiresAt).toISOString(),
@@ -57,24 +52,9 @@ export class SignedFiles {
 
   /** The claim, once; null when forged, expired or already used. */
   redeem(token: string): SignedFileClaim | null {
-    const [payload, signature, extra] = token.split(".");
+    const claim = this.signer.read<SignedFileClaim>(token);
 
-    if (
-      !payload ||
-      !signature ||
-      extra !== undefined ||
-      !this.signatureMatches(payload, signature)
-    ) {
-      return null;
-    }
-
-    let claim: SignedFileClaim;
-
-    try {
-      claim = JSON.parse(
-        Buffer.from(payload, "base64url").toString("utf8"),
-      ) as SignedFileClaim;
-    } catch {
+    if (!claim) {
       return null;
     }
 
@@ -88,19 +68,6 @@ export class SignedFiles {
     this.used.set(claim.nonce, claim.expiresAt);
 
     return claim;
-  }
-
-  private sign(payload: string) {
-    return createHmac("sha256", this.key).update(payload).digest("base64url");
-  }
-
-  private signatureMatches(payload: string, signature: string) {
-    const expected = Buffer.from(this.sign(payload));
-    const actual = Buffer.from(signature);
-
-    return (
-      expected.length === actual.length && timingSafeEqual(expected, actual)
-    );
   }
 
   private prune(now: number) {

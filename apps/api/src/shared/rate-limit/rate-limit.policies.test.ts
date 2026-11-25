@@ -62,7 +62,9 @@ describe("resolveRateLimitPolicies", () => {
 
   /** Reads of our own copies, autocomplete included; the lead route sends mail. */
   it("meters the job market tool and its lead route apart (US-137)", () => {
-    const market = policy("job-market", { PUBLIC_JOB_MARKET_DAILY_BUDGET: "900" });
+    const market = policy("job-market", {
+      PUBLIC_JOB_MARKET_DAILY_BUDGET: "900",
+    });
     const lead = policy("job-market-lead");
 
     expect(market.perIp.map((rule) => rule.limit)).toEqual([120, 600]);
@@ -159,6 +161,10 @@ describe("rateLimitedRoutes", () => {
   it("lists every declared route once, and only those", () => {
     expect(rateLimitedRoutes(resolveRateLimitPolicies({}))).toEqual([
       "public/events",
+      "oauth/authorize",
+      "oauth/token",
+      "oauth/register",
+      "oauth/revoke",
       "public/keyword-match/{*splat}",
       "public/keyword-match",
       "public/job-market/{*splat}",
@@ -170,5 +176,16 @@ describe("rateLimitedRoutes", () => {
       "public/ats-scan/{*splat}",
       "public/ats-scan",
     ]);
+  });
+
+  it("throttles the OAuth endpoints with their own wide policy", () => {
+    const policies = resolveRateLimitPolicies({});
+    const oauth = policies.find((policy) => policy.matches("/oauth/token"));
+
+    expect(oauth?.name).toBe("oauth");
+    expect(oauth?.globalBudget).toBeNull();
+    expect(
+      policies.find((policy) => policy.matches("/oauth/consent"))?.name,
+    ).not.toBe("oauth");
   });
 });
