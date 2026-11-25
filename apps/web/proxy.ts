@@ -2,7 +2,17 @@ import { NextResponse, type NextRequest } from "next/server"
 
 import { buildCsp, CSP_REPORT_PATH, newNonce } from "@/lib/csp"
 
-const PUBLIC_PATHS = ["/login", "/register", "/forbidden", "/version", CSP_REPORT_PATH]
+// `/autoriser-agent` checks the session itself: a signed-out user sent there
+// by an agent (OAuth, ADR-033) must keep the pending request, not lose it to
+// the login redirect.
+const PUBLIC_PATHS = [
+  "/login",
+  "/register",
+  "/forbidden",
+  "/version",
+  "/autoriser-agent",
+  CSP_REPORT_PATH,
+]
 
 const CSP_HEADER = "Content-Security-Policy-Report-Only"
 
