@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/empty"
 import { loadDigest, loadRecentMatches, type JobMatch } from "@/lib/job-search"
 import { OFFERS_VISIT_COOKIE, splitSinceVisit } from "@/lib/offer-freshness"
+import { APP_TIME_ZONE } from "@/lib/format"
 
 export const metadata: Metadata = { title: "Offres du jour" }
 
@@ -24,6 +25,7 @@ function formatDate(date: string) {
   return new Intl.DateTimeFormat("fr-FR", {
     day: "numeric",
     month: "long",
+    timeZone: APP_TIME_ZONE,
     weekday: "long",
   }).format(new Date(`${date}T12:00:00Z`))
 }

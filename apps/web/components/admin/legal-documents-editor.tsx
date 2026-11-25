@@ -14,10 +14,17 @@ import {
 } from "@/components/admin/legal-document-form"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
 import { Spinner } from "@/components/ui/spinner"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useActionMutation } from "@/hooks/use-action-mutation"
+import { APP_TIME_ZONE } from "@/lib/format"
 
 const DOCUMENT_LABELS: Record<LegalDocumentSlug, string> = {
   terms: "CGU",
@@ -29,6 +36,7 @@ const DOCUMENT_LABELS: Record<LegalDocumentSlug, string> = {
 const dateFormat = new Intl.DateTimeFormat("fr-FR", {
   dateStyle: "long",
   timeStyle: "short",
+  timeZone: APP_TIME_ZONE,
 })
 
 export function LegalDocumentsEditor({
@@ -41,7 +49,8 @@ export function LegalDocumentsEditor({
   if (!first) {
     return (
       <p className="text-muted-foreground">
-        Aucun document légal en base. Vérifiez que les migrations ont été appliquées.
+        Aucun document légal en base. Vérifiez que les migrations ont été
+        appliquées.
       </p>
     )
   }
