@@ -14,6 +14,7 @@ import {
   type ApplicationStatus,
   type ApplicationsKpiSummary,
   type DraftApplication,
+  type ExtractedOfferFields,
   type InterviewReport,
 } from "@cvforge/types";
 import { randomUUID } from "node:crypto";
@@ -41,6 +42,16 @@ function isApplicationStatus(value: string): value is ApplicationStatus {
   return applicationStatuses.includes(value as ApplicationStatus);
 }
 
+/**
+ * The structured fields JobSpark already holds for an offer URL (the job
+ * search's catalogue), or null when it does not know it.
+ */
+export type KnownOfferLookup = (
+  offerUrl: string,
+) => Promise<Partial<
+  Pick<ExtractedOfferFields, "companyName" | "contractType" | "location">
+> | null>;
+
 /** Notified with the URL of an offer a candidate just imported. */
 export type OfferImportedListener = (offerUrl: string) => Promise<void>;
 
@@ -62,6 +73,44 @@ export class ApplicationsService {
   }
 
   private readonly offerImportedListeners: OfferImportedListener[] = [];
+
+  /**
+   * Lets the job search fill what a scraped page did not give: a France
+   * Travail advert renders its employer, place and contract client-side, so
+   * the import came out with all three null although the catalogue had them.
+   */
+  setKnownOfferLookup(lookup: KnownOfferLookup) {
+    this.knownOfferLookup = lookup;
+  }
+
+  private knownOfferLookup: KnownOfferLookup | null = null;
+
+  private async withKnownOfferFields(
+    extraction: OfferExtractionResult,
+  ): Promise<OfferExtractionResult> {
+    if (!this.knownOfferLookup || !extraction.offerUrl) return extraction;
+
+    const known = await this.knownOfferLookup(extraction.offerUrl).catch(
+      (error: unknown) => {
+        this.logger.warn(
+          `Known-offer lookup failed: ${error instanceof Error ? error.message : String(error)}`,
+        );
+        return null;
+      },
+    );
+    if (!known) return extraction;
+
+    const { extracted } = extraction;
+    return {
+      ...extraction,
+      extracted: {
+        ...extracted,
+        companyName: extracted.companyName ?? known.companyName ?? null,
+        contractType: extracted.contractType ?? known.contractType ?? null,
+        location: extracted.location ?? known.location ?? null,
+      },
+    };
+  }
 
   /**
    * Lets a module that depends on applications react to an imported offer
@@ -202,7 +251,9 @@ export class ApplicationsService {
     userEmail: string,
     rawUrl: string,
   ): Promise<DraftApplication> {
-    const extraction = await this.offers.fromUrl(userEmail, rawUrl);
+    const extraction = await this.withKnownOfferFields(
+      await this.offers.fromUrl(userEmail, rawUrl),
+    );
 
     return this.createDraftFromExtraction(userEmail, extraction);
   }

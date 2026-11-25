@@ -10,6 +10,7 @@ import {
   scoreJob,
   selectJobsForProject,
 } from "./job-matching";
+import { formatSalaryLabel } from "./salary";
 
 const NOW = Date.parse("2026-09-23T06:00:00.000Z");
 const MS_PER_DAY = 86_400_000;
@@ -79,14 +80,20 @@ describe("rejectionReason", () => {
   it("refuses a contract the candidate did not ask for", () => {
     const project = makeProject({ contractTypes: ["stage", "alternance"] });
 
-    expect(rejectionReason({ job: makeJob(), now: NOW, project })).toBe("contract");
+    expect(rejectionReason({ job: makeJob(), now: NOW, project })).toBe(
+      "contract",
+    );
   });
 
   it("only proposes an unreadable contract to someone open to a CDI", () => {
     const job = makeJob({ contractType: "unknown" });
 
     expect(
-      rejectionReason({ job, now: NOW, project: makeProject({ contractTypes: ["cdi"] }) }),
+      rejectionReason({
+        job,
+        now: NOW,
+        project: makeProject({ contractTypes: ["cdi"] }),
+      }),
     ).toBeNull();
     // An internship seeker must never receive an offer we could not read.
     expect(
@@ -113,7 +120,9 @@ describe("rejectionReason", () => {
     const job = makeJob({ firstSeenAt: daysAgo(100), publishedAt: daysAgo(1) });
 
     expect(ageInDays(job, NOW)).toBeGreaterThan(99);
-    expect(rejectionReason({ job, now: NOW, project: makeProject() })).toBe("too_old");
+    expect(rejectionReason({ job, now: NOW, project: makeProject() })).toBe(
+      "too_old",
+    );
   });
 
   it("refuses a closed offer and one already proposed", () => {
@@ -138,28 +147,40 @@ describe("rejectionReason", () => {
     const project = makeProject({ excludedCompanies: ["acme"] });
 
     expect(
-      rejectionReason({ job: makeJob({ companyName: "ACME SAS" }), now: NOW, project }),
+      rejectionReason({
+        job: makeJob({ companyName: "ACME SAS" }),
+        now: NOW,
+        project,
+      }),
     ).toBe("excluded_company");
   });
 
   it("refuses a job outside every place the candidate accepted", () => {
     const job = makeJob({ department: "75", locationLabel: "Paris" });
 
-    expect(rejectionReason({ job, now: NOW, project: makeProject() })).toBe("location");
+    expect(rejectionReason({ job, now: NOW, project: makeProject() })).toBe(
+      "location",
+    );
   });
 
   it("accepts anywhere for a candidate mobile nationwide", () => {
     const job = makeJob({ department: "75" });
 
     expect(
-      rejectionReason({ job, now: NOW, project: makeProject({ nationalMobility: true }) }),
+      rejectionReason({
+        job,
+        now: NOW,
+        project: makeProject({ nationalMobility: true }),
+      }),
     ).toBeNull();
   });
 
   it("accepts a remote job wherever it sits", () => {
     const job = makeJob({ department: "75", remote: true });
 
-    expect(rejectionReason({ job, now: NOW, project: makeProject() })).toBeNull();
+    expect(
+      rejectionReason({ job, now: NOW, project: makeProject() }),
+    ).toBeNull();
   });
 
   it("measures an offer without coordinates from the commune of its label", () => {
@@ -175,7 +196,10 @@ describe("rejectionReason", () => {
         },
       ],
     });
-    const near = makeJob({ department: "59", locationLabel: "59 - Villeneuve-d'Ascq" });
+    const near = makeJob({
+      department: "59",
+      locationLabel: "59 - Villeneuve-d'Ascq",
+    });
     // Same department, 60 km away: the department alone used to let it in.
     const far = makeJob({ department: "59", locationLabel: "59 - Maubeuge" });
 
@@ -196,7 +220,10 @@ describe("rejectionReason", () => {
         },
       ],
     });
-    const job = makeJob({ department: "92", locationLabel: "92 - Boulogne-Billancourt" });
+    const job = makeJob({
+      department: "92",
+      locationLabel: "92 - Boulogne-Billancourt",
+    });
 
     expect(rejectionReason({ job, now: NOW, project })).toBeNull();
   });
@@ -204,7 +231,9 @@ describe("rejectionReason", () => {
   it("refuses an on-site job to someone who wants full remote", () => {
     const project = makeProject({ remote: "full_remote" });
 
-    expect(rejectionReason({ job: makeJob(), now: NOW, project })).toBe("location");
+    expect(rejectionReason({ job: makeJob(), now: NOW, project })).toBe(
+      "location",
+    );
   });
 });
 
@@ -278,7 +307,12 @@ describe("scoreJob", () => {
 
   it("stays neutral on a salary the offer never states", () => {
     const project = makeProject({ salaryMinYearly: 45_000 });
-    const silent = scoreJob({ job: makeJob(), now: NOW, project, skills: SKILLS });
+    const silent = scoreJob({
+      job: makeJob(),
+      now: NOW,
+      project,
+      skills: SKILLS,
+    });
     const generous = scoreJob({
       job: makeJob({ salaryLabel: "Annuel de 50000,00 Euros sur 12 mois" }),
       now: NOW,
@@ -307,7 +341,10 @@ describe("scoreJob", () => {
         salaryLabel: "Annuel de 60000,00 Euros sur 12 mois",
       }),
       now: NOW,
-      project: makeProject({ experienceLevel: "senior", salaryMinYearly: 45_000 }),
+      project: makeProject({
+        experienceLevel: "senior",
+        salaryMinYearly: 45_000,
+      }),
       skills: SKILLS,
     });
 
@@ -327,6 +364,8 @@ describe("readYearlySalary", () => {
     // No period stated: a four-figure salary is monthly in France.
     ["Rémunération : 3500 euros", 42_000],
     ["Rémunération : 42000 euros", 42_000],
+    // France Travail labels yearly figures "Mensuel": 38 000 € is not a month.
+    ["Mensuel de 38000.0 Euros à 55000.0 Euros", 55_000],
   ])("reads %j as %i", (label, expected) => {
     expect(readYearlySalary(label)).toBe(expected);
   });
@@ -334,6 +373,19 @@ describe("readYearlySalary", () => {
   it("gives up rather than inventing a figure", () => {
     expect(readYearlySalary("Selon profil")).toBeNull();
     expect(readYearlySalary("")).toBeNull();
+  });
+});
+
+describe("formatSalaryLabel", () => {
+  it.each([
+    ["Mensuel de 38000.0 Euros à 55000.0 Euros", "38 000 – 55 000 €/an"],
+    ["Annuel de 45000,00 Euros sur 12 mois", "45 000 €/an"],
+    ["Horaire de 25,00 Euros", "Horaire de 25,00 Euros"],
+    ["Selon profil", "Selon profil"],
+  ])("writes %j as %j", (label, expected) => {
+    expect(formatSalaryLabel(label).replace(/\u202f|\u00a0/g, " ")).toBe(
+      expected,
+    );
   });
 });
 
@@ -386,7 +438,12 @@ describe("selectJobsForProject", () => {
     ];
 
     expect(
-      selectJobsForProject({ jobs, now: NOW, project: makeProject(), skills: SKILLS }),
+      selectJobsForProject({
+        jobs,
+        now: NOW,
+        project: makeProject(),
+        skills: SKILLS,
+      }),
     ).toEqual([]);
   });
 });
@@ -424,13 +481,19 @@ describe("a DevOps engineer and the BTP offers", () => {
   });
   const devopsJob = makeJob({
     ...recentNearby,
-    description: "Plateforme Kubernetes, infrastructure Terraform, pipelines CI en Go.",
+    description:
+      "Plateforme Kubernetes, infrastructure Terraform, pipelines CI en Go.",
     id: "devops",
     title: "Ingénieur DevOps (H/F)",
   });
 
   it("reads a skill as a whole word only", () => {
-    const scored = scoreJob({ job: btpTechnician, now: NOW, project: devops, skills: DEVOPS_SKILLS });
+    const scored = scoreJob({
+      job: btpTechnician,
+      now: NOW,
+      project: devops,
+      skills: DEVOPS_SKILLS,
+    });
 
     // "CI" sits in "technicien", "Go" in "Google": neither is in the advert.
     expect(scored.matchedSkills).toEqual([]);
@@ -438,16 +501,31 @@ describe("a DevOps engineer and the BTP offers", () => {
   });
 
   it("does not take a shared generic word for the same job", () => {
-    const scored = scoreJob({ job: siteEngineer, now: NOW, project: devops, skills: DEVOPS_SKILLS });
+    const scored = scoreJob({
+      job: siteEngineer,
+      now: NOW,
+      project: devops,
+      skills: DEVOPS_SKILLS,
+    });
 
     expect(scored.breakdown.title).toBe(0);
   });
 
   it("still reads the generic word once the trade matches", () => {
-    const scored = scoreJob({ job: devopsJob, now: NOW, project: devops, skills: DEVOPS_SKILLS });
+    const scored = scoreJob({
+      job: devopsJob,
+      now: NOW,
+      project: devops,
+      skills: DEVOPS_SKILLS,
+    });
 
     expect(scored.breakdown.title).toBe(30);
-    expect(scored.matchedSkills).toEqual(["CI", "Go", "Terraform", "Kubernetes"]);
+    expect(scored.matchedSkills).toEqual([
+      "CI",
+      "Go",
+      "Terraform",
+      "Kubernetes",
+    ]);
   });
 
   it("gives no title points to a search without target titles", () => {
@@ -473,7 +551,12 @@ describe("a DevOps engineer and the BTP offers", () => {
   });
 
   it("refuses an offer that reaches the threshold on context alone", () => {
-    const scored = scoreJob({ job: btpTechnician, now: NOW, project: devops, skills: DEVOPS_SKILLS });
+    const scored = scoreJob({
+      job: btpTechnician,
+      now: NOW,
+      project: devops,
+      skills: DEVOPS_SKILLS,
+    });
 
     expect(scored.score).toBeGreaterThanOrEqual(35);
     expect(hasTradeEvidence(scored)).toBe(false);
@@ -488,7 +571,12 @@ describe("a DevOps engineer and the BTP offers", () => {
     });
 
     expect(
-      selectJobsForProject({ jobs: [oneSkill], now: NOW, project: devops, skills: DEVOPS_SKILLS }),
+      selectJobsForProject({
+        jobs: [oneSkill],
+        now: NOW,
+        project: devops,
+        skills: DEVOPS_SKILLS,
+      }),
     ).toEqual([]);
   });
 });
@@ -500,22 +588,33 @@ describe("a DevOps engineer and the BTP offers", () => {
  * past the relevance floor, with not one word of the trade in the title.
  */
 describe("hasTradeEvidence", () => {
-  const softwareEngineer = makeProject({ targetRoles: ["Ingénieur Fullstack"] });
+  const softwareEngineer = makeProject({
+    targetRoles: ["Ingénieur Fullstack"],
+  });
   const machining = makeJob({
-    description: "Usinage CNC, gestion de production assistée par ordinateur, React-ivité exigée.",
+    description:
+      "Usinage CNC, gestion de production assistée par ordinateur, React-ivité exigée.",
     romeCode: "H2503",
     title: "Technicien de production en usinage CNC (H/F)",
   });
   const gpao = {
     genericCodes: new Set<string>(),
     metierCompetences: new Map(),
-    profileCompetences: [{ code: "C1", label: "Gestion de Production Assistée Par Ordinateur (GPAO)" }],
+    profileCompetences: [
+      {
+        code: "C1",
+        label: "Gestion de Production Assistée Par Ordinateur (GPAO)",
+      },
+    ],
     projectCodes: ["M1855"],
   };
 
   it("does not take ROME competences read in a CV as the trade", () => {
     const scored = scoreJob({
-      job: { ...machining, romeCompetences: [{ code: "C1", label: "GPAO", required: true }] },
+      job: {
+        ...machining,
+        romeCompetences: [{ code: "C1", label: "GPAO", required: true }],
+      },
       now: NOW,
       project: softwareEngineer,
       rome: gpao,
@@ -530,19 +629,39 @@ describe("hasTradeEvidence", () => {
     const base = { now: NOW, project: softwareEngineer, rome: gpao };
 
     expect(
-      hasTradeEvidence(scoreJob({ ...base, job: makeJob({ title: "Ingénieur Fullstack (H/F)" }), skills: [] })),
-    ).toBe(true);
-    expect(
-      hasTradeEvidence(scoreJob({ ...base, job: makeJob({ romeCode: "M1855", title: "Dév web" }), skills: [] })),
-    ).toBe(true);
-    expect(
       hasTradeEvidence(
-        scoreJob({ ...base, job: makeJob({ title: "Software engineer" }), skills: ["TypeScript", "React"] }),
+        scoreJob({
+          ...base,
+          job: makeJob({ title: "Ingénieur Fullstack (H/F)" }),
+          skills: [],
+        }),
       ),
     ).toBe(true);
     expect(
       hasTradeEvidence(
-        scoreJob({ ...base, job: makeJob({ title: "Software engineer" }), skills: ["TypeScript"] }),
+        scoreJob({
+          ...base,
+          job: makeJob({ romeCode: "M1855", title: "Dév web" }),
+          skills: [],
+        }),
+      ),
+    ).toBe(true);
+    expect(
+      hasTradeEvidence(
+        scoreJob({
+          ...base,
+          job: makeJob({ title: "Software engineer" }),
+          skills: ["TypeScript", "React"],
+        }),
+      ),
+    ).toBe(true);
+    expect(
+      hasTradeEvidence(
+        scoreJob({
+          ...base,
+          job: makeJob({ title: "Software engineer" }),
+          skills: ["TypeScript"],
+        }),
       ),
     ).toBe(false);
   });
@@ -550,11 +669,23 @@ describe("hasTradeEvidence", () => {
 
 describe("the trade, on the owner's search (production, 2026-10-08)", () => {
   const owner = makeProject({
-    targetRoles: ["Ingénieur Fullstack", "Program Analyst / Ingénieur logiciel"],
+    targetRoles: [
+      "Ingénieur Fullstack",
+      "Program Analyst / Ingénieur logiciel",
+    ],
   });
-  const evidenceFor = (title: string, description = "Poste en CDI.", skills: string[] = []) =>
+  const evidenceFor = (
+    title: string,
+    description = "Poste en CDI.",
+    skills: string[] = [],
+  ) =>
     hasTradeEvidence(
-      scoreJob({ job: makeJob({ description, title }), now: NOW, project: owner, skills }),
+      scoreJob({
+        job: makeJob({ description, title }),
+        now: NOW,
+        project: owner,
+        skills,
+      }),
     );
 
   it("reads the trade in a title, whatever the spelling of full stack", () => {
@@ -569,7 +700,9 @@ describe("the trade, on the owner's search (production, 2026-10-08)", () => {
   });
 
   it("does not take a salesman of software for a software engineer", () => {
-    expect(evidenceFor("Ingénieur commercial logiciels - CDI (H/F)")).toBe(false);
+    expect(evidenceFor("Ingénieur commercial logiciels - CDI (H/F)")).toBe(
+      false,
+    );
   });
 
   it("does not let a broad ROME code carry a hardware or electrical offer", () => {
@@ -590,13 +723,24 @@ describe("the trade, on the owner's search (production, 2026-10-08)", () => {
       );
 
     expect(romeEvidenceFor("Ingénieur Hardware (H/F)")).toBe(false);
-    expect(romeEvidenceFor("Ingénieur d'Études Électroniques et Hardware (H/F)")).toBe(false);
-    expect(romeEvidenceFor("INGENIEUR CONTRÔLE-COMMANDES DE MACHINES ELECTRIQUES H/F")).toBe(false);
+    expect(
+      romeEvidenceFor("Ingénieur d'Études Électroniques et Hardware (H/F)"),
+    ).toBe(false);
+    expect(
+      romeEvidenceFor(
+        "INGENIEUR CONTRÔLE-COMMANDES DE MACHINES ELECTRIQUES H/F",
+      ),
+    ).toBe(false);
     // The code still carries an offer whose title names no other trade…
-    expect(romeEvidenceFor("Chargé.e d'études - expert.e informatique (H/F)")).toBe(true);
+    expect(
+      romeEvidenceFor("Chargé.e d'études - expert.e informatique (H/F)"),
+    ).toBe(true);
     // …and a hardware engineer's own search keeps its hardware offers.
     expect(
-      romeEvidenceFor("Ingénieur Hardware (H/F)", makeProject({ targetRoles: ["Ingénieur hardware"] })),
+      romeEvidenceFor(
+        "Ingénieur Hardware (H/F)",
+        makeProject({ targetRoles: ["Ingénieur hardware"] }),
+      ),
     ).toBe(true);
   });
 
@@ -610,13 +754,19 @@ describe("the trade, on the owner's search (production, 2026-10-08)", () => {
         skills,
       ),
     ).toBe(false);
-    expect(evidenceFor("Chargé d'affaires", "NestJS, développement, architecture.", skills)).toBe(
-      false,
-    );
+    expect(
+      evidenceFor(
+        "Chargé d'affaires",
+        "NestJS, développement, architecture.",
+        skills,
+      ),
+    ).toBe(false);
   });
 
   it("reads an English title as its French job", () => {
-    expect(evidenceFor("Senior Software Engineer, Connectors Platform")).toBe(true);
+    expect(evidenceFor("Senior Software Engineer, Connectors Platform")).toBe(
+      true,
+    );
     expect(evidenceFor("Full-Stack Engineer (m/f/x)")).toBe(true);
     expect(evidenceFor("Sales Engineer - Software")).toBe(false);
   });
@@ -635,11 +785,18 @@ describe("the ROME appellations the candidate confirmed", () => {
     projectCodes: [],
   };
   const titleFor = (title: string) =>
-    scoreJob({ job: makeJob({ description: "", title }), now: NOW, project, rome, skills: [] })
-      .evidence.title;
+    scoreJob({
+      job: makeJob({ description: "", title }),
+      now: NOW,
+      project,
+      rome,
+      skills: [],
+    }).evidence.title;
 
   it("takes an appellation the candidate did not type as their trade", () => {
-    expect(titleFor("Développeuse Full Stack confirmée (H/F)")).toBeGreaterThan(0);
+    expect(titleFor("Développeuse Full Stack confirmée (H/F)")).toBeGreaterThan(
+      0,
+    );
     expect(titleFor("Ingénieur d'études logiciel informatique")).toBe(1);
   });
 

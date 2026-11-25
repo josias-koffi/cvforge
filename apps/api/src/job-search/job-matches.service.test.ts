@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import type { ApplicationsService } from "../applications/applications.service";
-import { JobMatchesService } from "./job-matches.service";
+import { JobMatchesService, knownOfferFields } from "./job-matches.service";
 import type { JobSource, JobSourceAdapter } from "./job-search.types";
 import type { JobsStore, StoredJob, StoredJobListing } from "./jobs.types";
 import type { JobMatchWithJob, JobMatchesStore } from "./matches.types";
@@ -96,9 +96,20 @@ function createService(
   const created: unknown[] = [];
   const statuses: Array<{ status: string; applicationId?: string }> = [];
   const closed: string[] = [];
-  const importFromText = vi.fn(async () => ({ id: "app-1" }) as never);
-  const importFromUrl = vi.fn(async () => ({ id: "app-2" }) as never);
-  const updateOffer = vi.fn(async () => ({}) as never);
+  const blankExtraction = {
+    companyName: null,
+    contractType: null,
+    location: null,
+  };
+  const importFromText = vi.fn(
+    async () => ({ extracted: blankExtraction, id: "app-1" }) as never,
+  );
+  const importFromUrl = vi.fn(
+    async () => ({ extracted: blankExtraction, id: "app-2" }) as never,
+  );
+  const updateOffer = vi.fn(
+    async (_email: string, id: string) => ({ id }) as never,
+  );
   const savedApplications: Array<{
     id: string;
     skillsToHighlight?: string[];
@@ -354,7 +365,18 @@ describe("JobMatchesService", () => {
       );
       // Re-fetching the page would only add a way to fail.
       expect(harness.importFromUrl).not.toHaveBeenCalled();
-      expect(harness.updateOffer).toHaveBeenCalled();
+      // The description never names the employer: the stored job does.
+      expect(harness.updateOffer).toHaveBeenCalledWith(
+        "user@example.com",
+        "app-1",
+        expect.objectContaining({
+          extracted: {
+            companyName: "ACME",
+            contractType: "CDI",
+            location: "Nantes",
+          },
+        }),
+      );
       expect(harness.statuses).toEqual([
         { applicationId: "app-1", status: "applied" },
       ]);
@@ -505,5 +527,33 @@ describe("JobMatchesService", () => {
         await harness.service.applyToJob("intruder@example.com", "job-1"),
       ).toEqual({ outcome: "not_found" });
     });
+  });
+});
+
+describe("knownOfferFields", () => {
+  const job = {
+    companyAnonymous: false,
+    companyName: "ACME",
+    contractType: "cdd" as const,
+    locationLabel: "75 - Paris",
+  };
+
+  it("only fills what the extraction left empty", () => {
+    expect(
+      knownOfferFields(job, {
+        companyName: "Acme SAS",
+        contractType: null,
+        location: null,
+      }),
+    ).toEqual({ contractType: "CDD", location: "75 - Paris" });
+  });
+
+  it("leaves a masked employer unnamed", () => {
+    expect(
+      knownOfferFields(
+        { ...job, companyAnonymous: true, contractType: "unknown" },
+        { companyName: null, contractType: null, location: "Lyon" },
+      ),
+    ).toEqual({});
   });
 });

@@ -56,6 +56,8 @@ const MONTH_ALIASES: Record<string, number> = {
   février: 2,
   fevrier: 2,
   févr: 2,
+  fév: 2,
+  fev: 2,
   fevr: 2,
   february: 2,
   feb: 2,
