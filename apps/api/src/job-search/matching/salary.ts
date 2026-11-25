@@ -77,9 +77,29 @@ function yearlyFactor(text: string, hourly: boolean, highest: number): number {
   if (hourly) return HOURS_PER_WEEK * WEEKS_PER_YEAR;
   if (/\bannuel|annual|par an\b|\/\s?an\b|per year\b/.test(text)) return 1;
   if (/\bmensuel|par mois\b|\/\s?mois\b|per month\b/.test(text)) {
-    return MONTHS_PER_YEAR;
+    // "Mensuel de 38000 à 55000 Euros": France Travail mislabels yearly
+    // figures as monthly; no monthly salary reaches five figures.
+    return highest < 10_000 ? MONTHS_PER_YEAR : 1;
   }
 
   // No period stated: in France a four-figure salary is a monthly one.
   return highest < 10_000 ? MONTHS_PER_YEAR : 1;
+}
+
+const EUROS = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 });
+
+/**
+ * A raw label ("Mensuel de 38000.0 Euros à 55000.0 Euros") as a reader expects
+ * it: "38 000 – 55 000 €/an". An hourly rate, or a label that does not read as
+ * a salary, is returned as written.
+ */
+export function formatSalaryLabel(label: string): string {
+  const range = /\bhoraire|heure|\/\s?h\b|per hour\b/i.test(label)
+    ? null
+    : readYearlySalaryRange(label);
+  if (!range) return label.trim();
+
+  const low = EUROS.format(Math.round(range.low));
+  const high = EUROS.format(Math.round(range.high));
+  return `${range.low === range.high ? high : `${low} – ${high}`} €/an`;
 }

@@ -1733,3 +1733,12 @@
 - Piège : ajouter `zod@^3` dans l'API rétrogradait le zod de `ai` (4.6.7) dans le lockfile ; rester sur zod 4.
 - `buildGenerationRequest` vit maintenant dans `@cvforge/types` (web et MCP envoient la même pseudonymisation) ; la recherche `/offres` se lit par `job-search/offer-search-query.ts`.
 - Reste : page `/compte/agents` à vérifier en vrai, texte de confidentialité à coller dans `/admin/legal`, e2e Claude Code.
+
+## 2026-11-25 — Bugs du test MCP en staging (claude.ai)
+- Profil web : `saveProfile(profile, expectedLastSavedAt)` refuse d'écraser une version enregistrée ailleurs (MCP, autre onglet) ; `useServerProfileSync` rafraîchit au retour sur l'onglet et adopte la version serveur si rien n'est en cours d'édition. L'onboarding n'envoie pas de version (pas de contrôle).
+- `apply_to_offer` : l'extraction ne lit que la description → entreprise/lieu/contrat repris de l'offre stockée (`knownOfferFields`). Import par URL : `ApplicationsService.setKnownOfferLookup` (branché par `JobSearchModule`) complète depuis le catalogue via `urlKey`/`findJobByLinks`.
+- `structureOffer` : `isJobOffer: false` → 422 avant tout débit.
+- CV : dates en texte libre reformatées comme les structurées (`legacyToPartialDate`) ; alias « fév »/« fev » ajoutés. Lettre : reprend le titre du CV généré.
+- Salaire : « Mensuel » ≥ 10 000 € lu comme annuel ; MCP `search_offers` → `catalogueSize` + `total`, salaire formaté, score/aiReason omis si vides, entreprise masquée = « Entreprise non communiquée ».
+- Non traité (choix) : profileId null (= profil par défaut, voulu), pertinence de la recherche, migration des `period`, compteur de notifications.
+- Piège : `npx prettier` lancé depuis la racine prend une mauvaise config et reformate tout un dossier — le lancer depuis le paquet.

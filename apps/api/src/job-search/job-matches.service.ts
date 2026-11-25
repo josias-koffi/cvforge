@@ -1,7 +1,12 @@
 import type { ScoreBreakdown } from "@cvforge/types";
 import { Injectable, Logger } from "@nestjs/common";
 import type { ApplicationsService } from "../applications/applications.service";
-import type { ApplicationsStore } from "../applications/applications.types";
+import type {
+  ApplicationsStore,
+  OfferUpdateInput,
+} from "../applications/applications.types";
+import { CONTRACT_LABELS } from "../search-projects/search-projects.format";
+import { urlKey } from "./dedup/job-keys";
 import { dateInParis } from "./job-digest.service";
 import type { JobSourceAdapter } from "./job-search.types";
 import type { JobSourcesStore } from "./job-sources.types";
@@ -327,15 +332,16 @@ export class JobMatchesService {
         description,
       );
 
-      if (match.job.primaryUrl) {
-        // Keeps the link on the application, so the candidate can reopen the
-        // advert from their own follow-up screen.
-        await this.applications.updateOffer(userEmail, application.id, {
-          offerUrl: match.job.primaryUrl,
-        });
-      }
+      const patch: OfferUpdateInput = {};
+      // Keeps the link on the application, so the candidate can reopen the
+      // advert from their own follow-up screen.
+      if (match.job.primaryUrl) patch.offerUrl = match.job.primaryUrl;
+      const known = knownOfferFields(match.job, application.extracted);
+      if (Object.keys(known).length > 0) patch.extracted = known;
 
-      return application;
+      return Object.keys(patch).length > 0
+        ? this.applications.updateOffer(userEmail, application.id, patch)
+        : application;
     }
 
     this.logger.debug(
@@ -358,4 +364,54 @@ export class JobMatchesService {
       listings: adverts.get(match.jobId)?.listings ?? [],
     }));
   }
+}
+
+/**
+ * What the offer's source already stated and the text extraction missed.
+ *
+ * The application is extracted from the description alone, and many
+ * descriptions never name the employer, the place or the contract: those then
+ * came out null, and the cover letter was addressed to nobody. The stored job
+ * holds them as structured fields; they only fill what the extraction left
+ * empty. A masked employer stays unnamed rather than being given a label.
+ */
+export function knownOfferFields(
+  job: Pick<
+    JobMatchWithJob["job"],
+    "companyAnonymous" | "companyName" | "contractType" | "locationLabel"
+  >,
+  extracted: {
+    companyName: string | null;
+    contractType: string | null;
+    location: string | null;
+  },
+): NonNullable<OfferUpdateInput["extracted"]> {
+  const fields: NonNullable<OfferUpdateInput["extracted"]> = {};
+  const company = job.companyAnonymous ? "" : job.companyName.trim();
+  const location = job.locationLabel.trim();
+
+  if (!extracted.companyName && company) fields.companyName = company;
+  if (!extracted.location && location) fields.location = location;
+  if (!extracted.contractType && job.contractType !== "unknown") {
+    fields.contractType = CONTRACT_LABELS[job.contractType];
+  }
+
+  return fields;
+}
+
+/** The catalogue's fields for an offer URL, for an import by URL to reuse. */
+export async function lookupKnownOffer(
+  jobs: Pick<JobsStore, "findById" | "findJobByLinks">,
+  offerUrl: string,
+) {
+  const key = urlKey(offerUrl);
+  const jobId = key ? await jobs.findJobByLinks([key]) : null;
+  const found = jobId ? await jobs.findById(jobId) : null;
+  if (!found) return null;
+
+  return knownOfferFields(found.job, {
+    companyName: null,
+    contractType: null,
+    location: null,
+  });
 }

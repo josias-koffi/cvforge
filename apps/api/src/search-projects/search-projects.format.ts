@@ -1,6 +1,6 @@
 import type { SearchContractType, SearchProject } from "@cvforge/types";
 
-const CONTRACT_LABELS: Record<SearchContractType, string> = {
+export const CONTRACT_LABELS: Record<SearchContractType, string> = {
   alternance: "alternance",
   cdd: "CDD",
   cdi: "CDI",

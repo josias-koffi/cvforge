@@ -11,6 +11,7 @@ import { buildOfferPreview, inferLocaleFromText } from "./offer-extraction";
  */
 
 type ExtractedOfferPayload = Omit<ExtractedOfferFields, "language"> & {
+  isJobOffer?: unknown;
   language?: string | null;
 };
 
@@ -40,7 +41,8 @@ export async function structureOffer(
         {
           role: "system",
           content:
-            "You extract structured job-offer data. Return JSON only with keys: title, companyName, location, contractType, salaryRange, summary, responsibilities, requirements, keywords, language. " +
+            "You extract structured job-offer data. Return JSON only with keys: isJobOffer, title, companyName, location, contractType, salaryRange, summary, responsibilities, requirements, keywords, language. " +
+            "isJobOffer: false only when the text is plainly not a job advert (an encyclopedia article, a news story, a blog post, a home page, a list of many offers); true otherwise. " +
             "title: the job title. When the offer never states one outright (it often opens with the company's pitch), infer the most likely job title from the role described; never leave it empty. " +
             'keywords: 8 to 20 skills, tools, domains or deliverables the offer asks for, as short noun phrases copied in the offer\'s exact wording and language (e.g. "communication interne", "newsletters", "montage vidéo", "Canva", "KPIs"). No verbs, no generic qualities, no company or product names of the employer.',
         },
@@ -61,6 +63,14 @@ export async function structureOffer(
   );
 
   const payload = extractFirstJsonObject(response);
+
+  // Thrown before the caller debits anything: a Wikipedia page used to become
+  // an application, and the CV generated on it cost the user credits.
+  if (payload.isJobOffer === false) {
+    throw new UnprocessableEntityException(
+      "Cette page ne ressemble pas à une offre d'emploi. Vérifiez l'adresse ou collez le texte de l'offre. Aucun crédit n'a été débité.",
+    );
+  }
 
   // Sizes and key names only: an offer's text is not something to keep in logs.
   if (!toStringOrNull(payload.title)) {

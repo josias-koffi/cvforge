@@ -9,6 +9,23 @@ function modelAnswering(answer: string) {
 }
 
 describe("structureOffer", () => {
+  it("refuses a page the model says is not a job advert", async () => {
+    await expect(
+      structureOffer(
+        modelAnswering(
+          JSON.stringify({
+            isJobOffer: false,
+            title: "Ingénieur en informatique",
+          }),
+        ),
+        "L'ingénieur en informatique est un professionnel...",
+        NO_METADATA,
+        "https://fr.wikipedia.org/wiki/Ing%C3%A9nieur_en_informatique",
+        "url",
+      ),
+    ).rejects.toThrow(/ne ressemble pas à une offre/);
+  });
+
   it("keeps an offer whose text states no job title, instead of rejecting it", async () => {
     const offerText =
       "What is Finary?\n\nWe are on a mission to give power back to investors.";

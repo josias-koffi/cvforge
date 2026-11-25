@@ -129,7 +129,10 @@ export class CvGenerationService {
       ),
       language: offerContext.language,
     };
-    const cvTemplateId = await defaultTemplateId(this.templatesStore, TEMPLATE_KIND_CV);
+    const cvTemplateId = await defaultTemplateId(
+      this.templatesStore,
+      TEMPLATE_KIND_CV,
+    );
 
     // Charged only once the output has been parsed, normalised and grounded.
     await this.creditsService.consumeCredits({
@@ -191,7 +194,8 @@ export class CvGenerationService {
   ): Promise<LetterDocumentContent> {
     assertProfileIsGroundable(request.promptProfile);
     assertLocalFieldsProvided(request.localFields);
-    const application = await loadApplication(this.store, 
+    const application = await loadApplication(
+      this.store,
       userEmail,
       applicationId,
     );
@@ -227,21 +231,28 @@ export class CvGenerationService {
     );
 
     const rawJson = extractJsonFromContent<RawLetterJson>(rawResponse);
+    const normalizedLetter = normalizeLetterJson(
+      rawJson,
+      request.localFields,
+      application.extracted.companyName,
+      application.extracted.location,
+      fallbackLetterObject(offerContext.language, application.extracted.title),
+    );
+    // The CV already tailored the candidate's title to this offer; the letter
+    // used to print the profile's raw headline beside it.
+    const cvTitle = application.cvContent?.candidate.title.trim();
     const letterContent: LetterDocumentContent = {
-      ...normalizeLetterJson(
-        rawJson,
-        request.localFields,
-        application.extracted.companyName,
-        application.extracted.location,
-        fallbackLetterObject(
-          offerContext.language,
-          application.extracted.title,
-        ),
-      ),
+      ...normalizedLetter,
+      candidate: {
+        ...normalizedLetter.candidate,
+        title: cvTitle || normalizedLetter.candidate.title,
+      },
       language: offerContext.language,
     };
-    const letterTemplateId =
-      await defaultTemplateId(this.templatesStore, TEMPLATE_KIND_LETTER);
+    const letterTemplateId = await defaultTemplateId(
+      this.templatesStore,
+      TEMPLATE_KIND_LETTER,
+    );
 
     // Charged only once the output has been parsed and normalised.
     await this.creditsService.consumeCredits({
@@ -277,12 +288,18 @@ export class CvGenerationService {
     targetLanguage: unknown,
   ): Promise<CVDocumentContent> {
     const language = assertTargetLanguage(targetLanguage);
-    const application = await loadApplication(this.store, 
+    const application = await loadApplication(
+      this.store,
       userEmail,
       applicationId,
     );
 
-    return translateStoredCv(this.translationDeps(), application, userEmail, language);
+    return translateStoredCv(
+      this.translationDeps(),
+      application,
+      userEmail,
+      language,
+    );
   }
 
   async translateLetter(
@@ -291,7 +308,8 @@ export class CvGenerationService {
     targetLanguage: unknown,
   ): Promise<LetterDocumentContent> {
     const language = assertTargetLanguage(targetLanguage);
-    const application = await loadApplication(this.store, 
+    const application = await loadApplication(
+      this.store,
       userEmail,
       applicationId,
     );
@@ -366,7 +384,8 @@ export class CvGenerationService {
     applicationId: string,
     request: LetterContentUpdateRequest,
   ): Promise<LetterDocumentContent> {
-    const application = await loadApplication(this.store, 
+    const application = await loadApplication(
+      this.store,
       userEmail,
       applicationId,
     );

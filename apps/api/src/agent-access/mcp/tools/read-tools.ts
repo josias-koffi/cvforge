@@ -4,6 +4,7 @@ import {
 } from "@cvforge/types";
 import { NotFoundException } from "@nestjs/common";
 import { z } from "zod";
+import { formatSalaryLabel } from "../../../job-search/matching/salary";
 import type { ApplicationsService } from "../../../applications/applications.service";
 import type { CreditsService } from "../../../credits/credits.service";
 import type { CvGenerationService } from "../../../cv-generation/cv-generation.service";
@@ -50,10 +51,15 @@ export function summarizeOffer(offer: OfferSearchResult) {
   const description = job.description.replace(/\s+/g, " ").trim();
 
   return {
-    aiReason: offer.aiReason,
+    // Only an alert's offer is scored; a plain search leaves both empty.
+    ...(offer.score === null ? {} : { score: offer.score }),
+    ...(offer.aiReason ? { aiReason: offer.aiReason } : {}),
     applicationId: offer.applicationId,
     applyUrl: offer.details?.apply?.url ?? job.primaryUrl,
-    company: job.companyAnonymous ? null : job.companyName,
+    company:
+      job.companyAnonymous || !job.companyName.trim()
+        ? "Entreprise non communiquée"
+        : job.companyName,
     contractType: job.contractType,
     excerpt:
       description.length > OFFER_EXCERPT_CHARS
@@ -63,8 +69,7 @@ export function summarizeOffer(offer: OfferSearchResult) {
     location: job.locationLabel,
     publishedAt: job.publishedAt,
     remote: job.remote,
-    salary: job.salaryLabel,
-    score: offer.score,
+    salary: job.salaryLabel ? formatSalaryLabel(job.salaryLabel) : null,
     status: offer.status,
     title: job.title,
   };
@@ -234,8 +239,11 @@ export function readTools(deps: ReadToolsDeps) {
         );
 
         return {
-          ...found,
+          /** Open offers in the whole catalogue, whatever the filters. */
+          catalogueSize: found.available,
           offers: found.offers.map(summarizeOffer),
+          /** Offers matching these filters, across every page. */
+          total: found.total,
           page: search.page,
           place: search.place,
         };

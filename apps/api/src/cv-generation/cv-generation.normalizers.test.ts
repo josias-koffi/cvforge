@@ -111,7 +111,9 @@ describe("driving licences", () => {
     });
 
     expect(saved.candidate.drivingLicenses).toEqual(["B"]);
-    expect(normalizeUpdatedCvContent(BASE_CV).candidate.drivingLicenses).toEqual([]);
+    expect(
+      normalizeUpdatedCvContent(BASE_CV).candidate.drivingLicenses,
+    ).toEqual([]);
   });
 });
 
@@ -145,7 +147,7 @@ describe("normalizeCvJson — chronology", () => {
    */
   it("puts the most recent experience first", () => {
     expect(order(["2021", "Fév. 2026", "2024"])).toEqual([
-      "Fév. 2026",
+      "février 2026",
       "2024",
       "2021",
     ]);
@@ -191,10 +193,13 @@ describe("normalizeCvJson — repetition", () => {
    */
   it("drops an achievement that only reformulates the role's context", () => {
     expect(
-      achievementsOf("Développement d'un portail patient utilisé par 40 000 personnes.", [
-        "Migration de l'API monolithique vers des services NestJS",
-        "Développement du portail patient utilisé par 40 000 personnes",
-      ]),
+      achievementsOf(
+        "Développement d'un portail patient utilisé par 40 000 personnes.",
+        [
+          "Migration de l'API monolithique vers des services NestJS",
+          "Développement du portail patient utilisé par 40 000 personnes",
+        ],
+      ),
     ).toEqual(["Migration de l'API monolithique vers des services NestJS"]);
   });
 
@@ -218,6 +223,67 @@ describe("normalizeCvJson — repetition", () => {
 
   /** Too short for overlap to carry any meaning. */
   it("keeps short achievements even when they look alike", () => {
-    expect(achievementsOf("", ["Encadrement de deux juniors", "Encadrement des revues"])).toHaveLength(2);
+    expect(
+      achievementsOf("", [
+        "Encadrement de deux juniors",
+        "Encadrement des revues",
+      ]),
+    ).toHaveLength(2);
+  });
+});
+
+describe("normalizeCvJson — one date format", () => {
+  it("writes free-text dates like the structured ones", () => {
+    const [legacy, structured] = normalizeCvJson(
+      {
+        experiences: [
+          {
+            achievements: [],
+            company: "A",
+            endDate: "Présent",
+            position: "P",
+            startDate: "Sep. 2024",
+          },
+          {
+            achievements: [],
+            company: "B",
+            end: "2021-09",
+            position: "P",
+            start: "2020-01",
+          },
+        ],
+      } as never,
+      { email: "a@b.c", lastName: "Dupont", phone: "+33600000000" },
+      { profileSections: { interests: "" } } as never,
+    ).experiences;
+
+    expect([legacy.startDate, legacy.endDate]).toEqual([
+      "septembre 2024",
+      "Présent",
+    ]);
+    expect([structured.startDate, structured.endDate]).toEqual([
+      "janvier 2020",
+      "septembre 2021",
+    ]);
+  });
+
+  it("keeps a text that does not read as a date", () => {
+    const [experience] = normalizeCvJson(
+      {
+        experiences: [
+          {
+            achievements: [],
+            company: "A",
+            endDate: "",
+            position: "P",
+            startDate: "Été 2019",
+          },
+        ],
+      } as never,
+      { email: "a@b.c", lastName: "Dupont", phone: "+33600000000" },
+      { profileSections: { interests: "" } } as never,
+    ).experiences;
+
+    expect(experience.startDate).toBe("Été 2019");
   });
 });

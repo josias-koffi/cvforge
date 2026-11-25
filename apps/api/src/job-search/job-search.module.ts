@@ -38,10 +38,7 @@ import {
   JOB_SOURCE_ADAPTERS,
 } from "./sources/job-sources.factory";
 import type { JobSourceAdapter } from "./job-search.types";
-import {
-  PgJobDigestRunsStore,
-  PgJobMatchesStore,
-} from "./matches.pg-store";
+import { PgJobDigestRunsStore, PgJobMatchesStore } from "./matches.pg-store";
 import {
   JOB_DIGEST_RUNS_STORE,
   JOB_MATCHES_STORE,
@@ -57,7 +54,7 @@ import { JOB_BOARDS_STORE, type JobBoardsStore } from "./boards.types";
 import { JobBoardsController } from "./job-boards.controller";
 import { JobSearchAdminController } from "./job-search-admin.controller";
 import { JobMatchesController } from "./job-matches.controller";
-import { JobMatchesService } from "./job-matches.service";
+import { JobMatchesService, lookupKnownOffer } from "./job-matches.service";
 import { JobPurgeService } from "./job-purge.service";
 import { PgJobRetentionStore } from "./job-retention.pg-store";
 import { jobStreamProviders } from "./job-stream.providers";
@@ -262,6 +259,7 @@ export class JobSearchModule implements OnModuleInit, OnModuleDestroy {
     private readonly applications: ApplicationsService,
     @Inject(BoardsService) private readonly boards: BoardsService,
     @Inject(SourceCallCounter) private readonly callCounter: SourceCallCounter,
+    @Inject(JOBS_STORE) private readonly jobs: JobsStore,
   ) {}
 
   async onModuleDestroy() {
@@ -270,6 +268,9 @@ export class JobSearchModule implements OnModuleInit, OnModuleDestroy {
 
   onModuleInit() {
     this.callCounter.start();
+    this.applications.setKnownOfferLookup((offerUrl) =>
+      lookupKnownOffer(this.jobs, offerUrl),
+    );
     this.applications.onOfferImported(async (offerUrl) => {
       await this.boards.registerFromUrl(offerUrl, "user");
     });

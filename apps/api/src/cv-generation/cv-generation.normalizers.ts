@@ -16,8 +16,10 @@ import type {
 import type { Locale } from "@cvforge/types";
 import {
   formatPartialDate,
+  formatPeriod,
   isLocale,
   isPartialDate,
+  legacyToPartialDate,
   normalizeDrivingLicenses,
   resolvePeriodText,
 } from "@cvforge/types";
@@ -143,7 +145,11 @@ function experienceDates(
   const current = item.current === true;
 
   if (!start && !end && !current) {
-    return { endDate: toStr(item.endDate), startDate: toStr(item.startDate) };
+    return legacyExperienceDates(
+      toStr(item.startDate),
+      toStr(item.endDate),
+      locale,
+    );
   }
 
   const text = resolvePeriodText({ current, end, start }, "", "", locale);
@@ -154,6 +160,34 @@ function experienceDates(
     endDate: text.end,
     ...(start ? { start } : {}),
     startDate: text.start,
+  };
+}
+
+const PRESENT_PATTERN =
+  /^(présent|present|aujourd'hui|en cours|actuel|current|now)$/i;
+
+/**
+ * Free-text dates (an experience saved before structured dates, rewritten by
+ * the model as "Sep. 2024") put in the same format as the structured ones, so
+ * one CV no longer mixes "janvier 2020" and "Oct. 2021". A text that does not
+ * read as a month and a year is kept as written.
+ */
+function legacyExperienceDates(
+  startDate: string,
+  endDate: string,
+  locale: Locale,
+): { endDate: string; startDate: string } {
+  const start = legacyToPartialDate(startDate);
+  const current = PRESENT_PATTERN.test(endDate.trim());
+  const end = current ? undefined : legacyToPartialDate(endDate);
+
+  return {
+    endDate: current
+      ? formatPeriod({ current: true }, locale)
+      : end
+        ? formatPartialDate(end, locale)
+        : endDate,
+    startDate: start ? formatPartialDate(start, locale) : startDate,
   };
 }
 
