@@ -35,23 +35,46 @@ async function mutateRegistry(
   return result
 }
 
-export async function saveProfile(profile: BaseProfile): Promise<ActionResult> {
+const PROFILE_CONFLICT_MESSAGE =
+  "Ce profil a été modifié ailleurs (par un agent connecté ou un autre onglet). " +
+  "Rechargez la page pour récupérer la dernière version : vos modifications non enregistrées seraient sinon écrasées."
+
+/**
+ * Saves one profile of the registry.
+ *
+ * `expectedLastSavedAt` is the save the editor loaded. When the stored profile
+ * has moved on since (an agent wrote to it through the MCP server, another tab
+ * saved it), the save is refused instead of silently erasing those changes.
+ * Leave it undefined to skip the check (onboarding, which creates the profile).
+ */
+export async function saveProfile(
+  profile: BaseProfile,
+  expectedLastSavedAt?: string | null
+): Promise<ActionResult & { lastSavedAt?: string }> {
+  const lastSavedAt = new Date().toISOString()
   const saved: BaseProfile = {
     ...profile,
-    meta: {
-      ...profile.meta,
-      lastSavedAt: new Date().toISOString(),
-      source: "storage",
-    },
+    meta: { ...profile.meta, lastSavedAt, source: "storage" },
   }
 
-  return mutateRegistry((registry) => {
-    const exists = registry.profiles.some((item) => item.id === saved.id)
-    const profiles = exists
+  const result = await mutateRegistry((registry) => {
+    const current = registry.profiles.find((item) => item.id === saved.id)
+
+    if (
+      current &&
+      expectedLastSavedAt !== undefined &&
+      (current.meta.lastSavedAt ?? null) !== expectedLastSavedAt
+    ) {
+      return { error: PROFILE_CONFLICT_MESSAGE }
+    }
+
+    const profiles = current
       ? registry.profiles.map((item) => (item.id === saved.id ? saved : item))
       : [...registry.profiles, saved]
     return { ...registry, profiles }
   }, "Profil enregistré.")
+
+  return result.ok ? { ...result, lastSavedAt } : result
 }
 
 export async function duplicateProfile(

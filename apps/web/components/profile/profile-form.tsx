@@ -11,6 +11,7 @@ import { UnsavedChangesGuard } from "@/components/layout/unsaved-changes-guard"
 import { CvDropzone } from "@/components/profile/cv-dropzone"
 import { ProfileAvailabilityCard } from "@/components/profile/profile-availability-card"
 import { useProfileEditState } from "@/components/profile/profile-edit-state"
+import { useServerProfileSync } from "@/components/profile/use-server-profile-sync"
 import { ProfileIdentityCard } from "@/components/profile/profile-identity-card"
 import { ProfileListCards } from "@/components/profile/profile-list-cards"
 import { normalizeProfile } from "@/components/profile/normalize-profile"
@@ -61,6 +62,13 @@ export function ProfileForm({
   const { setDirty } = useProfileEditState()
 
   useEffect(() => setDirty(dirty), [dirty, setDirty])
+  useServerProfileSync({
+    dirty,
+    initialProfile,
+    savedProfile,
+    setProfile,
+    setSavedProfile,
+  })
   const filled = hasContent(profile)
   const setSection = <K extends keyof BaseProfile["sections"]>(
     key: K,
@@ -74,12 +82,19 @@ export function ProfileForm({
   const save = () =>
     startSaving(async () => {
       const normalized = normalizeProfile(profile)
-      const result = await saveProfile(normalized)
+      const result = await saveProfile(
+        normalized,
+        isNew ? undefined : (savedProfile.meta.lastSavedAt ?? null)
+      )
 
       if (result.ok) {
         const saved = {
           ...normalized,
-          meta: { ...normalized.meta, lastSavedAt: new Date().toISOString() },
+          meta: {
+            ...normalized.meta,
+            lastSavedAt: result.lastSavedAt ?? new Date().toISOString(),
+            source: "storage" as const,
+          },
         }
         setProfile(saved)
         setSavedProfile(saved)
