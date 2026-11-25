@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
-import { CopyIcon, KeyRoundIcon, PlusIcon } from "lucide-react"
+import { KeyRoundIcon, PlusIcon } from "lucide-react"
 import { toast } from "sonner"
 import {
   AGENT_SCOPE_LABELS,
@@ -13,6 +13,7 @@ import {
 } from "@cvforge/types"
 
 import { createAgentToken } from "@/app/(app)/compte/agents/actions"
+import { CopyButton } from "@/components/account/agents/copy-button"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import {
@@ -50,11 +51,6 @@ type CreatedToken = { token: string; mcpUrl: string }
 
 function connectCommand({ mcpUrl, token }: CreatedToken) {
   return `claude mcp add --transport http jobspark ${mcpUrl} --header "Authorization: Bearer ${token}"`
-}
-
-async function copy(text: string) {
-  await navigator.clipboard.writeText(text)
-  toast.success("Copié.")
 }
 
 /**
@@ -121,17 +117,12 @@ export function CreateAgentTokenDialog() {
                 {connectCommand(created)}
               </code>
               <div className="flex flex-wrap gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => copy(connectCommand(created))}
-                >
-                  <CopyIcon />
+                <CopyButton value={connectCommand(created)}>
                   Copier la commande
-                </Button>
-                <Button variant="ghost" onClick={() => copy(created.token)}>
-                  <CopyIcon />
+                </CopyButton>
+                <CopyButton variant="ghost" value={created.token}>
                   Copier le jeton seul
-                </Button>
+                </CopyButton>
               </div>
             </div>
             <DialogFooter>
