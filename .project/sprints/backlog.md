@@ -36,6 +36,7 @@
 | E29 | 036 | Postuler depuis sa propre boîte mail | Le candidat connecte Gmail ou Outlook (permission d'envoi seule) et envoie CV et lettre au recruteur depuis CVForge, depuis sa vraie adresse ; brouillon pré-rempli pour les autres messageries ; envoi gratuit, un destinataire par envoi, 20 par jour | 036 | **Hors vision** — demande propriétaire du 2026-09-28 ; ADR-028 |
 | E30 | 037 | Plus d'entreprises : Workday et les logiciels vus sur JobTeaser | Les offres que JobTeaser relaie sont lues à la source, dans le logiciel de recrutement de l'entreprise : adaptateur Workday (sitemap + `JobPosting`), adaptateurs Workable, Recruitee, Personio et Welcome Kit, ajout en masse d'entreprises depuis l'admin ; `robots.txt` respecté, CGU relues, retrait sur demande, affichage minimal ; JobTeaser n'est jamais lu par un programme | 037 | Demande propriétaire du 2026-09-28 ; ADR-029 ; étend E19/E20 |
 | E31 | hors sprint | Modèle IA par fonctionnalité | Claude en direct et OpenRouter via le Vercel AI SDK ; choix du modèle par fonctionnalité dans l'admin ; coût par fournisseur et crédit Claude estimé dans le cockpit | — | **Hors vision** — demande propriétaire du 2026-11-08 ; ADR-030 |
+| E32 | 038 | Serveur MCP pour agents personnels | Un candidat crée un jeton dans `/compte/agents` et son agent (Claude Code + Chrome) lit et enrichit le profil, voit offres, alertes et solde, crée une candidature, génère et télécharge CV et lettre ; jetons hachés, scopés, plafonnés en crédits, journal visible | 038 | **Hors vision** — demande propriétaire du 2026-11-25 ; ADR-032 |
 
 ## Estimate Scale
 
@@ -198,6 +199,13 @@ Référence de gate: le spec impose des branches courtes et des PRs <= 400 ligne
 | US-179 | Ajout en masse d'entreprises (100 URL d'offres) dans `/admin/job-search`, tableau « Logiciels à couvrir », Common Crawl sur `*.myworkdayjobs.com` | E30 | S | P1 | 037 | Demande propriétaire du 2026-09-28 |
 | US-180 | Adaptateurs Workable, Recruitee, Personio et Welcome Kit (reconnus mais jamais collectés), conditions d'utilisation relues avant production | E30 | M | P1 | 037 | Décision du 2026-09-22 restée sans adaptateur |
 | US-181 | Choix du modèle par fonctionnalité dans `/admin/ai-models`, Claude en direct et OpenRouter via le Vercel AI SDK, coût et crédit Claude dans le cockpit (ADR-030) | E31 | M | P1 | hors sprint | Demande propriétaire du 2026-11-08 |
+| US-182 | ADR-032, épic E32 et sprint 038 du serveur MCP | E32 | S | P0 | 038 | Demande propriétaire du 2026-11-25 |
+| US-183 | Jetons d'agent : création, hachage, scopes, expiration, plafond de crédits, révocation, API cookie | E32 | M | P0 | 038 | Demande propriétaire du 2026-11-25 |
+| US-184 | Point d'accès `POST /mcp` (HTTP sans état), garde par jeton, limites, journal et outils de lecture | E32 | L | P0 | 038 | Demande propriétaire du 2026-11-25 |
+| US-185 | Écriture fine du profil par l'agent (expériences, sections) avec garde de version | E32 | M | P1 | 038 | Demande propriétaire du 2026-11-25 |
+| US-186 | Outils payants (CV, lettre, candidature) sous plafond atomique et liens de téléchargement signés | E32 | L | P0 | 038 | Demande propriétaire du 2026-11-25 |
+| US-187 | Page « Agents connectés » `/compte/agents` : créer, lister, révoquer, activité | E32 | M | P0 | 038 | Demande propriétaire du 2026-11-25 |
+| US-188 | Guide de connexion Claude Code + Chrome et texte de confidentialité | E32 | S | P1 | 038 | Demande propriétaire du 2026-11-25 |
 
 ## Critères d'acceptation détaillés — E16
 
