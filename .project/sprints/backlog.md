@@ -37,6 +37,7 @@
 | E30 | 037 | Plus d'entreprises : Workday et les logiciels vus sur JobTeaser | Les offres que JobTeaser relaie sont lues à la source, dans le logiciel de recrutement de l'entreprise : adaptateur Workday (sitemap + `JobPosting`), adaptateurs Workable, Recruitee, Personio et Welcome Kit, ajout en masse d'entreprises depuis l'admin ; `robots.txt` respecté, CGU relues, retrait sur demande, affichage minimal ; JobTeaser n'est jamais lu par un programme | 037 | Demande propriétaire du 2026-09-28 ; ADR-029 ; étend E19/E20 |
 | E31 | hors sprint | Modèle IA par fonctionnalité | Claude en direct et OpenRouter via le Vercel AI SDK ; choix du modèle par fonctionnalité dans l'admin ; coût par fournisseur et crédit Claude estimé dans le cockpit | — | **Hors vision** — demande propriétaire du 2026-11-08 ; ADR-030 |
 | E32 | 038 | Serveur MCP pour agents personnels | Un candidat crée un jeton dans `/compte/agents` et son agent (Claude Code + Chrome) lit et enrichit le profil, voit offres, alertes et solde, crée une candidature, génère et télécharge CV et lettre ; jetons hachés, scopés, plafonnés en crédits, journal visible | 038 | **Hors vision** — demande propriétaire du 2026-11-25 ; ADR-032 |
+| E34 | 039 | Connexion OAuth des agents (claude.ai, ChatGPT, tout client MCP) | Dans claude.ai ou ChatGPT, l'utilisateur colle l'adresse `/mcp`, consent sur une page JobSpark (permissions, plafond de crédits) et l'agent est branché ; la connexion apparaît dans `/compte/agents` avec les mêmes garde-fous qu'un jeton | 039 | **Hors vision** — demande propriétaire du 2026-11-25 ; ADR-033 |
 
 ## Estimate Scale
 
@@ -206,6 +207,11 @@ Référence de gate: le spec impose des branches courtes et des PRs <= 400 ligne
 | US-186 | Outils payants (CV, lettre, candidature) sous plafond atomique et liens de téléchargement signés | E32 | L | P0 | 038 | Demande propriétaire du 2026-11-25 |
 | US-187 | Page « Agents connectés » `/compte/agents` : créer, lister, révoquer, activité | E32 | M | P0 | 038 | Demande propriétaire du 2026-11-25 |
 | US-188 | Guide de connexion Claude Code + Chrome et texte de confidentialité | E32 | S | P1 | 038 | Demande propriétaire du 2026-11-25 |
+| US-189 | `/mcp` en serveur de ressources OAuth : 401 avec `WWW-Authenticate`, métadonnées RFC 9728 | E34 | S | P0 | 039 | Demande propriétaire du 2026-11-25 |
+| US-190 | Serveur d'autorisation : métadonnées RFC 8414, `authorize`, `token` (PKCE S256, `resource`, rotation des jetons de rafraîchissement), `revoke`, `iss` RFC 9207 | E34 | L | P0 | 039 | Demande propriétaire du 2026-11-25 |
+| US-191 | Clients OAuth : CIMD via `safe-fetch`, DCR, règles des URI de redirection (loopback tout port), purge des clients inutilisés | E34 | M | P0 | 039 | Demande propriétaire du 2026-11-25 |
+| US-192 | Page de consentement `/autoriser-agent` et connexions OAuth visibles et révocables dans `/compte/agents` | E34 | M | P0 | 039 | Demande propriétaire du 2026-11-25 |
+| US-193 | Limites sur `/oauth/*`, tests des règles RFC, essai réel claude.ai / ChatGPT / Claude Code, confidentialité | E34 | M | P1 | 039 | Demande propriétaire du 2026-11-25 |
 
 ## Critères d'acceptation détaillés — E16
 
