@@ -252,6 +252,7 @@ import {
     JOB_SOURCE_CALLS_STORE,
     JOB_SOURCES_STORE,
     JOBS_STORE,
+    JobMatchesService,
   ],
 })
 export class JobSearchModule implements OnModuleInit, OnModuleDestroy {

@@ -3,6 +3,7 @@ export * from "./ai-usage";
 export * from "./data-imports";
 export * from "./applications";
 export * from "./acquisition";
+export * from "./agent-access";
 export * from "./ats";
 export * from "./auth";
 export * from "./companies";
