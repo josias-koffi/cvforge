@@ -7,7 +7,10 @@ import { z } from "zod";
 import type { ApplicationsService } from "../../../applications/applications.service";
 import type { CreditsService } from "../../../credits/credits.service";
 import type { CvGenerationService } from "../../../cv-generation/cv-generation.service";
-import type { JobMatchesService } from "../../../job-search/job-matches.service";
+import type {
+  JobMatchesService,
+  OfferSearchResult,
+} from "../../../job-search/job-matches.service";
 import {
   OFFER_SEARCH_PAGE_SIZE,
   jobContractFilters,
@@ -36,6 +39,36 @@ export type ReadToolsDeps = {
 };
 
 const ALERTS_LIMIT = 30;
+const OFFER_EXCERPT_CHARS = 600;
+
+/**
+ * An offer as an agent needs it to choose: about 1 KB instead of the 5 KB the
+ * web page renders from (listings, score breakdown, every detail field).
+ */
+export function summarizeOffer(offer: OfferSearchResult) {
+  const { job } = offer;
+  const description = job.description.replace(/\s+/g, " ").trim();
+
+  return {
+    aiReason: offer.aiReason,
+    applicationId: offer.applicationId,
+    applyUrl: offer.details?.apply?.url ?? job.primaryUrl,
+    company: job.companyAnonymous ? null : job.companyName,
+    contractType: job.contractType,
+    excerpt:
+      description.length > OFFER_EXCERPT_CHARS
+        ? `${description.slice(0, OFFER_EXCERPT_CHARS)}…`
+        : description,
+    jobId: job.id,
+    location: job.locationLabel,
+    publishedAt: job.publishedAt,
+    remote: job.remote,
+    salary: job.salaryLabel,
+    score: offer.score,
+    status: offer.status,
+    title: job.title,
+  };
+}
 
 function summarizeApplication(application: DraftApplication) {
   return {
@@ -200,7 +233,12 @@ export function readTools(deps: ReadToolsDeps) {
           search.filters,
         );
 
-        return { ...found, page: search.page, place: search.place };
+        return {
+          ...found,
+          offers: found.offers.map(summarizeOffer),
+          page: search.page,
+          place: search.place,
+        };
       },
       scopes: ["jobs:read"],
       title: "Rechercher des offres",
@@ -217,8 +255,14 @@ export function readTools(deps: ReadToolsDeps) {
       name: "get_daily_offers",
       readOnly: true,
       untrusted: true,
-      run: (args, { principal }) =>
-        deps.jobs.getDigest(principal.userEmail, args.date ?? null),
+      async run(args, { principal }) {
+        const digest = await deps.jobs.getDigest(
+          principal.userEmail,
+          args.date ?? null,
+        );
+
+        return { ...digest, matches: digest.matches.map(summarizeOffer) };
+      },
       scopes: ["jobs:read"],
       title: "Offres du jour",
     }),
@@ -229,8 +273,14 @@ export function readTools(deps: ReadToolsDeps) {
       name: "list_recent_offers",
       readOnly: true,
       untrusted: true,
-      run: (args, { principal }) =>
-        deps.jobs.listRecent(principal.userEmail, args.limit ?? 30),
+      async run(args, { principal }) {
+        const recent = await deps.jobs.listRecent(
+          principal.userEmail,
+          args.limit ?? 30,
+        );
+
+        return recent.map(summarizeOffer);
+      },
       scopes: ["jobs:read"],
       title: "Offres récentes",
     }),
