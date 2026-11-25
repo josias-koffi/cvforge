@@ -31,6 +31,7 @@ const pathLabels: Record<string, string> = {
 const segmentLabels: Record<string, string> = {
   acquisition: "Acquisition",
   admin: "Administration",
+  agents: "Agents connectés",
   "audit-log": "Journal d'audit",
   candidatures: "Candidatures",
   compte: "Mon compte",
