@@ -5,7 +5,7 @@ import { AiKeyForm } from "./AiKeyForm";
 import { ConnectionCard } from "./ConnectionCard";
 
 const base: PanelState = {
-  aiKey: { configured: false, hint: null, model: "anthropic/claude-haiku-5.5" },
+  aiKey: { configured: false, hint: null, model: "openai/gpt-4.1-mini" },
   apiHost: "api.example",
   balance: null,
   status: "disconnected",

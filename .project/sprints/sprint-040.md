@@ -124,6 +124,14 @@ Décision d'architecture : **ADR-034** (`decisions/ADR-034-chrome-extension-appl
 
 ## 🔁 Workflow Runs
 
+- 2026-11-26 — mesure du coût d'un remplissage (vrai `filler.js`, identité fictive, aucun envoi) :
+  - `openai/gpt-4.1-mini` : Lever 10 appels 0,015 $, Ashby 16 appels 0,032 $, remplissage terminé ;
+  - `anthropic/claude-haiku-5.5` : Lever 0,014 à 0,031 $, Ashby 0,046 à 0,066 $ (jusqu'à 54 appels, boucle) ;
+  - un crédit vaut 3,4 c€ (pack Intensif) à 6,6 c€ (Essentiel). Modèle par défaut passé à `gpt-4.1-mini`.
+  - Bugs trouvés et corrigés : sur un formulaire à un seul champ « Resume/CV », la lettre remplaçait le CV ;
+    l'agent reposait la même question reformulée (15 fois) → questions proches dédoublonnées, 8 au plus par
+    remplissage, consigne « libellé exact, jamais reposée ».
+
 - 2026-11-26 — retour du propriétaire sur Lever (`…/apply`) : le formulaire n'était pas relié à sa candidature
   (adresse plus longue que celle de l'offre) et la carte « Remplir » masquait ses erreurs. Corrigé : une page dont
   l'adresse prolonge celle de l'offre sur le même site est reconnue ; depuis la page de l'offre, « Remplir » ouvre
