@@ -1,3 +1,4 @@
+import type { ScreeningAnswers } from "@cvforge/types";
 import type { AuthExportSnapshot } from "../auth/auth.types";
 import type { StoredApplication } from "../applications/applications.types";
 import type { ExportedProfileCompetence } from "../profiles/profile-competences.pg-store";
@@ -41,6 +42,8 @@ export type PrivacyExportPayload = {
   ownedProfileCompetences: ExportedProfileCompetence[];
   notifications: InAppNotification[];
   adminGrantReferences: CreditLedgerEntry[];
+  /** Saved answers to recruiters' screening questions (US-197). */
+  screeningAnswers: ScreeningAnswers | null;
   retentionPolicy: PrivacyRetentionPolicy;
 };
 

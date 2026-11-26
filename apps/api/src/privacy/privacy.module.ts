@@ -1,3 +1,7 @@
+import {
+  SCREENING_ANSWERS_STORE,
+  type ScreeningAnswersStore,
+} from "../profiles/screening-answers.service";
 import { Module } from "@nestjs/common";
 import { AdminAuditModule } from "../admin/admin-audit.module";
 import {
@@ -78,6 +82,7 @@ import { PrivacyService } from "./privacy.service";
         ADMIN_AUDIT_STORE,
         SEARCH_PROJECT_ROME_STORE,
         PROFILE_COMPETENCES_STORE,
+        SCREENING_ANSWERS_STORE,
       ],
       useFactory: (
         authStore: AuthAccountStore,
@@ -92,6 +97,7 @@ import { PrivacyService } from "./privacy.service";
         auditStore: AdminAuditStore,
         searchJobsStore: SearchProjectRomeStore,
         profileCompetencesStore: ProfileCompetencesStore,
+        screeningAnswersStore: ScreeningAnswersStore,
       ) =>
         new PrivacyService(
           authStore,
@@ -106,6 +112,7 @@ import { PrivacyService } from "./privacy.service";
           auditStore,
           searchJobsStore,
           profileCompetencesStore,
+          screeningAnswersStore,
         ),
     },
   ],

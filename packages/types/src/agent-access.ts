@@ -13,12 +13,15 @@ export const AGENT_SCOPES = [
   "documents:generate",
   "notifications:read",
   "credits:read",
+  "answers:write",
 ] as const;
 
 export type AgentScope = (typeof AGENT_SCOPES)[number];
 
 export const AGENT_SCOPE_LABELS: Record<AgentScope, string> = {
   "applications:read": "Voir mes candidatures, CV et lettres",
+  "answers:write":
+    "Enregistrer mes réponses aux questions des recruteurs (salaire, préavis…)",
   "applications:write": "Créer des candidatures et changer leur statut",
   "credits:read": "Voir mon solde et l'historique de crédits",
   "documents:generate":
@@ -43,6 +46,7 @@ export const AGENT_SCOPE_PRESETS = {
     "applications:write",
     "documents:generate",
     "credits:read",
+    "answers:write",
   ],
   readOnly: [
     "profile:read",
