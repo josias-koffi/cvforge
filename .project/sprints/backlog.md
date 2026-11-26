@@ -38,6 +38,7 @@
 | E31 | hors sprint | Modèle IA par fonctionnalité | Claude en direct et OpenRouter via le Vercel AI SDK ; choix du modèle par fonctionnalité dans l'admin ; coût par fournisseur et crédit Claude estimé dans le cockpit | — | **Hors vision** — demande propriétaire du 2026-11-08 ; ADR-030 |
 | E32 | 038 | Serveur MCP pour agents personnels | Un candidat crée un jeton dans `/compte/agents` et son agent (Claude Code + Chrome) lit et enrichit le profil, voit offres, alertes et solde, crée une candidature, génère et télécharge CV et lettre ; jetons hachés, scopés, plafonnés en crédits, journal visible | 038 | **Hors vision** — demande propriétaire du 2026-11-25 ; ADR-032 |
 | E34 | 039 | Connexion OAuth des agents (claude.ai, ChatGPT, tout client MCP) | Dans claude.ai ou ChatGPT, l'utilisateur colle l'adresse `/mcp`, consent sur une page JobSpark (permissions, plafond de crédits) et l'agent est branché ; la connexion apparaît dans `/compte/agents` avec les mêmes garde-fous qu'un jeton | 039 | **Hors vision** — demande propriétaire du 2026-11-25 ; ADR-033 |
+| E33 | 040 | Extension Chrome JobSpark : l'agent postule sur le site du recruteur | Le candidat se connecte en un clic (OAuth) ; sur une offre, l'extension prépare CV et lettre, remplit le formulaire du recruteur en joignant les documents, répond avec les réponses enregistrées (jamais inventées), envoie après « Valider et envoyer » (palier 1) et range la preuve ; ensuite, envoi par lot quotidien puis sous mandat ; jamais sur LinkedIn ou Indeed | 040 | **Hors vision** — demande propriétaire du 2026-11-26 ; ADR-034 |
 
 ## Estimate Scale
 
@@ -212,6 +213,14 @@ Référence de gate: le spec impose des branches courtes et des PRs <= 400 ligne
 | US-191 | Clients OAuth : CIMD via `safe-fetch`, DCR, règles des URI de redirection (loopback tout port), purge des clients inutilisés | E34 | M | P0 | 039 | Demande propriétaire du 2026-11-25 |
 | US-192 | Page de consentement `/autoriser-agent` et connexions OAuth visibles et révocables dans `/compte/agents` | E34 | M | P0 | 039 | Demande propriétaire du 2026-11-25 |
 | US-193 | Limites sur `/oauth/*`, tests des règles RFC, essai réel claude.ai / ChatGPT / Claude Code, confidentialité | E34 | M | P1 | 039 | Demande propriétaire du 2026-11-25 |
+| US-194 | Prototype jetable : page-agent dans une extension MV3, modèle via le service worker, dépôt de PDF sur SmartRecruiters, Greenhouse, Lever, Workday ; SPIKE-006 | E33 | M | P0 | 040 | Demande propriétaire du 2026-11-26 |
+| US-195 | Squelette `apps/extension` (WXT), connexion OAuth `launchWebAuthFlow`, client MCP dans le service worker, `MCP_ALLOWED_ORIGINS` | E33 | M | P0 | 040 | Demande propriétaire du 2026-11-26 |
+| US-196 | « Préparer » depuis l'onglet d'une offre : import, coût annoncé, CV et lettre | E33 | S | P0 | 040 | Demande propriétaire du 2026-11-26 |
+| US-197 | Remplir le formulaire, `attach_document`, réponses types enregistrées, pause sur question inconnue | E33 | L | P0 | 040 | Demande propriétaire du 2026-11-26 |
+| US-198 | Envoi validé (palier 1), garde-fous de `submit_application`, outil MCP `record_submission` et preuve dans la fiche | E33 | L | P0 | 040 | Demande propriétaire du 2026-11-26 |
+| US-199 | Mandat du candidat (métiers, zones, salaire min., contrats, entreprises exclues, plafond par jour) stocké dans l'API | E33 | M | P1 | — | Demande propriétaire du 2026-11-26 |
+| US-200 | Paliers d'autonomie 2 (lot quotidien) et 3 (sous mandat), débloqués après des envois sans correction ; instructions MCP reformulées | E33 | L | P1 | — | Demande propriétaire du 2026-11-26 |
+| US-201 | Publication sur le Chrome Web Store depuis la CI, confidentialité de l'extension dans `/admin/legal` | E33 | M | P1 | — | Demande propriétaire du 2026-11-26 |
 
 ## Critères d'acceptation détaillés — E16
 
