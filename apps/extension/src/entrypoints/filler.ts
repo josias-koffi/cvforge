@@ -13,6 +13,7 @@ import type {
   FormRequest,
 } from "../filler-messages";
 import { attachFile, type DocumentKind } from "../page/attach";
+import { findApplyLink, formFieldCount } from "../page/apply-link";
 import { clickSubmit, readForm } from "../page/form-state";
 
 /**
@@ -140,6 +141,10 @@ export default defineUnlistedScript(() => {
     // Only the service worker can message this script, never the page.
     if (form?.type === "filler/read-form") {
       reply(readForm());
+      return;
+    }
+    if (form?.type === "filler/probe") {
+      reply({ applyLink: findApplyLink(), fieldCount: formFieldCount() });
       return;
     }
     if (form?.type === "filler/submit") {

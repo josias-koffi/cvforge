@@ -13,7 +13,11 @@ export type FillerReply = { success: boolean; summary: string; steps: number };
 /** Service worker → the script in the tab, outside a fill (US-198). */
 export type FormRequest =
   | { type: "filler/read-form" }
-  | { type: "filler/submit" };
+  | { type: "filler/submit" }
+  | { type: "filler/probe" };
+
+/** Is this tab already the form, or where is it? */
+export type PageProbe = { fieldCount: number; applyLink: string | null };
 
 /** The script in the recruiter's tab → the service worker. */
 export type FillerRequest =

@@ -44,7 +44,16 @@ export function FillCard() {
     };
   }, [load]);
 
-  if (!options || options.kind !== "page") return null;
+  if (!options || options.kind !== "page") {
+    return error ? (
+      <p
+        role="alert"
+        className="rounded-md border border-destructive p-3 text-sm text-destructive"
+      >
+        Remplissage indisponible : {error}
+      </p>
+    ) : null;
+  }
 
   const fill = async () => {
     setFilling(true);
@@ -113,6 +122,12 @@ export function FillCard() {
               ? "Formulaire rempli. Vérifiez le récapitulatif ci-dessous avant l'envoi."
               : "Formulaire rempli en partie : complétez-le sur la page, puis vérifiez le récapitulatif."}
           </p>
+          {outcome.formUrl && (
+            <p className="text-muted-foreground">
+              Formulaire ouvert depuis la page de l'offre :{" "}
+              {new URL(outcome.formUrl).host}
+            </p>
+          )}
           <p className="whitespace-pre-line text-muted-foreground">
             {outcome.summary}
           </p>

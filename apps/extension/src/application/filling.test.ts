@@ -13,6 +13,12 @@ const KEY: AiKeySettings = {
   model: "m",
 };
 
+/** A tab that is already the form: nothing to open. */
+const FORM_PAGE = {
+  open: async () => undefined,
+  probe: async () => ({ applyLink: null, fieldCount: 8 }),
+};
+
 const ready = (over: Partial<ApplicationSummary> = {}): ApplicationSummary => ({
   company: "Acme",
   cvGeneratedAt: "x",
@@ -25,7 +31,11 @@ const ready = (over: Partial<ApplicationSummary> = {}): ApplicationSummary => ({
 });
 
 function setup(
-  options: { key?: AiKeySettings | null; apps?: ApplicationSummary[] } = {},
+  options: {
+    key?: AiKeySettings | null;
+    apps?: ApplicationSummary[];
+    probe?: { applyLink: string | null; fieldCount: number };
+  } = {},
 ) {
   let tab: ActiveTab | null | "no-access" = TAB;
   let runRequest: FillerRun | null = null;
@@ -88,6 +98,10 @@ function setup(
     fetchFn: fetchFn as unknown as typeof fetch,
     pages: { activeTab: async () => tab, readText: async () => "" },
     tab: {
+      open: vi.fn(async () => undefined),
+      probe: vi.fn(
+        async () => options.probe ?? { applyLink: null, fieldCount: 8 },
+      ),
       run: vi.fn(async (_tabId, request) => {
         runRequest = request;
         // While running, the page asks for the CV, a model call and a question.
@@ -115,7 +129,7 @@ function setup(
 }
 
 describe("Filling.options", () => {
-  it("offers the applications that have their CV and letter, this page's first", async () => {
+  it("offers the applications that have their CV and letter, this form's first", async () => {
     const f = setup({
       apps: [ready({ id: "other", offerUrl: null }), ready()],
     });
@@ -127,7 +141,8 @@ describe("Filling.options", () => {
       ],
       host: "jobs.lever.co",
       kind: "page",
-      suggestedId: "other",
+      // …/acme/1/apply is the form of …/acme/1.
+      suggestedId: "a1",
       url: URL_,
     });
   });
@@ -170,6 +185,7 @@ describe("Filling.fill", () => {
     });
     expect(outcome).toEqual({
       answersSaved: 1,
+      formUrl: null,
       questionsAsked: 1,
       success: true,
       summary: "Rempli, champ « vélo » vide.",
@@ -188,6 +204,7 @@ describe("Filling.fill", () => {
   it("never asks the candidate the same question twice", async () => {
     const answersSeen: unknown[] = [];
     (f.filling as unknown as { deps: { tab: FillTab } }).deps.tab = {
+      ...FORM_PAGE,
       run: async () => {
         for (const question of [
           "Current Company",
@@ -250,6 +267,7 @@ describe("Filling.fill", () => {
       return { steps: 0, success: true, summary: "" };
     });
     (g.filling as unknown as { deps: { tab: FillTab } }).deps.tab = {
+      ...FORM_PAGE,
       run: tabRun,
     };
     await g.filling.fill({ applicationId: "a1", url: URL_ });
@@ -259,12 +277,44 @@ describe("Filling.fill", () => {
   });
 });
 
+describe("Filling: from the offer page", () => {
+  it("opens the form behind « Postuler », then fills it", async () => {
+    const f = setup({
+      probe: { applyLink: "https://jobs.lever.co/acme/1/apply", fieldCount: 0 },
+    });
+    const tab = (f.filling as unknown as { deps: { tab: FillTab } }).deps.tab;
+
+    const outcome = await f.filling.fill({ applicationId: "a1", url: URL_ });
+
+    expect(tab.open).toHaveBeenCalledWith(
+      9,
+      "https://jobs.lever.co/acme/1/apply",
+    );
+    expect(outcome.formUrl).toBe("https://jobs.lever.co/acme/1/apply");
+  });
+
+  it("fills the page as it is when it is already the form or has no link", async () => {
+    for (const probe of [
+      { applyLink: "https://jobs.lever.co/acme/1/apply", fieldCount: 6 },
+      { applyLink: null, fieldCount: 0 },
+    ]) {
+      const f = setup({ probe });
+      const tab = (f.filling as unknown as { deps: { tab: FillTab } }).deps.tab;
+      expect(
+        (await f.filling.fill({ applicationId: "a1", url: URL_ })).formUrl,
+      ).toBeNull();
+      expect(tab.open).not.toHaveBeenCalled();
+    }
+  });
+});
+
 describe("Filling: model calls relayed for the page", () => {
   it("adds the key only for the configured provider", async () => {
     const f = setup();
     let relayed: unknown;
     let refused: unknown;
     (f.filling as unknown as { deps: { tab: FillTab } }).deps.tab = {
+      ...FORM_PAGE,
       run: async () => {
         relayed = await f.filling.handle(9, {
           body: "{}",
