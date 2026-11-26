@@ -222,6 +222,7 @@ Référence de gate: le spec impose des branches courtes et des PRs <= 400 ligne
 | US-200 | Paliers d'autonomie 2 (lot quotidien) et 3 (sous mandat), débloqués après des envois sans correction ; instructions MCP reformulées | E33 | L | P1 | — | Demande propriétaire du 2026-11-26 |
 | US-201 | Publication sur le Chrome Web Store depuis la CI, confidentialité de l'extension dans `/admin/legal` | E33 | M | P1 | — | Demande propriétaire du 2026-11-26 |
 | US-202 | Remplissage avec le modèle de JobSpark payé en crédits (`form_fill`, 2 crédits), relais `/agent/llm`, clé personnelle en option | E33 | M | P0 | 040 | Décision propriétaire du 2026-11-26 |
+| US-203 | Remplissage d'abord par script (identité, liens, documents, réponses enregistrées, réglages Lever/Greenhouse/Ashby/Workable/Teamtailor), IA seulement pour les champs restants, aucun crédit si le script suffit | E33 | M | P0 | 040 | Demande propriétaire du 2026-11-26 |
 
 ## Critères d'acceptation détaillés — E16
 

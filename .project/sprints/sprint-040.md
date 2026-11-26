@@ -109,6 +109,25 @@ Décision d'architecture : **ADR-034** (`decisions/ADR-034-chrome-extension-appl
           la clé personnelle reste une option avancée sans crédit.
     - [ ] Texte de confidentialité : le contenu du formulaire passe par JobSpark vers le fournisseur IA.
 
+- [ ] **[US-203]** Remplissage d'abord par script, l'IA seulement pour le reste (demande du propriétaire du 2026-11-26)
+  - Agent: `developer`
+  - Pourquoi : un script remplit en 1 à 2 secondes, toujours de la même façon. L'IA prend 1 à 2 minutes et pose
+    parfois des questions inutiles. La confiance dans l'agent vient d'abord de la prévisibilité.
+  - Critères d'acceptation :
+    - [ ] Passe déterministe dans la page, avant tout appel au modèle : identité (prénom, nom, nom complet, e-mail,
+          téléphone, ville), liens (LinkedIn, GitHub, portfolio), CV et lettre, et réponses enregistrées dont le
+          libellé correspond. Elle reconnaît les champs par `autocomplete`, `name`/`id`, libellé et `aria-label`, en
+          français et en anglais, et ne touche jamais un champ déjà rempli.
+    - [ ] Les listes (`select`, boutons radio) sont remplies seulement quand une option correspond exactement à la
+          réponse enregistrée. Sinon, le champ est laissé à l'IA.
+    - [ ] Réglages par plateforme pour Lever, Greenhouse, Ashby, Workable et Teamtailor, couverts par des
+          fixtures HTML tirées des vrais formulaires.
+    - [ ] L'IA n'est lancée que s'il reste des champs vides ; elle reçoit la liste de ces champs seulement. Un
+          formulaire entièrement rempli par le script ne débite aucun crédit (`start_form_fill` n'est pas appelé).
+    - [ ] Le panneau dit ce que le script a rempli, ce que l'IA a rempli, et le coût réel (0 ou 2 crédits).
+    - [ ] Mesure sur les 6 formulaires réels de SPIKE-006 : part des champs remplis sans IA, durée et coût, avant
+          et après.
+
 ## 📊 Sprint DoD
 
 - [ ] Parcours réel de bout en bout sur une vraie offre, avec un seul geste du candidat, « Valider et envoyer » :
