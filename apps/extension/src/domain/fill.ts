@@ -80,9 +80,10 @@ export function buildFillTask(
     line("Langues (Languages)", facts.languages),
     ...answers.known.map((entry) => line(entry.label, entry.answer)),
   ].filter((row): row is string => row !== null);
-  const custom = answers.custom.map(
-    (entry) => `- « ${entry.question} » → ${entry.answer}`,
-  );
+  const identityLabels: string[] = Object.values(IDENTITY_FIELDS);
+  const custom = answers.custom
+    .filter((entry) => !identityLabels.includes(entry.question))
+    .map((entry) => `- « ${entry.question} » → ${entry.answer}`);
   const target = [application.title, application.company]
     .filter(Boolean)
     .join(" chez ");
@@ -153,4 +154,111 @@ export function sameQuestion(a: string, b: string): boolean {
   if (left.size === 0 || right.size === 0) return false;
   const shared = [...left].filter((word) => right.has(word)).length;
   return shared / Math.min(left.size, right.size) >= 0.5;
+}
+
+const normalized = (text: string) =>
+  text
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+
+const linkMatching = (profile: FillProfile, pattern: RegExp) =>
+  profile.identity.links.find(
+    (link) => pattern.test(link.label.toLowerCase()) || pattern.test(link.url),
+  )?.url ?? "";
+
+/** A label about another person or thing: « Referrer email », « Company name ». */
+const SOMEONE_ELSE =
+  /\b(refer\w*|referent|parrain\w*|manager|reference\w*|company|entreprise|societe|school|ecole|emergency|urgence|recruiter|recruteur)\b/;
+
+/**
+ * A field label the candidate's data already answers. The model sometimes
+ * asks for the first name or e-mail anyway: the extension answers in their
+ * place instead of bothering the candidate. Only short labels count, so
+ * « How did you hear about us (LinkedIn…)? » still reaches the candidate.
+ */
+export function answerFromData(
+  question: string,
+  profile: FillProfile,
+  answers: FillAnswers,
+): string | null {
+  const q = normalized(question)
+    .replace(/\b(required|obligatoire|optional|optionnel|facultatif)\b/g, "")
+    .trim()
+    .replace(/\s+/g, " ");
+  const saved =
+    answers.custom.find((entry) => sameQuestion(entry.question, question))
+      ?.answer ??
+    answers.known.find((entry) => sameQuestion(entry.label, question))?.answer;
+  if (saved) return saved;
+  if (q.split(" ").length > 6 || SOMEONE_ELSE.test(q)) return null;
+
+  const { identity } = profile;
+  const fullName = `${identity.firstName} ${identity.lastName}`.trim();
+  const rules: [RegExp, string][] = [
+    [
+      /^(nom complet|nom et prenom|prenom et nom|nom prenom|full ?name|your name|name|nom)$/,
+      identity.lastName ? fullName : "",
+    ],
+    [/\b(prenom|first ?name|given name|forename)\b/, identity.firstName],
+    [/\b(nom de famille|last ?name|surname|family name)\b/, identity.lastName],
+    [/\b(e ?mail|courriel|adresse electronique)\b/, identity.email],
+    [/\b(telephone|phone|mobile|portable|tel)\b/, identity.phone],
+    [/linkedin/, linkMatching(profile, /linkedin/)],
+    [/github/, linkMatching(profile, /github/)],
+    [
+      /\b(portfolio|site web|site personnel|website|personal site)\b/,
+      linkMatching(profile, /portfolio|site|web/),
+    ],
+    [/\b(ville|city|current location|location|localisation)\b/, identity.city],
+  ];
+  const rule = rules.find(([pattern]) => pattern.test(q));
+  return rule?.[1] || null;
+}
+
+/** Identity data most forms ask for, collected in the panel before a fill. */
+export const IDENTITY_FIELDS = {
+  firstName: "Prénom (First name)",
+  lastName: "Nom de famille (Last name)",
+  email: "E-mail (Email)",
+  phone: "Téléphone (Phone)",
+  linkedin: "Profil LinkedIn (LinkedIn URL)",
+} as const;
+export type IdentityField = keyof typeof IDENTITY_FIELDS;
+
+const valueOf = (profile: FillProfile, field: IdentityField) =>
+  field === "linkedin"
+    ? linkMatching(profile, /linkedin/)
+    : profile.identity[field];
+
+/**
+ * The profile with what the candidate already gave in the panel (kept as
+ * saved answers under the labels above): the extension may not write the
+ * profile itself (ADR-034, no profile:write).
+ */
+export function completeProfile(
+  profile: FillProfile,
+  answers: FillAnswers,
+): FillProfile {
+  const given = (field: IdentityField) =>
+    answers.custom.find((entry) => entry.question === IDENTITY_FIELDS[field])
+      ?.answer ?? "";
+  const identity = { ...profile.identity };
+  for (const field of ["firstName", "lastName", "email", "phone"] as const) {
+    if (!identity[field]) identity[field] = given(field);
+  }
+  const linkedin = given("linkedin");
+  if (!linkMatching(profile, /linkedin/) && linkedin) {
+    identity.links = [...identity.links, { label: "LinkedIn", url: linkedin }];
+  }
+  return { ...profile, identity };
+}
+
+/** What the (completed) profile still lacks: asked before the fill starts. */
+export function profileGaps(profile: FillProfile): IdentityField[] {
+  return (Object.keys(IDENTITY_FIELDS) as IdentityField[]).filter(
+    (field) => !valueOf(profile, field),
+  );
 }
