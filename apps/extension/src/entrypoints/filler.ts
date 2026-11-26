@@ -26,6 +26,7 @@ export default defineUnlistedScript(() => {
   const marker = window as { __jobsparkFiller?: boolean };
   if (marker.__jobsparkFiller) return;
   marker.__jobsparkFiller = true;
+  quietCrossOriginFrames();
 
   const ask = <T>(request: FillerRequest) =>
     browser.runtime.sendMessage(request) as Promise<T>;
@@ -163,3 +164,22 @@ export default defineUnlistedScript(() => {
     return true;
   });
 });
+
+/**
+ * page-agent warns each time it meets a frame from another site (a captcha,
+ * an embedded video): the browser rightly forbids reading it. Chrome lists
+ * those warnings as the extension's errors, so they are dropped. Only this
+ * script's world is affected, never the page's own console.
+ */
+function quietCrossOriginFrames() {
+  const warn = console.warn.bind(console);
+  console.warn = (...args: unknown[]) => {
+    if (
+      typeof args[0] === "string" &&
+      args[0].startsWith("Unable to access iframe")
+    ) {
+      return;
+    }
+    warn(...args);
+  };
+}
