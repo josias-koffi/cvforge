@@ -1,10 +1,12 @@
 import { Filling } from "../application/filling";
 import { Preparation } from "../application/preparation";
+import { Sending } from "../application/sending";
 import { Session } from "../application/session";
 import { localAiKeyStore } from "../infrastructure/ai-key-store";
 import { ChromeAuthorizer } from "../infrastructure/chrome-authorizer";
 import { signedFileDownloader } from "../infrastructure/download";
 import { chromeFillTab } from "../infrastructure/fill-tab";
+import { chromeFormTab } from "../infrastructure/form-tab";
 import { apiEndpoints } from "../infrastructure/config";
 import { JobSparkMcp } from "../infrastructure/jobspark-mcp";
 import { chromeLocalStore } from "../infrastructure/local-store";
@@ -46,6 +48,12 @@ export default defineBackground(() => {
     tab: chromeFillTab(),
     tools,
   });
+  const sending = new Sending({
+    form: chromeFormTab(),
+    lastFill: (tabId) => filling.lastFill(tabId),
+    pages,
+    tools,
+  });
 
   browser.sidePanel
     .setPanelBehavior({ openPanelOnActionClick: true })
@@ -71,6 +79,13 @@ export default defineBackground(() => {
         return filling.options();
       case "fill":
         return filling.fill({
+          applicationId: request.applicationId,
+          url: request.url,
+        });
+      case "review":
+        return sending.review();
+      case "send":
+        return sending.send({
           applicationId: request.applicationId,
           url: request.url,
         });

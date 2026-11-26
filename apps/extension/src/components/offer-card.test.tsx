@@ -89,7 +89,7 @@ describe("OfferCard", () => {
     await click("Autoriser l'accès aux pages");
 
     expect(request).toHaveBeenCalledWith({
-      origins: ["https://*/*", "http://*/*"],
+      origins: ["<all_urls>"],
     });
     expect(container.textContent).toContain("Préparer la candidature");
   });

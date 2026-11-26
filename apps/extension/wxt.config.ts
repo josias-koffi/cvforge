@@ -29,7 +29,7 @@ export default defineConfig({
     permissions: ["storage", "identity", "sidePanel", "scripting"],
     host_permissions: API_HOSTS,
     // Asked at first use, from the side panel (src/infrastructure/page-reader.ts).
-    optional_host_permissions: ["https://*/*", "http://*/*"],
+    optional_host_permissions: ["<all_urls>"],
     action: { default_title: "Ouvrir JobSpark" },
   },
   // @vitejs/plugin-react 5 (vite 7) rather than @wxt-dev/module-react, whose

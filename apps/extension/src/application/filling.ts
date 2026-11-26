@@ -8,6 +8,7 @@ import { screeningQuestionKey } from "@cvforge/types";
 import type { FillerReply, FillerRequest, FillerRun } from "../filler-messages";
 import type { DocumentKind } from "../page/attach";
 import type { PageReader } from "./preparation";
+import type { LastFill } from "./sending";
 import type { AiKeyStore, JobSparkTools } from "./session";
 
 /** The script that runs page-agent in the recruiter's tab. */
@@ -77,6 +78,7 @@ const fileName = (kind: DocumentKind, profile: FillProfile) => {
  */
 export class Filling {
   private active: ActiveFill | null = null;
+  private readonly filled = new Map<number, LastFill>();
 
   constructor(
     private readonly deps: {
@@ -168,6 +170,11 @@ export class Filling {
         task: buildFillTask(profile, answers, application),
         type: "filler/run",
       });
+      this.filled.set(tab.tabId, {
+        applicationId: application.id,
+        documents: [documents.cv.name, documents.letter.name],
+        tabId: tab.tabId,
+      });
       return {
         answersSaved: this.active.answersSaved,
         questionsAsked: this.active.questionsAsked,
@@ -177,6 +184,11 @@ export class Filling {
     } finally {
       this.active = null;
     }
+  }
+
+  /** What the last fill of this tab used, for the review before sending. */
+  lastFill(tabId: number): LastFill | null {
+    return this.filled.get(tabId) ?? null;
   }
 
   /**

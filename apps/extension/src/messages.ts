@@ -3,6 +3,7 @@ import type {
   PreparationResult,
 } from "./application/preparation";
 import type { FillOptions, FillOutcome } from "./application/filling";
+import type { Review, SendOutcome } from "./application/sending";
 import type { AiKeySettings } from "./application/session";
 import type { PanelState } from "./domain/connection";
 
@@ -28,6 +29,11 @@ export type PanelRequests = {
   fill: {
     request: { type: "fill"; applicationId: string; url: string };
     response: FillOutcome;
+  };
+  review: { request: { type: "review" }; response: Review };
+  send: {
+    request: { type: "send"; applicationId: string; url: string };
+    response: SendOutcome;
   };
   "answer-question": {
     request: {

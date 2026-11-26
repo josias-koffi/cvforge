@@ -1770,3 +1770,10 @@
 - **Why**: le remplissage ne doit rien inventer ; ce que le profil ne dit pas se demande une fois, et peut se garder.
 - **Learned**: les formulaires sont en anglais → libellés de données bilingues (sinon l'agent ne relie pas « Current Location » à « Ville » et boucle) ; dédoublonner les questions côté service worker ; `maxSteps` 60 ; WXT `defineUnlistedScript` + `wxt prepare` pour typer `/filler.js` ; `prettier --write` sur un dossier reformate des fichiers non touchés → cibler les fichiers. Banc e2e : `~/perso/projets/jobspark-e33-proto/e2e-filler` (vrai `filler.js`, service worker de test).
 - **Open**: essai réel préprod par le propriétaire ; US-198.
+
+## 2026-11-26 — US-198 envoi validé et preuve (ad hoc, demande propriétaire)
+- **Context**: [[sprints/sprint-040#US-198]]
+- **Did**: `application_submissions` (0066) + `record_submission` + carte « Preuve d'envoi » ; extension : `Sending` (récapitulatif, refus revérifiés avant clic, clic déterministe, détection de confirmation, capture), `form-state.ts` (lecture du formulaire).
+- **Why**: palier 1 d'ADR-034 : un seul geste du candidat, « Valider et envoyer », et une preuve rangée dans JobSpark.
+- **Learned**: `captureVisibleTab` exige `<all_urls>` (pas `https://*/*`) ; le pilote pg rend `bytea` en `Uint8Array` → `fromDriver` en Buffer ; un `<button>` sans `type` vaut `submit` → ne compter que `type="submit"` écrit ; « Thank you for your interest » est souvent dans l'intro d'une offre → la phrase de confirmation doit être nouvelle après le clic.
+- **Open**: essai réel préprod ; DoD sprint 040 (vraie offre de bout en bout) ; US-199/200/201.

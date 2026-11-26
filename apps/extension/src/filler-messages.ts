@@ -10,6 +10,11 @@ export type FillerRun = {
 
 export type FillerReply = { success: boolean; summary: string; steps: number };
 
+/** Service worker → the script in the tab, outside a fill (US-198). */
+export type FormRequest =
+  | { type: "filler/read-form" }
+  | { type: "filler/submit" };
+
 /** The script in the recruiter's tab → the service worker. */
 export type FillerRequest =
   | { type: "filler/llm-fetch"; url: string; body?: string }

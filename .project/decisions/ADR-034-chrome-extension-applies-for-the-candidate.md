@@ -72,7 +72,9 @@ What that study decided, and what changes here:
    - **The side panel**: connection, the current offer, "Préparer",
      "Postuler", progress and proof.
    - **The script injected into the recruiter's tab**, on demand
-     (`activeTab` + `scripting`): page-agent plus the JobSpark tools.
+     (`scripting` + the optional `<all_urls>` host permission, asked from the
+     side panel at first use; `<all_urls>` because `captureVisibleTab`, used
+     for the proof, needs it): page-agent plus the JobSpark tools.
 4. **Connection by OAuth**, through ADR-033's flow:
    - `chrome.identity.launchWebAuthFlow`, redirect
      `https://<extension id>.chromiumapp.org/`, the `extension` scope preset
@@ -99,6 +101,9 @@ What that study decided, and what changes here:
      answer stops the flow and asks the candidate through `onAskUser` or a
      push notification. **The agent never invents an answer.**
    - `submit_application`: the only way to click the final button (decision 6).
+     It is not a model tool: the extension's own code finds the one final
+     button and clicks it after « Valider et envoyer »; the model's click tool
+     refuses submit buttons.
    - `record_submission` → a new MCP tool. It stores the proof (decision 7)
      and sets the status to `sent`.
 6. **Earned autonomy levels**, chosen by the candidate and stored with the
