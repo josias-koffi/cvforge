@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   findApplicationFor,
+  isOfferPage,
   isWebPage,
   normalizeOfferUrl,
   planPreparation,
@@ -53,6 +54,31 @@ describe("findApplicationFor", () => {
       findApplicationFor(apps, "https://jobs.example.com/offre/43"),
     ).toBeNull();
     expect(findApplicationFor(apps, "chrome://newtab")).toBeNull();
+    expect(
+      findApplicationFor(apps, "https://jobs.example.com/offre/42/apply")?.id,
+    ).toBe("a1");
+  });
+});
+
+describe("isOfferPage", () => {
+  const offer = "https://jobs.lever.co/agicap/e0aa73bf";
+  it("recognises the offer's form at a longer address on the same site", () => {
+    expect(isOfferPage(offer, `${offer}/apply`)).toBe(true);
+    expect(isOfferPage(offer, `${offer}/apply?lever-source=x#form`)).toBe(true);
+    expect(isOfferPage(offer, `${offer}/`)).toBe(true);
+  });
+
+  it("does not take a sibling offer or another site for it", () => {
+    expect(isOfferPage(offer, "https://jobs.lever.co/agicap/e0aa73bf2")).toBe(
+      false,
+    );
+    expect(isOfferPage(offer, "https://jobs.lever.co/agicap")).toBe(false);
+    expect(
+      isOfferPage(offer, "https://evil.example/agicap/e0aa73bf/apply"),
+    ).toBe(false);
+    expect(
+      isOfferPage("https://acme.example/", "https://acme.example/jobs/1"),
+    ).toBe(false);
   });
 });
 

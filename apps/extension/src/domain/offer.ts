@@ -54,18 +54,34 @@ export function normalizeOfferUrl(raw: string): string | null {
   return `${url.protocol}//${url.host.toLowerCase()}${path}${url.search}`;
 }
 
+/**
+ * The page is the offer's, or its application form at a longer address on
+ * the same site (Lever `…/apply`, Ashby `…/application`, Workable `…/apply/`).
+ */
+export function isOfferPage(offerUrl: string, pageUrl: string): boolean {
+  const offer = normalizeOfferUrl(offerUrl);
+  const page = normalizeOfferUrl(pageUrl);
+  if (!offer || !page) return false;
+  if (offer === page) return true;
+  const a = new URL(offer);
+  const b = new URL(page);
+  return (
+    a.host === b.host &&
+    a.pathname !== "/" &&
+    b.pathname.startsWith(`${a.pathname}/`)
+  );
+}
+
 /** The candidate's application for this page, if there is one. */
 export function findApplicationFor(
   applications: readonly ApplicationSummary[],
   pageUrl: string,
 ): ApplicationSummary | null {
-  const page = normalizeOfferUrl(pageUrl);
-  if (!page) return null;
   return (
     applications.find(
       (application) =>
-        application.offerUrl &&
-        normalizeOfferUrl(application.offerUrl) === page,
+        application.offerUrl !== null &&
+        isOfferPage(application.offerUrl, pageUrl),
     ) ?? null
   );
 }

@@ -68,6 +68,7 @@ describe("FillCard", () => {
 
     ask.mockResolvedValueOnce({
       answersSaved: 1,
+      formUrl: "https://jobs.lever.co/acme/1/apply",
       questionsAsked: 2,
       success: true,
       summary: "Champ « vélo » laissé vide.",
@@ -80,6 +81,9 @@ describe("FillCard", () => {
       url: OPTIONS.url,
     });
     expect(container.textContent).toContain("Vérifiez le récapitulatif");
+    expect(container.textContent).toContain(
+      "Formulaire ouvert depuis la page de l'offre",
+    );
     // The review of the filled form loads right after (US-198).
     expect(ask).toHaveBeenLastCalledWith({ type: "review" });
     expect(container.textContent).toContain(

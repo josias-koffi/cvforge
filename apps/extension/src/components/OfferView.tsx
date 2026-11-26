@@ -104,7 +104,8 @@ function body({
       <>
         {header}
         <p className="text-sm text-success">
-          Candidature prête : CV et lettre déjà générés.
+          Candidature prête : CV et lettre déjà générés. « Remplir le formulaire
+          » ci-dessous ouvre le formulaire de l'offre et le remplit.
         </p>
       </>
     );

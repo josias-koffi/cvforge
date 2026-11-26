@@ -124,6 +124,12 @@ Décision d'architecture : **ADR-034** (`decisions/ADR-034-chrome-extension-appl
 
 ## 🔁 Workflow Runs
 
+- 2026-11-26 — retour du propriétaire sur Lever (`…/apply`) : le formulaire n'était pas relié à sa candidature
+  (adresse plus longue que celle de l'offre) et la carte « Remplir » masquait ses erreurs. Corrigé : une page dont
+  l'adresse prolonge celle de l'offre sur le même site est reconnue ; depuis la page de l'offre, « Remplir » ouvre
+  le lien « Postuler / Apply » du même site puis remplit. Vérifié sur Lever, Ashby et Workable avec le vrai
+  `filler.js`. 159 tests extension.
+
 - 2026-11-26 — US-198 :
   - API : table `application_submissions` (migration 0066, capture en `bytea`, liée à la candidature et au compte),
     outil MCP `record_submission`, `GET /applications/:id/submissions` et la capture par session ; carte « Preuve

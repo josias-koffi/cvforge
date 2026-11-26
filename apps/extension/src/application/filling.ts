@@ -5,7 +5,12 @@ import {
 } from "../domain/fill";
 import { findApplicationFor, type ApplicationSummary } from "../domain/offer";
 import { screeningQuestionKey } from "@cvforge/types";
-import type { FillerReply, FillerRequest, FillerRun } from "../filler-messages";
+import type {
+  FillerReply,
+  FillerRequest,
+  FillerRun,
+  PageProbe,
+} from "../filler-messages";
 import type { DocumentKind } from "../page/attach";
 import type { PageReader } from "./preparation";
 import type { LastFill } from "./sending";
@@ -14,7 +19,14 @@ import type { AiKeyStore, JobSparkTools } from "./session";
 /** The script that runs page-agent in the recruiter's tab. */
 export interface FillTab {
   run(tabId: number, request: FillerRun): Promise<FillerReply>;
+  /** Whether the tab is already a form, or the link to it. */
+  probe(tabId: number): Promise<PageProbe>;
+  /** Opens the form in the same tab and waits for it to load. */
+  open(tabId: number, url: string): Promise<void>;
 }
+
+/** Fewer fields than this: an offer page, not its application form. */
+const FORM_MIN_FIELDS = 3;
 
 /** Asks the candidate through the side panel; null when nobody answered. */
 export interface CandidateChannel {
@@ -36,6 +48,8 @@ export type FillOptions =
     };
 
 export type FillOutcome = {
+  /** The form the extension opened from the offer page, if it did. */
+  formUrl: string | null;
   success: boolean;
   summary: string;
   questionsAsked: number;
@@ -157,6 +171,7 @@ export class Filling {
       cv: await this.document(application.id, "cv", profile),
       letter: await this.document(application.id, "letter", profile),
     };
+    const formUrl = await this.openFormIfNeeded(tab.tabId);
     this.active = {
       answersSaved: 0,
       asked: new Map(),
@@ -177,6 +192,7 @@ export class Filling {
       });
       return {
         answersSaved: this.active.answersSaved,
+        formUrl,
         questionsAsked: this.active.questionsAsked,
         success: reply.success,
         summary: reply.summary,
@@ -184,6 +200,17 @@ export class Filling {
     } finally {
       this.active = null;
     }
+  }
+
+  /**
+   * On the offer's page, « Remplir » opens its form first: the same-site
+   * « Postuler » / « Apply » link. A page with fields is already the form.
+   */
+  private async openFormIfNeeded(tabId: number): Promise<string | null> {
+    const probe = await this.deps.tab.probe(tabId);
+    if (probe.fieldCount >= FORM_MIN_FIELDS || !probe.applyLink) return null;
+    await this.deps.tab.open(tabId, probe.applyLink);
+    return probe.applyLink;
   }
 
   /** What the last fill of this tab used, for the review before sending. */

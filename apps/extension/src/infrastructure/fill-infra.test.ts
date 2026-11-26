@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { fakeBrowser } from "wxt/testing/fake-browser";
 import { signedFileDownloader, toBase64 } from "./download";
 import { chromeFillTab } from "./fill-tab";
 import { PanelChannel } from "./panel-channel";
@@ -66,6 +67,58 @@ describe("PanelChannel", () => {
 
 describe("chromeFillTab", () => {
   afterEach(() => vi.restoreAllMocks());
+
+  it("asks the filler whether the tab is the form", async () => {
+    vi.spyOn(browser.scripting, "executeScript" as never).mockResolvedValue(
+      [] as never,
+    );
+    const send = vi
+      .spyOn(browser.tabs, "sendMessage" as never)
+      .mockResolvedValue({ applyLink: null, fieldCount: 5 } as never);
+    expect(await chromeFillTab().probe(5)).toEqual({
+      applyLink: null,
+      fieldCount: 5,
+    });
+    expect(send).toHaveBeenCalledWith(
+      5,
+      { type: "filler/probe" },
+      { frameId: 0 },
+    );
+  });
+
+  it("opens the form and waits until it has loaded", async () => {
+    vi.useFakeTimers();
+    const update = vi
+      .spyOn(browser.tabs, "update" as never)
+      .mockResolvedValue({} as never);
+    const opened = chromeFillTab().open(5, "https://jobs.lever.co/a/1/apply");
+    await fakeBrowser.tabs.onUpdated.trigger(
+      4,
+      { status: "complete" },
+      {} as never,
+    );
+    await fakeBrowser.tabs.onUpdated.trigger(
+      5,
+      { status: "complete" },
+      {} as never,
+    );
+    await vi.advanceTimersByTimeAsync(3_000);
+    await expect(opened).resolves.toBeUndefined();
+    expect(update).toHaveBeenCalledWith(5, {
+      url: "https://jobs.lever.co/a/1/apply",
+    });
+    vi.useRealTimers();
+  });
+
+  it("gives up on a form that never loads", async () => {
+    vi.useFakeTimers();
+    vi.spyOn(browser.tabs, "update" as never).mockResolvedValue({} as never);
+    const opened = chromeFillTab().open(5, "https://jobs.lever.co/a/1/apply");
+    const failure = expect(opened).rejects.toThrow("trop de temps");
+    await vi.advanceTimersByTimeAsync(21_000);
+    await failure;
+    vi.useRealTimers();
+  });
 
   it("injects the filler in the tab, then asks its top frame to run", async () => {
     const inject = vi
