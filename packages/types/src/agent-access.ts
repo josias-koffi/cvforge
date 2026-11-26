@@ -32,8 +32,9 @@ export const AGENT_SCOPE_LABELS: Record<AgentScope, string> = {
 export const AGENT_SCOPE_PRESETS = {
   assistant: [...AGENT_SCOPES],
   /**
-   * The future JobSpark Chrome extension (E33) acts inside third-party pages,
-   * exposed to prompt injection: no profile writes.
+   * The JobSpark Chrome extension (E33, ADR-034) acts inside third-party
+   * pages, exposed to prompt injection: no profile writes. It reads the
+   * balance to announce a cost before spending.
    */
   extension: [
     "profile:read",
@@ -41,6 +42,7 @@ export const AGENT_SCOPE_PRESETS = {
     "applications:read",
     "applications:write",
     "documents:generate",
+    "credits:read",
   ],
   readOnly: [
     "profile:read",
@@ -50,6 +52,31 @@ export const AGENT_SCOPE_PRESETS = {
     "credits:read",
   ],
 } satisfies Record<string, AgentScope[]>;
+
+export type AgentScopePreset = keyof typeof AGENT_SCOPE_PRESETS;
+
+/**
+ * The narrowest preset that covers what an agent asked for, so a consent
+ * screen never starts by offering more than the request (full access when
+ * nothing narrower fits, or when nothing was asked).
+ */
+export function closestAgentScopePreset(
+  requested: readonly string[],
+): AgentScopePreset {
+  if (requested.length === 0) return "assistant";
+
+  const covering = (Object.keys(AGENT_SCOPE_PRESETS) as AgentScopePreset[])
+    .filter((preset) =>
+      requested.every((scope) =>
+        (AGENT_SCOPE_PRESETS[preset] as readonly string[]).includes(scope),
+      ),
+    )
+    .sort(
+      (a, b) => AGENT_SCOPE_PRESETS[a].length - AGENT_SCOPE_PRESETS[b].length,
+    );
+
+  return covering[0] ?? "assistant";
+}
 
 export const AGENT_TOKEN_PREFIX = "jsk_";
 export const AGENT_TOKEN_MAX_ACTIVE = 10;

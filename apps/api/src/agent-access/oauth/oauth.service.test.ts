@@ -316,6 +316,30 @@ describe("OAuthService", () => {
     ).rejects.toThrow(/expirée/);
   });
 
+  it("never grants more than the client asked for", async () => {
+    const client = await clients.register({ redirect_uris: [REDIRECT] });
+    const outcome = await oauth.authorize(query(client.clientId));
+    const request = new URL((outcome as { url: string }).url).searchParams.get(
+      "request",
+    )!;
+    const redirect = new URL(
+      await oauth.decide(EMAIL, {
+        approve: true,
+        request,
+        scopes: ["jobs:read", "profile:write"],
+      }),
+    );
+
+    const { body } = await exchange(
+      client.clientId,
+      redirect.searchParams.get("code")!,
+    );
+    expect(String(body.scope).split(" ").sort()).toEqual([
+      "jobs:read",
+      "offline_access",
+    ]);
+  });
+
   it("refuses DCR with a non-https redirect", async () => {
     await expect(
       clients.register({ redirect_uris: ["http://evil.example/cb"] }),
