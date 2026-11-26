@@ -523,3 +523,10 @@
 - **Why**: Sans CV, pas de donnée personnelle envoyée au modèle ; la candidature donne au recruteur IA l'offre comme contexte.
 - **Learned**: La panne LLM (503 sans `Retry-After`) et le budget épuisé (503 avec) sont deux codes distincts pour la landing.
 - **Open**: none
+
+## 2026-11-26 — E33 au backlog (ad hoc, demande propriétaire)
+- **Context**: [[sprints/sprint-040]] · [[decisions/ADR-034-chrome-extension-applies-for-the-candidate]]
+- **Did**: épic E33 et US-194→201 ajoutés à `backlog.md` (hors vision, demande du 2026-11-26) ; sprint 040 = palier 1 (validation à chaque candidature).
+- **Why**: « laisser l'agent tout faire et postuler en toute confiance » ; la vidéo LinkedIn attend un parcours sans geste manuel.
+- **Learned**: le miroir `exports/claude-space/03-backlog-et-sprints.md` ne contient ni E32 ni E34 : il n'est plus tenu à jour depuis ces épics.
+- **Open**: mandat et paliers 2-3 (US-199, US-200), Chrome Web Store (US-201).

@@ -531,3 +531,10 @@
 - **Why**: E27 vise une détection en moins de 15 min ; les mesures du 2026-09-28 (10/s par application) rendent le flux national toutes les 5 min abordable.
 - **Learned**: Un critère qui dépend d'un espace réservé au propriétaire (francetravail.io) se demande en début de run, pas en fin.
 - **Open**: Demande de passage en production à déposer par le propriétaire ; case US-162 non cochée tant qu'elle ne l'est pas.
+
+## 2026-11-26 — ADR-034 / E33 (ad hoc, demande propriétaire)
+- **Context**: [[sprints/sprint-040]] · [[decisions/ADR-034-chrome-extension-applies-for-the-candidate]]
+- **Did**: ADR-034 (proposée) : extension `apps/extension` (WXT, `@page-agent/core` figé, OAuth `launchWebAuthFlow`, MCP depuis le service worker), outils `attach_document` / `submit_application` / `record_submission`, paliers d'autonomie 1-2-3 ; sprint 040 (US-194→198) et backlog US-199→201.
+- **Why**: essai réel claude.ai + Claude in Chrome bloqué au champ fichier « CV » (SmartRecruiters) ; le propriétaire veut un agent qui postule seul en confiance.
+- **Learned**: l'étude du 2026-11-25 imposait le mode assisté ; ADR-034 le remplace par des paliers mérités. LinkedIn/Indeed restent exclus.
+- **Open**: ADR-034 à passer « accepted » ; US-194 (prototype) en premier ; fichier `LICENSE` à décider.
