@@ -25,6 +25,7 @@ export type ApplicationToolsDeps = {
     ApplicationsService,
     | "getApplicationForUser"
     | "importFromUrl"
+    | "importFromPage"
     | "importFromText"
     | "updateStatus"
   >;
@@ -110,6 +111,7 @@ export function applicationTools(deps: ApplicationToolsDeps) {
       cost: () => OFFER_COST,
       description:
         `Crée une candidature à partir de l'URL d'une offre (site carrière, job board) ou de son texte. ` +
+        `Avec les deux, le texte lu sur la page est analysé et l'adresse gardée. ` +
         `Coûte ${OFFER_COST} crédit.`,
       inputSchema: {
         offerText: z
@@ -117,22 +119,34 @@ export function applicationTools(deps: ApplicationToolsDeps) {
           .min(50)
           .max(30_000)
           .optional()
-          .describe("Texte de l'offre si pas d'URL"),
+          .describe(
+            "Texte de l'offre : seul, ou avec `url` quand il a été lu sur la page",
+          ),
         url: z.string().url().max(2000).optional(),
       },
       name: "import_offer",
       async run(args, { principal }) {
         const email = principal.userEmail;
 
-        if (!args.url === !args.offerText) {
+        if (!args.url && !args.offerText) {
           throw new UnprocessableEntityException(
-            "Donnez soit une URL, soit le texte de l'offre.",
+            "Donnez l'URL de l'offre, son texte, ou les deux.",
           );
         }
 
-        const application = args.url
-          ? await deps.applications.importFromUrl(email, args.url)
-          : await deps.applications.importFromText(email, args.offerText ?? "");
+        const application =
+          args.url && args.offerText
+            ? await deps.applications.importFromPage(
+                email,
+                args.url,
+                args.offerText,
+              )
+            : args.url
+              ? await deps.applications.importFromUrl(email, args.url)
+              : await deps.applications.importFromText(
+                  email,
+                  args.offerText ?? "",
+                );
 
         return {
           applicationId: application.id,

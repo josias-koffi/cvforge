@@ -81,6 +81,43 @@ export class OfferImporter {
     };
   }
 
+  /**
+   * The text the candidate's own browser read on the offer page (the Chrome
+   * extension, ADR-034). The site may refuse our fetch or draw the offer with
+   * JavaScript, but the address is still the offer's, so it is kept: it links
+   * the application to its offer and lets the extension find it again.
+   */
+  async fromPageText(
+    userEmail: string,
+    rawUrl: string,
+    rawOfferText: string,
+  ): Promise<OfferExtractionResult> {
+    const offerUrl = normalizeOfferUrl(rawUrl);
+    const offerText = normalizeOfferText(rawOfferText);
+    const extracted = await this.extractWithCredits(userEmail, () =>
+      structureOffer(
+        this.openRouterService,
+        offerText,
+        {
+          description: buildOfferPreview(offerText, 320),
+          siteName: new URL(offerUrl).hostname,
+          title: null,
+        },
+        offerUrl,
+        APPLICATION_SOURCE_URL,
+      ),
+    );
+
+    return {
+      extracted,
+      offerText,
+      offerTextPreview: buildOfferPreview(offerText),
+      offerUrl,
+      sourceLabel: offerUrl,
+      sourceType: APPLICATION_SOURCE_URL,
+    };
+  }
+
   async fromText(
     userEmail: string,
     rawOfferText: string,
@@ -136,7 +173,8 @@ export class OfferImporter {
 
     try {
       page = await fetchPublicPage(offerUrl, {
-        userAgent: "Mozilla/5.0 (compatible; CVforgeBot/1.0; +https://cvforge.app)",
+        userAgent:
+          "Mozilla/5.0 (compatible; CVforgeBot/1.0; +https://cvforge.app)",
       });
     } catch (error) {
       if (error instanceof BlockedUrlError) {
