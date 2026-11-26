@@ -164,13 +164,18 @@ const controlText = (element: HTMLElement) =>
   );
 
 function controls(): HTMLElement[] {
-  return roots()
-    .flatMap((root) => [
-      ...root.querySelectorAll<HTMLElement>(
-        'button, input[type="submit"], input[type="button"], [role="button"]',
-      ),
-    ])
-    .filter((element) => !(element as HTMLButtonElement).disabled);
+  return (
+    roots()
+      .flatMap((root) => [
+        ...root.querySelectorAll<HTMLElement>(
+          'button, input[type="submit"], input[type="button"], [role="button"]',
+        ),
+      ])
+      .filter((element) => !(element as HTMLButtonElement).disabled)
+      // A hidden button is not the one the candidate sees: Lever keeps an
+      // invisible hCaptcha `type="submit"` beside « Submit application ».
+      .filter((element) => element.getClientRects().length > 0)
+  );
 }
 
 function nextControls() {
