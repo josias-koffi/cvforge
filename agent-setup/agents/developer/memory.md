@@ -1756,3 +1756,10 @@
 - **Why**: base de l'extension E33 ; l'id fixé (`iciahkakhljbapmhkjjgopacegifndha`) sert d'origine et d'adresse de retour OAuth.
 - **Learned**: `@wxt-dev/module-react` tire plugin-react 6 (Vite 8) → plugin-react 5 en direct ; `packages/types/dist` est en CommonJS → alias vers `src/index.ts` dans Vite ; un `fetch` par défaut stocké en propriété lève « Illegal invocation » ; un panneau ouvert dans un onglet a `sender.tab` → filtrer sur `sender.url`. Une variable d'env API doit aussi être listée dans `dokploy-stack.yml`.
 - **Open**: déploiement préprod + essai réel propriétaire (connexion, solde, révocation) avant de cocher US-195.
+
+## 2026-11-26 — US-196 « Préparer » depuis l'onglet (ad hoc, demande propriétaire)
+- **Context**: [[sprints/sprint-040#US-196]]
+- **Did**: carte « Offre de l'onglet » (permission optionnelle `https://*/*` demandée depuis le panneau, `scripting` pour lire le texte), plan et coût par étape, confirmation, revérification onglet + coût côté service worker ; API : `import_offer` accepte `url` + `offerText` (`importFromPage`, adresse gardée).
+- **Why**: les sites SPA ou qui refusent le serveur restent importables, et l'adresse permet de retrouver la candidature (dédoublonnage côté extension via `list_applications`).
+- **Learned**: `normalizeOfferUrl` de l'API garde le fragment ; l'extension normalise elle-même des deux côtés. `permissions.request` doit partir du panneau (geste utilisateur). happy-dom + `act` suffisent pour tester un composant à état sans testing-library.
+- **Open**: essai réel préprod ; US-197.

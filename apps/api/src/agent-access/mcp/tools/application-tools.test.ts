@@ -42,6 +42,7 @@ function setup(
         id: "app-1",
         profileId: "p2",
       })),
+      importFromPage: vi.fn(),
       importFromText: vi.fn(),
       importFromUrl: vi.fn(),
       updateStatus: vi.fn(),
@@ -99,7 +100,32 @@ describe("application tools", () => {
     });
   });
 
-  it("maps a closed offer to 410 and needs exactly one of URL or text", async () => {
+  it("imports the text read on the page with its address when given both", async () => {
+    const { deps, tools } = setup();
+    const draft = {
+      extracted: { companyName: "Acme", title: "Dev" },
+      id: "a9",
+    };
+    vi.mocked(deps.applications.importFromPage).mockResolvedValue(
+      draft as never,
+    );
+    const offerText = "Développeur web ".repeat(5);
+
+    const result = await tools.import_offer.run(
+      { offerText, url: "https://jobs.example/1" },
+      ctx,
+    );
+
+    expect(deps.applications.importFromPage).toHaveBeenCalledWith(
+      ctx.principal.userEmail,
+      "https://jobs.example/1",
+      offerText,
+    );
+    expect(deps.applications.importFromUrl).not.toHaveBeenCalled();
+    expect(result).toMatchObject({ applicationId: "a9", company: "Acme" });
+  });
+
+  it("maps a closed offer to 410 and needs a URL or a text", async () => {
     const { deps, tools } = setup();
     vi.mocked(deps.jobs.applyToJob).mockResolvedValue({ outcome: "closed" });
 

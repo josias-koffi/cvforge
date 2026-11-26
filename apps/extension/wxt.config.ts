@@ -26,8 +26,10 @@ export default defineConfig({
     description:
       "JobSpark prépare et remplit vos candidatures sur les sites des recruteurs.",
     key: MANIFEST_KEY,
-    permissions: ["storage", "identity", "sidePanel"],
+    permissions: ["storage", "identity", "sidePanel", "scripting"],
     host_permissions: API_HOSTS,
+    // Asked at first use, from the side panel (src/infrastructure/page-reader.ts).
+    optional_host_permissions: ["https://*/*", "http://*/*"],
     action: { default_title: "Ouvrir JobSpark" },
   },
   // @vitejs/plugin-react 5 (vite 7) rather than @wxt-dev/module-react, whose

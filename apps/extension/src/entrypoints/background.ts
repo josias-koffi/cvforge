@@ -1,3 +1,4 @@
+import { Preparation } from "../application/preparation";
 import { Session } from "../application/session";
 import { localAiKeyStore } from "../infrastructure/ai-key-store";
 import { ChromeAuthorizer } from "../infrastructure/chrome-authorizer";
@@ -5,6 +6,7 @@ import { apiEndpoints } from "../infrastructure/config";
 import { JobSparkMcp } from "../infrastructure/jobspark-mcp";
 import { chromeLocalStore } from "../infrastructure/local-store";
 import { ExtensionOAuthProvider } from "../infrastructure/oauth-provider";
+import { chromePageReader } from "../infrastructure/page-reader";
 import type { PanelRequest, PanelResponse } from "../messages";
 
 export default defineBackground(() => {
@@ -14,18 +16,20 @@ export default defineBackground(() => {
     store,
     browser.identity.getRedirectURL(),
   );
+  const tools = new JobSparkMcp(
+    api.mcpUrl,
+    provider,
+    browser.runtime.getManifest().version,
+  );
   const session = new Session({
     aiKeys: localAiKeyStore(store),
     apiHost: api.host,
     authorizer: new ChromeAuthorizer(provider, api, (url) =>
       browser.identity.launchWebAuthFlow({ interactive: true, url }),
     ),
-    tools: new JobSparkMcp(
-      api.mcpUrl,
-      provider,
-      browser.runtime.getManifest().version,
-    ),
+    tools,
   });
+  const preparation = new Preparation({ pages: chromePageReader(), tools });
 
   browser.sidePanel
     .setPanelBehavior({ openPanelOnActionClick: true })
@@ -43,6 +47,10 @@ export default defineBackground(() => {
         return session.saveAiKey(request.settings);
       case "clear-ai-key":
         return session.clearAiKey();
+      case "inspect-offer":
+        return preparation.inspect();
+      case "prepare-offer":
+        return preparation.prepare({ cost: request.cost, url: request.url });
     }
   };
 
@@ -52,7 +60,7 @@ export default defineBackground(() => {
     const ownPage = sender.url?.startsWith(browser.runtime.getURL("/"));
     if (sender.id !== browser.runtime.id || !ownPage) return;
     handle(request as PanelRequest).then(
-      (state): void => reply({ ok: true, state } satisfies PanelResponse),
+      (value): void => reply({ ok: true, value } satisfies PanelResponse),
       (error: unknown): void =>
         reply({
           error: error instanceof Error ? error.message : String(error),

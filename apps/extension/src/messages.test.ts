@@ -13,7 +13,7 @@ describe("askBackground", () => {
   it("returns the state the service worker sent", async () => {
     vi.spyOn(browser.runtime, "sendMessage" as never).mockResolvedValueOnce({
       ok: true,
-      state: STATE,
+      value: STATE,
     });
     expect(await askBackground({ type: "state" })).toEqual(STATE);
   });

@@ -258,6 +258,19 @@ export class ApplicationsService {
     return this.createDraftFromExtraction(userEmail, extraction);
   }
 
+  /** An offer page's text read by the candidate's browser, with its address. */
+  async importFromPage(
+    userEmail: string,
+    rawUrl: string,
+    rawOfferText: string,
+  ): Promise<DraftApplication> {
+    const extraction = await this.withKnownOfferFields(
+      await this.offers.fromPageText(userEmail, rawUrl, rawOfferText),
+    );
+
+    return this.createDraftFromExtraction(userEmail, extraction);
+  }
+
   async importFromText(
     userEmail: string,
     rawOfferText: string,

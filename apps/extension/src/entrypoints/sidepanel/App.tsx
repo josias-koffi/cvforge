@@ -1,16 +1,22 @@
 import { useCallback, useEffect, useState } from "react";
 import { AiKeyForm } from "../../components/AiKeyForm";
 import { ConnectionCard } from "../../components/ConnectionCard";
+import { OfferCard } from "../../components/OfferCard";
 import type { PanelState } from "../../domain/connection";
 import { askBackground, type PanelRequest } from "../../messages";
 
-/** Side panel: connection to JobSpark, balance and the candidate's AI key (US-195). */
+type StateRequest = Exclude<
+  PanelRequest,
+  { type: "inspect-offer" } | { type: "prepare-offer" }
+>;
+
+/** Side panel: connection, the offer of the active tab, the candidate's AI key. */
 export function App() {
   const [state, setState] = useState<PanelState | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const run = useCallback(async (request: PanelRequest) => {
+  const run = useCallback(async (request: StateRequest) => {
     setBusy(true);
     setError(null);
     try {
@@ -53,6 +59,9 @@ export function App() {
             onConnect={() => run({ type: "connect" })}
             onDisconnect={() => run({ type: "disconnect" })}
           />
+          {state.status === "connected" && (
+            <OfferCard onSpent={() => run({ type: "state" })} />
+          )}
           <AiKeyForm
             busy={busy}
             aiKey={state.aiKey}

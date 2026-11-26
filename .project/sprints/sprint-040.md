@@ -57,12 +57,14 @@ Décision d'architecture : **ADR-034** (`decisions/ADR-034-chrome-extension-appl
   - Critères d'acceptation :
     - [x] Une app WXT + React dans Turborepo, qui utilise `packages/types`, avec la `key` du manifeste fixée
           (`iciahkakhljbapmhkjjgopacegifndha`). `packages/ui` n'existe pas : Tailwind v4 avec les couleurs d'`apps/web`.
-    - [ ] « Se connecter à JobSpark » : OAuth par `chrome.identity.launchWebAuthFlow` (ADR-033) vers
+    - [x] « Se connecter à JobSpark » : OAuth par `chrome.identity.launchWebAuthFlow` (ADR-033) vers
           `https://<id>.chromiumapp.org/`, préréglage `extension`. La connexion apparaît dans `/compte/agents` et
           sa révocation déconnecte l'extension.
     - [ ] `chrome-extension://<id>` ajouté à `MCP_ALLOWED_ORIGINS` (préprod puis prod). Le service worker appelle
           `/mcp` sans CORS. Les jetons sont rafraîchis et gardés dans `chrome.storage.local`.
-    - [ ] Panneau latéral en français : état de connexion, solde, réglage de la clé IA personnelle.
+      - 2026-11-26 : préprod ✅ (origine admise, 401 sur jeton invalide ; autre origine 403). Prod : au prochain
+        déploiement de `main`.
+    - [x] Panneau latéral en français : état de connexion, solde, réglage de la clé IA personnelle.
 - [ ] **[US-196]** « Préparer » depuis l'onglet d'une offre
   - Agent: `developer`
   - Critères d'acceptation :
@@ -122,6 +124,14 @@ Décision d'architecture : **ADR-034** (`decisions/ADR-034-chrome-extension-appl
 
 ## 🔁 Workflow Runs
 
+- 2026-11-26 — US-196 : carte « Offre de l'onglet » : accès aux pages demandé à la première utilisation
+  (permission optionnelle), candidature retrouvée par adresse normalisée (sans fragment ni paramètres de suivi),
+  coût détaillé par étape (analyse 1, CV 3, lettre 3) puis confirmation explicite. Le service worker revérifie
+  l'onglet et le coût avant de dépenser. Une offre déjà envoyée est signalée sans rien préparer. Le texte lu dans
+  le navigateur est envoyé avec l'adresse : `import_offer` accepte maintenant `url` + `offerText` (adresse gardée,
+  rétrocompatible). 72 tests extension, 98 % des lignes ; 156 tests API (applications, agents). Reste : déploiement
+  préprod et essai réel par le propriétaire.
+- 2026-11-26 — essai réel US-195 par le propriétaire en préprod : connexion, solde et révocation OK.
 - 2026-11-26 — US-195 : `apps/extension` (WXT 0.21.5, React 19, SDK MCP 1.32.2). OAuth par
   `launchWebAuthFlow` (DCR, PKCE, contrôle de `state` et `iss`, révocation à la déconnexion). Client MCP dans le
   service worker. Panneau en français : connexion, solde, clé IA masquée. 37 tests, dont le parcours OAuth contre

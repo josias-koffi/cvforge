@@ -28,10 +28,11 @@ import type { CreditsService } from "../credits/credits.service";
 import { OpenRouterRequestError } from "../ai/openrouter.error";
 
 /** Long enough to clear MIN_OFFER_TEXT_LENGTH and reach the AI call. */
-const LONG_OFFER_TEXT = "Software Engineer role at Acme Corp. "
-  + "We are looking for a talented engineer with strong TypeScript skills. "
-  + "Responsibilities include building APIs and mentoring junior developers. "
-  + "Requirements include Node.js, TypeScript, PostgreSQL, and cloud infrastructure experience.";
+const LONG_OFFER_TEXT =
+  "Software Engineer role at Acme Corp. " +
+  "We are looking for a talented engineer with strong TypeScript skills. " +
+  "Responsibilities include building APIs and mentoring junior developers. " +
+  "Requirements include Node.js, TypeScript, PostgreSQL, and cloud infrastructure experience.";
 
 function createStore(): ApplicationsStore {
   const applications = new Map<string, StoredApplication>();
@@ -190,6 +191,41 @@ describe("ApplicationsService", () => {
     expect(creditsService.consumeCredits).not.toHaveBeenCalled();
   });
 
+  it("keeps the offer's address when the browser read the page text", async () => {
+    openRouterService.chat.mockResolvedValue(
+      JSON.stringify({
+        companyName: "Example Corp",
+        contractType: "CDI",
+        language: "fr",
+        location: "Paris",
+        requirements: ["Node.js"],
+        responsibilities: ["Concevoir des APIs"],
+        salaryRange: null,
+        summary: "Role backend.",
+        title: "Backend Engineer",
+      }),
+    );
+    const service = new ApplicationsService(
+      createStore(),
+      openRouterService as never,
+      creditsService,
+    );
+
+    const application = await service.importFromPage(
+      "user@example.com",
+      "https://jobs.example.com/backend",
+      LONG_OFFER_TEXT,
+    );
+
+    expect(application.offerUrl).toBe("https://jobs.example.com/backend");
+    expect(application.sourceType).toBe("url");
+    expect(application.extracted.title).toBe("Backend Engineer");
+    expect(creditsService.consumeCredits).toHaveBeenCalledWith({
+      action: "offer_enrichment",
+      userEmail: "user@example.com",
+    });
+  });
+
   it("imports a draft application from pasted offer text", async () => {
     openRouterService.chat.mockResolvedValue(
       JSON.stringify({
@@ -258,10 +294,13 @@ describe("ApplicationsService", () => {
       creditsService,
     );
 
-    await service.importFromUrl("user@example.com", "https://example.com/jobs/123");
-    const applications = await service.listApplications("user@example.com") as Array<
-      DraftApplication & { rawOfferText?: string }
-    >;
+    await service.importFromUrl(
+      "user@example.com",
+      "https://example.com/jobs/123",
+    );
+    const applications = (await service.listApplications(
+      "user@example.com",
+    )) as Array<DraftApplication & { rawOfferText?: string }>;
 
     expect(applications).toHaveLength(1);
     expect(applications[0]?.rawOfferText).toBeUndefined();
@@ -294,7 +333,9 @@ describe("ApplicationsService", () => {
 
   it("rejects scraping results that contain too little usable text", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue(
-      new Response("<html><body><p>Too short</p></body></html>", { status: 200 }),
+      new Response("<html><body><p>Too short</p></body></html>", {
+        status: 200,
+      }),
     );
     const service = new ApplicationsService(
       createStore(),
@@ -380,7 +421,11 @@ describe("ApplicationsService", () => {
     );
 
     await expect(
-      service.updateStatus("user@example.com", application.id, "offer_received"),
+      service.updateStatus(
+        "user@example.com",
+        application.id,
+        "offer_received",
+      ),
     ).rejects.toThrow(ConflictException);
   });
 
@@ -432,7 +477,11 @@ describe("ApplicationsService", () => {
     );
 
     await service.updateStatus("user@example.com", first.id, "sent");
-    await service.updateStatus("user@example.com", first.id, "interview_scheduled");
+    await service.updateStatus(
+      "user@example.com",
+      first.id,
+      "interview_scheduled",
+    );
     await service.updateStatus("user@example.com", second.id, "sent");
     await service.updateStatus("user@example.com", second.id, "rejected");
 
@@ -455,7 +504,13 @@ describe("ApplicationsService", () => {
 
   it("getApplicationForUser returns a DraftApplication for the owner", async () => {
     openRouterService.chat.mockResolvedValue(
-      JSON.stringify({ title: "Engineer", companyName: "Acme", summary: "Build APIs", requirements: [], responsibilities: [] }),
+      JSON.stringify({
+        title: "Engineer",
+        companyName: "Acme",
+        summary: "Build APIs",
+        requirements: [],
+        responsibilities: [],
+      }),
     );
     const service = new ApplicationsService(
       createStore(),
@@ -463,8 +518,14 @@ describe("ApplicationsService", () => {
       creditsService,
     );
 
-    const created = await service.importFromText("user@example.com", LONG_OFFER_TEXT);
-    const found = await service.getApplicationForUser("user@example.com", created.id);
+    const created = await service.importFromText(
+      "user@example.com",
+      LONG_OFFER_TEXT,
+    );
+    const found = await service.getApplicationForUser(
+      "user@example.com",
+      created.id,
+    );
 
     expect(found.id).toBe(created.id);
     expect(found).not.toHaveProperty("rawOfferText");
