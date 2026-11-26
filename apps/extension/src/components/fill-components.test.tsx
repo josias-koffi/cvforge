@@ -25,6 +25,7 @@ const OPTIONS: FillOptions = {
   ],
   host: "jobs.lever.co",
   kind: "page",
+  profileGaps: [],
   suggestedId: "a2",
   url: "https://jobs.lever.co/acme/1/apply",
 };
@@ -80,6 +81,7 @@ describe("FillCard", () => {
 
     expect(ask).toHaveBeenCalledWith({
       applicationId: "a2",
+      identity: {},
       type: "fill",
       url: OPTIONS.url,
     });
@@ -91,6 +93,31 @@ describe("FillCard", () => {
     expect(ask).toHaveBeenLastCalledWith({ type: "review" });
     expect(container.textContent).toContain(
       "2 question(s) posée(s), 1 réponse(s)",
+    );
+  });
+
+  it("collects what the profile lacks before the fill, not during it", async () => {
+    ask.mockResolvedValueOnce({
+      ...OPTIONS,
+      profileGaps: [
+        { field: "lastName", label: "Nom de famille (Last name)" },
+        { field: "phone", label: "Téléphone (Phone)" },
+      ],
+    });
+    await render(<FillCard />);
+    expect(container.textContent).toContain("Il manque à votre profil");
+    await type("identity-lastName", "Test");
+    ask.mockResolvedValueOnce({
+      answersSaved: 0,
+      creditsSpent: 2,
+      formUrl: null,
+      questionsAsked: 0,
+      success: true,
+      summary: "",
+    });
+    await click("Remplir ce formulaire (2 crédits)");
+    expect(ask).toHaveBeenCalledWith(
+      expect.objectContaining({ identity: { lastName: "Test" }, type: "fill" }),
     );
   });
 

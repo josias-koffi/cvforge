@@ -2,7 +2,16 @@ import { useCallback, useEffect, useState } from "react";
 import type { FillOptions, FillOutcome } from "../application/filling";
 import { askBackground } from "../messages";
 import { ReviewCard } from "./ReviewCard";
-import { Button, Card } from "./ui";
+import type { IdentityField } from "../domain/fill";
+import { Button, Card, Field } from "./ui";
+
+const AUTOCOMPLETE: Record<IdentityField, string> = {
+  email: "email",
+  firstName: "given-name",
+  lastName: "family-name",
+  linkedin: "url",
+  phone: "tel",
+};
 
 const label = (application: { title: string | null; company: string | null }) =>
   [application.title ?? "Candidature", application.company]
@@ -19,6 +28,9 @@ export function FillCard() {
   const [outcome, setOutcome] = useState<FillOutcome | null>(null);
   const [filling, setFilling] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [identity, setIdentity] = useState<
+    Partial<Record<IdentityField, string>>
+  >({});
 
   const load = useCallback(async () => {
     try {
@@ -63,6 +75,7 @@ export function FillCard() {
       setOutcome(
         await askBackground({
           applicationId: selected,
+          identity,
           type: "fill",
           url: options.url,
         }),
@@ -110,6 +123,39 @@ export function FillCard() {
             votre lettre, et vous pose les questions auxquelles vos données ne
             répondent pas. Il n'envoie rien.
           </p>
+          {options.profileGaps.length > 0 && (
+            <fieldset className="flex flex-col gap-2 rounded-md border border-warning p-3">
+              <legend className="px-1 text-sm font-medium">
+                Il manque à votre profil
+              </legend>
+              <p className="text-xs text-muted-foreground">
+                Donnez-les une fois ici : l'agent remplira ensuite le formulaire
+                sans vous interrompre, et les gardera pour les suivants. Laissez
+                vide ce que vous ne voulez pas donner.
+              </p>
+              {options.profileGaps.map((gap) => (
+                <Field
+                  key={gap.field}
+                  id={`identity-${gap.field}`}
+                  label={gap.label}
+                  type={
+                    gap.field === "email"
+                      ? "email"
+                      : gap.field === "phone"
+                        ? "tel"
+                        : gap.field === "linkedin"
+                          ? "url"
+                          : "text"
+                  }
+                  autoComplete={AUTOCOMPLETE[gap.field]}
+                  value={identity[gap.field] ?? ""}
+                  onChange={(value) =>
+                    setIdentity((given) => ({ ...given, [gap.field]: value }))
+                  }
+                />
+              ))}
+            </fieldset>
+          )}
           <p className="text-xs text-muted-foreground">
             {options.personalKey
               ? "Avec votre clé IA personnelle : aucun crédit dépensé."

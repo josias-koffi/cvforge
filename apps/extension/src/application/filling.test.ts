@@ -151,6 +151,9 @@ describe("Filling.options", () => {
       host: "jobs.lever.co",
       kind: "page",
       personalKey: true,
+      profileGaps: [
+        { field: "linkedin", label: "Profil LinkedIn (LinkedIn URL)" },
+      ],
       // …/acme/1/apply is the form of …/acme/1.
       suggestedId: "a1",
       url: URL_,
@@ -203,6 +206,45 @@ describe("Filling.fill", () => {
     });
   });
 
+  it("answers from the candidate's data instead of asking them", async () => {
+    const replies: unknown[] = [];
+    (f.filling as unknown as { deps: { tab: FillTab } }).deps.tab = {
+      ...FORM_PAGE,
+      run: async () => {
+        for (const question of ["First name", "Prénom *", "Email", "Phone"]) {
+          replies.push(
+            await f.filling.handle(9, { question, type: "filler/ask" }),
+          );
+        }
+        return { steps: 4, success: true, summary: "" };
+      },
+    };
+    await f.filling.fill({ applicationId: "a1", url: URL_ });
+    expect(f.candidate.ask).not.toHaveBeenCalled();
+    expect(replies).toEqual([
+      { answer: "Camille" },
+      { answer: "Camille" },
+      { answer: "c@example.com" },
+      { answer: "0600000000" },
+    ]);
+  });
+
+  it("keeps what the panel collected for the profile's gaps and fills with it", async () => {
+    await f.filling.fill({
+      applicationId: "a1",
+      identity: { linkedin: " https://linkedin.com/in/camille ", phone: "" },
+      url: URL_,
+    });
+    expect(f.call).toHaveBeenCalledWith("save_screening_answer", {
+      answer: "https://linkedin.com/in/camille",
+      question: "Profil LinkedIn (LinkedIn URL)",
+    });
+    expect(f.call).not.toHaveBeenCalledWith(
+      "save_screening_answer",
+      expect.objectContaining({ question: "Téléphone (Phone)" }),
+    );
+  });
+
   it("saves an answer the candidate chose to keep", async () => {
     await f.filling.fill({ applicationId: "a1", url: URL_ });
     expect(f.candidate.ask).toHaveBeenCalledWith("Salaire ?");
@@ -220,7 +262,7 @@ describe("Filling.fill", () => {
         for (const question of [
           "Current Company",
           "current company ?",
-          "Ville",
+          "Années d'expérience ?",
         ]) {
           answersSeen.push(
             await f.filling.handle(9, { question, type: "filler/ask" }),

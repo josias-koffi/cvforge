@@ -1,5 +1,10 @@
 import {
+  answerFromData,
   buildFillTask,
+  completeProfile,
+  IDENTITY_FIELDS,
+  type IdentityField,
+  profileGaps,
   sameQuestion,
   type FillAnswers,
   type FillProfile,
@@ -59,6 +64,8 @@ export type FillOptions =
       balance: number | null;
       applications: Pick<ApplicationSummary, "id" | "title" | "company">[];
       suggestedId: string | null;
+      /** Identity data the profile lacks: asked in the panel before filling. */
+      profileGaps: { field: IdentityField; label: string }[];
     };
 
 export type FillOutcome = {
@@ -78,6 +85,8 @@ type ModelRoute =
 
 type ActiveFill = {
   tabId: number;
+  /** What the agent may be told without asking the candidate. */
+  data: { profile: FillProfile; answers: FillAnswers };
   route: ModelRoute;
   documents: Record<DocumentKind, EncodedDocument>;
   questionsAsked: number;
@@ -138,10 +147,11 @@ export class Filling {
     if (tab === "no-access") return { kind: "no-access" };
     if (!tab) return { kind: "no-page" };
 
-    const [listed, aiKey, balance] = await Promise.all([
+    const [listed, aiKey, balance, profile] = await Promise.all([
       this.deps.tools.call("list_applications"),
       this.deps.aiKeys.get(),
       this.deps.tools.call("get_credit_balance").then(readBalance, () => null),
+      this.completedProfile().catch(() => null),
     ]);
     const ready = (
       Array.isArray(listed) ? (listed as ApplicationSummary[]) : []
@@ -159,6 +169,12 @@ export class Filling {
       fillCost: aiKey ? 0 : FORM_FILL_COST,
       kind: "page",
       personalKey: Boolean(aiKey),
+      profileGaps: profile
+        ? profileGaps(profile.profile).map((field) => ({
+            field,
+            label: IDENTITY_FIELDS[field],
+          }))
+        : [],
       suggestedId: matching?.id ?? ready[0]?.id ?? null,
       url: tab.url,
     };
@@ -167,6 +183,8 @@ export class Filling {
   async fill(request: {
     applicationId: string;
     url: string;
+    /** What the candidate typed in the panel for the profile's gaps. */
+    identity?: Partial<Record<IdentityField, string>>;
   }): Promise<FillOutcome> {
     if (this.active) throw new Error("Un remplissage est déjà en cours.");
     const aiKey = await this.deps.aiKeys.get();
@@ -184,17 +202,10 @@ export class Filling {
     if (!application || !READY(application)) {
       throw new Error("Cette candidature n'a pas encore son CV et sa lettre.");
     }
-    const registry = (await this.deps.tools.call(
-      "get_profile",
-    )) as ProfileRegistry;
-    const profile =
-      registry.profiles.find(
-        (entry) => entry.id === registry.activeProfileId,
-      ) ?? registry.profiles[0];
-    if (!profile) throw new Error("Complétez d'abord votre profil JobSpark.");
-    const answers = (await this.deps.tools.call("get_screening_answers", {
-      profileId: profile.id,
-    })) as FillAnswers;
+    await this.keepIdentity(request.identity ?? {});
+    const completed = await this.completedProfile();
+    if (!completed) throw new Error("Complétez d'abord votre profil JobSpark.");
+    const { answers, profile } = completed;
 
     const documents = {
       cv: await this.document(application.id, "cv", profile),
@@ -203,6 +214,7 @@ export class Filling {
     const formUrl = await this.openFormIfNeeded(tab.tabId);
     const route = await this.modelRoute(aiKey, application.id);
     this.active = {
+      data: { answers, profile },
       route,
       answersSaved: 0,
       asked: new Map(),
@@ -246,6 +258,40 @@ export class Filling {
     if (probe.fieldCount >= FORM_MIN_FIELDS || !probe.applyLink) return null;
     await this.deps.tab.open(tabId, probe.applyLink);
     return probe.applyLink;
+  }
+
+  /** The active profile, completed with what the panel collected before. */
+  private async completedProfile() {
+    const profile = await this.activeProfile();
+    if (!profile) return null;
+    const answers = (await this.deps.tools.call("get_screening_answers", {
+      profileId: profile.id,
+    })) as FillAnswers;
+    return { answers, profile: completeProfile(profile, answers) };
+  }
+
+  private async keepIdentity(given: Partial<Record<IdentityField, string>>) {
+    for (const [field, value] of Object.entries(given)) {
+      const answer = value?.trim();
+      if (!answer) continue;
+      await this.deps.tools.call("save_screening_answer", {
+        answer,
+        question: IDENTITY_FIELDS[field as IdentityField],
+      });
+    }
+  }
+
+  private async activeProfile() {
+    const registry = (await this.deps.tools.call(
+      "get_profile",
+    )) as ProfileRegistry;
+    return (
+      registry.profiles.find(
+        (entry) => entry.id === registry.activeProfileId,
+      ) ??
+      registry.profiles[0] ??
+      null
+    );
   }
 
   /** What the last fill of this tab used, for the review before sending. */
@@ -341,6 +387,12 @@ export class Filling {
   }
 
   private async askCandidate(active: ActiveFill, question: string) {
+    const known = answerFromData(
+      question,
+      active.data.profile,
+      active.data.answers,
+    );
+    if (known) return known;
     const key = screeningQuestionKey(question);
     const earlier = [...active.asked.keys()].find(
       (asked) => asked === key || sameQuestion(asked, key),

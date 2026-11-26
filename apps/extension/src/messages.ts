@@ -6,6 +6,7 @@ import type { FillOptions, FillOutcome } from "./application/filling";
 import type { Review, SendOutcome } from "./application/sending";
 import type { AiKeySettings } from "./application/session";
 import type { PanelState } from "./domain/connection";
+import type { IdentityField } from "./domain/fill";
 
 /** What the side panel may ask the service worker, and what each returns. */
 export type PanelRequests = {
@@ -27,7 +28,12 @@ export type PanelRequests = {
   };
   "fill-options": { request: { type: "fill-options" }; response: FillOptions };
   fill: {
-    request: { type: "fill"; applicationId: string; url: string };
+    request: {
+      type: "fill";
+      applicationId: string;
+      url: string;
+      identity?: Partial<Record<IdentityField, string>>;
+    };
     response: FillOutcome;
   };
   review: { request: { type: "review" }; response: Review };

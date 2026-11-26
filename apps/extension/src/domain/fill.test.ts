@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
   FILL_SYSTEM_INSTRUCTIONS,
+  answerFromData,
   buildFillTask,
+  completeProfile,
+  profileGaps,
   isSubmitControl,
   leavesSite,
   sameQuestion,
@@ -123,5 +126,76 @@ describe("leavesSite", () => {
     expect(leavesSite('[2]<a href="/privacy">', page)).toBe(false);
     expect(leavesSite("[2]<button>OK", page)).toBe(false);
     expect(leavesSite("[2]<a href=http://[bad>", page)).toBe(false);
+  });
+});
+
+describe("answerFromData", () => {
+  const ask = (question: string, from = profile) =>
+    answerFromData(question, from, answers);
+
+  it("answers identity labels in French or English", () => {
+    expect(ask("First name")).toBe("Camille");
+    expect(ask("Prénom *")).toBe("Camille");
+    expect(ask("Last name (required)")).toBe("Test");
+    expect(ask("Full name")).toBe("Camille Test");
+    expect(ask("Nom")).toBe("Camille Test");
+    expect(ask("E-mail")).toBe("camille@example.com");
+    expect(ask("LinkedIn URL")).toBe("https://linkedin.com/in/camille");
+    expect(ask("Current location")).toBe("Nantes");
+  });
+
+  it("answers from saved answers, even rephrased", () => {
+    expect(ask("Êtes-vous disponible le samedi ?")).toBe("Oui");
+    expect(ask("Préavis")).toBe("1 mois");
+  });
+
+  it("leaves to the candidate what the data lacks or another person's details", () => {
+    expect(ask("Phone")).toBeNull();
+    expect(ask("Referrer email")).toBeNull();
+    expect(ask("Company name")).toBeNull();
+    expect(
+      ask("How did you hear about this job? LinkedIn, a friend, other"),
+    ).toBeNull();
+    const noLastName = {
+      ...profile,
+      identity: { ...profile.identity, lastName: "" },
+    };
+    expect(ask("Full name", noLastName)).toBeNull();
+  });
+});
+
+describe("completeProfile and profileGaps", () => {
+  const bare: FillProfile = {
+    identity: {
+      city: "",
+      email: "c@example.com",
+      firstName: "Camille",
+      lastName: "",
+      links: [],
+      phone: "",
+    },
+  };
+
+  it("lists what most forms ask and the profile lacks", () => {
+    expect(profileGaps(bare)).toEqual(["lastName", "phone", "linkedin"]);
+  });
+
+  it("fills the gaps with what the candidate gave in the panel before", () => {
+    const completed = completeProfile(bare, {
+      custom: [
+        { answer: "Test", question: "Nom de famille (Last name)" },
+        {
+          answer: "https://linkedin.com/in/c",
+          question: "Profil LinkedIn (LinkedIn URL)",
+        },
+      ],
+      fromProfile: null,
+      known: [],
+    });
+    expect(completed.identity).toMatchObject({
+      lastName: "Test",
+      links: [{ label: "LinkedIn", url: "https://linkedin.com/in/c" }],
+    });
+    expect(profileGaps(completed)).toEqual(["phone"]);
   });
 });
