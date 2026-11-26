@@ -13,6 +13,7 @@ import type { NotificationsStore } from "../notifications/notifications.types";
 import type { ProfileCompetencesStore } from "../profiles/profile-competences.pg-store";
 import type { ProfilesStore } from "../profiles/profiles.types";
 import type { ScreeningAnswersStore } from "../profiles/screening-answers.service";
+import type { SubmissionsStore } from "../applications/submissions.service";
 import type { JobMatchesStore } from "../job-search/matches.types";
 import type { SearchProjectRomeStore } from "../search-projects/search-project-rome.pg-store";
 import type { SearchProjectsStore } from "../search-projects/search-projects.types";
@@ -51,6 +52,10 @@ export class PrivacyService {
       ScreeningAnswersStore,
       "find"
     > = { find: async () => null },
+    private readonly submissionsStore: Pick<
+      SubmissionsStore,
+      "listForExport"
+    > = { listForExport: async () => [] },
   ) {}
 
   getRetentionPolicy() {
@@ -84,6 +89,7 @@ export class PrivacyService {
         await this.searchProjectsStore.listByUserEmail(normalizedEmail),
       retentionPolicy: PRIVACY_RETENTION_POLICY,
       screeningAnswers: await this.screeningAnswersStore.find(normalizedEmail),
+      submissions: await this.submissionsStore.listForExport(normalizedEmail),
       userEmail: normalizedEmail,
     };
   }

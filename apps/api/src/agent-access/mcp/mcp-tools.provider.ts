@@ -1,5 +1,6 @@
 import type { Provider } from "@nestjs/common";
 import { ApplicationsService } from "../../applications/applications.service";
+import { SubmissionsService } from "../../applications/submissions.service";
 import { CreditsService } from "../../credits/credits.service";
 import { CvGenerationService } from "../../cv-generation/cv-generation.service";
 import { JobMatchesService } from "../../job-search/job-matches.service";
@@ -12,6 +13,7 @@ import { applicationTools } from "./tools/application-tools";
 import { profileWriteTools } from "./tools/profile-write-tools";
 import { readTools } from "./tools/read-tools";
 import { screeningTools } from "./tools/screening-tools";
+import { submissionTools } from "./tools/submission-tools";
 
 /** DI token for the full list of MCP tools; each request keeps those its token allows. */
 export const MCP_TOOLS = Symbol("MCP_TOOLS");
@@ -28,6 +30,7 @@ export const mcpToolsProvider: Provider = {
     ProfilesService,
     ScreeningAnswersService,
     SignedFiles,
+    SubmissionsService,
   ],
   provide: MCP_TOOLS,
   useFactory: (
@@ -39,6 +42,7 @@ export const mcpToolsProvider: Provider = {
     profiles: ProfilesService,
     answers: ScreeningAnswersService,
     signedFiles: SignedFiles,
+    submissions: SubmissionsService,
   ): McpToolList => [
     ...readTools({
       applications,
@@ -50,6 +54,7 @@ export const mcpToolsProvider: Provider = {
     }),
     ...profileWriteTools({ profiles }),
     ...screeningTools({ answers, profiles }),
+    ...submissionTools({ submissions }),
     ...applicationTools({
       applications,
       credits,

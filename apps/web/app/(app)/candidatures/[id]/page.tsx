@@ -1,6 +1,10 @@
 import type { Metadata } from "next"
 import Link from "next/link"
-import { AI_CREDIT_COSTS, type InterviewSessionListItem } from "@cvforge/types"
+import {
+  AI_CREDIT_COSTS,
+  type ApplicationSubmission,
+  type InterviewSessionListItem,
+} from "@cvforge/types"
 import { ExternalLinkIcon, MicIcon, PencilIcon } from "lucide-react"
 
 import { ApplicationInsights } from "@/components/interview/application-insights"
@@ -8,6 +12,7 @@ import { PageHeader } from "@/components/layout/page-header"
 import { OfferDocuments } from "@/components/offers/document-card"
 import { StatusBadge } from "@/components/offers/status-badge"
 import { StatusMenu } from "@/components/offers/status-menu"
+import { SubmissionProof } from "@/components/offers/submission-proof"
 import {
   Accordion,
   AccordionContent,
@@ -52,7 +57,7 @@ function BulletList({ items }: { items: string[] }) {
 export default async function OfferPage(props: PageProps<"/candidatures/[id]">) {
   const { id } = await props.params
   const session = await requireSession()
-  const [{ application: offer, offerText }, registry, sessions] = await Promise.all([
+  const [{ application: offer, offerText }, registry, sessions, proof] = await Promise.all([
     loadOffer(id),
     loadRegistry(session.email),
     // Only used to link the last report; a candidature page must not fail
@@ -60,6 +65,10 @@ export default async function OfferPage(props: PageProps<"/candidatures/[id]">) 
     api<{ sessions: InterviewSessionListItem[] }>("/interviews/sessions").catch(
       () => null
     ),
+    // Same: the proof of sending is a bonus on this page (US-198).
+    api<{ submissions: ApplicationSubmission[] }>(
+      `/applications/${encodeURIComponent(id)}/submissions`
+    ).catch(() => null),
   ])
   const { extracted } = offer
   // The reports ride along with the application — every finished session for
@@ -149,6 +158,7 @@ export default async function OfferPage(props: PageProps<"/candidatures/[id]">) 
           ) : null}
         </div>
         <div className="flex flex-col gap-4">
+          <SubmissionProof submissions={proof?.submissions ?? []} />
           <Card>
             <CardHeader>
               <CardTitle>Documents</CardTitle>

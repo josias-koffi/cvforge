@@ -9,6 +9,7 @@ export * from "./grounding";
 export * from "./acquisition";
 export * from "./agent-access";
 export * from "./screening-answers";
+export * from "./submissions";
 export * from "./admin-metrics";
 export * from "./ai-models";
 export * from "./ai-usage";
