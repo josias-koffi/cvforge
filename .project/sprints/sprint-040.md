@@ -65,13 +65,13 @@ Décision d'architecture : **ADR-034** (`decisions/ADR-034-chrome-extension-appl
       - 2026-11-26 : préprod ✅ (origine admise, 401 sur jeton invalide ; autre origine 403). Prod : au prochain
         déploiement de `main`.
     - [x] Panneau latéral en français : état de connexion, solde, réglage de la clé IA personnelle.
-- [ ] **[US-196]** « Préparer » depuis l'onglet d'une offre
+- [x] **[US-196]** « Préparer » depuis l'onglet d'une offre
   - Agent: `developer`
   - Critères d'acceptation :
-    - [ ] Sur une page d'offre, l'extension appelle `import_offer` (ou retrouve la candidature existante).
-    - [ ] Elle annonce le coût en crédits, et seulement après l'accord du candidat, appelle `generate_cv` et
+    - [x] Sur une page d'offre, l'extension appelle `import_offer` (ou retrouve la candidature existante).
+    - [x] Elle annonce le coût en crédits, et seulement après l'accord du candidat, appelle `generate_cv` et
           `generate_cover_letter`.
-    - [ ] Une offre déjà envoyée est signalée et non repréparée.
+    - [x] Une offre déjà envoyée est signalée et non repréparée.
 - [ ] **[US-197]** Remplir le formulaire, joindre les documents, répondre aux questions
   - Agent: `developer`
   - Critères d'acceptation :
@@ -123,6 +123,22 @@ Décision d'architecture : **ADR-034** (`decisions/ADR-034-chrome-extension-appl
 - La vidéo LinkedIn « l'agent postule pour toi » se tourne une fois la DoD atteinte.
 
 ## 🔁 Workflow Runs
+
+- 2026-11-26 — US-197 :
+  - API : table `screening_answers` (migration 0065), `GET/PUT /screening-answers`, outils MCP
+    `get_screening_answers` (`profile:read`, avec les faits du profil) et `save_screening_answer` (nouveau scope
+    `answers:write`, préréglages `extension` et `assistant`), export RGPD. Écran web `/profile/reponses`.
+  - Extension : carte « Remplir le formulaire » ; `filler.js` (page-agent 1.12.4) injecté à la demande, appels IA
+    relayés par le service worker (clé jamais dans la page), `attach_document` vérifié par la réaction de la page,
+    clic d'envoi et liens hors site refusés, contenu de la page balisé non fiable, cookies refusés par consigne.
+    Questions posées dans le panneau (une seule fois chacune), réponse gardée si le candidat le choisit.
+  - Essai réel du `filler.js` de production (service worker de test, identité fictive, aucun envoi) :
+    formulaire de test complet en 42 s ; Ashby (Qonto) en 46 s / 25 étapes : nom, e-mail, téléphone, ville,
+    entreprise, LinkedIn, CV ; consentement laissé décoché ; questions posées seulement pour les vrais manques.
+    Reste : une question parasite sur la lettre quand le formulaire n'a pas de champ pour elle.
+  - 112 tests extension (97,7 % des lignes), API agents/profils/privacy et web verts. Reste : essai réel par le
+    propriétaire en préprod (une reconnexion est nécessaire pour obtenir `answers:write`).
+- 2026-11-26 — essai réel US-196 par le propriétaire en préprod : OK.
 
 - 2026-11-26 — US-196 : carte « Offre de l'onglet » : accès aux pages demandé à la première utilisation
   (permission optionnelle), candidature retrouvée par adresse normalisée (sans fragment ni paramètres de suivi),

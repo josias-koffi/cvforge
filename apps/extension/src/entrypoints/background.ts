@@ -1,17 +1,23 @@
+import { Filling } from "../application/filling";
 import { Preparation } from "../application/preparation";
 import { Session } from "../application/session";
 import { localAiKeyStore } from "../infrastructure/ai-key-store";
 import { ChromeAuthorizer } from "../infrastructure/chrome-authorizer";
+import { signedFileDownloader } from "../infrastructure/download";
+import { chromeFillTab } from "../infrastructure/fill-tab";
 import { apiEndpoints } from "../infrastructure/config";
 import { JobSparkMcp } from "../infrastructure/jobspark-mcp";
 import { chromeLocalStore } from "../infrastructure/local-store";
 import { ExtensionOAuthProvider } from "../infrastructure/oauth-provider";
 import { chromePageReader } from "../infrastructure/page-reader";
+import { PanelChannel } from "../infrastructure/panel-channel";
+import type { FillerRequest } from "../filler-messages";
 import type { PanelRequest, PanelResponse } from "../messages";
 
 export default defineBackground(() => {
   const api = apiEndpoints();
   const store = chromeLocalStore();
+  const aiKeys = localAiKeyStore(store);
   const provider = new ExtensionOAuthProvider(
     store,
     browser.identity.getRedirectURL(),
@@ -22,14 +28,24 @@ export default defineBackground(() => {
     browser.runtime.getManifest().version,
   );
   const session = new Session({
-    aiKeys: localAiKeyStore(store),
+    aiKeys,
     apiHost: api.host,
     authorizer: new ChromeAuthorizer(provider, api, (url) =>
       browser.identity.launchWebAuthFlow({ interactive: true, url }),
     ),
     tools,
   });
-  const preparation = new Preparation({ pages: chromePageReader(), tools });
+  const pages = chromePageReader();
+  const preparation = new Preparation({ pages, tools });
+  const panel = new PanelChannel();
+  const filling = new Filling({
+    aiKeys,
+    candidate: panel,
+    download: signedFileDownloader(),
+    pages,
+    tab: chromeFillTab(),
+    tools,
+  });
 
   browser.sidePanel
     .setPanelBehavior({ openPanelOnActionClick: true })
@@ -51,14 +67,35 @@ export default defineBackground(() => {
         return preparation.inspect();
       case "prepare-offer":
         return preparation.prepare({ cost: request.cost, url: request.url });
+      case "fill-options":
+        return filling.options();
+      case "fill":
+        return filling.fill({
+          applicationId: request.applicationId,
+          url: request.url,
+        });
+      case "answer-question":
+        panel.answer(request.id, request.answer, request.save);
+        return Promise.resolve(null);
     }
   };
 
   browser.runtime.onMessage.addListener((request, sender, reply) => {
     // Only the extension's own pages (side panel) talk to the service worker,
     // never a script running inside a recruiter's page.
+    if (sender.id !== browser.runtime.id) return;
     const ownPage = sender.url?.startsWith(browser.runtime.getURL("/"));
-    if (sender.id !== browser.runtime.id || !ownPage) return;
+    const type = (request as { type?: unknown })?.type;
+    if (!ownPage) {
+      // The filler in the recruiter's tab: only its own requests, only for
+      // the tab being filled (checked by Filling.handle).
+      if (typeof type !== "string" || !type.startsWith("filler/")) return;
+      filling
+        .handle(sender.tab?.id, request as FillerRequest)
+        .then(reply, (error: unknown) => reply({ error: String(error) }));
+      return true;
+    }
+    if (typeof type === "string" && type.startsWith("panel/")) return;
     handle(request as PanelRequest).then(
       (value): void => reply({ ok: true, value } satisfies PanelResponse),
       (error: unknown): void =>

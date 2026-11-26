@@ -1763,3 +1763,10 @@
 - **Why**: les sites SPA ou qui refusent le serveur restent importables, et l'adresse permet de retrouver la candidature (dédoublonnage côté extension via `list_applications`).
 - **Learned**: `normalizeOfferUrl` de l'API garde le fragment ; l'extension normalise elle-même des deux côtés. `permissions.request` doit partir du panneau (geste utilisateur). happy-dom + `act` suffisent pour tester un composant à état sans testing-library.
 - **Open**: essai réel préprod ; US-197.
+
+## 2026-11-26 — US-197 remplir le formulaire (ad hoc, demande propriétaire)
+- **Context**: [[sprints/sprint-040#US-197]]
+- **Did**: réponses types (table 0065, `/screening-answers`, `/profile/reponses`, outils `get_screening_answers` / `save_screening_answer`, scope `answers:write`) ; extension : `filler.js` (page-agent) + `Filling` côté service worker + questions dans le panneau.
+- **Why**: le remplissage ne doit rien inventer ; ce que le profil ne dit pas se demande une fois, et peut se garder.
+- **Learned**: les formulaires sont en anglais → libellés de données bilingues (sinon l'agent ne relie pas « Current Location » à « Ville » et boucle) ; dédoublonner les questions côté service worker ; `maxSteps` 60 ; WXT `defineUnlistedScript` + `wxt prepare` pour typer `/filler.js` ; `prettier --write` sur un dossier reformate des fichiers non touchés → cibler les fichiers. Banc e2e : `~/perso/projets/jobspark-e33-proto/e2e-filler` (vrai `filler.js`, service worker de test).
+- **Open**: essai réel préprod par le propriétaire ; US-198.
