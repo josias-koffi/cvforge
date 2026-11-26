@@ -1,7 +1,7 @@
 # ADR-034: A JobSpark Chrome extension applies on the recruiter's site
 
 Date: 2026-11-26
-Status: proposed
+Status: accepted (owner's go on 2026-11-26, US-194 then US-195 launched)
 
 Builds on ADR-032 (MCP server) and ADR-033 (OAuth). Epic E33. Owner request
 of 2026-11-26: "je voudrais vraiment à terme qu'on puisse laisser l'agent tout
@@ -51,8 +51,11 @@ What that study decided, and what changes here:
 ## Decision
 
 1. **A new app `apps/extension`** (Manifest V3) in the monorepo.
-   - Built with **WXT** (MIT) and React, reusing `packages/ui` and
-     `packages/types`.
+   - Built with **WXT** (MIT) and React, reusing `packages/types`. There is
+     no shared UI package in the repo: the side panel uses Tailwind CSS v4 with
+     the same colour tokens as `apps/web`. React goes through
+     `@vitejs/plugin-react` 5 directly: `@wxt-dev/module-react` pulls
+     plugin-react 6, which needs Vite 8 while the repo is on Vite 7.
    - French UI, our own side panel, inspired by Nanobrowser, with nothing
      forked.
    - The manifest `key` pins the extension id.
@@ -75,6 +78,10 @@ What that study decided, and what changes here:
      `https://<extension id>.chromiumapp.org/`, the `extension` scope preset
      (no `profile:write`).
    - `chrome-extension://<id>` is added to `MCP_ALLOWED_ORIGINS`.
+   - The preset includes `credits:read`, so the extension can announce a cost
+     against the balance before spending.
+   - The consent page starts on the narrowest preset that covers the request,
+     and the server never grants more than the client asked for.
    - No pasted `jsk_` token in the normal path.
 5. **JobSpark tools given to the in-page agent**:
    - `get_candidate_profile` → MCP `get_profile`.

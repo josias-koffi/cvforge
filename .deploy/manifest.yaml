@@ -108,6 +108,9 @@ vars:
   ATS_PUBLIC_DAILY_LIMIT: "10"
   ATS_PUBLIC_DAILY_BUDGET: "300"
   CLIENT_IP_HEADER: ""
+  # The JobSpark Chrome extension calls /mcp from its service worker (ADR-034).
+  # Its id is pinned by the manifest key in apps/extension/wxt.config.ts.
+  MCP_ALLOWED_ORIGINS: chrome-extension://iciahkakhljbapmhkjjgopacegifndha
 
 environments:
   production:

@@ -1749,3 +1749,10 @@
 - **Why**: lever les trois doutes de l'étude avant d'écrire `apps/extension`.
 - **Learned**: SmartRecruiters vide `input.files` après lecture → vérifier par la réaction de la page ; DataDome bloque le Chromium automatisé (OK dans le vrai Chrome) ; Workday exige un compte ; Playwright 1.63 du prototype réclame chromium-1243 absent → `executablePath` vers chromium-1254 ; le jeton du lien signé `/mcp/files/` contient l'e-mail en clair.
 - **Open**: critère « dépôt » d'US-194 ouvert à cause de Workday (décision propriétaire) ; US-195.
+
+## 2026-11-26 — US-195 squelette `apps/extension` (ad hoc, demande propriétaire)
+- **Context**: [[sprints/sprint-040#US-195]] · [[decisions/ADR-034-chrome-extension-applies-for-the-candidate]]
+- **Did**: WXT 0.21.5 + React 19, OAuth du SDK MCP 1.32.2 adossé à `chrome.storage.local` + `launchWebAuthFlow`, client MCP dans le service worker, panneau FR ; consentement OAuth sur le préréglage le plus étroit et jamais plus que demandé ; `MCP_ALLOWED_ORIGINS` dans `.deploy/manifest.yaml` + stack.
+- **Why**: base de l'extension E33 ; l'id fixé (`iciahkakhljbapmhkjjgopacegifndha`) sert d'origine et d'adresse de retour OAuth.
+- **Learned**: `@wxt-dev/module-react` tire plugin-react 6 (Vite 8) → plugin-react 5 en direct ; `packages/types/dist` est en CommonJS → alias vers `src/index.ts` dans Vite ; un `fetch` par défaut stocké en propriété lève « Illegal invocation » ; un panneau ouvert dans un onglet a `sender.tab` → filtrer sur `sender.url`. Une variable d'env API doit aussi être listée dans `dokploy-stack.yml`.
+- **Open**: déploiement préprod + essai réel propriétaire (connexion, solde, révocation) avant de cocher US-195.

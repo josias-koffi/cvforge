@@ -55,8 +55,8 @@ Décision d'architecture : **ADR-034** (`decisions/ADR-034-chrome-extension-appl
 - [ ] **[US-195]** Squelette `apps/extension` et connexion au compte
   - Agent: `developer`
   - Critères d'acceptation :
-    - [ ] Une app WXT + React dans Turborepo, qui utilise `packages/ui` et `packages/types`, avec la `key` du
-          manifeste fixée.
+    - [x] Une app WXT + React dans Turborepo, qui utilise `packages/types`, avec la `key` du manifeste fixée
+          (`iciahkakhljbapmhkjjgopacegifndha`). `packages/ui` n'existe pas : Tailwind v4 avec les couleurs d'`apps/web`.
     - [ ] « Se connecter à JobSpark » : OAuth par `chrome.identity.launchWebAuthFlow` (ADR-033) vers
           `https://<id>.chromiumapp.org/`, préréglage `extension`. La connexion apparaît dans `/compte/agents` et
           sa révocation déconnecte l'extension.
@@ -122,6 +122,16 @@ Décision d'architecture : **ADR-034** (`decisions/ADR-034-chrome-extension-appl
 
 ## 🔁 Workflow Runs
 
+- 2026-11-26 — US-195 : `apps/extension` (WXT 0.21.5, React 19, SDK MCP 1.32.2). OAuth par
+  `launchWebAuthFlow` (DCR, PKCE, contrôle de `state` et `iss`, révocation à la déconnexion). Client MCP dans le
+  service worker. Panneau en français : connexion, solde, clé IA masquée. 37 tests, dont le parcours OAuth contre
+  un faux serveur ; 97 % des lignes couvertes.
+  - Chromium : identifiant attendu ; préprod `POST /oauth/register` 201 avec l'adresse de retour chromiumapp.org ;
+    `/mcp` 403 « Origine non autorisée » tant que `MCP_ALLOWED_ORIGINS` n'est pas déployé (variable ajoutée au
+    manifeste de déploiement et à la stack).
+  - Côté API : préréglage `extension` + `credits:read`, page de consentement sur le préréglage le plus étroit,
+    serveur qui n'accorde jamais plus que la demande.
+  - Reste à faire : déployer en préprod, puis un essai réel par le propriétaire (connexion, solde, révocation).
 - 2026-11-26 — US-194 : prototype hors monorepo (`~/perso/projets/jobspark-e33-proto`). **GO** (SPIKE-006). Dépôt du
   CV réussi sur 6 plateformes (Workday exclu) ; agent complet sans envoi sur un formulaire Ashby réel ; 0 appel IA
   depuis la page ; le garde-fou refuse le bouton d'envoi. À intégrer : vérifier le dépôt par la réaction de la page,

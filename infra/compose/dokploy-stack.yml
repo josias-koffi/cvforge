@@ -171,6 +171,9 @@ services:
       # Lets the landing vouch for the visitor's address, which Traefik
       # overwrites on the way in (US-132). Empty: the relay is ignored.
       LANDING_PROXY_SECRET: ${LANDING_PROXY_SECRET:-}
+      # Origins admitted on /mcp when a request carries Origin: the JobSpark
+      # Chrome extension (ADR-032, ADR-034). Empty: only clients without one.
+      MCP_ALLOWED_ORIGINS: ${MCP_ALLOWED_ORIGINS:-}
     volumes:
       # Real datastore of the API (JSON state files) — never drop this volume.
       - api_data:/workspace/.data
