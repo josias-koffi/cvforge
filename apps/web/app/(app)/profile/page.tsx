@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { redirect } from "next/navigation"
-import { PlusIcon } from "lucide-react"
+import { MessageSquareTextIcon, PlusIcon } from "lucide-react"
 
 import { PageHeader } from "@/components/layout/page-header"
 import { NewProfileCard, ProfileCard } from "@/components/profile/profile-card"
@@ -32,12 +32,20 @@ export default async function ProfilesPage(props: PageProps<"/profile">) {
         title="Mes profils"
         description="Votre matière première : un profil par type de poste visé. Le profil par défaut sert à chaque génération."
         actions={
-          <Button asChild>
-            <Link href="/profile/new">
-              <PlusIcon />
-              Nouveau profil
-            </Link>
-          </Button>
+          <>
+            <Button asChild variant="outline">
+              <Link href="/profile/reponses">
+                <MessageSquareTextIcon />
+                Réponses aux recruteurs
+              </Link>
+            </Button>
+            <Button asChild>
+              <Link href="/profile/new">
+                <PlusIcon />
+                Nouveau profil
+              </Link>
+            </Button>
+          </>
         }
       />
       <div className="grid gap-4 px-4 md:grid-cols-2 lg:px-6 xl:grid-cols-3">

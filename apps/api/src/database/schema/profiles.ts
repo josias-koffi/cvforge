@@ -1,3 +1,4 @@
+import type { CustomScreeningAnswer, ScreeningAnswerKey } from "@cvforge/types";
 import type { StoredProfile } from "../../profiles/profiles.types";
 import {
   integer,
@@ -7,6 +8,7 @@ import {
   timestamp,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
+import { authAccounts } from "./auth";
 
 /** One row per user: which profile is active, and the payload version. */
 export const profileRegistries = pgTable("profile_registries", {
@@ -45,6 +47,30 @@ export const profiles = pgTable(
   },
   // Serves the per-user lookup as well as guarding the ordering.
   (table) => [
-    uniqueIndex("profiles_user_position_idx").on(table.userEmail, table.position),
+    uniqueIndex("profiles_user_position_idx").on(
+      table.userEmail,
+      table.position,
+    ),
   ],
 );
+
+/**
+ * The candidate's answers to recruiters' screening questions (ADR-034 §5),
+ * one row per account, read by the Chrome extension when it fills a form.
+ */
+export const screeningAnswers = pgTable("screening_answers", {
+  userEmail: text("user_email")
+    .primaryKey()
+    .references(() => authAccounts.email, { onDelete: "cascade" }),
+  known: jsonb("known")
+    .$type<Partial<Record<ScreeningAnswerKey, string>>>()
+    .notNull()
+    .default({}),
+  custom: jsonb("custom")
+    .$type<CustomScreeningAnswer[]>()
+    .notNull()
+    .default([]),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});

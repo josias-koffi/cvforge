@@ -12,6 +12,7 @@ import type { CreditLedgerStore } from "../credits/credits.types";
 import type { NotificationsStore } from "../notifications/notifications.types";
 import type { ProfileCompetencesStore } from "../profiles/profile-competences.pg-store";
 import type { ProfilesStore } from "../profiles/profiles.types";
+import type { ScreeningAnswersStore } from "../profiles/screening-answers.service";
 import type { JobMatchesStore } from "../job-search/matches.types";
 import type { SearchProjectRomeStore } from "../search-projects/search-project-rome.pg-store";
 import type { SearchProjectsStore } from "../search-projects/search-projects.types";
@@ -38,11 +39,18 @@ export class PrivacyService {
     private readonly interviewStore: InterviewStore,
     private readonly creditOrdersStore: CreditOrdersStore,
     private readonly auditStore: AdminAuditStore,
-    private readonly searchJobsStore: Pick<SearchProjectRomeStore, "exportByUserEmail">,
+    private readonly searchJobsStore: Pick<
+      SearchProjectRomeStore,
+      "exportByUserEmail"
+    >,
     private readonly profileCompetencesStore: Pick<
       ProfileCompetencesStore,
       "exportByUserEmail"
     >,
+    private readonly screeningAnswersStore: Pick<
+      ScreeningAnswersStore,
+      "find"
+    > = { find: async () => null },
   ) {}
 
   getRetentionPolicy() {
@@ -75,6 +83,7 @@ export class PrivacyService {
       ownedSearchProjects:
         await this.searchProjectsStore.listByUserEmail(normalizedEmail),
       retentionPolicy: PRIVACY_RETENTION_POLICY,
+      screeningAnswers: await this.screeningAnswersStore.find(normalizedEmail),
       userEmail: normalizedEmail,
     };
   }
