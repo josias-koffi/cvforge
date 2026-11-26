@@ -85,6 +85,20 @@ describe("findSubmitControl / clickSubmit", () => {
     expect(findSubmitControl()?.textContent).toBe("Envoyer");
   });
 
+  it("ignores a hidden submit button beside the visible one (Lever, hCaptcha)", () => {
+    document.body.innerHTML = `
+      <button type="submit" id="hcaptchaSubmitBtn" class="hidden"></button>
+      <button type="button" id="btn-submit">SUBMIT APPLICATION</button>`;
+    vi.mocked(HTMLElement.prototype.getClientRects).mockImplementation(
+      function (this: HTMLElement) {
+        return (this.id === "hcaptchaSubmitBtn"
+          ? []
+          : [{} as DOMRect]) as unknown as DOMRectList;
+      },
+    );
+    expect(findSubmitControl()?.id).toBe("btn-submit");
+  });
+
   it("does not guess between two submit buttons, nor click a disabled one", () => {
     document.body.innerHTML = `
       <button type="submit">Envoyer</button><button type="submit">Submit application</button>`;
