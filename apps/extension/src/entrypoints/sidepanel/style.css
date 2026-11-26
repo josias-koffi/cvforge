@@ -1,0 +1,23 @@
+@import "tailwindcss";
+
+/* JobSpark tokens, same values as apps/web (light theme). */
+@theme {
+  --color-background: oklch(0.979 0.003 264.5);
+  --color-foreground: oklch(0.21 0.032 264.7);
+  --color-card: oklch(1 0 0);
+  --color-primary: oklch(0.558 0.243 265.4);
+  --color-primary-foreground: oklch(1 0 0);
+  --color-muted: oklch(0.957 0.007 260.7);
+  --color-muted-foreground: oklch(0.551 0.023 264.4);
+  --color-border: oklch(0.921 0.008 260.7);
+  --color-input: oklch(0.87 0.012 260.7);
+  --color-destructive: oklch(0.577 0.215 27.3);
+  --color-success: oklch(0.527 0.137 150.1);
+  --color-warning: oklch(0.555 0.146 49);
+  --color-spark: oklch(0.813 0.165 75);
+}
+
+body {
+  @apply bg-background text-foreground antialiased;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+}
