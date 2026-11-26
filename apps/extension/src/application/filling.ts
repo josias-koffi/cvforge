@@ -4,8 +4,13 @@ import {
   type FillAnswers,
   type FillProfile,
 } from "../domain/fill";
+import { readBalance } from "../domain/connection";
 import { findApplicationFor, type ApplicationSummary } from "../domain/offer";
-import { screeningQuestionKey } from "@cvforge/types";
+import {
+  AI_CREDIT_ACTION_FORM_FILL,
+  AI_CREDIT_COSTS,
+  screeningQuestionKey,
+} from "@cvforge/types";
 import type {
   FillerReply,
   FillerRequest,
@@ -15,7 +20,7 @@ import type {
 import type { DocumentKind } from "../page/attach";
 import type { PageReader } from "./preparation";
 import type { LastFill } from "./sending";
-import type { AiKeyStore, JobSparkTools } from "./session";
+import type { AiKeySettings, AiKeyStore, JobSparkTools } from "./session";
 
 /** The script that runs page-agent in the recruiter's tab. */
 export interface FillTab {
@@ -25,6 +30,11 @@ export interface FillTab {
   /** Opens the form in the same tab and waits for it to load. */
   open(tabId: number, url: string): Promise<void>;
 }
+
+/** What a fill with JobSpark's model costs (US-202). */
+export const FORM_FILL_COST = AI_CREDIT_COSTS[AI_CREDIT_ACTION_FORM_FILL];
+/** The relay picks the real model; page-agent only needs a name. */
+const JOBSPARK_MODEL = "jobspark";
 
 /** Fewer fields than this: an offer page, not its application form. */
 const FORM_MIN_FIELDS = 3;
@@ -43,12 +53,16 @@ export type FillOptions =
       kind: "page";
       host: string;
       url: string;
-      aiKeyConfigured: boolean;
+      /** The candidate's own key fills for free; else JobSpark's model, in credits. */
+      personalKey: boolean;
+      fillCost: number;
+      balance: number | null;
       applications: Pick<ApplicationSummary, "id" | "title" | "company">[];
       suggestedId: string | null;
     };
 
 export type FillOutcome = {
+  creditsSpent: number;
   /** The form the extension opened from the offer page, if it did. */
   formUrl: string | null;
   success: boolean;
@@ -57,8 +71,14 @@ export type FillOutcome = {
   answersSaved: number;
 };
 
+/** Who answers the in-page agent's model calls during a fill. */
+type ModelRoute =
+  | { kind: "personal"; baseURL: string; apiKey: string }
+  | { kind: "jobspark"; baseURL: string; sessionId: string };
+
 type ActiveFill = {
   tabId: number;
+  route: ModelRoute;
   documents: Record<DocumentKind, EncodedDocument>;
   questionsAsked: number;
   answersSaved: number;
@@ -107,6 +127,8 @@ export class Filling {
       aiKeys: AiKeyStore;
       candidate: CandidateChannel;
       download: (url: string) => Promise<{ base64: string; mime: string }>;
+      /** JobSpark's model relay (US-202), with the extension's OAuth token. */
+      relay: { origin: string; accessToken: () => Promise<string | null> };
       fetchFn?: typeof fetch;
     },
   ) {}
@@ -116,9 +138,10 @@ export class Filling {
     if (tab === "no-access") return { kind: "no-access" };
     if (!tab) return { kind: "no-page" };
 
-    const [listed, aiKey] = await Promise.all([
+    const [listed, aiKey, balance] = await Promise.all([
       this.deps.tools.call("list_applications"),
       this.deps.aiKeys.get(),
+      this.deps.tools.call("get_credit_balance").then(readBalance, () => null),
     ]);
     const ready = (
       Array.isArray(listed) ? (listed as ApplicationSummary[]) : []
@@ -126,14 +149,16 @@ export class Filling {
     const matching = findApplicationFor(ready, tab.url);
 
     return {
-      aiKeyConfigured: Boolean(aiKey),
       applications: ready.map(({ id, title, company }) => ({
         company,
         id,
         title,
       })),
       host: new URL(tab.url).host,
+      balance,
+      fillCost: aiKey ? 0 : FORM_FILL_COST,
       kind: "page",
+      personalKey: Boolean(aiKey),
       suggestedId: matching?.id ?? ready[0]?.id ?? null,
       url: tab.url,
     };
@@ -145,7 +170,6 @@ export class Filling {
   }): Promise<FillOutcome> {
     if (this.active) throw new Error("Un remplissage est déjà en cours.");
     const aiKey = await this.deps.aiKeys.get();
-    if (!aiKey) throw new Error("Ajoutez d'abord votre clé IA personnelle.");
     const tab = await this.deps.pages.activeTab();
     if (!tab || tab === "no-access" || tab.url !== request.url) {
       throw new Error("L'onglet a changé : vérifiez à nouveau.");
@@ -177,7 +201,9 @@ export class Filling {
       letter: await this.document(application.id, "letter", profile),
     };
     const formUrl = await this.openFormIfNeeded(tab.tabId);
+    const route = await this.modelRoute(aiKey, application.id);
     this.active = {
+      route,
       answersSaved: 0,
       asked: new Map(),
       documents,
@@ -186,7 +212,10 @@ export class Filling {
     };
     try {
       const reply = await this.deps.tab.run(tab.tabId, {
-        llm: { baseURL: aiKey.baseURL, model: aiKey.model },
+        llm: {
+          baseURL: route.baseURL,
+          model: aiKey?.model ?? JOBSPARK_MODEL,
+        },
         task: buildFillTask(profile, answers, application),
         type: "filler/run",
       });
@@ -197,6 +226,7 @@ export class Filling {
       });
       return {
         answersSaved: this.active.answersSaved,
+        creditsSpent: route.kind === "jobspark" ? FORM_FILL_COST : 0,
         formUrl,
         questionsAsked: this.active.questionsAsked,
         success: reply.success,
@@ -234,7 +264,7 @@ export class Filling {
     }
     switch (request.type) {
       case "filler/llm-fetch":
-        return this.relayModelCall(request);
+        return this.relayModelCall(active.route, request);
       case "filler/document":
         return active.documents[request.kind];
       case "filler/ask":
@@ -256,23 +286,57 @@ export class Filling {
     return { ...file, name: fileName(kind, profile) };
   }
 
-  private async relayModelCall(request: { url: string; body?: string }) {
-    const aiKey = await this.deps.aiKeys.get();
-    if (!aiKey) return { error: "Clé IA absente." };
-    if (!request.url.startsWith(`${aiKey.baseURL}/`)) {
+  /**
+   * The candidate's own key when set (free); otherwise a JobSpark fill
+   * session, two credits, opened only now that everything else is ready.
+   */
+  private async modelRoute(
+    aiKey: AiKeySettings | null,
+    applicationId: string,
+  ): Promise<ModelRoute> {
+    if (aiKey) {
+      return { apiKey: aiKey.apiKey, baseURL: aiKey.baseURL, kind: "personal" };
+    }
+    const started = (await this.deps.tools.call("start_form_fill", {
+      applicationId,
+    })) as { fillSessionId: string };
+    return {
+      baseURL: `${this.deps.relay.origin}/agent/llm`,
+      kind: "jobspark",
+      sessionId: started.fillSessionId,
+    };
+  }
+
+  private async relayModelCall(
+    route: ModelRoute,
+    request: { url: string; body?: string },
+  ) {
+    if (!request.url.startsWith(`${route.baseURL}/`)) {
       return { error: "Adresse du modèle non autorisée." };
     }
-    const response = await (this.deps.fetchFn ?? ((u, i) => fetch(u, i)))(
-      request.url,
-      {
+    const send = async () => {
+      const authorization =
+        route.kind === "personal"
+          ? `Bearer ${route.apiKey}`
+          : `Bearer ${(await this.deps.relay.accessToken()) ?? ""}`;
+      return (this.deps.fetchFn ?? ((u, i) => fetch(u, i)))(request.url, {
         body: request.body,
         headers: {
-          authorization: `Bearer ${aiKey.apiKey}`,
+          authorization,
           "content-type": "application/json",
+          ...(route.kind === "jobspark" && {
+            "x-jobspark-fill-session": route.sessionId,
+          }),
         },
         method: "POST",
-      },
-    );
+      });
+    };
+    let response = await send();
+    if (response.status === 401 && route.kind === "jobspark") {
+      // The access token expired mid-fill: any MCP call refreshes it.
+      await this.deps.tools.call("get_credit_balance").catch(() => undefined);
+      response = await send();
+    }
     return { body: await response.text(), status: response.status };
   }
 

@@ -29,10 +29,12 @@ export function AiKeyForm({
   };
 
   return (
-    <Card title="Clé IA personnelle">
+    <Card title="Clé IA personnelle (option avancée)">
       <p className="text-sm text-muted-foreground">
-        L'extension lit les formulaires des recruteurs avec votre propre modèle
-        IA. La clé reste sur cet ordinateur.
+        Facultatif. Par défaut, JobSpark remplit les formulaires avec son modèle
+        IA, pour quelques crédits. Avec votre propre clé (compatible OpenAI, par
+        exemple OpenRouter), le remplissage ne consomme aucun crédit. La clé
+        reste sur cet ordinateur.
       </p>
       {aiKey.configured && (
         <p className="text-sm">

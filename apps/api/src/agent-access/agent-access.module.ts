@@ -31,6 +31,23 @@ import {
 } from "./mcp/mcp-request-gate";
 import { mcpToolsProvider } from "./mcp/mcp-tools.provider";
 import { fetchPublicPage } from "../shared/safe-fetch";
+import type { AiUsageRecorder } from "../ai/ai-usage";
+import type { FeatureModelRouter } from "../ai/feature-models/feature-model.router";
+import {
+  AI_USAGE_RECORDER,
+  FEATURE_MODEL_ROUTER,
+  OpenRouterModule,
+} from "../ai/openrouter.module";
+import { resolveOpenRouterConfig } from "../ai/openrouter.config";
+import { ApplicationsService } from "../applications/applications.service";
+import { CreditsService } from "../credits/credits.service";
+import { FormFillController } from "./form-fill/form-fill.controller";
+import {
+  FORM_FILL_STORE,
+  FormFillService,
+  PgFormFillStore,
+  type FormFillStore,
+} from "./form-fill/form-fill.service";
 import { OAuthClients } from "./oauth/oauth-clients";
 import { OAuthController } from "./oauth/oauth.controller";
 import {
@@ -60,11 +77,13 @@ const CIMD_FETCH = {
     CvGenerationModule,
     JobSearchModule,
     NotificationsModule,
+    OpenRouterModule,
     ProfilesModule,
     RateLimitModule,
   ],
   controllers: [
     AgentTokensController,
+    FormFillController,
     McpController,
     McpFilesController,
     OAuthController,
@@ -127,6 +146,36 @@ const CIMD_FETCH = {
         const auth = resolveAuthConfig(process.env);
         return new SignedFiles(auth.sessionSecret, auth.apiUrl);
       },
+    },
+    {
+      provide: FORM_FILL_STORE,
+      inject: [DATABASE],
+      useFactory: (db: Database) => new PgFormFillStore(db),
+    },
+    {
+      provide: FormFillService,
+      inject: [
+        FORM_FILL_STORE,
+        ApplicationsService,
+        CreditsService,
+        FEATURE_MODEL_ROUTER,
+        AI_USAGE_RECORDER,
+      ],
+      useFactory: (
+        store: FormFillStore,
+        applications: ApplicationsService,
+        credits: CreditsService,
+        models: FeatureModelRouter,
+        usage: AiUsageRecorder,
+      ) =>
+        new FormFillService({
+          applications,
+          credits,
+          models,
+          openRouter: resolveOpenRouterConfig(),
+          store,
+          usage,
+        }),
     },
     mcpToolsProvider,
   ],

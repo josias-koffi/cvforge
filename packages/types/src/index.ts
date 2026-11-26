@@ -57,6 +57,8 @@ export const AI_CREDIT_ACTION_INTERVIEW_SESSION = "interview_session" as const;
 export const AI_CREDIT_ACTION_JOB_DIGEST_RERANK = "job_digest_rerank" as const;
 /** The optional AI analysis of the "Nouvelle offre pour vous" alerts (E27, US-168). */
 export const AI_CREDIT_ACTION_JOB_ALERT_ENRICH = "job_alert_enrich" as const;
+/** The Chrome extension fills a recruiter's form with JobSpark's model (E33, US-202). */
+export const AI_CREDIT_ACTION_FORM_FILL = "form_fill" as const;
 export const CREDIT_EVENT_AI_USAGE = "ai_usage" as const;
 export const CREDIT_EVENT_ADMIN_GRANT = "admin_grant" as const;
 export const CREDIT_EVENT_STRIPE_PURCHASE = "stripe_purchase" as const;
@@ -146,6 +148,7 @@ export const aiCreditActions = [
   AI_CREDIT_ACTION_INTERVIEW_SESSION,
   AI_CREDIT_ACTION_JOB_DIGEST_RERANK,
   AI_CREDIT_ACTION_JOB_ALERT_ENRICH,
+  AI_CREDIT_ACTION_FORM_FILL,
 ] as const;
 export type AiCreditAction = (typeof aiCreditActions)[number];
 export const creditEventTypes = [
@@ -543,6 +546,9 @@ export const AI_CREDIT_COSTS: Record<AiCreditAction, number> = {
   // A day pass: charged once, on the day's first analysis that succeeded; the
   // following ones that day are free. Distinct from the morning rerank.
   [AI_CREDIT_ACTION_JOB_ALERT_ENRICH]: 1,
+  // Measured 2026-11-26 with gpt-4.1-mini: 1.5 to 3.2 US cents a form, so two
+  // credits cover it even at the cheapest pack (3.4 euro cents a credit).
+  [AI_CREDIT_ACTION_FORM_FILL]: 2,
 };
 
 /**

@@ -297,6 +297,7 @@ export const fr: LandingDictionary = {
       letter_generation: "Génération d'une lettre",
       job_digest_rerank: "Classement IA de vos offres du jour",
       job_alert_enrich: "Analyse IA de vos alertes (par jour)",
+      form_fill: "Remplissage d'un formulaire par l'extension",
     },
   },
   testimonials: {

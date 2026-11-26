@@ -16,7 +16,9 @@ const ask = vi.mocked(askBackground);
 ).IS_REACT_ACT_ENVIRONMENT = true;
 
 const OPTIONS: FillOptions = {
-  aiKeyConfigured: true,
+  balance: 20,
+  fillCost: 2,
+  personalKey: false,
   applications: [
     { company: "Acme", id: "a1", title: "Dev" },
     { company: "Qonto", id: "a2", title: "Lead" },
@@ -68,12 +70,13 @@ describe("FillCard", () => {
 
     ask.mockResolvedValueOnce({
       answersSaved: 1,
+      creditsSpent: 2,
       formUrl: "https://jobs.lever.co/acme/1/apply",
       questionsAsked: 2,
       success: true,
       summary: "Champ « vélo » laissé vide.",
     });
-    await click("Remplir ce formulaire");
+    await click("Remplir ce formulaire (2 crédits)");
 
     expect(ask).toHaveBeenCalledWith({
       applicationId: "a2",
@@ -91,7 +94,7 @@ describe("FillCard", () => {
     );
   });
 
-  it("asks for a prepared application or the AI key first", async () => {
+  it("asks for a prepared application, or more credits, first", async () => {
     ask.mockResolvedValueOnce({
       ...OPTIONS,
       applications: [],
@@ -102,9 +105,9 @@ describe("FillCard", () => {
 
     act(() => root.unmount());
     root = createRoot(container);
-    ask.mockResolvedValueOnce({ ...OPTIONS, aiKeyConfigured: false });
+    ask.mockResolvedValueOnce({ ...OPTIONS, balance: 1 });
     await render(<FillCard />);
-    expect(container.textContent).toContain("Ajoutez votre clé IA");
+    expect(container.textContent).toContain("Solde insuffisant");
   });
 
   it("shows nothing off a web page, and the error of a failed fill", async () => {
@@ -119,7 +122,7 @@ describe("FillCard", () => {
     ask.mockRejectedValueOnce(
       new Error("Ajoutez d'abord votre clé IA personnelle."),
     );
-    await click("Remplir ce formulaire");
+    await click("Remplir ce formulaire (2 crédits)");
     expect(container.querySelector('[role="alert"]')?.textContent).toContain(
       "clé IA",
     );

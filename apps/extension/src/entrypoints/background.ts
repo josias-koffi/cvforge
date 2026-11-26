@@ -45,6 +45,10 @@ export default defineBackground(() => {
     candidate: panel,
     download: signedFileDownloader(),
     pages,
+    relay: {
+      accessToken: async () => (await provider.tokens())?.access_token ?? null,
+      origin: api.origin,
+    },
     tab: chromeFillTab(),
     tools,
   });

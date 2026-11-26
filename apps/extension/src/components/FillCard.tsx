@@ -81,10 +81,10 @@ export function FillCard() {
           Préparez d'abord une candidature (CV et lettre) depuis la page de
           l'offre.
         </p>
-      ) : !options.aiKeyConfigured ? (
-        <p className="text-sm text-warning">
-          Ajoutez votre clé IA personnelle ci-dessous : elle sert à lire le
-          formulaire.
+      ) : options.balance !== null && options.balance < options.fillCost ? (
+        <p className="text-sm text-destructive">
+          Solde insuffisant : le remplissage coûte {options.fillCost} crédits
+          (solde : {options.balance}).
         </p>
       ) : (
         <>
@@ -110,8 +110,17 @@ export function FillCard() {
             votre lettre, et vous pose les questions auxquelles vos données ne
             répondent pas. Il n'envoie rien.
           </p>
+          <p className="text-xs text-muted-foreground">
+            {options.personalKey
+              ? "Avec votre clé IA personnelle : aucun crédit dépensé."
+              : `Coût : ${options.fillCost} crédits${options.balance === null ? "" : ` (solde : ${options.balance})`}.`}
+          </p>
           <Button disabled={filling || !selected} onClick={() => void fill()}>
-            {filling ? "Remplissage en cours…" : "Remplir ce formulaire"}
+            {filling
+              ? "Remplissage en cours…"
+              : options.personalKey
+                ? "Remplir ce formulaire"
+                : `Remplir ce formulaire (${options.fillCost} crédits)`}
           </Button>
         </>
       )}

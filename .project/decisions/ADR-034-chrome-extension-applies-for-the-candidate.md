@@ -131,9 +131,25 @@ What that study decided, and what changes here:
    and the time. Everything is stored with the application and shown in its
    timeline. A submission with no confirmation page detected is recorded as
    "to check", never as sent.
-8. **Model**: the candidate's own OpenAI-compatible key (OpenRouter or
-   similar) for now, as decided on 2026-11-25. No new `AI_CREDIT_COSTS`
-   entry. A model paid by JobSpark is a separate decision.
+8. **Model** (amended 2026-11-26, US-202): by default **JobSpark's model,
+   paid in credits** — most candidates will never create an API key.
+   - The in-page agent's calls go to `POST /agent/llm/chat/completions`
+     (OpenAI-compatible), admitted like `/mcp` (agent token, allowed origin,
+     rate limit) inside a **fill session** opened by the MCP tool
+     `start_form_fill`: **2 credits**, 15 minutes, 60 calls at most.
+   - The server picks the model (`form_fill` in `/admin/ai-models`, default
+     `openai/gpt-4.1-mini`) and calls OpenRouter with its own key, no prompt
+     logging, ZDR providers when enabled; each call is filed in the AI cost
+     cockpit. Claude Sonnet/Opus 5.x get reasoning on and a free tool choice
+     (they refuse otherwise).
+   - Measured on real Lever and Ashby forms: gpt-4.1-mini 1.5–3.2 US cents a
+     fill (10–16 calls), claude-sonnet-5.5 18–26 cents, claude-haiku-5.5
+     looped. A credit is worth 3.4 to 6.6 euro cents: 2 credits cover
+     gpt-4.1-mini even at the cheapest pack. Choosing Sonnet would need about
+     7 credits.
+   - **The candidate's own OpenAI-compatible key stays an advanced option**:
+     with it, a fill costs no credit and calls go straight to their provider.
+
 9. **Prompt injection**: recruiter pages are untrusted.
    - Page text reaches the model wrapped like `<untrusted_offer_content>`.
    - The agent cannot leave the application host while filling.
