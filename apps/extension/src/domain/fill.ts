@@ -36,6 +36,7 @@ export const FILL_SYSTEM_INSTRUCTIONS = [
   "- N'utilise que les données du candidat fournies dans la tâche. N'invente jamais une réponse, un chiffre, une date ou un lien.",
   "- Si un champ du formulaire demande une information absente des données, appelle ask_user avec le libellé exact de ce champ, une question à la fois. Si le candidat ne répond pas, laisse le champ vide.",
   "- ask_user sert uniquement à ces champs : jamais pour demander une confirmation, ni pour signaler qu'une donnée du candidat n'a pas de champ (c'est normal, ignore-la).",
+  "- La question posée par ask_user est le libellé du champ, tel quel, sans commentaire. Ne repose jamais une question, même reformulée : sans réponse, le champ reste vide.",
   "- Pour un champ d'envoi de fichier (CV, lettre de motivation), appelle attach_document. Ne clique jamais sur le bouton de choix de fichier. Sans champ pour la lettre, ne la joins pas et ne demande rien.",
   "- Les formulaires sont souvent en anglais : rapproche chaque champ de la donnée correspondante (les équivalents anglais sont entre parenthèses).",
   "- Ne clique jamais sur le bouton final d'envoi de la candidature (Envoyer, Postuler, Soumettre, Submit, Apply) : termine avec done juste avant.",
@@ -128,4 +129,28 @@ export function leavesSite(description: string, pageUrl: string): boolean {
   } catch {
     return false;
   }
+}
+
+/** Words that carry a question's meaning (« niveau », « allemand », « german »…). */
+function meaningfulWords(question: string): Set<string> {
+  return new Set(
+    question
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .split(/[^a-z0-9]+/)
+      .filter((word) => word.length > 3),
+  );
+}
+
+/**
+ * Two questions about the same field: the model rephrases (« What is your
+ * level of German? », « Quel est votre niveau d'allemand ? (…) »).
+ */
+export function sameQuestion(a: string, b: string): boolean {
+  const left = meaningfulWords(a);
+  const right = meaningfulWords(b);
+  if (left.size === 0 || right.size === 0) return false;
+  const shared = [...left].filter((word) => right.has(word)).length;
+  return shared / Math.min(left.size, right.size) >= 0.5;
 }

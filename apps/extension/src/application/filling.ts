@@ -1,5 +1,6 @@
 import {
   buildFillTask,
+  sameQuestion,
   type FillAnswers,
   type FillProfile,
 } from "../domain/fill";
@@ -66,7 +67,11 @@ type ActiveFill = {
 };
 
 const ALREADY_ASKED =
-  "Déjà demandé au candidat, sans réponse : laisse ce champ vide et passe au suivant.";
+  "Déjà demandé au candidat, sans réponse : laisse ce champ vide, ne repose pas la question et passe au suivant.";
+const TOO_MANY_QUESTIONS =
+  "Plus de question au candidat pour ce formulaire : laisse les champs restants vides et termine.";
+/** Beyond this, the candidate is not bothered again during this fill. */
+const MAX_QUESTIONS = 8;
 
 type ProfileRegistry = {
   activeProfileId: string | null;
@@ -273,7 +278,12 @@ export class Filling {
 
   private async askCandidate(active: ActiveFill, question: string) {
     const key = screeningQuestionKey(question);
-    if (active.asked.has(key)) return active.asked.get(key) ?? ALREADY_ASKED;
+    const earlier = [...active.asked.keys()].find(
+      (asked) => asked === key || sameQuestion(asked, key),
+    );
+    if (earlier !== undefined)
+      return active.asked.get(earlier) ?? ALREADY_ASKED;
+    if (active.questionsAsked >= MAX_QUESTIONS) return TOO_MANY_QUESTIONS;
     active.questionsAsked += 1;
     const { answer, save } = await this.deps.candidate.ask(question);
     active.asked.set(key, answer);

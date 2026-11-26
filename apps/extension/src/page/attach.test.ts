@@ -50,6 +50,20 @@ describe("attachFile", () => {
     expect(await attachFile(doc("cv"))).toMatchObject({ ok: true });
   });
 
+  it("never puts the letter into the only field, labelled for the CV", async () => {
+    document.body.innerHTML = `<div><span>Resume/CV *</span><input type="file"></div>`;
+    expect(await attachFile(doc("cv"))).toMatchObject({ ok: true });
+    expect(await attachFile(doc("letter"))).toMatchObject({ ok: false });
+    expect(findFileInputs()[0]!.files?.[0]?.name).toBe("CV Camille Test.pdf");
+  });
+
+  it("never overwrites a file already in a field with the letter", async () => {
+    document.body.innerHTML = `<div><span>Pièces jointes</span><input type="file"></div>`;
+    await attachFile(doc("cv"));
+    expect(await attachFile(doc("letter"))).toMatchObject({ ok: false });
+    expect(findFileInputs()[0]!.files?.[0]?.name).toBe("CV Camille Test.pdf");
+  });
+
   it("finds fields inside open shadow roots", async () => {
     const host = document.createElement("div");
     document.body.append(host);

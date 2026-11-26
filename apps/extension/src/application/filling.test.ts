@@ -228,6 +228,44 @@ describe("Filling.fill", () => {
     expect(outcome.questionsAsked).toBe(2);
   });
 
+  it("does not re-ask a rephrased question, and stops after eight", async () => {
+    const replies: unknown[] = [];
+    (f.filling as unknown as { deps: { tab: FillTab } }).deps.tab = {
+      ...FORM_PAGE,
+      run: async () => {
+        const questions = [
+          "What is your level of German?",
+          "German level (What is your level of German? requis)",
+          "Salary expectations",
+          "Notice period",
+          "Visa sponsorship",
+          "Relocation Barcelona",
+          "Driving licence",
+          "Pronouns",
+          "Portfolio website",
+          "Referral source",
+          "Availability start",
+        ];
+        for (const question of questions) {
+          replies.push(
+            await f.filling.handle(9, { question, type: "filler/ask" }),
+          );
+        }
+        return { steps: 1, success: true, summary: "" };
+      },
+    };
+    f.candidate.ask.mockResolvedValue({ answer: null, save: false });
+    const outcome = await f.filling.fill({ applicationId: "a1", url: URL_ });
+
+    expect(replies[1]).toEqual({
+      answer: expect.stringContaining("ne repose pas"),
+    });
+    expect(outcome.questionsAsked).toBe(8);
+    expect(replies.at(-1)).toEqual({
+      answer: expect.stringContaining("Plus de question"),
+    });
+  });
+
   it("still answers the form when saving fails (older connection)", async () => {
     f.call.mockImplementation(async (name: string) => {
       if (name === "save_screening_answer")

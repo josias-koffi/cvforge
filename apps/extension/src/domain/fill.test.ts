@@ -4,6 +4,7 @@ import {
   buildFillTask,
   isSubmitControl,
   leavesSite,
+  sameQuestion,
   type FillAnswers,
   type FillProfile,
 } from "./fill";
@@ -79,6 +80,26 @@ describe("FILL_SYSTEM_INSTRUCTIONS", () => {
     expect(FILL_SYSTEM_INSTRUCTIONS).toContain(
       "jamais pour demander une confirmation",
     );
+    expect(FILL_SYSTEM_INSTRUCTIONS).toContain("Ne repose jamais une question");
+  });
+});
+
+describe("sameQuestion", () => {
+  it("sees the model's rephrasings of one field as one question", () => {
+    expect(
+      sameQuestion(
+        "What is your level of German?",
+        "German level (What is your level of German? ✱ — requis)",
+      ),
+    ).toBe(true);
+    expect(sameQuestion("Current Company", "current company ?")).toBe(true);
+  });
+
+  it("keeps different fields apart", () => {
+    expect(
+      sameQuestion("What is your level of German?", "Do you need a visa?"),
+    ).toBe(false);
+    expect(sameQuestion("?", "Visa")).toBe(false);
   });
 });
 

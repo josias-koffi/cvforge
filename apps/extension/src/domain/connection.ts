@@ -11,7 +11,9 @@ export const EXTENSION_SCOPE = [
 
 /** Default model for the candidate's own key (OpenAI-compatible, ADR-034 §8). */
 export const DEFAULT_AI_BASE_URL = "https://openrouter.ai/api/v1";
-export const DEFAULT_AI_MODEL = "anthropic/claude-haiku-5.5";
+// Measured 2026-11-26 on Lever and Ashby forms: 10 to 16 calls and 1.5 to 3.2 US
+// cents a fill, where claude-haiku-5.5 looped up to 54 calls.
+export const DEFAULT_AI_MODEL = "openai/gpt-4.1-mini";
 
 export type ConnectionStatus = "disconnected" | "connected" | "revoked";
 

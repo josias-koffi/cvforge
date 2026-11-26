@@ -153,7 +153,14 @@ export async function attachFile(input: {
     .sort((a, b) => b.points - a.points);
   const best = ranked[0];
 
-  if (best && (best.points > 0 || (inputs.length === 1 && best.points > -50))) {
+  // A single unlabelled field takes the document; a field labelled for the
+  // other document (the CV field, for the letter) never does, and a field
+  // already holding a file is never overwritten by the other document.
+  const takesIt =
+    best &&
+    !(input.kind === "letter" && best.input.files?.length) &&
+    (best.points > 0 || (inputs.length === 1 && best.points === 0));
+  if (best && takesIt) {
     setFiles(best.input, file);
     await wait(SETTLE_MS);
     // Some fields (SmartRecruiters) empty themselves once read: trust the page.

@@ -94,13 +94,13 @@ describe("Session", () => {
     expect(state.aiKey).toEqual({
       configured: true,
       hint: "sk-or-…abcd",
-      model: "anthropic/claude-haiku-5.5",
+      model: "openai/gpt-4.1-mini",
     });
     expect(JSON.stringify(state)).not.toContain("0123456789");
     expect(f.storedKey()).toEqual({
       apiKey: "sk-or-v1-0123456789abcd",
       baseURL: "https://openrouter.ai/api/v1",
-      model: "anthropic/claude-haiku-5.5",
+      model: "openai/gpt-4.1-mini",
     });
 
     expect((await f.session.clearAiKey()).aiKey.configured).toBe(false);
