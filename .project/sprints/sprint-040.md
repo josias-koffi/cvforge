@@ -98,6 +98,17 @@ Décision d'architecture : **ADR-034** (`decisions/ADR-034-chrome-extension-appl
           `sent`. Sans page de confirmation détectée, la candidature passe en « à vérifier ».
     - [ ] La preuve est visible dans la fiche candidature de l'app.
 
+- [ ] **[US-202]** Remplissage avec le modèle de JobSpark, payé en crédits (décision du propriétaire du 2026-11-26)
+  - Agent: `developer`
+  - Critères d'acceptation :
+    - [ ] Action de crédit `form_fill` à 2 crédits, visible dans l'historique et le cockpit IA.
+    - [ ] Outil MCP `start_form_fill` : session de 15 minutes et 60 appels, réservée à une candidature en
+          brouillon ; relais `POST /agent/llm/chat/completions` (jeton d'agent, origine admise, session), modèle
+          choisi côté serveur (`form_fill`, `gpt-4.1-mini` par défaut), clé du serveur, coût enregistré.
+    - [ ] L'extension utilise ce relais par défaut, annonce « Remplir ce formulaire (2 crédits) » et le solde ;
+          la clé personnelle reste une option avancée sans crédit.
+    - [ ] Texte de confidentialité : le contenu du formulaire passe par JobSpark vers le fournisseur IA.
+
 ## 📊 Sprint DoD
 
 - [ ] Parcours réel de bout en bout sur une vraie offre, avec un seul geste du candidat, « Valider et envoyer » :
@@ -123,6 +134,12 @@ Décision d'architecture : **ADR-034** (`decisions/ADR-034-chrome-extension-appl
 - La vidéo LinkedIn « l'agent postule pour toi » se tourne une fois la DoD atteinte.
 
 ## 🔁 Workflow Runs
+
+- 2026-11-26 — US-202 (décision : `gpt-4.1-mini`, 2 crédits, clé personnelle en option avancée ; mesure Sonnet 5.5 :
+  0,18 à 0,26 $ par remplissage) : action `form_fill`, table `form_fill_sessions` (migration 0067), outil
+  `start_form_fill`, relais `/agent/llm/chat/completions` (Sonnet/Opus 5.x : raisonnement bas, choix d'outil
+  libre), extension en mode JobSpark par défaut (jeton OAuth rafraîchi une fois si besoin). Tests : API 167,
+  extension 166, web lib 237, landing 321, types 75. Reste : texte de confidentialité, essai réel en préprod.
 
 - 2026-11-26 — mesure du coût d'un remplissage (vrai `filler.js`, identité fictive, aucun envoi) :
   - `openai/gpt-4.1-mini` : Lever 10 appels 0,015 $, Ashby 16 appels 0,032 $, remplissage terminé ;

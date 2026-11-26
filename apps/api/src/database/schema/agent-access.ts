@@ -111,3 +111,27 @@ export const oauthCodes = pgTable(
   },
   (table) => [index("oauth_codes_user_idx").on(table.userEmail)],
 );
+
+/**
+ * A form fill paid in credits (US-202): the Chrome extension's model calls go
+ * through JobSpark for fifteen minutes and sixty calls at most.
+ */
+export const formFillSessions = pgTable(
+  "form_fill_sessions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userEmail: text("user_email")
+      .notNull()
+      .references(() => authAccounts.email, { onDelete: "cascade" }),
+    tokenId: uuid("token_id")
+      .notNull()
+      .references(() => agentTokens.id, { onDelete: "cascade" }),
+    applicationId: text("application_id").notNull(),
+    calls: integer("calls").notNull().default(0),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  },
+  (table) => [index("form_fill_sessions_user_idx").on(table.userEmail)],
+);

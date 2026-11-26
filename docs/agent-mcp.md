@@ -76,6 +76,13 @@ Sous le capot :
 Chrome, qui lit la page dans le navigateur du candidat), le texte est analysé et
 l'adresse gardée.
 
+`start_form_fill` ouvre une session de remplissage (15 minutes, 60 appels) : les appels du
+modèle de l'extension passent alors par `POST /agent/llm/chat/completions`, et JobSpark
+appelle le modèle choisi dans `/admin/ai-models` (`gpt-4.1-mini` par défaut) avec sa propre
+clé. Le contenu du formulaire et les données du candidat transitent ainsi par JobSpark
+vers le fournisseur IA, comme pour le CV et la lettre (à mentionner dans la politique de
+confidentialité de l'extension).
+
 `record_submission` garde la preuve d'une candidature envoyée (adresse du formulaire, page
 de confirmation et sa capture, documents, champs remplis). Avec une confirmation, la
 candidature passe à « envoyée » ; sans, elle reste un brouillon « à vérifier ».
@@ -86,6 +93,7 @@ candidature passe à « envoyée » ; sans, elle reste un brouillon « à vérif
 ce que son profil répond déjà. `save_screening_answer` n'enregistre qu'une réponse
 donnée par le candidat.
 | `generate_cv`, `generate_cover_letter` | `documents:generate` | 3 |
+| `start_form_fill` (extension Chrome) | `documents:generate` | 2 |
 
 Un agent ne voit que les outils que son jeton permet. Aucun outil ne
 supprime le compte, n'exporte les données, n'achète de crédits, n'envoie

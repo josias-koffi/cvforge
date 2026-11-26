@@ -1777,3 +1777,10 @@
 - **Why**: palier 1 d'ADR-034 : un seul geste du candidat, « Valider et envoyer », et une preuve rangée dans JobSpark.
 - **Learned**: `captureVisibleTab` exige `<all_urls>` (pas `https://*/*`) ; le pilote pg rend `bytea` en `Uint8Array` → `fromDriver` en Buffer ; un `<button>` sans `type` vaut `submit` → ne compter que `type="submit"` écrit ; « Thank you for your interest » est souvent dans l'intro d'une offre → la phrase de confirmation doit être nouvelle après le clic.
 - **Open**: essai réel préprod ; DoD sprint 040 (vraie offre de bout en bout) ; US-199/200/201.
+
+## 2026-11-26 — US-202 modèle JobSpark payé en crédits (décision propriétaire)
+- **Context**: [[sprints/sprint-040#US-202]] · ADR-034 §8 amendé
+- **Did**: action `form_fill` (2 crédits), `form_fill_sessions` (0067), `start_form_fill`, relais `POST /agent/llm/chat/completions` (OpenRouter, clé serveur, coût au cockpit), extension par défaut sur ce relais, clé perso en option avancée.
+- **Why**: le propriétaire n'avait jamais mis de clé et « la plupart des gens ne vont pas le faire ».
+- **Learned**: mesures réelles : gpt-4.1-mini 1,5–3,2 c$ (10–16 appels), sonnet-5.5 18–26 c$, haiku-5.5 boucle ; Sonnet/Opus 5.x exigent le raisonnement et refusent un tool_choice forcé ; page-agent patche par nom de modèle → avec le relais, le nom envoyé est « jobspark » et c'est le serveur qui adapte.
+- **Open**: texte de confidentialité ; essai réel préprod.

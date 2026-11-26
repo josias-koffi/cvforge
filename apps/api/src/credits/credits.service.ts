@@ -3,6 +3,7 @@ import {
   AI_CREDIT_ACTION_CV_IMPORT,
   AI_CREDIT_ACTION_INTERVIEW_SESSION,
   AI_CREDIT_ACTION_JOB_ALERT_ENRICH,
+  AI_CREDIT_ACTION_FORM_FILL,
   AI_CREDIT_ACTION_JOB_DIGEST_RERANK,
   AI_CREDIT_ACTION_LETTER_GENERATION,
   AI_CREDIT_ACTION_OFFER_ENRICHMENT,
@@ -60,6 +61,8 @@ function buildAiUsageNote(
       return "Classement IA des offres du jour";
     case AI_CREDIT_ACTION_JOB_ALERT_ENRICH:
       return "Analyse IA des alertes du jour";
+    case AI_CREDIT_ACTION_FORM_FILL:
+      return "Remplissage d'un formulaire (extension)";
   }
 }
 

@@ -70,6 +70,10 @@ function setup(
         return { url: `https://api.example/mcp/files/${String(args?.kind)}` };
       case "save_screening_answer":
         return { saved: true };
+      case "get_credit_balance":
+        return { balance: 20 };
+      case "start_form_fill":
+        return { creditsSpent: 2, fillSessionId: "fill-1" };
     }
     throw new Error(`unexpected ${name}`);
   });
@@ -96,6 +100,10 @@ function setup(
       mime: "application/pdf",
     })),
     fetchFn: fetchFn as unknown as typeof fetch,
+    relay: {
+      accessToken: async () => "oauth-access",
+      origin: "https://api.example",
+    },
     pages: { activeTab: async () => tab, readText: async () => "" },
     tab: {
       open: vi.fn(async () => undefined),
@@ -134,13 +142,15 @@ describe("Filling.options", () => {
       apps: [ready({ id: "other", offerUrl: null }), ready()],
     });
     expect(await f.filling.options()).toEqual({
-      aiKeyConfigured: true,
       applications: [
         { company: "Acme", id: "other", title: "Dev" },
         { company: "Acme", id: "a1", title: "Dev" },
       ],
+      balance: 20,
+      fillCost: 0,
       host: "jobs.lever.co",
       kind: "page",
+      personalKey: true,
       // …/acme/1/apply is the form of …/acme/1.
       suggestedId: "a1",
       url: URL_,
@@ -185,6 +195,7 @@ describe("Filling.fill", () => {
     });
     expect(outcome).toEqual({
       answersSaved: 1,
+      creditsSpent: 0,
       formUrl: null,
       questionsAsked: 1,
       success: true,
@@ -277,10 +288,7 @@ describe("Filling.fill", () => {
     ).resolves.toMatchObject({ answersSaved: 0, questionsAsked: 1 });
   });
 
-  it("needs the AI key, the same tab and a ready application", async () => {
-    await expect(
-      setup({ key: null }).filling.fill({ applicationId: "a1", url: URL_ }),
-    ).rejects.toThrow("clé IA");
+  it("needs the same tab and a ready application", async () => {
     await expect(
       f.filling.fill({ applicationId: "a1", url: "https://other.example" }),
     ).rejects.toThrow("onglet a changé");
@@ -343,6 +351,80 @@ describe("Filling: from the offer page", () => {
       ).toBeNull();
       expect(tab.open).not.toHaveBeenCalled();
     }
+  });
+});
+
+describe("Filling with JobSpark's model (no personal key)", () => {
+  it("announces the cost, then opens a paid session only once all is ready", async () => {
+    const f = setup({ key: null });
+    expect(await f.filling.options()).toMatchObject({
+      balance: 20,
+      fillCost: 2,
+      personalKey: false,
+    });
+
+    let relayed: unknown;
+    let refused: unknown;
+    let sent: FillerRun | null = null;
+    (f.filling as unknown as { deps: { tab: FillTab } }).deps.tab = {
+      ...FORM_PAGE,
+      run: async (_tabId, request) => {
+        sent = request;
+        relayed = await f.filling.handle(9, {
+          body: "{}",
+          type: "filler/llm-fetch",
+          url: "https://api.example/agent/llm/chat/completions",
+        });
+        refused = await f.filling.handle(9, {
+          type: "filler/llm-fetch",
+          url: "https://openrouter.ai/api/v1/chat/completions",
+        });
+        return { steps: 1, success: true, summary: "" };
+      },
+    };
+    const outcome = await f.filling.fill({ applicationId: "a1", url: URL_ });
+
+    const names = f.call.mock.calls.map(([name]) => name);
+    expect(names.indexOf("start_form_fill")).toBeGreaterThan(
+      names.lastIndexOf("get_document_download_url"),
+    );
+    expect(sent!.llm).toEqual({
+      baseURL: "https://api.example/agent/llm",
+      model: "jobspark",
+    });
+    expect(relayed).toEqual({ body: '{"ok":1}', status: 200 });
+    expect(f.fetchFn).toHaveBeenCalledWith(
+      "https://api.example/agent/llm/chat/completions",
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          authorization: "Bearer oauth-access",
+          "x-jobspark-fill-session": "fill-1",
+        }),
+      }),
+    );
+    expect(refused).toEqual({ error: "Adresse du modèle non autorisée." });
+    expect(outcome.creditsSpent).toBe(2);
+  });
+
+  it("refreshes an expired access token once, mid-fill", async () => {
+    const f = setup({ key: null });
+    f.fetchFn
+      .mockResolvedValueOnce(new Response("", { status: 401 }))
+      .mockResolvedValueOnce(new Response('{"ok":2}', { status: 200 }));
+    let relayed: unknown;
+    (f.filling as unknown as { deps: { tab: FillTab } }).deps.tab = {
+      ...FORM_PAGE,
+      run: async () => {
+        relayed = await f.filling.handle(9, {
+          type: "filler/llm-fetch",
+          url: "https://api.example/agent/llm/chat/completions",
+        });
+        return { steps: 1, success: true, summary: "" };
+      },
+    };
+    await f.filling.fill({ applicationId: "a1", url: URL_ });
+    expect(relayed).toEqual({ body: '{"ok":2}', status: 200 });
+    expect(f.call).toHaveBeenCalledWith("get_credit_balance");
   });
 });
 
