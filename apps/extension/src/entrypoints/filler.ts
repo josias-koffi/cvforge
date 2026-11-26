@@ -6,8 +6,14 @@ import {
   isSubmitControl,
   leavesSite,
 } from "../domain/fill";
-import type { FillerReply, FillerRequest, FillerRun } from "../filler-messages";
+import type {
+  FillerReply,
+  FillerRequest,
+  FillerRun,
+  FormRequest,
+} from "../filler-messages";
 import { attachFile, type DocumentKind } from "../page/attach";
+import { clickSubmit, readForm } from "../page/form-state";
 
 /**
  * Injected in the recruiter's tab when the candidate clicks « Remplir »
@@ -129,8 +135,19 @@ export default defineUnlistedScript(() => {
   }
 
   browser.runtime.onMessage.addListener((message, _sender, reply) => {
+    if (window !== window.top) return;
+    const form = message as FormRequest;
+    // Only the service worker can message this script, never the page.
+    if (form?.type === "filler/read-form") {
+      reply(readForm());
+      return;
+    }
+    if (form?.type === "filler/submit") {
+      reply(clickSubmit());
+      return;
+    }
     const request = message as FillerRun;
-    if (request?.type !== "filler/run" || window !== window.top) return;
+    if (request?.type !== "filler/run") return;
     run(request).then(reply, (error: unknown) =>
       reply({
         steps: 0,

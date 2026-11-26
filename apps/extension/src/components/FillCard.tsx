@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import type { FillOptions, FillOutcome } from "../application/filling";
 import { askBackground } from "../messages";
+import { ReviewCard } from "./ReviewCard";
 import { Button, Card } from "./ui";
 
 const label = (application: { title: string | null; company: string | null }) =>
@@ -109,8 +110,8 @@ export function FillCard() {
         <div role="status" className="flex flex-col gap-1 text-sm">
           <p className={outcome.success ? "text-success" : "text-warning"}>
             {outcome.success
-              ? "Formulaire rempli. Relisez-le, puis envoyez-le vous-même."
-              : "Formulaire rempli en partie : relisez-le avant de l'envoyer vous-même."}
+              ? "Formulaire rempli. Vérifiez le récapitulatif ci-dessous avant l'envoi."
+              : "Formulaire rempli en partie : complétez-le sur la page, puis vérifiez le récapitulatif."}
           </p>
           <p className="whitespace-pre-line text-muted-foreground">
             {outcome.summary}
@@ -121,6 +122,7 @@ export function FillCard() {
               {outcome.answersSaved} réponse(s) gardée(s).
             </p>
           )}
+          <ReviewCard />
         </div>
       )}
       {error && (

@@ -72,16 +72,16 @@ Décision d'architecture : **ADR-034** (`decisions/ADR-034-chrome-extension-appl
     - [x] Elle annonce le coût en crédits, et seulement après l'accord du candidat, appelle `generate_cv` et
           `generate_cover_letter`.
     - [x] Une offre déjà envoyée est signalée et non repréparée.
-- [ ] **[US-197]** Remplir le formulaire, joindre les documents, répondre aux questions
+- [x] **[US-197]** Remplir le formulaire, joindre les documents, répondre aux questions
   - Agent: `developer`
   - Critères d'acceptation :
-    - [ ] page-agent remplit les champs du formulaire à partir du profil (`get_profile`).
-    - [ ] `attach_document` joint le CV et la lettre (champ fichier et zone de dépôt).
-    - [ ] Réponses types enregistrées dans le compte (API + écran dans le profil) : disponibilité, prétentions
+    - [x] page-agent remplit les champs du formulaire à partir du profil (`get_profile`).
+    - [x] `attach_document` joint le CV et la lettre (champ fichier et zone de dépôt).
+    - [x] Réponses types enregistrées dans le compte (API + écran dans le profil) : disponibilité, prétentions
           salariales, autorisation de travail, permis, mobilité, préavis.
-    - [ ] Une question sans réponse enregistrée met le remplissage en pause et la pose au candidat, qui peut
+    - [x] Une question sans réponse enregistrée met le remplissage en pause et la pose au candidat, qui peut
           enregistrer sa réponse pour la suite. Aucune réponse n'est inventée (test).
-    - [ ] Le texte de la page arrive au modèle balisé comme contenu non fiable. L'agent ne quitte pas l'hôte de
+    - [x] Le texte de la page arrive au modèle balisé comme contenu non fiable. L'agent ne quitte pas l'hôte de
           candidature pendant le remplissage.
 - [ ] **[US-198]** Envoi validé (palier 1) et preuve dans JobSpark
   - Agent: `developer`
@@ -123,6 +123,22 @@ Décision d'architecture : **ADR-034** (`decisions/ADR-034-chrome-extension-appl
 - La vidéo LinkedIn « l'agent postule pour toi » se tourne une fois la DoD atteinte.
 
 ## 🔁 Workflow Runs
+
+- 2026-11-26 — US-198 :
+  - API : table `application_submissions` (migration 0066, capture en `bytea`, liée à la candidature et au compte),
+    outil MCP `record_submission`, `GET /applications/:id/submissions` et la capture par session ; carte « Preuve
+    d'envoi » sur la fiche candidature ; export RGPD. Confirmée → statut « envoyée » ; sinon brouillon « à vérifier ».
+  - Extension : récapitulatif après remplissage (offre, documents, chaque champ lu sur la page, obligatoires vides),
+    refus d'envoi (LinkedIn/Indeed, autre site que l'offre, déjà envoyée, obligatoire vide, formulaire à étapes,
+    bouton ambigu) revérifié juste avant le clic ; clic par le code de l'extension, jamais par le modèle ;
+    confirmation reconnue seulement si la phrase n'était pas déjà sur la page ; capture JPEG ≤ 600 Ko. Permission
+    optionnelle élargie à `<all_urls>` (exigée par `captureVisibleTab`).
+  - Essai réel du `filler.js` de production sur le formulaire de test : lecture des champs, clic sur « Envoyer ma
+    candidature », page « Merci pour votre candidature » vue, capture 15 Ko. Pas d'envoi réel chez un recruteur.
+  - 148 tests extension (97,7 % des lignes), API applications/agents/privacy et web verts. Reste : déploiement
+    préprod et essai réel par le propriétaire, puis la DoD du sprint (vraie offre de bout en bout).
+
+- 2026-11-26 — essai réel US-197 par le propriétaire en préprod (réponses types, remplissage, question gardée) : OK.
 
 - 2026-11-26 — US-197 :
   - API : table `screening_answers` (migration 0065), `GET/PUT /screening-answers`, outils MCP

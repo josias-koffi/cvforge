@@ -74,12 +74,14 @@ describe("FillCard", () => {
     });
     await click("Remplir ce formulaire");
 
-    expect(ask).toHaveBeenLastCalledWith({
+    expect(ask).toHaveBeenCalledWith({
       applicationId: "a2",
       type: "fill",
       url: OPTIONS.url,
     });
-    expect(container.textContent).toContain("envoyez-le vous-même");
+    expect(container.textContent).toContain("Vérifiez le récapitulatif");
+    // The review of the filled form loads right after (US-198).
+    expect(ask).toHaveBeenLastCalledWith({ type: "review" });
     expect(container.textContent).toContain(
       "2 question(s) posée(s), 1 réponse(s)",
     );

@@ -69,12 +69,16 @@ Sous le capot :
 | `search_offers`, `get_daily_offers`, `list_recent_offers` | `jobs:read` | 0 |
 | `list_job_alerts`, `mark_alert_read` | `notifications:read` | 0 |
 | `list_applications`, `get_application`, `get_cv`, `get_cover_letter`, `get_document_download_url` | `applications:read` | 0 |
-| `update_application_status` | `applications:write` | 0 |
+| `update_application_status`, `record_submission` | `applications:write` | 0 |
 | `apply_to_offer`, `import_offer` | `applications:write` + `documents:generate` | 1 (0 si déjà candidaté) |
 
 `import_offer` prend l'adresse, le texte, ou les deux : avec les deux (l'extension
 Chrome, qui lit la page dans le navigateur du candidat), le texte est analysé et
 l'adresse gardée.
+
+`record_submission` garde la preuve d'une candidature envoyée (adresse du formulaire, page
+de confirmation et sa capture, documents, champs remplis). Avec une confirmation, la
+candidature passe à « envoyée » ; sans, elle reste un brouillon « à vérifier ».
 
 `get_screening_answers` renvoie les réponses que le candidat a enregistrées dans
 `/profile/reponses` (prétentions, préavis, visa, mobilité, mode de travail,

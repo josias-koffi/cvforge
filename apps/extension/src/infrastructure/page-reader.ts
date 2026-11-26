@@ -2,11 +2,12 @@ import type { ActiveTab, PageReader } from "../application/preparation";
 import { isWebPage } from "../domain/offer";
 
 /**
- * Every web page, asked for only when the candidate first clicks "Autoriser"
- * (optional host permission, ADR-034 §3): the extension reads the offer and,
- * later, fills the recruiter's form, on whatever site the offer lives.
+ * Every page, asked for only when the candidate first clicks "Autoriser"
+ * (optional host permission, ADR-034 §3): the extension reads the offer,
+ * fills the recruiter's form and captures its confirmation page
+ * (`captureVisibleTab` needs `<all_urls>`), on whatever site the offer lives.
  */
-export const WEB_PAGE_ORIGINS = ["https://*/*", "http://*/*"];
+export const WEB_PAGE_ORIGINS = ["<all_urls>"];
 
 export function chromePageReader(): PageReader {
   return {
