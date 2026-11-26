@@ -8,6 +8,8 @@ import {
   AGENT_SCOPE_PRESETS,
   AGENT_TOKEN_DEFAULT_DAILY_CREDIT_CAP,
   AGENT_TOKEN_MAX_DAILY_CREDIT_CAP,
+  type AgentScopePreset,
+  closestAgentScopePreset,
   type OAuthConsentRequest,
 } from "@cvforge/types"
 
@@ -34,24 +36,12 @@ import {
 } from "@/components/ui/select"
 import { Spinner } from "@/components/ui/spinner"
 
-type Preset = keyof typeof AGENT_SCOPE_PRESETS
+type Preset = AgentScopePreset
 
 const PRESET_LABELS: Record<Preset, string> = {
   assistant: "Assistant complet",
   extension: "Sans modification du profil",
   readOnly: "Lecture seule",
-}
-
-/** What the agent asked for, read as the closest preset; full access by default. */
-function initialPreset(
-  requested: OAuthConsentRequest["requestedScopes"]
-): Preset {
-  const readOnly: readonly string[] = AGENT_SCOPE_PRESETS.readOnly
-
-  return requested.length > 0 &&
-    requested.every((scope) => readOnly.includes(scope))
-    ? "readOnly"
-    : "assistant"
 }
 
 export function OAuthConsentForm({
@@ -65,10 +55,14 @@ export function OAuthConsentForm({
 }) {
   const [pending, startTransition] = useTransition()
   const [preset, setPreset] = useState<Preset>(
-    initialPreset(consent.requestedScopes)
+    closestAgentScopePreset(consent.requestedScopes)
   )
   const [cap, setCap] = useState(String(AGENT_TOKEN_DEFAULT_DAILY_CREDIT_CAP))
-  const scopes = AGENT_SCOPE_PRESETS[preset]
+  // The server never grants beyond the request: show only what will be granted.
+  const requested: readonly string[] = consent.requestedScopes
+  const scopes = AGENT_SCOPE_PRESETS[preset].filter(
+    (scope) => requested.length === 0 || requested.includes(scope)
+  )
 
   const answer = (approve: boolean) =>
     startTransition(async () => {

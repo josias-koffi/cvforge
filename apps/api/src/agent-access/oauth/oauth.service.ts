@@ -393,10 +393,15 @@ export class OAuthService {
   }
 
   /** What the user ticked; else what the agent asked; never nothing. */
+  /** What the user ticked, never more than the client asked for. */
   private readGrantedScopes(chosen: unknown, requested: AgentScope[]) {
-    const scopes = Array.isArray(chosen)
+    const ticked = Array.isArray(chosen)
       ? [...new Set(chosen.filter(isAgentScope))]
       : [];
+    const scopes =
+      requested.length > 0
+        ? ticked.filter((scope) => requested.includes(scope))
+        : ticked;
 
     if (scopes.length > 0) return scopes;
     if (requested.length > 0) return requested;
