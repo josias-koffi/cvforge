@@ -1,0 +1,294 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { ApplicationSummary } from "../domain/offer";
+import type { FillerRun } from "../filler-messages";
+import { Filling, type FillTab } from "./filling";
+import type { ActiveTab } from "./preparation";
+import type { AiKeySettings } from "./session";
+
+const URL_ = "https://jobs.lever.co/acme/1/apply";
+const TAB: ActiveTab = { tabId: 9, title: "Apply", url: URL_ };
+const KEY: AiKeySettings = {
+  apiKey: "sk-or-secret",
+  baseURL: "https://openrouter.ai/api/v1",
+  model: "m",
+};
+
+const ready = (over: Partial<ApplicationSummary> = {}): ApplicationSummary => ({
+  company: "Acme",
+  cvGeneratedAt: "x",
+  id: "a1",
+  letterGeneratedAt: "y",
+  offerUrl: "https://jobs.lever.co/acme/1",
+  status: "draft",
+  title: "Dev",
+  ...over,
+});
+
+function setup(
+  options: { key?: AiKeySettings | null; apps?: ApplicationSummary[] } = {},
+) {
+  let tab: ActiveTab | null | "no-access" = TAB;
+  let runRequest: FillerRun | null = null;
+  const apps = options.apps ?? [
+    ready(),
+    ready({ cvGeneratedAt: null, id: "a2" }),
+  ];
+  const call = vi.fn(async (name: string, args?: Record<string, unknown>) => {
+    switch (name) {
+      case "list_applications":
+        return apps;
+      case "get_profile":
+        return {
+          activeProfileId: "p1",
+          profiles: [
+            {
+              id: "p1",
+              identity: {
+                city: "Nantes",
+                email: "c@example.com",
+                firstName: "Camille",
+                lastName: "Test",
+                links: [],
+                phone: "0600000000",
+              },
+            },
+          ],
+        };
+      case "get_screening_answers":
+        return { custom: [], fromProfile: null, known: [] };
+      case "get_document_download_url":
+        return { url: `https://api.example/mcp/files/${String(args?.kind)}` };
+      case "save_screening_answer":
+        return { saved: true };
+    }
+    throw new Error(`unexpected ${name}`);
+  });
+  const candidate = {
+    ask: vi.fn(
+      async (
+        _question: string,
+      ): Promise<{ answer: string | null; save: boolean }> => ({
+        answer: "45 k€",
+        save: true,
+      }),
+    ),
+  };
+  const fetchFn = vi.fn(async () => new Response('{"ok":1}', { status: 200 }));
+  const filling = new Filling({
+    aiKeys: {
+      clear: async () => undefined,
+      get: async () => (options.key === undefined ? KEY : options.key),
+      save: async () => undefined,
+    },
+    candidate,
+    download: vi.fn(async (url: string) => ({
+      base64: btoa(url),
+      mime: "application/pdf",
+    })),
+    fetchFn: fetchFn as unknown as typeof fetch,
+    pages: { activeTab: async () => tab, readText: async () => "" },
+    tab: {
+      run: vi.fn(async (_tabId, request) => {
+        runRequest = request;
+        // While running, the page asks for the CV, a model call and a question.
+        await filling.handle(9, { kind: "cv", type: "filler/document" });
+        await filling.handle(9, { question: "Salaire ?", type: "filler/ask" });
+        return {
+          steps: 6,
+          success: true,
+          summary: "Rempli, champ « vélo » vide.",
+        };
+      }),
+    } satisfies FillTab,
+    tools: { call },
+  });
+  return {
+    call,
+    candidate,
+    fetchFn,
+    filling,
+    lastRun: () => runRequest,
+    setTab: (next: typeof tab) => {
+      tab = next;
+    },
+  };
+}
+
+describe("Filling.options", () => {
+  it("offers the applications that have their CV and letter, this page's first", async () => {
+    const f = setup({
+      apps: [ready({ id: "other", offerUrl: null }), ready()],
+    });
+    expect(await f.filling.options()).toEqual({
+      aiKeyConfigured: true,
+      applications: [
+        { company: "Acme", id: "other", title: "Dev" },
+        { company: "Acme", id: "a1", title: "Dev" },
+      ],
+      host: "jobs.lever.co",
+      kind: "page",
+      suggestedId: "other",
+      url: URL_,
+    });
+  });
+
+  it("matches the application of this page when there is one", async () => {
+    const f = setup({
+      apps: [ready({ id: "other", offerUrl: null }), ready()],
+    });
+    f.setTab({ ...TAB, url: "https://jobs.lever.co/acme/1" });
+    expect(await f.filling.options()).toMatchObject({ suggestedId: "a1" });
+  });
+
+  it("reports missing access or page", async () => {
+    const f = setup();
+    f.setTab("no-access");
+    expect(await f.filling.options()).toEqual({ kind: "no-access" });
+    f.setTab(null);
+    expect(await f.filling.options()).toEqual({ kind: "no-page" });
+  });
+});
+
+describe("Filling.fill", () => {
+  let f: ReturnType<typeof setup>;
+  beforeEach(() => {
+    f = setup();
+  });
+
+  it("runs page-agent with the candidate's data, documents ready, and no key", async () => {
+    const outcome = await f.filling.fill({ applicationId: "a1", url: URL_ });
+
+    const run = f.lastRun()!;
+    expect(run.llm).toEqual({ baseURL: KEY.baseURL, model: "m" });
+    expect(JSON.stringify(run)).not.toContain("sk-or-secret");
+    expect(run.task).toContain("- Prénom (First name) : Camille");
+    expect(run.task).toContain("offre : Dev chez Acme");
+    expect(f.call).toHaveBeenCalledWith("get_document_download_url", {
+      applicationId: "a1",
+      format: "pdf",
+      kind: "letter",
+    });
+    expect(outcome).toEqual({
+      answersSaved: 1,
+      questionsAsked: 1,
+      success: true,
+      summary: "Rempli, champ « vélo » vide.",
+    });
+  });
+
+  it("saves an answer the candidate chose to keep", async () => {
+    await f.filling.fill({ applicationId: "a1", url: URL_ });
+    expect(f.candidate.ask).toHaveBeenCalledWith("Salaire ?");
+    expect(f.call).toHaveBeenCalledWith("save_screening_answer", {
+      answer: "45 k€",
+      question: "Salaire ?",
+    });
+  });
+
+  it("never asks the candidate the same question twice", async () => {
+    const answersSeen: unknown[] = [];
+    (f.filling as unknown as { deps: { tab: FillTab } }).deps.tab = {
+      run: async () => {
+        for (const question of [
+          "Current Company",
+          "current company ?",
+          "Ville",
+        ]) {
+          answersSeen.push(
+            await f.filling.handle(9, { question, type: "filler/ask" }),
+          );
+        }
+        return { steps: 3, success: true, summary: "" };
+      },
+    };
+    f.candidate.ask.mockResolvedValueOnce({ answer: null, save: false });
+    const outcome = await f.filling.fill({ applicationId: "a1", url: URL_ });
+
+    expect(f.candidate.ask).toHaveBeenCalledTimes(2);
+    expect(answersSeen[1]).toEqual({
+      answer: expect.stringContaining("Déjà demandé"),
+    });
+    expect(outcome.questionsAsked).toBe(2);
+  });
+
+  it("still answers the form when saving fails (older connection)", async () => {
+    f.call.mockImplementation(async (name: string) => {
+      if (name === "save_screening_answer")
+        throw new Error("insufficient_scope");
+      return setup().call.getMockImplementation()!(name);
+    });
+    await expect(
+      f.filling.fill({ applicationId: "a1", url: URL_ }),
+    ).resolves.toMatchObject({ answersSaved: 0, questionsAsked: 1 });
+  });
+
+  it("needs the AI key, the same tab and a ready application", async () => {
+    await expect(
+      setup({ key: null }).filling.fill({ applicationId: "a1", url: URL_ }),
+    ).rejects.toThrow("clé IA");
+    await expect(
+      f.filling.fill({ applicationId: "a1", url: "https://other.example" }),
+    ).rejects.toThrow("onglet a changé");
+    await expect(
+      f.filling.fill({ applicationId: "a2", url: URL_ }),
+    ).rejects.toThrow("CV et sa lettre");
+  });
+
+  it("refuses page requests outside a fill, or from another tab", async () => {
+    expect(
+      await f.filling.handle(9, { kind: "cv", type: "filler/document" }),
+    ).toEqual({
+      error: "Aucun remplissage en cours pour cet onglet.",
+    });
+    const g = setup();
+    let fromOtherTab: unknown;
+    const tabRun = vi.fn(async () => {
+      fromOtherTab = await g.filling.handle(3, {
+        kind: "cv",
+        type: "filler/document",
+      });
+      return { steps: 0, success: true, summary: "" };
+    });
+    (g.filling as unknown as { deps: { tab: FillTab } }).deps.tab = {
+      run: tabRun,
+    };
+    await g.filling.fill({ applicationId: "a1", url: URL_ });
+    expect(fromOtherTab).toEqual({
+      error: "Aucun remplissage en cours pour cet onglet.",
+    });
+  });
+});
+
+describe("Filling: model calls relayed for the page", () => {
+  it("adds the key only for the configured provider", async () => {
+    const f = setup();
+    let relayed: unknown;
+    let refused: unknown;
+    (f.filling as unknown as { deps: { tab: FillTab } }).deps.tab = {
+      run: async () => {
+        relayed = await f.filling.handle(9, {
+          body: "{}",
+          type: "filler/llm-fetch",
+          url: `${KEY.baseURL}/chat/completions`,
+        });
+        refused = await f.filling.handle(9, {
+          type: "filler/llm-fetch",
+          url: "https://evil.example/v1/chat/completions",
+        });
+        return { steps: 1, success: true, summary: "" };
+      },
+    };
+    await f.filling.fill({ applicationId: "a1", url: URL_ });
+
+    expect(relayed).toEqual({ body: '{"ok":1}', status: 200 });
+    expect(f.fetchFn).toHaveBeenCalledWith(
+      `${KEY.baseURL}/chat/completions`,
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          authorization: "Bearer sk-or-secret",
+        }),
+      }),
+    );
+    expect(refused).toEqual({ error: "Adresse du modèle non autorisée." });
+  });
+});

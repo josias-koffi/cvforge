@@ -63,13 +63,24 @@ Sous le capot :
 | Outil | Permission | Crédits |
 |---|---|---|
 | `get_account_overview`, `get_credit_balance`, `list_credit_history` | `credits:read` | 0 |
-| `get_profile` | `profile:read` | 0 |
+| `get_profile`, `get_screening_answers` | `profile:read` | 0 |
+| `save_screening_answer` | `answers:write` | 0 |
 | `update_experience`, `add_experience`, `remove_experience`, `update_profile_sections` | `profile:write` | 0 |
 | `search_offers`, `get_daily_offers`, `list_recent_offers` | `jobs:read` | 0 |
 | `list_job_alerts`, `mark_alert_read` | `notifications:read` | 0 |
 | `list_applications`, `get_application`, `get_cv`, `get_cover_letter`, `get_document_download_url` | `applications:read` | 0 |
 | `update_application_status` | `applications:write` | 0 |
 | `apply_to_offer`, `import_offer` | `applications:write` + `documents:generate` | 1 (0 si déjà candidaté) |
+
+`import_offer` prend l'adresse, le texte, ou les deux : avec les deux (l'extension
+Chrome, qui lit la page dans le navigateur du candidat), le texte est analysé et
+l'adresse gardée.
+
+`get_screening_answers` renvoie les réponses que le candidat a enregistrées dans
+`/profile/reponses` (prétentions, préavis, visa, mobilité, mode de travail,
+« comment avez-vous connu l'offre », questions déjà rencontrées), ce qui manque, et
+ce que son profil répond déjà. `save_screening_answer` n'enregistre qu'une réponse
+donnée par le candidat.
 | `generate_cv`, `generate_cover_letter` | `documents:generate` | 3 |
 
 Un agent ne voit que les outils que son jeton permet. Aucun outil ne

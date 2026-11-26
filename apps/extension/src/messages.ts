@@ -2,6 +2,7 @@ import type {
   OfferInspection,
   PreparationResult,
 } from "./application/preparation";
+import type { FillOptions, FillOutcome } from "./application/filling";
 import type { AiKeySettings } from "./application/session";
 import type { PanelState } from "./domain/connection";
 
@@ -22,6 +23,20 @@ export type PanelRequests = {
   "prepare-offer": {
     request: { type: "prepare-offer"; url: string; cost: number };
     response: PreparationResult;
+  };
+  "fill-options": { request: { type: "fill-options" }; response: FillOptions };
+  fill: {
+    request: { type: "fill"; applicationId: string; url: string };
+    response: FillOutcome;
+  };
+  "answer-question": {
+    request: {
+      type: "answer-question";
+      id: string;
+      answer: string;
+      save: boolean;
+    };
+    response: null;
   };
 };
 

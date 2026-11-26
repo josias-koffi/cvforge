@@ -1,13 +1,15 @@
 import { useCallback, useEffect, useState } from "react";
 import { AiKeyForm } from "../../components/AiKeyForm";
 import { ConnectionCard } from "../../components/ConnectionCard";
+import { FillCard } from "../../components/FillCard";
 import { OfferCard } from "../../components/OfferCard";
+import { QuestionPrompt } from "../../components/QuestionPrompt";
 import type { PanelState } from "../../domain/connection";
 import { askBackground, type PanelRequest } from "../../messages";
 
-type StateRequest = Exclude<
+type StateRequest = Extract<
   PanelRequest,
-  { type: "inspect-offer" } | { type: "prepare-offer" }
+  { type: "state" | "connect" | "disconnect" | "save-ai-key" | "clear-ai-key" }
 >;
 
 /** Side panel: connection, the offer of the active tab, the candidate's AI key. */
@@ -60,7 +62,11 @@ export function App() {
             onDisconnect={() => run({ type: "disconnect" })}
           />
           {state.status === "connected" && (
-            <OfferCard onSpent={() => run({ type: "state" })} />
+            <>
+              <QuestionPrompt />
+              <OfferCard onSpent={() => run({ type: "state" })} />
+              <FillCard />
+            </>
           )}
           <AiKeyForm
             busy={busy}

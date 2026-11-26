@@ -79,7 +79,10 @@ What that study decided, and what changes here:
      (no `profile:write`).
    - `chrome-extension://<id>` is added to `MCP_ALLOWED_ORIGINS`.
    - The preset includes `credits:read`, so the extension can announce a cost
-     against the balance before spending.
+     against the balance before spending, and `answers:write` (US-197), so an
+     answer the candidate gives in the side panel can be kept for later forms.
+     Only the candidate's own replies are saved; the in-page model has no tool
+     that writes them.
    - The consent page starts on the narrowest preset that covers the request,
      and the server never grants more than the client asked for.
    - No pasted `jsk_` token in the normal path.
