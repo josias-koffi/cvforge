@@ -1,4 +1,8 @@
 import {
+  SUBMISSIONS_STORE,
+  type SubmissionsStore,
+} from "../applications/submissions.service";
+import {
   SCREENING_ANSWERS_STORE,
   type ScreeningAnswersStore,
 } from "../profiles/screening-answers.service";
@@ -83,6 +87,7 @@ import { PrivacyService } from "./privacy.service";
         SEARCH_PROJECT_ROME_STORE,
         PROFILE_COMPETENCES_STORE,
         SCREENING_ANSWERS_STORE,
+        SUBMISSIONS_STORE,
       ],
       useFactory: (
         authStore: AuthAccountStore,
@@ -98,6 +103,7 @@ import { PrivacyService } from "./privacy.service";
         searchJobsStore: SearchProjectRomeStore,
         profileCompetencesStore: ProfileCompetencesStore,
         screeningAnswersStore: ScreeningAnswersStore,
+        submissionsStore: SubmissionsStore,
       ) =>
         new PrivacyService(
           authStore,
@@ -113,6 +119,7 @@ import { PrivacyService } from "./privacy.service";
           searchJobsStore,
           profileCompetencesStore,
           screeningAnswersStore,
+          submissionsStore,
         ),
     },
   ],

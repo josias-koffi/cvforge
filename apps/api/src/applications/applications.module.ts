@@ -8,14 +8,24 @@ import { ApplicationsController } from "./applications.controller";
 import { ApplicationsService } from "./applications.service";
 import { CompanyContextService } from "./company-context.service";
 import { LeadOfferListener } from "./lead-offer.listener";
+import { SubmissionsController } from "./submissions.controller";
+import {
+  PgSubmissionsStore,
+  SUBMISSIONS_STORE,
+  SubmissionsService,
+  type SubmissionsStore,
+} from "./submissions.service";
 import { PgApplicationsStore } from "./applications.pg-store";
-import { APPLICATIONS_STORE, type ApplicationsStore } from "./applications.types";
+import {
+  APPLICATIONS_STORE,
+  type ApplicationsStore,
+} from "./applications.types";
 import { ProfilesModule } from "../profiles/profiles.module";
 import { PROFILES_STORE, type ProfilesStore } from "../profiles/profiles.types";
 
 @Module({
   imports: [AuthModule, CreditsModule, OpenRouterModule, ProfilesModule],
-  controllers: [ApplicationsController],
+  controllers: [ApplicationsController, SubmissionsController],
   providers: [
     {
       provide: APPLICATIONS_STORE,
@@ -50,12 +60,33 @@ import { PROFILES_STORE, type ProfilesStore } from "../profiles/profiles.types";
       provide: CompanyContextService,
       inject: [OPENROUTER_SERVICE, APPLICATIONS_STORE],
       useFactory: (
-        openRouterService: ConstructorParameters<typeof CompanyContextService>[0],
+        openRouterService: ConstructorParameters<
+          typeof CompanyContextService
+        >[0],
         store: ApplicationsStore,
       ) => new CompanyContextService(openRouterService, store),
     },
     LeadOfferListener,
+    {
+      provide: SUBMISSIONS_STORE,
+      inject: [DATABASE],
+      useFactory: (db: Database) => new PgSubmissionsStore(db),
+    },
+    {
+      provide: SubmissionsService,
+      inject: [SUBMISSIONS_STORE, ApplicationsService],
+      useFactory: (
+        store: SubmissionsStore,
+        applications: ApplicationsService,
+      ) => new SubmissionsService(store, applications),
+    },
   ],
-  exports: [APPLICATIONS_STORE, ApplicationsService, CompanyContextService],
+  exports: [
+    APPLICATIONS_STORE,
+    ApplicationsService,
+    CompanyContextService,
+    SUBMISSIONS_STORE,
+    SubmissionsService,
+  ],
 })
 export class ApplicationsModule {}

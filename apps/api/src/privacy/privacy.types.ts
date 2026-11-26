@@ -1,4 +1,4 @@
-import type { ScreeningAnswers } from "@cvforge/types";
+import type { ApplicationSubmission, ScreeningAnswers } from "@cvforge/types";
 import type { AuthExportSnapshot } from "../auth/auth.types";
 import type { StoredApplication } from "../applications/applications.types";
 import type { ExportedProfileCompetence } from "../profiles/profile-competences.pg-store";
@@ -44,6 +44,8 @@ export type PrivacyExportPayload = {
   adminGrantReferences: CreditLedgerEntry[];
   /** Saved answers to recruiters' screening questions (US-197). */
   screeningAnswers: ScreeningAnswers | null;
+  /** Proof of the applications the extension sent, screenshots included (US-198). */
+  submissions: (ApplicationSubmission & { screenshotBase64: string | null })[];
   retentionPolicy: PrivacyRetentionPolicy;
 };
 

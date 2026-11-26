@@ -8,6 +8,7 @@ import { ApplicationsController } from "./applications.controller";
 import { ApplicationsModule } from "./applications.module";
 import { ApplicationsService } from "./applications.service";
 import { APPLICATIONS_STORE } from "./applications.types";
+import { SubmissionsController } from "./submissions.controller";
 
 describe("ApplicationsModule", () => {
   it("registers the auth, credits, openrouter and profiles dependencies", () => {
@@ -28,7 +29,7 @@ describe("ApplicationsModule", () => {
       ApplicationsModule,
     ) as Array<{ provide?: unknown }> | undefined;
 
-    expect(controllers).toEqual([ApplicationsController]);
+    expect(controllers).toEqual([ApplicationsController, SubmissionsController]);
     expect(providers?.[0]?.provide).toBe(APPLICATIONS_STORE);
     expect(providers?.[1]?.provide).toBe(ApplicationsService);
   });
