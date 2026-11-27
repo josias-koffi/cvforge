@@ -26,7 +26,13 @@ export default defineConfig({
     description:
       "JobSpark prépare et remplit vos candidatures sur les sites des recruteurs.",
     key: MANIFEST_KEY,
-    permissions: ["storage", "identity", "sidePanel", "scripting"],
+    permissions: [
+      "storage",
+      "identity",
+      "sidePanel",
+      "scripting",
+      "notifications",
+    ],
     host_permissions: API_HOSTS,
     // Asked at first use, from the side panel (src/infrastructure/page-reader.ts).
     optional_host_permissions: ["<all_urls>"],

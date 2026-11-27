@@ -176,6 +176,21 @@ Décision d'architecture : **ADR-034** (`decisions/ADR-034-chrome-extension-appl
     - [x] Tests unitaires (fusion, choix par score, repli) et de l'écran.
     - [ ] Essai réel en préprod avec la sélection du jour (avec celui d'US-204).
 
+- [ ] **[US-209]** Rapport de fin de file et notification Chrome (demande du propriétaire du 2026-11-27)
+  - Agent: `developer`
+  - Pourquoi : la file tourne panneau fermé ; le candidat doit savoir quand elle a fini et ce qui l'attend.
+  - Critères d'acceptation :
+    - [x] À la fin d'une file (terminée ou arrêtée), une notification Chrome résume : prêtes, à compléter, captchas,
+          envoyées, écartées, échecs, crédits dépensés. Un clic ouvre le panneau ; si Chrome le refuse, l'onglet du
+          premier formulaire en attente passe au premier plan.
+    - [x] Le même résumé reste en tête de la file tant qu'elle n'est pas effacée.
+    - [x] Les captchas visibles (reCAPTCHA v2, hCaptcha, Turnstile ; pas le badge de reCAPTCHA v3) sont repérés à la
+          relecture : l'offre passe « à compléter », raison « Captcha à résoudre dans l'onglet ». Jamais résolus par
+          l'extension.
+    - [x] Permission `notifications` et icônes de l'extension (logo de l'appli) ajoutées au manifeste.
+    - [x] Tests unitaires (résumé, captcha, notification) et de l'écran.
+    - [ ] Essai réel : notification reçue panneau fermé, et clic qui ouvre le panneau (avec celui d'US-204).
+
 ## 📊 Sprint DoD
 
 - [ ] Parcours réel de bout en bout sur une vraie offre, avec un seul geste du candidat, « Valider et envoyer » :

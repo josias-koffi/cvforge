@@ -12,7 +12,22 @@ export type FormSnapshot = {
   submitLabel: string | null;
   /** The visible button only moves to another step of the form. */
   multiStep: boolean;
+  /** A captcha the candidate must solve (never solved by the extension). */
+  captcha: boolean;
 };
+
+/** Visible challenge widgets; reCAPTCHA v3's corner badge asks nothing. */
+const CAPTCHA_FRAMES =
+  /recaptcha\/(api2|enterprise)\/anchor|hcaptcha\.com\/.*frame=checkbox|challenges\.cloudflare\.com/i;
+
+export function captchaShown(): boolean {
+  return [...document.querySelectorAll<HTMLIFrameElement>("iframe")].some(
+    (frame) =>
+      CAPTCHA_FRAMES.test(frame.src) &&
+      !frame.closest(".grecaptcha-badge") &&
+      isVisible(frame),
+  );
+}
 
 const SUBMIT_TEXT =
   /\b(envoyer|soumettre|postuler|valider ma candidature|submit|send|apply)\b/i;
@@ -212,6 +227,7 @@ export function readForm(): FormSnapshot {
 
   const control = findSubmitControl();
   return {
+    captcha: captchaShown(),
     fields,
     multiStep: control === null && nextControls().length > 0,
     optionalEmpty,

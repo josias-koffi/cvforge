@@ -13,6 +13,7 @@ const FILL: LastFill = {
 };
 const FORM: FormSnapshot = {
   fields: [{ label: "E-mail", value: "c@example.com" }],
+  captcha: false,
   multiStep: false,
   optionalEmpty: [],
   requiredEmpty: [],
@@ -79,6 +80,7 @@ describe("Sending.review", () => {
         offerUrl: "https://jobs.lever.co/acme/1",
         title: "Dev",
       },
+      captcha: false,
       documents: FILL.documents,
       fields: FORM.fields,
       kind: "review",

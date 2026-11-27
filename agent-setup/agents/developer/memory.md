@@ -1805,3 +1805,10 @@
 - **Why**: la sélection du matin est la source naturelle d'une file quotidienne.
 - **Learned**: `get_daily_offers` renvoie `{ digestDate, matches }` avec la même forme d'offre que `list_recent_offers` (`summarizeOffer`) : aucune modification de l'API.
 - **Open**: essai réel préprod avec US-204.
+
+## 2026-11-27 — US-209 rapport de fin de file (demande propriétaire)
+- **Context**: [[sprints/sprint-040#US-209]] · suite d'US-204/206
+- **Did**: `queueReport` (domaine), `notify` appelé en fin de `run`, `infrastructure/queue-notifier.ts` (notification ; clic → `sidePanel.open`, repli sur l'onglet du premier formulaire en attente), résumé en tête de `QueueProgress`. `readForm` signale `captcha` (iframes reCAPTCHA v2 / hCaptcha checkbox / Turnstile, badge v3 ignoré) → item « à compléter ». Icônes `public/icon/*.png` rendues depuis `apps/web/app/icon.svg`.
+- **Why**: la file tourne panneau fermé ; un captcha était jusque-là invisible dans la file.
+- **Learned**: avec WXT 0.21 et `srcDir: "src"`, le dossier public reste `apps/extension/public` (pas `src/public`) ; `wxt prepare` régénère `PublicPath` pour `runtime.getURL`. Context7 en échec ce jour (erreur d'encodage) : `sidePanel.open` depuis un clic de notification non confirmé, d'où le repli.
+- **Open**: essai réel (notification panneau fermé, ouverture du panneau au clic).

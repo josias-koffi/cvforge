@@ -29,8 +29,9 @@ const FILLED: FillOutcome = {
   summary: "",
 };
 
-const review = (refusal: string | null = null): Review => ({
+const review = (refusal: string | null = null, captcha = false): Review => ({
   application: { company: "Acme", id: "app", offerUrl: null, title: "Dev" },
+  captcha,
   documents: ["CV.pdf"],
   fields: [
     { label: "Email", value: "c@example.com" },
@@ -128,6 +129,7 @@ function setup(
     })),
   };
   const release = vi.fn();
+  const notify = vi.fn(async () => undefined);
   const store = options.store ?? memoryStore();
   const queue = new ApplicationQueue({
     aiKeys: {
@@ -142,6 +144,7 @@ function setup(
     filling,
     keepAlive: () => release,
     newId: () => "q1",
+    notify,
     preparation: { prepareTab },
     sending,
     store,
@@ -159,6 +162,7 @@ function setup(
   };
   return {
     filling,
+    notify,
     prepareTab,
     queue,
     release,
@@ -266,6 +270,25 @@ describe("ApplicationQueue: the run (US-204)", () => {
       reason: "Champs obligatoires encore vides : Pronouns.",
       state: "incomplete",
     });
+  });
+
+  it("flags a captcha left for the candidate, and reports the end (US-209)", async () => {
+    const f = setup();
+    f.sending.reviewTab.mockResolvedValueOnce(review(null, true));
+    await f.queue.start({ budget: 18, offers: [offer("1"), offer("2")] });
+    const done = await f.settle();
+    expect(done.items.map((item) => [item.state, item.reason])).toEqual([
+      ["incomplete", "Captcha à résoudre dans l'onglet."],
+      ["ready", null],
+    ]);
+    await vi.waitFor(() =>
+      expect(f.notify).toHaveBeenCalledWith({
+        message:
+          "1 prête à envoyer · 1 captcha à résoudre — 18 crédits dépensés.",
+        title: "File terminée : 2 candidatures vous attendent",
+      }),
+    );
+    expect(await f.queue.firstWaitingTab()).toBe(100);
   });
 
   it("checks the budget against the balance, and keeps the profile's gaps first", async () => {
