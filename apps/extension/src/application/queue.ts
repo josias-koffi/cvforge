@@ -304,6 +304,7 @@ export class ApplicationQueue {
         { unattended: true },
       );
       this.spend(queue, item, filled.creditsSpent);
+      this.update(item, { drafted: filled.drafted.length });
 
       await this.step(item, "review");
       const now = await this.deps.tabs.current(tab.tabId);

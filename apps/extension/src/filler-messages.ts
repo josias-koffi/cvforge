@@ -30,7 +30,8 @@ export type PageProbe = { fieldCount: number; applyLink: string | null };
 export type FillerRequest =
   | { type: "filler/llm-fetch"; url: string; body?: string }
   | { type: "filler/document"; kind: DocumentKind }
-  | { type: "filler/ask"; question: string };
+  | { type: "filler/ask"; question: string }
+  | { type: "filler/draft"; question: string };
 
 /** Service worker → side panel: the agent needs the candidate. */
 export type PanelEvent = {

@@ -154,6 +154,8 @@ function Item({
             {item.offer.company ?? new URL(item.offer.url).host}
             {item.creditsSpent > 0 && ` · ${item.creditsSpent} crédit(s)`}
             {item.filledCount > 0 && ` · ${item.filledCount} champ(s)`}
+            {(item.drafted ?? 0) > 0 &&
+              ` · ${item.drafted} réponse(s) à relire`}
           </p>
         </div>
         <span

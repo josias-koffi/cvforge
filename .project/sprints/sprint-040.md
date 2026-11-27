@@ -191,6 +191,25 @@ Décision d'architecture : **ADR-034** (`decisions/ADR-034-chrome-extension-appl
     - [x] Tests unitaires (résumé, captcha, notification) et de l'écran.
     - [ ] Essai réel : notification reçue panneau fermé, et clic qui ouvre le panneau (avec celui d'US-204).
 
+- [ ] **[US-208]** Réponses rédigées aux questions ouvertes (demande du propriétaire du 2026-11-27)
+  - Agent: `developer`
+  - Pourquoi : « Pourquoi nous ? », « Présentez-vous » bloquaient le remplissage (question au candidat, ou champ vide
+    dans la file) ; ce sont pourtant des réponses que la lettre contient déjà.
+  - Critères d'acceptation :
+    - [x] page-agent appelle `draft_answer` pour une question ouverte : réponse tirée des données du candidat si elles
+          suffisent, sinon rédigée depuis la lettre, le CV et l'offre de cette candidature (2 à 5 phrases, première
+          personne, langue de la question), puis tapée telle quelle. Dans la file aussi, sans le candidat.
+    - [x] Jamais rédigés : salaire, prétentions, dates, disponibilité, préavis, visa, âge, années d'expérience,
+          coordonnées ; demandés au candidat (ou laissés vides dans la file). Sources insuffisantes → champ vide.
+    - [x] Récapitulatif : les réponses rédigées sont mises en avant « à relire », telles que la page les contient
+          (corrections comprises) ; compte « réponse(s) à relire » dans le résultat du remplissage et dans la file.
+    - [x] À l'envoi validé, chaque réponse rédigée est gardée telle qu'envoyée (`save_screening_answer`) pour les
+          questions semblables.
+    - [x] Coût : même session de remplissage (2 crédits, ou clé personnelle), aucun crédit en plus ; annoncé dans le
+          panneau avant le remplissage. 6 réponses rédigées au plus par formulaire.
+    - [x] Tests unitaires (questions factuelles, rédaction, repli, reprise à l'envoi) et de l'écran.
+    - [ ] Essai réel : qualité des réponses sur 3 formulaires avec questions ouvertes.
+
 ## 📊 Sprint DoD
 
 - [ ] Parcours réel de bout en bout sur une vraie offre, avec un seul geste du candidat, « Valider et envoyer » :

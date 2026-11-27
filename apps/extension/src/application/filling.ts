@@ -1,10 +1,4 @@
-import {
-  buildFillTask,
-  prefillData,
-  type IdentityField,
-  type FillAnswers,
-  type FillProfile,
-} from "../domain/fill";
+import { buildFillTask, prefillData, type IdentityField } from "../domain/fill";
 import { readBalance } from "../domain/connection";
 import { findApplicationFor, type ApplicationSummary } from "../domain/offer";
 import { AI_CREDIT_ACTION_FORM_FILL, AI_CREDIT_COSTS } from "@cvforge/types";
@@ -25,8 +19,10 @@ import {
   type EncodedDocument,
   type ProfileGap,
 } from "./candidate-data";
-import { askCandidate, type QuestionState } from "./fill-questions";
-import { ModelRelay, type ModelRoute } from "./model-relay";
+import { askCandidate } from "./fill-questions";
+import { draftAnswer, type DraftState } from "./open-answers";
+import type { DraftedAnswer } from "../domain/open-answer";
+import { ModelRelay } from "./model-relay";
 import type { AiKeyStore, JobSparkTools } from "./session";
 
 /** The script that runs page-agent in the recruiter's tab. */
@@ -92,15 +88,14 @@ export type FillOutcome = {
   summary: string;
   questionsAsked: number;
   answersSaved: number;
+  /** Open answers drafted for the candidate to read (US-208). */
+  drafted: DraftedAnswer[];
 };
 
 type ActiveFill = {
   tabId: number;
-  /** What the agent may be told without asking the candidate. */
-  data: { profile: FillProfile; answers: FillAnswers };
-  route: ModelRoute;
   documents: Record<DocumentKind, EncodedDocument>;
-} & QuestionState;
+} & DraftState;
 
 const READY = (application: ApplicationSummary) =>
   application.status === "draft" &&
@@ -229,6 +224,7 @@ export class Filling {
     this.filled.set(tab.tabId, {
       applicationId: application.id,
       documents: pre.attached.length ? pre.attached : documentNames,
+      drafted: [],
       tabId: tab.tabId,
     });
     const base = {
@@ -245,6 +241,7 @@ export class Filling {
         aiUsed: false,
         answersSaved: 0,
         creditsSpent: 0,
+        drafted: [],
         questionsAsked: 0,
         success: true,
         summary: `Rempli sans IA : ${pre.filled.length} champ(s)${pre.attached.length ? `, ${pre.attached.length} document(s) joint(s)` : ""}.`,
@@ -253,7 +250,10 @@ export class Filling {
 
     const route = await this.models.route(aiKey, application.id);
     this.active = {
+      applicationId: application.id,
       data: { answers, profile },
+      drafted: [],
+      model: aiKey?.model ?? JOBSPARK_MODEL,
       route,
       answersSaved: 0,
       asked: new Map(),
@@ -264,10 +264,7 @@ export class Filling {
     };
     try {
       const reply = await this.deps.tab.run(tab.tabId, {
-        llm: {
-          baseURL: route.baseURL,
-          model: aiKey?.model ?? JOBSPARK_MODEL,
-        },
+        llm: { baseURL: route.baseURL, model: this.active.model },
         task: buildFillTask(profile, answers, application, {
           attached: pre.attached,
           // A search box typed into but not picked (Greenhouse « Location »)
@@ -283,6 +280,7 @@ export class Filling {
       this.filled.set(tab.tabId, {
         applicationId: application.id,
         documents: documentNames,
+        drafted: this.active.drafted,
         tabId: tab.tabId,
       });
       return {
@@ -290,6 +288,7 @@ export class Filling {
         aiUsed: true,
         answersSaved: this.active.answersSaved,
         creditsSpent: route.kind === "jobspark" ? FORM_FILL_COST : 0,
+        drafted: this.active.drafted,
         questionsAsked: this.active.questionsAsked,
         success: reply.success,
         summary: reply.summary,
@@ -345,6 +344,13 @@ export class Filling {
         return this.models.call(active.route, request);
       case "filler/document":
         return active.documents[request.kind];
+      case "filler/draft":
+        return {
+          answer: await draftAnswer(active, request.question, {
+            models: this.models,
+            tools: this.deps.tools,
+          }),
+        };
       case "filler/ask":
         return {
           answer: await askCandidate(active, request.question, this.deps),

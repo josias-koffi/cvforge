@@ -212,6 +212,7 @@ describe("Filling.fill", () => {
       aiUsed: true,
       answersSaved: 1,
       creditsSpent: 0,
+      drafted: [],
       formUrl: null,
       optionalEmpty: [],
       prefilled: LEFT_TO_MODEL.filled,

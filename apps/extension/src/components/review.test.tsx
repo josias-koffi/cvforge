@@ -18,6 +18,7 @@ const REVIEW: Extract<Review, { kind: "review" }> = {
   application: { company: "Acme", id: "a1", offerUrl: null, title: "Dev" },
   captcha: false,
   documents: ["CV Camille Test.pdf"],
+  drafted: [],
   fields: [{ label: "E-mail", value: "c@example.com" }],
   kind: "review",
   refusal: null,
@@ -46,6 +47,21 @@ describe("ReviewView", () => {
     expect(html).toContain("c@example.com");
     expect(html).toContain("« Submit application »");
     expect(html).toContain("Valider et envoyer");
+  });
+
+  it("puts the drafted answers forward, to read (US-208)", () => {
+    expect(view()).not.toContain("à relire");
+    const html = view({
+      review: {
+        ...REVIEW,
+        drafted: [
+          { answer: "Votre produit me parle.", question: "Pourquoi nous ?" },
+        ],
+      },
+    });
+    expect(html).toContain("1 réponse rédigée par JobSpark, à relire");
+    expect(html).toContain("Pourquoi nous ?");
+    expect(html).toContain("Votre produit me parle.");
   });
 
   it("keeps the button off with the reason when sending is refused", () => {

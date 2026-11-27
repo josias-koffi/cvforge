@@ -21,6 +21,7 @@ const FILLED: FillOutcome = {
   aiUsed: true,
   answersSaved: 0,
   creditsSpent: 2,
+  drafted: [],
   formUrl: null,
   optionalEmpty: [],
   prefilled: [],
@@ -33,6 +34,7 @@ const review = (refusal: string | null = null, captcha = false): Review => ({
   application: { company: "Acme", id: "app", offerUrl: null, title: "Dev" },
   captcha,
   documents: ["CV.pdf"],
+  drafted: [],
   fields: [
     { label: "Email", value: "c@example.com" },
     { label: "Name", value: "Camille" },
