@@ -1,3 +1,4 @@
+import type { AgentAccessExport } from "./agent-access-export.pg-store";
 import type { ApplicationSubmission, ScreeningAnswers } from "@cvforge/types";
 import type { AuthExportSnapshot } from "../auth/auth.types";
 import type { StoredApplication } from "../applications/applications.types";
@@ -46,6 +47,8 @@ export type PrivacyExportPayload = {
   screeningAnswers: ScreeningAnswers | null;
   /** Proof of the applications the extension sent, screenshots included (US-198). */
   submissions: (ApplicationSubmission & { screenshotBase64: string | null })[];
+  /** Agent tokens and actions, form fills and form map votes (E32, E33). */
+  agentAccess: AgentAccessExport;
   retentionPolicy: PrivacyRetentionPolicy;
 };
 

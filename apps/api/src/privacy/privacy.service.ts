@@ -17,6 +17,7 @@ import type { SubmissionsStore } from "../applications/submissions.service";
 import type { JobMatchesStore } from "../job-search/matches.types";
 import type { SearchProjectRomeStore } from "../search-projects/search-project-rome.pg-store";
 import type { SearchProjectsStore } from "../search-projects/search-projects.types";
+import type { PgAgentAccessExportStore } from "./agent-access-export.pg-store";
 import { PRIVACY_RETENTION_POLICY } from "./privacy-retention-policy";
 import type {
   PrivacyDeletionSummary,
@@ -56,6 +57,17 @@ export class PrivacyService {
       SubmissionsStore,
       "listForExport"
     > = { listForExport: async () => [] },
+    private readonly agentAccessStore: Pick<
+      PgAgentAccessExportStore,
+      "exportByUserEmail"
+    > = {
+      exportByUserEmail: async () => ({
+        formFillSessions: [],
+        formMapVotes: [],
+        tokens: [],
+        toolCalls: [],
+      }),
+    },
   ) {}
 
   getRetentionPolicy() {
@@ -90,6 +102,8 @@ export class PrivacyService {
       retentionPolicy: PRIVACY_RETENTION_POLICY,
       screeningAnswers: await this.screeningAnswersStore.find(normalizedEmail),
       submissions: await this.submissionsStore.listForExport(normalizedEmail),
+      agentAccess:
+        await this.agentAccessStore.exportByUserEmail(normalizedEmail),
       userEmail: normalizedEmail,
     };
   }

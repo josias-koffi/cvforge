@@ -1,3 +1,5 @@
+import { DATABASE, type Database } from "../database/database.types";
+import { PgAgentAccessExportStore } from "./agent-access-export.pg-store";
 import {
   SUBMISSIONS_STORE,
   type SubmissionsStore,
@@ -88,6 +90,7 @@ import { PrivacyService } from "./privacy.service";
         PROFILE_COMPETENCES_STORE,
         SCREENING_ANSWERS_STORE,
         SUBMISSIONS_STORE,
+        DATABASE,
       ],
       useFactory: (
         authStore: AuthAccountStore,
@@ -104,6 +107,7 @@ import { PrivacyService } from "./privacy.service";
         profileCompetencesStore: ProfileCompetencesStore,
         screeningAnswersStore: ScreeningAnswersStore,
         submissionsStore: SubmissionsStore,
+        db: Database,
       ) =>
         new PrivacyService(
           authStore,
@@ -120,6 +124,7 @@ import { PrivacyService } from "./privacy.service";
           profileCompetencesStore,
           screeningAnswersStore,
           submissionsStore,
+          new PgAgentAccessExportStore(db),
         ),
     },
   ],

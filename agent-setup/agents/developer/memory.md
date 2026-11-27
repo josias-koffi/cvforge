@@ -1840,3 +1840,8 @@
 - **Why**: remplacer les réglages par plateforme par un apprentissage partagé.
 - **Learned**: les valeurs ne servent qu'au service worker pour retrouver le nom de la donnée ; deux données de même valeur (prénom = nom complet) sont ignorées. Les builds préprod et prod ont le même identifiant d'extension : une seule chargée à la fois (`.output/jobspark-prod`, `.output/jobspark-preprod`).
 - **Open**: essai à deux comptes ; export RGPD des votes (comme les sessions de remplissage, absent de l'export) ; `filling.ts` à 392 lignes, à découper au prochain passage.
+
+## 2026-11-27 — Export RGPD des données agents et extension (demande propriétaire)
+- **Did**: `privacy/agent-access-export.pg-store.ts` (jetons sans empreinte, journal, sessions de remplissage, votes de carte) branché dans `PrivacyService.exportUserData` (`agentAccess`), règles de conservation ajoutées. Texte de confidentialité de l'extension : `docs/extension-chrome-privacy.md` (à coller par le propriétaire dans `/admin/legal`).
+- **Learned**: preuves d'envoi et réponses enregistrées étaient déjà exportées ; seuls les jetons/journal (E32) et les données E33 récentes manquaient.
+

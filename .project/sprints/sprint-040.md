@@ -263,6 +263,13 @@ Décision d'architecture : **ADR-034** (`decisions/ADR-034-chrome-extension-appl
     - [ ] Remplace à terme les réglages écrits à la main d'US-203 (après mesure en production).
     - [ ] Essai réel : deux comptes sur le même site, la seconde passe remplit sans IA ce que la première a appris.
 
+- [x] **Export RGPD des données agents et extension** (demande du propriétaire du 2026-11-27)
+  - Agent: `developer`
+  - L'export (`/privacy/export`) gagne `agentAccess` : jetons d'agent (sans leur empreinte), journal des actions,
+    sessions de remplissage, votes de la carte des formulaires. Les preuves d'envoi et les réponses enregistrées y
+    étaient déjà. Règles de conservation ajoutées pour ces données (`privacy-retention-policy.ts`).
+  - Test sur base réelle (`agent-access-export.pg-store.test.ts`) : rien d'un autre compte, aucune empreinte de jeton.
+
 ## 📊 Sprint DoD
 
 - [ ] Parcours réel de bout en bout sur une vraie offre, avec un seul geste du candidat, « Valider et envoyer » :

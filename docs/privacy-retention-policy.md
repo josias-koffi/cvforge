@@ -22,3 +22,14 @@ Scope: Sprint `010` / `US-036`
 
 - The product does not persist interview audio, by design rather than by omission: the report is built from the transcript alone (docs/interview-practice.md).
 - The browser-local base profile and onboarding draft are cleared client-side when the user confirms account deletion.
+
+## Agents connectés et extension Chrome (2026-11-27)
+
+- Jetons d'agent : conservés jusqu'à révocation, expiration ou suppression du compte ; seule une empreinte SHA-256
+  est stockée. Journal des actions des agents : 90 jours (`AgentCallLogPurge`).
+- Extension : preuves d'envoi avec la candidature ; réponses enregistrées, sessions de remplissage et votes de la
+  carte des formulaires tant que le compte existe (suppression en cascade). Le contenu des formulaires transmis à
+  l'IA n'est pas conservé.
+- Statistique `form_fill_outcomes` (site, IA ou non) : sans candidat, conservée.
+- Tout cela figure dans l'export RGPD (`agentAccess`, `submissions`, `screeningAnswers`).
+
