@@ -25,6 +25,7 @@ const offer = (key: string, over: Partial<QueueOffer> = {}): QueueOffer => ({
 });
 const CANDIDATES: QueueCandidates = {
   balance: 40,
+  daily: [],
   fillCost: 2,
   kind: "ready",
   offers: [offer("a"), offer("b"), offer("t", { source: "tab", tabId: 3 })],
@@ -79,6 +80,28 @@ describe("QueueSetup", () => {
       type: "queue-start",
     });
     expect(started).toHaveBeenCalled();
+  });
+
+  it("ticks this morning's offers in one click (US-206)", async () => {
+    ask.mockResolvedValueOnce({
+      ...CANDIDATES,
+      daily: ["b"],
+      offers: [offer("a"), offer("b", { daily: true })],
+    });
+    await render(<QueueSetup onStarted={() => undefined} />);
+    expect(container.textContent).toContain("Du jour · Acme");
+    await click("Offres du jour (1)");
+    const boxes = [
+      ...container.querySelectorAll<HTMLInputElement>("input[type=checkbox]"),
+    ];
+    expect(boxes.map((box) => box.checked)).toEqual([false, true]);
+    expect(button("Lancer la file (1 offre)")).toBeDefined();
+  });
+
+  it("hides the button when there are no offers this morning", async () => {
+    ask.mockResolvedValueOnce(CANDIDATES);
+    await render(<QueueSetup onStarted={() => undefined} />);
+    expect(button("Offres du jour")).toBeUndefined();
   });
 
   it("refuses a budget above the balance", async () => {

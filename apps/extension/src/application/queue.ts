@@ -2,6 +2,7 @@ import { readBalance } from "../domain/connection";
 import type { IdentityField } from "../domain/fill";
 import {
   exclusion,
+  dailyPicks,
   interrupted,
   MAX_QUEUE,
   mergeOffers,
@@ -49,6 +50,8 @@ export type QueueCandidates =
       offers: QueueOffer[];
       /** Keys picked by default: best scores, sites that accept automation. */
       suggested: string[];
+      /** « Offres du jour » (US-206): this morning's offers, best first. */
+      daily: string[];
       /** Most one offer can cost: every preparation step and a fill. */
       fillCost: number;
       balance: number | null;
@@ -90,23 +93,37 @@ export class ApplicationQueue {
 
   async candidates(): Promise<QueueCandidates> {
     if (!(await this.deps.canReadPages())) return { kind: "no-access" };
-    const [recent, tabs, aiKey, balance, profileGaps] = await Promise.all([
-      this.deps.tools
-        .call("list_recent_offers", { limit: 30 })
-        .catch(() => []) as Promise<RecentOffer[]>,
-      this.deps.tabs.openOffers(),
-      this.deps.aiKeys.get(),
-      this.deps.tools.call("get_credit_balance").then(readBalance, () => null),
-      this.deps.filling.profileGaps(),
-    ]);
-    const offers = mergeOffers(Array.isArray(recent) ? recent : [], tabs);
+    const [recent, daily, tabs, aiKey, balance, profileGaps] =
+      await Promise.all([
+        this.deps.tools
+          .call("list_recent_offers", { limit: 30 })
+          .catch(() => []) as Promise<RecentOffer[]>,
+        this.deps.tools
+          .call("get_daily_offers")
+          .then((digest) => (digest as { matches?: RecentOffer[] }).matches)
+          .catch(() => undefined),
+        this.deps.tabs.openOffers(),
+        this.deps.aiKeys.get(),
+        this.deps.tools
+          .call("get_credit_balance")
+          .then(readBalance, () => null),
+        this.deps.filling.profileGaps(),
+      ]);
+    const offers = mergeOffers(
+      Array.isArray(recent) ? recent : [],
+      tabs,
+      Array.isArray(daily) ? daily : [],
+    );
+    const picks = dailyPicks(offers);
     return {
       balance,
+      daily: picks,
       fillCost: aiKey ? 0 : FORM_FILL_COST,
       kind: "ready",
       offers,
       profileGaps,
-      suggested: suggested(offers),
+      // This morning's offers when there are some, else the best recent ones.
+      suggested: picks.length ? picks : suggested(offers),
     };
   }
 

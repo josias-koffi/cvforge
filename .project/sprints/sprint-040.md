@@ -164,6 +164,18 @@ Décision d'architecture : **ADR-034** (`decisions/ADR-034-chrome-extension-appl
           À faire par le propriétaire : vérifier que page-agent remplit bien un onglet en arrière-plan (Chrome y
           ralentit les minuteries à une par seconde ; page-agent n'attend pas `requestAnimationFrame`).
 
+- [ ] **[US-206]** « Offres du jour » comme source de la file (demande du propriétaire du 2026-11-27)
+  - Agent: `developer`
+  - Pourquoi : « postuler aux offres du jour » en un clic, sans les chercher dans la liste.
+  - Critères d'acceptation :
+    - [x] Dans « Plusieurs offres », les offres de l'alerte du jour (`get_daily_offers`) passent en tête, marquées
+          « Du jour », sans doublon avec les offres récentes ; offres envoyées ou écartées exclues.
+    - [x] Elles sont cochées d'office par score (10 au plus, LinkedIn et sites à compte exclus) ; le bouton
+          « Offres du jour (N) » les recoche ; sans sélection ce matin, ni bouton ni changement (offres récentes).
+    - [x] Mêmes exclusions, budget et validation en un clic qu'US-204 ; une sélection illisible ne bloque pas la file.
+    - [x] Tests unitaires (fusion, choix par score, repli) et de l'écran.
+    - [ ] Essai réel en préprod avec la sélection du jour (avec celui d'US-204).
+
 ## 📊 Sprint DoD
 
 - [ ] Parcours réel de bout en bout sur une vraie offre, avec un seul geste du candidat, « Valider et envoyer » :

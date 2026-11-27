@@ -63,6 +63,7 @@ function setup(
     balance?: number;
     personalKey?: boolean;
     reachable?: (tabId: number) => boolean;
+    daily?: unknown;
     prepare?: (tab: ActiveTab, maxCost: number) => Promise<number>;
     store?: ReturnType<typeof memoryStore>;
   } = {},
@@ -86,6 +87,10 @@ function setup(
     if (name === "get_credit_balance")
       return { balance: options.balance ?? 50 };
     if (name === "list_recent_offers") return [];
+    if (name === "get_daily_offers") {
+      if (options.daily instanceof Error) throw options.daily;
+      return options.daily ?? { digestDate: "2026-11-27", matches: [] };
+    }
     throw new Error(`unexpected ${name}`);
   });
   const prepareTab = vi.fn(
@@ -342,7 +347,67 @@ describe("ApplicationQueue: sending and state", () => {
   });
 });
 
+describe("ApplicationQueue: this morning's offers (US-206)", () => {
+  const match = (jobId: string, score: number, applyUrl: string) => ({
+    applicationId: null,
+    applyUrl,
+    company: "Acme",
+    jobId,
+    score,
+    status: "new",
+    title: jobId,
+  });
+
+  it("offers this morning's selection, ticked by score, LinkedIn left out", async () => {
+    const f = setup({
+      daily: {
+        digestDate: "2026-11-27",
+        matches: [
+          match("d1", 60, "https://jobs.lever.co/acme/d1"),
+          match("d2", 90, "https://jobs.ashbyhq.com/acme/d2"),
+          match("d3", 99, "https://www.linkedin.com/jobs/view/3"),
+        ],
+      },
+    });
+    const candidates = await f.queue.candidates();
+    expect(candidates).toMatchObject({
+      daily: ["d2", "d1"],
+      kind: "ready",
+      suggested: ["d2", "d1"],
+    });
+  });
+
+  it("falls back to the recent offers when the selection cannot be read", async () => {
+    const f = setup({ daily: new Error("indisponible") });
+    expect(await f.queue.candidates()).toMatchObject({
+      daily: [],
+      kind: "ready",
+    });
+  });
+});
+
 describe("mergeOffers", () => {
+  it("lists this morning's offers first, once, flagged", () => {
+    const today = {
+      applicationId: null,
+      applyUrl: "https://jobs.lever.co/acme/1",
+      company: "Acme",
+      jobId: "j1",
+      score: 70,
+      status: "new",
+      title: "Dev",
+    };
+    const merged = mergeOffers(
+      [{ ...today, jobId: "j0", title: "Old" }, today],
+      [],
+      [today],
+    );
+    expect(merged.map((o) => [o.key, o.daily ?? false])).toEqual([
+      ["j1", true],
+      ["j0", false],
+    ]);
+  });
+
   it("drops applied offers and folds an open tab into its JobSpark offer", () => {
     const merged = mergeOffers(
       [

@@ -1799,3 +1799,9 @@
 - **Learned**: les offres JobSpark de préprod mènent à Beetween, Xtramile (redirection) ou France Travail (compte) : beaucoup n'ont pas de formulaire atteignable → vérifier avant de dépenser. Un service worker MV3 meurt après 30 s sans appel d'extension, même pendant un `generate_cv` → `getPlatformInfo` toutes les 20 s pendant la file. page-agent n'utilise `requestAnimationFrame` que pour son masque (désactivé).
 - **Open**: essai réel préprod sur 3 offres ; sources « recherche » et « candidatures préparées » non proposées (offres récentes + onglets seulement).
 
+## 2026-11-27 — US-206 offres du jour dans la file (demande propriétaire)
+- **Context**: [[sprints/sprint-040#US-206]] · suite d'US-204
+- **Did**: `mergeOffers` prend la sélection du jour en tête (`daily: true`), `dailyPicks` (= `suggested` filtré), `ApplicationQueue.candidates` lit `get_daily_offers` (repli silencieux), bouton « Offres du jour (N) » et mention « Du jour » dans `QueueSetup`.
+- **Why**: la sélection du matin est la source naturelle d'une file quotidienne.
+- **Learned**: `get_daily_offers` renvoie `{ digestDate, matches }` avec la même forme d'offre que `list_recent_offers` (`summarizeOffer`) : aucune modification de l'API.
+- **Open**: essai réel préprod avec US-204.
