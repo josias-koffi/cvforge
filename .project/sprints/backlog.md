@@ -225,8 +225,13 @@ Référence de gate: le spec impose des branches courtes et des PRs <= 400 ligne
 | US-203 | Remplissage d'abord par script (identité, liens, documents, réponses enregistrées, réglages Lever/Greenhouse/Ashby/Workable/Teamtailor), IA seulement pour les champs restants, aucun crédit si le script suffit | E33 | M | P0 | 040 | Demande propriétaire du 2026-11-26 |
 | US-204 | File de candidatures : le candidat choisit jusqu'à 10 offres (ou celles du jour) et un budget, l'agent prépare et remplit chaque formulaire en arrière-plan, puis le candidat valide chaque envoi en un clic depuis une file de récapitulatifs | E33 | L | P0 | 040 | Demande propriétaire du 2026-11-27 |
 | US-205 | Carte des formulaires apprise et partagée : la correspondance champ → donnée du profil (jamais les valeurs) est enregistrée après un remplissage par l'IA, puis réutilisée sans IA pour le même modèle de formulaire par tous les candidats ; l'IA ne reprend que les champs qui ne correspondent plus | E33 | L | P1 | — | Demande propriétaire du 2026-11-27 |
+| US-206 | « Postuler aux offres du jour » : les offres de l'alerte du jour (E19/E27) deviennent une source de la file d'US-204, cochées d'office par score | E33 | S | P0 | — | Demande propriétaire du 2026-11-27 |
+| US-207 | Pastille sur l'icône de l'extension : sur une offre ou un formulaire, elle indique que JobSpark peut remplir et affiche le score de pertinence, sans ouvrir le panneau | E33 | M | P1 | — | Demande propriétaire du 2026-11-27 |
+| US-208 | Réponses aux questions ouvertes (« Pourquoi nous ? », prétentions, disponibilité) rédigées depuis le profil et l'offre, relues par le candidat, gardées après validation | E33 | M | P0 | — | Demande propriétaire du 2026-11-27 |
+| US-209 | Rapport de fin de file et notification Chrome : prêtes, à compléter, captchas, échecs, crédits dépensés, même panneau fermé | E33 | S | P1 | — | Demande propriétaire du 2026-11-27 |
+| US-210 | LinkedIn et Indeed en lecture seule : import de l'offre et préparation du CV et de la lettre, sans aucun remplissage ni clic sur leurs pages | E33 | S | P0 | — | Demande propriétaire du 2026-11-27 |
 
-## Critères d'acceptation détaillés — E33 (US-204)
+## Critères d'acceptation détaillés — E33 (US-204 à US-210)
 
 > Demande propriétaire du 2026-11-27 : « je lance une tâche et il postule aux dix dernières offres essentielles
 > pour moi ». Palier 1 en lot : rien n'est envoyé sans un clic du candidat par offre. L'envoi sans clic reste
@@ -258,6 +263,34 @@ Référence de gate: le spec impose des branches courtes et des PRs <= 400 ligne
     plusieurs fois est retirée.
   - Remplace à terme les réglages écrits à la main par plateforme d'US-203.
   - Mesure : part des remplissages faits sans IA, par plateforme.
+- **US-206** :
+  - Dans « Plusieurs offres », un bouton « Offres du jour » remplit la liste avec les offres de l'alerte du jour
+    (`get_daily_offers`), hors offres déjà envoyées ou écartées, cochées d'office par score dans la limite de 10.
+  - Mêmes exclusions, budget et validation en un clic qu'US-204.
+- **US-207** :
+  - Sur une page d'offre reconnue ou un formulaire de candidature, l'icône porte une pastille (score de
+    pertinence, ou « ✓ » pour un formulaire remplissable) ; rien sur les autres pages.
+  - La détection se fait dans la page, sans crédit ni appel IA ; le score vient de JobSpark quand l'offre y est
+    connue.
+  - Aucune pastille sur LinkedIn et Indeed au-delà de l'offre reconnue (US-210).
+- **US-208** :
+  - Un champ de texte libre que ni le script ni les réponses enregistrées ne couvrent reçoit une réponse rédigée
+    depuis le profil et l'offre, signalée « à relire » dans le récapitulatif.
+  - Le candidat peut corriger la réponse avant l'envoi ; une réponse validée est enregistrée pour les questions
+    semblables.
+  - Aucun chiffre ni fait absent du profil : un salaire ou une date inconnus laissent le champ vide, à compléter.
+  - Coût annoncé dans le panneau avant le remplissage.
+- **US-209** :
+  - À la fin d'une file, une notification Chrome résume : prêtes, à compléter, captchas, échecs, crédits dépensés ;
+    un clic ouvre le panneau sur la file.
+  - Le même résumé reste en tête de la file tant qu'elle n'est pas effacée.
+- **US-210** (décision propriétaire du 2026-11-27 : leurs conditions d'utilisation interdisent l'automatisation, le
+  compte du candidat serait exposé) :
+  - Sur LinkedIn et Indeed, le panneau importe l'offre et prépare le CV et la lettre ; « Remplir » est remplacé par
+    une explication et le lien des documents à joindre soi-même.
+  - Aucun script injecté, aucun clic ni remplissage sur leurs pages ; les offres de ces sites restent exclues de la
+    file.
+  - Le candidat peut marquer la candidature « envoyée » depuis le panneau.
 
 ## Critères d'acceptation détaillés — E16
 
