@@ -1,4 +1,4 @@
-import { PlayIcon } from "lucide-react";
+import { PlayIcon, SunriseIcon } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import type { QueueCandidates } from "../application/queue";
 import type { IdentityField } from "../domain/fill";
@@ -111,6 +111,17 @@ export function QueueSetup({ onStarted }: { onStarted: () => void }) {
         </Notice>
       ) : (
         <fieldset className="flex flex-col gap-1">
+          {candidates.daily.length > 0 && (
+            <Button
+              variant="secondary"
+              size="sm"
+              className="mb-2 self-start"
+              onClick={() => setPicked(candidates.daily)}
+            >
+              <SunriseIcon aria-hidden="true" />
+              Offres du jour ({candidates.daily.length})
+            </Button>
+          )}
           <legend className="mb-1 flex w-full items-center justify-between text-xs font-medium">
             <span>
               Offres ({picked.length}/{MAX_QUEUE})
@@ -141,6 +152,7 @@ export function QueueSetup({ onStarted }: { onStarted: () => void }) {
                       {offer.title}
                     </span>
                     <span className="block truncate text-xs text-muted-foreground">
+                      {offer.daily ? "Du jour · " : ""}
                       {offer.source === "tab" ? "Onglet ouvert · " : ""}
                       {offer.company ?? new URL(offer.url).host}
                     </span>

@@ -21,6 +21,8 @@ export type QueueOffer = {
   /** The candidate's application for this offer, when JobSpark has one. */
   applicationId?: string | null;
   score?: number | null;
+  /** In this morning's selection (US-206). */
+  daily?: boolean;
 };
 
 export type QueueItemState =
@@ -95,12 +97,17 @@ export function exclusion(url: string): string | null {
  * best score first. Open tabs are never ticked for the candidate: one may be
  * their mailbox, not an offer.
  */
-export function suggested(offers: QueueOffer[]): string[] {
+export function suggested(
+  offers: QueueOffer[],
+  only: (offer: QueueOffer) => boolean = () => true,
+): string[] {
   return offers
     .map((offer, index) => ({ index, offer }))
     .filter(
       ({ offer }) =>
-        offer.source === "jobspark" && exclusion(offer.url) === null,
+        offer.source === "jobspark" &&
+        exclusion(offer.url) === null &&
+        only(offer),
     )
     .sort(
       (a, b) =>
@@ -109,6 +116,10 @@ export function suggested(offers: QueueOffer[]): string[] {
     .slice(0, MAX_QUEUE)
     .map(({ offer }) => offer.key);
 }
+
+/** « Offres du jour » (US-206): this morning's offers, best score first. */
+export const dailyPicks = (offers: QueueOffer[]) =>
+  suggested(offers, (offer) => offer.daily === true);
 
 export function newQueue(
   id: string,
@@ -189,18 +200,25 @@ type OpenTab = { tabId: number; title: string; url: string };
 const DONE = new Set(["applied", "dismissed"]);
 
 /**
- * JobSpark's recent offers not applied to, and the candidate's open tabs; a
- * tab already showing a JobSpark offer is the same entry.
+ * This morning's offers first, then JobSpark's other recent offers, none
+ * applied to or dismissed, then the candidate's open tabs; a tab already
+ * showing a JobSpark offer is the same entry.
  */
 export function mergeOffers(
   recent: RecentOffer[],
   tabs: OpenTab[],
+  daily: RecentOffer[] = [],
 ): QueueOffer[] {
-  const offers: QueueOffer[] = recent
+  const dailyIds = new Set(daily.map((offer) => offer.jobId));
+  const offers: QueueOffer[] = [
+    ...daily,
+    ...recent.filter((offer) => !dailyIds.has(offer.jobId)),
+  ]
     .filter((offer) => offer.applyUrl && !DONE.has(offer.status ?? ""))
     .map((offer) => ({
       applicationId: offer.applicationId,
       company: offer.company,
+      ...(dailyIds.has(offer.jobId) ? { daily: true } : {}),
       key: offer.jobId,
       score: offer.score ?? null,
       source: "jobspark" as const,
