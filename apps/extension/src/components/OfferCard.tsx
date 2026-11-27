@@ -19,6 +19,7 @@ export function OfferCard({ onSpent }: { onSpent: () => void }) {
   const [busy, setBusy] = useState(false);
   const [preparing, setPreparing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [offerText, setOfferText] = useState("");
 
   const guard = useCallback(async (work: () => Promise<void>) => {
     setBusy(true);
@@ -73,6 +74,7 @@ export function OfferCard({ onSpent }: { onSpent: () => void }) {
         setResult(
           await askBackground({
             cost: inspection.plan.cost,
+            ...(inspection.readOnly && offerText.trim() ? { offerText } : {}),
             type: "prepare-offer",
             url: inspection.page.url,
           }),
@@ -94,6 +96,8 @@ export function OfferCard({ onSpent }: { onSpent: () => void }) {
         onAsk={() => setConfirming(true)}
         onCancel={() => setConfirming(false)}
         onConfirm={confirm}
+        offerText={offerText}
+        onOfferText={setOfferText}
       />
       {preparing && (
         <Notice tone="info" role="status">

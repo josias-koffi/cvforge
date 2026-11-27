@@ -189,6 +189,27 @@ describe("Filling.options", () => {
   });
 });
 
+describe("Filling on LinkedIn or Indeed (US-210)", () => {
+  it("offers the prepared documents instead of filling, and refuses to fill", async () => {
+    const f = setup({
+      apps: [ready({ offerUrl: "https://www.linkedin.com/jobs/view/4242" })],
+    });
+    f.setTab({ ...TAB, url: "https://www.linkedin.com/jobs/view/4242" });
+    expect(await f.filling.options()).toEqual({
+      application: { company: "Acme", id: "a1", status: "draft", title: "Dev" },
+      documents: { cv: true, letter: true },
+      kind: "read-only",
+      site: "LinkedIn",
+    });
+    await expect(
+      f.filling.fillTab(
+        { ...TAB, url: "https://www.linkedin.com/jobs/view/4242" },
+        { applicationId: "a1" },
+      ),
+    ).rejects.toThrow("LinkedIn interdit le remplissage automatique");
+  });
+});
+
 describe("Filling.fill", () => {
   let f: ReturnType<typeof setup>;
   beforeEach(() => {

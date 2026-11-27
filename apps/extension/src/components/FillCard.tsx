@@ -4,6 +4,7 @@ import type { FillOptions, FillOutcome } from "../application/filling";
 import { askBackground } from "../messages";
 import { IdentityGaps } from "./IdentityGaps";
 import { ReviewCard } from "./ReviewCard";
+import { ReadOnlyCard } from "./ReadOnlyCard";
 import type { IdentityField } from "../domain/fill";
 import { Button, Card, Hint, Notice, Select } from "./ui";
 
@@ -54,6 +55,9 @@ export function FillCard() {
     };
   }, [load]);
 
+  if (options?.kind === "read-only") {
+    return <ReadOnlyCard options={options} onChange={() => void load()} />;
+  }
   if (!options || options.kind !== "page") {
     return error ? (
       <Notice tone="destructive">Remplissage indisponible : {error}</Notice>

@@ -208,3 +208,36 @@ describe("Preparation.prepareTab (queue, US-204)", () => {
     expect(f.call).not.toHaveBeenCalledWith("import_offer", expect.anything());
   });
 });
+
+describe("Preparation on LinkedIn or Indeed (US-210)", () => {
+  const LI = "https://www.linkedin.com/jobs/view/4242";
+
+  it("never reads the page: the offer goes by its address", async () => {
+    const f = setup();
+    f.setTab({ ...TAB, url: LI });
+    expect(await f.preparation.inspect()).toMatchObject({
+      readOnly: "LinkedIn",
+    });
+    await f.preparation.prepare({ cost: 7, url: LI });
+    expect(f.pages.readText).not.toHaveBeenCalled();
+    expect(f.call).toHaveBeenCalledWith("import_offer", { url: LI });
+  });
+
+  it("uses the text the candidate pasted, and asks for it when the address fails", async () => {
+    const f = setup();
+    f.setTab({ ...TAB, url: LI });
+    await f.preparation.prepare({ cost: 7, offerText: PAGE_TEXT, url: LI });
+    expect(f.call).toHaveBeenCalledWith("import_offer", {
+      offerText: PAGE_TEXT.trim(),
+      url: LI,
+    });
+
+    f.call.mockImplementation(async (name: string) => {
+      if (name === "list_applications") return [];
+      throw new Error("403");
+    });
+    await expect(f.preparation.prepare({ cost: 7, url: LI })).rejects.toThrow(
+      "LinkedIn ne laisse pas JobSpark lire cette offre",
+    );
+  });
+});

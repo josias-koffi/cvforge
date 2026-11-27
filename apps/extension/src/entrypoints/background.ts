@@ -26,6 +26,7 @@ import {
 import { chromeQueueNotifier } from "../infrastructure/queue-notifier";
 import { chromeBadgeHost } from "../infrastructure/badge-host";
 import { PageBadge } from "../application/page-badge";
+import { documentLink, markSent } from "../application/read-only-apply";
 import { PanelChannel } from "../infrastructure/panel-channel";
 import type { FillerRequest } from "../filler-messages";
 import type { PanelRequest, PanelResponse } from "../messages";
@@ -117,7 +118,15 @@ export default defineBackground(() => {
       case "inspect-offer":
         return preparation.inspect();
       case "prepare-offer":
-        return preparation.prepare({ cost: request.cost, url: request.url });
+        return preparation.prepare({
+          cost: request.cost,
+          offerText: request.offerText,
+          url: request.url,
+        });
+      case "document-link":
+        return documentLink(tools, request.applicationId, request.kind);
+      case "mark-sent":
+        return markSent(tools, request.applicationId);
       case "fill-options":
         return filling.options();
       case "fill":

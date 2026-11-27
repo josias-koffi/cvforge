@@ -1,3 +1,4 @@
+import { readOnlySite } from "../domain/submission";
 import {
   findApplicationFor,
   planPreparation,
@@ -40,6 +41,8 @@ export type OfferInspection =
       existing: ApplicationSummary | null;
       plan: PreparationPlan;
       balance: number | null;
+      /** LinkedIn, Indeed: the page is never read, the offer goes by its address (US-210). */
+      readOnly: string | null;
     };
 
 export type PreparationResult = {
@@ -83,6 +86,7 @@ export class Preparation {
       kind: "page",
       page: { host: new URL(tab.url).host, title: tab.title, url: tab.url },
       plan: planPreparation(existing),
+      readOnly: readOnlySite(tab.url),
     };
   }
 
@@ -94,12 +98,17 @@ export class Preparation {
   async prepare(accepted: {
     url: string;
     cost: number;
+    /** The offer's text the candidate pasted, on a read-only site. */
+    offerText?: string;
   }): Promise<PreparationResult> {
     const tab = await this.deps.pages.activeTab();
     if (!tab || tab === "no-access" || tab.url !== accepted.url) {
       throw new Error("L'onglet a changé : vérifiez à nouveau l'offre.");
     }
-    return this.prepareTab(tab, { maxCost: accepted.cost });
+    return this.prepareTab(tab, {
+      maxCost: accepted.cost,
+      offerText: accepted.offerText,
+    });
   }
 
   /**
@@ -109,7 +118,11 @@ export class Preparation {
    */
   async prepareTab(
     tab: ActiveTab,
-    limits: { maxCost: number; applicationId?: string | null },
+    limits: {
+      maxCost: number;
+      applicationId?: string | null;
+      offerText?: string;
+    },
   ): Promise<PreparationResult> {
     const existing = await this.existingFor(tab.url, limits.applicationId);
     const plan = planPreparation(existing);
@@ -131,7 +144,7 @@ export class Preparation {
         title: existing.title,
       };
     } else {
-      application = await this.importOffer(tab);
+      application = await this.importOffer(tab, limits.offerText);
       record(application);
     }
     const args = { applicationId: application.applicationId };
@@ -174,9 +187,17 @@ export class Preparation {
    * sites that refuse our server or draw the offer with JavaScript. The
    * server reads the address alone only when the page text is too thin.
    */
-  private async importOffer(tab: ActiveTab): Promise<ImportAnswer> {
+  private async importOffer(
+    tab: ActiveTab,
+    pasted?: string,
+  ): Promise<ImportAnswer> {
+    // On a read-only site (US-210), no script reads the page: the address,
+    // or the text the candidate pasted.
+    const readOnly = readOnlySite(tab.url);
     const offerText = usablePageText(
-      await this.deps.pages.readText(tab.tabId).catch(() => ""),
+      readOnly
+        ? (pasted ?? "")
+        : await this.deps.pages.readText(tab.tabId).catch(() => ""),
     );
     try {
       return (await this.deps.tools.call("import_offer", {
@@ -185,6 +206,11 @@ export class Preparation {
       })) as ImportAnswer;
     } catch (error) {
       if (error instanceof ConnectionRevokedError) throw error;
+      if (readOnly && !offerText) {
+        throw new Error(
+          `${readOnly} ne laisse pas JobSpark lire cette offre : copiez son texte dans « Texte de l'offre », puis recommencez.`,
+        );
+      }
       throw new Error(
         `JobSpark n'a pas pu lire cette offre : ${error instanceof Error ? error.message : String(error)}`,
       );
