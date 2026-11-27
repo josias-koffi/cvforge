@@ -223,6 +223,30 @@ Référence de gate: le spec impose des branches courtes et des PRs <= 400 ligne
 | US-201 | Publication sur le Chrome Web Store depuis la CI, confidentialité de l'extension dans `/admin/legal` | E33 | M | P1 | — | Demande propriétaire du 2026-11-26 |
 | US-202 | Remplissage avec le modèle de JobSpark payé en crédits (`form_fill`, 2 crédits), relais `/agent/llm`, clé personnelle en option | E33 | M | P0 | 040 | Décision propriétaire du 2026-11-26 |
 | US-203 | Remplissage d'abord par script (identité, liens, documents, réponses enregistrées, réglages Lever/Greenhouse/Ashby/Workable/Teamtailor), IA seulement pour les champs restants, aucun crédit si le script suffit | E33 | M | P0 | 040 | Demande propriétaire du 2026-11-26 |
+| US-204 | File de candidatures : le candidat choisit jusqu'à 10 offres (ou celles du jour) et un budget, l'agent prépare et remplit chaque formulaire en arrière-plan, puis le candidat valide chaque envoi en un clic depuis une file de récapitulatifs | E33 | L | P0 | — | Demande propriétaire du 2026-11-27 |
+
+## Critères d'acceptation détaillés — E33 (US-204)
+
+> Demande propriétaire du 2026-11-27 : « je lance une tâche et il postule aux dix dernières offres essentielles
+> pour moi ». Palier 1 en lot : rien n'est envoyé sans un clic du candidat par offre. L'envoi sans clic reste
+> US-200 (paliers 2 et 3), décision du propriétaire à prendre.
+
+- **US-204** :
+  - Lancement depuis le panneau : jusqu'à 10 offres choisies parmi les offres du jour, la recherche ou les
+    candidatures préparées, avec un budget maximum de crédits annoncé avant le départ (préparation 7 + remplissage
+    2 au plus par offre) ; rien n'est débité au-delà du budget.
+  - Les profils incomplets sont complétés une seule fois avant le départ (champs « Il manque à votre profil ») :
+    aucune question pendant le lot ; une question inconnue laisse le champ vide et la marque « à compléter ».
+  - Une offre à la fois, dans un onglet en arrière-plan : préparation (US-196), passe par script puis IA (US-203),
+    lecture du formulaire. Une erreur sur une offre ne stoppe pas les suivantes.
+  - Exclues et signalées sans débit : offre déjà envoyée, site à compte (Workday, LinkedIn, Indeed), formulaire
+    introuvable.
+  - File de récapitulatifs : pour chaque offre, état (prête, à compléter, captcha à résoudre, échec), champs remplis,
+    documents joints, crédits dépensés ; « Valider et envoyer » en un clic ouvre l'onglet et envoie avec les
+    garde-fous d'US-198, preuve comprise. Un captcha s'affiche pour le candidat, jamais contourné.
+  - Le lot survit à la fermeture du panneau (état dans le service worker) ; il peut être arrêté à tout moment.
+  - Tests unitaires de l'orchestration (budget, exclusions, reprise après erreur) et essai réel sur 3 offres
+    de préprod de plateformes différentes.
 
 ## Critères d'acceptation détaillés — E16
 
