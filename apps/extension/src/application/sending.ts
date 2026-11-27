@@ -3,6 +3,7 @@ import type { ApplicationSummary } from "../domain/offer";
 import type { FormSnapshot } from "../page/form-state";
 import type { ActiveTab, PageReader } from "./preparation";
 import type { JobSparkTools } from "./session";
+import { validatedAnswers, type DraftedAnswer } from "../domain/open-answer";
 
 /** The form in the recruiter's tab, outside page-agent. */
 export interface FormTab {
@@ -23,6 +24,8 @@ export type LastFill = {
   tabId: number;
   applicationId: string;
   documents: string[];
+  /** Open answers the extension drafted (US-208), kept once sent. */
+  drafted: DraftedAnswer[];
 };
 
 export type Review =
@@ -44,6 +47,8 @@ export type Review =
       refusal: string | null;
       /** A captcha waits for the candidate in the page. */
       captcha: boolean;
+      /** Open answers drafted by the extension, to read before sending. */
+      drafted: DraftedAnswer[];
     };
 
 export type SendOutcome = {
@@ -95,6 +100,10 @@ export class Sending {
       },
       captcha: form.captcha,
       documents: fill.documents,
+      // As the form holds them now: the candidate may have corrected them.
+      drafted: fill.drafted.map(
+        (draft) => validatedAnswers([draft], form.fields)[0] ?? draft,
+      ),
       fields: form.fields,
       kind: "review",
       refusal: this.refusal(tab.url, application, form),
@@ -140,11 +149,27 @@ export class Sending {
       screenshotBase64: screenshot?.base64 ?? null,
       screenshotType: screenshot?.type ?? null,
     });
+    await this.keepAnswers(fill.drafted, form.fields);
     return {
       confirmationUrl: page.confirmed ? page.url : null,
       confirmed: page.confirmed,
       recorded: true,
     };
+  }
+
+  /**
+   * The drafted answers, as sent (corrections included), saved for similar
+   * questions (US-208). Not fatal: the application is already sent.
+   */
+  private async keepAnswers(
+    drafted: DraftedAnswer[],
+    fields: FormSnapshot["fields"],
+  ) {
+    for (const entry of validatedAnswers(drafted, fields)) {
+      await this.deps.tools
+        .call("save_screening_answer", entry)
+        .catch(() => undefined);
+    }
   }
 
   private refusal(

@@ -1812,3 +1812,10 @@
 - **Why**: la file tourne panneau fermé ; un captcha était jusque-là invisible dans la file.
 - **Learned**: avec WXT 0.21 et `srcDir: "src"`, le dossier public reste `apps/extension/public` (pas `src/public`) ; `wxt prepare` régénère `PublicPath` pour `runtime.getURL`. Context7 en échec ce jour (erreur d'encodage) : `sidePanel.open` depuis un clic de notification non confirmé, d'où le repli.
 - **Open**: essai réel (notification panneau fermé, ouverture du panneau au clic).
+
+## 2026-11-27 — US-208 réponses rédigées aux questions ouvertes (demande propriétaire)
+- **Context**: [[sprints/sprint-040#US-208]]
+- **Did**: `domain/open-answer.ts` (questions factuelles jamais rédigées, prompt ancré lettre/CV/offre, nettoyage, `validatedAnswers`), `application/open-answers.ts` (`draftAnswer` via la route de modèle du remplissage), outil page-agent `draft_answer` + consigne système, `LastFill.drafted` → récapitulatif « à relire » → `save_screening_answer` à l'envoi avec la valeur lue dans la page.
+- **Why**: les questions de motivation obligatoires bloquaient le remplissage ; la lettre générée y répond déjà.
+- **Learned**: le relais `/agent/llm` accepte un appel sans outils dans la même session (60 appels, 15 min) : aucune modification d'API ni de crédit. Regex de questions factuelles : bornes de mot indispensables (« candidate » contient « date », « language » contient « age ») ; `\b` ne marche pas devant « â » sans drapeau `u`.
+- **Open**: qualité réelle des réponses (essai préprod) ; un champ riche (éditeur contenteditable) n'est pas lu par `readForm`, la correction n'y serait pas reprise.

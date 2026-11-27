@@ -53,6 +53,8 @@ export type QueueItem = {
   filledCount: number;
   /** A captcha waits in the tab (US-209); absent from queues saved before. */
   captcha?: boolean;
+  /** Open answers drafted by the extension, to read before sending (US-208). */
+  drafted?: number;
 };
 
 export type Queue = {

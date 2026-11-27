@@ -85,7 +85,7 @@ export function FillCard() {
   const short = options.balance !== null && options.balance < options.fillCost;
   const cost = options.personalKey
     ? "Avec votre clé IA personnelle : aucun crédit dépensé."
-    : `Gratuit quand vos données suffisent, ${options.fillCost} crédits si l'IA doit compléter des questions.`;
+    : `Gratuit quand vos données suffisent, ${options.fillCost} crédits si l'IA doit compléter des questions, réponses rédigées aux questions ouvertes comprises.`;
 
   return (
     <Card step={2} title="Le formulaire">
@@ -196,6 +196,8 @@ function Outcome({
             : " : aucun crédit dépensé."}
           {outcome.questionsAsked > 0 &&
             ` ${outcome.questionsAsked} question(s) posée(s), ${outcome.answersSaved} réponse(s) gardée(s).`}
+          {outcome.drafted.length > 0 &&
+            ` ${outcome.drafted.length} réponse(s) rédigée(s) à relire.`}
         </p>
         {outcome.formUrl && (
           <p className="text-foreground/80">

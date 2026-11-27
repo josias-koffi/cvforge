@@ -75,6 +75,28 @@ export function ReviewView({
           ))}
         </dl>
       </details>
+      {review.drafted.length > 0 && (
+        <section
+          aria-label="Réponses rédigées à relire"
+          className="flex flex-col gap-2 rounded-lg border border-warning/40 bg-warning/5 px-3 py-2.5"
+        >
+          <p className="font-medium">
+            {review.drafted.length === 1
+              ? "1 réponse rédigée par JobSpark, à relire"
+              : `${review.drafted.length} réponses rédigées par JobSpark, à relire`}
+          </p>
+          {review.drafted.map((draft) => (
+            <div key={draft.question} className="flex flex-col gap-0.5">
+              <p className="text-xs text-muted-foreground">{draft.question}</p>
+              <p className="whitespace-pre-line">{draft.answer}</p>
+            </div>
+          ))}
+          <p className="text-xs text-muted-foreground">
+            Corrigez-les directement sur la page si besoin : la version envoyée
+            sera reprise pour les questions semblables.
+          </p>
+        </section>
+      )}
       {review.requiredEmpty.length > 0 && (
         <Notice tone="destructive" role="status">
           Obligatoires et vides : {review.requiredEmpty.join(", ")}

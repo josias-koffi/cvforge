@@ -73,6 +73,7 @@ describe("FillCard", () => {
       aiUsed: true,
       answersSaved: 1,
       creditsSpent: 2,
+      drafted: [],
       optionalEmpty: [],
       prefilled: [{ label: "Email", value: "c@example.com" }],
       formUrl: "https://jobs.lever.co/acme/1/apply",
@@ -113,6 +114,7 @@ describe("FillCard", () => {
     ask.mockResolvedValueOnce({
       aiUsed: true,
       answersSaved: 0,
+      drafted: [],
       creditsSpent: 2,
       optionalEmpty: [],
       prefilled: [],
@@ -133,6 +135,7 @@ describe("FillCard", () => {
     ask.mockResolvedValueOnce({
       aiUsed: false,
       answersSaved: 0,
+      drafted: [],
       creditsSpent: 0,
       formUrl: null,
       optionalEmpty: ["Pronouns"],

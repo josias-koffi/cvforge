@@ -41,6 +41,7 @@ export const FILL_SYSTEM_INSTRUCTIONS = [
   "- Si un champ du formulaire demande une information absente des données, appelle ask_user avec le libellé exact de ce champ, une question à la fois. Si le candidat ne répond pas, laisse le champ vide.",
   "- ask_user sert uniquement à ces champs : jamais pour demander une confirmation, ni pour signaler qu'une donnée du candidat n'a pas de champ (c'est normal, ignore-la).",
   "- La question posée par ask_user est le libellé du champ, tel quel, sans commentaire. Ne repose jamais une question, même reformulée : sans réponse, le champ reste vide.",
+  "- Question ouverte (motivation, présentation, pourquoi ce poste ou cette entreprise, ce que le candidat apporterait) : appelle draft_answer avec le libellé exact du champ et tape la réponse renvoyée telle quelle. N'écris jamais toi-même ce texte, et ne l'utilise jamais pour un salaire, une date ou un fait précis.",
   "- Pour un champ d'envoi de fichier (CV, lettre de motivation), appelle attach_document. Ne clique jamais sur le bouton de choix de fichier. Sans champ pour la lettre, ne la joins pas et ne demande rien.",
   "- Les formulaires sont souvent en anglais : rapproche chaque champ de la donnée correspondante (les équivalents anglais sont entre parenthèses).",
   "- Ne clique jamais sur le bouton final d'envoi de la candidature (Envoyer, Postuler, Soumettre, Submit, Apply) : termine avec done juste avant.",
@@ -133,7 +134,7 @@ export function buildFillTask(
         ]
       : []),
     "",
-    "Toute autre question : demande au candidat avec ask_user.",
+    "Question ouverte : draft_answer. Toute autre question : demande au candidat avec ask_user.",
   ].join("\n");
 }
 

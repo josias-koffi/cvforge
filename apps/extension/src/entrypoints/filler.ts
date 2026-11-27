@@ -81,6 +81,19 @@ export default defineUnlistedScript(() => {
     },
   });
 
+  const draftAnswerTool = tool({
+    description:
+      "Rédige la réponse du candidat à une question ouverte du formulaire (motivation, présentation, pourquoi ce poste ou cette entreprise, ce qu'il apporterait). Donne le libellé exact du champ ; tape ensuite la réponse renvoyée, telle quelle.",
+    inputSchema: z.object({ question: z.string() }),
+    async execute({ question }) {
+      const reply = await ask<{ answer: string } | { error: string }>({
+        question,
+        type: "filler/draft",
+      });
+      return "error" in reply ? `❌ ${reply.error}` : reply.answer;
+    },
+  });
+
   const guardedClick = tool({
     description: "Click element by index",
     inputSchema: z.object({ index: z.int().min(0) }),
@@ -107,6 +120,7 @@ export default defineUnlistedScript(() => {
       customFetch: relayFetch,
       customTools: {
         attach_document: attachDocument,
+        draft_answer: draftAnswerTool,
         click_element_by_index: guardedClick,
       },
       instructions: { system: FILL_SYSTEM_INSTRUCTIONS },

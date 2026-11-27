@@ -9,6 +9,7 @@ const TAB: ActiveTab = { tabId: 4, title: "Apply", url: FORM_URL };
 const FILL: LastFill = {
   applicationId: "a1",
   documents: ["CV Camille Test.pdf", "Lettre de motivation Camille Test.pdf"],
+  drafted: [],
   tabId: 4,
 };
 const FORM: FormSnapshot = {
@@ -58,6 +59,7 @@ function setup(
     if (name === "list_applications") return [options.application ?? app()];
     if (name === "record_submission")
       return { confirmed: true, submissionId: "s1" };
+    if (name === "save_screening_answer") return { saved: true };
     throw new Error(name);
   });
   const sending = new Sending({
@@ -82,6 +84,7 @@ describe("Sending.review", () => {
       },
       captcha: false,
       documents: FILL.documents,
+      drafted: [],
       fields: FORM.fields,
       kind: "review",
       refusal: null,
@@ -133,6 +136,38 @@ describe("Sending.send", () => {
       screenshotBase64: "AAAA",
       screenshotType: "image/jpeg",
     });
+  });
+
+  it("shows the drafted answers as the page holds them, and keeps them once sent (US-208)", async () => {
+    const question = "Why do you want to join Acme?";
+    const { call, sending } = setup({
+      form: {
+        fields: [
+          ...FORM.fields,
+          { label: question, value: "Corrigé par le candidat." },
+        ],
+      },
+      lastFill: {
+        ...FILL,
+        drafted: [
+          { answer: "Brouillon.", question },
+          { answer: "Effacé.", question: "Anything else?" },
+        ],
+      },
+    });
+    const review = await sending.review();
+    expect(review.kind === "review" && review.drafted).toEqual([
+      { answer: "Corrigé par le candidat.", question },
+      { answer: "Effacé.", question: "Anything else?" },
+    ]);
+    await sending.send({ applicationId: "a1", url: FORM_URL });
+    expect(call).toHaveBeenCalledWith("save_screening_answer", {
+      answer: "Corrigé par le candidat.",
+      question,
+    });
+    expect(
+      call.mock.calls.filter(([name]) => name === "save_screening_answer"),
+    ).toHaveLength(1);
   });
 
   it("records an unconfirmed sending as such, never as sent", async () => {
