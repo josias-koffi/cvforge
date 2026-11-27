@@ -114,19 +114,27 @@ Décision d'architecture : **ADR-034** (`decisions/ADR-034-chrome-extension-appl
   - Pourquoi : un script remplit en 1 à 2 secondes, toujours de la même façon. L'IA prend 1 à 2 minutes et pose
     parfois des questions inutiles. La confiance dans l'agent vient d'abord de la prévisibilité.
   - Critères d'acceptation :
-    - [ ] Passe déterministe dans la page, avant tout appel au modèle : identité (prénom, nom, nom complet, e-mail,
+    - [x] Passe déterministe dans la page, avant tout appel au modèle : identité (prénom, nom, nom complet, e-mail,
           téléphone, ville), liens (LinkedIn, GitHub, portfolio), CV et lettre, et réponses enregistrées dont le
           libellé correspond. Elle reconnaît les champs par `autocomplete`, `name`/`id`, libellé et `aria-label`, en
           français et en anglais, et ne touche jamais un champ déjà rempli.
-    - [ ] Les listes (`select`, boutons radio) sont remplies seulement quand une option correspond exactement à la
+    - [x] Les listes (`select`, boutons radio) sont remplies seulement quand une option correspond exactement à la
           réponse enregistrée. Sinon, le champ est laissé à l'IA.
     - [ ] Réglages par plateforme pour Lever, Greenhouse, Ashby, Workable et Teamtailor, couverts par des
           fixtures HTML tirées des vrais formulaires.
-    - [ ] L'IA n'est lancée que s'il reste des champs vides ; elle reçoit la liste de ces champs seulement. Un
+          Fait pour Lever, Greenhouse, Ashby et Workable (`apps/extension/src/page/fixtures`, capturés le
+          2026-11-26). Reste Teamtailor : son formulaire s'ouvre dans une fenêtre que le navigateur de test
+          n'atteint pas ; la reconnaissance par libellé s'y applique quand même.
+    - [x] L'IA n'est lancée que s'il reste des champs vides ; elle reçoit la liste de ces champs seulement. Un
           formulaire entièrement rempli par le script ne débite aucun crédit (`start_form_fill` n'est pas appelé).
-    - [ ] Le panneau dit ce que le script a rempli, ce que l'IA a rempli, et le coût réel (0 ou 2 crédits).
+    - [x] Le panneau dit ce que le script a rempli, ce que l'IA a rempli, et le coût réel (0 ou 2 crédits).
     - [ ] Mesure sur les 6 formulaires réels de SPIKE-006 : part des champs remplis sans IA, durée et coût, avant
           et après.
+          Passe sans IA mesurée en ligne le 2026-11-26 (données fictives, rien envoyé) : Lever 0,9 s, 5 champs + CV,
+          reste 1 question obligatoire ; Greenhouse 1,7 s, 7 champs + CV + lettre, reste 9 questions ; Ashby 0,9 s,
+          6 champs + CV, reste 3 questions ouvertes ; Workable 1,0 s, 5 champs + CV, reste 6 questions.
+          SmartRecruiters bloque le navigateur de test (DataDome), Workday exclu (SPIKE-006). Avant : tout par l'IA,
+          10 à 16 appels. Reste à mesurer le coût de l'IA après la passe (essai réel avec le relais).
 
 ## 📊 Sprint DoD
 

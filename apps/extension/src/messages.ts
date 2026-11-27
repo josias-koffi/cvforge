@@ -33,6 +33,7 @@ export type PanelRequests = {
       applicationId: string;
       url: string;
       identity?: Partial<Record<IdentityField, string>>;
+      completeOptional?: boolean;
     };
     response: FillOutcome;
   };

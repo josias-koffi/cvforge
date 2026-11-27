@@ -1,5 +1,6 @@
 import type { FillTab } from "../application/filling";
 import type { FillerReply, PageProbe } from "../filler-messages";
+import type { PrefillReport } from "../page/prefill";
 
 const LOAD_TIMEOUT_MS = 20_000;
 /** Single-page application forms keep drawing after `complete`. */
@@ -41,6 +42,16 @@ export function chromeFillTab(): FillTab {
       )) as PageProbe;
     },
     open: (tabId, url) => waitForLoad(tabId, url),
+    async prefill(tabId, request) {
+      await inject(tabId);
+      const report = (await browser.tabs.sendMessage(
+        tabId,
+        { type: "filler/prefill", ...request },
+        { frameId: 0 },
+      )) as PrefillReport | { error: string };
+      if ("error" in report) throw new Error(report.error);
+      return report;
+    },
     async run(tabId, request) {
       await browser.scripting.executeScript({
         files: ["/filler.js"],

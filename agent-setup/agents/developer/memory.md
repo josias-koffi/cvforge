@@ -1784,3 +1784,10 @@
 - **Why**: le propriétaire n'avait jamais mis de clé et « la plupart des gens ne vont pas le faire ».
 - **Learned**: mesures réelles : gpt-4.1-mini 1,5–3,2 c$ (10–16 appels), sonnet-5.5 18–26 c$, haiku-5.5 boucle ; Sonnet/Opus 5.x exigent le raisonnement et refusent un tool_choice forcé ; page-agent patche par nom de modèle → avec le relais, le nom envoyé est « jobspark » et c'est le serveur qui adapte.
 - **Open**: texte de confidentialité ; essai réel préprod.
+
+## 2026-11-26 — US-203 remplissage d'abord par script (demande propriétaire)
+- **Context**: [[sprints/sprint-040#US-203]] · demande du propriétaire (« a-t-on vraiment besoin d'une IA ? »)
+- **Did**: `domain/field-match.ts` (autocomplete → noms des plateformes → libellé), `page/prefill.ts` (texte, listes et radios sur correspondance exacte, CV et lettre), `Filling.fill` lance l'IA seulement s'il reste des champs obligatoires vides, panneau « N champs sans IA », bouton « compléter les facultatifs ». Fixtures réelles Lever/Greenhouse/Ashby/Workable dans `page/fixtures`.
+- **Why**: vitesse (≈1 s contre 1–2 min) et prévisibilité, plus que l'économie.
+- **Learned**: presque tous les formulaires ont des questions obligatoires propres à l'offre : l'IA reste utile, mais pour 1 à 9 champs. Workable met LinkedIn dans un textarea ; Greenhouse a des champs de recherche à choisir (laissés à l'IA) ; Teamtailor ouvre son formulaire dans une fenêtre inaccessible au navigateur de test.
+- **Open**: fixture Teamtailor ; coût réel de l'IA après la passe (essai préprod).

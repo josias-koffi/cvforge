@@ -183,6 +183,9 @@ importers:
       '@page-agent/page-controller':
         specifier: 1.12.4
         version: 1.12.4
+      lucide-react:
+        specifier: ^1.45.0
+        version: 1.46.0(react@19.2.8)
       react:
         specifier: 19.2.8
         version: 19.2.8

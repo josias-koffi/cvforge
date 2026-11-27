@@ -1,14 +1,23 @@
+import { LoaderCircleIcon, WandSparklesIcon } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import type { FillOptions, FillOutcome } from "../application/filling";
 import { askBackground } from "../messages";
 import { ReviewCard } from "./ReviewCard";
 import type { IdentityField } from "../domain/fill";
-import { Button, Card, Field } from "./ui";
+import { Button, Card, Field, Hint, Notice, Select } from "./ui";
 
 const AUTOCOMPLETE: Record<IdentityField, string> = {
   email: "email",
   firstName: "given-name",
   lastName: "family-name",
+  linkedin: "url",
+  phone: "tel",
+};
+
+const INPUT_TYPE: Record<IdentityField, string> = {
+  email: "email",
+  firstName: "text",
+  lastName: "text",
   linkedin: "url",
   phone: "tel",
 };
@@ -36,7 +45,11 @@ export function FillCard() {
     try {
       const next = await askBackground({ type: "fill-options" });
       setOptions(next);
-      setSelected(next.kind === "page" ? (next.suggestedId ?? "") : "");
+      setSelected(
+        next.kind === "page"
+          ? (next.suggestedId ?? next.applications[0]?.id ?? "")
+          : "",
+      );
     } catch (failure) {
       setError(failure instanceof Error ? failure.message : String(failure));
     }
@@ -58,16 +71,11 @@ export function FillCard() {
 
   if (!options || options.kind !== "page") {
     return error ? (
-      <p
-        role="alert"
-        className="rounded-md border border-destructive p-3 text-sm text-destructive"
-      >
-        Remplissage indisponible : {error}
-      </p>
+      <Notice tone="destructive">Remplissage indisponible : {error}</Notice>
     ) : null;
   }
 
-  const fill = async () => {
+  const fill = async (completeOptional = false) => {
     setFilling(true);
     setError(null);
     setOutcome(null);
@@ -75,6 +83,7 @@ export function FillCard() {
       setOutcome(
         await askBackground({
           applicationId: selected,
+          ...(completeOptional && { completeOptional }),
           identity,
           type: "fill",
           url: options.url,
@@ -87,66 +96,66 @@ export function FillCard() {
     }
   };
 
+  const single = options.applications.length === 1;
+  const short = options.balance !== null && options.balance < options.fillCost;
+  const cost = options.personalKey
+    ? "Avec votre clé IA personnelle : aucun crédit dépensé."
+    : `Gratuit quand vos données suffisent, ${options.fillCost} crédits si l'IA doit compléter des questions.`;
+
   return (
-    <Card title="Remplir le formulaire">
+    <Card step={2} title="Le formulaire">
       {options.applications.length === 0 ? (
-        <p className="text-sm text-muted-foreground">
+        <p className="text-muted-foreground">
           Préparez d'abord une candidature (CV et lettre) depuis la page de
           l'offre.
         </p>
-      ) : options.balance !== null && options.balance < options.fillCost ? (
-        <p className="text-sm text-destructive">
-          Solde insuffisant : le remplissage coûte {options.fillCost} crédits
-          (solde : {options.balance}).
-        </p>
+      ) : short ? (
+        <Notice tone="destructive">
+          Solde insuffisant : le remplissage peut coûter {options.fillCost}{" "}
+          crédits (solde : {options.balance}).
+        </Notice>
       ) : (
         <>
-          <div className="flex flex-col gap-1">
-            <label htmlFor="fill-application" className="text-sm font-medium">
-              Candidature à utiliser
-            </label>
-            <select
+          {single ? (
+            <p className="truncate font-medium">
+              {label(options.applications[0]!)}
+            </p>
+          ) : (
+            <Select
               id="fill-application"
+              label="Candidature à utiliser"
               value={selected}
-              onChange={(event) => setSelected(event.target.value)}
-              className="rounded-md border border-input bg-card px-3 py-2 text-sm"
+              onChange={setSelected}
             >
               {options.applications.map((application) => (
                 <option key={application.id} value={application.id}>
                   {label(application)}
                 </option>
               ))}
-            </select>
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Sur {options.host} : l'agent remplit les champs, joint votre CV et
-            votre lettre, et vous pose les questions auxquelles vos données ne
-            répondent pas. Il n'envoie rien.
-          </p>
+            </Select>
+          )}
+          {!outcome && (
+            <p className="text-muted-foreground">
+              Sur {options.host}, l'agent remplit les champs et joint votre CV
+              et votre lettre. Il n'envoie rien.
+            </p>
+          )}
           {options.profileGaps.length > 0 && (
-            <fieldset className="flex flex-col gap-2 rounded-md border border-warning p-3">
-              <legend className="px-1 text-sm font-medium">
+            <fieldset className="flex flex-col gap-3 rounded-lg border border-dashed border-warning/60 bg-warning/5 p-3">
+              <legend className="px-1 text-xs font-semibold text-warning">
                 Il manque à votre profil
               </legend>
-              <p className="text-xs text-muted-foreground">
-                Donnez-les une fois ici : l'agent remplira ensuite le formulaire
-                sans vous interrompre, et les gardera pour les suivants. Laissez
-                vide ce que vous ne voulez pas donner.
-              </p>
+              <Hint>
+                Donnez-les une fois : l'agent ne vous interrompra pas et les
+                gardera pour les prochains formulaires. Laissez vide ce que vous
+                ne voulez pas donner.
+              </Hint>
               {options.profileGaps.map((gap) => (
                 <Field
                   key={gap.field}
                   id={`identity-${gap.field}`}
                   label={gap.label}
-                  type={
-                    gap.field === "email"
-                      ? "email"
-                      : gap.field === "phone"
-                        ? "tel"
-                        : gap.field === "linkedin"
-                          ? "url"
-                          : "text"
-                  }
+                  type={INPUT_TYPE[gap.field]}
                   autoComplete={AUTOCOMPLETE[gap.field]}
                   value={identity[gap.field] ?? ""}
                   onChange={(value) =>
@@ -156,53 +165,103 @@ export function FillCard() {
               ))}
             </fieldset>
           )}
-          <p className="text-xs text-muted-foreground">
-            {options.personalKey
-              ? "Avec votre clé IA personnelle : aucun crédit dépensé."
-              : `Coût : ${options.fillCost} crédits${options.balance === null ? "" : ` (solde : ${options.balance})`}.`}
-          </p>
-          <Button disabled={filling || !selected} onClick={() => void fill()}>
-            {filling
-              ? "Remplissage en cours…"
-              : options.personalKey
-                ? "Remplir ce formulaire"
-                : `Remplir ce formulaire (${options.fillCost} crédits)`}
-          </Button>
+          <div className="flex flex-col gap-1.5">
+            <Button
+              variant={outcome ? "secondary" : "primary"}
+              disabled={filling || !selected}
+              onClick={() => void fill()}
+            >
+              {filling ? (
+                <LoaderCircleIcon className="animate-spin" aria-hidden="true" />
+              ) : (
+                <WandSparklesIcon aria-hidden="true" />
+              )}
+              {filling
+                ? "Remplissage en cours…"
+                : outcome
+                  ? "Remplir à nouveau"
+                  : options.personalKey
+                    ? "Remplir ce formulaire"
+                    : `Remplir ce formulaire (${options.fillCost} crédits max)`}
+            </Button>
+            {!outcome && <Hint>{cost}</Hint>}
+          </div>
         </>
       )}
       {outcome && (
-        <div role="status" className="flex flex-col gap-1 text-sm">
-          <p className={outcome.success ? "text-success" : "text-warning"}>
-            {outcome.success
-              ? "Formulaire rempli. Vérifiez le récapitulatif ci-dessous avant l'envoi."
-              : "Formulaire rempli en partie : complétez-le sur la page, puis vérifiez le récapitulatif."}
-          </p>
-          {outcome.formUrl && (
-            <p className="text-muted-foreground">
-              Formulaire ouvert depuis la page de l'offre :{" "}
-              {new URL(outcome.formUrl).host}
-            </p>
-          )}
-          <p className="whitespace-pre-line text-muted-foreground">
-            {outcome.summary}
-          </p>
-          {outcome.questionsAsked > 0 && (
-            <p className="text-muted-foreground">
-              {outcome.questionsAsked} question(s) posée(s),{" "}
-              {outcome.answersSaved} réponse(s) gardée(s).
-            </p>
-          )}
-          <ReviewCard />
-        </div>
+        <Outcome
+          outcome={outcome}
+          filling={filling}
+          optionalLabel={
+            options.personalKey
+              ? "Les compléter avec l'IA"
+              : `Les compléter avec l'IA (${options.fillCost} crédits)`
+          }
+          onCompleteOptional={() => void fill(true)}
+        />
       )}
-      {error && (
-        <p
-          role="alert"
-          className="rounded-md border border-destructive p-3 text-sm text-destructive"
-        >
-          {error}
+      {error && <Notice tone="destructive">{error}</Notice>}
+    </Card>
+  );
+}
+
+function Outcome({
+  outcome,
+  filling,
+  optionalLabel,
+  onCompleteOptional,
+}: {
+  outcome: FillOutcome;
+  filling: boolean;
+  optionalLabel: string;
+  onCompleteOptional: () => void;
+}) {
+  return (
+    <div role="status" className="flex flex-col gap-3">
+      <Notice tone={outcome.success ? "success" : "warning"}>
+        <p className="font-medium">
+          {outcome.success
+            ? "Formulaire rempli. Vérifiez le récapitulatif avant l'envoi."
+            : "Formulaire rempli en partie : complétez-le sur la page, puis vérifiez le récapitulatif."}
+        </p>
+        <p className="text-foreground/80">
+          {outcome.prefilled.length} champ(s) rempli(s) sans IA
+          {outcome.aiUsed
+            ? `, le reste par l'IA (${outcome.creditsSpent} crédit(s)).`
+            : " : aucun crédit dépensé."}
+          {outcome.questionsAsked > 0 &&
+            ` ${outcome.questionsAsked} question(s) posée(s), ${outcome.answersSaved} réponse(s) gardée(s).`}
+        </p>
+        {outcome.formUrl && (
+          <p className="text-foreground/80">
+            Formulaire ouvert depuis la page de l'offre :{" "}
+            {new URL(outcome.formUrl).host}
+          </p>
+        )}
+      </Notice>
+      {outcome.aiUsed && outcome.summary && (
+        <p className="whitespace-pre-line text-muted-foreground">
+          {outcome.summary}
         </p>
       )}
-    </Card>
+      {!outcome.aiUsed && outcome.optionalEmpty.length > 0 && (
+        <div className="flex flex-col gap-2 rounded-lg bg-muted/60 p-3">
+          <p className="text-muted-foreground">
+            Champs facultatifs laissés vides :{" "}
+            {outcome.optionalEmpty.join(", ")}.
+          </p>
+          <Button
+            variant="secondary"
+            size="sm"
+            className="self-start"
+            disabled={filling}
+            onClick={onCompleteOptional}
+          >
+            {optionalLabel}
+          </Button>
+        </div>
+      )}
+      <ReviewCard />
+    </div>
   );
 }

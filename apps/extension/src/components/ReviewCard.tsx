@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import type { Review, SendOutcome } from "../application/sending";
 import { askBackground } from "../messages";
 import { ReviewView } from "./ReviewView";
+import { Notice } from "./ui";
 
 /** Loads the review of the filled form and sends it on the candidate's go. */
 export function ReviewCard() {
@@ -32,11 +33,7 @@ export function ReviewCard() {
   }, [refresh]);
 
   if (!review || review.kind !== "review") {
-    return error ? (
-      <p role="alert" className="text-sm text-destructive">
-        {error}
-      </p>
-    ) : null;
+    return error ? <Notice tone="destructive">{error}</Notice> : null;
   }
 
   const send = () =>
@@ -59,14 +56,7 @@ export function ReviewCard() {
         onRefresh={() => void refresh()}
         onSend={() => void send()}
       />
-      {error && (
-        <p
-          role="alert"
-          className="rounded-md border border-destructive p-3 text-sm text-destructive"
-        >
-          {error}
-        </p>
-      )}
+      {error && <Notice tone="destructive">{error}</Notice>}
     </>
   );
 }

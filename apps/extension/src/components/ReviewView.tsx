@@ -1,5 +1,6 @@
 import type { Review, SendOutcome } from "../application/sending";
-import { Button } from "./ui";
+import { RefreshCwIcon, SendIcon } from "lucide-react";
+import { Button, Hint, Notice } from "./ui";
 
 type Props = {
   review: Extract<Review, { kind: "review" }>;
@@ -22,16 +23,16 @@ export function ReviewView({
 }: Props) {
   if (outcome) {
     return outcome.confirmed ? (
-      <p role="status" className="text-sm text-success">
+      <Notice tone="success" role="status">
         Candidature envoyée : le recruteur l'a confirmée. La preuve (page et
         capture) est enregistrée dans JobSpark.
-      </p>
+      </Notice>
     ) : (
-      <p role="status" className="text-sm text-warning">
+      <Notice tone="warning" role="status">
         Envoi à vérifier : aucune page de confirmation n'est apparue. La capture
         est enregistrée dans JobSpark ; vérifiez sur le site du recruteur ou
         dans vos e-mails.
-      </p>
+      </Notice>
     );
   }
 
@@ -41,26 +42,28 @@ export function ReviewView({
   return (
     <section
       aria-labelledby="review-title"
-      className="flex flex-col gap-3 border-t border-border pt-3"
+      className="flex flex-col gap-3 border-t pt-3"
     >
-      <h3 id="review-title" className="text-sm font-semibold">
+      <h3 id="review-title" className="flex items-center gap-2 font-semibold">
+        <span
+          aria-hidden="true"
+          className="flex size-5 items-center justify-center rounded-full bg-accent text-xs font-semibold text-primary"
+        >
+          3
+        </span>
         Récapitulatif avant l'envoi
       </h3>
-      <dl className="grid gap-1 text-sm">
-        <div>
-          <dt className="inline font-medium">Offre : </dt>
-          <dd className="inline">{offer || "—"}</dd>
-        </div>
-        <div>
-          <dt className="inline font-medium">Documents joints : </dt>
-          <dd className="inline">{review.documents.join(", ")}</dd>
-        </div>
+      <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1">
+        <dt className="text-muted-foreground">Offre</dt>
+        <dd className="min-w-0 truncate">{offer || "—"}</dd>
+        <dt className="text-muted-foreground">Documents</dt>
+        <dd className="min-w-0 break-words">{review.documents.join(", ")}</dd>
       </dl>
-      <div>
-        <p className="text-sm font-medium">
+      <details className="rounded-lg border">
+        <summary className="cursor-pointer px-3 py-2 font-medium">
           Champs remplis ({review.fields.length})
-        </p>
-        <dl className="mt-1 grid max-h-64 gap-1 overflow-y-auto text-sm">
+        </summary>
+        <dl className="grid max-h-64 gap-1.5 overflow-y-auto border-t px-3 py-2">
           {review.fields.map((field, index) => (
             <div
               key={`${field.label}-${index}`}
@@ -71,30 +74,38 @@ export function ReviewView({
             </div>
           ))}
         </dl>
-      </div>
+      </details>
       {review.requiredEmpty.length > 0 && (
-        <p className="text-sm text-destructive">
+        <Notice tone="destructive" role="status">
           Obligatoires et vides : {review.requiredEmpty.join(", ")}
-        </p>
+        </Notice>
       )}
-      {review.refusal ? (
-        <p role="alert" className="text-sm text-warning">
+      {review.refusal && (
+        <Notice tone="warning" role="alert">
           {review.refusal}
-        </p>
-      ) : (
-        <p className="text-xs text-muted-foreground">
-          « Valider et envoyer » clique sur « {review.submitLabel} » à votre
-          place, puis garde la page de confirmation comme preuve.
-        </p>
+        </Notice>
       )}
       <div className="flex gap-2">
-        <Button disabled={busy || review.refusal !== null} onClick={onSend}>
+        <Button
+          variant="spark"
+          className="flex-1"
+          disabled={busy || review.refusal !== null}
+          onClick={onSend}
+        >
+          <SendIcon aria-hidden="true" />
           {busy ? "Envoi…" : "Valider et envoyer"}
         </Button>
         <Button variant="secondary" disabled={busy} onClick={onRefresh}>
+          <RefreshCwIcon aria-hidden="true" />
           Relire la page
         </Button>
       </div>
+      {!review.refusal && (
+        <Hint>
+          Clique sur « {review.submitLabel} » à votre place, puis garde la page
+          de confirmation comme preuve.
+        </Hint>
+      )}
     </section>
   );
 }

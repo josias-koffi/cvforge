@@ -1,23 +1,122 @@
 @import "tailwindcss";
 
-/* JobSpark tokens, same values as apps/web (light theme). */
-@theme {
-  --color-background: oklch(0.979 0.003 264.5);
-  --color-foreground: oklch(0.21 0.032 264.7);
-  --color-card: oklch(1 0 0);
-  --color-primary: oklch(0.558 0.243 265.4);
-  --color-primary-foreground: oklch(1 0 0);
-  --color-muted: oklch(0.957 0.007 260.7);
-  --color-muted-foreground: oklch(0.551 0.023 264.4);
-  --color-border: oklch(0.921 0.008 260.7);
-  --color-input: oklch(0.87 0.012 260.7);
-  --color-destructive: oklch(0.577 0.215 27.3);
-  --color-success: oklch(0.527 0.137 150.1);
-  --color-warning: oklch(0.555 0.146 49);
-  --color-spark: oklch(0.813 0.165 75);
+/* JobSpark tokens: same values as apps/web/app/globals.css, light and dark. */
+@theme inline {
+  --font-sans: "Inter", "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-destructive: var(--destructive);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-info: var(--info);
+  --color-spark: var(--spark);
+  --color-spark-foreground: var(--spark-foreground);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --shadow-surface: var(--elevation-surface);
+  --shadow-raised: var(--elevation-raised);
+  --shadow-spark: var(--elevation-spark);
+  --ease-spark: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --animate-rise-in: rise-in 400ms var(--ease-spark) both;
+
+  @keyframes rise-in {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
 }
 
-body {
-  @apply bg-background text-foreground antialiased;
-  font-family: ui-sans-serif, system-ui, sans-serif;
+:root {
+  --background: oklch(0.979 0.003 264.5);
+  --foreground: oklch(0.21 0.032 264.7);
+  --card: oklch(1 0 0);
+  --primary: oklch(0.558 0.243 265.4);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.957 0.007 260.7);
+  --muted: oklch(0.957 0.007 260.7);
+  --muted-foreground: oklch(0.551 0.023 264.4);
+  --accent: oklch(0.962 0.018 272.3);
+  --border: oklch(0.921 0.008 260.7);
+  --input: oklch(0.87 0.012 260.7);
+  --ring: oklch(0.558 0.243 265.4);
+  --destructive: oklch(0.577 0.215 27.3);
+  --success: oklch(0.527 0.137 150.1);
+  --warning: oklch(0.555 0.146 49);
+  --info: oklch(0.546 0.215 262.9);
+  --spark: oklch(0.813 0.165 75);
+  --spark-foreground: oklch(0.21 0.032 264.7);
+  --radius: 0.625rem;
+  --elevation-surface: 0 1px 2px 0 oklch(0.21 0.032 264.7 / 5%);
+  --elevation-raised:
+    0 2px 4px -1px oklch(0.21 0.032 264.7 / 6%),
+    0 8px 20px -4px oklch(0.21 0.032 264.7 / 10%);
+  --elevation-spark: 0 4px 14px -4px oklch(0.813 0.165 75 / 55%);
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: oklch(0.183 0.031 263.4);
+    --foreground: oklch(0.967 0.003 264.5);
+    --card: oklch(0.226 0.039 267.9);
+    --primary: oklch(0.642 0.19 267.7);
+    --primary-foreground: oklch(0.183 0.031 263.4);
+    --secondary: oklch(0.267 0.054 269.1);
+    --muted: oklch(0.267 0.054 269.1);
+    --muted-foreground: oklch(0.714 0.019 261.3);
+    --accent: oklch(0.281 0.063 268.3);
+    --border: oklch(0.312 0.049 266.1);
+    --input: oklch(0.34 0.05 266.1);
+    --ring: oklch(0.642 0.19 267.7);
+    --destructive: oklch(0.711 0.166 22.2);
+    --success: oklch(0.8 0.182 151.7);
+    --warning: oklch(0.837 0.164 84.4);
+    --info: oklch(0.714 0.143 254.6);
+    --spark: oklch(0.781 0.144 72.1);
+    --spark-foreground: oklch(0.183 0.031 263.4);
+    --elevation-surface: 0 1px 2px 0 oklch(0 0 0 / 30%);
+    --elevation-raised:
+      0 0 0 1px oklch(0.642 0.19 267.7 / 18%),
+      0 10px 24px -6px oklch(0 0 0 / 50%);
+    --elevation-spark: 0 4px 16px -4px oklch(0.781 0.144 72.1 / 40%);
+    color-scheme: dark;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background font-sans text-foreground antialiased;
+  }
+}
+
+@utility rise-in {
+  animation: var(--animate-rise-in);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }

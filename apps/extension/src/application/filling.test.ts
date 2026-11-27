@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ApplicationSummary } from "../domain/offer";
 import type { FillerRun } from "../filler-messages";
+import type { PrefillReport } from "../page/prefill";
 import { Filling, type FillTab } from "./filling";
 import type { ActiveTab } from "./preparation";
 import type { AiKeySettings } from "./session";
@@ -13,9 +14,18 @@ const KEY: AiKeySettings = {
   model: "m",
 };
 
+/** What the script pass leaves: one required question, for the model. */
+const LEFT_TO_MODEL: PrefillReport = {
+  attached: ["CV Camille Test.pdf"],
+  filled: [{ label: "Email", value: "c@example.com" }],
+  optionalEmpty: [],
+  remaining: ["Salaire ?"],
+};
+
 /** A tab that is already the form: nothing to open. */
 const FORM_PAGE = {
   open: async () => undefined,
+  prefill: async () => LEFT_TO_MODEL,
   probe: async () => ({ applyLink: null, fieldCount: 8 }),
 };
 
@@ -35,6 +45,7 @@ function setup(
     key?: AiKeySettings | null;
     apps?: ApplicationSummary[];
     probe?: { applyLink: string | null; fieldCount: number };
+    prefill?: PrefillReport;
   } = {},
 ) {
   let tab: ActiveTab | null | "no-access" = TAB;
@@ -107,6 +118,7 @@ function setup(
     pages: { activeTab: async () => tab, readText: async () => "" },
     tab: {
       open: vi.fn(async () => undefined),
+      prefill: vi.fn(async () => options.prefill ?? LEFT_TO_MODEL),
       probe: vi.fn(
         async () => options.probe ?? { applyLink: null, fieldCount: 8 },
       ),
@@ -197,13 +209,22 @@ describe("Filling.fill", () => {
       kind: "letter",
     });
     expect(outcome).toEqual({
+      aiUsed: true,
       answersSaved: 1,
       creditsSpent: 0,
       formUrl: null,
+      optionalEmpty: [],
+      prefilled: LEFT_TO_MODEL.filled,
       questionsAsked: 1,
       success: true,
       summary: "Rempli, champ « vélo » vide.",
     });
+    // The model only finishes what the script left (US-203).
+    expect(run.task).toContain(
+      "Champs déjà remplis, n'y touche pas :\n- Email",
+    );
+    expect(run.task).toContain("Champs à remplir :\n- Salaire ?");
+    expect(run.task).toContain("Documents déjà joints");
   });
 
   it("answers from the candidate's data instead of asking them", async () => {
@@ -393,6 +414,43 @@ describe("Filling: from the offer page", () => {
       ).toBeNull();
       expect(tab.open).not.toHaveBeenCalled();
     }
+  });
+});
+
+describe("Filling: the script first, the model only for the rest (US-203)", () => {
+  const ALL_DONE = {
+    ...LEFT_TO_MODEL,
+    optionalEmpty: ["Pronouns"],
+    remaining: [],
+  };
+
+  it("costs nothing and calls no model when the script filled every required field", async () => {
+    const f = setup({ key: null, prefill: ALL_DONE });
+    const outcome = await f.filling.fill({ applicationId: "a1", url: URL_ });
+    expect(outcome).toMatchObject({
+      aiUsed: false,
+      creditsSpent: 0,
+      optionalEmpty: ["Pronouns"],
+      success: true,
+    });
+    expect(f.lastRun()).toBeNull();
+    expect(f.call).not.toHaveBeenCalledWith(
+      "start_form_fill",
+      expect.anything(),
+    );
+    // The review knows the form was filled, without the model.
+    expect(f.filling.lastFill(9)).toMatchObject({ applicationId: "a1" });
+  });
+
+  it("has the model try the optional fields only when the candidate asks", async () => {
+    const f = setup({ key: null, prefill: ALL_DONE });
+    const outcome = await f.filling.fill({
+      applicationId: "a1",
+      completeOptional: true,
+      url: URL_,
+    });
+    expect(outcome).toMatchObject({ aiUsed: true, creditsSpent: 2 });
+    expect(f.lastRun()!.task).toContain("Champs à remplir :\n- Pronouns");
   });
 });
 

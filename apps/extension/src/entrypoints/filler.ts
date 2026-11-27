@@ -15,6 +15,7 @@ import type {
 import { attachFile, type DocumentKind } from "../page/attach";
 import { findApplyLink, formFieldCount } from "../page/apply-link";
 import { clickSubmit, readForm } from "../page/form-state";
+import { prefill } from "../page/prefill";
 
 /**
  * Injected in the recruiter's tab when the candidate clicks « Remplir »
@@ -147,6 +148,14 @@ export default defineUnlistedScript(() => {
     if (form?.type === "filler/probe") {
       reply({ applyLink: findApplyLink(), fieldCount: formFieldCount() });
       return;
+    }
+    if (form?.type === "filler/prefill") {
+      void prefill(form.data, form.documents).then(reply, (error: unknown) =>
+        reply({
+          error: error instanceof Error ? error.message : String(error),
+        }),
+      );
+      return true;
     }
     if (form?.type === "filler/submit") {
       reply(clickSubmit());

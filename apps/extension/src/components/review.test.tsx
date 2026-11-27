@@ -56,7 +56,9 @@ describe("ReviewView", () => {
       },
     });
     expect(html).toContain("Champs obligatoires encore vides : CV.");
-    expect(html).toMatch(/<button[^>]*disabled[^>]*>Valider et envoyer/);
+    expect(html).toMatch(
+      /<button[^>]*disabled[^>]*>(<svg.*?<\/svg>)?Valider et envoyer/,
+    );
   });
 
   it("tells a confirmed sending from one to check", () => {

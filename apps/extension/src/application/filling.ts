@@ -1,6 +1,7 @@
 import {
   answerFromData,
   buildFillTask,
+  prefillData,
   completeProfile,
   IDENTITY_FIELDS,
   type IdentityField,
@@ -23,6 +24,8 @@ import type {
   PageProbe,
 } from "../filler-messages";
 import type { DocumentKind } from "../page/attach";
+import type { PrefillData } from "../domain/field-match";
+import type { PrefillReport } from "../page/prefill";
 import type { PageReader } from "./preparation";
 import type { LastFill } from "./sending";
 import type { AiKeySettings, AiKeyStore, JobSparkTools } from "./session";
@@ -30,6 +33,14 @@ import type { AiKeySettings, AiKeyStore, JobSparkTools } from "./session";
 /** The script that runs page-agent in the recruiter's tab. */
 export interface FillTab {
   run(tabId: number, request: FillerRun): Promise<FillerReply>;
+  /** The pass without a model: what the data answers for sure (US-203). */
+  prefill(
+    tabId: number,
+    request: {
+      data: PrefillData;
+      documents: Record<DocumentKind, EncodedDocument>;
+    },
+  ): Promise<PrefillReport>;
   /** Whether the tab is already a form, or the link to it. */
   probe(tabId: number): Promise<PageProbe>;
   /** Opens the form in the same tab and waits for it to load. */
@@ -70,6 +81,12 @@ export type FillOptions =
 
 export type FillOutcome = {
   creditsSpent: number;
+  /** Fields the page script filled without a model (US-203). */
+  prefilled: { label: string; value: string }[];
+  /** Whether the model was needed for what remained. */
+  aiUsed: boolean;
+  /** Optional fields left empty: the candidate may have the model try them. */
+  optionalEmpty: string[];
   /** The form the extension opened from the offer page, if it did. */
   formUrl: string | null;
   success: boolean;
@@ -185,6 +202,8 @@ export class Filling {
     url: string;
     /** What the candidate typed in the panel for the profile's gaps. */
     identity?: Partial<Record<IdentityField, string>>;
+    /** Also have the model try the optional fields the script left empty. */
+    completeOptional?: boolean;
   }): Promise<FillOutcome> {
     if (this.active) throw new Error("Un remplissage est déjà en cours.");
     const aiKey = await this.deps.aiKeys.get();
@@ -212,6 +231,36 @@ export class Filling {
       letter: await this.document(application.id, "letter", profile),
     };
     const formUrl = await this.openFormIfNeeded(tab.tabId);
+    const pre = await this.deps.tab.prefill(tab.tabId, {
+      data: prefillData(profile, answers),
+      documents,
+    });
+    const documentNames = [documents.cv.name, documents.letter.name];
+    this.filled.set(tab.tabId, {
+      applicationId: application.id,
+      documents: pre.attached.length ? pre.attached : documentNames,
+      tabId: tab.tabId,
+    });
+    const base = {
+      formUrl,
+      optionalEmpty: pre.optionalEmpty,
+      prefilled: pre.filled,
+    };
+    const needsModel =
+      pre.remaining.length > 0 ||
+      (request.completeOptional === true && pre.optionalEmpty.length > 0);
+    if (!needsModel) {
+      return {
+        ...base,
+        aiUsed: false,
+        answersSaved: 0,
+        creditsSpent: 0,
+        questionsAsked: 0,
+        success: true,
+        summary: `Rempli sans IA : ${pre.filled.length} champ(s)${pre.attached.length ? `, ${pre.attached.length} document(s) joint(s)` : ""}.`,
+      };
+    }
+
     const route = await this.modelRoute(aiKey, application.id);
     this.active = {
       data: { answers, profile },
@@ -228,18 +277,28 @@ export class Filling {
           baseURL: route.baseURL,
           model: aiKey?.model ?? JOBSPARK_MODEL,
         },
-        task: buildFillTask(profile, answers, application),
+        task: buildFillTask(profile, answers, application, {
+          attached: pre.attached,
+          // A search box typed into but not picked (Greenhouse « Location »)
+          // is still required: the model finishes it.
+          filled: pre.filled
+            .map((field) => field.label)
+            .filter((label) => !pre.remaining.includes(label)),
+          optionalEmpty: request.completeOptional ? pre.optionalEmpty : [],
+          remaining: pre.remaining,
+        }),
         type: "filler/run",
       });
       this.filled.set(tab.tabId, {
         applicationId: application.id,
-        documents: [documents.cv.name, documents.letter.name],
+        documents: documentNames,
         tabId: tab.tabId,
       });
       return {
+        ...base,
+        aiUsed: true,
         answersSaved: this.active.answersSaved,
         creditsSpent: route.kind === "jobspark" ? FORM_FILL_COST : 0,
-        formUrl,
         questionsAsked: this.active.questionsAsked,
         success: reply.success,
         summary: reply.summary,

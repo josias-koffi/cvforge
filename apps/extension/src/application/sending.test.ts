@@ -14,6 +14,7 @@ const FILL: LastFill = {
 const FORM: FormSnapshot = {
   fields: [{ label: "E-mail", value: "c@example.com" }],
   multiStep: false,
+  optionalEmpty: [],
   requiredEmpty: [],
   submitLabel: "Submit application",
 };
