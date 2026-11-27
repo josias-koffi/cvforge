@@ -23,6 +23,9 @@ export type OfferViewProps = {
   onAsk: () => void;
   onConfirm: () => void;
   onCancel: () => void;
+  /** The offer's text pasted by the candidate, on LinkedIn or Indeed (US-210). */
+  offerText?: string;
+  onOfferText?: (text: string) => void;
 };
 
 /** The offer of the active tab and what preparing it costs (US-196). */
@@ -43,6 +46,8 @@ function body({
   onAsk,
   onConfirm,
   onCancel,
+  offerText,
+  onOfferText,
 }: OfferViewProps) {
   if (result) {
     return (
@@ -111,7 +116,9 @@ function body({
       <>
         {header}
         <Notice tone="success">
-          CV et lettre déjà générés : passez au formulaire.
+          {inspection.readOnly
+            ? "CV et lettre prêts : téléchargez-les ci-dessous, puis postulez vous-même."
+            : "CV et lettre déjà générés : passez au formulaire."}
         </Notice>
       </>
     );
@@ -121,6 +128,13 @@ function body({
   return (
     <>
       {header}
+      {inspection.readOnly && (
+        <ReadOnlyNotice
+          site={inspection.readOnly}
+          offerText={offerText ?? ""}
+          onOfferText={onOfferText}
+        />
+      )}
       {existing && (
         <Hint>Candidature déjà créée : on complète ce qui manque.</Hint>
       )}
@@ -164,6 +178,45 @@ function body({
           Préparer la candidature
         </Button>
       )}
+    </>
+  );
+}
+
+/** LinkedIn, Indeed: why nothing is read nor filled there, and the paste box. */
+function ReadOnlyNotice({
+  site,
+  offerText,
+  onOfferText,
+}: {
+  site: string;
+  offerText: string;
+  onOfferText?: (text: string) => void;
+}) {
+  return (
+    <>
+      <Notice tone="info">
+        {site} interdit l'automatisation : JobSpark n'y lit ni n'y remplit la
+        page. Il prépare votre CV et votre lettre à partir de l'adresse de
+        l'offre ; vous postulez vous-même.
+      </Notice>
+      <details className="rounded-lg border">
+        <summary className="cursor-pointer px-3 py-2 font-medium">
+          Texte de l'offre (si l'import échoue)
+        </summary>
+        <div className="border-t px-3 py-2">
+          <label htmlFor="offer-text" className="sr-only">
+            Texte de l'offre
+          </label>
+          <textarea
+            id="offer-text"
+            rows={6}
+            value={offerText}
+            placeholder={`Copiez ici le texte de l'offre affichée sur ${site}.`}
+            onChange={(event) => onOfferText?.(event.target.value)}
+            className="w-full resize-y rounded-md border bg-background px-2 py-1.5 text-sm"
+          />
+        </div>
+      </details>
     </>
   );
 }

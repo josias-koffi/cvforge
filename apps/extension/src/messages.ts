@@ -25,8 +25,25 @@ export type PanelRequests = {
     response: OfferInspection;
   };
   "prepare-offer": {
-    request: { type: "prepare-offer"; url: string; cost: number };
+    request: {
+      type: "prepare-offer";
+      url: string;
+      cost: number;
+      offerText?: string;
+    };
     response: PreparationResult;
+  };
+  "document-link": {
+    request: {
+      type: "document-link";
+      applicationId: string;
+      kind: "cv" | "letter";
+    };
+    response: string;
+  };
+  "mark-sent": {
+    request: { type: "mark-sent"; applicationId: string };
+    response: { status: string };
   };
   "fill-options": { request: { type: "fill-options" }; response: FillOptions };
   fill: {

@@ -5,8 +5,24 @@ import { APPLICATION_STATUS_DRAFT } from "@cvforge/types";
  * §6, US-198), and how it tells a sending went through.
  */
 
-/** Sites whose terms forbid applying through automation. */
-const BLOCKED_SITES = [/(^|\.)linkedin\.com$/i, /(^|\.)indeed\.[a-z.]+$/i];
+/** Sites whose terms forbid automation: read-only for the extension (US-210). */
+const BLOCKED_SITES: [RegExp, string][] = [
+  [/(^|\.)linkedin\.com$/i, "LinkedIn"],
+  [/(^|\.)indeed\.[a-z.]+$/i, "Indeed"],
+];
+
+/**
+ * The site's name when its terms forbid automation (US-210): no script, no
+ * click, no fill there; the extension only imports the offer by its address.
+ */
+export function readOnlySite(url: string): string | null {
+  try {
+    const host = new URL(url).host;
+    return BLOCKED_SITES.find(([site]) => site.test(host))?.[1] ?? null;
+  } catch {
+    return null;
+  }
+}
 
 const SECOND_LEVEL = new Set(["co", "com", "org", "net", "gov", "ac", "gouv"]);
 
@@ -32,7 +48,7 @@ export type SubmitCheck = {
 /** Why the extension must not send, or null when it may. */
 export function submitRefusal(check: SubmitCheck): string | null {
   const page = new URL(check.pageUrl);
-  if (BLOCKED_SITES.some((site) => site.test(page.host))) {
+  if (readOnlySite(page.href)) {
     return "Ce site interdit l'envoi automatique : envoyez la candidature vous-même.";
   }
   if (check.status !== APPLICATION_STATUS_DRAFT) {

@@ -44,6 +44,14 @@ describe("PageBadge (US-207)", () => {
     );
   });
 
+  it("injects nothing on LinkedIn (US-210)", async () => {
+    const f = setup();
+    expect(
+      await f.badge.update(1, "https://www.linkedin.com/jobs/view/1"),
+    ).toBeNull();
+    expect(f.host.probe).not.toHaveBeenCalled();
+  });
+
   it("lists the offers once per ten minutes", async () => {
     const f = setup();
     await f.badge.update(1, "https://x.io/a");

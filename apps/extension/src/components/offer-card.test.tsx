@@ -16,6 +16,7 @@ const PAGE: OfferInspection = {
   kind: "page",
   page: { host: "jobs.example", title: "Dev", url: "https://jobs.example/1" },
   plan: { alreadySent: false, cost: 7, steps: ["import", "cv", "letter"] },
+  readOnly: null,
 };
 
 (

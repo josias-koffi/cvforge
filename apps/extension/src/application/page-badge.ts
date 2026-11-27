@@ -6,6 +6,7 @@ import {
   type PageSignals,
 } from "../domain/badge";
 import { isWebPage } from "../domain/offer";
+import { readOnlySite } from "../domain/submission";
 import type { JobSparkTools } from "./session";
 
 /** The browser side of the badge. */
@@ -46,8 +47,9 @@ export class PageBadge {
       await this.deps.host.show(tabId, null);
       return null;
     }
+    // No script on LinkedIn or Indeed (US-210): the score alone.
     const [signals, offers] = await Promise.all([
-      this.deps.host.probe(tabId).catch(() => null),
+      readOnlySite(url) ? null : this.deps.host.probe(tabId).catch(() => null),
       this.knownOffers(),
     ]);
     const badge = badgeFor(url, signals, knownOfferFor(offers, url));

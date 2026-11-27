@@ -20,6 +20,8 @@ import {
   type ProfileGap,
 } from "./candidate-data";
 import { askCandidate } from "./fill-questions";
+import { readOnlyOptions, type ReadOnlyOptions } from "./read-only-apply";
+import { readOnlySite } from "../domain/submission";
 import { draftAnswer, type DraftState } from "./open-answers";
 import type { DraftedAnswer } from "../domain/open-answer";
 import { ModelRelay } from "./model-relay";
@@ -58,6 +60,7 @@ export interface CandidateChannel {
 export type FillOptions =
   | { kind: "no-access" }
   | { kind: "no-page" }
+  | ReadOnlyOptions
   | {
       kind: "page";
       host: string;
@@ -133,6 +136,8 @@ export class Filling {
     const tab = await this.deps.pages.activeTab();
     if (tab === "no-access") return { kind: "no-access" };
     if (!tab) return { kind: "no-page" };
+    const site = readOnlySite(tab.url);
+    if (site) return readOnlyOptions(this.deps.tools, tab, site);
 
     const [listed, aiKey, balance, profile] = await Promise.all([
       this.deps.tools.call("list_applications"),
@@ -191,6 +196,12 @@ export class Filling {
     mode: { unattended?: boolean } = {},
   ): Promise<FillOutcome> {
     if (this.active) throw new Error("Un remplissage est déjà en cours.");
+    const site = readOnlySite(tab.url);
+    if (site) {
+      throw new Error(
+        `${site} interdit le remplissage automatique : postulez vous-même.`,
+      );
+    }
     const aiKey = await this.deps.aiKeys.get();
 
     const listed = (await this.deps.tools.call(

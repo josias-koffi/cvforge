@@ -226,6 +226,21 @@ Décision d'architecture : **ADR-034** (`decisions/ADR-034-chrome-extension-appl
     - [x] Tests unitaires (règles, cache, sans accès, déconnecté).
     - [ ] Essai réel sur une offre du jour, un formulaire Lever/Greenhouse et une page quelconque.
 
+- [ ] **[US-210]** LinkedIn et Indeed en lecture seule (décision du propriétaire du 2026-11-27)
+  - Agent: `developer`
+  - Pourquoi : leurs conditions d'utilisation interdisent l'automatisation ; c'est le compte du candidat qui serait
+    restreint.
+  - Critères d'acceptation :
+    - [x] Aucun script injecté sur ces sites : ni lecture de la page à l'import, ni sonde de pastille (US-207), ni
+          remplissage ; `Filling.fillTab` refuse, l'envoi était déjà refusé (US-198), la file les exclut (US-204).
+    - [x] Étape 1 : explication, import de l'offre par son adresse seule ; si JobSpark ne peut pas la lire, le
+          candidat colle le texte de l'offre (« Texte de l'offre ») et relance.
+    - [x] Étape 2 : « Remplir » remplacé par les liens du CV et de la lettre (PDF, nouvel onglet) et « Je l'ai
+          envoyée », qui passe la candidature en « envoyée » dans JobSpark.
+    - [x] Tests unitaires (aucune lecture, import par adresse ou texte collé, refus de remplir, pas de sonde) et de
+          l'écran.
+    - [ ] Essai réel sur une offre LinkedIn : import par l'adresse (ou texte collé), documents, « Je l'ai envoyée ».
+
 ## 📊 Sprint DoD
 
 - [ ] Parcours réel de bout en bout sur une vraie offre, avec un seul geste du candidat, « Valider et envoyer » :

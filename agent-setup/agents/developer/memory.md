@@ -1826,3 +1826,10 @@
 - **Why**: voir sans ouvrir le panneau qu'une page vaut le coup.
 - **Learned**: un script non listé WXT renvoie la valeur de `main` comme résultat d'`executeScript({ files })` (vérifié sur le build avec `vm`). Un formulaire de contact a 3+ champs : exiger un champ fichier pour « ✓ ».
 - **Open**: essai réel ; texte de confidentialité à compléter (script sur chaque page chargée).
+
+## 2026-11-27 — US-210 LinkedIn et Indeed en lecture seule (décision propriétaire)
+- **Context**: [[sprints/sprint-040#US-210]]
+- **Did**: `readOnlySite()` (domain/submission, réutilisé par `submitRefusal`), import par adresse ou texte collé (`Preparation.importOffer`), `application/read-only-apply.ts` (options, lien PDF, `update_application_status` « sent »), `ReadOnlyCard`, aucune sonde de pastille sur ces sites, `fillTab` refuse.
+- **Why**: conditions d'utilisation ; risque de restriction du compte du candidat.
+- **Learned**: l'erreur happy-dom « AsyncTaskManager destroyed » n'apparaît qu'en suite complète, déjà présente avant (sans incidence sur les résultats).
+- **Open**: essai réel ; l'import par adresse seule de LinkedIn par le serveur est probablement souvent refusé → le texte collé sera la voie courante.
