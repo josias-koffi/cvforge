@@ -87,6 +87,11 @@ confidentialité de l'extension).
 de confirmation et sa capture, documents, champs remplis). Avec une confirmation, la
 candidature passe à « envoyée » ; sans, elle reste un brouillon « à vérifier ».
 
+`get_form_map` et `report_form_map` (extension Chrome, US-205) lisent et enrichissent la carte
+apprise des formulaires d'un site : forme des champs et nom de la donnée reçue, jamais une
+valeur ; une règle n'est servie qu'après deux candidats. Confidentialité de l'extension :
+`docs/extension-chrome-privacy.md`.
+
 `get_screening_answers` renvoie les réponses que le candidat a enregistrées dans
 `/profile/reponses` (prétentions, préavis, visa, mobilité, mode de travail,
 « comment avez-vous connu l'offre », questions déjà rencontrées), ce qui manque, et
