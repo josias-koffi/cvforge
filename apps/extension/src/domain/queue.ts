@@ -51,6 +51,8 @@ export type QueueItem = {
   creditsSpent: number;
   /** Fields the page holds after the fill. */
   filledCount: number;
+  /** A captcha waits in the tab (US-209); absent from queues saved before. */
+  captcha?: boolean;
 };
 
 export type Queue = {
@@ -164,6 +166,39 @@ export function summarize(queue: Queue): QueueSummary {
   } satisfies QueueSummary;
   for (const item of queue.items) counts[item.state] += 1;
   return counts;
+}
+
+export type QueueReport = { title: string; message: string };
+
+const plural = (count: number, one: string, many: string) =>
+  `${count} ${count > 1 ? many : one}`;
+
+/** What a finished queue left the candidate (US-209): notification and panel. */
+export function queueReport(queue: Queue): QueueReport {
+  const counts = summarize(queue);
+  const captchas = queue.items.filter(
+    (item) => item.state === "incomplete" && item.captcha,
+  ).length;
+  const parts = [
+    counts.ready && plural(counts.ready, "prête à envoyer", "prêtes à envoyer"),
+    counts.incomplete - captchas &&
+      plural(counts.incomplete - captchas, "à compléter", "à compléter"),
+    captchas && plural(captchas, "captcha à résoudre", "captchas à résoudre"),
+    counts.sent && plural(counts.sent, "envoyée", "envoyées"),
+    counts["to-check"] &&
+      plural(counts["to-check"], "envoi à vérifier", "envois à vérifier"),
+    counts.skipped && plural(counts.skipped, "écartée", "écartées"),
+    counts.failed && plural(counts.failed, "échec", "échecs"),
+  ].filter(Boolean);
+  const waiting = counts.ready + counts.incomplete;
+  return {
+    message: `${parts.join(" · ") || "Aucune offre traitée"} — ${plural(queue.spent, "crédit dépensé", "crédits dépensés")}.`,
+    title: queue.stopRequested
+      ? "File arrêtée"
+      : waiting > 0
+        ? `File terminée : ${plural(waiting, "candidature vous attend", "candidatures vous attendent")}`
+        : "File terminée",
+  };
 }
 
 /** A run cut short (service worker restarted): unfinished items failed. */

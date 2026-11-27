@@ -69,6 +69,18 @@ describe("readForm", () => {
   });
 });
 
+describe("captchaShown (US-209)", () => {
+  it("spots a challenge to solve, not reCAPTCHA v3's badge", () => {
+    document.body.innerHTML = `
+      <div class="grecaptcha-badge"><iframe src="https://www.google.com/recaptcha/api2/anchor?k=x&size=invisible"></iframe></div>`;
+    expect(readForm().captcha).toBe(false);
+    document.body.innerHTML = `<iframe src="https://newassets.hcaptcha.com/captcha/v1/x/static/hcaptcha.html#frame=checkbox&id=1"></iframe>`;
+    expect(readForm().captcha).toBe(true);
+    document.body.innerHTML = `<iframe src="https://challenges.cloudflare.com/cdn-cgi/challenge-platform/turnstile"></iframe>`;
+    expect(readForm().captcha).toBe(true);
+  });
+});
+
 describe("findSubmitControl / clickSubmit", () => {
   it("clicks the one final button", () => {
     document.body.innerHTML = `<button>Annuler</button><button type="submit">Postuler</button>`;

@@ -4,8 +4,12 @@ import {
   interrupted,
   maxOfferCost,
   newQueue,
+  queueReport,
   suggested,
   summarize,
+  type Queue,
+  type QueueItem,
+  type QueueItemState,
   type QueueOffer,
 } from "./queue";
 
@@ -62,5 +66,63 @@ describe("queue rules", () => {
     expect(after.running).toBe(false);
     expect(summarize(after)).toMatchObject({ failed: 1, ready: 1 });
     expect(interrupted(after)).toBe(after);
+  });
+});
+
+describe("queueReport (US-209)", () => {
+  const item = (state: QueueItemState, captcha = false): QueueItem => ({
+    applicationId: null,
+    captcha,
+    creditsSpent: 0,
+    filledCount: 0,
+    offer: {
+      company: null,
+      key: state,
+      source: "jobspark",
+      title: "",
+      url: "https://x.io",
+    },
+    reason: null,
+    state,
+    step: null,
+    tabId: null,
+  });
+  const queue = (items: QueueItem[], over: Partial<Queue> = {}): Queue => ({
+    budget: 30,
+    id: "q",
+    items,
+    running: false,
+    spent: 18,
+    stopRequested: false,
+    ...over,
+  });
+
+  it("counts what waits for the candidate, captchas apart", () => {
+    expect(
+      queueReport(
+        queue([
+          item("ready"),
+          item("ready"),
+          item("incomplete"),
+          item("incomplete", true),
+          item("skipped"),
+          item("failed"),
+        ]),
+      ),
+    ).toEqual({
+      message:
+        "2 prêtes à envoyer · 1 à compléter · 1 captcha à résoudre · 1 écartée · 1 échec — 18 crédits dépensés.",
+      title: "File terminée : 4 candidatures vous attendent",
+    });
+  });
+
+  it("says when the queue was stopped, or left nothing", () => {
+    expect(
+      queueReport(queue([item("ready")], { stopRequested: true })).title,
+    ).toBe("File arrêtée");
+    expect(queueReport(queue([item("skipped")], { spent: 0 }))).toEqual({
+      message: "1 écartée — 0 crédit dépensé.",
+      title: "File terminée",
+    });
   });
 });

@@ -1,6 +1,7 @@
 import { EyeIcon, SendIcon, SquareIcon } from "lucide-react";
 import { useState } from "react";
 import {
+  queueReport,
   summarize,
   type Queue,
   type QueueItem,
@@ -61,8 +62,16 @@ export function QueueProgress({
       }
     });
 
+  const report = queue.running ? null : queueReport(queue);
+
   return (
     <Card title="Plusieurs offres d'un coup">
+      {report && (
+        <Notice tone={counts.ready + counts.incomplete ? "success" : "info"}>
+          <strong className="block font-semibold">{report.title}</strong>
+          {report.message}
+        </Notice>
+      )}
       <div className="flex flex-col gap-1.5">
         <div className="flex justify-between text-xs text-muted-foreground">
           <span>

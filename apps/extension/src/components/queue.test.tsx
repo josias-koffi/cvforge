@@ -161,5 +161,21 @@ describe("QueueProgress", () => {
     expect(changed).toHaveBeenCalled();
     await click("Arrêter la file");
     expect(ask).toHaveBeenLastCalledWith({ type: "queue-stop" });
+    expect(container.textContent).not.toContain("File terminée");
+  });
+
+  it("sums up a finished queue on top (US-209)", async () => {
+    const finished: Queue = {
+      ...queue,
+      items: [queue.items[0]!, { ...queue.items[1]!, state: "skipped" }],
+      running: false,
+    };
+    await render(<QueueProgress queue={finished} onChange={() => undefined} />);
+    expect(container.textContent).toContain(
+      "File terminée : 1 candidature vous attend",
+    );
+    expect(container.textContent).toContain(
+      "1 prête à envoyer · 1 écartée — 9 crédits dépensés.",
+    );
   });
 });

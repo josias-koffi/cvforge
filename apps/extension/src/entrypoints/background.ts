@@ -23,6 +23,7 @@ import {
   chromeQueueTabs,
   keepServiceWorkerAlive,
 } from "../infrastructure/queue-tabs";
+import { chromeQueueNotifier } from "../infrastructure/queue-notifier";
 import { PanelChannel } from "../infrastructure/panel-channel";
 import type { FillerRequest } from "../filler-messages";
 import type { PanelRequest, PanelResponse } from "../messages";
@@ -70,12 +71,13 @@ export default defineBackground(() => {
     tools,
   });
 
-  const queue = new ApplicationQueue({
+  const queue: ApplicationQueue = new ApplicationQueue({
     aiKeys,
     canReadPages: () =>
       browser.permissions.contains({ origins: WEB_PAGE_ORIGINS }),
     filling,
     keepAlive: keepServiceWorkerAlive,
+    notify: chromeQueueNotifier(() => queue.firstWaitingTab()),
     preparation,
     sending,
     store: chromeSessionStore(),

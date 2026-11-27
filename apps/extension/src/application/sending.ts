@@ -42,6 +42,8 @@ export type Review =
       submitLabel: string | null;
       /** Why « Valider et envoyer » stays off, or null. */
       refusal: string | null;
+      /** A captcha waits for the candidate in the page. */
+      captcha: boolean;
     };
 
 export type SendOutcome = {
@@ -91,6 +93,7 @@ export class Sending {
         offerUrl: application.offerUrl,
         title: application.title,
       },
+      captcha: form.captcha,
       documents: fill.documents,
       fields: form.fields,
       kind: "review",

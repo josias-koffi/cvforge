@@ -7,11 +7,13 @@ import {
   MAX_QUEUE,
   mergeOffers,
   newQueue,
+  queueReport,
   remainingBudget,
   suggested,
   type Queue,
   type QueueItem,
   type QueueOffer,
+  type QueueReport,
   type RecentOffer,
 } from "../domain/queue";
 import type { KeyValueStore } from "../infrastructure/local-store";
@@ -87,6 +89,8 @@ export class ApplicationQueue {
       sending: Pick<Sending, "reviewTab" | "send">;
       store: KeyValueStore;
       keepAlive: () => () => void;
+      /** Tells the candidate the queue is done, panel closed or not (US-209). */
+      notify?: (report: QueueReport) => Promise<void>;
       newId?: () => string;
     },
   ) {}
@@ -190,6 +194,16 @@ export class ApplicationQueue {
     return null;
   }
 
+  /** The tab of the first form waiting for the candidate, if any. */
+  async firstWaitingTab(): Promise<number | null> {
+    const item = (await this.status())?.items.find(
+      (entry) =>
+        (entry.state === "ready" || entry.state === "incomplete") &&
+        entry.tabId !== null,
+    );
+    return item?.tabId ?? null;
+  }
+
   /** Shows the item's tab: to check it, finish a field or solve a captcha. */
   async show(index: number): Promise<void> {
     const item = await this.item(index);
@@ -248,6 +262,7 @@ export class ApplicationQueue {
       queue.running = false;
       release();
       await this.save();
+      await this.deps.notify?.(queueReport(queue)).catch(() => undefined);
     }
   }
 
@@ -301,10 +316,14 @@ export class ApplicationQueue {
           step: null,
         });
       }
+      const reason =
+        review.refusal ??
+        (review.captcha ? "Captcha à résoudre dans l'onglet." : null);
       this.update(item, {
+        captcha: review.captcha,
         filledCount: review.fields.length,
-        reason: review.refusal,
-        state: review.refusal ? "incomplete" : "ready",
+        reason,
+        state: reason ? "incomplete" : "ready",
         step: null,
       });
     } catch (error) {

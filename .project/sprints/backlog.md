@@ -228,7 +228,7 @@ Référence de gate: le spec impose des branches courtes et des PRs <= 400 ligne
 | US-206 | « Postuler aux offres du jour » : les offres de l'alerte du jour (E19/E27) deviennent une source de la file d'US-204, cochées d'office par score | E33 | S | P0 | 040 | Demande propriétaire du 2026-11-27 |
 | US-207 | Pastille sur l'icône de l'extension : sur une offre ou un formulaire, elle indique que JobSpark peut remplir et affiche le score de pertinence, sans ouvrir le panneau | E33 | M | P1 | — | Demande propriétaire du 2026-11-27 |
 | US-208 | Réponses aux questions ouvertes (« Pourquoi nous ? », prétentions, disponibilité) rédigées depuis le profil et l'offre, relues par le candidat, gardées après validation | E33 | M | P0 | — | Demande propriétaire du 2026-11-27 |
-| US-209 | Rapport de fin de file et notification Chrome : prêtes, à compléter, captchas, échecs, crédits dépensés, même panneau fermé | E33 | S | P1 | — | Demande propriétaire du 2026-11-27 |
+| US-209 | Rapport de fin de file et notification Chrome : prêtes, à compléter, captchas, échecs, crédits dépensés, même panneau fermé | E33 | S | P1 | 040 | Demande propriétaire du 2026-11-27 |
 | US-210 | LinkedIn et Indeed en lecture seule : import de l'offre et préparation du CV et de la lettre, sans aucun remplissage ni clic sur leurs pages | E33 | S | P0 | — | Demande propriétaire du 2026-11-27 |
 
 ## Critères d'acceptation détaillés — E33 (US-204 à US-210)

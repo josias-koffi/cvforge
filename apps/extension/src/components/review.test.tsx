@@ -16,6 +16,7 @@ const ask = vi.mocked(askBackground);
 
 const REVIEW: Extract<Review, { kind: "review" }> = {
   application: { company: "Acme", id: "a1", offerUrl: null, title: "Dev" },
+  captcha: false,
   documents: ["CV Camille Test.pdf"],
   fields: [{ label: "E-mail", value: "c@example.com" }],
   kind: "review",
