@@ -2,6 +2,8 @@ import type { Provider } from "@nestjs/common";
 import { ApplicationsService } from "../../applications/applications.service";
 import { SubmissionsService } from "../../applications/submissions.service";
 import { FormFillService } from "../form-fill/form-fill.service";
+import { FormMapsService } from "../form-maps/form-maps.service";
+import { formMapTools } from "./tools/form-map-tools";
 import { CreditsService } from "../../credits/credits.service";
 import { CvGenerationService } from "../../cv-generation/cv-generation.service";
 import { JobMatchesService } from "../../job-search/job-matches.service";
@@ -34,6 +36,7 @@ export const mcpToolsProvider: Provider = {
     SignedFiles,
     SubmissionsService,
     FormFillService,
+    FormMapsService,
   ],
   provide: MCP_TOOLS,
   useFactory: (
@@ -47,6 +50,7 @@ export const mcpToolsProvider: Provider = {
     signedFiles: SignedFiles,
     submissions: SubmissionsService,
     fills: FormFillService,
+    maps: FormMapsService,
   ): McpToolList => [
     ...readTools({
       applications,
@@ -60,6 +64,7 @@ export const mcpToolsProvider: Provider = {
     ...screeningTools({ answers, profiles }),
     ...submissionTools({ submissions }),
     ...formFillTools({ fills }),
+    ...formMapTools({ maps }),
     ...applicationTools({
       applications,
       credits,

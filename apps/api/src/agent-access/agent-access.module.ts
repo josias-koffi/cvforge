@@ -43,6 +43,12 @@ import { ApplicationsService } from "../applications/applications.service";
 import { CreditsService } from "../credits/credits.service";
 import { FormFillController } from "./form-fill/form-fill.controller";
 import {
+  FORM_MAP_STORE,
+  FormMapsService,
+  PgFormMapStore,
+  type FormMapStore,
+} from "./form-maps/form-maps.service";
+import {
   FORM_FILL_STORE,
   FormFillService,
   PgFormFillStore,
@@ -176,6 +182,16 @@ const CIMD_FETCH = {
           store,
           usage,
         }),
+    },
+    {
+      provide: FORM_MAP_STORE,
+      inject: [DATABASE],
+      useFactory: (db: Database) => new PgFormMapStore(db),
+    },
+    {
+      provide: FormMapsService,
+      inject: [FORM_MAP_STORE],
+      useFactory: (store: FormMapStore) => new FormMapsService(store),
     },
     mcpToolsProvider,
   ],

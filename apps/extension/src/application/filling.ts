@@ -25,6 +25,8 @@ import { readOnlySite } from "../domain/submission";
 import { draftAnswer, type DraftState } from "./open-answers";
 import type { DraftedAnswer } from "../domain/open-answer";
 import { ModelRelay } from "./model-relay";
+import { FormMapLearning } from "./form-map-learning";
+import type { FilledField, FormMapRule } from "../domain/form-map";
 import type { AiKeyStore, JobSparkTools } from "./session";
 
 /** The script that runs page-agent in the recruiter's tab. */
@@ -36,8 +38,11 @@ export interface FillTab {
     request: {
       data: PrefillData;
       documents: Record<DocumentKind, EncodedDocument>;
+      rules?: FormMapRule[];
     },
   ): Promise<PrefillReport>;
+  /** What the fields hold after the fill, by shape (US-205). */
+  values(tabId: number): Promise<FilledField[]>;
   /** Whether the tab is already a form, or the link to it. */
   probe(tabId: number): Promise<PageProbe>;
   /** Opens the form in the same tab and waits for it to load. */
@@ -114,6 +119,7 @@ export class Filling {
   private readonly filled = new Map<number, LastFill>();
   private readonly models: ModelRelay;
   private readonly candidateData: CandidateData;
+  private readonly learning: FormMapLearning;
 
   constructor(
     private readonly deps: {
@@ -130,6 +136,7 @@ export class Filling {
   ) {
     this.models = new ModelRelay(deps);
     this.candidateData = new CandidateData(deps);
+    this.learning = new FormMapLearning(deps);
   }
 
   async options(): Promise<FillOptions> {
@@ -227,10 +234,22 @@ export class Filling {
       ),
     };
     const formUrl = await this.openFormIfNeeded(tab.tabId);
+    const pageUrl = formUrl ?? tab.url;
+    const data = prefillData(profile, answers);
+    const served = await this.learning.rules(pageUrl);
     const pre = await this.deps.tab.prefill(tab.tabId, {
-      data: prefillData(profile, answers),
+      data,
       documents,
+      rules: served,
     });
+    const learn = (aiUsed: boolean) =>
+      this.learning.learn({
+        aiUsed,
+        data,
+        served,
+        tabId: tab.tabId,
+        url: pageUrl,
+      });
     const documentNames = [documents.cv.name, documents.letter.name];
     this.filled.set(tab.tabId, {
       applicationId: application.id,
@@ -247,6 +266,7 @@ export class Filling {
       pre.remaining.length > 0 ||
       (request.completeOptional === true && pre.optionalEmpty.length > 0);
     if (!needsModel) {
+      await learn(false);
       return {
         ...base,
         aiUsed: false,
@@ -294,6 +314,7 @@ export class Filling {
         drafted: this.active.drafted,
         tabId: tab.tabId,
       });
+      await learn(true);
       return {
         ...base,
         aiUsed: true,

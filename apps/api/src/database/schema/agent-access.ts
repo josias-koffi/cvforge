@@ -1,10 +1,12 @@
 import type { AgentScope, AgentToolCallOutcome } from "@cvforge/types";
 import {
+  boolean,
   date,
   index,
   integer,
   jsonb,
   pgTable,
+  primaryKey,
   text,
   timestamp,
   uuid,
@@ -134,4 +136,46 @@ export const formFillSessions = pgTable(
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
   },
   (table) => [index("form_fill_sessions_user_idx").on(table.userEmail)],
+);
+
+/**
+ * The learned map of application forms (US-205): which field of a site's
+ * form receives which of the candidate's data, one vote per candidate. Only
+ * the field's shape and the data's name, never a value. A rule is served
+ * once two candidates confirmed it.
+ */
+export const formMapVotes = pgTable(
+  "form_map_votes",
+  {
+    site: text("site").notNull(),
+    signature: text("signature").notNull(),
+    fieldKey: text("field_key").notNull(),
+    userEmail: text("user_email")
+      .notNull()
+      .references(() => authAccounts.email, { onDelete: "cascade" }),
+    ok: boolean("ok").notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    primaryKey({
+      columns: [table.site, table.signature, table.fieldKey, table.userEmail],
+    }),
+    index("form_map_votes_user_idx").on(table.userEmail),
+  ],
+);
+
+/** One line per fill, no candidate: the share of fills done without a model. */
+export const formFillOutcomes = pgTable(
+  "form_fill_outcomes",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    site: text("site").notNull(),
+    aiUsed: boolean("ai_used").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [index("form_fill_outcomes_site_idx").on(table.site)],
 );

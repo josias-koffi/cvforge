@@ -27,6 +27,7 @@ const FORM_PAGE = {
   open: async () => undefined,
   prefill: async () => LEFT_TO_MODEL,
   probe: async () => ({ applyLink: null, fieldCount: 8 }),
+  values: async () => [],
 };
 
 const ready = (over: Partial<ApplicationSummary> = {}): ApplicationSummary => ({
@@ -45,6 +46,9 @@ function setup(
     key?: AiKeySettings | null;
     apps?: ApplicationSummary[];
     probe?: { applyLink: string | null; fieldCount: number };
+    values?: { signature: string; value: string }[];
+    formMap?: { signature: string; fieldKey: string }[];
+    formMapFails?: boolean;
     prefill?: PrefillReport;
   } = {},
 ) {
@@ -85,6 +89,11 @@ function setup(
         return { balance: 20 };
       case "start_form_fill":
         return { creditsSpent: 2, fillSessionId: "fill-1" };
+      case "get_form_map":
+        if (options.formMapFails) throw new Error("réseau");
+        return { rules: options.formMap ?? [] };
+      case "report_form_map":
+        return { recorded: true };
     }
     throw new Error(`unexpected ${name}`);
   });
@@ -99,6 +108,25 @@ function setup(
     ),
   };
   const fetchFn = vi.fn(async () => new Response('{"ok":1}', { status: 200 }));
+  const tabMock = {
+    open: vi.fn(async () => undefined),
+    prefill: vi.fn(async () => options.prefill ?? LEFT_TO_MODEL),
+    probe: vi.fn(
+      async () => options.probe ?? { applyLink: null, fieldCount: 8 },
+    ),
+    values: vi.fn(async () => options.values ?? []),
+    run: vi.fn(async (_tabId, request) => {
+      runRequest = request;
+      // While running, the page asks for the CV, a model call and a question.
+      await filling.handle(9, { kind: "cv", type: "filler/document" });
+      await filling.handle(9, { question: "Salaire ?", type: "filler/ask" });
+      return {
+        steps: 6,
+        success: true,
+        summary: "Rempli, champ « vélo » vide.",
+      };
+    }),
+  } satisfies FillTab;
   const filling = new Filling({
     aiKeys: {
       clear: async () => undefined,
@@ -116,24 +144,7 @@ function setup(
       origin: "https://api.example",
     },
     pages: { activeTab: async () => tab, readText: async () => "" },
-    tab: {
-      open: vi.fn(async () => undefined),
-      prefill: vi.fn(async () => options.prefill ?? LEFT_TO_MODEL),
-      probe: vi.fn(
-        async () => options.probe ?? { applyLink: null, fieldCount: 8 },
-      ),
-      run: vi.fn(async (_tabId, request) => {
-        runRequest = request;
-        // While running, the page asks for the CV, a model call and a question.
-        await filling.handle(9, { kind: "cv", type: "filler/document" });
-        await filling.handle(9, { question: "Salaire ?", type: "filler/ask" });
-        return {
-          steps: 6,
-          success: true,
-          summary: "Rempli, champ « vélo » vide.",
-        };
-      }),
-    } satisfies FillTab,
+    tab: tabMock,
     tools: { call },
   });
   return {
@@ -141,6 +152,7 @@ function setup(
     candidate,
     fetchFn,
     filling,
+    tab: tabMock,
     lastRun: () => runRequest,
     setTab: (next: typeof tab) => {
       tab = next;
@@ -436,6 +448,43 @@ describe("Filling: from the offer page", () => {
       ).toBeNull();
       expect(tab.open).not.toHaveBeenCalled();
     }
+  });
+});
+
+describe("Filling with the learned map of forms (US-205)", () => {
+  it("passes the site's rules to the script, then reports data names only", async () => {
+    const rule = { fieldKey: "phone", signature: "input:text:mobile:mobile" };
+    const f = setup({
+      formMap: [rule],
+      values: [
+        { signature: "input:text:mobile:mobile", value: "0600000000" },
+        { signature: "input:text:mail:votre mail", value: "c@example.com" },
+      ],
+    });
+    await f.filling.fillTab(TAB, { applicationId: "a1" });
+    expect(f.call).toHaveBeenCalledWith("get_form_map", { site: "lever.co" });
+    expect(f.tab.prefill).toHaveBeenCalledWith(
+      9,
+      expect.objectContaining({ rules: [rule] }),
+    );
+    const report = f.call.mock.calls.find(
+      ([name]) => name === "report_form_map",
+    );
+    expect(report?.[1]).toMatchObject({ aiUsed: true, site: "lever.co" });
+    // Never a value of the candidate in what leaves the browser.
+    expect(report?.[1]).toMatchObject({
+      confirmed: expect.arrayContaining([
+        { fieldKey: "email", signature: "input:text:mail:votre mail" },
+      ]),
+    });
+    expect(JSON.stringify(report?.[1])).not.toMatch(/c@example|0600000000/);
+  });
+
+  it("fills even when the map cannot be read", async () => {
+    const f = setup({ formMapFails: true });
+    await expect(
+      f.filling.fillTab(TAB, { applicationId: "a1" }),
+    ).resolves.toMatchObject({ success: true });
   });
 });
 

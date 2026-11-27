@@ -192,6 +192,9 @@ export function prefillData(
         (entry) => !identityLabels.includes(entry.question),
       ),
     ].filter((entry) => entry.answer.trim()),
+    known: Object.fromEntries(
+      answers.known.map((entry) => [entry.key, entry.answer]),
+    ),
     values: {
       city: identity.city,
       currentCompany: text(facts.currentCompany),

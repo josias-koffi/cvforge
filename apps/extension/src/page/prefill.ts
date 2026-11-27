@@ -12,7 +12,9 @@ import {
   savedAnswer,
   type PrefillData,
 } from "../domain/field-match";
+import { ruleValue, type FormMapRule } from "../domain/form-map";
 import { attachFile, type DocumentKind } from "./attach";
+import { signatureOf } from "./form-map";
 import {
   clean,
   groupQuestion,
@@ -66,6 +68,7 @@ const usable = (field: HTMLElement) =>
 function fillText(
   field: HTMLInputElement | HTMLTextAreaElement,
   data: PrefillData,
+  rules: readonly FormMapRule[],
 ): { label: string; value: string } | null {
   if (field.value.trim() || isCombobox(field)) return null;
   const label = labelOf(field);
@@ -80,16 +83,25 @@ function fillText(
           type: field.type,
         })
       : classifyLabel(label);
-  const value = key ? data.values[key] : savedAnswer(label, data.answers);
+  const value =
+    (key ? data.values[key] : savedAnswer(label, data.answers)) ||
+    // What other candidates' fills taught about this field (US-205).
+    ruleValue(rules, signatureOf(field), data);
   if (!value) return null;
   setValue(field, value);
   return { label, value };
 }
 
-function fillSelect(field: HTMLSelectElement, data: PrefillData) {
+function fillSelect(
+  field: HTMLSelectElement,
+  data: PrefillData,
+  rules: readonly FormMapRule[],
+) {
   if (field.selectedIndex > 0) return null;
   const label = labelOf(field);
-  const answer = savedAnswer(label, data.answers);
+  const answer =
+    savedAnswer(label, data.answers) ??
+    ruleValue(rules, signatureOf(field), data);
   if (!answer) return null;
   const options = [...field.options].map((option) => clean(option.textContent));
   const index = matchOption(answer, options);
@@ -99,10 +111,16 @@ function fillSelect(field: HTMLSelectElement, data: PrefillData) {
   return { label, value: options[index]! };
 }
 
-function fillRadios(radios: HTMLInputElement[], data: PrefillData) {
+function fillRadios(
+  radios: HTMLInputElement[],
+  data: PrefillData,
+  rules: readonly FormMapRule[],
+) {
   if (radios.some((radio) => radio.checked)) return null;
   const question = groupQuestion(radios);
-  const answer = savedAnswer(question, data.answers);
+  const answer =
+    savedAnswer(question, data.answers) ??
+    (radios[0] ? ruleValue(rules, signatureOf(radios[0]), data) : null);
   if (!answer) return null;
   const options = radios.map((radio) => labelOf(radio));
   const index = matchOption(answer, options);
@@ -114,6 +132,7 @@ function fillRadios(radios: HTMLInputElement[], data: PrefillData) {
 export async function prefill(
   data: PrefillData,
   documents: Record<DocumentKind, PrefillDocument>,
+  rules: readonly FormMapRule[] = [],
 ): Promise<PrefillReport> {
   const filled: PrefillReport["filled"] = [];
   const seenGroups = new Set<string>();
@@ -124,15 +143,17 @@ export async function prefill(
     >("input, select, textarea")) {
       if (!usable(field)) continue;
       let done: { label: string; value: string } | null = null;
-      if (field instanceof HTMLSelectElement) done = fillSelect(field, data);
+      if (field instanceof HTMLSelectElement)
+        done = fillSelect(field, data, rules);
       else if (field instanceof HTMLTextAreaElement)
-        done = fillText(field, data);
+        done = fillText(field, data, rules);
       else if (field.type === "radio") {
         const key = field.name || labelOf(field);
         if (seenGroups.has(key)) continue;
         seenGroups.add(key);
-        done = fillRadios(radioGroup(field).filter(usable), data);
-      } else if (TEXT_TYPES.has(field.type)) done = fillText(field, data);
+        done = fillRadios(radioGroup(field).filter(usable), data, rules);
+      } else if (TEXT_TYPES.has(field.type))
+        done = fillText(field, data, rules);
       if (done) filled.push(done);
     }
   }

@@ -1833,3 +1833,10 @@
 - **Why**: conditions d'utilisation ; risque de restriction du compte du candidat.
 - **Learned**: l'erreur happy-dom « AsyncTaskManager destroyed » n'apparaît qu'en suite complète, déjà présente avant (sans incidence sur les résultats).
 - **Open**: essai réel ; l'import par adresse seule de LinkedIn par le serveur est probablement souvent refusé → le texte collé sera la voie courante.
+
+## 2026-11-27 — Release E33 en production, puis US-205 carte des formulaires (demande propriétaire)
+- **Context**: [[sprints/sprint-040#US-205]] · PR #72 fusionnée (rebase), Deploy prod lancé depuis `main` : vert.
+- **Did**: API `agent-access/form-maps` (`PgFormMapStore`, `servedRules`, outils MCP `get_form_map` / `report_form_map`, migration 0068). Extension : `domain/form-map.ts` (signature, `learnFromForm`, `ruleValue`), `page/form-map.ts` (`signatureOf`, `filledFields`), règles passées à `prefill`, `FormMapLearning` dans `Filling` (lecture avant, apprentissage après). `PrefillData.known` (réponses par clé).
+- **Why**: remplacer les réglages par plateforme par un apprentissage partagé.
+- **Learned**: les valeurs ne servent qu'au service worker pour retrouver le nom de la donnée ; deux données de même valeur (prénom = nom complet) sont ignorées. Les builds préprod et prod ont le même identifiant d'extension : une seule chargée à la fois (`.output/jobspark-prod`, `.output/jobspark-preprod`).
+- **Open**: essai à deux comptes ; export RGPD des votes (comme les sessions de remplissage, absent de l'export) ; `filling.ts` à 392 lignes, à découper au prochain passage.

@@ -241,13 +241,36 @@ Décision d'architecture : **ADR-034** (`decisions/ADR-034-chrome-extension-appl
           l'écran.
     - [ ] Essai réel sur une offre LinkedIn : import par l'adresse (ou texte collé), documents, « Je l'ai envoyée ».
 
+- [ ] **[US-205]** Carte des formulaires apprise et partagée (demande du propriétaire du 2026-11-27)
+  - Agent: `developer`
+  - Pourquoi : ne plus écrire de réglages par plateforme ; chaque remplissage apprend aux suivants, pour tous les
+    candidats.
+  - Critères d'acceptation :
+    - [x] Après chaque remplissage, l'extension lit les champs (dans le navigateur), garde ceux qui contiennent
+          exactement une donnée du candidat (profil ou réponse enregistrée par sa clé) et envoie à JobSpark le site,
+          la forme du champ (balise, type, nom sans identifiants, mots du libellé) et le nom de la donnée
+          (`report_form_map`). Aucune valeur ne quitte le navigateur.
+    - [x] Au remplissage suivant sur le même site, quel que soit le candidat, la passe par script utilise les règles
+          servies (`get_form_map`) pour les champs que ses propres règles ne reconnaissent pas : sans IA ni crédit.
+    - [x] Une règle n'est servie qu'après confirmation par 2 candidats différents ; une règle manquée par autant de
+          candidats qu'elle a réussi, ou par 3, est retirée ; deux données à égalité pour un champ → rien.
+    - [x] Mesure : une ligne par remplissage (`form_fill_outcomes` : site, IA utilisée ou non, sans candidat).
+    - [x] Les votes partent avec le compte (suppression en cascade). Tables `form_map_votes` et `form_fill_outcomes`
+          (migration 0068, petites tables neuves).
+    - [x] La carte ne bloque jamais un remplissage (lecture ou envoi en échec ignorés).
+    - [x] Tests : API (seuil de 2 candidats, retrait, cascade, schéma) et extension (signature, apprentissage,
+          règles dans le pré-remplissage, rien d'autre que des noms de données envoyés).
+    - [ ] Remplace à terme les réglages écrits à la main d'US-203 (après mesure en production).
+    - [ ] Essai réel : deux comptes sur le même site, la seconde passe remplit sans IA ce que la première a appris.
+
 ## 📊 Sprint DoD
 
 - [ ] Parcours réel de bout en bout sur une vraie offre, avec un seul geste du candidat, « Valider et envoyer » :
       offre → préparation → formulaire rempli avec CV et lettre joints → envoi → preuve dans JobSpark.
 - [ ] ADR-034 acceptée et texte de confidentialité de l'extension prêt pour `/admin/legal` (lecture des pages des
       recruteurs, captures gardées en preuve, clé IA stockée localement ; script de pastille sur chaque page chargée,
-      sans lecture de valeurs ni envoi, US-207).
+      sans lecture de valeurs ni envoi, US-207 ; carte des formulaires : forme des champs et noms de données
+      par site, liés au compte, US-205).
 - [ ] `pnpm lint` et tests de l'extension, de l'API et du web verts (CI).
 - [ ] Mémoire des agents concernés mise à jour.
 

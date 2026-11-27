@@ -31,6 +31,8 @@ export type FieldHints = {
 export type PrefillData = {
   values: Partial<Record<FieldKey, string>>;
   answers: { question: string; answer: string }[];
+  /** Saved answers by their key (salary, notice…), for the learned map (US-205). */
+  known?: Record<string, string>;
 };
 
 export const normalized = (text: string) =>

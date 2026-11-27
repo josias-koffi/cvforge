@@ -1,3 +1,4 @@
+import type { FilledField } from "../domain/form-map";
 import type { FillTab } from "../application/filling";
 import type { FillerReply, PageProbe } from "../filler-messages";
 import type { PrefillReport } from "../page/prefill";
@@ -29,6 +30,14 @@ export function chromeFillTab(): FillTab {
       )) as PrefillReport | { error: string };
       if ("error" in report) throw new Error(report.error);
       return report;
+    },
+    async values(tabId) {
+      await inject(tabId);
+      return (await browser.tabs.sendMessage(
+        tabId,
+        { type: "filler/values" },
+        { frameId: 0 },
+      )) as FilledField[];
     },
     async run(tabId, request) {
       await inject(tabId);

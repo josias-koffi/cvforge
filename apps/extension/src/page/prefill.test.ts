@@ -140,3 +140,40 @@ describe("prefill on real forms (fixtures captured 2026-11-26)", () => {
     ).toBe(false);
   });
 });
+
+describe("prefill with the learned map (US-205)", () => {
+  it("fills a field no rule of its own recognises, from the site's map", async () => {
+    document.body.innerHTML = `
+      <form>
+        <label for="m">Numéro où vous joindre</label><input id="m" name="contact_7">
+        <label for="s">Rémunération souhaitée</label><input id="s" name="q_12">
+      </form>`;
+    const { signatureOf, filledFields } = await import("./form-map");
+    const rules = [
+      {
+        fieldKey: "phone",
+        signature: signatureOf(document.querySelector<HTMLInputElement>("#m")!),
+      },
+      {
+        fieldKey: "answer:salaryExpectation",
+        signature: signatureOf(document.querySelector<HTMLInputElement>("#s")!),
+      },
+    ];
+    const report = await prefill(
+      { ...DATA, known: { salaryExpectation: "45 k€" } },
+      DOCS,
+      rules,
+    );
+    expect(report.filled).toEqual([
+      { label: "Numéro où vous joindre", value: "0600000000" },
+      { label: "Rémunération souhaitée", value: "45 k€" },
+    ]);
+    expect(filledFields()).toEqual([
+      {
+        signature: "input:text:contact_#:numero ou vous joindre",
+        value: "0600000000",
+      },
+      { signature: "input:text:q_#:remuneration souhaitee", value: "45 k€" },
+    ]);
+  });
+});

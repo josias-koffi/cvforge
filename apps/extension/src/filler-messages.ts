@@ -1,3 +1,4 @@
+import type { FormMapRule } from "./domain/form-map";
 import type { PrefillData } from "./domain/field-match";
 import type { DocumentKind } from "./page/attach";
 import type { PrefillDocument } from "./page/prefill";
@@ -17,10 +18,14 @@ export type FormRequest =
   | { type: "filler/read-form" }
   | { type: "filler/submit" }
   | { type: "filler/probe" }
+  /** What the fields hold after a fill, by shape (US-205). */
+  | { type: "filler/values" }
   | {
       type: "filler/prefill";
       data: PrefillData;
       documents: Record<DocumentKind, PrefillDocument>;
+      /** The learned map of this site's forms (US-205). */
+      rules?: FormMapRule[];
     };
 
 /** Is this tab already the form, or where is it? */
