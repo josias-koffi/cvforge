@@ -175,3 +175,36 @@ describe("Preparation.prepare", () => {
     ).rejects.toBeInstanceOf(ConnectionRevokedError);
   });
 });
+
+describe("Preparation.prepareTab (queue, US-204)", () => {
+  it("works on a background tab, within the queue's budget", async () => {
+    const f = setup();
+    f.setTab(null); // the candidate looks at another page
+    const result = await f.preparation.prepareTab(TAB, { maxCost: 7 });
+    expect(result).toMatchObject({ applicationId: "new-1", creditsSpent: 7 });
+  });
+
+  it("spends nothing when the plan exceeds the budget, and says how much", async () => {
+    const f = setup();
+    await expect(
+      f.preparation.prepareTab(TAB, { maxCost: 6 }),
+    ).rejects.toMatchObject({ cost: 7 });
+    expect(f.call).toHaveBeenCalledTimes(1); // list_applications only
+  });
+
+  it("uses the application JobSpark already has, even at another address", async () => {
+    const f = setup([
+      draft({
+        cvGeneratedAt: "x",
+        id: "known",
+        offerUrl: "https://www.francetravail.fr/offre/1",
+      }),
+    ]);
+    const result = await f.preparation.prepareTab(TAB, {
+      applicationId: "known",
+      maxCost: 7,
+    });
+    expect(result).toMatchObject({ applicationId: "known", creditsSpent: 3 });
+    expect(f.call).not.toHaveBeenCalledWith("import_offer", expect.anything());
+  });
+});

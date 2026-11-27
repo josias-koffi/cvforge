@@ -8,6 +8,19 @@ import {
 import { readBalance } from "../domain/connection";
 import { ConnectionRevokedError, type JobSparkTools } from "./session";
 
+export class AlreadySentError extends Error {
+  constructor() {
+    super("Candidature déjà envoyée pour cette offre.");
+  }
+}
+
+/** The plan costs more than what was announced, or than the queue's budget. */
+export class CostChangedError extends Error {
+  constructor(readonly cost: number) {
+    super("Le coût a changé depuis l'annonce : vérifiez à nouveau.");
+  }
+}
+
 /** The tab the candidate is looking at. */
 export type ActiveTab = { tabId: number; url: string; title: string };
 
@@ -86,17 +99,22 @@ export class Preparation {
     if (!tab || tab === "no-access" || tab.url !== accepted.url) {
       throw new Error("L'onglet a changé : vérifiez à nouveau l'offre.");
     }
-    const acceptedCost = accepted.cost;
+    return this.prepareTab(tab, { maxCost: accepted.cost });
+  }
 
-    const existing = await this.existingFor(tab.url);
+  /**
+   * Runs what is left for the offer shown in `tab`, within `maxCost`. The
+   * queue (US-204) calls it on background tabs; `applicationId` is the
+   * application JobSpark already has for this offer, if any.
+   */
+  async prepareTab(
+    tab: ActiveTab,
+    limits: { maxCost: number; applicationId?: string | null },
+  ): Promise<PreparationResult> {
+    const existing = await this.existingFor(tab.url, limits.applicationId);
     const plan = planPreparation(existing);
-    if (plan.alreadySent)
-      throw new Error("Candidature déjà envoyée pour cette offre.");
-    if (plan.cost > acceptedCost) {
-      throw new Error(
-        "Le coût a changé depuis l'annonce : vérifiez à nouveau.",
-      );
-    }
+    if (plan.alreadySent) throw new AlreadySentError();
+    if (plan.cost > limits.maxCost) throw new CostChangedError(plan.cost);
 
     let spent = 0;
     let balanceAfter: number | null = null;
@@ -140,13 +158,14 @@ export class Preparation {
     };
   }
 
-  private async existingFor(url: string) {
-    const applications = (await this.deps.tools.call(
+  private async existingFor(url: string, applicationId?: string | null) {
+    const listed = (await this.deps.tools.call(
       "list_applications",
     )) as ApplicationSummary[];
-    return findApplicationFor(
-      Array.isArray(applications) ? applications : [],
-      url,
+    const applications = Array.isArray(listed) ? listed : [];
+    return (
+      applications.find((entry) => entry.id === applicationId) ??
+      findApplicationFor(applications, url)
     );
   }
 

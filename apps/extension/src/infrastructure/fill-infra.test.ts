@@ -115,7 +115,7 @@ describe("chromeFillTab", () => {
     vi.spyOn(browser.tabs, "update" as never).mockResolvedValue({} as never);
     const opened = chromeFillTab().open(5, "https://jobs.lever.co/a/1/apply");
     const failure = expect(opened).rejects.toThrow("trop de temps");
-    await vi.advanceTimersByTimeAsync(21_000);
+    await vi.advanceTimersByTimeAsync(31_000);
     await failure;
     vi.useRealTimers();
   });

@@ -3,6 +3,8 @@ import type {
   PreparationResult,
 } from "./application/preparation";
 import type { FillOptions, FillOutcome } from "./application/filling";
+import type { QueueCandidates } from "./application/queue";
+import type { Queue, QueueOffer } from "./domain/queue";
 import type { Review, SendOutcome } from "./application/sending";
 import type { AiKeySettings } from "./application/session";
 import type { PanelState } from "./domain/connection";
@@ -40,6 +42,30 @@ export type PanelRequests = {
   review: { request: { type: "review" }; response: Review };
   send: {
     request: { type: "send"; applicationId: string; url: string };
+    response: SendOutcome;
+  };
+  "queue-candidates": {
+    request: { type: "queue-candidates" };
+    response: QueueCandidates;
+  };
+  "queue-start": {
+    request: {
+      type: "queue-start";
+      offers: QueueOffer[];
+      budget: number;
+      identity?: Partial<Record<IdentityField, string>>;
+    };
+    response: Queue;
+  };
+  "queue-status": { request: { type: "queue-status" }; response: Queue | null };
+  "queue-stop": { request: { type: "queue-stop" }; response: Queue | null };
+  "queue-clear": { request: { type: "queue-clear" }; response: null };
+  "queue-show": {
+    request: { type: "queue-show"; index: number };
+    response: null;
+  };
+  "queue-send": {
+    request: { type: "queue-send"; index: number };
     response: SendOutcome;
   };
   "answer-question": {

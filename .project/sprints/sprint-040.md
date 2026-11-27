@@ -136,6 +136,34 @@ Décision d'architecture : **ADR-034** (`decisions/ADR-034-chrome-extension-appl
           SmartRecruiters bloque le navigateur de test (DataDome), Workday exclu (SPIKE-006). Avant : tout par l'IA,
           10 à 16 appels. Reste à mesurer le coût de l'IA après la passe (essai réel avec le relais).
 
+- [ ] **[US-204]** File de candidatures : plusieurs offres préparées et remplies en arrière-plan, envoi en un clic
+      chacune (demande du propriétaire du 2026-11-27)
+  - Agent: `developer`
+  - Pourquoi : « je lance une tâche et il postule aux dix dernières offres essentielles pour moi ». Palier 1 en lot :
+    rien ne part sans un clic par offre ; l'envoi sans clic reste US-200, à décider par le propriétaire.
+  - Critères d'acceptation :
+    - [x] Lancement depuis le panneau (« Plusieurs offres ») : jusqu'à 10 offres parmi les offres récentes de JobSpark
+          (non postulées) et les onglets ouverts, budget maximum annoncé avant le départ (9 crédits au plus par offre,
+          7 avec une clé personnelle) et refusé au-dessus du solde ; rien n'est débité au-delà.
+          Les onglets ouverts ne sont jamais cochés d'office.
+    - [x] Les manques du profil sont demandés une fois avant le départ ; pendant la file, aucune question : un champ
+          inconnu reste vide et l'offre passe « à compléter ».
+    - [x] Une offre à la fois dans un onglet en arrière-plan : ouverture, formulaire accessible vérifié avant toute
+          dépense, préparation (US-196), script puis IA (US-203), relecture. Une erreur n'arrête pas les suivantes ;
+          une connexion révoquée arrête la file.
+    - [x] Écartées sans débit et signalées : LinkedIn, Indeed, Workday, France Travail (compte), page sans formulaire,
+          candidature déjà envoyée, budget atteint. L'onglet ouvert pour rien est refermé ; ceux du candidat restent.
+    - [x] File de récapitulatifs : état (prête, à compléter, écartée, échec, envoyée, à vérifier), crédits, champs
+          remplis ; « Valider et envoyer » met l'onglet au premier plan et passe par les garde-fous d'US-198 (preuve
+          comprise) ; « Voir l'onglet » pour finir un champ ou un captcha, jamais contourné.
+    - [x] La file continue panneau fermé (service worker maintenu en vie, état en `storage.session`), s'arrête à la
+          demande après l'offre en cours ; une file coupée par un redémarrage de Chrome est marquée comme telle.
+    - [x] Tests unitaires de l'orchestration (budget, exclusions, reprise après erreur, envoi, redémarrage) et des
+          écrans.
+    - [ ] Essai réel sur 3 offres de préprod de plateformes différentes.
+          À faire par le propriétaire : vérifier que page-agent remplit bien un onglet en arrière-plan (Chrome y
+          ralentit les minuteries à une par seconde ; page-agent n'attend pas `requestAnimationFrame`).
+
 ## 📊 Sprint DoD
 
 - [ ] Parcours réel de bout en bout sur une vraie offre, avec un seul geste du candidat, « Valider et envoyer » :

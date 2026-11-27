@@ -2,25 +2,10 @@ import { LoaderCircleIcon, WandSparklesIcon } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import type { FillOptions, FillOutcome } from "../application/filling";
 import { askBackground } from "../messages";
+import { IdentityGaps } from "./IdentityGaps";
 import { ReviewCard } from "./ReviewCard";
 import type { IdentityField } from "../domain/fill";
-import { Button, Card, Field, Hint, Notice, Select } from "./ui";
-
-const AUTOCOMPLETE: Record<IdentityField, string> = {
-  email: "email",
-  firstName: "given-name",
-  lastName: "family-name",
-  linkedin: "url",
-  phone: "tel",
-};
-
-const INPUT_TYPE: Record<IdentityField, string> = {
-  email: "email",
-  firstName: "text",
-  lastName: "text",
-  linkedin: "url",
-  phone: "tel",
-};
+import { Button, Card, Hint, Notice, Select } from "./ui";
 
 const label = (application: { title: string | null; company: string | null }) =>
   [application.title ?? "Candidature", application.company]
@@ -140,31 +125,11 @@ export function FillCard() {
               et votre lettre. Il n'envoie rien.
             </p>
           )}
-          {options.profileGaps.length > 0 && (
-            <fieldset className="flex flex-col gap-3 rounded-lg border border-dashed border-warning/60 bg-warning/5 p-3">
-              <legend className="px-1 text-xs font-semibold text-warning">
-                Il manque à votre profil
-              </legend>
-              <Hint>
-                Donnez-les une fois : l'agent ne vous interrompra pas et les
-                gardera pour les prochains formulaires. Laissez vide ce que vous
-                ne voulez pas donner.
-              </Hint>
-              {options.profileGaps.map((gap) => (
-                <Field
-                  key={gap.field}
-                  id={`identity-${gap.field}`}
-                  label={gap.label}
-                  type={INPUT_TYPE[gap.field]}
-                  autoComplete={AUTOCOMPLETE[gap.field]}
-                  value={identity[gap.field] ?? ""}
-                  onChange={(value) =>
-                    setIdentity((given) => ({ ...given, [gap.field]: value }))
-                  }
-                />
-              ))}
-            </fieldset>
-          )}
+          <IdentityGaps
+            gaps={options.profileGaps}
+            values={identity}
+            onChange={setIdentity}
+          />
           <div className="flex flex-col gap-1.5">
             <Button
               variant={outcome ? "secondary" : "primary"}

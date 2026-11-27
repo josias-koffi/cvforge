@@ -1,22 +1,13 @@
 import {
-  answerFromData,
   buildFillTask,
   prefillData,
-  completeProfile,
-  IDENTITY_FIELDS,
   type IdentityField,
-  profileGaps,
-  sameQuestion,
   type FillAnswers,
   type FillProfile,
 } from "../domain/fill";
 import { readBalance } from "../domain/connection";
 import { findApplicationFor, type ApplicationSummary } from "../domain/offer";
-import {
-  AI_CREDIT_ACTION_FORM_FILL,
-  AI_CREDIT_COSTS,
-  screeningQuestionKey,
-} from "@cvforge/types";
+import { AI_CREDIT_ACTION_FORM_FILL, AI_CREDIT_COSTS } from "@cvforge/types";
 import type {
   FillerReply,
   FillerRequest,
@@ -26,9 +17,17 @@ import type {
 import type { DocumentKind } from "../page/attach";
 import type { PrefillData } from "../domain/field-match";
 import type { PrefillReport } from "../page/prefill";
-import type { PageReader } from "./preparation";
+import type { ActiveTab, PageReader } from "./preparation";
 import type { LastFill } from "./sending";
-import type { AiKeySettings, AiKeyStore, JobSparkTools } from "./session";
+import {
+  CandidateData,
+  gapsOf,
+  type EncodedDocument,
+  type ProfileGap,
+} from "./candidate-data";
+import { askCandidate, type QuestionState } from "./fill-questions";
+import { ModelRelay, type ModelRoute } from "./model-relay";
+import type { AiKeyStore, JobSparkTools } from "./session";
 
 /** The script that runs page-agent in the recruiter's tab. */
 export interface FillTab {
@@ -60,8 +59,6 @@ export interface CandidateChannel {
   ask(question: string): Promise<{ answer: string | null; save: boolean }>;
 }
 
-export type EncodedDocument = { base64: string; name: string; mime: string };
-
 export type FillOptions =
   | { kind: "no-access" }
   | { kind: "no-page" }
@@ -79,6 +76,8 @@ export type FillOptions =
       profileGaps: { field: IdentityField; label: string }[];
     };
 
+export type { EncodedDocument, ProfileGap };
+
 export type FillOutcome = {
   creditsSpent: number;
   /** Fields the page script filled without a model (US-203). */
@@ -95,46 +94,17 @@ export type FillOutcome = {
   answersSaved: number;
 };
 
-/** Who answers the in-page agent's model calls during a fill. */
-type ModelRoute =
-  | { kind: "personal"; baseURL: string; apiKey: string }
-  | { kind: "jobspark"; baseURL: string; sessionId: string };
-
 type ActiveFill = {
   tabId: number;
   /** What the agent may be told without asking the candidate. */
   data: { profile: FillProfile; answers: FillAnswers };
   route: ModelRoute;
   documents: Record<DocumentKind, EncodedDocument>;
-  questionsAsked: number;
-  answersSaved: number;
-  /** Each question goes to the candidate once; the agent tends to re-ask. */
-  asked: Map<string, string | null>;
-};
-
-const ALREADY_ASKED =
-  "Déjà demandé au candidat, sans réponse : laisse ce champ vide, ne repose pas la question et passe au suivant.";
-const TOO_MANY_QUESTIONS =
-  "Plus de question au candidat pour ce formulaire : laisse les champs restants vides et termine.";
-/** Beyond this, the candidate is not bothered again during this fill. */
-const MAX_QUESTIONS = 8;
-
-type ProfileRegistry = {
-  activeProfileId: string | null;
-  profiles: (FillProfile & { id: string })[];
-};
+} & QuestionState;
 
 const READY = (application: ApplicationSummary) =>
   application.status === "draft" &&
   Boolean(application.cvGeneratedAt && application.letterGeneratedAt);
-
-const fileName = (kind: DocumentKind, profile: FillProfile) => {
-  const who = `${profile.identity.firstName} ${profile.identity.lastName}`
-    .replace(/[^\p{L}\p{N} -]/gu, "")
-    .trim();
-  const base = kind === "cv" ? "CV" : "Lettre de motivation";
-  return `${who ? `${base} ${who}` : base}.pdf`;
-};
 
 /**
  * « Remplir » (US-197): page-agent fills the recruiter's form with the
@@ -144,6 +114,8 @@ const fileName = (kind: DocumentKind, profile: FillProfile) => {
 export class Filling {
   private active: ActiveFill | null = null;
   private readonly filled = new Map<number, LastFill>();
+  private readonly models: ModelRelay;
+  private readonly candidateData: CandidateData;
 
   constructor(
     private readonly deps: {
@@ -157,7 +129,10 @@ export class Filling {
       relay: { origin: string; accessToken: () => Promise<string | null> };
       fetchFn?: typeof fetch;
     },
-  ) {}
+  ) {
+    this.models = new ModelRelay(deps);
+    this.candidateData = new CandidateData(deps);
+  }
 
   async options(): Promise<FillOptions> {
     const tab = await this.deps.pages.activeTab();
@@ -168,7 +143,7 @@ export class Filling {
       this.deps.tools.call("list_applications"),
       this.deps.aiKeys.get(),
       this.deps.tools.call("get_credit_balance").then(readBalance, () => null),
-      this.completedProfile().catch(() => null),
+      this.candidateData.completedProfile().catch(() => null),
     ]);
     const ready = (
       Array.isArray(listed) ? (listed as ApplicationSummary[]) : []
@@ -186,12 +161,7 @@ export class Filling {
       fillCost: aiKey ? 0 : FORM_FILL_COST,
       kind: "page",
       personalKey: Boolean(aiKey),
-      profileGaps: profile
-        ? profileGaps(profile.profile).map((field) => ({
-            field,
-            label: IDENTITY_FIELDS[field],
-          }))
-        : [],
+      profileGaps: profile ? gapsOf(profile.profile) : [],
       suggestedId: matching?.id ?? ready[0]?.id ?? null,
       url: tab.url,
     };
@@ -205,12 +175,28 @@ export class Filling {
     /** Also have the model try the optional fields the script left empty. */
     completeOptional?: boolean;
   }): Promise<FillOutcome> {
-    if (this.active) throw new Error("Un remplissage est déjà en cours.");
-    const aiKey = await this.deps.aiKeys.get();
     const tab = await this.deps.pages.activeTab();
     if (!tab || tab === "no-access" || tab.url !== request.url) {
       throw new Error("L'onglet a changé : vérifiez à nouveau.");
     }
+    return this.fillTab(tab, request);
+  }
+
+  /**
+   * Fills the form shown in `tab`, in the background for the queue (US-204):
+   * `unattended` never asks the candidate, the field stays empty instead.
+   */
+  async fillTab(
+    tab: ActiveTab,
+    request: {
+      applicationId: string;
+      identity?: Partial<Record<IdentityField, string>>;
+      completeOptional?: boolean;
+    },
+    mode: { unattended?: boolean } = {},
+  ): Promise<FillOutcome> {
+    if (this.active) throw new Error("Un remplissage est déjà en cours.");
+    const aiKey = await this.deps.aiKeys.get();
 
     const listed = (await this.deps.tools.call(
       "list_applications",
@@ -221,14 +207,18 @@ export class Filling {
     if (!application || !READY(application)) {
       throw new Error("Cette candidature n'a pas encore son CV et sa lettre.");
     }
-    await this.keepIdentity(request.identity ?? {});
-    const completed = await this.completedProfile();
+    await this.candidateData.keepIdentity(request.identity ?? {});
+    const completed = await this.candidateData.completedProfile();
     if (!completed) throw new Error("Complétez d'abord votre profil JobSpark.");
     const { answers, profile } = completed;
 
     const documents = {
-      cv: await this.document(application.id, "cv", profile),
-      letter: await this.document(application.id, "letter", profile),
+      cv: await this.candidateData.document(application.id, "cv", profile),
+      letter: await this.candidateData.document(
+        application.id,
+        "letter",
+        profile,
+      ),
     };
     const formUrl = await this.openFormIfNeeded(tab.tabId);
     const pre = await this.deps.tab.prefill(tab.tabId, {
@@ -261,7 +251,7 @@ export class Filling {
       };
     }
 
-    const route = await this.modelRoute(aiKey, application.id);
+    const route = await this.models.route(aiKey, application.id);
     this.active = {
       data: { answers, profile },
       route,
@@ -270,6 +260,7 @@ export class Filling {
       documents,
       questionsAsked: 0,
       tabId: tab.tabId,
+      unattended: mode.unattended === true,
     };
     try {
       const reply = await this.deps.tab.run(tab.tabId, {
@@ -312,6 +303,12 @@ export class Filling {
    * On the offer's page, « Remplir » opens its form first: the same-site
    * « Postuler » / « Apply » link. A page with fields is already the form.
    */
+  /** A form is in the tab, or a same-site link leads to it: nothing spent yet. */
+  async formReachable(tabId: number): Promise<boolean> {
+    const probe = await this.deps.tab.probe(tabId);
+    return probe.fieldCount >= FORM_MIN_FIELDS || probe.applyLink !== null;
+  }
+
   private async openFormIfNeeded(tabId: number): Promise<string | null> {
     const probe = await this.deps.tab.probe(tabId);
     if (probe.fieldCount >= FORM_MIN_FIELDS || !probe.applyLink) return null;
@@ -319,38 +316,14 @@ export class Filling {
     return probe.applyLink;
   }
 
-  /** The active profile, completed with what the panel collected before. */
-  private async completedProfile() {
-    const profile = await this.activeProfile();
-    if (!profile) return null;
-    const answers = (await this.deps.tools.call("get_screening_answers", {
-      profileId: profile.id,
-    })) as FillAnswers;
-    return { answers, profile: completeProfile(profile, answers) };
+  /** Identity data the profile lacks, to ask in the panel before filling. */
+  profileGaps(): Promise<ProfileGap[]> {
+    return this.candidateData.gaps();
   }
 
-  private async keepIdentity(given: Partial<Record<IdentityField, string>>) {
-    for (const [field, value] of Object.entries(given)) {
-      const answer = value?.trim();
-      if (!answer) continue;
-      await this.deps.tools.call("save_screening_answer", {
-        answer,
-        question: IDENTITY_FIELDS[field as IdentityField],
-      });
-    }
-  }
-
-  private async activeProfile() {
-    const registry = (await this.deps.tools.call(
-      "get_profile",
-    )) as ProfileRegistry;
-    return (
-      registry.profiles.find(
-        (entry) => entry.id === registry.activeProfileId,
-      ) ??
-      registry.profiles[0] ??
-      null
-    );
+  /** Profile gaps typed in the panel, kept as answers (no profile write). */
+  keepIdentity(given: Partial<Record<IdentityField, string>>) {
+    return this.candidateData.keepIdentity(given);
   }
 
   /** What the last fill of this tab used, for the review before sending. */
@@ -369,111 +342,13 @@ export class Filling {
     }
     switch (request.type) {
       case "filler/llm-fetch":
-        return this.relayModelCall(active.route, request);
+        return this.models.call(active.route, request);
       case "filler/document":
         return active.documents[request.kind];
       case "filler/ask":
-        return { answer: await this.askCandidate(active, request.question) };
+        return {
+          answer: await askCandidate(active, request.question, this.deps),
+        };
     }
-  }
-
-  private async document(
-    applicationId: string,
-    kind: DocumentKind,
-    profile: FillProfile,
-  ) {
-    const link = (await this.deps.tools.call("get_document_download_url", {
-      applicationId,
-      format: "pdf",
-      kind,
-    })) as { url: string };
-    const file = await this.deps.download(link.url);
-    return { ...file, name: fileName(kind, profile) };
-  }
-
-  /**
-   * The candidate's own key when set (free); otherwise a JobSpark fill
-   * session, two credits, opened only now that everything else is ready.
-   */
-  private async modelRoute(
-    aiKey: AiKeySettings | null,
-    applicationId: string,
-  ): Promise<ModelRoute> {
-    if (aiKey) {
-      return { apiKey: aiKey.apiKey, baseURL: aiKey.baseURL, kind: "personal" };
-    }
-    const started = (await this.deps.tools.call("start_form_fill", {
-      applicationId,
-    })) as { fillSessionId: string };
-    return {
-      baseURL: `${this.deps.relay.origin}/agent/llm`,
-      kind: "jobspark",
-      sessionId: started.fillSessionId,
-    };
-  }
-
-  private async relayModelCall(
-    route: ModelRoute,
-    request: { url: string; body?: string },
-  ) {
-    if (!request.url.startsWith(`${route.baseURL}/`)) {
-      return { error: "Adresse du modèle non autorisée." };
-    }
-    const send = async () => {
-      const authorization =
-        route.kind === "personal"
-          ? `Bearer ${route.apiKey}`
-          : `Bearer ${(await this.deps.relay.accessToken()) ?? ""}`;
-      return (this.deps.fetchFn ?? ((u, i) => fetch(u, i)))(request.url, {
-        body: request.body,
-        headers: {
-          authorization,
-          "content-type": "application/json",
-          ...(route.kind === "jobspark" && {
-            "x-jobspark-fill-session": route.sessionId,
-          }),
-        },
-        method: "POST",
-      });
-    };
-    let response = await send();
-    if (response.status === 401 && route.kind === "jobspark") {
-      // The access token expired mid-fill: any MCP call refreshes it.
-      await this.deps.tools.call("get_credit_balance").catch(() => undefined);
-      response = await send();
-    }
-    return { body: await response.text(), status: response.status };
-  }
-
-  private async askCandidate(active: ActiveFill, question: string) {
-    const known = answerFromData(
-      question,
-      active.data.profile,
-      active.data.answers,
-    );
-    if (known) return known;
-    const key = screeningQuestionKey(question);
-    const earlier = [...active.asked.keys()].find(
-      (asked) => asked === key || sameQuestion(asked, key),
-    );
-    if (earlier !== undefined)
-      return active.asked.get(earlier) ?? ALREADY_ASKED;
-    if (active.questionsAsked >= MAX_QUESTIONS) return TOO_MANY_QUESTIONS;
-    active.questionsAsked += 1;
-    const { answer, save } = await this.deps.candidate.ask(question);
-    active.asked.set(key, answer);
-    if (answer && save) {
-      try {
-        await this.deps.tools.call("save_screening_answer", {
-          answer,
-          question,
-        });
-        active.answersSaved += 1;
-      } catch {
-        // Not fatal: the form still gets the answer. An older connection may
-        // lack answers:write until the candidate reconnects.
-      }
-    }
-    return answer;
   }
 }

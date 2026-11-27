@@ -1791,3 +1791,11 @@
 - **Why**: vitesse (≈1 s contre 1–2 min) et prévisibilité, plus que l'économie.
 - **Learned**: presque tous les formulaires ont des questions obligatoires propres à l'offre : l'IA reste utile, mais pour 1 à 9 champs. Workable met LinkedIn dans un textarea ; Greenhouse a des champs de recherche à choisir (laissés à l'IA) ; Teamtailor ouvre son formulaire dans une fenêtre inaccessible au navigateur de test.
 - **Open**: fixture Teamtailor ; coût réel de l'IA après la passe (essai préprod).
+
+## 2026-11-27 — US-204 file de candidatures (demande propriétaire)
+- **Context**: [[sprints/sprint-040#US-204]] · panneau refait au design de l'appli le même jour
+- **Did**: `domain/queue.ts` (règles : exclusions, suggestion, budget, coupure), `application/queue.ts` (`ApplicationQueue` : une offre à la fois en onglet d'arrière-plan, formulaire vérifié avant toute dépense, `prepareTab` / `fillTab` sans surveillance / `reviewTab`, envoi d'un clic par US-198), `infrastructure/queue-tabs.ts`, panneau « Cette offre / Plusieurs offres ». Découpage de `filling.ts` (462 → 354 lignes) : `model-relay.ts`, `candidate-data.ts`, `fill-questions.ts`.
+- **Why**: le propriétaire veut lancer une tâche et retrouver ses candidatures remplies ; l'envoi reste validé un par un (palier 1).
+- **Learned**: les offres JobSpark de préprod mènent à Beetween, Xtramile (redirection) ou France Travail (compte) : beaucoup n'ont pas de formulaire atteignable → vérifier avant de dépenser. Un service worker MV3 meurt après 30 s sans appel d'extension, même pendant un `generate_cv` → `getPlatformInfo` toutes les 20 s pendant la file. page-agent n'utilise `requestAnimationFrame` que pour son masque (désactivé).
+- **Open**: essai réel préprod sur 3 offres ; sources « recherche » et « candidatures préparées » non proposées (offres récentes + onglets seulement).
+

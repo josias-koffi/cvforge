@@ -1,7 +1,7 @@
 import { looksConfirmed, submitRefusal } from "../domain/submission";
 import type { ApplicationSummary } from "../domain/offer";
 import type { FormSnapshot } from "../page/form-state";
-import type { PageReader } from "./preparation";
+import type { ActiveTab, PageReader } from "./preparation";
 import type { JobSparkTools } from "./session";
 
 /** The form in the recruiter's tab, outside page-agent. */
@@ -72,6 +72,11 @@ export class Sending {
   async review(): Promise<Review> {
     const tab = await this.deps.pages.activeTab();
     if (!tab || tab === "no-access") return { kind: "nothing" };
+    return this.reviewTab(tab);
+  }
+
+  /** The review of the form filled in `tab`, even a background one (US-204). */
+  async reviewTab(tab: ActiveTab): Promise<Review> {
     const fill = this.deps.lastFill(tab.tabId);
     if (!fill) return { kind: "nothing" };
 
