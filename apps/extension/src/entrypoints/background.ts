@@ -84,6 +84,7 @@ export default defineBackground(() => {
       case "fill":
         return filling.fill({
           applicationId: request.applicationId,
+          completeOptional: request.completeOptional,
           identity: request.identity,
           url: request.url,
         });

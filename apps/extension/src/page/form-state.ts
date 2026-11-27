@@ -6,6 +6,8 @@
 export type FormSnapshot = {
   fields: { label: string; value: string }[];
   requiredEmpty: string[];
+  /** Empty fields the form does not require (files and consent boxes aside). */
+  optionalEmpty: string[];
   /** The final button's text, or null when none (or several) stand out. */
   submitLabel: string | null;
   /** The visible button only moves to another step of the form. */
@@ -24,7 +26,7 @@ const SKIPPED_TYPES = new Set([
   "image",
 ]);
 
-function roots(
+export function roots(
   root: Document | ShadowRoot = document,
 ): (Document | ShadowRoot)[] {
   const found: (Document | ShadowRoot)[] = [root];
@@ -35,7 +37,7 @@ function roots(
 }
 
 /** A label's own words, without the controls nested in it. */
-function ownText(element: Element | null): string {
+export function ownText(element: Element | null): string {
   if (!element) return "";
   const copy = element.cloneNode(true) as Element;
   copy
@@ -50,13 +52,13 @@ function ownText(element: Element | null): string {
   return parts.join(" ");
 }
 
-const clean = (text: string | null | undefined) =>
+export const clean = (text: string | null | undefined) =>
   (text ?? "")
     .replace(/\s+/g, " ")
-    .replace(/\s*\*\s*$/, "")
+    .replace(/\s*[*✱]\s*$/, "")
     .trim();
 
-function labelOf(field: HTMLElement): string {
+export function labelOf(field: HTMLElement): string {
   const root = field.getRootNode() as Document | ShadowRoot;
   const byFor = field.id
     ? root.querySelector(`label[for="${CSS.escape(field.id)}"]`)?.textContent
@@ -110,13 +112,66 @@ function valueOf(
 }
 
 // File inputs are often hidden behind a styled button: they still count.
-const isVisible = (element: HTMLElement) =>
+export const isVisible = (element: HTMLElement) =>
   (element as HTMLInputElement).type === "file" ||
   element.getClientRects().length > 0;
+
+/** The radios answering the same question as this one. */
+export function radioGroup(radio: HTMLInputElement): HTMLInputElement[] {
+  const root = radio.getRootNode() as Document | ShadowRoot;
+  return radio.name
+    ? [
+        ...root.querySelectorAll<HTMLInputElement>(
+          `input[type=radio][name="${CSS.escape(radio.name)}"]`,
+        ),
+      ]
+    : [radio];
+}
+
+/**
+ * The question a group of radios answers: its legend, its radiogroup label,
+ * or the text of the block around the options, without the options.
+ */
+export function groupQuestion(radios: HTMLInputElement[]): string {
+  const first = radios[0];
+  if (!first) return "";
+  const legend = first.closest("fieldset")?.querySelector("legend");
+  if (legend) return clean(ownText(legend)).slice(0, 200);
+  const group = first.closest<HTMLElement>('[role="radiogroup"]');
+  if (
+    group &&
+    (group.getAttribute("aria-label") || group.getAttribute("aria-labelledby"))
+  )
+    return labelOf(group);
+  let block: HTMLElement | null = first.parentElement;
+  while (block && !radios.every((radio) => block!.contains(radio))) {
+    block = block.parentElement;
+  }
+  const options = radios.map((radio) => labelOf(radio)).filter(Boolean);
+  // Only a block holding these radios and nothing else speaks for them.
+  const onlyThese = (element: HTMLElement) =>
+    [...element.querySelectorAll("input, select, textarea")].every(
+      (field) =>
+        radios.includes(field as HTMLInputElement) ||
+        (field as HTMLInputElement).type === "hidden",
+    );
+  for (
+    let level = 0;
+    level < 3 && block && onlyThese(block);
+    level++, block = block.parentElement
+  ) {
+    let text = clean(ownText(block));
+    for (const option of options) text = text.split(option).join(" ");
+    text = clean(text);
+    if (text) return text.slice(0, 200);
+  }
+  return "";
+}
 
 export function readForm(): FormSnapshot {
   const fields: FormSnapshot["fields"] = [];
   const requiredEmpty: string[] = [];
+  const optionalEmpty: string[] = [];
   const radioGroups = new Set<string>();
 
   for (const root of roots()) {
@@ -132,19 +187,26 @@ export function readForm(): FormSnapshot {
         field.required || field.getAttribute("aria-required") === "true";
 
       if (field instanceof HTMLInputElement && field.type === "radio") {
-        const group = field.name || label;
-        const checked = root.querySelector<HTMLInputElement>(
-          `input[type=radio][name="${CSS.escape(field.name)}"]:checked`,
-        );
-        if (radioGroups.has(group)) continue;
-        radioGroups.add(group);
+        const key = field.name || label;
+        if (radioGroups.has(key)) continue;
+        radioGroups.add(key);
+        const radios = radioGroup(field);
+        const question = groupQuestion(radios) || key;
+        const checked = radios.find((radio) => radio.checked);
         if (checked)
-          fields.push({ label: group, value: labelOf(checked) || "Oui" });
-        else if (required) requiredEmpty.push(group);
+          fields.push({ label: question, value: labelOf(checked) || "Oui" });
+        else if (radios.some((radio) => radio.required) || required)
+          requiredEmpty.push(question);
+        else optionalEmpty.push(question);
         continue;
       }
       if (value) fields.push({ label: label || "(sans libellé)", value });
       else if (required) requiredEmpty.push(label || "(sans libellé)");
+      else if (
+        !(field instanceof HTMLInputElement) ||
+        !["checkbox", "file"].includes(field.type)
+      )
+        optionalEmpty.push(label || "(sans libellé)");
     }
   }
 
@@ -152,6 +214,7 @@ export function readForm(): FormSnapshot {
   return {
     fields,
     multiStep: control === null && nextControls().length > 0,
+    optionalEmpty,
     requiredEmpty,
     submitLabel: control ? controlText(control) : null,
   };

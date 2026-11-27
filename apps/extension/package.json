@@ -17,6 +17,7 @@
     "@page-agent/core": "1.12.4",
     "@page-agent/llms": "1.12.4",
     "@page-agent/page-controller": "1.12.4",
+    "lucide-react": "^1.45.0",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "zod": "^4.6.7"

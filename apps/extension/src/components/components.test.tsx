@@ -2,7 +2,8 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import type { PanelState } from "../domain/connection";
 import { AiKeyForm } from "./AiKeyForm";
-import { ConnectionCard } from "./ConnectionCard";
+import { Settings } from "./Settings";
+import { Welcome } from "./Welcome";
 
 const base: PanelState = {
   aiKey: { configured: false, hint: null, model: "openai/gpt-4.1-mini" },
@@ -12,15 +13,10 @@ const base: PanelState = {
 };
 const noop = () => undefined;
 
-describe("ConnectionCard", () => {
+describe("Welcome", () => {
   const render = (state: PanelState) =>
     renderToStaticMarkup(
-      <ConnectionCard
-        busy={false}
-        state={state}
-        onConnect={noop}
-        onDisconnect={noop}
-      />,
+      <Welcome busy={false} state={state} onConnect={noop} />,
     );
 
   it("offers to connect when disconnected", () => {
@@ -29,18 +25,43 @@ describe("ConnectionCard", () => {
     expect(html).toContain("api.example");
   });
 
-  it("shows the balance and a way out when connected", () => {
+  it("explains a revoked connection", () => {
+    expect(render({ ...base, status: "revoked" })).toContain("révoquée");
+  });
+});
+
+describe("Settings", () => {
+  const render = (state: PanelState) =>
+    renderToStaticMarkup(
+      <Settings
+        busy={false}
+        state={state}
+        onBack={noop}
+        onDisconnect={noop}
+        onSaveKey={noop}
+        onClearKey={noop}
+      />,
+    );
+
+  it("shows the balance and a way out", () => {
     const html = render({ ...base, balance: 42, status: "connected" });
     expect(html).toContain("42 crédits");
     expect(html).toContain("Se déconnecter");
   });
 
-  it("explains a revoked connection", () => {
-    expect(render({ ...base, status: "revoked" })).toContain("révoquée");
-  });
-
   it("says when the balance is unavailable", () => {
     expect(render({ ...base, status: "connected" })).toContain("indisponible");
+  });
+
+  it("keeps the personal key folded until one is saved", () => {
+    const connected = { ...base, status: "connected" as const };
+    expect(render(connected)).not.toMatch(/<details[^>]*open/);
+    expect(
+      render({
+        ...connected,
+        aiKey: { configured: true, hint: "sk-…9f3a", model: "m" },
+      }),
+    ).toMatch(/<details[^>]*open/);
   });
 });
 

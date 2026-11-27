@@ -57,12 +57,13 @@ export function QuestionPrompt() {
       role="alertdialog"
       aria-labelledby="question-title"
       aria-describedby="question-text"
+      className="rounded-xl ring-2 ring-spark/70"
     >
       <Card title="Une question du formulaire">
         <h3 id="question-title" ref={heading} tabIndex={-1} className="sr-only">
           Question du formulaire
         </h3>
-        <p id="question-text" className="text-sm font-medium">
+        <p id="question-text" className="font-medium">
           {current.question}
         </p>
         <form className="flex flex-col gap-3" onSubmit={submit}>
@@ -72,9 +73,10 @@ export function QuestionPrompt() {
             value={answer}
             onChange={setAnswer}
           />
-          <label className="flex items-center gap-2 text-sm">
+          <label className="flex items-center gap-2 text-xs text-muted-foreground">
             <input
               type="checkbox"
+              className="size-4 accent-primary"
               checked={save}
               onChange={(event) => setSave(event.target.checked)}
             />

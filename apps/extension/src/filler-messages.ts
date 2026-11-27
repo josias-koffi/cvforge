@@ -1,4 +1,6 @@
+import type { PrefillData } from "./domain/field-match";
 import type { DocumentKind } from "./page/attach";
+import type { PrefillDocument } from "./page/prefill";
 
 /** Service worker → the script in the recruiter's tab. */
 export type FillerRun = {
@@ -14,7 +16,12 @@ export type FillerReply = { success: boolean; summary: string; steps: number };
 export type FormRequest =
   | { type: "filler/read-form" }
   | { type: "filler/submit" }
-  | { type: "filler/probe" };
+  | { type: "filler/probe" }
+  | {
+      type: "filler/prefill";
+      data: PrefillData;
+      documents: Record<DocumentKind, PrefillDocument>;
+    };
 
 /** Is this tab already the form, or where is it? */
 export type PageProbe = { fieldCount: number; applyLink: string | null };

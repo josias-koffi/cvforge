@@ -3,6 +3,8 @@
  * ADR-034 §5): only the candidate's own data, never an invented answer, never
  * the final button, cookies refused beyond what is needed.
  */
+import { classifyLabel, type PrefillData } from "./field-match";
+import { sameQuestion } from "./question";
 
 /** The profile fields the form filler needs (from MCP `get_profile`). */
 export type FillProfile = {
@@ -30,6 +32,8 @@ export type FillApplication = {
   company: string | null;
 };
 
+export { sameQuestion };
+
 export const FILL_SYSTEM_INSTRUCTIONS = [
   "Tu remplis le formulaire de candidature affiché, pour le candidat.",
   "Règles absolues :",
@@ -55,10 +59,19 @@ const line = (label: string, value: unknown) =>
     : `- ${label} : ${Array.isArray(value) || typeof value === "object" ? JSON.stringify(value) : String(value)}`;
 
 /** The task handed to page-agent: the data block and what to do with it. */
+/** What the page script already did before the model starts (US-203). */
+export type PrefillSummary = {
+  filled: string[];
+  attached: string[];
+  remaining: string[];
+  optionalEmpty: string[];
+};
+
 export function buildFillTask(
   profile: FillProfile,
   answers: FillAnswers,
   application: FillApplication,
+  done?: PrefillSummary,
 ): string {
   const { identity } = profile;
   const facts = answers.fromProfile ?? {};
@@ -88,9 +101,27 @@ export function buildFillTask(
     .filter(Boolean)
     .join(" chez ");
 
+  const list = (items: string[]) => items.map((item) => `- ${item}`);
+  const head = done
+    ? [
+        `Termine le formulaire de candidature de cette page${target ? ` (offre : ${target})` : ""} : une partie est déjà remplie.`,
+        ...(done.filled.length
+          ? ["Champs déjà remplis, n'y touche pas :", ...list(done.filled)]
+          : []),
+        done.attached.length
+          ? `Documents déjà joints, ne les joins pas à nouveau : ${done.attached.join(", ")}.`
+          : "Joins le CV et la lettre de motivation avec attach_document.",
+        "Champs à remplir :",
+        ...list([...done.remaining, ...done.optionalEmpty]),
+        "Ne remplis un champ facultatif que si les données du candidat y répondent ; sinon laisse-le vide sans rien demander.",
+      ]
+    : [
+        `Remplis le formulaire de candidature de cette page${target ? ` (offre : ${target})` : ""}.`,
+        "Joins le CV et la lettre de motivation avec attach_document.",
+      ];
+
   return [
-    `Remplis le formulaire de candidature de cette page${target ? ` (offre : ${target})` : ""}.`,
-    "Joins le CV et la lettre de motivation avec attach_document.",
+    ...head,
     "",
     "Données du candidat :",
     ...rows,
@@ -132,46 +163,52 @@ export function leavesSite(description: string, pageUrl: string): boolean {
   }
 }
 
-/** Words that carry a question's meaning (« niveau », « allemand », « german »…). */
-function meaningfulWords(question: string): Set<string> {
-  return new Set(
-    question
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .toLowerCase()
-      .split(/[^a-z0-9]+/)
-      .filter((word) => word.length > 3),
-  );
-}
-
-/**
- * Two questions about the same field: the model rephrases (« What is your
- * level of German? », « Quel est votre niveau d'allemand ? (…) »).
- */
-export function sameQuestion(a: string, b: string): boolean {
-  const left = meaningfulWords(a);
-  const right = meaningfulWords(b);
-  if (left.size === 0 || right.size === 0) return false;
-  const shared = [...left].filter((word) => right.has(word)).length;
-  return shared / Math.min(left.size, right.size) >= 0.5;
-}
-
-const normalized = (text: string) =>
-  text
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, " ")
-    .trim();
-
 const linkMatching = (profile: FillProfile, pattern: RegExp) =>
   profile.identity.links.find(
     (link) => pattern.test(link.label.toLowerCase()) || pattern.test(link.url),
   )?.url ?? "";
 
-/** A label about another person or thing: « Referrer email », « Company name ». */
-const SOMEONE_ELSE =
-  /\b(refer\w*|referent|parrain\w*|manager|reference\w*|company|entreprise|societe|school|ecole|emergency|urgence|recruiter|recruteur)\b/;
+/**
+ * What the page script may fill without a model (US-203): identity, links,
+ * current job, and the answers the candidate saved. The identity answers the
+ * panel collected are already in the values, not repeated as questions.
+ */
+export function prefillData(
+  profile: FillProfile,
+  answers: FillAnswers,
+): PrefillData {
+  const { identity } = profile;
+  const facts = answers.fromProfile ?? {};
+  const text = (value: unknown) => (typeof value === "string" ? value : "");
+  const identityLabels: string[] = Object.values(IDENTITY_FIELDS);
+  return {
+    answers: [
+      ...answers.known.map((entry) => ({
+        answer: entry.answer,
+        question: entry.label,
+      })),
+      ...answers.custom.filter(
+        (entry) => !identityLabels.includes(entry.question),
+      ),
+    ].filter((entry) => entry.answer.trim()),
+    values: {
+      city: identity.city,
+      currentCompany: text(facts.currentCompany),
+      currentTitle: text(facts.currentRole),
+      email: identity.email,
+      firstName: identity.firstName,
+      // A full name without the last name would be wrong: left to the candidate.
+      fullName: identity.lastName
+        ? `${identity.firstName} ${identity.lastName}`.trim()
+        : "",
+      github: linkMatching(profile, /github/),
+      lastName: identity.lastName,
+      linkedin: linkMatching(profile, /linkedin/),
+      phone: identity.phone,
+      portfolio: linkMatching(profile, /portfolio|site|web/),
+    },
+  };
+}
 
 /**
  * A field label the candidate's data already answers. The model sometimes
@@ -184,38 +221,15 @@ export function answerFromData(
   profile: FillProfile,
   answers: FillAnswers,
 ): string | null {
-  const q = normalized(question)
-    .replace(/\b(required|obligatoire|optional|optionnel|facultatif)\b/g, "")
-    .trim()
-    .replace(/\s+/g, " ");
   const saved =
     answers.custom.find((entry) => sameQuestion(entry.question, question))
       ?.answer ??
     answers.known.find((entry) => sameQuestion(entry.label, question))?.answer;
   if (saved) return saved;
-  if (q.split(" ").length > 6 || SOMEONE_ELSE.test(q)) return null;
-
-  const { identity } = profile;
-  const fullName = `${identity.firstName} ${identity.lastName}`.trim();
-  const rules: [RegExp, string][] = [
-    [
-      /^(nom complet|nom et prenom|prenom et nom|nom prenom|full ?name|your name|name|nom)$/,
-      identity.lastName ? fullName : "",
-    ],
-    [/\b(prenom|first ?name|given name|forename)\b/, identity.firstName],
-    [/\b(nom de famille|last ?name|surname|family name)\b/, identity.lastName],
-    [/\b(e ?mail|courriel|adresse electronique)\b/, identity.email],
-    [/\b(telephone|phone|mobile|portable|tel)\b/, identity.phone],
-    [/linkedin/, linkMatching(profile, /linkedin/)],
-    [/github/, linkMatching(profile, /github/)],
-    [
-      /\b(portfolio|site web|site personnel|website|personal site)\b/,
-      linkMatching(profile, /portfolio|site|web/),
-    ],
-    [/\b(ville|city|current location|location|localisation)\b/, identity.city],
-  ];
-  const rule = rules.find(([pattern]) => pattern.test(q));
-  return rule?.[1] || null;
+  const key = classifyLabel(question);
+  // Current job facts are already in the task: only identity is answered here.
+  if (!key || key === "currentCompany" || key === "currentTitle") return null;
+  return prefillData(profile, answers).values[key] || null;
 }
 
 /** Identity data most forms ask for, collected in the panel before a fill. */

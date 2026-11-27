@@ -70,14 +70,17 @@ describe("FillCard", () => {
     expect(container.textContent).toContain("Il n'envoie rien");
 
     ask.mockResolvedValueOnce({
+      aiUsed: true,
       answersSaved: 1,
       creditsSpent: 2,
+      optionalEmpty: [],
+      prefilled: [{ label: "Email", value: "c@example.com" }],
       formUrl: "https://jobs.lever.co/acme/1/apply",
       questionsAsked: 2,
       success: true,
       summary: "Champ « vélo » laissé vide.",
     });
-    await click("Remplir ce formulaire (2 crédits)");
+    await click("Remplir ce formulaire (2 crédits max)");
 
     expect(ask).toHaveBeenCalledWith({
       applicationId: "a2",
@@ -108,16 +111,48 @@ describe("FillCard", () => {
     expect(container.textContent).toContain("Il manque à votre profil");
     await type("identity-lastName", "Test");
     ask.mockResolvedValueOnce({
+      aiUsed: true,
       answersSaved: 0,
       creditsSpent: 2,
+      optionalEmpty: [],
+      prefilled: [],
       formUrl: null,
       questionsAsked: 0,
       success: true,
       summary: "",
     });
-    await click("Remplir ce formulaire (2 crédits)");
+    await click("Remplir ce formulaire (2 crédits max)");
     expect(ask).toHaveBeenCalledWith(
       expect.objectContaining({ identity: { lastName: "Test" }, type: "fill" }),
+    );
+  });
+
+  it("says when no credit was spent, and offers the model for optional fields", async () => {
+    ask.mockResolvedValueOnce(OPTIONS);
+    await render(<FillCard />);
+    ask.mockResolvedValueOnce({
+      aiUsed: false,
+      answersSaved: 0,
+      creditsSpent: 0,
+      formUrl: null,
+      optionalEmpty: ["Pronouns"],
+      prefilled: [
+        { label: "Email", value: "c@example.com" },
+        { label: "Phone", value: "06" },
+      ],
+      questionsAsked: 0,
+      success: true,
+      summary: "",
+    });
+    await click("Remplir ce formulaire (2 crédits max)");
+    expect(container.textContent).toContain(
+      "2 champ(s) rempli(s) sans IA : aucun crédit dépensé.",
+    );
+    expect(container.textContent).toContain("Pronouns");
+    ask.mockResolvedValueOnce(null);
+    await click("Les compléter avec l'IA (2 crédits)");
+    expect(ask).toHaveBeenCalledWith(
+      expect.objectContaining({ completeOptional: true, type: "fill" }),
     );
   });
 
@@ -149,7 +184,7 @@ describe("FillCard", () => {
     ask.mockRejectedValueOnce(
       new Error("Ajoutez d'abord votre clé IA personnelle."),
     );
-    await click("Remplir ce formulaire (2 crédits)");
+    await click("Remplir ce formulaire (2 crédits max)");
     expect(container.querySelector('[role="alert"]')?.textContent).toContain(
       "clé IA",
     );

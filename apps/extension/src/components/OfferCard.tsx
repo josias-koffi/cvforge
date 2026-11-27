@@ -6,6 +6,7 @@ import type {
 import { WEB_PAGE_ORIGINS } from "../infrastructure/page-reader";
 import { askBackground } from "../messages";
 import { OfferView } from "./OfferView";
+import { Notice } from "./ui";
 
 /**
  * Follows the active tab and prepares its offer. Credits are spent only after
@@ -95,19 +96,12 @@ export function OfferCard({ onSpent }: { onSpent: () => void }) {
         onConfirm={confirm}
       />
       {preparing && (
-        <p role="status" className="text-sm text-muted-foreground">
+        <Notice tone="info" role="status">
           Préparation en cours (analyse, CV, lettre) : cela peut prendre une
           minute.
-        </p>
+        </Notice>
       )}
-      {error && (
-        <p
-          role="alert"
-          className="rounded-md border border-destructive p-3 text-sm text-destructive"
-        >
-          {error}
-        </p>
-      )}
+      {error && <Notice tone="destructive">{error}</Notice>}
     </>
   );
 }

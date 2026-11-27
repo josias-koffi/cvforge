@@ -3,7 +3,8 @@ import type {
   PreparationResult,
 } from "../application/preparation";
 import { STEP_COSTS, type PreparationStep } from "../domain/offer";
-import { Button, Card } from "./ui";
+import { ExternalLinkIcon, SparklesIcon } from "lucide-react";
+import { Button, Card, Hint, Notice } from "./ui";
 
 const STEP_LABELS: Record<PreparationStep, string> = {
   cv: "CV adapté à l'offre",
@@ -26,7 +27,11 @@ export type OfferViewProps = {
 
 /** The offer of the active tab and what preparing it costs (US-196). */
 export function OfferView(props: OfferViewProps) {
-  return <Card title="Offre de l'onglet">{body(props)}</Card>;
+  return (
+    <Card step={1} title="L'offre">
+      {body(props)}
+    </Card>
+  );
 }
 
 function body({
@@ -41,7 +46,7 @@ function body({
 }: OfferViewProps) {
   if (result) {
     return (
-      <p role="status" className="text-sm text-success">
+      <Notice tone="success" role="status">
         Candidature préparée
         {result.title ? ` : ${result.title}` : ""}
         {result.company ? ` chez ${result.company}` : ""}. CV et lettre sont
@@ -50,21 +55,19 @@ function body({
         {result.balanceAfter === null
           ? "."
           : `, solde : ${credits(result.balanceAfter)}.`}
-      </p>
+      </Notice>
     );
   }
   if (!inspection) {
-    return (
-      <p className="text-sm text-muted-foreground">Lecture de l'onglet…</p>
-    );
+    return <p className="text-muted-foreground">Lecture de l'onglet…</p>;
   }
   if (inspection.kind === "no-access") {
     return (
       <>
-        <p className="text-sm">
-          Pour lire l'offre affichée, puis remplir les formulaires des
-          recruteurs, JobSpark a besoin d'accéder aux pages web. Rien n'est lu
-          tant que vous ne cliquez pas sur « Préparer ».
+        <p className="text-muted-foreground">
+          Pour lire l'offre affichée et remplir les formulaires des recruteurs,
+          JobSpark a besoin d'accéder aux pages web. Rien n'est lu tant que vous
+          ne cliquez pas sur « Préparer ».
         </p>
         <Button disabled={busy} onClick={onAllow}>
           Autoriser l'accès aux pages
@@ -74,7 +77,7 @@ function body({
   }
   if (inspection.kind === "no-page") {
     return (
-      <p className="text-sm text-muted-foreground">
+      <p className="text-muted-foreground">
         Ouvrez la page d'une offre d'emploi dans cet onglet.
       </p>
     );
@@ -82,20 +85,24 @@ function body({
 
   const { page, plan, existing, balance } = inspection;
   const header = (
-    <p className="text-sm">
-      <strong>{existing?.title ?? page.title}</strong>
-      <br />
-      <span className="text-muted-foreground">{page.host}</span>
-    </p>
+    <div className="flex min-w-0 flex-col gap-0.5">
+      <p className="line-clamp-2 font-medium">
+        {existing?.title ?? page.title}
+      </p>
+      <p className="flex items-center gap-1 text-xs text-muted-foreground">
+        <ExternalLinkIcon className="size-3" aria-hidden="true" />
+        {page.host}
+      </p>
+    </div>
   );
 
   if (plan.alreadySent) {
     return (
       <>
         {header}
-        <p className="text-sm text-warning">
+        <Notice tone="warning">
           Candidature déjà envoyée pour cette offre : rien à préparer.
-        </p>
+        </Notice>
       </>
     );
   }
@@ -103,10 +110,9 @@ function body({
     return (
       <>
         {header}
-        <p className="text-sm text-success">
-          Candidature prête : CV et lettre déjà générés. « Remplir le formulaire
-          » ci-dessous ouvre le formulaire de l'offre et le remplit.
-        </p>
+        <Notice tone="success">
+          CV et lettre déjà générés : passez au formulaire.
+        </Notice>
       </>
     );
   }
@@ -116,31 +122,33 @@ function body({
     <>
       {header}
       {existing && (
-        <p className="text-sm">
-          Candidature déjà créée, on complète ce qui manque.
-        </p>
+        <Hint>Candidature déjà créée : on complète ce qui manque.</Hint>
       )}
-      <ul className="text-sm">
+      <ul className="divide-y rounded-lg border">
         {plan.steps.map((step) => (
-          <li key={step} className="flex justify-between">
+          <li key={step} className="flex justify-between px-3 py-2">
             <span>{STEP_LABELS[step]}</span>
-            <span>{credits(STEP_COSTS[step])}</span>
+            <span className="text-muted-foreground">
+              {credits(STEP_COSTS[step])}
+            </span>
           </li>
         ))}
+        <li className="flex justify-between bg-muted/60 px-3 py-2 font-medium">
+          <span>Total</span>
+          <span>{credits(plan.cost)}</span>
+        </li>
       </ul>
-      <p className="text-sm">
-        Coût : <strong>{credits(plan.cost)}</strong>
-        {balance !== null && ` (solde : ${credits(balance)})`}
-      </p>
+      {balance !== null && !short && (
+        <Hint>Votre solde : {credits(balance)}</Hint>
+      )}
       {short ? (
-        <p className="text-sm text-destructive">
-          Solde insuffisant pour préparer cette candidature.
-        </p>
+        <Notice tone="destructive">
+          Solde insuffisant pour préparer cette candidature (solde :{" "}
+          {credits(balance ?? 0)}).
+        </Notice>
       ) : confirming ? (
-        <div className="flex flex-col gap-2 rounded-md border border-input p-3">
-          <p className="text-sm">
-            Confirmez-vous la dépense de {credits(plan.cost)} ?
-          </p>
+        <div className="flex flex-col gap-2 rounded-lg bg-accent p-3">
+          <p>Confirmez-vous la dépense de {credits(plan.cost)} ?</p>
           <div className="flex gap-2">
             <Button disabled={busy} onClick={onConfirm}>
               Confirmer
@@ -152,6 +160,7 @@ function body({
         </div>
       ) : (
         <Button disabled={busy} onClick={onAsk}>
+          <SparklesIcon aria-hidden="true" />
           Préparer la candidature
         </Button>
       )}
