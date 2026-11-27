@@ -10,12 +10,21 @@ export interface KeyValueStore {
 }
 
 export function chromeLocalStore(): KeyValueStore {
+  return storeOf(browser.storage.local);
+}
+
+/** Kept while the browser runs, never written to disk: the queue (US-204). */
+export function chromeSessionStore(): KeyValueStore {
+  return storeOf(browser.storage.session);
+}
+
+function storeOf(area: Browser.storage.StorageArea): KeyValueStore {
   return {
     async get<T>(key: string) {
-      const values = await browser.storage.local.get(key);
+      const values = await area.get(key);
       return values[key] as T | undefined;
     },
-    set: (key, value) => browser.storage.local.set({ [key]: value }),
-    remove: (...keys) => browser.storage.local.remove(keys),
+    set: (key, value) => area.set({ [key]: value }),
+    remove: (...keys) => area.remove(keys),
   };
 }

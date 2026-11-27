@@ -1,5 +1,6 @@
 import { Filling } from "../application/filling";
 import { Preparation } from "../application/preparation";
+import { ApplicationQueue } from "../application/queue";
 import { Sending } from "../application/sending";
 import { Session } from "../application/session";
 import { localAiKeyStore } from "../infrastructure/ai-key-store";
@@ -9,9 +10,19 @@ import { chromeFillTab } from "../infrastructure/fill-tab";
 import { chromeFormTab } from "../infrastructure/form-tab";
 import { apiEndpoints } from "../infrastructure/config";
 import { JobSparkMcp } from "../infrastructure/jobspark-mcp";
-import { chromeLocalStore } from "../infrastructure/local-store";
+import {
+  chromeLocalStore,
+  chromeSessionStore,
+} from "../infrastructure/local-store";
 import { ExtensionOAuthProvider } from "../infrastructure/oauth-provider";
-import { chromePageReader } from "../infrastructure/page-reader";
+import {
+  chromePageReader,
+  WEB_PAGE_ORIGINS,
+} from "../infrastructure/page-reader";
+import {
+  chromeQueueTabs,
+  keepServiceWorkerAlive,
+} from "../infrastructure/queue-tabs";
 import { PanelChannel } from "../infrastructure/panel-channel";
 import type { FillerRequest } from "../filler-messages";
 import type { PanelRequest, PanelResponse } from "../messages";
@@ -59,6 +70,21 @@ export default defineBackground(() => {
     tools,
   });
 
+  const queue = new ApplicationQueue({
+    aiKeys,
+    canReadPages: () =>
+      browser.permissions.contains({ origins: WEB_PAGE_ORIGINS }),
+    filling,
+    keepAlive: keepServiceWorkerAlive,
+    preparation,
+    sending,
+    store: chromeSessionStore(),
+    tabs: chromeQueueTabs(),
+    tools,
+  });
+  // Marks a queue cut short by a restart as such, before the panel asks.
+  void queue.status();
+
   browser.sidePanel
     .setPanelBehavior({ openPanelOnActionClick: true })
     .catch(() => undefined);
@@ -95,6 +121,24 @@ export default defineBackground(() => {
           applicationId: request.applicationId,
           url: request.url,
         });
+      case "queue-candidates":
+        return queue.candidates();
+      case "queue-start":
+        return queue.start({
+          budget: request.budget,
+          identity: request.identity,
+          offers: request.offers,
+        });
+      case "queue-status":
+        return queue.status();
+      case "queue-stop":
+        return queue.stop();
+      case "queue-clear":
+        return queue.clear();
+      case "queue-show":
+        return queue.show(request.index).then(() => null);
+      case "queue-send":
+        return queue.send(request.index);
       case "answer-question":
         panel.answer(request.id, request.answer, request.save);
         return Promise.resolve(null);

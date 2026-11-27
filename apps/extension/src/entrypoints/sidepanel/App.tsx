@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { FillCard } from "../../components/FillCard";
 import { OfferCard } from "../../components/OfferCard";
 import { QuestionPrompt } from "../../components/QuestionPrompt";
+import { QueueView } from "../../components/QueueView";
 import { Settings } from "../../components/Settings";
 import { Brand, Button, Notice } from "../../components/ui";
 import { Welcome } from "../../components/Welcome";
@@ -20,6 +21,7 @@ export function App() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [settings, setSettings] = useState(false);
+  const [mode, setMode] = useState<"single" | "queue">("single");
 
   const run = useCallback(async (request: StateRequest) => {
     setBusy(true);
@@ -36,6 +38,7 @@ export function App() {
   useEffect(() => {
     void run({ type: "state" });
   }, [run]);
+  const refreshState = useCallback(() => void run({ type: "state" }), [run]);
 
   const connected = state?.status === "connected";
 
@@ -99,9 +102,41 @@ export function App() {
             )}
             {/* Kept mounted behind the settings: a fill in progress survives. */}
             <div hidden={settings} className="flex flex-col gap-3">
+              <div
+                role="tablist"
+                aria-label="Mode"
+                className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-1"
+              >
+                {(
+                  [
+                    ["single", "Cette offre"],
+                    ["queue", "Plusieurs offres"],
+                  ] as const
+                ).map(([value, text]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    role="tab"
+                    aria-selected={mode === value}
+                    onClick={() => setMode(value)}
+                    className={`h-7 rounded-md text-xs font-medium transition-all duration-150 ease-spark ${
+                      mode === value
+                        ? "bg-card text-foreground shadow-surface"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {text}
+                  </button>
+                ))}
+              </div>
               <QuestionPrompt />
-              <OfferCard onSpent={() => run({ type: "state" })} />
-              <FillCard />
+              <div hidden={mode !== "single"} className="flex flex-col gap-3">
+                <OfferCard onSpent={refreshState} />
+                <FillCard />
+              </div>
+              <div hidden={mode !== "queue"} className="flex flex-col gap-3">
+                <QueueView onSpent={refreshState} />
+              </div>
             </div>
           </>
         )}

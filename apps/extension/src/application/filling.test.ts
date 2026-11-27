@@ -417,6 +417,37 @@ describe("Filling: from the offer page", () => {
   });
 });
 
+describe("Filling for the queue (US-204)", () => {
+  it("fills a background tab without asking the candidate anything", async () => {
+    const f = setup();
+    f.setTab(null); // the candidate looks elsewhere
+    const outcome = await f.filling.fillTab(
+      TAB,
+      { applicationId: "a1" },
+      { unattended: true },
+    );
+    expect(outcome.questionsAsked).toBe(0);
+    expect(f.candidate.ask).not.toHaveBeenCalled();
+  });
+
+  it("finds a form, or the link to it, before anything is spent", async () => {
+    expect(await setup().filling.formReachable(9)).toBe(true);
+    expect(
+      await setup({
+        probe: {
+          applyLink: "https://jobs.lever.co/acme/1/apply",
+          fieldCount: 0,
+        },
+      }).filling.formReachable(9),
+    ).toBe(true);
+    expect(
+      await setup({
+        probe: { applyLink: null, fieldCount: 1 },
+      }).filling.formReachable(9),
+    ).toBe(false);
+  });
+});
+
 describe("Filling: the script first, the model only for the rest (US-203)", () => {
   const ALL_DONE = {
     ...LEFT_TO_MODEL,

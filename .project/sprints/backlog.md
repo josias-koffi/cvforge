@@ -223,7 +223,7 @@ Référence de gate: le spec impose des branches courtes et des PRs <= 400 ligne
 | US-201 | Publication sur le Chrome Web Store depuis la CI, confidentialité de l'extension dans `/admin/legal` | E33 | M | P1 | — | Demande propriétaire du 2026-11-26 |
 | US-202 | Remplissage avec le modèle de JobSpark payé en crédits (`form_fill`, 2 crédits), relais `/agent/llm`, clé personnelle en option | E33 | M | P0 | 040 | Décision propriétaire du 2026-11-26 |
 | US-203 | Remplissage d'abord par script (identité, liens, documents, réponses enregistrées, réglages Lever/Greenhouse/Ashby/Workable/Teamtailor), IA seulement pour les champs restants, aucun crédit si le script suffit | E33 | M | P0 | 040 | Demande propriétaire du 2026-11-26 |
-| US-204 | File de candidatures : le candidat choisit jusqu'à 10 offres (ou celles du jour) et un budget, l'agent prépare et remplit chaque formulaire en arrière-plan, puis le candidat valide chaque envoi en un clic depuis une file de récapitulatifs | E33 | L | P0 | — | Demande propriétaire du 2026-11-27 |
+| US-204 | File de candidatures : le candidat choisit jusqu'à 10 offres (ou celles du jour) et un budget, l'agent prépare et remplit chaque formulaire en arrière-plan, puis le candidat valide chaque envoi en un clic depuis une file de récapitulatifs | E33 | L | P0 | 040 | Demande propriétaire du 2026-11-27 |
 
 ## Critères d'acceptation détaillés — E33 (US-204)
 
