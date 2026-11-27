@@ -210,12 +210,29 @@ Décision d'architecture : **ADR-034** (`decisions/ADR-034-chrome-extension-appl
     - [x] Tests unitaires (questions factuelles, rédaction, repli, reprise à l'envoi) et de l'écran.
     - [ ] Essai réel : qualité des réponses sur 3 formulaires avec questions ouvertes.
 
+- [ ] **[US-207]** Pastille sur l'icône de l'extension (demande du propriétaire du 2026-11-27)
+  - Agent: `developer`
+  - Pourquoi : savoir en un coup d'œil, sans ouvrir le panneau, qu'une offre est pertinente ou que JobSpark peut
+    remplir le formulaire.
+  - Critères d'acceptation :
+    - [x] Après chaque chargement de page (accès aux pages autorisé), la pastille montre le score de pertinence d'une
+          offre connue de JobSpark (offres du jour, récentes, candidatures préparées ; sur sa page ou son formulaire),
+          sinon « ✓ » sur un formulaire remplissable (champ fichier et 3 champs au moins, ou lien « Postuler » du même
+          site) ; rien ailleurs. Couleur selon le score ; info-bulle explicative.
+    - [x] Détection dans la page par un petit script dédié (`probe.js`, 4 ko : nombre de champs, champ fichier, lien
+          « Postuler »), sans lire aucune valeur, sans crédit ni IA ; offres listées au plus toutes les 10 minutes.
+    - [x] LinkedIn et Indeed : jamais « ✓ », seulement le score d'une offre connue (US-210).
+    - [x] Sans accès aux pages, aucun script injecté et aucune pastille.
+    - [x] Tests unitaires (règles, cache, sans accès, déconnecté).
+    - [ ] Essai réel sur une offre du jour, un formulaire Lever/Greenhouse et une page quelconque.
+
 ## 📊 Sprint DoD
 
 - [ ] Parcours réel de bout en bout sur une vraie offre, avec un seul geste du candidat, « Valider et envoyer » :
       offre → préparation → formulaire rempli avec CV et lettre joints → envoi → preuve dans JobSpark.
 - [ ] ADR-034 acceptée et texte de confidentialité de l'extension prêt pour `/admin/legal` (lecture des pages des
-      recruteurs, captures gardées en preuve, clé IA stockée localement).
+      recruteurs, captures gardées en preuve, clé IA stockée localement ; script de pastille sur chaque page chargée,
+      sans lecture de valeurs ni envoi, US-207).
 - [ ] `pnpm lint` et tests de l'extension, de l'API et du web verts (CI).
 - [ ] Mémoire des agents concernés mise à jour.
 

@@ -1819,3 +1819,10 @@
 - **Why**: les questions de motivation obligatoires bloquaient le remplissage ; la lettre générée y répond déjà.
 - **Learned**: le relais `/agent/llm` accepte un appel sans outils dans la même session (60 appels, 15 min) : aucune modification d'API ni de crédit. Regex de questions factuelles : bornes de mot indispensables (« candidate » contient « date », « language » contient « age ») ; `\b` ne marche pas devant « â » sans drapeau `u`.
 - **Open**: qualité réelle des réponses (essai préprod) ; un champ riche (éditeur contenteditable) n'est pas lu par `readForm`, la correction n'y serait pas reprise.
+
+## 2026-11-27 — US-207 pastille sur l'icône (demande propriétaire)
+- **Context**: [[sprints/sprint-040#US-207]]
+- **Did**: `domain/badge.ts` (score d'une offre connue, sinon « ✓ » sur formulaire remplissable, rien sur LinkedIn/Indeed hors score), `entrypoints/probe.ts` (script non listé de 4 ko), `application/page-badge.ts` (offres du jour + récentes + candidatures, cache 10 min), `infrastructure/badge-host.ts` (`action.setBadgeText` par onglet), branché sur `tabs.onUpdated` « complete ».
+- **Why**: voir sans ouvrir le panneau qu'une page vaut le coup.
+- **Learned**: un script non listé WXT renvoie la valeur de `main` comme résultat d'`executeScript({ files })` (vérifié sur le build avec `vm`). Un formulaire de contact a 3+ champs : exiger un champ fichier pour « ✓ ».
+- **Open**: essai réel ; texte de confidentialité à compléter (script sur chaque page chargée).

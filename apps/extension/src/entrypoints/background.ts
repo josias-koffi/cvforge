@@ -24,6 +24,8 @@ import {
   keepServiceWorkerAlive,
 } from "../infrastructure/queue-tabs";
 import { chromeQueueNotifier } from "../infrastructure/queue-notifier";
+import { chromeBadgeHost } from "../infrastructure/badge-host";
+import { PageBadge } from "../application/page-badge";
 import { PanelChannel } from "../infrastructure/panel-channel";
 import type { FillerRequest } from "../filler-messages";
 import type { PanelRequest, PanelResponse } from "../messages";
@@ -91,13 +93,22 @@ export default defineBackground(() => {
     .setPanelBehavior({ openPanelOnActionClick: true })
     .catch(() => undefined);
 
+  // The icon's badge (US-207): worked out after each page load.
+  const badge = new PageBadge({ host: chromeBadgeHost(), tools });
+  browser.tabs.onUpdated.addListener((tabId, change, tab) => {
+    if (change.status !== "complete") return;
+    void badge.update(tabId, tab.url).catch(() => undefined);
+  });
+
   const handle = (request: PanelRequest) => {
     switch (request.type) {
       case "state":
         return session.state();
       case "connect":
+        badge.reset();
         return session.connect();
       case "disconnect":
+        badge.reset();
         return session.disconnect();
       case "save-ai-key":
         return session.saveAiKey(request.settings);
